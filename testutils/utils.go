@@ -2,6 +2,7 @@
 package testutils
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -36,4 +37,14 @@ func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 		}
 	}
 	return filtered
+}
+
+// ErrorCache is a struct that can be used to get at the error that is emitted by test assertions when passing it instead ot *testing.T
+type ErrorCache struct {
+	Error error
+}
+
+// Errorf records the given formatted string as an erro
+func (ec *ErrorCache) Errorf(format string, args ...interface{}) {
+	ec.Error = fmt.Errorf(format, args...)
 }

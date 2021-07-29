@@ -128,7 +128,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	k.DeleteUnsignedTx(ctx)
 	k.SetSignedTx(ctx, tx)
 
-	// Notify that consolidation tx can be queried
+	// notify that consolidation tx can be queried
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransactionSigned,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyTxHash, txHash.String()),

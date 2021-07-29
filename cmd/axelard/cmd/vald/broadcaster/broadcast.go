@@ -2,7 +2,6 @@ package broadcaster
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -13,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // Broadcaster submits transactions to a tendermint node
@@ -111,7 +111,7 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 // RetryPipeline manages serialized execution of functions with retry on error
 type RetryPipeline struct {
 	c          chan func()
-	backOff    BackOff
+	backOff    utils.BackOff
 	maxRetries int
 	logger     log.Logger
 }
@@ -149,7 +149,7 @@ func (p RetryPipeline) Close() {
 }
 
 // NewPipelineWithRetry returns a pipeline with the given configuration
-func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy BackOff, logger log.Logger) *RetryPipeline {
+func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff, logger log.Logger) *RetryPipeline {
 	p := &RetryPipeline{
 		c:          make(chan func(), cap),
 		backOff:    backOffStrategy,
@@ -164,29 +164,4 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy BackOff, logg
 	}()
 
 	return p
-}
-
-// BackOff computes the next back-off duration
-type BackOff func(currentRetryCount int) time.Duration
-
-// ExponentialBackOff computes an exponential back-off
-func ExponentialBackOff(minTimeout time.Duration) BackOff {
-	return func(currentRetryCount int) time.Duration {
-		jitter := rand.Float64()
-		strategy := 1 << currentRetryCount
-		backoff := (1 + float64(strategy)*jitter) * minTimeout.Seconds() * float64(time.Second)
-
-		return time.Duration(backoff)
-	}
-}
-
-// LinearBackOff computes a linear back-off
-func LinearBackOff(minTimeout time.Duration) BackOff {
-	return func(currentRetryCount int) time.Duration {
-		jitter := rand.Float64()
-		strategy := float64(currentRetryCount)
-
-		backoff := (1 + strategy*jitter) * minTimeout.Seconds() * float64(time.Second)
-		return time.Duration(backoff)
-	}
 }

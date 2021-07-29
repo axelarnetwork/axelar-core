@@ -7,6 +7,8 @@ require (
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.4
+	github.com/cucumber/godog v0.11.0 // indirect
+	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
 	github.com/ethereum/go-ethereum v1.10.2
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.0
