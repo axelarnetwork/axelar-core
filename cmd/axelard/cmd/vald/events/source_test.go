@@ -35,7 +35,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 
 		client.NextBlock(start + newBlockCount)
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		for i := int64(0); i < newBlockCount; i++ {
@@ -54,7 +54,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 		client := NewClientMock()
 		start := rand.I64Between(0, 1000000)
 		notifier := events.NewBlockNotifier(client, start, log.TestingLogger(),
-			events.Timeout(1*time.Second), events.Retries(1), events.KeepAlive(1*time.Second))
+			events.Timeout(1*time.Millisecond), events.Retries(1), events.KeepAlive(1*time.Millisecond))
 
 		receivedBlocks, errChan := notifier.BlockHeights(context.Background())
 
@@ -64,7 +64,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 		client.NextBlock(firstBatch)
 		client.NextBlock(secondBatch)
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		for i := int64(0); i < secondBatch-start; i++ {
 			select {
@@ -82,7 +82,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 		client := NewClientMock()
 		start := rand.I64Between(0, 1000000)
 		notifier := events.NewBlockNotifier(client, start, log.TestingLogger(),
-			events.Timeout(1*time.Second), events.Retries(1), events.KeepAlive(1*time.Second))
+			events.Timeout(1*time.Millisecond), events.Retries(1), events.KeepAlive(1*time.Millisecond))
 
 		ctx, cancelMainCtx := context.WithCancel(context.Background())
 
@@ -144,7 +144,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 			client.NextBlock(nextBlock)
 		}
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		for i := int64(0); i < blockCount; i++ {
@@ -178,7 +178,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 			client.NextBlock(nextBlock)
 		}
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		for {
@@ -201,7 +201,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 
 		blocks, errChan := notifier.BlockHeights(context.Background())
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		select {

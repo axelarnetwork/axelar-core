@@ -102,7 +102,7 @@ func TestMgr_Subscribe(t *testing.T) {
 		newBlocks <- newBlock
 		newBlocks <- endMarkerBlock
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Minute)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		expectedEventCount := len(newBlock.BeginBlockEvents) + len(newBlock.EndBlockEvents)
@@ -160,7 +160,7 @@ func TestMgr_Subscribe(t *testing.T) {
 		newBlocks <- newBlock
 		newBlocks <- endMarkerBlock
 
-		timeout, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		expectedEventCount := 0
