@@ -173,22 +173,18 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
 
-	var voteResult codec.ProtoMarshaler
-	if keygenData := req.Result.GetData(); keygenData != nil {
-		voteResult = &gogoprototypes.BytesValue{Value: keygenData.GetPubKey()}
-
+	var voteData codec.ProtoMarshaler
+	switch res := req.Result.GetKeygenResultData().(type) {
+	case *tofnd.MessageOut_KeygenResult_Criminals:
+		voteData = res.Criminals
+	case *tofnd.MessageOut_KeygenResult_Data:
+		voteData = &gogoprototypes.BytesValue{Value: res.Data.PubKey}
 		//TODO: store the recovery data in the keeper
-		_ = keygenData.ShareRecoveryInfos
-		if voteResult == nil {
-			voteResult = req.Result.GetCriminals()
-		}
+	default:
+		return nil, fmt.Errorf("invalid data type")
 	}
 
-	if voteResult == nil {
-		return nil, fmt.Errorf("invalid result")
-	}
-
-	if err := poll.Vote(voter, voteResult); err != nil {
+	if err := poll.Vote(voter, voteData); err != nil {
 		return nil, err
 	}
 
