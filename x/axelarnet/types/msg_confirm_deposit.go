@@ -37,6 +37,9 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 	if m.Chain == "" {
 		return fmt.Errorf("missing chain")
 	}
+	if m.TxID == nil {
+		return fmt.Errorf("missing TxID")
+	}
 
 	return nil
 }

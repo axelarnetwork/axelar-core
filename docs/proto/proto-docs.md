@@ -4,6 +4,9 @@
 
 ## Table of Contents
 
+- [axelarnet/v1beta1/params.proto](#axelarnet/v1beta1/params.proto)
+    - [Params](#axelarnet.v1beta1.Params)
+  
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
@@ -204,6 +207,37 @@
 
 
 
+<a name="axelarnet/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/params.proto
+
+
+
+<a name="axelarnet.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `supported_assets` | [string](#string) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -215,6 +249,11 @@
 
 ### GenesisState
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelarnet.v1beta1.Params) |  |  |
 
 
 

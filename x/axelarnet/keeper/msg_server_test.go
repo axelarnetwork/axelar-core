@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"crypto/sha256"
 	"fmt"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 	mathRand "math/rand"
 	"testing"
@@ -44,13 +43,13 @@ func TestHandleMsgLink(t *testing.T) {
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = randomMsgLink()
 		server = keeper.NewMsgServerImpl(nexusKeeper, &mock.BankKeeperMock{})
 	}
 
 	repeatCount := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgLink()
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, nexusKeeper.LinkAddressesCalls(), 1)
@@ -59,6 +58,7 @@ func TestHandleMsgLink(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgLink()
 		nexusKeeper.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -66,6 +66,7 @@ func TestHandleMsgLink(t *testing.T) {
 
 	t.Run("asset not registered", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgLink()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -97,24 +98,27 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		msg = randomMsgConfirmDeposit()
 		server = keeper.NewMsgServerImpl(nexusKeeper, bankKeeper)
 	}
 
 	repeatCount := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgConfirmDeposit()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
+		assert.Len(t, bankKeeper.BurnCoinsCalls(), 1)
+		assert.Len(t, bankKeeper.SendCoinsFromAccountToModuleCalls(), 1)
 		assert.Equal(t, msg.Token.Denom, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Denom)
 		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
 	t.Run("enqueue transfer failed", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgConfirmDeposit()
 		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error {
 			return fmt.Errorf("failed")
 		}
@@ -125,6 +129,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("burn token failed", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgConfirmDeposit()
 		bankKeeper.BurnCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
@@ -135,6 +140,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("transfer from account to module failed", testutils.Func(func(t *testing.T) {
 		setup()
+		msg = randomMsgConfirmDeposit()
 		bankKeeper.SendCoinsFromAccountToModuleFunc = func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
@@ -155,15 +161,16 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		transfers []nexus.CrossChainTransfer
 	)
 	setup := func() {
-		transfers = []nexus.CrossChainTransfer{}
 
-		for i := int64(0); i < rand.I64Between(1, 50); i++ {
-			transfer := randomTransfer()
-			transfers = append(transfers, transfer)
-		}
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		nexusKeeper = &mock.NexusMock{
-			GetTransfersForChainFunc:   func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer { return transfers },
+			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
+				transfers = []nexus.CrossChainTransfer{}
+				for i := int64(0); i < rand.I64Between(1, 50); i++ {
+					transfer := randomTransfer()
+					transfers = append(transfers, transfer)
+				}
+				return transfers
+			},
 			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
@@ -186,9 +193,11 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	repeatCount := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
-
+		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
+		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers))
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), len(transfers))
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 
 	}).Repeat(repeatCount))
@@ -198,8 +207,10 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		bankKeeper.MintCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
+		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
@@ -208,6 +219,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		bankKeeper.SendCoinsFromModuleToAccountFunc = func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
+		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		assert.Panics(t, func() { _, _ = server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg) }, "ExecutePendingTransfers did not panic when transfer token failed")
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))

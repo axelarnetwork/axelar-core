@@ -123,7 +123,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 		if err := s.bank.SendCoinsFromModuleToAccount(
 			ctx, types.ModuleName, recipient, sdk.NewCoins(pendingTransfer.Asset),
 		); err != nil {
-			panic(fmt.Sprintf("unable to send coins from module to account despite previously minting coins to module account: %v", err))
+			panic(fmt.Sprintf("unable to send coins from module to account: %v", err))
 		}
 
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)

@@ -101,7 +101,12 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 
 // InitGenesis initializes the module's keeper from the given genesis state
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
-	am.nexus.RegisterAsset(ctx, "Axelarnet", "satoshi")
+	var genState types.GenesisState
+	// Initialize global index to index in genesis state
+	cdc.MustUnmarshalJSON(gs, &genState)
+
+	InitGenesis(ctx, am.nexus, genState)
+
 	return []abci.ValidatorUpdate{}
 }
 

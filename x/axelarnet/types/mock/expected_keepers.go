@@ -4,100 +4,100 @@
 package mock
 
 import (
-	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
-// Ensure, that NexusMock does implement axelarnettypes.Nexus.
+// Ensure, that NexusMock does implement types.Nexus.
 // If this is not the case, regenerate this file with moq.
-var _ axelarnettypes.Nexus = &NexusMock{}
+var _ types.Nexus = &NexusMock{}
 
-// NexusMock is a mock implementation of axelarnettypes.Nexus.
+// NexusMock is a mock implementation of types.Nexus.
 //
 // 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked axelarnettypes.Nexus
+// 		// make and configure a mocked types.Nexus
 // 		mockedNexus := &NexusMock{
-// 			ArchivePendingTransferFunc: func(ctx cosmossdktypes.Context, transfer nexus.CrossChainTransfer)  {
+// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, amount cosmossdktypes.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetChainFunc: func(ctx cosmossdktypes.Context, chain string) (nexus.Chain, bool) {
+// 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetTransfersForChainFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+// 			GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
-// 			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chainName string, denom string) bool {
+// 			IsAssetRegisteredFunc: func(ctx sdk.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
-// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chainName string, denom string)  {
+// 			RegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 		}
 //
-// 		// use mockedNexus in code that requires axelarnettypes.Nexus
+// 		// use mockedNexus in code that requires types.Nexus
 // 		// and then make assertions.
 //
 // 	}
 type NexusMock struct {
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
-	ArchivePendingTransferFunc func(ctx cosmossdktypes.Context, transfer nexus.CrossChainTransfer)
+	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, amount cosmossdktypes.Coin) error
+	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx cosmossdktypes.Context, chain string) (nexus.Chain, bool)
+	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
 
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
-	GetTransfersForChainFunc func(ctx cosmossdktypes.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
+	GetTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
-	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chainName string, denom string) bool
+	IsAssetRegisteredFunc func(ctx sdk.Context, chainName string, denom string) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
+	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx cosmossdktypes.Context, chainName string, denom string)
+	RegisterAssetFunc func(ctx sdk.Context, chainName string, denom string)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
 		ArchivePendingTransfer []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// Transfer is the transfer argument value.
 			Transfer nexus.CrossChainTransfer
 		}
 		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
 		EnqueueForTransfer []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// Sender is the sender argument value.
 			Sender nexus.CrossChainAddress
 			// Amount is the amount argument value.
-			Amount cosmossdktypes.Coin
+			Amount sdk.Coin
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain string
 		}
 		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
 		GetTransfersForChain []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// State is the state argument value.
@@ -106,7 +106,7 @@ type NexusMock struct {
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// ChainName is the chainName argument value.
 			ChainName string
 			// Denom is the denom argument value.
@@ -115,7 +115,7 @@ type NexusMock struct {
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// Sender is the sender argument value.
 			Sender nexus.CrossChainAddress
 			// Recipient is the recipient argument value.
@@ -124,7 +124,7 @@ type NexusMock struct {
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// ChainName is the chainName argument value.
 			ChainName string
 			// Denom is the denom argument value.
@@ -141,12 +141,12 @@ type NexusMock struct {
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
-func (mock *NexusMock) ArchivePendingTransfer(ctx cosmossdktypes.Context, transfer nexus.CrossChainTransfer) {
+func (mock *NexusMock) ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer) {
 	if mock.ArchivePendingTransferFunc == nil {
 		panic("NexusMock.ArchivePendingTransferFunc: method is nil but Nexus.ArchivePendingTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      sdk.Context
 		Transfer nexus.CrossChainTransfer
 	}{
 		Ctx:      ctx,
@@ -162,11 +162,11 @@ func (mock *NexusMock) ArchivePendingTransfer(ctx cosmossdktypes.Context, transf
 // Check the length with:
 //     len(mockedNexus.ArchivePendingTransferCalls())
 func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
-	Ctx      cosmossdktypes.Context
+	Ctx      sdk.Context
 	Transfer nexus.CrossChainTransfer
 } {
 	var calls []struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      sdk.Context
 		Transfer nexus.CrossChainTransfer
 	}
 	mock.lockArchivePendingTransfer.RLock()
@@ -176,14 +176,14 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, amount cosmossdktypes.Coin) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx    cosmossdktypes.Context
+		Ctx    sdk.Context
 		Sender nexus.CrossChainAddress
-		Amount cosmossdktypes.Coin
+		Amount sdk.Coin
 	}{
 		Ctx:    ctx,
 		Sender: sender,
@@ -199,14 +199,14 @@ func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender nex
 // Check the length with:
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx    cosmossdktypes.Context
+	Ctx    sdk.Context
 	Sender nexus.CrossChainAddress
-	Amount cosmossdktypes.Coin
+	Amount sdk.Coin
 } {
 	var calls []struct {
-		Ctx    cosmossdktypes.Context
+		Ctx    sdk.Context
 		Sender nexus.CrossChainAddress
-		Amount cosmossdktypes.Coin
+		Amount sdk.Coin
 	}
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer
@@ -215,12 +215,12 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx cosmossdktypes.Context, chain string) (nexus.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   sdk.Context
 		Chain string
 	}{
 		Ctx:   ctx,
@@ -236,11 +236,11 @@ func (mock *NexusMock) GetChain(ctx cosmossdktypes.Context, chain string) (nexus
 // Check the length with:
 //     len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   sdk.Context
 	Chain string
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   sdk.Context
 		Chain string
 	}
 	mock.lockGetChain.RLock()
@@ -250,12 +250,12 @@ func (mock *NexusMock) GetChainCalls() []struct {
 }
 
 // GetTransfersForChain calls GetTransfersForChainFunc.
-func (mock *NexusMock) GetTransfersForChain(ctx cosmossdktypes.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+func (mock *NexusMock) GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 	if mock.GetTransfersForChainFunc == nil {
 		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   sdk.Context
 		Chain nexus.Chain
 		State nexus.TransferState
 	}{
@@ -273,12 +273,12 @@ func (mock *NexusMock) GetTransfersForChain(ctx cosmossdktypes.Context, chain ne
 // Check the length with:
 //     len(mockedNexus.GetTransfersForChainCalls())
 func (mock *NexusMock) GetTransfersForChainCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   sdk.Context
 	Chain nexus.Chain
 	State nexus.TransferState
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   sdk.Context
 		Chain nexus.Chain
 		State nexus.TransferState
 	}
@@ -289,12 +289,12 @@ func (mock *NexusMock) GetTransfersForChainCalls() []struct {
 }
 
 // IsAssetRegistered calls IsAssetRegisteredFunc.
-func (mock *NexusMock) IsAssetRegistered(ctx cosmossdktypes.Context, chainName string, denom string) bool {
+func (mock *NexusMock) IsAssetRegistered(ctx sdk.Context, chainName string, denom string) bool {
 	if mock.IsAssetRegisteredFunc == nil {
 		panic("NexusMock.IsAssetRegisteredFunc: method is nil but Nexus.IsAssetRegistered was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		ChainName string
 		Denom     string
 	}{
@@ -312,12 +312,12 @@ func (mock *NexusMock) IsAssetRegistered(ctx cosmossdktypes.Context, chainName s
 // Check the length with:
 //     len(mockedNexus.IsAssetRegisteredCalls())
 func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       sdk.Context
 	ChainName string
 	Denom     string
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		ChainName string
 		Denom     string
 	}
@@ -328,12 +328,12 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		Sender    nexus.CrossChainAddress
 		Recipient nexus.CrossChainAddress
 	}{
@@ -351,12 +351,12 @@ func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender nexus.Cr
 // Check the length with:
 //     len(mockedNexus.LinkAddressesCalls())
 func (mock *NexusMock) LinkAddressesCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       sdk.Context
 	Sender    nexus.CrossChainAddress
 	Recipient nexus.CrossChainAddress
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		Sender    nexus.CrossChainAddress
 		Recipient nexus.CrossChainAddress
 	}
@@ -367,12 +367,12 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chainName string, denom string) {
+func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chainName string, denom string) {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		ChainName string
 		Denom     string
 	}{
@@ -390,12 +390,12 @@ func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chainName strin
 // Check the length with:
 //     len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       sdk.Context
 	ChainName string
 	Denom     string
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       sdk.Context
 		ChainName string
 		Denom     string
 	}
@@ -405,88 +405,88 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	return calls
 }
 
-// Ensure, that BankKeeperMock does implement axelarnettypes.BankKeeper.
+// Ensure, that BankKeeperMock does implement types.BankKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
+var _ types.BankKeeper = &BankKeeperMock{}
 
-// BankKeeperMock is a mock implementation of axelarnettypes.BankKeeper.
+// BankKeeperMock is a mock implementation of types.BankKeeper.
 //
 // 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked axelarnettypes.BankKeeper
+// 		// make and configure a mocked types.BankKeeper
 // 		mockedBankKeeper := &BankKeeperMock{
-// 			BurnCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+// 			BurnCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 // 				panic("mock out the BurnCoins method")
 // 			},
-// 			MintCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+// 			MintCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 // 				panic("mock out the MintCoins method")
 // 			},
-// 			SendCoinsFromAccountToModuleFunc: func(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
+// 			SendCoinsFromAccountToModuleFunc: func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 // 				panic("mock out the SendCoinsFromAccountToModule method")
 // 			},
-// 			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+// 			SendCoinsFromModuleToAccountFunc: func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 // 				panic("mock out the SendCoinsFromModuleToAccount method")
 // 			},
 // 		}
 //
-// 		// use mockedBankKeeper in code that requires axelarnettypes.BankKeeper
+// 		// use mockedBankKeeper in code that requires types.BankKeeper
 // 		// and then make assertions.
 //
 // 	}
 type BankKeeperMock struct {
 	// BurnCoinsFunc mocks the BurnCoins method.
-	BurnCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
+	BurnCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 
 	// MintCoinsFunc mocks the MintCoins method.
-	MintCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
+	MintCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 
 	// SendCoinsFromAccountToModuleFunc mocks the SendCoinsFromAccountToModule method.
-	SendCoinsFromAccountToModuleFunc func(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error
+	SendCoinsFromAccountToModuleFunc func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 
 	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
-	SendCoinsFromModuleToAccountFunc func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
+	SendCoinsFromModuleToAccountFunc func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// BurnCoins holds details about calls to the BurnCoins method.
 		BurnCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Coins
+			Amt sdk.Coins
 		}
 		// MintCoins holds details about calls to the MintCoins method.
 		MintCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Coins
+			Amt sdk.Coins
 		}
 		// SendCoinsFromAccountToModule holds details about calls to the SendCoinsFromAccountToModule method.
 		SendCoinsFromAccountToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// SenderAddr is the senderAddr argument value.
-			SenderAddr cosmossdktypes.AccAddress
+			SenderAddr sdk.AccAddress
 			// RecipientModule is the recipientModule argument value.
 			RecipientModule string
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Coins
+			Amt sdk.Coins
 		}
 		// SendCoinsFromModuleToAccount holds details about calls to the SendCoinsFromModuleToAccount method.
 		SendCoinsFromModuleToAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx sdk.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientAddr is the recipientAddr argument value.
-			RecipientAddr cosmossdktypes.AccAddress
+			RecipientAddr sdk.AccAddress
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Coins
+			Amt sdk.Coins
 		}
 	}
 	lockBurnCoins                    sync.RWMutex
@@ -496,14 +496,14 @@ type BankKeeperMock struct {
 }
 
 // BurnCoins calls BurnCoinsFunc.
-func (mock *BankKeeperMock) BurnCoins(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 	if mock.BurnCoinsFunc == nil {
 		panic("BankKeeperMock.BurnCoinsFunc: method is nil but BankKeeper.BurnCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        sdk.Context
 		ModuleName string
-		Amt        cosmossdktypes.Coins
+		Amt        sdk.Coins
 	}{
 		Ctx:        ctx,
 		ModuleName: moduleName,
@@ -519,14 +519,14 @@ func (mock *BankKeeperMock) BurnCoins(ctx cosmossdktypes.Context, moduleName str
 // Check the length with:
 //     len(mockedBankKeeper.BurnCoinsCalls())
 func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
-	Ctx        cosmossdktypes.Context
+	Ctx        sdk.Context
 	ModuleName string
-	Amt        cosmossdktypes.Coins
+	Amt        sdk.Coins
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        sdk.Context
 		ModuleName string
-		Amt        cosmossdktypes.Coins
+		Amt        sdk.Coins
 	}
 	mock.lockBurnCoins.RLock()
 	calls = mock.calls.BurnCoins
@@ -535,14 +535,14 @@ func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
 }
 
 // MintCoins calls MintCoinsFunc.
-func (mock *BankKeeperMock) MintCoins(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 	if mock.MintCoinsFunc == nil {
 		panic("BankKeeperMock.MintCoinsFunc: method is nil but BankKeeper.MintCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        sdk.Context
 		ModuleName string
-		Amt        cosmossdktypes.Coins
+		Amt        sdk.Coins
 	}{
 		Ctx:        ctx,
 		ModuleName: moduleName,
@@ -558,14 +558,14 @@ func (mock *BankKeeperMock) MintCoins(ctx cosmossdktypes.Context, moduleName str
 // Check the length with:
 //     len(mockedBankKeeper.MintCoinsCalls())
 func (mock *BankKeeperMock) MintCoinsCalls() []struct {
-	Ctx        cosmossdktypes.Context
+	Ctx        sdk.Context
 	ModuleName string
-	Amt        cosmossdktypes.Coins
+	Amt        sdk.Coins
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        sdk.Context
 		ModuleName string
-		Amt        cosmossdktypes.Coins
+		Amt        sdk.Coins
 	}
 	mock.lockMintCoins.RLock()
 	calls = mock.calls.MintCoins
@@ -574,15 +574,15 @@ func (mock *BankKeeperMock) MintCoinsCalls() []struct {
 }
 
 // SendCoinsFromAccountToModule calls SendCoinsFromAccountToModuleFunc.
-func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 	if mock.SendCoinsFromAccountToModuleFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromAccountToModuleFunc: method is nil but BankKeeper.SendCoinsFromAccountToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             cosmossdktypes.Context
-		SenderAddr      cosmossdktypes.AccAddress
+		Ctx             sdk.Context
+		SenderAddr      sdk.AccAddress
 		RecipientModule string
-		Amt             cosmossdktypes.Coins
+		Amt             sdk.Coins
 	}{
 		Ctx:             ctx,
 		SenderAddr:      senderAddr,
@@ -599,16 +599,16 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx cosmossdktypes.Cont
 // Check the length with:
 //     len(mockedBankKeeper.SendCoinsFromAccountToModuleCalls())
 func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
-	Ctx             cosmossdktypes.Context
-	SenderAddr      cosmossdktypes.AccAddress
+	Ctx             sdk.Context
+	SenderAddr      sdk.AccAddress
 	RecipientModule string
-	Amt             cosmossdktypes.Coins
+	Amt             sdk.Coins
 } {
 	var calls []struct {
-		Ctx             cosmossdktypes.Context
-		SenderAddr      cosmossdktypes.AccAddress
+		Ctx             sdk.Context
+		SenderAddr      sdk.AccAddress
 		RecipientModule string
-		Amt             cosmossdktypes.Coins
+		Amt             sdk.Coins
 	}
 	mock.lockSendCoinsFromAccountToModule.RLock()
 	calls = mock.calls.SendCoinsFromAccountToModule
@@ -617,15 +617,15 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
 }
 
 // SendCoinsFromModuleToAccount calls SendCoinsFromModuleToAccountFunc.
-func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 	if mock.SendCoinsFromModuleToAccountFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromModuleToAccountFunc: method is nil but BankKeeper.SendCoinsFromModuleToAccount was just called")
 	}
 	callInfo := struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           sdk.Context
 		SenderModule  string
-		RecipientAddr cosmossdktypes.AccAddress
-		Amt           cosmossdktypes.Coins
+		RecipientAddr sdk.AccAddress
+		Amt           sdk.Coins
 	}{
 		Ctx:           ctx,
 		SenderModule:  senderModule,
@@ -642,16 +642,16 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Cont
 // Check the length with:
 //     len(mockedBankKeeper.SendCoinsFromModuleToAccountCalls())
 func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
-	Ctx           cosmossdktypes.Context
+	Ctx           sdk.Context
 	SenderModule  string
-	RecipientAddr cosmossdktypes.AccAddress
-	Amt           cosmossdktypes.Coins
+	RecipientAddr sdk.AccAddress
+	Amt           sdk.Coins
 } {
 	var calls []struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           sdk.Context
 		SenderModule  string
-		RecipientAddr cosmossdktypes.AccAddress
-		Amt           cosmossdktypes.Coins
+		RecipientAddr sdk.AccAddress
+		Amt           sdk.Coins
 	}
 	mock.lockSendCoinsFromModuleToAccount.RLock()
 	calls = mock.calls.SendCoinsFromModuleToAccount
