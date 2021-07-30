@@ -178,7 +178,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		voteData = &gogoprototypes.BytesValue{Value: res.Data.PubKey}
+		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
 		//TODO: store the recovery data in the keeper
 	default:
 		return nil, fmt.Errorf("invalid data type")

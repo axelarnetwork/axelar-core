@@ -182,24 +182,32 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		return fmt.Errorf("failed to receive keygen result, received unexpected type %T", r)
 	}
 
-	// prepare criminals for Validate()
-	if result.GetCriminals() != nil {
-		// criminals have to be sorted in ascending order
-		sort.Stable(result.GetCriminals())
-	}
-
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
 
-	// TODO: here result data contain the pub key and recovery info. For now we only use pubkey.
-	if keygenData := result.GetData(); keygenData != nil {
-		if keygenData.GetPubKey() != nil {
-			btcecPK, err := btcec.ParsePubKey(keygenData.GetPubKey(), btcec.S256())
-			if err != nil {
-				return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
-			}
-
-			mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+	switch res := result.GetKeygenResultData().(type) {
+	case *tofnd.MessageOut_KeygenResult_Criminals:
+		// prepare criminals for Validate()
+		// criminals have to be sorted in ascending order
+		sort.Stable(res.Criminals)
+	case *tofnd.MessageOut_KeygenResult_Data:
+		if res.Data.GetPubKey() == nil {
+			return fmt.Errorf("public key missing from the result")
 		}
+		if res.Data.GetShareRecoveryInfos() == nil {
+			return fmt.Errorf("recovery data missing from the result")
+		}
+
+		btcecPK, err := btcec.ParsePubKey(res.Data.GetPubKey(), btcec.S256())
+		if err != nil {
+			return sdkerrors.Wrap(err, "failure to deserialize pubkey")
+		}
+
+		mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
+	default:
+		return fmt.Errorf("invalid data type")
+	}
+
+	if result.GetCriminals() != nil {
 	}
 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
