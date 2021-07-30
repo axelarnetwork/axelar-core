@@ -177,21 +177,23 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	}
 
 	// get result. Result will be implicity checked by Validate() during Braodcast(), so no checks are needed here
-	result := r.(*tofnd.MessageOut_KeygenResult)
+	result, ok := r.(*tofnd.MessageOut_KeygenResult)
+	if !ok {
+		return fmt.Errorf("failed to receive keygen result, received unexpected type %T", r)
+	}
 
 	// prepare criminals for Validate()
-	if criminals := result.GetCriminals(); criminals != nil {
+	if result.GetCriminals() != nil {
 		// criminals have to be sorted in ascending order
 		sort.Stable(result.GetCriminals())
-		return nil
 	}
 
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
 
 	// TODO: here result data contain the pub key and recovery info. For now we only use pubkey.
 	if keygenData := result.GetData(); keygenData != nil {
-		if pubKeyBytes := keygenData.GetPubKey(); pubKeyBytes != nil {
-			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+		if keygenData.GetPubKey() != nil {
+			btcecPK, err := btcec.ParsePubKey(keygenData.GetPubKey(), btcec.S256())
 			if err != nil {
 				return sdkerrors.Wrap(err, "handler goroutine: failure to deserialize pubkey")
 			}
