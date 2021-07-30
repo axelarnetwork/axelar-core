@@ -5,6 +5,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
@@ -32,6 +33,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&tofnd.MessageOut_SignResult{},
 		&tofnd.MessageOut_KeygenResult{},
+		&gogoprototypes.BytesValue{},
 	)
 }
 

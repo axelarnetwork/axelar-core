@@ -62,7 +62,15 @@ func (m *MessageOut_SignResult) Validate() error {
 
 // Validate checks if the keygen result is valid
 func (m *MessageOut_KeygenResult) Validate() error {
-	if pubKeyBytes := m.GetPubkey(); pubKeyBytes != nil {
+	if keygenData := m.GetData(); keygenData != nil {
+		pubKeyBytes := keygenData.GetPubKey()
+		if pubKeyBytes == nil {
+			return fmt.Errorf("pubkey is nil")
+		}
+		recoveryInfos := keygenData.GetShareRecoveryInfos()
+		if recoveryInfos == nil || len(recoveryInfos) == 0 {
+			return fmt.Errorf("recovery info is nil")
+		}
 		_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 		if err != nil {
 			return err

@@ -37,7 +37,8 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Marshaler
 
-	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Pubkey{Pubkey: []byte("a public key")}}
+	output := tofnd.MessageOut_KeygenResult_KeygenOutput{PubKey: []byte("a public key"), ShareRecoveryInfos: [][]byte{{0, 1, 2, 3}}}
+	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{Data: &output}}
 	vote := types.NewTalliedVote(rand.Bytes(sdk.AddrLen), 23, &data)
 
 	bz := cdc.MustMarshalBinaryLengthPrefixed(&vote)

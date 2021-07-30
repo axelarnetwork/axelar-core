@@ -30,26 +30,37 @@ message MessageIn {
 }
 
 message MessageOut {
+
   oneof data {                      // TODO don't reuse `data`
     TrafficOut traffic = 1;         // all but final message
     KeygenResult keygen_result = 2; // final message only, Keygen
     SignResult sign_result = 3;     // final message only, Sign
+    bool need_recover = 4;          // request recovery, socket closes after
   }
 
+  // Keygen's response types
   message KeygenResult {
+    // Keygen's success response
+    message KeygenOutput {
+      bytes pub_key = 1;                       // pub_key
+      repeated bytes share_recovery_infos = 2; // recovery info
+    }
+
     oneof keygen_result_data {
-      bytes pubkey = 1;
-      CriminalList criminals = 2;
+      KeygenOutput data = 1;      // Success response
+      CriminalList criminals = 2; // Faiilure response
     }
   }
 
+  // Sign's response types
   message SignResult {
     oneof sign_result_data {
-      bytes signature = 1;
-      CriminalList criminals = 2;
+      bytes signature = 1;        // Success response
+      CriminalList criminals = 2; // Failure response
     }
   }
 
+  // Keygen/Sign failure response message
   message CriminalList {
     repeated Criminal criminals = 1;
 

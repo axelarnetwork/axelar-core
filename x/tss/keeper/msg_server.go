@@ -7,12 +7,14 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -170,7 +172,19 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, req.Result); err != nil {
+
+	var voteData codec.ProtoMarshaler
+	switch res := req.Result.GetKeygenResultData().(type) {
+	case *tofnd.MessageOut_KeygenResult_Criminals:
+		voteData = res.Criminals
+	case *tofnd.MessageOut_KeygenResult_Data:
+		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
+		//TODO: store the recovery data in the keeper
+	default:
+		return nil, fmt.Errorf("invalid data type")
+	}
+
+	if err := poll.Vote(voter, voteData); err != nil {
 		return nil, err
 	}
 
@@ -198,29 +212,28 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	result := poll.GetResult()
+	// result should be either the PubKey or Criminals
 	switch keygenResult := result.(type) {
-	case *tofnd.MessageOut_KeygenResult:
+	case *gogoprototypes.BytesValue:
 
-		if pubKeyBytes := keygenResult.GetPubkey(); pubKeyBytes != nil {
-			btcecPK, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
-			}
-
-			pubKey := btcecPK.ToECDSA()
-			s.SetKey(ctx, req.PollKey.ID, *pubKey)
-
-			ctx.EventManager().EmitEvent(
-				event.AppendAttributes(
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-					sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
-				),
-			)
-			s.Logger(ctx).Info(fmt.Sprintf("public key confirmation result is %.10s", result))
-
-			return &types.VotePubKeyResponse{}, nil
+		// TODO: check that the number of shares is the same as the number of recovery info
+		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 		}
 
+		pubKey := btcecPK.ToECDSA()
+		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+				sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+			),
+		)
+
+		return &types.VotePubKeyResponse{}, nil
+	case *tofnd.MessageOut_CriminalList:
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
@@ -236,7 +249,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
 		}
 
-		for _, criminal := range keygenResult.GetCriminals().Criminals {
+		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
 			if _, found := snapshot.GetValidator(criminalAddress); !found {
 				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollKey.ID))
