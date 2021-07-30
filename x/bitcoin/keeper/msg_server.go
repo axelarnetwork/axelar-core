@@ -767,7 +767,7 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 		return sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", to.ID, from.Role.SimpleString())
 	}
 
-	// TODO: think about the solution how to make sure the queue is never empty
+	// TODO: How do we prevent the queue being always non-empty?
 	if !k.GetConfirmedOutpointInfoQueueForKey(ctx, from.ID).IsEmpty() {
 		return fmt.Errorf("key %s still has outpoints to be signed and therefore it cannot be rotated out yet", from.ID)
 	}
