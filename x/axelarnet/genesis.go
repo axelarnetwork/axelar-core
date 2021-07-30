@@ -9,7 +9,7 @@ import (
 // InitGenesis initialize default parameters
 // from the genesis state
 func InitGenesis(ctx sdk.Context, n types.Nexus, g types.GenesisState) {
-	for _, asset := range g.Params.SupportedAssets {
-		n.RegisterAsset(ctx, exported.Axelarnet.Name, asset)
+	for _, chain := range g.Params.Chains {
+		n.RegisterAsset(ctx, exported.Axelarnet.Name, chain.NativeAsset)
 	}
 }

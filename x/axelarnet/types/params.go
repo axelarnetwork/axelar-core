@@ -6,6 +6,7 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -21,7 +22,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedAssets: []string{btc.Bitcoin.NativeAsset},
+		Chains: []exported.Chain{btc.Bitcoin},
 	}
 }
 
@@ -35,24 +36,24 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyAssets, &m.SupportedAssets, validateAssets),
+		params.NewParamSetPair(KeyAssets, &m.Chains, validateChains),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
-	return validateAssets(m.SupportedAssets)
+	return validateChains(m.Chains)
 }
 
-func validateAssets(infos interface{}) error {
-	assets, ok := infos.([]string)
+func validateChains(infos interface{}) error {
+	chains, ok := infos.([]exported.Chain)
 	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []string{}, infos)
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []exported.Chain{}, infos)
 	}
 
-	for _, a := range assets {
-		if a == "" {
-			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "asset cannot be empty")
+	for _, c := range chains {
+		if err := c.Validate(); err != nil {
+			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid chain: %v", err)
 		}
 	}
 
