@@ -114,7 +114,10 @@ func (m *EventBus) FetchEvents(ctx context.Context) <-chan error {
 
 		for {
 			select {
-			case block := <-blockResults:
+			case block, ok := <-blockResults:
+				if !ok {
+					return
+				}
 				if err := m.publishEvents(block); err != nil {
 					errChan <- err
 					return
