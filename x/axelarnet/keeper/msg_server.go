@@ -41,12 +41,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	linkedAddress := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
+	burnerAddr := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: linkedAddress.String()},
+		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: burnerAddr.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 
-	return &types.LinkResponse{DepositAddr: linkedAddress.String()}, nil
+	return &types.LinkResponse{DepositAddr: burnerAddr.String()}, nil
 }
 
 // ConfirmDeposit handles deposit confirmations
