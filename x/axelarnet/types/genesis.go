@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
@@ -18,15 +16,4 @@ func (m GenesisState) Validate() error {
 	}
 
 	return nil
-}
-
-// GetGenesisStateFromAppState returns x/axelarnet GenesisState given raw application
-// genesis state.
-func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) GenesisState {
-	var genesisState GenesisState
-	if appState[ModuleName] != nil {
-		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
-	}
-
-	return genesisState
 }

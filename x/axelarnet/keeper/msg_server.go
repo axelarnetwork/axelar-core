@@ -53,15 +53,6 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	recipientChain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
-	}
-
-	if !s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Token.Denom) {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Token.Denom, recipientChain.Name)
-	}
-
 	// transfer the coins from linked address to module account and burn them
 	if err := s.bank.SendCoinsFromAccountToModule(
 		ctx, req.BurnerAddress, types.ModuleName, sdk.NewCoins(req.Token),
@@ -86,7 +77,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))

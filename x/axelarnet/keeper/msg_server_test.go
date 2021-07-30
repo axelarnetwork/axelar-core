@@ -237,7 +237,6 @@ func randomMsgLink() *types.LinkRequest {
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 	return types.NewConfirmDepositRequest(
 		rand.Bytes(sdk.AddrLen),
-		rand.StrBetween(5, 100),
 		rand.BytesBetween(5, 100),
 		sdk.NewCoin("testDenom", sdk.NewInt(rand.I64Between(1, 10000000000))),
 		rand.Bytes(sdk.AddrLen))

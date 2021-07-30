@@ -60,29 +60,28 @@ func GetCmdLink() *cobra.Command {
 // GetCmdConfirmDeposit returns the cli command to confirm a deposit
 func GetCmdConfirmDeposit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-deposit [chain] [txID] [amount] [burnerAddr]",
+		Use:   "confirm-deposit [txID] [amount] [burnerAddr]",
 		Short: "Confirm a deposit to Axelar chain that sent given amount of token to a burner address",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			chain := args[0]
-			txID, err := hex.DecodeString(args[1])
+			txID, err := hex.DecodeString(args[0])
 
-			coin, err := sdk.ParseCoinNormalized(args[2])
+			coin, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return err
 			}
 
-			burnerAddr, err := sdk.AccAddressFromBech32(args[3])
+			burnerAddr, err := sdk.AccAddressFromBech32(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, coin, burnerAddr)
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), txID, coin, burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

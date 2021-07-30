@@ -31,7 +31,6 @@ type ReqLink struct {
 // ReqConfirmDeposit represents a request to confirm a deposit
 type ReqConfirmDeposit struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain         string       `json:"chain" yaml:"chain"`
 	TxID          string       `json:"tx_id" yaml:"tx_id"`
 	Amount        string       `json:"amount" yaml:"amount"`
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
@@ -93,7 +92,6 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := req.Chain
 		txID, err := hex.DecodeString(req.TxID)
 
 		coin, err := sdk.ParseCoinNormalized(req.Amount)
@@ -108,7 +106,7 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewConfirmDepositRequest(fromAddr, chain, txID, coin, burnerAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, txID, coin, burnerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

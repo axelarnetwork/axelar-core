@@ -8,10 +8,9 @@ import (
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
-func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID []byte, token sdk.Coin, burnerAddr sdk.AccAddress) *ConfirmDepositRequest {
+func NewConfirmDepositRequest(sender sdk.AccAddress, txID []byte, token sdk.Coin, burnerAddr sdk.AccAddress) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
 		Sender:        sender,
-		Chain:         chain,
 		TxID:          txID,
 		Token:         token,
 		BurnerAddress: burnerAddr,
@@ -34,9 +33,6 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
-	}
 	if m.TxID == nil {
 		return fmt.Errorf("missing TxID")
 	}
