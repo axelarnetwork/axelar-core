@@ -116,11 +116,13 @@ func (m *EventBus) FetchEvents(ctx context.Context) <-chan error {
 			select {
 			case block, ok := <-blockResults:
 				if !ok {
-					return
+					m.shutdown()
+					continue
 				}
 				if err := m.publishEvents(block); err != nil {
 					errChan <- err
-					return
+					m.shutdown()
+					continue
 				}
 			case <-m.running.Done():
 				m.logger.Info("closing all subscriptions")

@@ -21,7 +21,7 @@ import (
 
 func TestMgr_FetchEvents(t *testing.T) {
 
-	t.Run("returns error", func(t *testing.T) {
+	t.Run("WHEN the event source throws an error THEN the bus returns error", func(t *testing.T) {
 		bus := func() pubsub.Bus { return &mock.BusMock{} }
 		errors := make(chan error, 1)
 		source := &mock.BlockSourceMock{
@@ -37,6 +37,36 @@ func TestMgr_FetchEvents(t *testing.T) {
 
 		err := <-errChan
 		assert.Error(t, err)
+	})
+
+	t.Run("WHEN the block source block result channel closes THEN the bus shuts down", func(t *testing.T) {
+		busMock := &mock.BusMock{
+			SubscribeFunc: func() (pubsub.Subscriber, error) {
+				return &mock.SubscriberMock{}, nil
+			},
+			CloseFunc: func() {},
+		}
+		busFactory := func() pubsub.Bus { return busMock }
+		results := make(chan *coretypes.ResultBlockResults)
+		source := &mock.BlockSourceMock{
+			BlockResultsFunc: func(ctx context.Context) (<-chan *coretypes.ResultBlockResults, <-chan error) {
+				return results, nil
+			},
+		}
+		mgr := events.NewEventBus(source, busFactory, log.TestingLogger())
+
+		mgr.FetchEvents(context.Background())
+
+		close(results)
+
+		timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		select {
+		case <-mgr.Done():
+			return
+		case <-timeout.Done():
+			assert.FailNow(t, "timed out")
+		}
 	})
 }
 
