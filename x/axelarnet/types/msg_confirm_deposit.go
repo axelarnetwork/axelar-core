@@ -33,8 +33,12 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.TxID == nil {
+	if len(m.TxID) == 0 {
 		return fmt.Errorf("missing TxID")
+	}
+
+	if m.Token.Amount.LTE(sdk.NewInt(0)){
+		return fmt.Errorf("amount cannot be less than or equal to 0")
 	}
 
 	return nil
