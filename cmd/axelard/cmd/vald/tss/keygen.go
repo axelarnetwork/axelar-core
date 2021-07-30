@@ -207,9 +207,6 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		return fmt.Errorf("invalid data type")
 	}
 
-	if result.GetCriminals() != nil {
-	}
-
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
 	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollKey: pollKey, Result: result}
 
