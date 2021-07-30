@@ -36,12 +36,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Symbol)
+	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
 	if !found {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Symbol, recipientChain.Name)
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	linkedAddress := types.NewLinkedAddress(recipientChain.Name, req.Symbol, req.RecipientAddr)
+	linkedAddress := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: linkedAddress.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})

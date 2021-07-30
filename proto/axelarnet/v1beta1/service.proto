@@ -9,7 +9,7 @@ import "axelarnet/v1beta1/tx.proto";
 
 option (gogoproto.goproto_registration) = true;
 
-// Msg defines the evm Msg service.
+// Msg defines the axelarnet Msg service.
 service MsgService {
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {

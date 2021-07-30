@@ -36,7 +36,7 @@ func GetTxCmd() *cobra.Command {
 // GetCmdLink links a cross chain address to an Axelar chain address
 func GetCmdLink() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "link [recipient chain] [recipient address] [symbol]",
+		Use:   "link [recipient chain] [recipient address] [asset]",
 		Short: "Link a cross chain address to an Axelar address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

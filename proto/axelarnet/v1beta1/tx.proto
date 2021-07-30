@@ -15,7 +15,7 @@ message LinkRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
   string recipient_chain = 3;
-  string symbol = 4;
+  string asset = 4;
 }
 
 message LinkResponse { string deposit_addr = 2; };

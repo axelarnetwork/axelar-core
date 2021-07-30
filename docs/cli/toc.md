@@ -151,7 +151,7 @@
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
       - [confirm-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
-      - [link \[recipient chain\] \[recipient address\] \[symbol\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+      - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
         ignored as it is implied from \[from_key_or_address\].

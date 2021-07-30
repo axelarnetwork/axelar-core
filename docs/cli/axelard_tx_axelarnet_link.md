@@ -3,7 +3,7 @@
 Link a cross chain address to an Axelar address
 
 ```
-axelard tx axelarnet link [recipient chain] [recipient address] [symbol] [flags]
+axelard tx axelarnet link [recipient chain] [recipient address] [asset] [flags]
 ```
 
 ### Options

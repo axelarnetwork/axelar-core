@@ -8,12 +8,12 @@ import (
 )
 
 // NewLinkRequest creates a message of type LinkRequest
-func NewLinkRequest(sender sdk.AccAddress, recipientChain, recipientAddr, symbol string) *LinkRequest {
+func NewLinkRequest(sender sdk.AccAddress, recipientChain, recipientAddr, asset string) *LinkRequest {
 	return &LinkRequest{
 		Sender:         sender,
 		RecipientAddr:  recipientAddr,
 		RecipientChain: recipientChain,
-		Symbol:         symbol,
+		Asset:          asset,
 	}
 }
 
@@ -39,8 +39,8 @@ func (m LinkRequest) ValidateBasic() error {
 	if m.RecipientAddr == "" {
 		return fmt.Errorf("missing recipient address")
 	}
-	if m.Symbol == "" {
-		return fmt.Errorf("missing asset symbol")
+	if m.Asset == "" {
+		return fmt.Errorf("missing asset")
 	}
 
 	return nil

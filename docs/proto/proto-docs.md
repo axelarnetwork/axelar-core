@@ -342,7 +342,7 @@ address
 | `sender` | [bytes](#bytes) |  |  |
 | `recipient_addr` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 
 
 
@@ -389,7 +389,7 @@ address
 <a name="axelarnet.v1beta1.MsgService"></a>
 
 ### MsgService
-Msg defines the evm Msg service.
+Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |

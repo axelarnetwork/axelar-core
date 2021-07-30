@@ -25,7 +25,7 @@ type ReqLink struct {
 	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
 	RecipientChain string       `json:"chain" yaml:"chain"`
 	RecipientAddr  string       `json:"recipient" yaml:"recipient"`
-	Symbol         string       `json:"symbol" yaml:"symbol"`
+	Asset          string       `json:"asset" yaml:"asset"`
 }
 
 // ReqConfirmDeposit represents a request to confirm a deposit
@@ -66,7 +66,7 @@ func TxHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewLinkRequest(fromAddr, req.RecipientChain, req.RecipientAddr, req.Symbol)
+		msg := types.NewLinkRequest(fromAddr, req.RecipientChain, req.RecipientAddr, req.Asset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
