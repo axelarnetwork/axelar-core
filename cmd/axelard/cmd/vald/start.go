@@ -253,6 +253,12 @@ func createEventBus(ctx sdkClient.Context, startBlock int64, logger log.Logger) 
 		panic(err)
 	}
 
+	if !node.IsRunning() {
+		if err := node.Start(); err != nil {
+			panic(fmt.Errorf("unable to start client: %v", err))
+		}
+	}
+
 	notifier := events.NewBlockNotifier(NewBlockClient(node), startBlock, logger)
 	return events.NewEventBus(events.NewBlockSource(node, notifier), pubsub.NewBus, logger)
 }
