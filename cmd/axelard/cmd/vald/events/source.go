@@ -275,8 +275,8 @@ type blockNotifier struct {
 
 // NewBlockNotifier returns a new BlockNotifier instance
 func NewBlockNotifier(client BlockClient, startBlock int64, logger log.Logger, options ...DialOption) BlockNotifier {
-	if startBlock < 0 {
-		startBlock = 0
+	if startBlock <= 0 {
+		startBlock = 1
 	}
 	return &blockNotifier{
 		start:          startBlock,
