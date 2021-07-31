@@ -193,7 +193,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 		}
 	}).Repeat(repeats))
 
-	t.Run("GIVEN start < 0 THEN start at block 0", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN start < 0 THEN start at block 1", testutils.Func(func(t *testing.T) {
 		client := NewClientMock()
 		client.NextBlock(rand.PosI64())
 
@@ -210,7 +210,7 @@ func TestBlockNotifier_BlockHeights(t *testing.T) {
 			return
 		case b, ok := <-blocks:
 			assert.True(t, ok)
-			assert.Equal(t, int64(0), b)
+			assert.Equal(t, int64(1), b)
 		case <-timeout.Done():
 			assert.FailNow(t, "test timed out")
 		}

@@ -12,8 +12,8 @@ Feature: provide a robust source for block results
     Then I receive all results from <start> to <latest>
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
 
   Scenario: block notifier fails
@@ -36,6 +36,6 @@ Feature: provide a robust source for block results
     Then the result channel gets closed
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
