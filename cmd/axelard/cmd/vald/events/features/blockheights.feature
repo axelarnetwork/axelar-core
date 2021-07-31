@@ -13,8 +13,8 @@ Feature: provide a robust source for existing blocks
 
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
 
   Scenario Outline: stale block queries
@@ -26,8 +26,8 @@ Feature: provide a robust source for existing blocks
 
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
 
   Scenario Outline: canceled context
@@ -39,9 +39,9 @@ Feature: provide a robust source for existing blocks
 
     Examples:
       | start | latest |
-      | 0     | 0      |
-      | 0     | 1      |
-      | 0     | 10000  |
+      | 1     | 1      |
+      | 1     | 2      |
+      | 1     | 10000  |
 
   Scenario Outline: subscription fails
     Given a block notifier starting at block <start>
@@ -52,8 +52,8 @@ Feature: provide a robust source for existing blocks
 
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
 
   Scenario Outline: block query fails
@@ -65,18 +65,18 @@ Feature: provide a robust source for existing blocks
 
     Examples:
       | start  | latest |
-      | 0      | 0      |
-      | 0      | 1      |
+      | 1      | 1      |
+      | 1      | 2      |
       | 100000 | 100018 |
 
   Scenario Outline: negative start block
     Given a block notifier starting at block <start>
     And block <latest> is available
     When I try to receive block heights
-    Then I receive all blocks from 0 to <latest>
+    Then I receive all blocks from 1 to <latest>
 
     Examples:
       | start  | latest |
-      | -1     | 0      |
+      | -1     | 1      |
       | -10000 | 1      |
       | -10000 | 10     |
