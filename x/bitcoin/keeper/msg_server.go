@@ -469,6 +469,8 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 
 		outputs = append(outputs, secondaryOutput)
 		totalOut = totalOut.AddRaw(int64(req.SecondaryKeyAmount))
+
+		s.SetAddress(ctx, currSecondaryAddress)
 	}
 
 	oldMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)

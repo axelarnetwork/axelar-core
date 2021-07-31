@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 
@@ -68,12 +69,15 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
 		s := setup()
-		ctx := s.Ctx.WithBlockHeight(currHeight)
+		time := time.Unix(time.Now().Unix(), 0)
+		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
+		s.Ctx = s.Ctx.WithBlockTime(time)
 		s.SetLockingPeriod(lockingPeriod)
-		expectedKey := s.SetKey(t, ctx)
+		expectedKey := s.SetKey(t, s.Ctx)
 		expectedKey.Role = exported.MasterKey
+		expectedKey.RotatedAt = &time
 
-		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, expectedKey.ID))
+		assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedKey.ID))
 		assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
 
 		actualKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.MasterKey)
@@ -87,18 +91,22 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 
 	chain := bitcoin.Bitcoin
 	s := setup()
-	ctx := s.Ctx.WithBlockHeight(currHeight)
-	expectedMasterKey := s.SetKey(t, ctx)
-	expectedSecondaryKey := s.SetKey(t, ctx)
+	time := time.Unix(time.Now().Unix(), 0)
+	s.Ctx = s.Ctx.WithBlockHeight(currHeight)
+	s.Ctx = s.Ctx.WithBlockTime(time)
+	expectedMasterKey := s.SetKey(t, s.Ctx)
+	expectedSecondaryKey := s.SetKey(t, s.Ctx)
 
-	assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, expectedMasterKey.ID))
+	assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedMasterKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
 
-	assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.SecondaryKey, expectedSecondaryKey.ID))
+	assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.SecondaryKey, expectedSecondaryKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.SecondaryKey))
 
 	expectedMasterKey.Role = exported.MasterKey
+	expectedMasterKey.RotatedAt = &time
 	expectedSecondaryKey.Role = exported.SecondaryKey
+	expectedSecondaryKey.RotatedAt = &time
 
 	actualMasterKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.MasterKey)
 	assert.True(t, ok)

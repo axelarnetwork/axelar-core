@@ -458,6 +458,16 @@ func MustDecodeTx(bz []byte) wire.MsgTx {
 	return tx
 }
 
+// MustDecodeAddress decodes the given address; panic if error
+func MustDecodeAddress(address string, network Network) btcutil.Address {
+	decoded, err := btcutil.DecodeAddress(address, network.Params())
+	if err != nil {
+		panic(err)
+	}
+
+	return decoded
+}
+
 // EstimateTxSize calculates the upper limit of the size in byte of given transaction after all witness data is attached
 func EstimateTxSize(tx wire.MsgTx, outpointsToSign []OutPointToSign) int64 {
 	zeroSigBytes := make([]byte, maxDerSigLength)
