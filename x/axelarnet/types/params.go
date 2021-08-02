@@ -4,9 +4,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -22,7 +19,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedChains: []exported.Chain{btc.Bitcoin},
+		SupportedChains: []string{"Bitcoin"},
 	}
 }
 
@@ -36,24 +33,24 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateChains),
+		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
-	return validateChains(m.SupportedChains)
+	return validateSupportedChains(m.SupportedChains)
 }
 
-func validateChains(infos interface{}) error {
-	chains, ok := infos.([]exported.Chain)
+func validateSupportedChains(infos interface{}) error {
+	supportedChains, ok := infos.([]string)
 	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []exported.Chain{}, infos)
+		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []string{}, infos)
 	}
 
-	for _, c := range chains {
-		if err := c.Validate(); err != nil {
-			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid chain: %v", err)
+	for _, chain := range supportedChains {
+		if chain == "" {
+			return sdkerrors.Wrap(types.ErrInvalidGenesis, "chain name cannot be an empty string")
 		}
 	}
 

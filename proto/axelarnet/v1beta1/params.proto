@@ -8,7 +8,4 @@ import "nexus/exported/v1beta1/types.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
-message Params {
-  repeated nexus.exported.v1beta1.Chain supported_chains = 1
-      [ (gogoproto.nullable) = false ];
-}
+message Params { repeated string supported_chains = 1; }
