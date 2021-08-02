@@ -1,0 +1,33 @@
+syntax = "proto3";
+package axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelarnet/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the axelarnet Msg service.
+service MsgService {
+  rpc Link(LinkRequest) returns (LinkResponse) {
+    option (google.api.http) = {
+      post : "/axelar/cosmos/link/{recipient_chain}"
+      body : "*"
+    };
+  }
+  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/cosmos/confirm-deposit"
+      body : "*"
+    };
+  }
+  rpc ExecutePendingTransfers(ExecutePendingTransfersRequest)
+      returns (ExecutePendingTransfersResponse) {
+    option (google.api.http) = {
+      post : "/axelar/cosmos/execute-pending-transfers"
+      body : "*"
+    };
+  }
+}
