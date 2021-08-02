@@ -9,6 +9,6 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
 message Params {
-  repeated nexus.exported.v1beta1.Chain chains = 1
+  repeated nexus.exported.v1beta1.Chain supported_chains = 1
       [ (gogoproto.nullable) = false ];
 }

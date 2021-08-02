@@ -22,7 +22,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		Chains: []exported.Chain{btc.Bitcoin},
+		SupportedChains: []exported.Chain{btc.Bitcoin},
 	}
 }
 
@@ -36,13 +36,13 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyAssets, &m.Chains, validateChains),
+		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateChains),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
-	return validateChains(m.Chains)
+	return validateChains(m.SupportedChains)
 }
 
 func validateChains(infos interface{}) error {
