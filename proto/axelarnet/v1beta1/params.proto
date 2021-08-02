@@ -3,7 +3,6 @@ package axelarnet.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 
 import "gogoproto/gogo.proto";
-import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
