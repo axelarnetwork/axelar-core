@@ -30,6 +30,6 @@ axelard tx bitcoin [flags]
 - [axelard tx bitcoin create-master-tx](axelard_tx_bitcoin_create-master-tx.md)	 - Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by \[keyID\]
 - [axelard tx bitcoin create-pending-transfers-tx](axelard_tx_bitcoin_create-pending-transfers-tx.md)	 - Create a Bitcoin transaction for all pending transfers
 - [axelard tx bitcoin link](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-- [axelard tx bitcoin register-external-key](axelard_tx_bitcoin_register-external-key.md)	 - Register the external key for bitcoin
+- [axelard tx bitcoin register-external-keys](axelard_tx_bitcoin_register-external-keys.md)	 - Register the external key for bitcoin
 - [axelard tx bitcoin sign-tx](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role
 - [axelard tx bitcoin submit-external-signature](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash

@@ -44,6 +44,7 @@ message UnsignedTx {
   TxStatus status = 3;
   bool confirmation_required = 4;
   uint32 anyone_can_spend_vout = 5;
+  string prev_aborted_key_id = 6;
 }
 
 message SignedTx {
@@ -77,12 +78,24 @@ enum AddressRole {
 // AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
 // corresponding script and the underlying key
 message AddressInfo {
+  message SpendingCondition {
+    // internal_key_ids lists the internal key IDs that one of which has to sign
+    // regardless of locktime
+    repeated string internal_key_ids = 1;
+    // external_key_ids lists the external key IDs that
+    // external_multisig_threshold of which have to sign to spend before
+    // locktime if set
+    repeated string external_key_ids = 2;
+    int64 external_multisig_threshold = 3;
+    google.protobuf.Timestamp lock_time = 4 [ (gogoproto.stdtime) = true ];
+  }
+
   string address = 1;
   AddressRole role = 2;
   bytes redeem_script = 3;
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
   uint32 max_sig_count = 5;
-  google.protobuf.Timestamp lock_time = 6 [ (gogoproto.stdtime) = true ];
+  SpendingCondition spending_condition = 6;
 }
 
 message Network { string name = 1; }

@@ -17,7 +17,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&CreateMasterTxRequest{}, "bitcoin/CreateMasterTx", nil)
 	cdc.RegisterConcrete(&SignTxRequest{}, "bitcoin/SignTx", nil)
 	cdc.RegisterConcrete(&SubmitExternalSignatureRequest{}, "bitcoin/SubmitExternalSignature", nil)
-	cdc.RegisterConcrete(&RegisterExternalKeyRequest{}, "bitcoin/RegisterExternalKey", nil)
+	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "bitcoin/RegisterExternalKey", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -30,7 +30,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&CreateMasterTxRequest{},
 		&SignTxRequest{},
 		&SubmitExternalSignatureRequest{},
-		&RegisterExternalKeyRequest{},
+		&RegisterExternalKeysRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},

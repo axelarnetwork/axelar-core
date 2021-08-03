@@ -31,6 +31,7 @@ var (
 	latestSignedTxHashPrefix = utils.KeyFromStr("latest_signed_tx_hash_")
 	unconfirmedAmountPrefix  = utils.KeyFromStr("unconfirmed_amount_")
 
+	externalKeyIDsKey        = utils.KeyFromStr("external_key_ids")
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
@@ -157,6 +158,14 @@ func (k Keeper) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
 func (k Keeper) GetMasterAddressLockDuration(ctx sdk.Context) time.Duration {
 	var result time.Duration
 	k.params.Get(ctx, types.KeyMasterAddressLockDuration, &result)
+
+	return result
+}
+
+// GetExternalMultisigThreshold returns the external multisig threshold
+func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
+	var result utils.Threshold
+	k.params.Get(ctx, types.KeyExternalMultisigThreshold, &result)
 
 	return result
 }
@@ -341,6 +350,33 @@ func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amou
 	}
 
 	return btcutil.Amount(result.Value)
+}
+
+// SetExternalKeyIDs stores the given list of external key IDs
+func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, keyIDs []string) {
+	values := make([]*gogoprototypes.Value, len(keyIDs))
+	for i, keyID := range keyIDs {
+		values[i] = &gogoprototypes.Value{
+			Kind: &gogoprototypes.Value_StringValue{StringValue: keyID},
+		}
+	}
+
+	k.getStore(ctx).Set(externalKeyIDsKey, &gogoprototypes.ListValue{Values: values})
+}
+
+// GetExternalKeyIDs retrieves the current list of external key IDs
+func (k Keeper) GetExternalKeyIDs(ctx sdk.Context) ([]string, bool) {
+	var listValue gogoprototypes.ListValue
+	if !k.getStore(ctx).Get(externalKeyIDsKey, &listValue) {
+		return nil, false
+	}
+
+	keyIDs := make([]string, len(listValue.Values))
+	for i, value := range listValue.Values {
+		keyIDs[i] = value.GetStringValue()
+	}
+
+	return keyIDs, true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

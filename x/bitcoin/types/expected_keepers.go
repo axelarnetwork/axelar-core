@@ -35,6 +35,7 @@ type BTCKeeper interface {
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
 	GetMasterAddressLockDuration(ctx sdk.Context) time.Duration
+	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -62,6 +63,9 @@ type BTCKeeper interface {
 
 	SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount)
 	GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount
+
+	SetExternalKeyIDs(ctx sdk.Context, keyIDs []string)
+	GetExternalKeyIDs(ctx sdk.Context) ([]string, bool)
 }
 
 // Voter is the interface that provides voting functionality

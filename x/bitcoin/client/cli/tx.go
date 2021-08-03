@@ -3,8 +3,8 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -32,7 +32,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreatePendingTransfersTx(),
 		GetCmdCreateMasterConsolidationTx(),
 		GetCmdSignTx(),
-		GetCmdRegisterExternalKey(),
+		GetCmdRegisterExternalKeys(),
 		GetCmdSubmitExternalSignature(),
 	)
 
@@ -197,10 +197,10 @@ func GetCmdSignTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterExternalKey returns the cli command to register an external key
-func GetCmdRegisterExternalKey() *cobra.Command {
+// GetCmdRegisterExternalKeys returns the cli command to register an external key
+func GetCmdRegisterExternalKeys() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-external-key [keyID] [pubKeyHex]",
+		Use:   "register-external-keys [comma separated keyIDs] [comma separated pubKeyHexes]",
 		Short: "Register the external key for bitcoin",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -209,20 +209,24 @@ func GetCmdRegisterExternalKey() *cobra.Command {
 				return err
 			}
 
-			keyID := args[0]
-			pubKeyHex := args[1]
+			keyIDs := strings.Split(args[0], ",")
+			pubKeyHexes := strings.Split(args[1], ",")
 
-			pubKeyBytes, err := hex.DecodeString(pubKeyHex)
-			if err != nil {
-				return err
+			if len(keyIDs) != len(pubKeyHexes) {
+				return fmt.Errorf("length mismatch between key IDs and pub key hexes")
 			}
 
-			pubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return err
+			externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(keyIDs))
+			for i, keyID := range keyIDs {
+				pubKeyBytes, err := hex.DecodeString(pubKeyHexes[i])
+				if err != nil {
+					return err
+				}
+
+				externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
 			}
 
-			msg := types.NewRegisterExternalKeyRequest(clientCtx.GetFromAddress(), keyID, pubKey)
+			msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), externalKeys...)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
