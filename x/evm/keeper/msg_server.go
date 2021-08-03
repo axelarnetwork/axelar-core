@@ -888,6 +888,9 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, err
 	}
 
+	// prepare endBlocker to catch signature result
+	s.SetPendingSignCommand(ctx, commandIDHex, commandIDHex, types.AxelarGatewayCommandMint)
+
 	// TODO: Archive pending transfers after signing is completed
 	for _, pendingTransfer := range pendingTransfers {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)

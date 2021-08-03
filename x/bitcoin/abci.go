@@ -20,6 +20,7 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.BTCKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, signer types.Signer) []abci.ValidatorUpdate {
+
 	if req.Height%k.GetSigCheckInterval(ctx) != 0 {
 		return nil
 	}

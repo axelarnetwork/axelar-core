@@ -335,6 +335,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeKeySigID, req.PollMeta.ID),
 	)
 	defer ctx.EventManager().EmitEvent(event)
 

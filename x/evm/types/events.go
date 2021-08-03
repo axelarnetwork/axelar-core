@@ -7,22 +7,26 @@ const (
 	EventTypeDepositConfirmation           = "depositConfirmation"
 	EventTypeTokenConfirmation             = "tokenConfirmation"
 	EventTypeTransferOwnershipConfirmation = "transferOwnershipConfirmation"
+
+	EventTypeSignedCommandID = "signedCommandID"
+	EventTypeSignedTx        = "signedTx"
 )
 
 // Event attribute keys
 const (
-	AttributeKeyCommandID      = "commandID"
-	AttributeKeyChain          = "chain"
-	AttributeKeyAddress        = "address"
-	AttributeKeyPoll           = "poll"
-	AttributeKeyTxID           = "txID"
-	AttributeKeyAmount         = "amount"
-	AttributeKeyBurnAddress    = "burnAddress"
-	AttributeKeyTokenAddress   = "tokenAddress"
-	AttributeKeyGatewayAddress = "gatewayAddress"
-	AttributeKeyConfHeight     = "confHeight"
-	AttributeKeySymbol         = "symbol"
-	AttributeKeyNativeAsset    = "nativeAsset"
+	AttributeKeyCommandID       = "commandID"
+	AttributeKeyCommandSelector = "commandSelector"
+	AttributeKeyChain           = "chain"
+	AttributeKeyAddress         = "address"
+	AttributeKeyPoll            = "poll"
+	AttributeKeyTxID            = "txID"
+	AttributeKeyAmount          = "amount"
+	AttributeKeyBurnAddress     = "burnAddress"
+	AttributeKeyTokenAddress    = "tokenAddress"
+	AttributeKeyGatewayAddress  = "gatewayAddress"
+	AttributeKeyConfHeight      = "confHeight"
+	AttributeKeySymbol          = "symbol"
+	AttributeKeyNativeAsset     = "nativeAsset"
 )
 
 // Event attribute values

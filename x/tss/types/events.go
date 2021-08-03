@@ -18,6 +18,7 @@ const (
 	AttributeKeyParticipants           = "participants"
 	AttributeKeyParticipantShareCounts = "participantShareCounts"
 	AttributeKeyPayload                = "payload"
+	AttributeKeyResult                 = "result"
 )
 
 // Event attribute values

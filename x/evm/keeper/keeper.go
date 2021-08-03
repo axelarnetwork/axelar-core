@@ -28,11 +28,13 @@ import (
 )
 
 const (
-	gatewayKey      = "gateway"
-	pendingChainKey = "pending_chain_asset"
+	gatewayKey               = "gateway"
+	pendingChainKey          = "pending_chain_asset"
+	pendingSignCommandPrefix = "pending_tss_sig"
 
 	chainPrefix            = "chain_"
 	subspacePrefix         = "subspace_"
+	chainIndependentPrefix = "chain_independent_"
 	unsignedPrefix         = "unsigned_"
 	pendingTokenPrefix     = "pending_token_"
 	pendingDepositPrefix   = "pending_deposit_"
@@ -274,6 +276,7 @@ func (k Keeper) GetGatewayByteCodes(ctx sdk.Context, chain string) ([]byte, bool
 // SetPendingTokenDeployment stores a pending ERC20 token deployment
 func (k Keeper) SetPendingTokenDeployment(ctx sdk.Context, chain string, poll exported.PollMeta, token types.ERC20TokenDeployment) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&token)
+
 	k.getStore(ctx, chain).Set([]byte(pendingTokenPrefix+poll.String()), bz)
 }
 
@@ -332,6 +335,29 @@ func (k Keeper) SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.
 	}
 
 	k.getStore(ctx, chain).Set([]byte(unsignedPrefix+txID), bz)
+}
+
+// SetPendingSignCommand stores the command name for a commandID that is being signed
+func (k Keeper) SetPendingSignCommand(ctx sdk.Context, chain string, commandIDHex string, axelarGatewayCommand string) {
+	// sigID = commandIDHex
+	// todo: create ExpectedSignResult struct that stores chain with command name
+	// todo: tests should guarantee that commandID is unique across all chains (hash includes chain identifier)
+	k.getChainIndependentStore(ctx).Set([]byte(pendingSignCommandPrefix+commandIDHex), []byte(axelarGatewayCommand))
+}
+
+// DeletePendingSignCommand stores the command name for a commandID that is being signed
+func (k Keeper) DeletePendingSignCommand(ctx sdk.Context, commandIDHex string) {
+	k.getChainIndependentStore(ctx).Set([]byte(pendingSignCommandPrefix+commandIDHex), []byte{})
+}
+
+// GetPendingSignCommand retrieves the command name for a commandID that is being signed
+func (k Keeper) GetPendingSignCommand(ctx sdk.Context, commandIDHex string) (string, string, bool) {
+	bz := k.getChainIndependentStore(ctx).Get([]byte(pendingSignCommandPrefix + commandIDHex))
+	if len(bz) == 0 {
+		return "no_chain", "", false
+	}
+
+	return "chain", string(bz), true
 }
 
 // SetPendingDeposit stores a pending deposit
@@ -563,6 +589,10 @@ func (k Keeper) GetChainIDByNetwork(ctx sdk.Context, chain, network string) *big
 	}
 
 	return nil
+}
+
+func (k Keeper) getChainIndependentStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), []byte(chainIndependentPrefix))
 }
 
 func (k Keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
