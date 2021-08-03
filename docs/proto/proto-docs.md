@@ -44,6 +44,7 @@
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [PendingSignCommand](#evm.v1beta1.PendingSignCommand)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
@@ -675,6 +676,23 @@ NetworkInfo describes information about a network
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingSignCommand"></a>
+
+### PendingSignCommand
+PendingSignCommand stores information about a pending TSS sign operation for
+an evm gateway command
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_selector` | [string](#string) |  |  |
 
 
 

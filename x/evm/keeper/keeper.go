@@ -337,27 +337,29 @@ func (k Keeper) SetUnsignedTx(ctx sdk.Context, chain, txID string, tx *ethTypes.
 	k.getStore(ctx, chain).Set([]byte(unsignedPrefix+txID), bz)
 }
 
-// SetPendingSignCommand stores the command name for a commandID that is being signed
-func (k Keeper) SetPendingSignCommand(ctx sdk.Context, chain string, commandIDHex string, axelarGatewayCommand string) {
-	// sigID = commandIDHex
-	// todo: create ExpectedSignResult struct that stores chain with command name
+// SetPendingSignCommand stores the command information for a commandID that is being signed
+func (k Keeper) SetPendingSignCommand(ctx sdk.Context, commandIDHex string, pending *types.PendingSignCommand) {
 	// todo: tests should guarantee that commandID is unique across all chains (hash includes chain identifier)
-	k.getChainIndependentStore(ctx).Set([]byte(pendingSignCommandPrefix+commandIDHex), []byte(axelarGatewayCommand))
+
+	// sigID = commandIDHex
+	k.getChainIndependentStore(ctx).Set([]byte(pendingSignCommandPrefix+commandIDHex), k.cdc.MustMarshalBinaryLengthPrefixed(pending))
+}
+
+// GetPendingSignCommand retrieves the command information for a commandID that is being signed
+func (k Keeper) GetPendingSignCommand(ctx sdk.Context, commandIDHex string) (types.PendingSignCommand, bool) {
+	var pending types.PendingSignCommand
+	bz := k.getChainIndependentStore(ctx).Get([]byte(pendingSignCommandPrefix + commandIDHex))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &pending)
+		return pending, true
+	}
+
+	return types.PendingSignCommand{}, false
 }
 
 // DeletePendingSignCommand stores the command name for a commandID that is being signed
 func (k Keeper) DeletePendingSignCommand(ctx sdk.Context, commandIDHex string) {
-	k.getChainIndependentStore(ctx).Set([]byte(pendingSignCommandPrefix+commandIDHex), []byte{})
-}
-
-// GetPendingSignCommand retrieves the command name for a commandID that is being signed
-func (k Keeper) GetPendingSignCommand(ctx sdk.Context, commandIDHex string) (string, string, bool) {
-	bz := k.getChainIndependentStore(ctx).Get([]byte(pendingSignCommandPrefix + commandIDHex))
-	if len(bz) == 0 {
-		return "no_chain", "", false
-	}
-
-	return "chain", string(bz), true
+	k.getChainIndependentStore(ctx).Delete([]byte(pendingSignCommandPrefix + commandIDHex))
 }
 
 // SetPendingDeposit stores a pending deposit

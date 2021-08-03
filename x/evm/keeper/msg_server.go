@@ -889,7 +889,11 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	// prepare endBlocker to catch signature result
-	s.SetPendingSignCommand(ctx, commandIDHex, commandIDHex, types.AxelarGatewayCommandMint)
+	s.SetPendingSignCommand(ctx, commandIDHex, &types.PendingSignCommand{
+		Chain:           req.Chain,
+		CommandSelector: types.AxelarGatewayCommandMint,
+	})
+	s.Logger(ctx).Info("SetPendingSignCommand " + commandIDHex)
 
 	// TODO: Archive pending transfers after signing is completed
 	for _, pendingTransfer := range pendingTransfers {

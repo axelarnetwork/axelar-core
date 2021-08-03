@@ -59,3 +59,10 @@ message TransferOwnership {
 
   string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
 }
+
+// PendingSignCommand stores information about a pending TSS sign operation for
+// an evm gateway command
+message PendingSignCommand {
+  string chain = 1;
+  string command_selector = 2;
+}
