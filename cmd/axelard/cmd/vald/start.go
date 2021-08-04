@@ -187,7 +187,18 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 		logger.Error(err.Error())
 		startBlock = 0
 	}
-	eventBus := createEventBus(ctx, startBlock, logger)
+
+	client, err := ctx.GetNode()
+	if err != nil {
+		panic(err)
+	}
+	// in order to subscribe to events, the client needs to be running
+	if !client.IsRunning() {
+		if err := client.Start(); err != nil {
+			panic(fmt.Errorf("unable to start client: %v", err))
+		}
+	}
+	eventBus := createEventBus(client, startBlock, logger)
 
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
@@ -247,14 +258,9 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	mgr.Wait()
 }
 
-func createEventBus(ctx sdkClient.Context, startBlock int64, logger log.Logger) *events.EventBus {
-	node, err := ctx.GetNode()
-	if err != nil {
-		panic(err)
-	}
-
-	notifier := events.NewBlockNotifier(NewBlockClient(node), startBlock, logger)
-	return events.NewEventBus(events.NewBlockSource(node, notifier), pubsub.NewBus, logger)
+func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *events.EventBus {
+	notifier := events.NewBlockNotifier(NewBlockClient(client), startBlock, logger)
+	return events.NewEventBus(events.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
