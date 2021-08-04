@@ -19,4 +19,8 @@ message Params {
   cosmos.base.v1beta1.DecCoin max_secondary_output_amount = 7
       [ (gogoproto.nullable) = false ];
   int64 master_key_retention_period = 8;
+  int64 master_address_lock_duration = 9 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "time.Duration"
+  ];
 }

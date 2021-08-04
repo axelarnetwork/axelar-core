@@ -1,370 +1,347 @@
 package keeper_test
 
 import (
-	"crypto/ecdsa"
-	cryptoRand "crypto/rand"
-	mathRand "math/rand"
+	"encoding/hex"
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	"github.com/axelarnetwork/axelar-core/testutils"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-func TestQueryMasterAddress(t *testing.T) {
-
-	var (
-		btcKeeper *mock.BTCKeeperMock
-		signer    *mock.SignerMock
-		ctx       sdk.Context
-	)
-
-	setup := func() {
-		btcKeeper = &mock.BTCKeeperMock{
-			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
-				return types.AddressInfo{
-					Address:      randomAddress().EncodeAddress(),
-					RedeemScript: rand.Bytes(200),
-					Role:         types.Deposit,
-					KeyID:        rand.StrBetween(5, 20),
-				}, true
-			},
-		}
-		signer = &mock.SignerMock{
-			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-				return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}, true
-			},
-		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-	}
-
-	repeatCount := 20
-
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		setup()
-		assert := assert.New(t)
-
-		var key tss.Key
-		signer = &mock.SignerMock{
-			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-				key = tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}
-				return key, true
-			},
-		}
-
-		res, err := bitcoinKeeper.QuerySecondaryConsolidationAddress(ctx, btcKeeper, signer)
-		assert.NoError(err)
-
-		var resp types.QuerySecondaryConsolidationAddressResponse
-		err = resp.Unmarshal(res)
-		assert.NoError(err)
-
-		assert.Len(signer.GetCurrentKeyCalls(), 1)
-		assert.Equal(key.ID, resp.KeyId)
-
-	}).Repeat(repeatCount))
-
-	t.Run("no secondary key", testutils.Func(func(t *testing.T) {
-		setup()
-		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
-
-		_, err := bitcoinKeeper.QuerySecondaryConsolidationAddress(ctx, btcKeeper, signer)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-}
-
 func TestQueryDepositAddress(t *testing.T) {
-
 	var (
 		btcKeeper   *mock.BTCKeeperMock
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		data        []byte
+
+		address string
 	)
 
 	setup := func() {
-
-		btcKeeper = &mock.BTCKeeperMock{
-			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-		}
-		signer = &mock.SignerMock{
-			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-				sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-				return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}, true
-			},
-		}
-		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				return nexus.Chain{
-					Name:                  chain,
-					NativeAsset:           rand.StrBetween(5, 20),
-					SupportsForeignAssets: true,
-				}, true
-			},
-			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-				return nexus.CrossChainAddress{
-					Chain:   exported.Bitcoin,
-					Address: randomAddress().EncodeAddress(),
-				}, true
-			},
-		}
+		btcKeeper = &mock.BTCKeeperMock{}
+		signer = &mock.SignerMock{}
+		nexusKeeper = &mock.NexusMock{}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		data = types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: "ethereum", Address: "0xf2151de34BbFb22f799243FFBeFf18FD5D701147"})
+
+		address = fmt.Sprintf("0x%s", hex.EncodeToString(rand.Bytes(20)))
 	}
 
-	repeatCount := 20
-
-	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if the given chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		params := types.DepositQueryParams{Chain: "unknown", Address: address}
 
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, _ string) (nexus.Chain, bool) {
+			return nexus.Chain{}, false
+		}
 
-		assert.Equal(nexusKeeper.GetChainCalls()[0].Chain, "ethereum")
-		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 
-	}).Repeat(repeatCount))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "recipient chain not found")
+	}))
 
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if the master key for given chain is not available", testutils.Func(func(t *testing.T) {
 		setup()
-		dataStr := &types.DepositQueryParams{Chain: rand.StrBetween(5, 20), Address: "0x" + rand.HexStr(40)}
-		data = types.ModuleCdc.MustMarshalJSON(dataStr)
 
-		res, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(nexusKeeper.GetRecipientCalls(), 1)
-
-		assert.Equal(nexusKeeper.GetChainCalls()[0].Chain, dataStr.Chain)
-		assert.Equal(string(res), nexusKeeper.GetRecipientCalls()[0].Sender.Address)
-
-	}).Repeat(repeatCount))
-
-	t.Run("cannot parse recipient", testutils.Func(func(t *testing.T) {
-		setup()
-		data = nil
-
-		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
-	t.Run("recipient chain not found", testutils.Func(func(t *testing.T) {
-		setup()
 		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-			return exported.Bitcoin, false
+			if chain == params.Chain {
+				return evm.Ethereum, true
+			}
+			return nexus.Chain{}, false
+		}
+		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
+			return tss.Key{}, false
 		}
 
-		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 
-		assert := assert.New(t)
-		assert.Error(err)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "master key not set")
+	}))
 
-	}).Repeat(repeatCount))
-
-	t.Run("no master/secondary key", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if the secondary key for given chain is not available", testutils.Func(func(t *testing.T) {
 		setup()
-		signer.GetCurrentKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false }
 
-		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
+		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
-		assert := assert.New(t)
-		assert.Error(err)
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == params.Chain {
+				return evm.Ethereum, true
+			}
+			return nexus.Chain{}, false
+		}
+		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.MasterKey {
+				return tss.Key{}, true
+			}
+			return tss.Key{}, false
+		}
 
-	}).Repeat(repeatCount))
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 
-	t.Run("deposit address not linked", testutils.Func(func(t *testing.T) {
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "secondary key not set")
+	}))
+
+	t.Run("should return error if the deposit address is not linked yet", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.GetRecipientFunc = func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return nexus.CrossChainAddress{}, false
-		}
 
-		_, err := bitcoinKeeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, data)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
-}
-
-func TestQueryTxState(t *testing.T) {
-
-	var (
-		btcKeeper *mock.BTCKeeperMock
-		ctx       sdk.Context
-		data      []byte
-	)
-
-	setup := func() {
-		btcKeeper = &mock.BTCKeeperMock{
-			GetOutPointInfoFunc: func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-				return randomOutpointInfo(), types.CONFIRMED, true
-			},
-		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-
-		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
+		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
 		}
-		vout := mathRand.Uint32()
-		if vout == 0 {
-			vout++
+		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
 		}
-		data = []byte(wire.NewOutPoint(txHash, vout).String())
-	}
+		masterKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: masterPrivKey.PublicKey,
+			Role:  tss.MasterKey,
+		}
+		secondaryKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: secondaryPrivKey.PublicKey,
+			Role:  tss.SecondaryKey,
+		}
+		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
-	repeatCount := 20
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == params.Chain {
+				return evm.Ethereum, true
+			}
+			return nexus.Chain{}, false
+		}
+		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.MasterKey {
+				return masterKey, true
+			}
+			if keyRole == tss.SecondaryKey {
+				return secondaryKey, true
+			}
+			return tss.Key{}, false
+		}
+		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, false
+		}
 
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		_, err = keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "deposit address is not linked with recipient address")
+	}))
+
+	t.Run("should return the deposit address", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := bitcoinKeeper.QueryTxState(ctx, btcKeeper, data)
+		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		masterKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: masterPrivKey.PublicKey,
+			Role:  tss.MasterKey,
+		}
+		secondaryKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: secondaryPrivKey.PublicKey,
+			Role:  tss.SecondaryKey,
+		}
+		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
-
-	}).Repeat(repeatCount))
-
-	t.Run("transaction not found", testutils.Func(func(t *testing.T) {
-		setup()
-		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outpoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return types.OutPointInfo{}, 0, false
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == params.Chain {
+				return evm.Ethereum, true
+			}
+			return nexus.Chain{}, false
+		}
+		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.MasterKey {
+				return masterKey, true
+			}
+			if keyRole == tss.SecondaryKey {
+				return secondaryKey, true
+			}
+			return tss.Key{}, false
+		}
+		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+			return nexus.CrossChainAddress{}, true
 		}
 
-		_, err := bitcoinKeeper.QueryTxState(ctx, btcKeeper, data)
+		expected := types.QueryAddressResponse{
+			Address: types.NewDepositAddress(masterKey, secondaryKey, types.DefaultParams().Network, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}).Address,
+			KeyID:   secondaryKey.ID,
+		}
+		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 
-		assert := assert.New(t)
-		assert.Error(err)
+		var actual types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
 
-	}).Repeat(repeatCount))
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	}))
 }
 
-func TestGetRawConsolidationTx(t *testing.T) {
-
+func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 	var (
 		btcKeeper *mock.BTCKeeperMock
+		signer    *mock.SignerMock
 		ctx       sdk.Context
 
-		latestSignedTxHash *chainhash.Hash
+		keyID string
 	)
 
 	setup := func() {
-		latestSignedTxHash, _ = chainhash.NewHash(rand.Bytes(32))
-
-		btcKeeper = &mock.BTCKeeperMock{
-			GetLatestSignedTxHashFunc: func(sdk.Context) (*chainhash.Hash, bool) { return latestSignedTxHash, true },
-			GetSignedTxFunc: func(_ sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool) {
-				if txHash.IsEqual(latestSignedTxHash) {
-					return wire.NewMsgTx(wire.TxVersion), true
-				}
-
-				return nil, false
-			},
-		}
+		btcKeeper = &mock.BTCKeeperMock{}
+		signer = &mock.SignerMock{}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		keyID = rand.Str(10)
 	}
 
-	repeatCount := 20
-
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if the given key ID cannot be found", testutils.Func(func(t *testing.T) {
 		setup()
 
-		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) { return tss.Key{}, false }
 
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetLatestSignedTxHashCalls(), 1)
-		assert.Len(btcKeeper.GetSignedTxCalls(), 1)
+		_, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
-	}).Repeat(repeatCount))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), fmt.Sprintf("no key with keyID %s found", keyID))
+	}))
 
-	t.Run("no consolidation transaction", testutils.Func(func(t *testing.T) {
+	t.Run("should return the master consolidation address if given key ID is for a master key", testutils.Func(func(t *testing.T) {
 		setup()
-		btcKeeper.GetLatestSignedTxHashFunc = func(sdk.Context) (*chainhash.Hash, bool) { return nil, false }
 
-		_, err := bitcoinKeeper.GetRawConsolidationTx(ctx, btcKeeper)
-
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetSignedTxCalls(), 0)
-
-	}).Repeat(repeatCount))
-}
-
-func TestGetConsolidationTxState(t *testing.T) {
-
-	var (
-		btcKeeper *mock.BTCKeeperMock
-		ctx       sdk.Context
-
-		latestSignedTxHash *chainhash.Hash
-	)
-
-	setup := func() {
-		latestSignedTxHash, _ = chainhash.NewHash(rand.Bytes(32))
-
-		btcKeeper = &mock.BTCKeeperMock{
-			GetLatestSignedTxHashFunc: func(sdk.Context) (*chainhash.Hash, bool) { return latestSignedTxHash, true },
-			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-				return types.OutPointInfo{}, types.CONFIRMED, true
-			},
+		now := time.Now()
+		rotationCount := rand.I64Between(100, 1000)
+		oldMasterKeyRotationCount := rotationCount - (rotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
+		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
 		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-	}
+		oldMasterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		masterKey := tss.Key{
+			ID:        keyID,
+			Value:     masterPrivKey.PublicKey,
+			Role:      tss.MasterKey,
+			RotatedAt: &now,
+		}
+		oldMasterKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: oldMasterPrivKey.PublicKey,
+			Role:  tss.MasterKey,
+		}
+		externalKey := tss.Key{
+			ID:    rand.Str(10),
+			Value: externalPrivKey.PublicKey,
+			Role:  tss.ExternalKey,
+		}
 
-	repeatCount := 20
+		btcKeeper.GetMasterKeyRetentionPeriodFunc = func(ctx sdk.Context) int64 { return types.DefaultParams().MasterKeyRetentionPeriod }
+		btcKeeper.GetMasterAddressLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressLockDuration }
+		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			if keyID == masterKey.ID {
+				return masterKey, true
+			}
 
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+			return tss.Key{}, false
+		}
+		signer.GetRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 { return rotationCount }
+		signer.GetKeyByRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
+			if rotationCount == oldMasterKeyRotationCount {
+				return oldMasterKey, true
+			}
+
+			return tss.Key{}, false
+		}
+		signer.GetCurrentKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.ExternalKey {
+				return externalKey, true
+			}
+
+			return tss.Key{}, false
+		}
+
+		expected := types.QueryAddressResponse{
+			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, externalKey, now.Add(types.DefaultParams().MasterAddressLockDuration), types.DefaultParams().Network).Address,
+			KeyID:   masterKey.ID,
+		}
+
+		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
+
+		var actual types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	}))
+
+	t.Run("should return the secondary consolidation address if given key ID is for a secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
+		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		secondaryKey := tss.Key{
+			ID:    keyID,
+			Value: secondaryPrivKey.PublicKey,
+			Role:  tss.SecondaryKey,
+		}
 
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(btcKeeper.GetOutPointInfoCalls(), 1)
-		assert.Equal(btcKeeper.GetOutPointInfoCalls()[0].OutPoint.Hash, *latestSignedTxHash)
-		assert.Equal(btcKeeper.GetOutPointInfoCalls()[0].OutPoint.Index, uint32(0))
-		assert.Equal(string(res), "bitcoin transaction state is confirmed")
-	}).Repeat(repeatCount))
+		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			if keyID == secondaryKey.ID {
+				return secondaryKey, true
+			}
 
-	t.Run("no signed consolidation transaction", testutils.Func(func(t *testing.T) {
-		setup()
-		btcKeeper.GetLatestSignedTxHashFunc = func(sdk.Context) (*chainhash.Hash, bool) { return nil, false }
+			return tss.Key{}, false
+		}
 
-		_, err := bitcoinKeeper.GetConsolidationTxState(ctx, btcKeeper)
+		expected := types.QueryAddressResponse{
+			Address: types.NewSecondaryConsolidationAddress(secondaryKey, types.DefaultParams().Network).Address,
+			KeyID:   secondaryKey.ID,
+		}
 
-		assert := assert.New(t)
-		assert.Error(err)
-		assert.Len(btcKeeper.GetOutPointInfoCalls(), 0)
-	}).Repeat(repeatCount))
+		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
+
+		var actual types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	}))
 }

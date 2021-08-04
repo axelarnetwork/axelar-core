@@ -2,6 +2,7 @@ package types
 
 import (
 	"crypto/ecdsa"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -12,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -34,6 +34,7 @@ type BTCKeeper interface {
 	GetMaxInputCount(ctx sdk.Context) int64
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
+	GetMasterAddressLockDuration(ctx sdk.Context) time.Duration
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -44,12 +45,13 @@ type BTCKeeper interface {
 	SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info OutPointInfo)
 	GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue
 
-	SetUnsignedTx(ctx sdk.Context, tx *Transaction)
-	GetUnsignedTx(ctx sdk.Context) (*Transaction, bool)
-	DeleteUnsignedTx(ctx sdk.Context)
-	SetSignedTx(ctx sdk.Context, tx *wire.MsgTx)
-	GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool)
-	GetLatestSignedTxHash(ctx sdk.Context) (*chainhash.Hash, bool)
+	SetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx UnsignedTx)
+	GetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) (UnsignedTx, bool)
+	DeleteUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole)
+	SetSignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx SignedTx)
+	GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (SignedTx, bool)
+	SetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole, txHash chainhash.Hash)
+	GetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool)
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
@@ -58,8 +60,8 @@ type BTCKeeper interface {
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
 
-	SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64)
-	GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool)
+	SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount)
+	GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount
 }
 
 // Voter is the interface that provides voting functionality
@@ -78,18 +80,21 @@ type InitPoller = interface {
 // Signer provides keygen and signing functionality
 type Signer interface {
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
+	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
+	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
+	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
-	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
+	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

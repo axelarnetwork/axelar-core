@@ -2,14 +2,10 @@ package types
 
 // CLI query error message formats
 const (
-	ErrFSecondaryKey         = "could not resolve secondary key"
-	ErrFMasterKey            = "could not resolve master key"
-	ErrFNextMasterKey        = "could not get next master key ID"
-	ErrFGetRawTx             = "could not get the raw consolidation transaction"
-	ErrFGetPayForRawTx       = "could not get the raw pay-for-consolidation transaction"
-	ErrFInvalidFeeRate       = "invalid fee rate"
-	ErrFGetSignTransferState = "could not get the sign transfer state"
-	ErrFMinWithdraw          = "could not get the minimum withdraw amount"
-	ErrFTxState              = "could not get bitcoin transaction state"
-	ErrFConsolidationState   = "could not get bitcoin consolidation transaction state"
+	ErrFDepositAddr       = "could not resolve deposit address"
+	ErrFConsolidationAddr = "could not resolve consolidation address"
+	ErrFNextKeyID         = "could not resolve the next key ID"
+	ErrFMinOutputAmount   = "could not resolve the minimum output amount allowed"
+	ErrFLatestTx          = "could not resolve the latest consolidation transaction"
+	ErrFSignedTx          = "could not resolve the signed consolidation transaction"
 )

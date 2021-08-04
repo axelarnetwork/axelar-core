@@ -4,17 +4,11 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math"
 
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/mempool"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -24,15 +18,13 @@ import (
 
 // Query paths
 const (
-	QDepositAddress                   = "depositAddr"
-	QSecondaryConsolidationAddress    = "masterAddr"
-	QKeySecondaryConsolidationAddress = "keySecondaryConsolidationAddress"
-	QNextMasterKeyID                  = "nextMasterKeyID"
-	QMinimumWithdrawAmount            = "minWithdrawAmount"
-	QTxState                          = "txState"
-	QConsolidationTx                  = "getConsolidationTx"
-	QConsolidationTxState             = "QConsolidationTxState"
-	QPayForConsolidationTx            = "getPayForConsolidationTx"
+	QDepositAddress                = "depositAddr"
+	QConsolidationAddressByKeyRole = "consolidationAddrByKeyRole"
+	QConsolidationAddressByKeyID   = "consolidationAddrByKeyID"
+	QNextKeyID                     = "nextKeyID"
+	QMinOutputAmount               = "minOutputAmount"
+	QLatestTxByKeyRole             = "latestTxByKeyRole"
+	QSignedTx                      = "signedTx"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -43,29 +35,26 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 		switch path[0] {
 		case QDepositAddress:
 			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
-		case QSecondaryConsolidationAddress:
-			res, err = QuerySecondaryConsolidationAddress(ctx, k, s)
-		case QKeySecondaryConsolidationAddress:
-			res, err = queryKeyConsolidationAddress(ctx, k, s, req.Data)
-		case QNextMasterKeyID:
-			res, err = queryNextMasterKeyID(ctx, s)
-		case QMinimumWithdrawAmount:
-			res = queryMinimumWithdrawAmount(ctx, k)
-		case QTxState:
-			res, err = QueryTxState(ctx, k, req.Data)
-		case QConsolidationTx:
-			res, err = GetRawConsolidationTx(ctx, k)
-		case QConsolidationTxState:
-			res, err = GetConsolidationTxState(ctx, k)
-		case QPayForConsolidationTx:
-			res, err = payForConsolidationTx(ctx, k, rpc, req.Data)
+		case QConsolidationAddressByKeyRole:
+			res, err = QueryConsolidationAddressByKeyRole(ctx, k, s, path[1])
+		case QConsolidationAddressByKeyID:
+			res, err = QueryConsolidationAddressByKeyID(ctx, k, s, path[1])
+		case QNextKeyID:
+			res, err = QueryNextKeyID(ctx, s, path[1])
+		case QMinOutputAmount:
+			res = QueryMinOutputAmount(ctx, k)
+		case QLatestTxByKeyRole:
+			res, err = QueryLatestTxByKeyRole(ctx, k, path[1])
+		case QSignedTx:
+			res, err = QuerySignedTx(ctx, k, path[1])
 		default:
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown btc-bridge query endpoint: %s", path[1]))
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown query endpoint: %s", path[0]))
 		}
 
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
 		}
+
 		return res, nil
 	}
 }
@@ -73,7 +62,7 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 // QueryDepositAddress returns deposit address
 func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
-	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
+	if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
@@ -101,41 +90,65 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		return nil, fmt.Errorf("deposit address is not linked with recipient address")
 	}
 
-	return []byte(depositAddr.Address), nil
+	resp := types.QueryAddressResponse{
+		Address: depositAddr.Address,
+		KeyID:   depositAddr.KeyID,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }
 
-// QuerySecondaryConsolidationAddress returns the master address
-func QuerySecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer) ([]byte, error) {
-	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+// QueryConsolidationAddressByKeyRole returns the current consolidation address of the given key role
+func QueryConsolidationAddressByKeyRole(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyRoleStr string) ([]byte, error) {
+	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
+	if err != nil {
+		return nil, err
+	}
+
+	keyID, ok := s.GetCurrentKeyID(ctx, exported.Bitcoin, keyRole)
 	if !ok {
-		return nil, fmt.Errorf("secondaryKey not found")
+		return nil, fmt.Errorf("%s key not found", keyRoleStr)
 	}
 
-	resp := types.QuerySecondaryConsolidationAddressResponse{
-		Address: types.NewSecondaryConsolidationAddress(secondaryKey, k.GetNetwork(ctx)).Address,
-		KeyId:   secondaryKey.ID,
-	}
-
-	return resp.Marshal()
+	return QueryConsolidationAddressByKeyID(ctx, k, s, keyID)
 }
 
-func queryKeyConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyIDBytes []byte) ([]byte, error) {
-	keyID := string(keyIDBytes)
-
+// QueryConsolidationAddressByKeyID returns the consolidation address of the given key ID
+func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) ([]byte, error) {
 	key, ok := s.GetKey(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("no key with keyID %s found", keyID)
 	}
-	if key.Role != tss.MasterKey {
-		return nil, fmt.Errorf("key %s does not have the role %s", keyID, tss.MasterKey)
+
+	var addressInfo *types.AddressInfo
+	var err error
+
+	switch key.Role {
+	case tss.MasterKey:
+		addressInfo, err = getMasterConsolidationAddress(ctx, k, s, keyID)
+	case tss.SecondaryKey:
+		addressInfo, err = getSecondaryConsolidationAddress(ctx, k, s, keyID)
+	default:
+		return nil, fmt.Errorf("no consolidation address supported for key %s of key role %s", keyID, key.Role.SimpleString())
 	}
 
-	addr := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
-	return []byte(addr.Address), nil
+	if err != nil {
+		return nil, err
+	}
+
+	resp := types.QueryAddressResponse{Address: addressInfo.Address, KeyID: addressInfo.KeyID}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }
 
-func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
-	next, nextAssigned := s.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+// QueryNextKeyID returns the next key ID of the given key role
+func QueryNextKeyID(ctx sdk.Context, s types.Signer, keyRoleStr string) ([]byte, error) {
+	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
+	if err != nil {
+		return nil, err
+	}
+
+	next, nextAssigned := s.GetNextKey(ctx, exported.Bitcoin, keyRole)
 	if !nextAssigned {
 		return []byte{}, nil
 	}
@@ -143,198 +156,166 @@ func queryNextMasterKeyID(ctx sdk.Context, s types.Signer) ([]byte, error) {
 	return []byte(next.ID), nil
 }
 
-func queryMinimumWithdrawAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
-	amount := make([]byte, 8)
-	binary.LittleEndian.PutUint64(amount, uint64(k.GetMinOutputAmount(ctx)))
-	return amount
+// QueryMinOutputAmount returns the minimum amount allowed for any transaction output
+func QueryMinOutputAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(k.GetMinOutputAmount(ctx)))
+
+	return bz
 }
 
-// QueryTxState returns the state of given transaction
-func QueryTxState(ctx sdk.Context, k types.BTCKeeper, data []byte) ([]byte, error) {
-	outpoint, err := types.OutPointFromStr(string(data))
+func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) (*types.AddressInfo, error) {
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no key with keyID %s found", keyID)
+	}
+
+	if key.Role != tss.SecondaryKey {
+		return nil, fmt.Errorf("given keyID %s is not for a %s key", keyID, tss.SecondaryKey.SimpleString())
+	}
+
+	consolidationAddress := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
+
+	return &consolidationAddress, nil
+}
+
+func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) (*types.AddressInfo, error) {
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("no key with keyID %s found", keyID)
+	}
+
+	if key.Role != tss.MasterKey {
+		return nil, fmt.Errorf("given keyID %s is not for a %s key", keyID, tss.MasterKey.SimpleString())
+	}
+
+	if key.RotatedAt == nil {
+		return nil, fmt.Errorf("given keyID %s has not been rotated yet and therefore cannot get its %s consolidation address", keyID, tss.MasterKey.SimpleString())
+	}
+
+	rotationCount := s.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
+	oldMasterKeyRotationCount := rotationCount - (rotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
+	oldMasterKey, ok := s.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
+	if !ok {
+		return nil, fmt.Errorf("cannot find the old %s key of the given keyID %s", tss.MasterKey.SimpleString(), keyID)
+	}
+
+	externalKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
+	if !ok {
+		return nil, fmt.Errorf("external key not registered")
+	}
+
+	lockTime := key.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalKey, lockTime, k.GetNetwork(ctx))
+
+	return &consolidationAddress, nil
+}
+
+// QueryLatestTxByKeyRole returns the latest consolidation transaction of the given key role
+func QueryLatestTxByKeyRole(ctx sdk.Context, k types.BTCKeeper, keyRoleStr string) ([]byte, error) {
+	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
 	if err != nil {
 		return nil, err
 	}
 
-	_, state, ok := k.GetOutPointInfo(ctx, *outpoint)
-	var message string
+	unsignedTx, ok := k.GetUnsignedTx(ctx, keyRole)
+	if ok {
+		prevSignedTxHashHex := ""
 
-	switch {
-	case !ok:
-		return nil, fmt.Errorf("bitcoin transaction is not tracked")
-	case state == types.CONFIRMED:
-		message = "bitcoin transaction state is confirmed"
-	case state == types.SPENT:
-		message = "bitcoin transaction state is spent"
-	default:
-		message = "bitcoin transaction state is not confirmed"
+		prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
+		if ok {
+			prevSignedTxHashHex = prevSignedTxHash.String()
+		}
+
+		var signingInfos []*types.QueryTxResponse_SigningInfo
+
+		for _, input := range unsignedTx.Info.InputInfos {
+			outPoint := input.OutPointInfo
+			addressInfo, ok := k.GetAddress(ctx, outPoint.Address)
+			if !ok {
+				return nil, fmt.Errorf("unknown outpoint address %s", outPoint.Address)
+			}
+
+			signingInfos = append(signingInfos, &types.QueryTxResponse_SigningInfo{
+				RedeemScript: hex.EncodeToString(addressInfo.RedeemScript),
+				Amount:       int64(outPoint.Amount),
+			})
+		}
+
+		resp := types.QueryTxResponse{
+			Tx:                   hex.EncodeToString(types.MustEncodeTx(unsignedTx.GetTx())),
+			Status:               unsignedTx.Status,
+			ConfirmationRequired: unsignedTx.ConfirmationRequired,
+			PrevSignedTxHash:     prevSignedTxHashHex,
+			AnyoneCanSpendVout:   unsignedTx.AnyoneCanSpendVout,
+			SigningInfos:         signingInfos,
+		}
+
+		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 	}
 
-	return []byte(message), nil
-}
-
-// GetConsolidationTxState returns the state of consolidqtion transaction
-func GetConsolidationTxState(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-	txHash, ok := k.GetLatestSignedTxHash(ctx)
+	latestSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
 	if !ok {
-		return nil, fmt.Errorf("could not find the signed consolidation transaction")
+		return nil, fmt.Errorf("no consolidation transaction exists for the %s key", keyRole.SimpleString())
 	}
 
-	outpointByte := []byte(wire.NewOutPoint(txHash, 0).String())
-
-	stateMsg, err := QueryTxState(ctx, k, outpointByte)
-	if err != nil {
-		return nil, err
-	}
-
-	return stateMsg, nil
-}
-
-// GetRawConsolidationTx returns the consolidation transaction in bytes
-func GetRawConsolidationTx(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
-	txHash, ok := k.GetLatestSignedTxHash(ctx)
+	signedTx, ok := k.GetSignedTx(ctx, *latestSignedTxHash)
 	if !ok {
-		rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_State{State: types.Ready}}
-		return rawTxResponse.Marshal()
+		return nil, fmt.Errorf("cannot find the latest signed consolidation transaction for the %s key", keyRole.SimpleString())
 	}
 
-	tx, _ := k.GetSignedTx(ctx, *txHash)
-
-	rawTxResponse := &types.QueryRawTxResponse{StateOrTx: &types.QueryRawTxResponse_RawTx{RawTx: hex.EncodeToString(types.MustEncodeTx(tx))}}
-	return rawTxResponse.Marshal()
-}
-
-func payForConsolidationTx(ctx sdk.Context, k types.BTCKeeper, rpc types.RPCClient, data []byte) ([]byte, error) {
-	txHash, ok := k.GetLatestSignedTxHash(ctx)
-	if !ok {
-		return nil, fmt.Errorf("no signed consolidation transaction ready")
-	}
-
-	feeRate := int64(binary.LittleEndian.Uint64(data))
-	consolidationTx, _ := k.GetSignedTx(ctx, *txHash)
-
-	utxos, err := rpc.ListUnspent()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(utxos) <= 0 {
-		return nil, fmt.Errorf("no UTXO available to pay for consolidation transaction")
-	}
-
-	if feeRate <= 0 {
-		estimateSmartFeeResult, err := rpc.EstimateSmartFee(1, &btcjson.EstimateModeEconomical)
+	prevSignedTxHashHex := ""
+	if signedTx.PrevSignedTxHash != nil {
+		prevSignedTxHash, err := chainhash.NewHash(signedTx.PrevSignedTxHash)
 		if err != nil {
 			return nil, err
 		}
 
-		// feeRate here is measured in satoshi/byte
-		feeRate = int64(math.Ceil(*estimateSmartFeeResult.FeeRate * btcutil.SatoshiPerBitcoin / 1000))
-		if feeRate <= types.MinRelayTxFeeSatoshiPerByte {
-			return nil, fmt.Errorf("no need to pay for consolidation transaction")
-		}
+		prevSignedTxHashHex = prevSignedTxHash.String()
 	}
 
-	network := k.GetNetwork(ctx)
-	consolidationTxHash := consolidationTx.TxHash()
-	anyoneCanSpendAddress := k.GetAnyoneCanSpendAddress(ctx)
-
-	anyoneCanSpendVout, ok := k.GetAnyoneCanSpendVout(ctx, consolidationTxHash)
-	if !ok {
-		return nil, fmt.Errorf("no anyone-can-spend output found in consolidation transaction %s", consolidationTxHash.String())
+	resp := types.QueryTxResponse{
+		Tx:                   hex.EncodeToString(types.MustEncodeTx(signedTx.GetTx())),
+		Status:               types.Signed,
+		ConfirmationRequired: signedTx.ConfirmationRequired,
+		PrevSignedTxHash:     prevSignedTxHashHex,
+		AnyoneCanSpendVout:   signedTx.AnyoneCanSpendVout,
+		SigningInfos:         nil,
 	}
 
-	inputs := []types.OutPointToSign{
-		{
-			OutPointInfo: types.NewOutPointInfo(
-				wire.NewOutPoint(&consolidationTxHash, uint32(anyoneCanSpendVout)),
-				k.GetMinOutputAmount(ctx),
-				anyoneCanSpendAddress.Address,
-			),
-			AddressInfo: types.AddressInfo{
-				Address:      anyoneCanSpendAddress.Address,
-				RedeemScript: anyoneCanSpendAddress.RedeemScript,
-			},
-		},
-	}
-	inputTotal := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
-
-	for _, utxo := range utxos {
-		hash, err := chainhash.NewHashFromStr(utxo.TxID)
-		if err != nil {
-			return nil, err
-		}
-
-		address, err := btcutil.DecodeAddress(utxo.Address, network.Params())
-		if err != nil {
-			return nil, err
-		}
-
-		redeemScript, err := hex.DecodeString(utxo.RedeemScript)
-		if err != nil {
-			return nil, err
-		}
-
-		amount := btcutil.Amount(utxo.Amount * btcutil.SatoshiPerBitcoin)
-		outPointInfo := types.NewOutPointInfo(
-			wire.NewOutPoint(hash, utxo.Vout),
-			amount,
-			utxo.Address,
-		)
-		addressInfo := types.AddressInfo{
-			Address:      address.EncodeAddress(),
-			RedeemScript: redeemScript,
-		}
-
-		input := types.OutPointToSign{
-			OutPointInfo: outPointInfo,
-			AddressInfo:  addressInfo,
-		}
-		inputs = append(inputs, input)
-		inputTotal = inputTotal.AddRaw(int64(amount))
-	}
-
-	address, err := btcutil.DecodeAddress(utxos[0].Address, network.Params())
-	if err != nil {
-		return nil, err
-	}
-	txSizeUpperBound, err := estimateTxSize(inputs, []types.Output{{Amount: 0, Recipient: address}})
-	if err != nil {
-		return nil, err
-	}
-
-	consolidationTxSize := mempool.GetTxVirtualSize(btcutil.NewTx(consolidationTx))
-	fee := (txSizeUpperBound+consolidationTxSize)*feeRate - consolidationTxSize*types.MinRelayTxFeeSatoshiPerByte
-	amount := btcutil.Amount(inputTotal.SubRaw(fee).Int64())
-	if amount < 0 {
-		return nil, fmt.Errorf("not enough UTXOs to execute child-pay-for-parent with fee rate %d", feeRate)
-	}
-
-	outputs := []types.Output{
-		{Amount: btcutil.Amount(inputTotal.SubRaw(fee).Int64()), Recipient: address},
-	}
-
-	tx, err := types.CreateTx(inputs, outputs)
-	if err != nil {
-		return nil, err
-	}
-
-	tx.TxIn[0].Witness = wire.TxWitness{anyoneCanSpendAddress.RedeemScript}
-	tx = types.EnableTimelockAndRBF(tx)
-
-	tx, _, err = rpc.SignRawTransactionWithWallet(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	return []byte(hex.EncodeToString(types.MustEncodeTx(tx))), nil
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }
 
-func estimateTxSize(inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
-	tx, err := types.CreateTx(inputs, outputs)
+// QuerySignedTx returns the signed consolidation transaction of the given transaction hash
+func QuerySignedTx(ctx sdk.Context, k types.BTCKeeper, txHashHex string) ([]byte, error) {
+	txHash, err := chainhash.NewHashFromStr(txHashHex)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return types.EstimateTxSize(*tx, inputs), nil
+	signedTx, ok := k.GetSignedTx(ctx, *txHash)
+	if !ok {
+		return nil, fmt.Errorf("cannot find signed consolidation transaction for the given transaction hash %s", txHash.String())
+	}
+
+	prevSignedTxHashHex := ""
+	if signedTx.PrevSignedTxHash != nil {
+		prevSignedTxHash, err := chainhash.NewHash(signedTx.PrevSignedTxHash)
+		if err != nil {
+			return nil, err
+		}
+
+		prevSignedTxHashHex = prevSignedTxHash.String()
+	}
+
+	resp := types.QueryTxResponse{
+		Tx:                   hex.EncodeToString(types.MustEncodeTx(signedTx.GetTx())),
+		Status:               types.Signed,
+		ConfirmationRequired: signedTx.ConfirmationRequired,
+		PrevSignedTxHash:     prevSignedTxHashHex,
+		AnyoneCanSpendVout:   signedTx.AnyoneCanSpendVout,
+		SigningInfos:         nil,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }

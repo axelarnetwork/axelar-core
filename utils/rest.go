@@ -19,6 +19,7 @@ const (
 	PathVarEthereumAddress = "EthereumAddress"
 	PathVarTxID            = "TxID"
 	PathVarCommandID       = "CommandID"
+	PathVarKeyRole         = "KeyRole"
 	PathVarKeyID           = "KeyID"
 	PathVarSigID           = "SigID"
 )

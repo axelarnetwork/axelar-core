@@ -261,8 +261,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.FailNow(t, "keygen", err)
 	}
 
+	// create the consolidation transaction
+	createResult := <-chain.Submit(btcTypes.NewCreatePendingTransfersTxRequest(randomSender(), secondaryKeyID2, 0))
+	assert.NoError(t, createResult.Error)
+
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewSignPendingTransfersRequest(randomSender(), secondaryKeyID2, 0))
+	signResult := <-chain.Submit(btcTypes.NewSignTxRequest(randomSender(), tss.SecondaryKey))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -274,14 +278,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
 
 	// get signed tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QConsolidationTx}, abci.RequestQuery{})
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QLatestTxByKeyRole, tss.SecondaryKey.SimpleString()}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	var rawTx types.QueryRawTxResponse
-	err = rawTx.Unmarshal(bz)
-	assert.NoError(t, err)
+	var res types.QueryTxResponse
+	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
-	buf, err := hex.DecodeString(rawTx.GetRawTx())
+	buf, err := hex.DecodeString(res.Tx)
 	assert.NoError(t, err)
 	signedTx := types.MustDecodeTx(buf)
 

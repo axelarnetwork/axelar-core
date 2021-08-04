@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 import "bitcoin/v1beta1/types.proto";
 import "vote/exported/v1beta1/types.proto";
 import "gogoproto/gogo.proto";
+import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -30,9 +31,9 @@ message LinkRequest {
 
 message LinkResponse { string deposit_addr = 2; };
 
-// MsgSignPendingTransfers represents a message to trigger the signing of a
-// consolidation transaction
-message SignPendingTransfersRequest {
+// CreatePendingTransfersTxRequest represents a message to trigger the creation
+// of a secondary key consolidation transaction
+message CreatePendingTransfersTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
@@ -40,7 +41,7 @@ message SignPendingTransfersRequest {
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
-message SignPendingTransfersResponse {};
+message CreatePendingTransfersTxResponse {};
 
 // MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 message VoteConfirmOutpointRequest {
@@ -62,7 +63,17 @@ message RegisterExternalKeyRequest {
 
 message RegisterExternalKeyResponse {};
 
-message SignMasterConsolidationTransactionRequest {
+message SubmitExternalSignatureRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  bytes signature = 3;
+  bytes sig_hash = 4;
+};
+
+message SubmitExternalSignatureResponse {};
+
+message CreateMasterTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
@@ -70,4 +81,12 @@ message SignMasterConsolidationTransactionRequest {
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
-message SignMasterConsolidationTransactionResponse {}
+message CreateMasterTxResponse {}
+
+message SignTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  tss.exported.v1beta1.KeyRole key_role = 2;
+}
+
+message SignTxResponse {}

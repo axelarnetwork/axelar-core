@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,14 +16,15 @@ const (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight       = []byte("confirmationHeight")
-	KeyNetwork                  = []byte("network")
-	KeyRevoteLockingPeriod      = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval         = []byte("KeySigCheckInterval")
-	KeyMinOutputAmount          = []byte("KeyMinOutputAmount")
-	KeyMaxInputCount            = []byte("KeyMaxInputCount")
-	KeyMaxSecondaryOutputAmount = []byte("KeyMaxSecondaryOutputAmount")
-	KeyMasterKeyRetentionPeriod = []byte("KeyMasterKeyRetentionPeriod")
+	KeyConfirmationHeight        = []byte("confirmationHeight")
+	KeyNetwork                   = []byte("network")
+	KeyRevoteLockingPeriod       = []byte("RevoteLockingPeriod")
+	KeySigCheckInterval          = []byte("KeySigCheckInterval")
+	KeyMinOutputAmount           = []byte("KeyMinOutputAmount")
+	KeyMaxInputCount             = []byte("KeyMaxInputCount")
+	KeyMaxSecondaryOutputAmount  = []byte("KeyMaxSecondaryOutputAmount")
+	KeyMasterKeyRetentionPeriod  = []byte("KeyMasterKeyRetentionPeriod")
+	KeyMasterAddressLockDuration = []byte("KeyMasterAddressLockDuration")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -33,14 +35,15 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:       1,
-		Network:                  Network{Name: Regtest.Name},
-		RevoteLockingPeriod:      50,
-		SigCheckInterval:         10,
-		MinOutputAmount:          sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
-		MaxInputCount:            50,
-		MaxSecondaryOutputAmount: sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
-		MasterKeyRetentionPeriod: 8,
+		ConfirmationHeight:        1,
+		Network:                   Network{Name: Regtest.Name},
+		RevoteLockingPeriod:       50,
+		SigCheckInterval:          10,
+		MinOutputAmount:           sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
+		MaxInputCount:             50,
+		MaxSecondaryOutputAmount:  sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
+		MasterKeyRetentionPeriod:  8,
+		MasterAddressLockDuration: 2 * 7 * 24 * time.Hour, // 2 weeks
 	}
 }
 
@@ -62,6 +65,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
 		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
+		paramtypes.NewParamSetPair(KeyMasterAddressLockDuration, &m.MasterAddressLockDuration, validateMasterAddressLockDuration),
 	}
 }
 
@@ -167,6 +171,19 @@ func validateMasterKeyRetentionPeriod(masterKeyRetentionPeriod interface{}) erro
 
 	if m <= 0 {
 		return fmt.Errorf("master key retention period has to be greater than 0")
+	}
+
+	return nil
+}
+
+func validateMasterAddressLockDuration(masterAddressLockDuration interface{}) error {
+	m, ok := masterAddressLockDuration.(time.Duration)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for master address lock duration: %T", masterAddressLockDuration)
+	}
+
+	if m <= 0 {
+		return fmt.Errorf("master address lock duration has to be greater than 0")
 	}
 
 	return nil

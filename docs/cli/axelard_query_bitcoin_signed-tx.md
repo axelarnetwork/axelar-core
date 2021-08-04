@@ -1,16 +1,16 @@
-## axelard query bitcoin minWithdraw
+## axelard query bitcoin signed-tx
 
-Returns the minimum withdraw amount in satoshi
+Returns the signed consolidation transaction of the given transaction hash
 
 ```
-axelard query bitcoin minWithdraw [flags]
+axelard query bitcoin signed-tx [txHash] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for minWithdraw
+  -h, --help          help for signed-tx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

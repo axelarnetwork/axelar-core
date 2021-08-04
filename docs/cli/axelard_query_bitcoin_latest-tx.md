@@ -1,16 +1,16 @@
-## axelard query bitcoin txState
+## axelard query bitcoin latest-tx
 
-Returns the state of a bitcoin transaction as seen by Axelar network
+Returns the latest consolidation transaction of the given key role
 
 ```
-axelard query bitcoin txState [txID:voutIdx] [flags]
+axelard query bitcoin latest-tx [keyRole] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for txState
+  -h, --help          help for latest-tx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

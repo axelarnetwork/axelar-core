@@ -3,6 +3,7 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -46,15 +47,18 @@ func (k Keeper) GetKey(ctx sdk.Context, keyID string) (exported.Key, bool) {
 	if bz == nil {
 		return exported.Key{}, false
 	}
+
 	btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
 	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
 	if err != nil {
 		panic(err)
 	}
+
 	pk := btcecPK.ToECDSA()
 	role := k.getKeyRole(ctx, keyID)
+	rotatedAt := k.getRotatedAt(ctx, keyID)
 
-	return exported.Key{ID: keyID, Value: *pk, Role: role}, true
+	return exported.Key{ID: keyID, Value: *pk, Role: role, RotatedAt: rotatedAt}, true
 }
 
 // SetKey stores the given public key under the given key ID
@@ -113,6 +117,26 @@ func (k Keeper) getKeyRole(ctx sdk.Context, keyID string) exported.KeyRole {
 	return keyRole
 }
 
+func (k Keeper) setRotatedAt(ctx sdk.Context, keyID string) {
+	storageKey := fmt.Sprintf("%s%s", keyRotatedAtPrefix, keyID)
+	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockTime().Unix()))
+}
+
+func (k Keeper) getRotatedAt(ctx sdk.Context, keyID string) *time.Time {
+	storageKey := fmt.Sprintf("%s%s", keyRotatedAtPrefix, keyID)
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
+	if bz == nil {
+		return nil
+	}
+
+	var seconds int64
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &seconds)
+
+	timestamp := time.Unix(seconds, 0)
+	return &timestamp
+}
+
 // AssignNextKey stores a new key for a given chain which will become the default once RotateKey is called
 func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 	if _, ok := k.GetKey(ctx, keyID); !ok {
@@ -130,11 +154,13 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 // RotateKey rotates to the next stored key. Returns an error if no new key has been prepared
 func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 	r := k.GetRotationCount(ctx, chain, keyRole)
-	if _, found := k.getKeyID(ctx, chain, r+1, keyRole); !found {
+	keyID, found := k.getKeyID(ctx, chain, r+1, keyRole)
+	if !found {
 		return fmt.Errorf("next %s key for chain %s not set", keyRole.SimpleString(), chain.Name)
 	}
 
 	k.setRotationCount(ctx, chain, keyRole, r+1)
+	k.setRotatedAt(ctx, keyID)
 
 	return nil
 }

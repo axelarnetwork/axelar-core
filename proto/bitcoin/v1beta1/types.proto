@@ -5,14 +5,52 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 
 import "gogoproto/gogo.proto";
 import "tss/exported/v1beta1/types.proto";
+import "google/protobuf/timestamp.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message Transaction {
+enum TxStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TX_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  TX_STATUS_CREATED = 1 [ (gogoproto.enumvalue_customname) = "Created" ];
+  TX_STATUS_SIGNING = 2 [ (gogoproto.enumvalue_customname) = "Signing" ];
+  TX_STATUS_ABORTED = 3 [ (gogoproto.enumvalue_customname) = "Aborted" ];
+  TX_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
+}
+
+message UnsignedTx {
+  message Info {
+    message InputInfo {
+      message SigRequirement {
+        string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+        bytes sig_hash = 2;
+      }
+
+      OutPointInfo out_point_info = 1 [ (gogoproto.nullable) = false ];
+      repeated SigRequirement sig_requirements = 2
+          [ (gogoproto.nullable) = false ];
+    }
+
+    bool assign_next_key = 1;
+    string next_key_id = 2 [ (gogoproto.customname) = "NextKeyID" ];
+    repeated InputInfo input_infos = 3 [ (gogoproto.nullable) = false ];
+  }
+
   bytes tx = 1;
-  bool assign_next_key = 2;
-  tss.exported.v1beta1.KeyRole next_key_role = 3;
-  string next_key_id = 4 [ (gogoproto.customname) = "NextKeyID" ];
+  Info info = 2 [ (gogoproto.nullable) = false ];
+  TxStatus status = 3;
+  bool confirmation_required = 4;
+  uint32 anyone_can_spend_vout = 5;
+}
+
+message SignedTx {
+  bytes tx = 1;
+  bytes prev_signed_tx_hash = 2;
+  bool confirmation_required = 3;
+  uint32 anyone_can_spend_vout = 4;
 }
 
 // OutPointInfo describes all the necessary information to confirm the outPoint
@@ -44,18 +82,7 @@ message AddressInfo {
   bytes redeem_script = 3;
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
   uint32 max_sig_count = 5;
+  google.protobuf.Timestamp lock_time = 6 [ (gogoproto.stdtime) = true ];
 }
 
 message Network { string name = 1; }
-
-enum SignState {
-  option (gogoproto.goproto_enum_prefix) = false;
-  option (gogoproto.goproto_enum_stringer) = true;
-
-  SIGN_STATE_UNSPECIFIED = 0;
-  SIGN_STATE_SIGNING_PENDING_TRANSFERS = 1
-      [ (gogoproto.enumvalue_customname) = "Signing" ];
-  SIGN_STATE_SIGNED_NOT_CONFIRMED = 2
-      [ (gogoproto.enumvalue_customname) = "Signed" ];
-  SIGN_STATE_READY_TO_SIGN = 3 [ (gogoproto.enumvalue_customname) = "Ready" ];
-}

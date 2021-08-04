@@ -7,24 +7,22 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
-
-	"github.com/axelarnetwork/axelar-core/utils"
-
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 // query parameters
 const (
-	QueryParamFeeRate = "fee_rate"
+	QueryParamKeyRole = "key_role"
+	QueryParamKeyID   = "key_id"
 )
 
-// QueryHandlerDepositAddress returns a handler to query a deposit address
+// QueryHandlerDepositAddress returns a handler to query the deposit address for a recipient address on another blockchain
 func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -34,28 +32,23 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		queryData, err := cliCtx.LegacyAmino.MarshalJSON(types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]})
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-		}
+		params := types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]}
+		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress)
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress), queryData)
+		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddr).Error())
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
-// QueryHandlerMinimumWithdrawAmount returns a handler to query the minimum amount to withdraw in satoshi
-func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerConsolidationAddress returns a handler to query the consolidation address
+func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -63,19 +56,39 @@ func QueryHandlerMinimumWithdrawAmount(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMinimumWithdrawAmount), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+		keyID := r.URL.Query().Get(QueryParamKeyRole)
+		keyRole := r.URL.Query().Get(QueryParamKeyRole)
+
+		var query string
+		var param string
+		switch {
+		case keyRole != "" && keyID == "":
+			query = keeper.QConsolidationAddressByKeyRole
+			param = keyRole
+		case keyRole == "" && keyID != "":
+			query = keeper.QConsolidationAddressByKeyID
+			param = keyID
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "one and only one of the two flags key-role and key-id has to be set")
 			return
 		}
 
-		response := int64(binary.LittleEndian.Uint64(res))
-		rest.PostProcessResponse(w, cliCtx, strconv.FormatInt(response, 10))
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, query, param)
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFConsolidationAddr).Error())
+			return
+		}
+
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
-// QueryHandlerSecondaryConsolidationAddress returns a handler to query the segwit address of the master key
-func QueryHandlerSecondaryConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerNextKeyID returns a query handler to get the next assigned key ID
+func QueryHandlerNextKeyID(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -83,25 +96,22 @@ func QueryHandlerSecondaryConsolidationAddress(cliCtx client.Context) http.Handl
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QSecondaryConsolidationAddress), nil)
+		vars := mux.Vars(r)
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextKeyID, vars[utils.PathVarKeyRole])
+
+		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFNextKeyID).Error())
 			return
 		}
 
-		var resp types.QuerySecondaryConsolidationAddressResponse
-		err = resp.Unmarshal(res)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, resp)
+		keyID := string(bz)
+		rest.PostProcessResponse(w, cliCtx, keyID)
 	}
 }
 
-// QueryHandlerKeyConsolidationAddress  returns a handler to query the consolidation segwit address of any key
-func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerMinOutputAmount returns a handler to query the minimum amount allowed for any transaction output in satoshi
+func QueryHandlerMinOutputAmount(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -109,24 +119,21 @@ func QueryHandlerKeyConsolidationAddress(cliCtx client.Context) http.HandlerFunc
 			return
 		}
 
-		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeySecondaryConsolidationAddress), []byte(keyID))
+		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QMinOutputAmount)
+
+		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMinOutputAmount).Error())
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		minOutputAmount := int64(binary.LittleEndian.Uint64(bz))
+		rest.PostProcessResponse(w, cliCtx, strconv.FormatInt(minOutputAmount, 10))
 	}
 }
 
-// QueryHandlerNextMasterKeyID returns a query handler to get the next assigned master key ID
-func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerLatestTx returns a handler to query the latest consolidation transaction of the given key role
+func QueryHandlerLatestTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -134,24 +141,22 @@ func QueryHandlerNextMasterKeyID(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QNextMasterKeyID), nil)
+		vars := mux.Vars(r)
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QLatestTxByKeyRole, vars[utils.PathVarKeyRole])
+
+		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFLatestTx).Error())
 		}
 
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		var res types.QueryTxResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
-// GetConsolidationTxResult models the QueryRawTxResponse from keeper.GetConsolidationTx as a JSON response
-type GetConsolidationTxResult struct {
-	State types.SignState `json:"state"`
-	RawTx string          `json:"raw_tx"`
-}
-
-// QueryHandlerGetConsolidationTx returns a handler to build a consolidation transaction
-func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerSignedTx returns a handler to query the signed consolidation transaction of the given transaction hash
+func QueryHandlerSignedTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -159,58 +164,16 @@ func QueryHandlerGetConsolidationTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QConsolidationTx), nil)
+		vars := mux.Vars(r)
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, vars[utils.PathVarTxID])
+
+		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFGetRawTx)
-			return
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFSignedTx).Error())
 		}
 
-		var proto types.QueryRawTxResponse
-		err = proto.Unmarshal(res)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to unmarshal QueryRawTxResponse: "+err.Error())
-			return
-		}
-
-		result := GetConsolidationTxResult{
-			State: proto.GetState(),
-			RawTx: proto.GetRawTx(),
-		}
-
-		rest.PostProcessResponse(w, cliCtx, result)
-	}
-}
-
-// QueryHandlerGetPayForConsolidationTx returns a handler to build a transaction that pays for the consolidation transaction
-func QueryHandlerGetPayForConsolidationTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		// Parse fee rate
-		feeRateStr := r.URL.Query().Get(QueryParamFeeRate)
-		if feeRateStr == "" {
-			feeRateStr = "0" // fee is optional and defaults to zero
-		}
-
-		feeRate, err := strconv.ParseInt(feeRateStr, 10, 64)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrFInvalidFeeRate)
-			return
-		}
-
-		bz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bz, uint64(feeRate))
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QPayForConsolidationTx), bz)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFGetPayForRawTx).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, string(res))
+		var res types.QueryTxResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

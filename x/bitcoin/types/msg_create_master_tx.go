@@ -8,9 +8,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewSignMasterConsolidationTransactionRequest is the constructor for SignMasterConsolidationTransactionRequest
-func NewSignMasterConsolidationTransactionRequest(sender sdk.AccAddress, keyID string, secondaryKeyAmount btcutil.Amount) *SignMasterConsolidationTransactionRequest {
-	return &SignMasterConsolidationTransactionRequest{
+// NewCreateMasterTxRequest is the constructor for CreateMasterTxRequest
+func NewCreateMasterTxRequest(sender sdk.AccAddress, keyID string, secondaryKeyAmount btcutil.Amount) *CreateMasterTxRequest {
+	return &CreateMasterTxRequest{
 		Sender:             sender,
 		KeyID:              keyID,
 		SecondaryKeyAmount: secondaryKeyAmount,
@@ -18,17 +18,17 @@ func NewSignMasterConsolidationTransactionRequest(sender sdk.AccAddress, keyID s
 }
 
 // Route returns the route for this message
-func (m SignMasterConsolidationTransactionRequest) Route() string {
+func (m CreateMasterTxRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m SignMasterConsolidationTransactionRequest) Type() string {
+func (m CreateMasterTxRequest) Type() string {
 	return "SignMasterConsolidationTransaction"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m SignMasterConsolidationTransactionRequest) ValidateBasic() error {
+func (m CreateMasterTxRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -45,11 +45,11 @@ func (m SignMasterConsolidationTransactionRequest) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m SignMasterConsolidationTransactionRequest) GetSignBytes() []byte {
+func (m CreateMasterTxRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m SignMasterConsolidationTransactionRequest) GetSigners() []sdk.AccAddress {
+func (m CreateMasterTxRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

@@ -1,17 +1,19 @@
-## axelard query bitcoin consolidationTxState
+## axelard query bitcoin consolidation-address
 
-Returns the state of the consolidation transaction as seen by Axelar network
+Returns the bitcoin consolidation address
 
 ```
-axelard query bitcoin consolidationTxState [flags]
+axelard query bitcoin consolidation-address [flags]
 ```
 
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for consolidationTxState
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --height int        Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help              help for consolidation-address
+      --key-id string     the ID of the key to get the consolidation address for
+      --key-role string   the role of the key to get the consolidation address for
+      --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands

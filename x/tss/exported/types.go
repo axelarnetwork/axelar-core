@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 )
 
 // Signature - an ECDSA signature
@@ -15,14 +16,15 @@ type Signature struct {
 
 // Key contains the public key value and corresponding ID
 type Key struct {
-	ID    string
-	Value ecdsa.PublicKey
-	Role  KeyRole
+	ID        string
+	Value     ecdsa.PublicKey
+	Role      KeyRole
+	RotatedAt *time.Time
 }
 
 // GetKeyRoles returns an array of all types of key role
 func GetKeyRoles() []KeyRole {
-	return []KeyRole{MasterKey, SecondaryKey}
+	return []KeyRole{MasterKey, SecondaryKey, ExternalKey}
 }
 
 // KeyRoleFromSimpleStr creates a KeyRole from string

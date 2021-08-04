@@ -32,14 +32,20 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 				k.Logger(ctx).Debug(res.Status)
 			}
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.SignPendingTransfersRequest:
-			res, err := server.SignPendingTransfers(sdk.WrapSDKContext(ctx), msg)
+		case *types.CreatePendingTransfersTxRequest:
+			res, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.SignMasterConsolidationTransactionRequest:
-			res, err := server.SignMasterConsolidationTransaction(sdk.WrapSDKContext(ctx), msg)
+		case *types.CreateMasterTxRequest:
+			res, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.SignTxRequest:
+			res, err := server.SignTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.RegisterExternalKeyRequest:
 			res, err := server.RegisterExternalKey(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.SubmitExternalSignatureRequest:
+			res, err := server.SubmitExternalSignature(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,

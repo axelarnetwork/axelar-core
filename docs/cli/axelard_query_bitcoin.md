@@ -26,11 +26,9 @@ axelard query bitcoin [flags]
 ### SEE ALSO
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query bitcoin consolidationTxState](axelard_query_bitcoin_consolidationTxState.md)	 - Returns the state of the consolidation transaction as seen by Axelar network
+- [axelard query bitcoin consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
 - [axelard query bitcoin deposit-address](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-- [axelard query bitcoin minWithdraw](axelard_query_bitcoin_minWithdraw.md)	 - Returns the minimum withdraw amount in satoshi
-- [axelard query bitcoin nextMasterKeyID](axelard_query_bitcoin_nextMasterKeyID.md)	 - Returns the next assigned master key ID
-- [axelard query bitcoin rawPayForConsolidationTx](axelard_query_bitcoin_rawPayForConsolidationTx.md)	 - Returns the encoded hex string of a fully signed transaction that pays for the consolidation transaction
-- [axelard query bitcoin rawTx](axelard_query_bitcoin_rawTx.md)	 - Returns the encoded hex string of a fully signed transfer and consolidation transaction
-- [axelard query bitcoin secondary-address](axelard_query_bitcoin_secondary-address.md)	 - Returns the bitcoin consolidation address of the current secondary key, and optionally the key's ID
-- [axelard query bitcoin txState](axelard_query_bitcoin_txState.md)	 - Returns the state of a bitcoin transaction as seen by Axelar network
+- [axelard query bitcoin latest-tx](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
+- [axelard query bitcoin min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
+- [axelard query bitcoin next-key-id](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
+- [axelard query bitcoin signed-tx](axelard_query_bitcoin_signed-tx.md)	 - Returns the signed consolidation transaction of the given transaction hash

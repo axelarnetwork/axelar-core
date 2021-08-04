@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -15,7 +16,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var (
@@ -25,11 +27,11 @@ var (
 	addrPrefix               = utils.KeyFromStr("addr_")
 	dustAmtPrefix            = utils.KeyFromStr("dust_")
 	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
-	anyoneCanSpendVoutPrefix = utils.KeyFromStr("anyone_can_spend_vout_")
+	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
+	latestSignedTxHashPrefix = utils.KeyFromStr("latest_signed_tx_hash_")
+	unconfirmedAmountPrefix  = utils.KeyFromStr("unconfirmed_amount_")
 
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
-	unsignedTxKey            = utils.KeyFromStr("unsigned_tx")
-	latestSignedTxHashKey    = utils.KeyFromStr("latest_signed_tx_hash")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
 )
@@ -151,6 +153,14 @@ func (k Keeper) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
 	return result
 }
 
+// GetMasterAddressLockDuration returns the master address lock duration
+func (k Keeper) GetMasterAddressLockDuration(ctx sdk.Context) time.Duration {
+	var result time.Duration
+	k.params.Get(ctx, types.KeyMasterAddressLockDuration, &result)
+
+	return result
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	k.getStore(ctx).Set(addrPrefix.Append(utils.LowerCaseKey(address.Address)), &address)
@@ -172,7 +182,7 @@ func (k Keeper) DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint) {
 }
 
 // GetPendingOutPointInfo returns outpoint information associated with the given poll
-func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, key exported.PollKey) (types.OutPointInfo, bool) {
+func (k Keeper) GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (types.OutPointInfo, bool) {
 	var info types.OutPointInfo
 	ok := k.getStore(ctx).Get(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())), &info)
 	return info, ok
@@ -199,12 +209,12 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 // SetPendingOutpointInfo stores an unconfirmed outpoint.
 // Since the information is not yet confirmed the outpoint info is not necessarily unique.
 // Therefore we need to store by the poll that confirms/rejects it
-func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, key exported.PollKey, info types.OutPointInfo) {
+func (k Keeper) SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info types.OutPointInfo) {
 	k.getStore(ctx).Set(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())), &info)
 }
 
 // DeletePendingOutPointInfo deletes the outpoint information associated with the given poll
-func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, key exported.PollKey) {
+func (k Keeper) DeletePendingOutPointInfo(ctx sdk.Context, key vote.PollKey) {
 	k.getStore(ctx).Delete(pendingOutpointPrefix.Append(utils.LowerCaseKey(key.String())))
 }
 
@@ -229,50 +239,56 @@ func (k Keeper) GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID strin
 	return utils.NewBlockHeightKVQueue(queueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
 }
 
-// SetUnsignedTx stores a raw transaction for outpoint consolidation
-func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx *types.Transaction) {
-	k.getStore(ctx).Set(unsignedTxKey, tx)
+// SetUnsignedTx stores an unsigned transaction for the given key role
+func (k Keeper) SetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {
+	k.getStore(ctx).Set(unsignedTxPrefix.AppendStr(keyRole.SimpleString()), &tx)
 }
 
-// GetUnsignedTx returns the raw unsigned transaction for outpoint consolidation
-func (k Keeper) GetUnsignedTx(ctx sdk.Context) (*types.Transaction, bool) {
-	var result types.Transaction
-	if ok := k.getStore(ctx).Get(unsignedTxKey, &result); !ok {
-		return nil, false
+// GetUnsignedTx returns the unsigned transaction for the given key role
+func (k Keeper) GetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+	var result types.UnsignedTx
+	if ok := k.getStore(ctx).Get(unsignedTxPrefix.AppendStr(keyRole.SimpleString()), &result); !ok {
+		return types.UnsignedTx{}, false
 	}
 
-	return &result, true
+	return result, true
 }
 
-// DeleteUnsignedTx deletes the raw unsigned transaction for outpoint consolidation
-func (k Keeper) DeleteUnsignedTx(ctx sdk.Context) {
-	k.getStore(ctx).Delete(unsignedTxKey)
+// DeleteUnsignedTx deletes the unsigned transaction for the given key role
+func (k Keeper) DeleteUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) {
+	k.getStore(ctx).Delete(unsignedTxPrefix.AppendStr(keyRole.SimpleString()))
 }
 
 // SetSignedTx stores the signed transaction for outpoint consolidation
-func (k Keeper) SetSignedTx(ctx sdk.Context, tx *wire.MsgTx) {
-	txHash := tx.TxHash()
+func (k Keeper) SetSignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx types.SignedTx) {
+	prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
+	if ok {
+		tx.PrevSignedTxHash = prevSignedTxHash[:]
+	} else {
+		tx.PrevSignedTxHash = nil
+	}
 
-	k.getStore(ctx).SetRaw(latestSignedTxHashKey, txHash.CloneBytes())
-	k.getStore(ctx).SetRaw(signedTxPrefix.Append(utils.LowerCaseKey(txHash.String())), types.MustEncodeTx(tx))
+	k.getStore(ctx).Set(signedTxPrefix.Append(utils.LowerCaseKey(tx.GetTx().TxHash().String())), &tx)
 }
 
 // GetSignedTx returns the signed transaction for outpoint consolidation
-// TODO: think about how to get all signed txs in the correct order
-func (k Keeper) GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (*wire.MsgTx, bool) {
-	bz := k.getStore(ctx).GetRaw(signedTxPrefix.Append(utils.LowerCaseKey(txHash.String())))
-	if bz == nil {
-		return nil, false
+func (k Keeper) GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (types.SignedTx, bool) {
+	var result types.SignedTx
+	if ok := k.getStore(ctx).Get(signedTxPrefix.Append(utils.LowerCaseKey(txHash.String())), &result); !ok {
+		return types.SignedTx{}, false
 	}
 
-	tx := types.MustDecodeTx(bz)
-
-	return &tx, true
+	return result, true
 }
 
-// GetLatestSignedTxHash retrieves the tx hash of the most recent signed transaction
-func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context) (*chainhash.Hash, bool) {
-	bz := k.getStore(ctx).GetRaw(latestSignedTxHashKey)
+// SetLatestSignedTxHash stores the tx hash of the most recent transaction signed by the given key role
+func (k Keeper) SetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole, txHash chainhash.Hash) {
+	k.getStore(ctx).SetRaw(latestSignedTxHashPrefix.AppendStr(keyRole.SimpleString()), txHash[:])
+}
+
+// GetLatestSignedTxHash retrieves the tx hash of the most recent transaction signed by the given key role
+func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool) {
+	bz := k.getStore(ctx).GetRaw(latestSignedTxHashPrefix.AppendStr(keyRole.SimpleString()))
 	if bz == nil {
 		return nil, false
 	}
@@ -308,19 +324,23 @@ func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
 }
 
-// GetAnyoneCanSpendVout retrieves the vout of anyone-can-spend output of given transaction hash
-func (k Keeper) GetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash) (int64, bool) {
-	var result gogoprototypes.Int64Value
-	if ok := k.getStore(ctx).Get(anyoneCanSpendVoutPrefix.Append(utils.LowerCaseKey(txHash.String())), &result); !ok {
-		return 0, false
+// SetUnconfirmedAmount stores the unconfirmed amount for the given key ID
+func (k Keeper) SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount) {
+	if amount < 0 {
+		amount = 0
 	}
 
-	return result.Value, true
+	k.getStore(ctx).Set(unconfirmedAmountPrefix.AppendStr(keyID), &gogoprototypes.Int64Value{Value: int64(amount)})
 }
 
-// SetAnyoneCanSpendVout sets the vout of anyone-can-spend output for the given transaction hash
-func (k Keeper) SetAnyoneCanSpendVout(ctx sdk.Context, txHash chainhash.Hash, vout int64) {
-	k.getStore(ctx).Set(anyoneCanSpendVoutPrefix.Append(utils.LowerCaseKey(txHash.String())), &gogoprototypes.Int64Value{Value: int64(vout)})
+// GetUnconfirmedAmount retrieves the unconfirmed amount for the given key ID
+func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount {
+	var result gogoprototypes.Int64Value
+	if ok := k.getStore(ctx).Get(unconfirmedAmountPrefix.AppendStr(keyID), &result); !ok {
+		return 0
+	}
+
+	return btcutil.Amount(result.Value)
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
