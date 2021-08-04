@@ -14,11 +14,17 @@ import (
 )
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
-	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
+func (k Keeper) StartSignWithData(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot, requestingModule string, data []byte) error {
+	if _, ok := k.GetSigInfo(ctx, sigID); ok {
 		return fmt.Errorf("sigID %s has been used before", sigID)
 	}
-	k.setKeyIDForSig(ctx, sigID, keyID)
+
+	info := exported.SigInfo{
+		KeyId:  keyID,
+		Module: requestingModule,
+		Data:   data,
+	}
+	k.setSigInfo(ctx, sigID, &info)
 
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
@@ -62,10 +68,15 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
 			sdk.NewAttribute(types.AttributeKeySigID, sigID),
+			sdk.NewAttribute(types.AttributeKeySigModule, requestingModule),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg))))
 
 	return nil
+}
+
+func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
+	return k.StartSignWithData(ctx, voter, keyID, sigID, msg, s, "TEMP_NONE", nil)
 }
 
 // GetSig returns the signature associated with sigID
@@ -91,28 +102,31 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
-	keyID, ok := k.getKeyIDForSig(ctx, sigID)
+	info, ok := k.GetSigInfo(ctx, sigID)
 	if !ok {
 		return exported.Key{}, false
 	}
-	return k.GetKey(ctx, keyID)
+	return k.GetKey(ctx, info.KeyId)
 }
 
-func (k Keeper) setKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(keyIDForSigPrefix+sigID), []byte(keyID))
+func (k Keeper) setSigInfo(ctx sdk.Context, sigID string, info *exported.SigInfo) {
+
+	ctx.KVStore(k.storeKey).Set([]byte(sigInfoPrefix+sigID), k.cdc.MustMarshalBinaryLengthPrefixed(info))
 }
 
-func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDForSigPrefix + sigID))
-	if bz == nil {
-		return "", false
+func (k Keeper) GetSigInfo(ctx sdk.Context, sigID string) (exported.SigInfo, bool) {
+	var info exported.SigInfo
+	bz := ctx.KVStore(k.storeKey).Get([]byte(sigInfoPrefix + sigID))
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+		return info, true
 	}
-	return string(bz), true
+	return exported.SigInfo{}, false
 }
 
 // DeleteKeyIDForSig deletes the key ID associated with the given signature
-func (k Keeper) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
-	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
+func (k Keeper) DeleteSigInfo(ctx sdk.Context, sigID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(sigInfoPrefix + sigID))
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {

@@ -44,7 +44,7 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMint              = "mintToken"
+	AxelarGatewayCommandMint              = "mintToken"
 	axelarGatewayCommandDeployToken       = "deployToken"
 	axelarGatewayCommandBurnToken         = "burnToken"
 	axelarGatewayCommandTransferOwnership = "transferOwnership"
@@ -266,7 +266,7 @@ func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfe
 		}
 
 		commandIDs = append(commandIDs, transferIDtoCommandID(transfer.ID))
-		commands = append(commands, axelarGatewayCommandMint)
+		commands = append(commands, AxelarGatewayCommandMint)
 		commandParams = append(commandParams, commandParam)
 	}
 

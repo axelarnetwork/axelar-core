@@ -82,9 +82,11 @@ type TSSKeeper interface {
 	ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
+	StartSignWithData(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot, requestingModule string, data []byte) error
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
+	GetSigInfo(ctx sdk.Context, sigID string) (exported.SigInfo, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
@@ -101,7 +103,7 @@ type TSSKeeper interface {
 	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
-	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
+	DeleteSigInfo(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
 }

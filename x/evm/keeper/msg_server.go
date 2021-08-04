@@ -664,7 +664,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
+	err = s.signer.StartSignWithData(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot, types.ModuleName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -743,7 +743,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
+	err = s.signer.StartSignWithData(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot, types.ModuleName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -805,7 +805,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, txID, hash.Bytes(), snapshot)
+	err = s.signer.StartSignWithData(ctx, s.voter, keyID, txID, hash.Bytes(), snapshot, types.ModuleName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -883,7 +883,17 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
+	sigInfo := types.SigInfo{
+		Type:   types.Tx,
+		Action: types.AxelarGatewayCommandMint,
+	}
+
+	bzInfo, err := sigInfo.Marshal()
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to marshal sigInfo")
+	}
+
+	err = s.signer.StartSignWithData(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot, types.ModuleName, bzInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -970,7 +980,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
+	err = s.signer.StartSignWithData(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot, types.ModuleName, nil)
 	if err != nil {
 		return nil, err
 	}

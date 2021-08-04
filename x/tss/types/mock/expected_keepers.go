@@ -1177,7 +1177,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 				panic("mock out the ComputeCorruptionThreshold method")
 // 			},
 // 			DeleteKeyIDForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)  {
-// 				panic("mock out the DeleteKeyIDForSig method")
+// 				panic("mock out the DeleteSigInfo method")
 // 			},
 // 			DeleteKeygenStartFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)  {
 // 				panic("mock out the DeleteKeygenStart method")
@@ -1273,7 +1273,7 @@ type TSSKeeperMock struct {
 	// ComputeCorruptionThresholdFunc mocks the ComputeCorruptionThreshold method.
 	ComputeCorruptionThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64
 
-	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
+	// DeleteKeyIDForSigFunc mocks the DeleteSigInfo method.
 	DeleteKeyIDForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)
 
 	// DeleteKeygenStartFunc mocks the DeleteKeygenStart method.
@@ -1379,7 +1379,7 @@ type TSSKeeperMock struct {
 			// TotalShareCount is the totalShareCount argument value.
 			TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
 		}
-		// DeleteKeyIDForSig holds details about calls to the DeleteKeyIDForSig method.
+		// DeleteSigInfo holds details about calls to the DeleteSigInfo method.
 		DeleteKeyIDForSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -1714,10 +1714,10 @@ func (mock *TSSKeeperMock) ComputeCorruptionThresholdCalls() []struct {
 	return calls
 }
 
-// DeleteKeyIDForSig calls DeleteKeyIDForSigFunc.
-func (mock *TSSKeeperMock) DeleteKeyIDForSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) {
+// DeleteSigInfo calls DeleteKeyIDForSigFunc.
+func (mock *TSSKeeperMock) DeleteSigInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) {
 	if mock.DeleteKeyIDForSigFunc == nil {
-		panic("TSSKeeperMock.DeleteKeyIDForSigFunc: method is nil but TSSKeeper.DeleteKeyIDForSig was just called")
+		panic("TSSKeeperMock.DeleteKeyIDForSigFunc: method is nil but TSSKeeper.DeleteSigInfo was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
@@ -1732,7 +1732,7 @@ func (mock *TSSKeeperMock) DeleteKeyIDForSig(ctx github_com_cosmos_cosmos_sdk_ty
 	mock.DeleteKeyIDForSigFunc(ctx, sigID)
 }
 
-// DeleteKeyIDForSigCalls gets all the calls that were made to DeleteKeyIDForSig.
+// DeleteKeyIDForSigCalls gets all the calls that were made to DeleteSigInfo.
 // Check the length with:
 //     len(mockedTSSKeeper.DeleteKeyIDForSigCalls())
 func (mock *TSSKeeperMock) DeleteKeyIDForSigCalls() []struct {

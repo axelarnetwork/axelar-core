@@ -13,6 +13,8 @@ const (
 
 	AttributeKeyKeyID                  = "keyID"
 	AttributeKeySigID                  = "sigID"
+	AttributeKeySigModule              = "sigModule"
+	AttributeKeySigData                = "sigData"
 	AttributeKeySessionID              = "sessionID"
 	AttributeKeyThreshold              = "threshold"
 	AttributeKeyParticipants           = "participants"

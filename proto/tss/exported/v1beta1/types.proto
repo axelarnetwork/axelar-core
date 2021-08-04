@@ -35,3 +35,10 @@ enum KeyShareDistributionPolicy {
   KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
       [ (gogoproto.enumvalue_customname) = "OnePerValidator" ];
 }
+
+// SigInfo defines the required information about a signature
+message SigInfo {
+  string key_id = 1;
+  string module = 2;
+  bytes data = 3;
+}

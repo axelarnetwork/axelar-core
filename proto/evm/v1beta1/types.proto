@@ -59,3 +59,19 @@ message TransferOwnership {
 
   string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
 }
+
+// SigInfo store neccesary information for external apps to map signature
+// results to evm relay transaction types
+message SigInfo {
+  SigType type = 1;
+  string action = 2;
+}
+
+enum SigType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  SIG_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  SIG_TYPE_TX = 1 [ (gogoproto.enumvalue_customname) = "Tx" ];
+  SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "Command" ];
+}

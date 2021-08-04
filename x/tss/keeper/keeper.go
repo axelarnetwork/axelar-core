@@ -22,7 +22,7 @@ const (
 	pkPrefix               = "pk_"
 	snapshotForKeyIDPrefix = "sfkid_"
 	sigPrefix              = "sig_"
-	keyIDForSigPrefix      = "kidfs_"
+	sigInfoPrefix          = "info_"
 	participatePrefix      = "part_"
 	keyRequirementPrefix   = "key_requirement_"
 	keyRolePrefix          = "key_role_"

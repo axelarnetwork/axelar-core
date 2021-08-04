@@ -44,7 +44,10 @@
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [SigInfo](#evm.v1beta1.SigInfo)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
+  
+    - [SigType](#evm.v1beta1.SigType)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
@@ -58,6 +61,7 @@
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [SigInfo](#tss.exported.v1beta1.SigInfo)
   
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
@@ -681,6 +685,23 @@ NetworkInfo describes information about a network
 
 
 
+<a name="evm.v1beta1.SigInfo"></a>
+
+### SigInfo
+SigInfo store neccesary information for external apps to map signature
+results to evm relay transaction types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [SigType](#evm.v1beta1.SigType) |  |  |
+| `action` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.TransferOwnership"></a>
 
 ### TransferOwnership
@@ -697,6 +718,19 @@ TransferOwnership contains information for a transfer ownership
 
 
  <!-- end messages -->
+
+
+<a name="evm.v1beta1.SigType"></a>
+
+### SigType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_TYPE_UNSPECIFIED | 0 |  |
+| SIG_TYPE_TX | 1 |  |
+| SIG_TYPE_COMMAND | 2 |  |
+
 
  <!-- end enums -->
 
@@ -845,6 +879,23 @@ KeyRequirement defines requirements for keys
 | `min_validator_subset_size` | [int64](#int64) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 | `needs_assignment` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.SigInfo"></a>
+
+### SigInfo
+SigInfo defines the required information about a signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `module` | [string](#string) |  |  |
+| `data` | [bytes](#bytes) |  |  |
 
 
 

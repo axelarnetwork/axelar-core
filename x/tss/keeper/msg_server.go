@@ -307,6 +307,11 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, fmt.Errorf("poll does not exist or is closed")
 	}
 
+	info, ok := s.GetSigInfo(ctx, req.PollMeta.ID)
+	if !ok {
+		return nil, fmt.Errorf("sig info does not exist")
+	}
+
 	snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.ValidatorSnapshotCounter)
 	if !found {
 		return nil, fmt.Errorf("no snapshot found for counter %d", poll.ValidatorSnapshotCounter)
@@ -331,10 +336,14 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
+	//metadataHex := hex.EncodeToString(info.Data)
 	event := sdk.NewEvent(
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
+		sdk.NewAttribute(types.AttributeKeySigID, req.PollMeta.ID),
+		sdk.NewAttribute(types.AttributeKeySigModule, info.Module),
+		sdk.NewAttribute(types.AttributeKeySigData, string(info.Data)),
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
@@ -344,7 +353,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		)
 
 		s.voter.DeletePoll(ctx, req.PollMeta)
-		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
+		s.DeleteSigInfo(ctx, req.PollMeta.ID)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -368,7 +377,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		s.DeleteKeyIDForSig(ctx, req.PollMeta.ID)
+		s.DeleteSigInfo(ctx, req.PollMeta.ID)
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
