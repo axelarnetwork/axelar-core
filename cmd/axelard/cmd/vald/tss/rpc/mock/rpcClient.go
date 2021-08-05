@@ -24,6 +24,9 @@ var _ rpc.Client = &ClientMock{}
 // 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 // 				panic("mock out the Keygen method")
 // 			},
+// 			RecoverFunc: func(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error) {
+// 				panic("mock out the Recover method")
+// 			},
 // 			SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 // 				panic("mock out the Sign method")
 // 			},
@@ -37,6 +40,9 @@ type ClientMock struct {
 	// KeygenFunc mocks the Keygen method.
 	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
 
+	// RecoverFunc mocks the Recover method.
+	RecoverFunc func(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error)
+
 	// SignFunc mocks the Sign method.
 	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error)
 
@@ -49,6 +55,15 @@ type ClientMock struct {
 			// Opts is the opts argument value.
 			Opts []grpc.CallOption
 		}
+		// Recover holds details about calls to the Recover method.
+		Recover []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// In is the in argument value.
+			In *tofnd.RecoverRequest
+			// Opts is the opts argument value.
+			Opts []grpc.CallOption
+		}
 		// Sign holds details about calls to the Sign method.
 		Sign []struct {
 			// Ctx is the ctx argument value.
@@ -57,8 +72,9 @@ type ClientMock struct {
 			Opts []grpc.CallOption
 		}
 	}
-	lockKeygen sync.RWMutex
-	lockSign   sync.RWMutex
+	lockKeygen  sync.RWMutex
+	lockRecover sync.RWMutex
+	lockSign    sync.RWMutex
 }
 
 // Keygen calls KeygenFunc.
@@ -93,6 +109,45 @@ func (mock *ClientMock) KeygenCalls() []struct {
 	mock.lockKeygen.RLock()
 	calls = mock.calls.Keygen
 	mock.lockKeygen.RUnlock()
+	return calls
+}
+
+// Recover calls RecoverFunc.
+func (mock *ClientMock) Recover(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error) {
+	if mock.RecoverFunc == nil {
+		panic("ClientMock.RecoverFunc: method is nil but Client.Recover was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		In   *tofnd.RecoverRequest
+		Opts []grpc.CallOption
+	}{
+		Ctx:  ctx,
+		In:   in,
+		Opts: opts,
+	}
+	mock.lockRecover.Lock()
+	mock.calls.Recover = append(mock.calls.Recover, callInfo)
+	mock.lockRecover.Unlock()
+	return mock.RecoverFunc(ctx, in, opts...)
+}
+
+// RecoverCalls gets all the calls that were made to Recover.
+// Check the length with:
+//     len(mockedClient.RecoverCalls())
+func (mock *ClientMock) RecoverCalls() []struct {
+	Ctx  context.Context
+	In   *tofnd.RecoverRequest
+	Opts []grpc.CallOption
+} {
+	var calls []struct {
+		Ctx  context.Context
+		In   *tofnd.RecoverRequest
+		Opts []grpc.CallOption
+	}
+	mock.lockRecover.RLock()
+	calls = mock.calls.Recover
+	mock.lockRecover.RUnlock()
 	return calls
 }
 

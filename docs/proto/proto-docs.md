@@ -174,12 +174,16 @@
     - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
     - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
     - [MessageOut.KeygenResult.KeygenOutput](#tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput)
+    - [MessageOut.NeedRecover](#tss.tofnd.v1beta1.MessageOut.NeedRecover)
     - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
+    - [RecoverRequest](#tss.tofnd.v1beta1.RecoverRequest)
+    - [RecoverResponse](#tss.tofnd.v1beta1.RecoverResponse)
     - [SignInit](#tss.tofnd.v1beta1.SignInit)
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
     - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
   
     - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
+    - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
   
 - [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
     - [Params](#tss.v1beta1.Params)
@@ -189,6 +193,7 @@
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
     - [Signature](#tss.v1beta1.Signature)
   
@@ -2353,7 +2358,7 @@ File copied from golang tofnd with minor tweaks
 | `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
 | `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
 | `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
-| `need_recover` | [bool](#bool) |  | request recovery, socket closes after |
+| `need_recover` | [MessageOut.NeedRecover](#tss.tofnd.v1beta1.MessageOut.NeedRecover) |  | issue recover from client |
 
 
 
@@ -2423,6 +2428,21 @@ Keygen's success response
 
 
 
+<a name="tss.tofnd.v1beta1.MessageOut.NeedRecover"></a>
+
+### MessageOut.NeedRecover
+TODO: create separate message in case we need to add more info later
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `session_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="tss.tofnd.v1beta1.MessageOut.SignResult"></a>
 
 ### MessageOut.SignResult
@@ -2433,6 +2453,37 @@ Sign's response types
 | ----- | ---- | ----- | ----------- |
 | `signature` | [bytes](#bytes) |  | Success response |
 | `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Failure response |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverRequest"></a>
+
+### RecoverRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  |  |
+| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse"></a>
+
+### RecoverResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response) |  |  |
 
 
 
@@ -2503,6 +2554,19 @@ Sign's response types
 | CRIME_TYPE_UNSPECIFIED | 0 |  |
 | CRIME_TYPE_NON_MALICIOUS | 1 |  |
 | CRIME_TYPE_MALICIOUS | 2 |  |
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse.Response"></a>
+
+### RecoverResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_SUCCESS | 1 |  |
+| RESPONSE_FAIL | 2 |  |
 
 
  <!-- end enums -->
@@ -2598,6 +2662,24 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryRecoveryResponse"></a>
+
+### QueryRecoveryResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `party_uids` | [string](#string) | repeated |  |
+| `party_share_counts` | [uint32](#uint32) | repeated |  |
+| `threshold` | [int32](#int32) |  |  |
+| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
 
 
 

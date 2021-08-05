@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -119,11 +120,20 @@ func GetValdCommand() *cobra.Command {
 				}
 			}
 
+			var recoveryJSON []byte
+			recoveryFile := serverCtx.Viper.GetString("tofnd-recovery")
+			if recoveryFile != "" {
+				recoveryJSON, err = ioutil.ReadFile(recoveryFile)
+				if err != nil {
+					return err
+				}
+			}
+
 			fPath := filepath.Join(valdHome, "state.json")
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, stateSource, logger)
+			listen(cliCtx, appState, hub, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -151,6 +161,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	defaultConf := tssTypes.DefaultConfig()
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
+	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
 	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
@@ -165,7 +176,17 @@ func newHub(node string, logger log.Logger) (*tmEvents.Hub, error) {
 	return &hub, nil
 }
 
-func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, stateSource ReadWriter, logger log.Logger) {
+func listen(
+	ctx sdkClient.Context,
+	appState map[string]json.RawMessage,
+	hub *tmEvents.Hub,
+	txf tx.Factory,
+	axelarCfg app.Config,
+	valAddr string,
+	recoveryJSON []byte,
+	stateSource ReadWriter,
+	logger log.Logger,
+) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	protoCdc := encCfg.Marshaler
@@ -201,6 +222,12 @@ func listen(ctx sdkClient.Context, appState map[string]json.RawMessage, hub *tmE
 	eventBus := createEventBus(client, startBlock, logger)
 
 	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
+	if recoveryJSON != nil && len(recoveryJSON) > 0 {
+		if err = tssMgr.Recover(recoveryJSON); err != nil {
+			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
+		}
+	}
+
 	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 	evmMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
 

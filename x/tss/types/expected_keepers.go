@@ -69,6 +69,8 @@ type TSSKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) (params Params)
+	SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte)
+	GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte
 	SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement)
 	GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64

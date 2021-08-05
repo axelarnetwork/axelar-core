@@ -130,6 +130,7 @@
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
+      - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx \[hash\]](axelard_query_tx.md)	 - Query for a transaction by hash in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events

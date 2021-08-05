@@ -41,8 +41,12 @@ initGenesis() {
 startValdProc() {
   DURATION=${SLEEP_TIME:-"10s"}
   sleep $DURATION
+  if [ -n "$RECOVERY_FILE" ] & [ -f "$RECOVERY_FILE" ]; then
+    RECOVERY="--tofnd-recovery=$RECOVERY_FILE"
+  fi
+
   axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} \
-    --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
+    --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}" "$RECOVERY"
 }
 
 startNodeProc() {

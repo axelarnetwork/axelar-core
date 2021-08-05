@@ -1,8 +1,9 @@
 package rest
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"net/http"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -22,6 +23,7 @@ const (
 
 	QuerySigStatus = keeper.QuerySigStatus
 	QueryKeyStatus = keeper.QueryKeyStatus
+	QueryRecovery  = keeper.QueryRecovery
 )
 
 // ReqKeygenStart represents a key-gen request
@@ -49,6 +51,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySigStatus, clientUtils.PathVarSigID)
 	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKeyStatus, clientUtils.PathVarKeyID)
+	registerQuery(QueryHandlerRecovery(cliCtx), QueryRecovery, clientUtils.PathVarKeyID)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen

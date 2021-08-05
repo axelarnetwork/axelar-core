@@ -13,6 +13,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -20,6 +21,7 @@ const (
 	rotationPrefix         = "rotationCount_"
 	keygenStartHeight      = "blockHeight_"
 	pkPrefix               = "pk_"
+	recoveryPrefix         = "recovery_"
 	snapshotForKeyIDPrefix = "sfkid_"
 	sigPrefix              = "sig_"
 	keyIDForSigPrefix      = "kidfs_"
@@ -125,6 +127,41 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+// SetRecoveryInfos sets the recovery infos for a given party
+func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte) {
+	key := fmt.Sprintf("%skey_%s_%s", recoveryPrefix, keyID, sender.String())
+
+	data := tofnd.MessageOut_KeygenResult_KeygenOutput{
+		ShareRecoveryInfos: infos,
+	}
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
+
+	//k.Logger(ctx).Info(fmt.Sprintf("saving recovery info for key %s and data %v", key, data))
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// GetAllRecoveryInfos returns the recovery infos for all parties of a specific key ID
+func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
+	prefix := fmt.Sprintf("%skey_%s_", recoveryPrefix, keyID)
+	store := ctx.KVStore(k.storeKey)
+	var infos [][]byte
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+
+		//k.Logger(ctx).Info(fmt.Sprintf("fetching recovery info for key %s and data %v", string(iter.Key()), iter.Value()))
+
+		var data tofnd.MessageOut_KeygenResult_KeygenOutput
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &data)
+		infos = append(infos, data.ShareRecoveryInfos...)
+	}
+
+	return infos
 }
 
 // SetKeyRequirement sets the key requirement for a given chain of a given role

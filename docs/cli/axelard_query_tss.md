@@ -27,4 +27,5 @@ axelard query tss [flags]
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
+- [axelard query tss recover](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
 - [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID

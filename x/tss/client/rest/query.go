@@ -2,8 +2,9 @@ package rest
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
 	"net/http"
+
+	"github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 
@@ -67,5 +68,33 @@ func QueryHandlerKeyStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, keyResponse)
+	}
+}
+
+// QueryHandlerRecovery returns a handler to query the recovery data for some operator and key IDs
+func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var recResponse types.QueryRecoveryResponse
+		err = recResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, recResponse)
 	}
 }

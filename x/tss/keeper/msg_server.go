@@ -160,29 +160,55 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, ok := s.GetKey(ctx, req.PollKey.ID); ok {
-		// the key is already set, no need for further processing of the vote
-		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
-		return &types.VotePubKeyResponse{}, nil
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
 
 	var voteData codec.ProtoMarshaler
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
+		infos := res.Data.GetShareRecoveryInfos()
+		if infos == nil {
+			return nil, fmt.Errorf("could not obtain recovery info from result")
+		}
+
+		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
+		if !ok {
+			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.PollKey.ID)
+		}
+		snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+		if !ok {
+			return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+		}
+
+		val, ok := snapshot.GetValidator(voter)
+		if !ok {
+			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
+		}
+
+		// check that the number of shares is the same as the number of recovery info
+		if val.ShareCount != int64(len(infos)) {
+			return nil, fmt.Errorf("number of shares is not the same as the number of recovery infos"+
+				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(infos))
+		}
+
+		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, infos)
 		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
-		//TODO: store the recovery data in the keeper
+
 	default:
 		return nil, fmt.Errorf("invalid data type")
 	}
+
+	if _, ok := s.GetKey(ctx, req.PollKey.ID); ok {
+		// the key is already set, no need for further processing of the vote
+		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
+		return &types.VotePubKeyResponse{}, nil
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
 
 	if err := poll.Vote(voter, voteData); err != nil {
 		return nil, err
@@ -216,7 +242,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		// TODO: check that the number of shares is the same as the number of recovery info
 		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)

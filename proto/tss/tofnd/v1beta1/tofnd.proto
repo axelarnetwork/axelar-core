@@ -11,9 +11,23 @@ package tss.tofnd.v1beta1;
 //// rpc definitions intended to wrap the API for this library:
 /// https://github.com/axelarnetwork/tofn
 // service GG20 {
+//    rpc Recover(RecoverRequest) returns (RecoverResponse);
 //    rpc Keygen(stream MessageIn) returns (stream MessageOut);
 //    rpc Sign(stream MessageIn) returns (stream MessageOut);
 //}
+
+message RecoverRequest {
+  KeygenInit keygen_init = 1;
+  repeated bytes share_recovery_infos = 2;
+}
+message RecoverResponse {
+  enum Response {
+    RESPONSE_UNSPECIFIED = 0;
+    RESPONSE_SUCCESS = 1;
+    RESPONSE_FAIL = 2;
+  }
+  Response response = 1;
+}
 
 // generic message types shared by Keygen, Sign
 
@@ -31,11 +45,14 @@ message MessageIn {
 
 message MessageOut {
 
+  // TODO: create separate message in case we need to add more info later
+  message NeedRecover { string session_id = 1; }
+
   oneof data {                      // TODO don't reuse `data`
     TrafficOut traffic = 1;         // all but final message
     KeygenResult keygen_result = 2; // final message only, Keygen
     SignResult sign_result = 3;     // final message only, Sign
-    bool need_recover = 4;          // request recovery, socket closes after
+    NeedRecover need_recover = 4;   // issue recover from client
   }
 
   // Keygen's response types

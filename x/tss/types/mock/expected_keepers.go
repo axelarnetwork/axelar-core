@@ -34,6 +34,9 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 // 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 // 				panic("mock out the Keygen method")
 // 			},
+// 			RecoverFunc: func(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error) {
+// 				panic("mock out the Recover method")
+// 			},
 // 			SignFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error) {
 // 				panic("mock out the Sign method")
 // 			},
@@ -47,6 +50,9 @@ type TofndClientMock struct {
 	// KeygenFunc mocks the Keygen method.
 	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
 
+	// RecoverFunc mocks the Recover method.
+	RecoverFunc func(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error)
+
 	// SignFunc mocks the Sign method.
 	SignFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_SignClient, error)
 
@@ -59,6 +65,15 @@ type TofndClientMock struct {
 			// Opts is the opts argument value.
 			Opts []grpc.CallOption
 		}
+		// Recover holds details about calls to the Recover method.
+		Recover []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// In is the in argument value.
+			In *tofnd.RecoverRequest
+			// Opts is the opts argument value.
+			Opts []grpc.CallOption
+		}
 		// Sign holds details about calls to the Sign method.
 		Sign []struct {
 			// Ctx is the ctx argument value.
@@ -67,8 +82,9 @@ type TofndClientMock struct {
 			Opts []grpc.CallOption
 		}
 	}
-	lockKeygen sync.RWMutex
-	lockSign   sync.RWMutex
+	lockKeygen  sync.RWMutex
+	lockRecover sync.RWMutex
+	lockSign    sync.RWMutex
 }
 
 // Keygen calls KeygenFunc.
@@ -103,6 +119,45 @@ func (mock *TofndClientMock) KeygenCalls() []struct {
 	mock.lockKeygen.RLock()
 	calls = mock.calls.Keygen
 	mock.lockKeygen.RUnlock()
+	return calls
+}
+
+// Recover calls RecoverFunc.
+func (mock *TofndClientMock) Recover(ctx context.Context, in *tofnd.RecoverRequest, opts ...grpc.CallOption) (*tofnd.RecoverResponse, error) {
+	if mock.RecoverFunc == nil {
+		panic("TofndClientMock.RecoverFunc: method is nil but TofndClient.Recover was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		In   *tofnd.RecoverRequest
+		Opts []grpc.CallOption
+	}{
+		Ctx:  ctx,
+		In:   in,
+		Opts: opts,
+	}
+	mock.lockRecover.Lock()
+	mock.calls.Recover = append(mock.calls.Recover, callInfo)
+	mock.lockRecover.Unlock()
+	return mock.RecoverFunc(ctx, in, opts...)
+}
+
+// RecoverCalls gets all the calls that were made to Recover.
+// Check the length with:
+//     len(mockedTofndClient.RecoverCalls())
+func (mock *TofndClientMock) RecoverCalls() []struct {
+	Ctx  context.Context
+	In   *tofnd.RecoverRequest
+	Opts []grpc.CallOption
+} {
+	var calls []struct {
+		Ctx  context.Context
+		In   *tofnd.RecoverRequest
+		Opts []grpc.CallOption
+	}
+	mock.lockRecover.RLock()
+	calls = mock.calls.Recover
+	mock.lockRecover.RUnlock()
 	return calls
 }
 
@@ -1083,6 +1138,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			DoesValidatorParticipateInSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the DoesValidatorParticipateInSign method")
 // 			},
+// 			GetAllRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) [][]byte {
+// 				panic("mock out the GetAllRecoveryInfos method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -1140,6 +1198,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
+// 			SetRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, infos [][]byte)  {
+// 				panic("mock out the SetRecoveryInfos method")
+// 			},
 // 			SetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
@@ -1179,6 +1240,9 @@ type TSSKeeperMock struct {
 
 	// DoesValidatorParticipateInSignFunc mocks the DoesValidatorParticipateInSign method.
 	DoesValidatorParticipateInSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
+	// GetAllRecoveryInfosFunc mocks the GetAllRecoveryInfos method.
+	GetAllRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) [][]byte
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
@@ -1236,6 +1300,9 @@ type TSSKeeperMock struct {
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)
+
+	// SetRecoveryInfosFunc mocks the SetRecoveryInfos method.
+	SetRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, infos [][]byte)
 
 	// SetSigFunc mocks the SetSig method.
 	SetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, signature []byte)
@@ -1313,6 +1380,13 @@ type TSSKeeperMock struct {
 			SigID string
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
+		// GetAllRecoveryInfos holds details about calls to the GetAllRecoveryInfos method.
+		GetAllRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -1455,6 +1529,17 @@ type TSSKeeperMock struct {
 			// P is the p argument value.
 			P tsstypes.Params
 		}
+		// SetRecoveryInfos holds details about calls to the SetRecoveryInfos method.
+		SetRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Sender is the sender argument value.
+			Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+			// KeyID is the keyID argument value.
+			KeyID string
+			// Infos is the infos argument value.
+			Infos [][]byte
+		}
 		// SetSig holds details about calls to the SetSig method.
 		SetSig []struct {
 			// Ctx is the ctx argument value.
@@ -1501,6 +1586,7 @@ type TSSKeeperMock struct {
 	lockDeleteSnapshotCounterForKeyID    sync.RWMutex
 	lockDoesValidatorParticipateInKeygen sync.RWMutex
 	lockDoesValidatorParticipateInSign   sync.RWMutex
+	lockGetAllRecoveryInfos              sync.RWMutex
 	lockGetCurrentKey                    sync.RWMutex
 	lockGetCurrentKeyID                  sync.RWMutex
 	lockGetKey                           sync.RWMutex
@@ -1520,6 +1606,7 @@ type TSSKeeperMock struct {
 	lockSetKey                           sync.RWMutex
 	lockSetKeyRequirement                sync.RWMutex
 	lockSetParams                        sync.RWMutex
+	lockSetRecoveryInfos                 sync.RWMutex
 	lockSetSig                           sync.RWMutex
 	lockStartKeygen                      sync.RWMutex
 	lockStartSign                        sync.RWMutex
@@ -1818,6 +1905,41 @@ func (mock *TSSKeeperMock) DoesValidatorParticipateInSignCalls() []struct {
 	mock.lockDoesValidatorParticipateInSign.RLock()
 	calls = mock.calls.DoesValidatorParticipateInSign
 	mock.lockDoesValidatorParticipateInSign.RUnlock()
+	return calls
+}
+
+// GetAllRecoveryInfos calls GetAllRecoveryInfosFunc.
+func (mock *TSSKeeperMock) GetAllRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) [][]byte {
+	if mock.GetAllRecoveryInfosFunc == nil {
+		panic("TSSKeeperMock.GetAllRecoveryInfosFunc: method is nil but TSSKeeper.GetAllRecoveryInfos was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetAllRecoveryInfos.Lock()
+	mock.calls.GetAllRecoveryInfos = append(mock.calls.GetAllRecoveryInfos, callInfo)
+	mock.lockGetAllRecoveryInfos.Unlock()
+	return mock.GetAllRecoveryInfosFunc(ctx, keyID)
+}
+
+// GetAllRecoveryInfosCalls gets all the calls that were made to GetAllRecoveryInfos.
+// Check the length with:
+//     len(mockedTSSKeeper.GetAllRecoveryInfosCalls())
+func (mock *TSSKeeperMock) GetAllRecoveryInfosCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockGetAllRecoveryInfos.RLock()
+	calls = mock.calls.GetAllRecoveryInfos
+	mock.lockGetAllRecoveryInfos.RUnlock()
 	return calls
 }
 
@@ -2499,6 +2621,49 @@ func (mock *TSSKeeperMock) SetParamsCalls() []struct {
 	mock.lockSetParams.RLock()
 	calls = mock.calls.SetParams
 	mock.lockSetParams.RUnlock()
+	return calls
+}
+
+// SetRecoveryInfos calls SetRecoveryInfosFunc.
+func (mock *TSSKeeperMock) SetRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, infos [][]byte) {
+	if mock.SetRecoveryInfosFunc == nil {
+		panic("TSSKeeperMock.SetRecoveryInfosFunc: method is nil but TSSKeeper.SetRecoveryInfos was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+		Infos  [][]byte
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+		KeyID:  keyID,
+		Infos:  infos,
+	}
+	mock.lockSetRecoveryInfos.Lock()
+	mock.calls.SetRecoveryInfos = append(mock.calls.SetRecoveryInfos, callInfo)
+	mock.lockSetRecoveryInfos.Unlock()
+	mock.SetRecoveryInfosFunc(ctx, sender, keyID, infos)
+}
+
+// SetRecoveryInfosCalls gets all the calls that were made to SetRecoveryInfos.
+// Check the length with:
+//     len(mockedTSSKeeper.SetRecoveryInfosCalls())
+func (mock *TSSKeeperMock) SetRecoveryInfosCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+	KeyID  string
+	Infos  [][]byte
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+		Infos  [][]byte
+	}
+	mock.lockSetRecoveryInfos.RLock()
+	calls = mock.calls.SetRecoveryInfos
+	mock.lockSetRecoveryInfos.RUnlock()
 	return calls
 }
 
