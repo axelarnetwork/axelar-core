@@ -9,12 +9,20 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gorilla/mux"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+)
+
+// query parameters
+const (
+	QueryParamKeyID     = "key_id"
+	QueryParamValidator = "validator"
 )
 
 // QueryHandlerSigStatus returns a handler to query a signature's vote status by its sigID
@@ -80,21 +88,53 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyID := mux.Vars(r)[utils.PathVarKeyID]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID), nil)
+		r.ParseForm()
+		IDs := r.Form[QueryParamKeyID]
+		validator := r.URL.Query().Get(QueryParamValidator)
+		address, err := sdk.ValAddressFromBech32(validator)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to parse validator address").Error())
 		}
 
-		var recResponse types.QueryRecoveryResponse
-		err = recResponse.Unmarshal(res)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
-			return
+		requests := make([]tofnd.RecoverRequest, len(IDs))
+		for i, keyID := range IDs {
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID), nil)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
+				return
+			}
+
+			var recResponse types.QueryRecoveryResponse
+			err = recResponse.Unmarshal(res)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
+				return
+			}
+
+			var index int32 = -1
+			for i, participant := range recResponse.PartyUids {
+				if address.String() == participant {
+					index = int32(i)
+					break
+				}
+			}
+			// not participating
+			if index == -1 {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain address %s", address.String()).Error())
+			}
+
+			requests[i] = tofnd.RecoverRequest{
+				KeygenInit: &tofnd.KeygenInit{
+					NewKeyUid:        keyID,
+					Threshold:        recResponse.Threshold,
+					PartyUids:        recResponse.PartyUids,
+					PartyShareCounts: recResponse.PartyShareCounts,
+					MyPartyIndex:     index,
+				},
+				ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
+			}
 		}
 
-		rest.PostProcessResponse(w, cliCtx, recResponse)
+		rest.PostProcessResponse(w, cliCtx, requests)
 	}
 }

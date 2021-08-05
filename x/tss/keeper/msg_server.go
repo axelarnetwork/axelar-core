@@ -170,6 +170,10 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
+		if s.HasRecoveryInfos(ctx, voter, req.PollKey.ID) {
+			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
+		}
+
 		infos := res.Data.GetShareRecoveryInfos()
 		if infos == nil {
 			return nil, fmt.Errorf("could not obtain recovery info from result")
@@ -233,6 +237,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}

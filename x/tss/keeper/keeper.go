@@ -13,7 +13,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -131,21 +130,31 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 // SetRecoveryInfos sets the recovery infos for a given party
 func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte) {
-	key := fmt.Sprintf("%skey_%s_%s", recoveryPrefix, keyID, sender.String())
+	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 
-	data := tofnd.MessageOut_KeygenResult_KeygenOutput{
+	data := types.QueryRecoveryResponse{
 		ShareRecoveryInfos: infos,
 	}
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 
-	//k.Logger(ctx).Info(fmt.Sprintf("saving recovery info for key %s and data %v", key, data))
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
+// HasRecoveryInfos returns true if the recovery infos for a given party exists
+func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return false
+	}
+
+	return true
+}
+
 // GetAllRecoveryInfos returns the recovery infos for all parties of a specific key ID
 func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
-	prefix := fmt.Sprintf("%skey_%s_", recoveryPrefix, keyID)
+	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
 	store := ctx.KVStore(k.storeKey)
 	var infos [][]byte
 
@@ -154,14 +163,25 @@ func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
 
 	for ; iter.Valid(); iter.Next() {
 
-		//k.Logger(ctx).Info(fmt.Sprintf("fetching recovery info for key %s and data %v", string(iter.Key()), iter.Value()))
-
-		var data tofnd.MessageOut_KeygenResult_KeygenOutput
+		var data types.QueryRecoveryResponse
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &data)
 		infos = append(infos, data.ShareRecoveryInfos...)
 	}
 
 	return infos
+}
+
+// DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID
+func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
+	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
+	store := ctx.KVStore(k.storeKey)
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
+	}
 }
 
 // SetKeyRequirement sets the key requirement for a given chain of a given role

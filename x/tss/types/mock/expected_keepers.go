@@ -1175,6 +1175,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ComputeCorruptionThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64 {
 // 				panic("mock out the ComputeCorruptionThreshold method")
 // 			},
+// 			DeleteAllRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)  {
+// 				panic("mock out the DeleteAllRecoveryInfos method")
+// 			},
 // 			DeleteKeyIDForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)  {
 // 				panic("mock out the DeleteKeyIDForSig method")
 // 			},
@@ -1235,6 +1238,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
+// 			HasRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool {
+// 				panic("mock out the HasRecoveryInfos method")
+// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -1277,6 +1283,9 @@ type TSSKeeperMock struct {
 
 	// ComputeCorruptionThresholdFunc mocks the ComputeCorruptionThreshold method.
 	ComputeCorruptionThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64
+
+	// DeleteAllRecoveryInfosFunc mocks the DeleteAllRecoveryInfos method.
+	DeleteAllRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)
 
 	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
 	DeleteKeyIDForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)
@@ -1338,6 +1347,9 @@ type TSSKeeperMock struct {
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
+	// HasRecoveryInfosFunc mocks the HasRecoveryInfos method.
+	HasRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool
+
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
@@ -1389,6 +1401,13 @@ type TSSKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TotalShareCount is the totalShareCount argument value.
 			TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
+		}
+		// DeleteAllRecoveryInfos holds details about calls to the DeleteAllRecoveryInfos method.
+		DeleteAllRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
 		}
 		// DeleteKeyIDForSig holds details about calls to the DeleteKeyIDForSig method.
 		DeleteKeyIDForSig []struct {
@@ -1538,6 +1557,15 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// HasRecoveryInfos holds details about calls to the HasRecoveryInfos method.
+		HasRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Sender is the sender argument value.
+			Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -1635,6 +1663,7 @@ type TSSKeeperMock struct {
 	}
 	lockAssignNextKey                    sync.RWMutex
 	lockComputeCorruptionThreshold       sync.RWMutex
+	lockDeleteAllRecoveryInfos           sync.RWMutex
 	lockDeleteKeyIDForSig                sync.RWMutex
 	lockDeleteKeygenStart                sync.RWMutex
 	lockDeleteParticipantsInKeygen       sync.RWMutex
@@ -1655,6 +1684,7 @@ type TSSKeeperMock struct {
 	lockGetSig                           sync.RWMutex
 	lockGetSnapshotCounterForKeyID       sync.RWMutex
 	lockGetTssSuspendedUntil             sync.RWMutex
+	lockHasRecoveryInfos                 sync.RWMutex
 	lockLogger                           sync.RWMutex
 	lockPenalizeSignCriminal             sync.RWMutex
 	lockRotateKey                        sync.RWMutex
@@ -1742,6 +1772,41 @@ func (mock *TSSKeeperMock) ComputeCorruptionThresholdCalls() []struct {
 	mock.lockComputeCorruptionThreshold.RLock()
 	calls = mock.calls.ComputeCorruptionThreshold
 	mock.lockComputeCorruptionThreshold.RUnlock()
+	return calls
+}
+
+// DeleteAllRecoveryInfos calls DeleteAllRecoveryInfosFunc.
+func (mock *TSSKeeperMock) DeleteAllRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) {
+	if mock.DeleteAllRecoveryInfosFunc == nil {
+		panic("TSSKeeperMock.DeleteAllRecoveryInfosFunc: method is nil but TSSKeeper.DeleteAllRecoveryInfos was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockDeleteAllRecoveryInfos.Lock()
+	mock.calls.DeleteAllRecoveryInfos = append(mock.calls.DeleteAllRecoveryInfos, callInfo)
+	mock.lockDeleteAllRecoveryInfos.Unlock()
+	mock.DeleteAllRecoveryInfosFunc(ctx, keyID)
+}
+
+// DeleteAllRecoveryInfosCalls gets all the calls that were made to DeleteAllRecoveryInfos.
+// Check the length with:
+//     len(mockedTSSKeeper.DeleteAllRecoveryInfosCalls())
+func (mock *TSSKeeperMock) DeleteAllRecoveryInfosCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockDeleteAllRecoveryInfos.RLock()
+	calls = mock.calls.DeleteAllRecoveryInfos
+	mock.lockDeleteAllRecoveryInfos.RUnlock()
 	return calls
 }
 
@@ -2458,6 +2523,45 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
+	return calls
+}
+
+// HasRecoveryInfos calls HasRecoveryInfosFunc.
+func (mock *TSSKeeperMock) HasRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool {
+	if mock.HasRecoveryInfosFunc == nil {
+		panic("TSSKeeperMock.HasRecoveryInfosFunc: method is nil but TSSKeeper.HasRecoveryInfos was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+		KeyID:  keyID,
+	}
+	mock.lockHasRecoveryInfos.Lock()
+	mock.calls.HasRecoveryInfos = append(mock.calls.HasRecoveryInfos, callInfo)
+	mock.lockHasRecoveryInfos.Unlock()
+	return mock.HasRecoveryInfosFunc(ctx, sender, keyID)
+}
+
+// HasRecoveryInfosCalls gets all the calls that were made to HasRecoveryInfos.
+// Check the length with:
+//     len(mockedTSSKeeper.HasRecoveryInfosCalls())
+func (mock *TSSKeeperMock) HasRecoveryInfosCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+	KeyID  string
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+	}
+	mock.lockHasRecoveryInfos.RLock()
+	calls = mock.calls.HasRecoveryInfos
+	mock.lockHasRecoveryInfos.RUnlock()
 	return calls
 }
 
