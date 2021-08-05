@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 
 package tss.tofnd.v1beta1;
 
-// TODO: igure out why gogoproto produces unusable services
+// TODO: figure out why gogoproto produces unusable services
 //// GG20 is the protocol https://eprint.iacr.org/2020/540
 //// rpc definitions intended to wrap the API for this library:
 /// https://github.com/axelarnetwork/tofn
