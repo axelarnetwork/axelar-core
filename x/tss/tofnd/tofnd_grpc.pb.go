@@ -21,6 +21,7 @@ type GG20Client interface {
 	Recover(ctx context.Context, in *RecoverRequest, opts ...grpc.CallOption) (*RecoverResponse, error)
 	Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error)
 	Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error)
+	KeyPresence(ctx context.Context, in *KeyPresenceRequest, opts ...grpc.CallOption) (*KeyPresenceResponse, error)
 }
 
 type gG20Client struct {
@@ -34,6 +35,15 @@ func NewGG20Client(cc grpc.ClientConnInterface) GG20Client {
 func (c *gG20Client) Recover(ctx context.Context, in *RecoverRequest, opts ...grpc.CallOption) (*RecoverResponse, error) {
 	out := new(RecoverResponse)
 	err := c.cc.Invoke(ctx, "/tofnd.GG20/Recover", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gG20Client) KeyPresence(ctx context.Context, in *KeyPresenceRequest, opts ...grpc.CallOption) (*KeyPresenceResponse, error) {
+	out := new(KeyPresenceResponse)
+	err := c.cc.Invoke(ctx, "/tofnd.GG20/KeyPresence", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}

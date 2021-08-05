@@ -14,6 +14,7 @@ package tss.tofnd.v1beta1;
 //    rpc Recover(RecoverRequest) returns (RecoverResponse);
 //    rpc Keygen(stream MessageIn) returns (stream MessageOut);
 //    rpc Sign(stream MessageIn) returns (stream MessageOut);
+//    rpc KeyPresence(KeyPresenceRequest) returns (KeyPresenceResponse);
 //}
 
 message RecoverRequest {
@@ -122,4 +123,18 @@ message SignInit {
   string key_uid = 2;
   repeated string party_uids = 3; // TODO replace this with a subset of indices?
   bytes message_to_sign = 4;
+}
+
+// Key presence check types
+message KeyPresenceRequest { string key_uid = 1; }
+
+message KeyPresenceResponse {
+  enum Response {
+    RESPONSE_UNSPECIFIED = 0;
+    RESPONSE_PRESENT = 1;
+    RESPONSE_ABSENT = 2;
+    RESPONSE_FAIL = 3;
+  }
+
+  Response response = 1;
 }

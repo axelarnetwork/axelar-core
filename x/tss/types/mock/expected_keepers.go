@@ -31,6 +31,9 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 //
 // 		// make and configure a mocked tsstypes.TofndClient
 // 		mockedTofndClient := &TofndClientMock{
+// 			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
+// 				panic("mock out the KeyPresence method")
+// 			},
 // 			KeygenFunc: func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 // 				panic("mock out the Keygen method")
 // 			},
@@ -47,6 +50,9 @@ var _ tsstypes.TofndClient = &TofndClientMock{}
 //
 // 	}
 type TofndClientMock struct {
+	// KeyPresenceFunc mocks the KeyPresence method.
+	KeyPresenceFunc func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error)
+
 	// KeygenFunc mocks the Keygen method.
 	KeygenFunc func(ctx context.Context, opts ...grpc.CallOption) (tofnd.GG20_KeygenClient, error)
 
@@ -58,6 +64,15 @@ type TofndClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// KeyPresence holds details about calls to the KeyPresence method.
+		KeyPresence []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// In is the in argument value.
+			In *tofnd.KeyPresenceRequest
+			// Opts is the opts argument value.
+			Opts []grpc.CallOption
+		}
 		// Keygen holds details about calls to the Keygen method.
 		Keygen []struct {
 			// Ctx is the ctx argument value.
@@ -82,9 +97,49 @@ type TofndClientMock struct {
 			Opts []grpc.CallOption
 		}
 	}
-	lockKeygen  sync.RWMutex
-	lockRecover sync.RWMutex
-	lockSign    sync.RWMutex
+	lockKeyPresence sync.RWMutex
+	lockKeygen      sync.RWMutex
+	lockRecover     sync.RWMutex
+	lockSign        sync.RWMutex
+}
+
+// KeyPresence calls KeyPresenceFunc.
+func (mock *TofndClientMock) KeyPresence(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
+	if mock.KeyPresenceFunc == nil {
+		panic("TofndClientMock.KeyPresenceFunc: method is nil but TofndClient.KeyPresence was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		In   *tofnd.KeyPresenceRequest
+		Opts []grpc.CallOption
+	}{
+		Ctx:  ctx,
+		In:   in,
+		Opts: opts,
+	}
+	mock.lockKeyPresence.Lock()
+	mock.calls.KeyPresence = append(mock.calls.KeyPresence, callInfo)
+	mock.lockKeyPresence.Unlock()
+	return mock.KeyPresenceFunc(ctx, in, opts...)
+}
+
+// KeyPresenceCalls gets all the calls that were made to KeyPresence.
+// Check the length with:
+//     len(mockedTofndClient.KeyPresenceCalls())
+func (mock *TofndClientMock) KeyPresenceCalls() []struct {
+	Ctx  context.Context
+	In   *tofnd.KeyPresenceRequest
+	Opts []grpc.CallOption
+} {
+	var calls []struct {
+		Ctx  context.Context
+		In   *tofnd.KeyPresenceRequest
+		Opts []grpc.CallOption
+	}
+	mock.lockKeyPresence.RLock()
+	calls = mock.calls.KeyPresence
+	mock.lockKeyPresence.RUnlock()
+	return calls
 }
 
 // Keygen calls KeygenFunc.

@@ -167,6 +167,8 @@
     - [MsgService](#snapshot.v1beta1.MsgService)
   
 - [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
+    - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
+    - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
     - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
     - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
@@ -181,6 +183,7 @@
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
     - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
   
+    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
     - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
     - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
   
@@ -2309,6 +2312,36 @@ Msg defines the snapshot Msg service.
 File copied from golang tofnd with minor tweaks
 
 
+<a name="tss.tofnd.v1beta1.KeyPresenceRequest"></a>
+
+### KeyPresenceRequest
+Key presence check types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse"></a>
+
+### KeyPresenceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response) |  |  |
+
+
+
+
+
+
 <a name="tss.tofnd.v1beta1.KeygenInit"></a>
 
 ### KeygenInit
@@ -2526,6 +2559,20 @@ Sign's response types
 
 
  <!-- end messages -->
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
+
+### KeyPresenceResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_PRESENT | 1 |  |
+| RESPONSE_ABSENT | 2 |  |
+| RESPONSE_FAIL | 3 |  |
+
 
 
 <a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
