@@ -127,6 +127,9 @@ func GetValdCommand() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				if len(recoveryJSON) == 0 {
+					return fmt.Errorf("JSON file is empty")
+				}
 			}
 
 			fPath := filepath.Join(valdHome, "state.json")
