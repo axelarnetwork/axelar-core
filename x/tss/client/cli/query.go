@@ -117,9 +117,9 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "failed to parse validator address")
 			}
 
-			IDs := args[1:]
-			requests := make([]tofnd.RecoverRequest, len(IDs))
-			for i, keyID := range IDs {
+			keyIDs := args[1:]
+			requests := make([]tofnd.RecoverRequest, len(keyIDs))
+			for i, keyID := range keyIDs {
 				res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryRecovery, keyID), nil)
 				if err != nil {
 					return sdkerrors.Wrapf(err, "failed to get recovery data")

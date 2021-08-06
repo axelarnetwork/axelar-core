@@ -89,15 +89,15 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		r.ParseForm()
-		IDs := r.Form[QueryParamKeyID]
+		keyIDs := r.Form[QueryParamKeyID]
 		validator := r.URL.Query().Get(QueryParamValidator)
 		address, err := sdk.ValAddressFromBech32(validator)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to parse validator address").Error())
 		}
 
-		requests := make([]tofnd.RecoverRequest, len(IDs))
-		for i, keyID := range IDs {
+		requests := make([]tofnd.RecoverRequest, len(keyIDs))
+		for i, keyID := range keyIDs {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID), nil)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
