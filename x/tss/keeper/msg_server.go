@@ -202,6 +202,15 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, infos)
+
+		// TODO: in the near future we need to change the voting value to include both the pubkey and
+		// and the public recovery infos of all parties. The way that is currently done, if a single
+		// party neglects to vote, it will be impossible later on to recover shares. Therefore, tofnd needs
+		// to be updated to provide only the public part of the recovery shares, and voting be done on that
+		// data + pubkey. We will also need to provide both the (public) recovery data and the pubkey that
+		// was voted on, so that tofnd can re-construct the shares.
+		//
+		// Check issue #694 on axelar-core repo for details.
 		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
 
 	default:
