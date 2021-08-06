@@ -21,6 +21,7 @@ const (
 	keygenStartHeight      = "blockHeight_"
 	pkPrefix               = "pk_"
 	recoveryPrefix         = "recovery_"
+	thresholdPrefix        = "threshold_"
 	snapshotForKeyIDPrefix = "sfkid_"
 	sigPrefix              = "sig_"
 	keyIDForSigPrefix      = "kidfs_"
@@ -207,13 +208,37 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64 {
+// ComputeAndSetCorruptionThreshold returns corruption threshold to be used by tss. Second return value
+// is set to true if no threhold was already defined for the given key ID
+func (k Keeper) ComputeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
 
-	// (threshold + 1) shares are required to signed
-	return totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
+	// (threshold + 1) shares are required to sign
+	result := totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
+
+	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz != nil {
+		return result, false
+	}
+
+	bz = make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(result))
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+
+	return result, true
+}
+
+// GetCorruptionThreshold returns the corruption threshold set for some key ID
+func (k Keeper) GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool) {
+	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return 0, false
+	}
+
+	return int64(binary.LittleEndian.Uint64(bz)), true
 }
 
 func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {

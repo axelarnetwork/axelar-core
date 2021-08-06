@@ -16,6 +16,7 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -121,18 +122,25 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 	}, power)
 }
 
-func TestComputeCorruptionThreshold(t *testing.T) {
+func TestComputeAndSetCorruptionThreshold(t *testing.T) {
 	s := setup()
 	defaultParams := types.DefaultParams()
+	keyID := rand.StrBetween(5, 10)
 
 	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(5), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+	threshold, set := s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
+	assert.True(t, set)
+	assert.Equal(t, int64(5), threshold)
 
 	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
 	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(8), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+	threshold, set = s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
+	assert.False(t, set)
+	assert.Equal(t, int64(8), threshold)
 
 	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
 	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(-1), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+	threshold, set = s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
+	assert.False(t, set)
+	assert.Equal(t, int64(-1), threshold)
 }

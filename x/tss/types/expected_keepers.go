@@ -75,7 +75,8 @@ type TSSKeeper interface {
 	DeleteAllRecoveryInfos(ctx sdk.Context, keyID string)
 	SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement)
 	GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
-	ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64
+	ComputeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool)
+	GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)

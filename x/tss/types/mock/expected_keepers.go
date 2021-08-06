@@ -1172,8 +1172,8 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
-// 			ComputeCorruptionThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64 {
-// 				panic("mock out the ComputeCorruptionThreshold method")
+// 			ComputeAndSetCorruptionThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int, keyID string) (int64, bool) {
+// 				panic("mock out the ComputeAndSetCorruptionThreshold method")
 // 			},
 // 			DeleteAllRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)  {
 // 				panic("mock out the DeleteAllRecoveryInfos method")
@@ -1198,6 +1198,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			GetAllRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) [][]byte {
 // 				panic("mock out the GetAllRecoveryInfos method")
+// 			},
+// 			GetCorruptionThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
+// 				panic("mock out the GetCorruptionThreshold method")
 // 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
@@ -1281,8 +1284,8 @@ type TSSKeeperMock struct {
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error
 
-	// ComputeCorruptionThresholdFunc mocks the ComputeCorruptionThreshold method.
-	ComputeCorruptionThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64
+	// ComputeAndSetCorruptionThresholdFunc mocks the ComputeAndSetCorruptionThreshold method.
+	ComputeAndSetCorruptionThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int, keyID string) (int64, bool)
 
 	// DeleteAllRecoveryInfosFunc mocks the DeleteAllRecoveryInfos method.
 	DeleteAllRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string)
@@ -1307,6 +1310,9 @@ type TSSKeeperMock struct {
 
 	// GetAllRecoveryInfosFunc mocks the GetAllRecoveryInfos method.
 	GetAllRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) [][]byte
+
+	// GetCorruptionThresholdFunc mocks the GetCorruptionThreshold method.
+	GetCorruptionThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
@@ -1395,12 +1401,14 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// ComputeCorruptionThreshold holds details about calls to the ComputeCorruptionThreshold method.
-		ComputeCorruptionThreshold []struct {
+		// ComputeAndSetCorruptionThreshold holds details about calls to the ComputeAndSetCorruptionThreshold method.
+		ComputeAndSetCorruptionThreshold []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TotalShareCount is the totalShareCount argument value.
 			TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
+			// KeyID is the keyID argument value.
+			KeyID string
 		}
 		// DeleteAllRecoveryInfos holds details about calls to the DeleteAllRecoveryInfos method.
 		DeleteAllRecoveryInfos []struct {
@@ -1457,6 +1465,13 @@ type TSSKeeperMock struct {
 		}
 		// GetAllRecoveryInfos holds details about calls to the GetAllRecoveryInfos method.
 		GetAllRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
+		// GetCorruptionThreshold holds details about calls to the GetCorruptionThreshold method.
+		GetCorruptionThreshold []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyID is the keyID argument value.
@@ -1662,7 +1677,7 @@ type TSSKeeperMock struct {
 		}
 	}
 	lockAssignNextKey                    sync.RWMutex
-	lockComputeCorruptionThreshold       sync.RWMutex
+	lockComputeAndSetCorruptionThreshold sync.RWMutex
 	lockDeleteAllRecoveryInfos           sync.RWMutex
 	lockDeleteKeyIDForSig                sync.RWMutex
 	lockDeleteKeygenStart                sync.RWMutex
@@ -1671,6 +1686,7 @@ type TSSKeeperMock struct {
 	lockDoesValidatorParticipateInKeygen sync.RWMutex
 	lockDoesValidatorParticipateInSign   sync.RWMutex
 	lockGetAllRecoveryInfos              sync.RWMutex
+	lockGetCorruptionThreshold           sync.RWMutex
 	lockGetCurrentKey                    sync.RWMutex
 	lockGetCurrentKeyID                  sync.RWMutex
 	lockGetKey                           sync.RWMutex
@@ -1740,38 +1756,42 @@ func (mock *TSSKeeperMock) AssignNextKeyCalls() []struct {
 	return calls
 }
 
-// ComputeCorruptionThreshold calls ComputeCorruptionThresholdFunc.
-func (mock *TSSKeeperMock) ComputeCorruptionThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int) int64 {
-	if mock.ComputeCorruptionThresholdFunc == nil {
-		panic("TSSKeeperMock.ComputeCorruptionThresholdFunc: method is nil but TSSKeeper.ComputeCorruptionThreshold was just called")
+// ComputeAndSetCorruptionThreshold calls ComputeAndSetCorruptionThresholdFunc.
+func (mock *TSSKeeperMock) ComputeAndSetCorruptionThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context, totalShareCount github_com_cosmos_cosmos_sdk_types.Int, keyID string) (int64, bool) {
+	if mock.ComputeAndSetCorruptionThresholdFunc == nil {
+		panic("TSSKeeperMock.ComputeAndSetCorruptionThresholdFunc: method is nil but TSSKeeper.ComputeAndSetCorruptionThreshold was just called")
 	}
 	callInfo := struct {
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
+		KeyID           string
 	}{
 		Ctx:             ctx,
 		TotalShareCount: totalShareCount,
+		KeyID:           keyID,
 	}
-	mock.lockComputeCorruptionThreshold.Lock()
-	mock.calls.ComputeCorruptionThreshold = append(mock.calls.ComputeCorruptionThreshold, callInfo)
-	mock.lockComputeCorruptionThreshold.Unlock()
-	return mock.ComputeCorruptionThresholdFunc(ctx, totalShareCount)
+	mock.lockComputeAndSetCorruptionThreshold.Lock()
+	mock.calls.ComputeAndSetCorruptionThreshold = append(mock.calls.ComputeAndSetCorruptionThreshold, callInfo)
+	mock.lockComputeAndSetCorruptionThreshold.Unlock()
+	return mock.ComputeAndSetCorruptionThresholdFunc(ctx, totalShareCount, keyID)
 }
 
-// ComputeCorruptionThresholdCalls gets all the calls that were made to ComputeCorruptionThreshold.
+// ComputeAndSetCorruptionThresholdCalls gets all the calls that were made to ComputeAndSetCorruptionThreshold.
 // Check the length with:
-//     len(mockedTSSKeeper.ComputeCorruptionThresholdCalls())
-func (mock *TSSKeeperMock) ComputeCorruptionThresholdCalls() []struct {
+//     len(mockedTSSKeeper.ComputeAndSetCorruptionThresholdCalls())
+func (mock *TSSKeeperMock) ComputeAndSetCorruptionThresholdCalls() []struct {
 	Ctx             github_com_cosmos_cosmos_sdk_types.Context
 	TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
+	KeyID           string
 } {
 	var calls []struct {
 		Ctx             github_com_cosmos_cosmos_sdk_types.Context
 		TotalShareCount github_com_cosmos_cosmos_sdk_types.Int
+		KeyID           string
 	}
-	mock.lockComputeCorruptionThreshold.RLock()
-	calls = mock.calls.ComputeCorruptionThreshold
-	mock.lockComputeCorruptionThreshold.RUnlock()
+	mock.lockComputeAndSetCorruptionThreshold.RLock()
+	calls = mock.calls.ComputeAndSetCorruptionThreshold
+	mock.lockComputeAndSetCorruptionThreshold.RUnlock()
 	return calls
 }
 
@@ -2060,6 +2080,41 @@ func (mock *TSSKeeperMock) GetAllRecoveryInfosCalls() []struct {
 	mock.lockGetAllRecoveryInfos.RLock()
 	calls = mock.calls.GetAllRecoveryInfos
 	mock.lockGetAllRecoveryInfos.RUnlock()
+	return calls
+}
+
+// GetCorruptionThreshold calls GetCorruptionThresholdFunc.
+func (mock *TSSKeeperMock) GetCorruptionThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
+	if mock.GetCorruptionThresholdFunc == nil {
+		panic("TSSKeeperMock.GetCorruptionThresholdFunc: method is nil but TSSKeeper.GetCorruptionThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetCorruptionThreshold.Lock()
+	mock.calls.GetCorruptionThreshold = append(mock.calls.GetCorruptionThreshold, callInfo)
+	mock.lockGetCorruptionThreshold.Unlock()
+	return mock.GetCorruptionThresholdFunc(ctx, keyID)
+}
+
+// GetCorruptionThresholdCalls gets all the calls that were made to GetCorruptionThreshold.
+// Check the length with:
+//     len(mockedTSSKeeper.GetCorruptionThresholdCalls())
+func (mock *TSSKeeperMock) GetCorruptionThresholdCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockGetCorruptionThreshold.RLock()
+	calls = mock.calls.GetCorruptionThreshold
+	mock.lockGetCorruptionThreshold.RUnlock()
 	return calls
 }
 

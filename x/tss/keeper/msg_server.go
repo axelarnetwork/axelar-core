@@ -64,9 +64,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf(msg)
 	}
 
-	threshold := s.ComputeCorruptionThreshold(ctx, snapshot.TotalShareCount)
+	threshold, set := s.ComputeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, req.NewKeyID)
 	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
 		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
+	}
+	if !set {
+		return nil, fmt.Errorf("key ID %s already has a corruption threshold defined", req.NewKeyID)
 	}
 
 	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {

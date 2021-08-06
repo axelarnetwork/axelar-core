@@ -42,17 +42,20 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter) 
 	}
 }
 
-func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, sigID string) ([]byte, error) {
-	counter, ok := k.GetSnapshotCounterForKeyID(ctx, sigID)
+func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
-		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", sigID)
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
 	}
 	snapshot, ok := s.GetSnapshot(ctx, counter)
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
 	}
 
-	threshold := k.ComputeCorruptionThreshold(ctx, snapshot.TotalShareCount)
+	threshold, found := k.GetCorruptionThreshold(ctx, keyID)
+	if !found {
+		return nil, fmt.Errorf("keyID %s has no corruption threshold defined", keyID)
+	}
 
 	participants := make([]string, 0, len(snapshot.Validators))
 	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
@@ -61,7 +64,7 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	infos := k.GetAllRecoveryInfos(ctx, sigID)
+	infos := k.GetAllRecoveryInfos(ctx, keyID)
 
 	resp := tssTypes.QueryRecoveryResponse{
 		Threshold:          int32(threshold),
