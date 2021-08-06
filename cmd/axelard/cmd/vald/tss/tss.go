@@ -211,14 +211,12 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 		}
 
 		if response.GetResponse() == tofnd.RecoverResponse_RESPONSE_FAIL {
-			mgr.Logger.Error(
-				fmt.Sprintf("failed to recover tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid))
-		} else {
-			mgr.Logger.Info(
-				fmt.Sprintf("successfully recovered tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid))
-
+			return fmt.Errorf("failed to recover tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid)
 		}
+		mgr.Logger.Info(
+			fmt.Sprintf("successfully recovered tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid))
 	}
+
 	return nil
 }
 
