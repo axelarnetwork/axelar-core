@@ -336,7 +336,6 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
-	//metadataHex := hex.EncodeToString(info.Data)
 	event := sdk.NewEvent(
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
