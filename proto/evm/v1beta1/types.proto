@@ -64,7 +64,8 @@ message TransferOwnership {
 // results to evm relay transaction types
 message SigInfo {
   SigType type = 1;
-  string action = 2;
+  string chain = 2;
+  string action = 3;
 }
 
 enum SigType {

@@ -885,6 +885,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 	sigInfo := types.SigInfo{
 		Type:   types.Command,
+		Chain:  chain.Name,
 		Action: types.AxelarGatewayCommandMint,
 	}
 

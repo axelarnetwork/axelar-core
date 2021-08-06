@@ -695,6 +695,7 @@ results to evm relay transaction types
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#evm.v1beta1.SigType) |  |  |
+| `chain` | [string](#string) |  |  |
 | `action` | [string](#string) |  |  |
 
 
