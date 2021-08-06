@@ -94,6 +94,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 		address, err := sdk.ValAddressFromBech32(validator)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to parse validator address").Error())
+			return
 		}
 
 		requests := make([]tofnd.RecoverRequest, len(keyIDs))
@@ -121,6 +122,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 			// not participating
 			if index == -1 {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain address %s", address.String()).Error())
+				return
 			}
 
 			requests[i] = tofnd.RecoverRequest{
