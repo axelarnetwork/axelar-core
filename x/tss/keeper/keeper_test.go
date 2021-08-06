@@ -16,7 +16,6 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -119,28 +118,17 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
+		IsJailedFunc:          func() bool { return false },
 	}, power)
 }
 
 func TestComputeAndSetCorruptionThreshold(t *testing.T) {
-	s := setup()
-	defaultParams := types.DefaultParams()
-	keyID := rand.StrBetween(5, 10)
+	corruptionThreshold := types.DefaultParams().CorruptionThreshold
+	assert.Equal(t, int64(5), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	threshold, set := s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
-	assert.True(t, set)
-	assert.Equal(t, int64(5), threshold)
+	corruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
+	assert.Equal(t, int64(8), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 
-	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	threshold, set = s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
-	assert.False(t, set)
-	assert.Equal(t, int64(8), threshold)
-
-	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	threshold, set = s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.NewInt(10), keyID)
-	assert.False(t, set)
-	assert.Equal(t, int64(-1), threshold)
+	corruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
+	assert.Equal(t, int64(-1), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 )
@@ -39,7 +38,6 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		TotalShareCount: sdk.NewInt(200),
 		Counter:         rand2.I64Between(0, 100000),
 	}
-	s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, snap.TotalShareCount, keyID)
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
@@ -53,19 +51,17 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	sigID := "sigID"
 	keyID := "keyID1"
 	msgToSign := []byte("message")
-	s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.ZeroInt(), keyID)
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.Snapshot{TotalShareCount: sdk.ZeroInt()})
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{TotalShareCount: sdk.ZeroInt()})
+	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	s.Keeper.ComputeAndSetCorruptionThreshold(s.Ctx, sdk.ZeroInt(), keyID)
-	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.Snapshot{TotalShareCount: sdk.ZeroInt()})
+	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{TotalShareCount: sdk.ZeroInt()})
+	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.Error(t, err)
 }

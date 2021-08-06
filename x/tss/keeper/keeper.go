@@ -208,16 +208,15 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// ComputeAndSetCorruptionThreshold returns corruption threshold to be used by tss. Second return value
-// is set to true if no threhold was already defined for the given key ID
-func (k Keeper) ComputeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
+// compute and save the corruption threshold to be used by tss.
+// Second return value is set to true if no threhold was already defined for the given key ID
+func (k Keeper) computeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
 
-	// (threshold + 1) shares are required to sign
-	result := totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
-
+	result := types.ComputeCorruptionThreshold(threshold, totalShareCount)
 	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
+
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz != nil {
 		return result, false

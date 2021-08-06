@@ -64,14 +64,6 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf(msg)
 	}
 
-	threshold, set := s.ComputeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, req.NewKeyID)
-	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
-		return nil, fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
-	}
-	if !set {
-		return nil, fmt.Errorf("key ID %s already has a corruption threshold defined", req.NewKeyID)
-	}
-
 	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
 		return nil, err
 	}
@@ -81,6 +73,13 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	for _, validator := range snapshot.Validators {
 		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
+	}
+
+	threshold, found := s.GetCorruptionThreshold(ctx, req.NewKeyID)
+	// if this value is set to false, then something is really wrong, since a successful
+	// invocation of StartKeygen should automatically set the corruption threshold for the key ID
+	if !found {
+		return nil, fmt.Errorf("could not find corruption threshold for key ID %s", req.NewKeyID)
 	}
 
 	ctx.EventManager().EmitEvent(
