@@ -22,7 +22,10 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 
 	// for now we recalculate the threshold
 	// might make sense to store it with the snapshot after keygen is done.
-	threshold := k.ComputeCorruptionThreshold(ctx, s.TotalShareCount)
+	threshold, found := k.GetCorruptionThreshold(ctx, keyID)
+	if !found {
+		return fmt.Errorf("keyID %s has no corruption threshold defined", keyID)
+	}
 
 	var activeValidators []snapshot.Validator
 	activeShareCount := sdk.ZeroInt()

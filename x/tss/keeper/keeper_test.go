@@ -118,21 +118,17 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
 		GetConsensusPowerFunc: func() int64 { return power },
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
+		IsJailedFunc:          func() bool { return false },
 	}, power)
 }
 
-func TestComputeCorruptionThreshold(t *testing.T) {
-	s := setup()
-	defaultParams := types.DefaultParams()
+func TestComputeAndSetCorruptionThreshold(t *testing.T) {
+	corruptionThreshold := types.DefaultParams().CorruptionThreshold
+	assert.Equal(t, int64(5), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(5), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+	corruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
+	assert.Equal(t, int64(8), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 
-	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(8), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
-
-	defaultParams.CorruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
-	s.Keeper.SetParams(s.Ctx, defaultParams)
-	assert.Equal(t, int64(-1), s.Keeper.ComputeCorruptionThreshold(s.Ctx, sdk.NewInt(10)))
+	corruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
+	assert.Equal(t, int64(-1), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 }

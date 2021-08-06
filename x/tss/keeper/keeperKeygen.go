@@ -19,6 +19,14 @@ import (
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
+	threshold, set := k.computeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, keyID)
+	if !set {
+		return fmt.Errorf("key ID %s already has a corruption threshold defined", keyID)
+	}
+	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
+		return fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
+	}
+
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}

@@ -29,6 +29,7 @@ axelard vald-start [flags]
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
       --tofnd-host string        host name for tss daemon (default "localhost")
       --tofnd-port string        port for tss daemon (default "50051")
+      --tofnd-recovery string    json file with recovery request
       --validator-addr string    the address of the validator operator
   -y, --yes                      Skip tx broadcasting prompt confirmation
 ```

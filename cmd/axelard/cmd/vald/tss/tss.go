@@ -186,6 +186,40 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 	}
 }
 
+// Recover instructs tofnd to recover the node's shares given the recovery info provided
+func (mgr *Mgr) Recover(recoverJSON []byte) error {
+	var requests []tofnd.RecoverRequest
+	err := mgr.cdc.UnmarshalJSON(recoverJSON, &requests)
+	if err != nil {
+		return sdkerrors.Wrapf(err, "failed to unmarshal recovery requests")
+	}
+
+	for _, request := range requests {
+		uid := request.KeygenInit.PartyUids[int(request.KeygenInit.MyPartyIndex)]
+
+		if mgr.principalAddr != uid {
+			return fmt.Errorf("party UID mismatch (expected %s, got %s)", mgr.principalAddr, uid)
+		}
+
+		grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+		defer cancel()
+
+		response, err := mgr.client.Recover(grpcCtx, &request)
+		if err != nil {
+			return sdkerrors.Wrap(err,
+				fmt.Sprintf("failed tofnd gRPC call Recover for key ID %s", request.KeygenInit.NewKeyUid))
+		}
+
+		if response.GetResponse() == tofnd.RecoverResponse_RESPONSE_FAIL {
+			return fmt.Errorf("failed to recover tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid)
+		}
+		mgr.Logger.Info(
+			fmt.Sprintf("successfully recovered tofnd shares for validator %s and key ID %s", uid, request.KeygenInit.NewKeyUid))
+	}
+
+	return nil
+}
+
 func (mgr *Mgr) abortSign(sigID string) (err error) {
 	stream, ok := mgr.getSignStream(sigID)
 	if !ok {

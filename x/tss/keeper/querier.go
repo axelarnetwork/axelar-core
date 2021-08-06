@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,10 +16,11 @@ import (
 const (
 	QuerySigStatus = "sig-status"
 	QueryKeyStatus = "key-status"
+	QueryRecovery  = "recovery"
 )
 
 // NewQuerier returns a new querier for the TSS module
-func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter) sdk.Querier {
+func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
@@ -27,6 +29,8 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter) sdk.Querier {
 			res, err = querySigStatus(ctx, k, v, path[1])
 		case QueryKeyStatus:
 			res, err = queryKeygenStatus(ctx, k, v, path[1])
+		case QueryRecovery:
+			res, err = queryRecovery(ctx, k, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown tss query endpoint: %s", path[0]))
 		}
@@ -36,6 +40,40 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter) sdk.Querier {
 		}
 		return res, nil
 	}
+}
+
+func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
+	}
+	snapshot, ok := s.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	}
+
+	threshold, found := k.GetCorruptionThreshold(ctx, keyID)
+	if !found {
+		return nil, fmt.Errorf("keyID %s has no corruption threshold defined", keyID)
+	}
+
+	participants := make([]string, 0, len(snapshot.Validators))
+	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
+	for _, validator := range snapshot.Validators {
+		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
+		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
+	}
+
+	infos := k.GetAllRecoveryInfos(ctx, keyID)
+
+	resp := tssTypes.QueryRecoveryResponse{
+		Threshold:          int32(threshold),
+		PartyUids:          participants,
+		PartyShareCounts:   participantShareCounts,
+		ShareRecoveryInfos: infos,
+	}
+
+	return resp.Marshal()
 }
 
 func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sigID string) ([]byte, error) {

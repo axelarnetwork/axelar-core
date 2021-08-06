@@ -167,6 +167,8 @@
     - [MsgService](#snapshot.v1beta1.MsgService)
   
 - [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
+    - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
+    - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
     - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
     - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
@@ -175,11 +177,15 @@
     - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
     - [MessageOut.KeygenResult.KeygenOutput](#tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput)
     - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
+    - [RecoverRequest](#tss.tofnd.v1beta1.RecoverRequest)
+    - [RecoverResponse](#tss.tofnd.v1beta1.RecoverResponse)
     - [SignInit](#tss.tofnd.v1beta1.SignInit)
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
     - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
   
+    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
     - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
+    - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
   
 - [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
     - [Params](#tss.v1beta1.Params)
@@ -189,6 +195,7 @@
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
     - [Signature](#tss.v1beta1.Signature)
   
@@ -2305,6 +2312,36 @@ Msg defines the snapshot Msg service.
 File copied from golang tofnd with minor tweaks
 
 
+<a name="tss.tofnd.v1beta1.KeyPresenceRequest"></a>
+
+### KeyPresenceRequest
+Key presence check types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse"></a>
+
+### KeyPresenceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response) |  |  |
+
+
+
+
+
+
 <a name="tss.tofnd.v1beta1.KeygenInit"></a>
 
 ### KeygenInit
@@ -2353,7 +2390,7 @@ File copied from golang tofnd with minor tweaks
 | `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
 | `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
 | `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
-| `need_recover` | [bool](#bool) |  | request recovery, socket closes after |
+| `need_recover` | [bool](#bool) |  | issue recover from client |
 
 
 
@@ -2439,6 +2476,37 @@ Sign's response types
 
 
 
+<a name="tss.tofnd.v1beta1.RecoverRequest"></a>
+
+### RecoverRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  |  |
+| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse"></a>
+
+### RecoverResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response) |  |  |
+
+
+
+
+
+
 <a name="tss.tofnd.v1beta1.SignInit"></a>
 
 ### SignInit
@@ -2493,6 +2561,20 @@ Sign's response types
  <!-- end messages -->
 
 
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
+
+### KeyPresenceResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_PRESENT | 1 |  |
+| RESPONSE_ABSENT | 2 |  |
+| RESPONSE_FAIL | 3 |  |
+
+
+
 <a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
 
 ### MessageOut.CriminalList.Criminal.CrimeType
@@ -2503,6 +2585,19 @@ Sign's response types
 | CRIME_TYPE_UNSPECIFIED | 0 |  |
 | CRIME_TYPE_NON_MALICIOUS | 1 |  |
 | CRIME_TYPE_MALICIOUS | 2 |  |
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse.Response"></a>
+
+### RecoverResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_SUCCESS | 1 |  |
+| RESPONSE_FAIL | 2 |  |
 
 
  <!-- end enums -->
@@ -2598,6 +2693,24 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryRecoveryResponse"></a>
+
+### QueryRecoveryResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `party_uids` | [string](#string) | repeated |  |
+| `party_share_counts` | [uint32](#uint32) | repeated |  |
+| `threshold` | [int32](#int32) |  |  |
+| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
 
 
 

@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 )
@@ -56,13 +55,13 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{TotalShareCount: sdk.NewInt(0)})
+	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, exported.Snapshot{TotalShareCount: sdk.NewInt(0)})
+	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.Error(t, err)
 }

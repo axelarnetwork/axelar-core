@@ -32,3 +32,11 @@ enum VoteStatus {
   VOTE_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
   VOTE_STATUS_DECIDED = 2 [ (gogoproto.enumvalue_customname) = "Decided" ];
 }
+
+message QueryRecoveryResponse {
+  repeated string party_uids = 1;
+  repeated uint32 party_share_counts = 2;
+  int32 threshold = 3;
+
+  repeated bytes share_recovery_infos = 4;
+}

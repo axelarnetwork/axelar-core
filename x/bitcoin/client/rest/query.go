@@ -56,7 +56,7 @@ func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyID := r.URL.Query().Get(QueryParamKeyRole)
+		keyID := r.URL.Query().Get(QueryParamKeyID)
 		keyRole := r.URL.Query().Get(QueryParamKeyRole)
 
 		var query string

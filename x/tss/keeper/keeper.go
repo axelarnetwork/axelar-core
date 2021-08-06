@@ -20,6 +20,8 @@ const (
 	rotationPrefix         = "rotationCount_"
 	keygenStartHeight      = "blockHeight_"
 	pkPrefix               = "pk_"
+	recoveryPrefix         = "recovery_"
+	thresholdPrefix        = "threshold_"
 	snapshotForKeyIDPrefix = "sfkid_"
 	sigPrefix              = "sig_"
 	keyIDForSigPrefix      = "kidfs_"
@@ -127,6 +129,62 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
+// SetRecoveryInfos sets the recovery infos for a given party
+func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte) {
+	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+
+	data := types.QueryRecoveryResponse{
+		ShareRecoveryInfos: infos,
+	}
+
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// HasRecoveryInfos returns true if the recovery infos for a given party exists
+func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return false
+	}
+
+	return true
+}
+
+// GetAllRecoveryInfos returns the recovery infos for all parties of a specific key ID
+func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
+	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
+	store := ctx.KVStore(k.storeKey)
+	var infos [][]byte
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+
+		var data types.QueryRecoveryResponse
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &data)
+		infos = append(infos, data.ShareRecoveryInfos...)
+	}
+
+	return infos
+}
+
+// DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID
+func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
+	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
+	store := ctx.KVStore(k.storeKey)
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
+	}
+}
+
 // SetKeyRequirement sets the key requirement for a given chain of a given role
 func (k Keeper) SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
 	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.SimpleString())
@@ -150,13 +208,36 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// ComputeCorruptionThreshold returns corruption threshold to be used by tss
-func (k Keeper) ComputeCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int) int64 {
+// compute and save the corruption threshold to be used by tss.
+// Second return value is set to true if no threhold was already defined for the given key ID
+func (k Keeper) computeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
 
-	// (threshold + 1) shares are required to signed
-	return totalShareCount.MulRaw(threshold.Numerator).QuoRaw(threshold.Denominator).Int64() - 1
+	result := types.ComputeCorruptionThreshold(threshold, totalShareCount)
+	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
+
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz != nil {
+		return result, false
+	}
+
+	bz = make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(result))
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+
+	return result, true
+}
+
+// GetCorruptionThreshold returns the corruption threshold set for some key ID
+func (k Keeper) GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool) {
+	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return 0, false
+	}
+
+	return int64(binary.LittleEndian.Uint64(bz)), true
 }
 
 func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {
