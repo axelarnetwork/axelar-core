@@ -20,9 +20,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -57,7 +58,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitializePollFunc: func(sdk.Context, exported.PollKey, int64, ...exported.PollProperty) error { return nil },
+		InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
@@ -98,7 +99,7 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 	keyID := randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
 	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
@@ -123,7 +124,7 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 }
 
 func TestComputeAndSetCorruptionThreshold(t *testing.T) {
-	corruptionThreshold := types.DefaultParams().CorruptionThreshold
+	corruptionThreshold := types.DefaultParams().MasterSafetyThreshold
 	assert.Equal(t, int64(5), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 
 	corruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}

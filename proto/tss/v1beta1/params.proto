@@ -11,25 +11,33 @@ option (gogoproto.goproto_getters_all) = false;
 // Params is the parameter set for this module
 message Params {
   int64 locking_period = 1 [ deprecated = true ];
-  // MinKeygenThreshold defines the minimum % of stake that must be online
-  // to authorize generation of a new key in the system.
-  utils.v1beta1.Threshold min_keygen_threshold = 2
+  // MasterMinKeygenThreshold defines the minimum % of stake that must be online
+  // to authorize generation of a new master key in the system.
+  utils.v1beta1.Threshold master_min_keygen_threshold = 2
       [ (gogoproto.nullable) = false ];
-  // CorruptionThreshold defines the corruption threshold with which
-  // we'll run keygen protocol.
-  utils.v1beta1.Threshold corruption_threshold = 3
+  // MasterSafetyThreshold defines the safety threshold with which
+  // we'll run keygen protocol for a master key.
+  utils.v1beta1.Threshold master_safety_threshold = 3
+      [ (gogoproto.nullable) = false ];
+  // SecondaryMinKeygenThreshold defines the minimum % of stake that must be
+  // online to authorize generation of a new secondary key in the system.
+  utils.v1beta1.Threshold secondary_min_keygen_threshold = 4
+      [ (gogoproto.nullable) = false ];
+  // SecondarySafetyThreshold defines the safety threshold with which
+  // we'll run keygen protocol for a secondary key.
+  utils.v1beta1.Threshold secondary_safety_threshold = 5
       [ (gogoproto.nullable) = false ];
   // KeyRequirements defines the requirement of each key for each chain
-  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 4
+  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 6
       [ (gogoproto.nullable) = false ];
   // MinBondFractionPerShare defines the % of stake validators have to bond per
   // key share
-  utils.v1beta1.Threshold min_bond_fraction_per_share = 5
+  utils.v1beta1.Threshold min_bond_fraction_per_share = 7
       [ (gogoproto.nullable) = false ];
   // SuspendDurationInBlocks defines the number of blocks a
   // validator is disallowed to participate in any TSS ceremony after committing
   // a malicious behaviour during signing
-  int64 suspend_duration_in_blocks = 6;
+  int64 suspend_duration_in_blocks = 8;
   // TimeoutInBlocks defines the timeout in blocks for signing and keygen
-  int64 timeout_in_blocks = 7;
+  int64 timeout_in_blocks = 9;
 }

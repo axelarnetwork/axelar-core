@@ -18,8 +18,11 @@ import (
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
-	threshold, set := k.computeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, keyID)
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error {
+	threshold, set, err := k.computeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, keyID, keyRole)
+	if err != nil {
+		return err
+	}
 	if !set {
 		return fmt.Errorf("key ID %s already has a corruption threshold defined", keyID)
 	}
@@ -271,10 +274,21 @@ func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, 
 }
 
 // GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
-func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
+func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context, keyRole exported.KeyRole) (utils.Threshold, error) {
+	var key []byte
 	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
-	return threshold
+
+	switch keyRole {
+	case exported.MasterKey:
+		key = types.KeyMasterMinKeygenThreshold
+	case exported.SecondaryKey:
+		key = types.KeySecondaryMinKeygenThreshold
+	default:
+		return utils.Threshold{}, fmt.Errorf("key role '%s' not supported", keyRole.String())
+	}
+
+	k.params.Get(ctx, key, &threshold)
+	return threshold, nil
 }
 
 // GetMinBondFractionPerShare returns the % of stake validators have to bond per key share

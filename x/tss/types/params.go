@@ -20,13 +20,15 @@ const (
 
 // Parameter keys
 var (
-	KeyLockingPeriod           = []byte("lockingPeriod")
-	KeyMinKeygenThreshold      = []byte("minKeygenThreshold")
-	KeyCorruptionThreshold     = []byte("corruptionThreshold")
-	KeyKeyRequirements         = []byte("keyRequirements")
-	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
-	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
-	KeyTimeoutInBlocks         = []byte("TimeoutInBlocks")
+	KeyLockingPeriod               = []byte("lockingPeriod")
+	KeyMasterMinKeygenThreshold    = []byte("masterMinKeygenThreshold")
+	KeyMasterSafetyThreshold       = []byte("masterSafetyThreshold")
+	KeySecondaryMinKeygenThreshold = []byte("secondaryMinKeygenThreshold")
+	KeySecondarySafetyThreshold    = []byte("secondarySafetyThreshold")
+	KeyKeyRequirements             = []byte("keyRequirements")
+	KeyMinBondFractionPerShare     = []byte("MinBondFractionPerShare")
+	KeySuspendDurationInBlocks     = []byte("SuspendDurationInBlocks")
+	KeyTimeoutInBlocks             = []byte("TimeoutInBlocks")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -39,8 +41,10 @@ func DefaultParams() Params {
 	return Params{
 		LockingPeriod: 0,
 		// Set MinKeygenThreshold >= CorruptionThreshold
-		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
-		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
+		MasterMinKeygenThreshold:    utils.Threshold{Numerator: 9, Denominator: 10},
+		MasterSafetyThreshold:       utils.Threshold{Numerator: 2, Denominator: 3},
+		SecondaryMinKeygenThreshold: utils.Threshold{Numerator: 9, Denominator: 10},
+		SecondarySafetyThreshold:    utils.Threshold{Numerator: 2, Denominator: 3},
 		KeyRequirements: []exported.KeyRequirement{
 			{
 				ChainName:                  bitcoin.Bitcoin.Name,
@@ -84,8 +88,10 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
-		params.NewParamSetPair(KeyMinKeygenThreshold, &m.MinKeygenThreshold, validateThreshold),
-		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
+		params.NewParamSetPair(KeyMasterMinKeygenThreshold, &m.MasterMinKeygenThreshold, validateThreshold),
+		params.NewParamSetPair(KeyMasterSafetyThreshold, &m.MasterSafetyThreshold, validateThreshold),
+		params.NewParamSetPair(KeySecondaryMinKeygenThreshold, &m.SecondaryMinKeygenThreshold, validateThreshold),
+		params.NewParamSetPair(KeySecondarySafetyThreshold, &m.SecondarySafetyThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
@@ -110,15 +116,27 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateThreshold(m.MinKeygenThreshold); err != nil {
+	if err := validateThreshold(m.MasterMinKeygenThreshold); err != nil {
 		return err
 	}
 
-	if err := validateThreshold(m.CorruptionThreshold); err != nil {
+	if err := validateThreshold(m.MasterSafetyThreshold); err != nil {
 		return err
 	}
 
-	if err := validateTssThresholds(m.MinKeygenThreshold, m.CorruptionThreshold); err != nil {
+	if err := validateThreshold(m.SecondaryMinKeygenThreshold); err != nil {
+		return err
+	}
+
+	if err := validateThreshold(m.SecondarySafetyThreshold); err != nil {
+		return err
+	}
+
+	if err := validateTssThresholds(m.MasterMinKeygenThreshold, m.MasterSafetyThreshold); err != nil {
+		return err
+	}
+
+	if err := validateTssThresholds(m.SecondaryMinKeygenThreshold, m.SecondarySafetyThreshold); err != nil {
 		return err
 	}
 

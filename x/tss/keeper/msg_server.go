@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -42,6 +43,7 @@ func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	//TODO: must now perform checks to see if key specs match key role's requirements
 	// record the snapshot of active validators that we'll use for the key
 	snapshotConsensusPower, totalConsensusPower, err := s.snapshotter.TakeSnapshot(ctx, req.SubsetSize, req.KeyShareDistributionPolicy)
 	if err != nil {
@@ -53,7 +55,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
 	}
 
-	if !s.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
+	// TODO: cannot hard code key role, start-keygen request must now include the keyrole too
+	keygenThreshold, err := s.GetMinKeygenThreshold(ctx, exported.MasterKey)
+	if err != nil {
+		return nil, err
+	}
+	if !(keygenThreshold).IsMet(snapshotConsensusPower, totalConsensusPower) {
 		msg := fmt.Sprintf(
 			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
 			snapshotConsensusPower.String(),
@@ -64,7 +71,8 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf(msg)
 	}
 
-	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
+	// TODO: cannot hard code key role, start-keygen request must now include the keyrole too
+	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, exported.MasterKey, snapshot); err != nil {
 		return nil, err
 	}
 
@@ -75,7 +83,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	threshold, found := s.GetCorruptionThreshold(ctx, req.NewKeyID)
+	corruptionThreshols, found := s.GetCorruptionThreshold(ctx, req.NewKeyID)
 	// if this value is set to false, then something is really wrong, since a successful
 	// invocation of StartKeygen should automatically set the corruption threshold for the key ID
 	if !found {
@@ -87,13 +95,13 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(corruptionThreshols, 10)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
 		),
 	)
 
-	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
+	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, corruptionThreshols, req.KeyShareDistributionPolicy.SimpleString()))
 
 	return &types.StartKeygenResponse{}, nil
 }

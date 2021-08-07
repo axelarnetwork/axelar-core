@@ -17,17 +17,21 @@ import (
 )
 
 const (
-	flagKeygen     = "keygen"
-	flagCorruption = "corruption"
+	flagKeygenMaster    = "keygen-master"
+	flagSafetyMaster    = "safety-master"
+	flagKeygenSecondary = "keygen-secondary"
+	flagSafetySecondary = "safety-secondary"
 )
 
 // SetGenesisTSSCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		period     int64
-		keygen     string
-		corruption string
+		period          int64
+		keygenMaster    string
+		safetyMaster    string
+		keygenSecondary string
+		safetySecondary string
 	)
 
 	cmd := &cobra.Command{
@@ -55,20 +59,36 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 				genesisTSS.Params.LockingPeriod = period
 			}
 
-			if keygen != "" {
-				threshold, err := parseThreshold(keygen)
+			if keygenMaster != "" {
+				threshold, err := parseThreshold(keygenMaster)
 				if err != nil {
 					return err
 				}
-				genesisTSS.Params.MinKeygenThreshold = threshold
+				genesisTSS.Params.MasterMinKeygenThreshold = threshold
 			}
 
-			if corruption != "" {
-				threshold, err := parseThreshold(corruption)
+			if safetyMaster != "" {
+				threshold, err := parseThreshold(safetyMaster)
 				if err != nil {
 					return err
 				}
-				genesisTSS.Params.CorruptionThreshold = threshold
+				genesisTSS.Params.MasterSafetyThreshold = threshold
+			}
+
+			if keygenSecondary != "" {
+				threshold, err := parseThreshold(keygenSecondary)
+				if err != nil {
+					return err
+				}
+				genesisTSS.Params.SecondaryMinKeygenThreshold = threshold
+			}
+
+			if safetySecondary != "" {
+				threshold, err := parseThreshold(safetySecondary)
+				if err != nil {
+					return err
+				}
+				genesisTSS.Params.SecondarySafetyThreshold = threshold
 			}
 
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
@@ -90,8 +110,10 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
 	cmd.Flags().Int64Var(&period, flagLockingPeriod, 0, "A positive integer representing the locking period for validators in terms of number of blocks")
-	cmd.Flags().StringVar(&keygen, flagKeygen, "", "The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., \"9/10\").")
-	cmd.Flags().StringVar(&corruption, flagCorruption, "", "The corruption threshold with which Axelar Core will run the keygen protocol (e.g., \"2/3\").")
+	cmd.Flags().StringVar(&keygenMaster, flagKeygenMaster, "", "The minimum % of stake that must be online to authorize generation of a new master key in the system (e.g., \"9/10\").")
+	cmd.Flags().StringVar(&safetyMaster, flagSafetyMaster, "", "The safety threshold with which Axelar Core will run the keygen protocol for a master key (e.g., \"2/3\").")
+	cmd.Flags().StringVar(&keygenSecondary, flagKeygenSecondary, "", "The minimum % of stake that must be online to authorize generation of a new master key in the system (e.g., \"9/10\").")
+	cmd.Flags().StringVar(&safetySecondary, flagSafetySecondary, "", "The safety threshold with which Axelar Core will run the keygen protocol for a master key (e.g., \"2/3\").")
 
 	return cmd
 }

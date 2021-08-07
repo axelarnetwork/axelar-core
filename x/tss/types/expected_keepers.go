@@ -83,7 +83,7 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
-	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
+	StartKeygen(ctx sdk.Context, voter Voter, keyID string, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
@@ -94,7 +94,7 @@ type TSSKeeper interface {
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
-	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
+	GetMinKeygenThreshold(ctx sdk.Context, keyRole exported.KeyRole) (utils.Threshold, error)
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
 	DeleteKeyIDForSig(ctx sdk.Context, sigID string)

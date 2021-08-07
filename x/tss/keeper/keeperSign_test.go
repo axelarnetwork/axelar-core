@@ -10,6 +10,7 @@ import (
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -40,7 +41,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msg, snap)
 	assert.EqualError(t, err, "not enough active validators are online: threshold [132], online share count [100]")
@@ -53,14 +54,14 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	msgToSign := []byte("message")
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.Error(t, err)

@@ -2624,8 +2624,10 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `locking_period` | [int64](#int64) |  | **Deprecated.**  |
-| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinKeygenThreshold defines the minimum % of stake that must be online to authorize generation of a new key in the system. |
-| `corruption_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | CorruptionThreshold defines the corruption threshold with which we'll run keygen protocol. |
+| `master_min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MasterMinKeygenThreshold defines the minimum % of stake that must be online to authorize generation of a new master key in the system. |
+| `master_safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MasterSafetyThreshold defines the safety threshold with which we'll run keygen protocol for a master key. |
+| `secondary_min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | SecondaryMinKeygenThreshold defines the minimum % of stake that must be online to authorize generation of a new secondary key in the system. |
+| `secondary_safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | SecondarySafetyThreshold defines the safety threshold with which we'll run keygen protocol for a secondary key. |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement of each key for each chain |
 | `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |

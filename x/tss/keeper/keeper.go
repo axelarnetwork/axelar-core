@@ -210,23 +210,34 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 
 // compute and save the corruption threshold to be used by tss.
 // Second return value is set to true if no threhold was already defined for the given key ID
-func (k Keeper) computeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
+func (k Keeper) computeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string, keyRole exported.KeyRole) (int64, bool, error) {
+	var paramKey []byte
 	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
+
+	switch keyRole {
+	case exported.MasterKey:
+		paramKey = types.KeyMasterSafetyThreshold
+	case exported.SecondaryKey:
+		paramKey = types.KeySecondarySafetyThreshold
+	default:
+		return -1, false, fmt.Errorf("key role '%s' not supported", keyRole.String())
+	}
+
+	k.params.Get(ctx, paramKey, &threshold)
 
 	result := types.ComputeCorruptionThreshold(threshold, totalShareCount)
 	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz != nil {
-		return result, false
+		return result, false, nil
 	}
 
 	bz = make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(result))
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 
-	return result, true
+	return result, true, nil
 }
 
 // GetCorruptionThreshold returns the corruption threshold set for some key ID

@@ -1217,7 +1217,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
 // 				panic("mock out the GetMinBondFractionPerShare method")
 // 			},
-// 			GetMinKeygenThresholdFunc: func(ctx sdk.Context) utils.Threshold {
+// 			GetMinKeygenThresholdFunc: func(ctx sdk.Context, keyRole exported.KeyRole) (utils.Threshold, error) {
 // 				panic("mock out the GetMinKeygenThreshold method")
 // 			},
 // 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
@@ -1265,7 +1265,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
-// 			StartKeygenFunc: func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartKeygenFunc: func(ctx sdk.Context, voter tsstypes.Voter, keyID string, keyRole exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
 // 			StartSignFunc: func(ctx sdk.Context, voter interface{InitializePoll(ctx sdk.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
@@ -1327,7 +1327,7 @@ type TSSKeeperMock struct {
 	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
 
 	// GetMinKeygenThresholdFunc mocks the GetMinKeygenThreshold method.
-	GetMinKeygenThresholdFunc func(ctx sdk.Context) utils.Threshold
+	GetMinKeygenThresholdFunc func(ctx sdk.Context, keyRole exported.KeyRole) (utils.Threshold, error)
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
@@ -1375,7 +1375,7 @@ type TSSKeeperMock struct {
 	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
 
 	// StartKeygenFunc mocks the StartKeygen method.
-	StartKeygenFunc func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error
+	StartKeygenFunc func(ctx sdk.Context, voter tsstypes.Voter, keyID string, keyRole exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, voter interface {
@@ -1512,6 +1512,8 @@ type TSSKeeperMock struct {
 		GetMinKeygenThreshold []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// KeyRole is the keyRole argument value.
+			KeyRole exported.KeyRole
 		}
 		// GetNextKey holds details about calls to the GetNextKey method.
 		GetNextKey []struct {
@@ -1640,6 +1642,8 @@ type TSSKeeperMock struct {
 			Voter tsstypes.Voter
 			// KeyID is the keyID argument value.
 			KeyID string
+			// KeyRole is the keyRole argument value.
+			KeyRole exported.KeyRole
 			// SnapshotMoqParam is the snapshotMoqParam argument value.
 			SnapshotMoqParam snapshot.Snapshot
 		}
@@ -2282,29 +2286,33 @@ func (mock *TSSKeeperMock) GetMinBondFractionPerShareCalls() []struct {
 }
 
 // GetMinKeygenThreshold calls GetMinKeygenThresholdFunc.
-func (mock *TSSKeeperMock) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
+func (mock *TSSKeeperMock) GetMinKeygenThreshold(ctx sdk.Context, keyRole exported.KeyRole) (utils.Threshold, error) {
 	if mock.GetMinKeygenThresholdFunc == nil {
 		panic("TSSKeeperMock.GetMinKeygenThresholdFunc: method is nil but TSSKeeper.GetMinKeygenThreshold was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx     sdk.Context
+		KeyRole exported.KeyRole
 	}{
-		Ctx: ctx,
+		Ctx:     ctx,
+		KeyRole: keyRole,
 	}
 	mock.lockGetMinKeygenThreshold.Lock()
 	mock.calls.GetMinKeygenThreshold = append(mock.calls.GetMinKeygenThreshold, callInfo)
 	mock.lockGetMinKeygenThreshold.Unlock()
-	return mock.GetMinKeygenThresholdFunc(ctx)
+	return mock.GetMinKeygenThresholdFunc(ctx, keyRole)
 }
 
 // GetMinKeygenThresholdCalls gets all the calls that were made to GetMinKeygenThreshold.
 // Check the length with:
 //     len(mockedTSSKeeper.GetMinKeygenThresholdCalls())
 func (mock *TSSKeeperMock) GetMinKeygenThresholdCalls() []struct {
-	Ctx sdk.Context
+	Ctx     sdk.Context
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx     sdk.Context
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetMinKeygenThreshold.RLock()
 	calls = mock.calls.GetMinKeygenThreshold
@@ -2866,7 +2874,7 @@ func (mock *TSSKeeperMock) SetSigCalls() []struct {
 }
 
 // StartKeygen calls StartKeygenFunc.
-func (mock *TSSKeeperMock) StartKeygen(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
+func (mock *TSSKeeperMock) StartKeygen(ctx sdk.Context, voter tsstypes.Voter, keyID string, keyRole exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartKeygenFunc == nil {
 		panic("TSSKeeperMock.StartKeygenFunc: method is nil but TSSKeeper.StartKeygen was just called")
 	}
@@ -2874,17 +2882,19 @@ func (mock *TSSKeeperMock) StartKeygen(ctx sdk.Context, voter tsstypes.Voter, ke
 		Ctx              sdk.Context
 		Voter            tsstypes.Voter
 		KeyID            string
+		KeyRole          exported.KeyRole
 		SnapshotMoqParam snapshot.Snapshot
 	}{
 		Ctx:              ctx,
 		Voter:            voter,
 		KeyID:            keyID,
+		KeyRole:          keyRole,
 		SnapshotMoqParam: snapshotMoqParam,
 	}
 	mock.lockStartKeygen.Lock()
 	mock.calls.StartKeygen = append(mock.calls.StartKeygen, callInfo)
 	mock.lockStartKeygen.Unlock()
-	return mock.StartKeygenFunc(ctx, voter, keyID, snapshotMoqParam)
+	return mock.StartKeygenFunc(ctx, voter, keyID, keyRole, snapshotMoqParam)
 }
 
 // StartKeygenCalls gets all the calls that were made to StartKeygen.
@@ -2894,12 +2904,14 @@ func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 	Ctx              sdk.Context
 	Voter            tsstypes.Voter
 	KeyID            string
+	KeyRole          exported.KeyRole
 	SnapshotMoqParam snapshot.Snapshot
 } {
 	var calls []struct {
 		Ctx              sdk.Context
 		Voter            tsstypes.Voter
 		KeyID            string
+		KeyRole          exported.KeyRole
 		SnapshotMoqParam snapshot.Snapshot
 	}
 	mock.lockStartKeygen.RLock()
