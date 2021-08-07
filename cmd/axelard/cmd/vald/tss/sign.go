@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -20,8 +21,8 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 	if err != nil {
 		return err
 	}
-	_, ok := indexOf(participants, mgr.principalAddr)
-	if !ok {
+
+	if utils.IndexOf(participants, mgr.principalAddr) == -1 {
 		// do not participate
 		return nil
 	}

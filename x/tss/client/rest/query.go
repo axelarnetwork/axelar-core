@@ -112,15 +112,9 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 				return
 			}
 
-			var index int32 = -1
-			for i, participant := range recResponse.PartyUids {
-				if address.String() == participant {
-					index = int32(i)
-					break
-				}
-			}
-			// not participating
+			index := utils.IndexOf(recResponse.PartyUids, address.String())
 			if index == -1 {
+				// not participating
 				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain address %s", address.String()).Error())
 				return
 			}
@@ -131,7 +125,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					Threshold:        recResponse.Threshold,
 					PartyUids:        recResponse.PartyUids,
 					PartyShareCounts: recResponse.PartyShareCounts,
-					MyPartyIndex:     index,
+					MyPartyIndex:     int32(index),
 				},
 				ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
 			}

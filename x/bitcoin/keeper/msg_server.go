@@ -686,17 +686,17 @@ func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([
 		return nil, fmt.Errorf("external keys not registered yet")
 	}
 
-	externelKeys := make([]tss.Key, len(externalKeyIDs))
-	for i, exterexternalKeyID := range externalKeyIDs {
-		externalKey, ok := signer.GetKey(ctx, exterexternalKeyID)
+	externalKeys := make([]tss.Key, len(externalKeyIDs))
+	for i, externalKeyID := range externalKeyIDs {
+		externalKey, ok := signer.GetKey(ctx, externalKeyID)
 		if !ok || externalKey.Role != tss.ExternalKey {
-			return nil, fmt.Errorf("external key %s not found", exterexternalKeyID)
+			return nil, fmt.Errorf("external key %s not found", externalKeyID)
 		}
 
-		externelKeys[i] = externalKey
+		externalKeys[i] = externalKey
 	}
 
-	return externelKeys, nil
+	return externalKeys, nil
 }
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
