@@ -83,7 +83,7 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
-	SetKeygenAtHeight(ctx sdk.Context, height int64, req StartKeygenRequest)
+	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest)
 	DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error

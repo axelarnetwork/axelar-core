@@ -76,19 +76,9 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("key ID '%s' is already in use", req.NewKeyID)
 	}
 
-	height := s.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	s.SetKeygenAtHeight(ctx, height, *req)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeAck,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueKeygen),
-			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
-		),
-	)
-
-	s.Logger(ctx).Info(fmt.Sprintf("keygen scheduled for block %d (currently at %d))", height, ctx.BlockHeight()))
+	s.ScheduleKeygen(ctx, *req)
 	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.NewKeyID))
+
 	return &types.StartKeygenResponse{}, nil
 }
 

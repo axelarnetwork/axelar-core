@@ -1265,6 +1265,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
+// 			ScheduleKeygenFunc: func(ctx sdk.Context, req tsstypes.StartKeygenRequest)  {
+// 				panic("mock out the ScheduleKeygen method")
+// 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
@@ -1273,9 +1276,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement exported.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
-// 			},
-// 			SetKeygenAtHeightFunc: func(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest)  {
-// 				panic("mock out the SetKeygenAtHeight method")
 // 			},
 // 			SetParamsFunc: func(ctx sdk.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
@@ -1395,6 +1395,9 @@ type TSSKeeperMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 
+	// ScheduleKeygenFunc mocks the ScheduleKeygen method.
+	ScheduleKeygenFunc func(ctx sdk.Context, req tsstypes.StartKeygenRequest)
+
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
 
@@ -1403,9 +1406,6 @@ type TSSKeeperMock struct {
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement exported.KeyRequirement)
-
-	// SetKeygenAtHeightFunc mocks the SetKeygenAtHeight method.
-	SetKeygenAtHeightFunc func(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx sdk.Context, p tsstypes.Params)
@@ -1672,6 +1672,13 @@ type TSSKeeperMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole exported.KeyRole
 		}
+		// ScheduleKeygen holds details about calls to the ScheduleKeygen method.
+		ScheduleKeygen []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Req is the req argument value.
+			Req tsstypes.StartKeygenRequest
+		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
 			// Ctx is the ctx argument value.
@@ -1698,15 +1705,6 @@ type TSSKeeperMock struct {
 			Ctx sdk.Context
 			// KeyRequirement is the keyRequirement argument value.
 			KeyRequirement exported.KeyRequirement
-		}
-		// SetKeygenAtHeight holds details about calls to the SetKeygenAtHeight method.
-		SetKeygenAtHeight []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Height is the height argument value.
-			Height int64
-			// Req is the req argument value.
-			Req tsstypes.StartKeygenRequest
 		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
@@ -1796,10 +1794,10 @@ type TSSKeeperMock struct {
 	lockOperatorIsAvailableForCounter       sync.RWMutex
 	lockPenalizeSignCriminal                sync.RWMutex
 	lockRotateKey                           sync.RWMutex
+	lockScheduleKeygen                      sync.RWMutex
 	lockSetAvailableOperator                sync.RWMutex
 	lockSetKey                              sync.RWMutex
 	lockSetKeyRequirement                   sync.RWMutex
-	lockSetKeygenAtHeight                   sync.RWMutex
 	lockSetParams                           sync.RWMutex
 	lockSetRecoveryInfos                    sync.RWMutex
 	lockSetSig                              sync.RWMutex
@@ -2971,6 +2969,41 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	return calls
 }
 
+// ScheduleKeygen calls ScheduleKeygenFunc.
+func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKeygenRequest) {
+	if mock.ScheduleKeygenFunc == nil {
+		panic("TSSKeeperMock.ScheduleKeygenFunc: method is nil but TSSKeeper.ScheduleKeygen was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		Req tsstypes.StartKeygenRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockScheduleKeygen.Lock()
+	mock.calls.ScheduleKeygen = append(mock.calls.ScheduleKeygen, callInfo)
+	mock.lockScheduleKeygen.Unlock()
+	mock.ScheduleKeygenFunc(ctx, req)
+}
+
+// ScheduleKeygenCalls gets all the calls that were made to ScheduleKeygen.
+// Check the length with:
+//     len(mockedTSSKeeper.ScheduleKeygenCalls())
+func (mock *TSSKeeperMock) ScheduleKeygenCalls() []struct {
+	Ctx sdk.Context
+	Req tsstypes.StartKeygenRequest
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		Req tsstypes.StartKeygenRequest
+	}
+	mock.lockScheduleKeygen.RLock()
+	calls = mock.calls.ScheduleKeygen
+	mock.lockScheduleKeygen.RUnlock()
+	return calls
+}
+
 // SetAvailableOperator calls SetAvailableOperatorFunc.
 func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 	if mock.SetAvailableOperatorFunc == nil {
@@ -3085,45 +3118,6 @@ func (mock *TSSKeeperMock) SetKeyRequirementCalls() []struct {
 	mock.lockSetKeyRequirement.RLock()
 	calls = mock.calls.SetKeyRequirement
 	mock.lockSetKeyRequirement.RUnlock()
-	return calls
-}
-
-// SetKeygenAtHeight calls SetKeygenAtHeightFunc.
-func (mock *TSSKeeperMock) SetKeygenAtHeight(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest) {
-	if mock.SetKeygenAtHeightFunc == nil {
-		panic("TSSKeeperMock.SetKeygenAtHeightFunc: method is nil but TSSKeeper.SetKeygenAtHeight was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		Height int64
-		Req    tsstypes.StartKeygenRequest
-	}{
-		Ctx:    ctx,
-		Height: height,
-		Req:    req,
-	}
-	mock.lockSetKeygenAtHeight.Lock()
-	mock.calls.SetKeygenAtHeight = append(mock.calls.SetKeygenAtHeight, callInfo)
-	mock.lockSetKeygenAtHeight.Unlock()
-	mock.SetKeygenAtHeightFunc(ctx, height, req)
-}
-
-// SetKeygenAtHeightCalls gets all the calls that were made to SetKeygenAtHeight.
-// Check the length with:
-//     len(mockedTSSKeeper.SetKeygenAtHeightCalls())
-func (mock *TSSKeeperMock) SetKeygenAtHeightCalls() []struct {
-	Ctx    sdk.Context
-	Height int64
-	Req    tsstypes.StartKeygenRequest
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		Height int64
-		Req    tsstypes.StartKeygenRequest
-	}
-	mock.lockSetKeygenAtHeight.RLock()
-	calls = mock.calls.SetKeygenAtHeight
-	mock.lockSetKeygenAtHeight.RUnlock()
 	return calls
 }
 

@@ -17,6 +17,25 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+// ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
+// to notify vald processes about sending their acknowledgments
+func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) {
+	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
+	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeAck,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueKeygen),
+			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
+		),
+	)
+
+	k.Logger(ctx).Info(fmt.Sprintf("keygen scheduled for block %d (currently at %d))", height, ctx.BlockHeight()))
+}
+
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
 	threshold, set := k.computeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, keyID)

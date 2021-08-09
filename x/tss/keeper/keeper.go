@@ -264,13 +264,6 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 	return int64(binary.LittleEndian.Uint64(bz))
 }
 
-// SetKeygenAtHeight sets the height for a given keygen request to start at the specified block height
-func (k Keeper) SetKeygenAtHeight(ctx sdk.Context, height int64, req types.StartKeygenRequest) {
-	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-}
-
 // DeleteAtCurrentHeight removes a keygen/sign request for the current height
 func (k Keeper) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
 	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, ctx.BlockHeight(), ackType.String(), ID)
