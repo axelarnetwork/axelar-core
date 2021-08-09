@@ -399,3 +399,13 @@ func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, va
 
 	return false
 }
+
+func (k Keeper) emitAckEvent(ctx sdk.Context, action, ID string) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeAck,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, action),
+			sdk.NewAttribute(types.AttributeKeyKeyID, ID),
+		),
+	)
+}
