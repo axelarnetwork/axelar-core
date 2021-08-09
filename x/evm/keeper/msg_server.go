@@ -883,6 +883,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
+	// todo: do not allow omit empty
 	sigInfo := types.SigInfo{
 		Type:   types.Command,
 		Chain:  chain.Name,

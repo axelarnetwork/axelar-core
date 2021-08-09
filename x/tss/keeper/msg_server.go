@@ -3,7 +3,9 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -336,13 +338,24 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return &types.VoteSigResponse{}, nil
 	}
 
+	var evmSigInfo evmTypes.SigInfo
+	err = evmSigInfo.Unmarshal(info.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	sigDataJson, err := json.Marshal(&evmSigInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	event := sdk.NewEvent(
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollMeta.String()),
 		sdk.NewAttribute(types.AttributeKeySigID, req.PollMeta.ID),
 		sdk.NewAttribute(types.AttributeKeySigModule, info.Module),
-		sdk.NewAttribute(types.AttributeKeySigData, string(info.Data)),
+		sdk.NewAttribute(types.AttributeKeySigData, string(sigDataJson)),
 	)
 	defer ctx.EventManager().EmitEvent(event)
 
