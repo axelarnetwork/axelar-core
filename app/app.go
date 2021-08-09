@@ -90,6 +90,7 @@ import (
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
+	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
@@ -161,7 +162,7 @@ var (
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		axelarnetTypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -248,6 +249,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		snapTypes.StoreKey,
 		tssTypes.StoreKey,
 		nexusTypes.StoreKey,
+		axelarnetTypes.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -378,6 +380,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	votingK := voteKeeper.NewKeeper(
 		appCodec, keys[voteTypes.StoreKey], snapK,
 	)
+	axelarnetK := axelarnetKeeper.NewKeeper(
+		appCodec, keys[axelarnetTypes.StoreKey],
+	)
 
 	rpcsEVM := make(map[string]evmTypes.RPCClient)
 	for _, evmConf := range axelarCfg.EVMConfig {
@@ -437,7 +442,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexus.NewAppModule(nexusK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
-		axelarnet.NewAppModule(nexusK, bankK, logger),
+		axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, logger),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

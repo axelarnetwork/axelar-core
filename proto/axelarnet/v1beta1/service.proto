@@ -13,20 +13,34 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
-      post : "/axelar/cosmos/link/{recipient_chain}"
+      post : "/axelar/axelarnet/link/{recipient_chain}"
       body : "*"
     };
   }
   rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
     option (google.api.http) = {
-      post : "/axelar/cosmos/confirm-deposit"
+      post : "/axelar/axelarnet/confirm-deposit"
       body : "*"
     };
   }
   rpc ExecutePendingTransfers(ExecutePendingTransfersRequest)
       returns (ExecutePendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/cosmos/execute-pending-transfers"
+      post : "/axelar/axelarnet/execute-pending-transfers"
+      body : "*"
+    };
+  }
+  rpc RegisterIbcPath(RegisterIbcPathRequest)
+      returns (RegisterIbcPathResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/register-ibc-path"
+      body : "*"
+    };
+  }
+  rpc AddCosmosBasedChain(AddCosmosBasedChainRequest)
+      returns (AddCosmosBasedChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/add-cosmos-based-chain"
       body : "*"
     };
   }

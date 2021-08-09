@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -76,21 +77,27 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger log.Logger
-	nexus  types.Nexus
-	bank   types.BankKeeper
+	logger   log.Logger
+	keeper   keeper.Keeper
+	nexus    types.Nexus
+	bank     types.BankKeeper
+	transfer types.IbcTransferKeeper
 }
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
+	k keeper.Keeper,
 	nexus types.Nexus,
 	bank types.BankKeeper,
+	transfer types.IbcTransferKeeper,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
+		keeper:         k,
 		nexus:          nexus,
 		bank:           bank,
+		transfer:       transfer,
 	}
 }
 
@@ -117,7 +124,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.nexus, am.bank))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer))
 }
 
 // QuerierRoute returns this module's query route

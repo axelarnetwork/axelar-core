@@ -42,3 +42,22 @@ message ExecutePendingTransfersRequest {
 }
 
 message ExecutePendingTransfersResponse {}
+
+// RegisterIbcPathRequest represents a message to register a path for an asset
+message RegisterIbcPathRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string asset = 2;
+  string path = 3;
+}
+
+message RegisterIbcPathResponse {}
+
+message AddCosmosBasedChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string name = 2;
+  string native_asset = 3;
+}
+
+message AddCosmosBasedChainResponse {}

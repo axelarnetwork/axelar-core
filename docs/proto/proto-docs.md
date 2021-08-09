@@ -11,12 +11,16 @@
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
+    - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
     - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterIbcPathRequest](#axelarnet.v1beta1.RegisterIbcPathRequest)
+    - [RegisterIbcPathResponse](#axelarnet.v1beta1.RegisterIbcPathResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
@@ -299,6 +303,33 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
+
+### AddCosmosBasedChainRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
+
+### AddCosmosBasedChainResponse
+
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
@@ -386,6 +417,33 @@ address
 
 
 
+
+<a name="axelarnet.v1beta1.RegisterIbcPathRequest"></a>
+
+### RegisterIbcPathRequest
+RegisterIbcPathRequest represents a message to register a path for an asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `path` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterIbcPathResponse"></a>
+
+### RegisterIbcPathResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -416,9 +474,11 @@ Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/cosmos/link/{recipient_chain}|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/cosmos/confirm-deposit|
-| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/cosmos/execute-pending-transfers|
+| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link/{recipient_chain}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm-deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
+| `RegisterIbcPath` | [RegisterIbcPathRequest](#axelarnet.v1beta1.RegisterIbcPathRequest) | [RegisterIbcPathResponse](#axelarnet.v1beta1.RegisterIbcPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
+| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 
  <!-- end services -->
 
@@ -1256,6 +1316,7 @@ that is deposited by an user
 | `token_address` | [bytes](#bytes) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `salt` | [bytes](#bytes) |  |  |
 
 
@@ -1273,6 +1334,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 

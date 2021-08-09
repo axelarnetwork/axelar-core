@@ -94,6 +94,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		TokenAddress:     types.Address(tokenAddr),
 		DestinationChain: req.RecipientChain,
 		Symbol:           symbol,
+		Asset:            req.Asset,
 		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
@@ -161,6 +162,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
+
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve symbol for token %s", originChain.NativeAsset)
 	}
@@ -283,6 +285,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	erc20Deposit := types.ERC20Deposit{
 		TxID:             req.TxID,
 		Amount:           req.Amount,
+		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    req.BurnerAddress,
 	}
@@ -447,7 +450,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
 
-	destChain, ok := s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
 	if !ok {
 		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
 	}
@@ -520,7 +523,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	amount := sdk.NewInt64Coin(destChain.NativeAsset, pendingDeposit.Amount.BigInt().Int64())
+	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}

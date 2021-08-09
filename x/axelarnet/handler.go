@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(n types.Nexus, b types.BankKeeper) sdk.Handler {
-	server := keeper.NewMsgServerImpl(n, b)
+func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IbcTransferKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, n, b, t)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -35,6 +35,20 @@ func NewHandler(n types.Nexus, b types.BankKeeper) sdk.Handler {
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully executed pending transfers")
+			}
+			return result, err
+		case *types.RegisterIbcPathRequest:
+			res, err := server.RegisterIbcPath(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully registered asset %s with path %s", msg.Asset, msg.Path)
+			}
+			return result, err
+		case *types.AddCosmosBasedChainRequest:
+			res, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully added chain %s with native asset %s", msg.Name, msg.NativeAsset)
 			}
 			return result, err
 		default:
