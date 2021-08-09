@@ -17,6 +17,26 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
+// to ask vald processes about sending their acknowledgments
+func (k Keeper) ScheduleSign(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshot.Snapshot) {
+	info := types.SignInfo{
+		KeyID:    keyID,
+		SigID:    sigID,
+		Msg:      msg,
+		Snapshot: s,
+	}
+
+	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
+	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckSign.String(), info.SigID)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+	k.emitAckEvent(ctx, types.AttributeValueKeygen, info.KeyID, info.SigID)
+
+	k.Logger(ctx).Info(fmt.Sprintf("keygen scheduled for block %d (currently at %d))", height, ctx.BlockHeight()))
+}
+
 // StartSign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {

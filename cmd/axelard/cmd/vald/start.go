@@ -243,6 +243,7 @@ func listen(
 	blockHeaderForStateUpdate := tmEvents.MustSubscribeNewBlockHeader(hub)
 
 	keygenAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
+	signAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
 
 	q := tmEvents.Query{
 		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
@@ -257,7 +258,6 @@ func listen(
 		panic(fmt.Errorf("unable to create keygen event query: %v", err))
 	}
 
-	//keygenStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 	signStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
@@ -290,6 +290,7 @@ func listen(
 		events.Consume(keygenAck, tssMgr.ProcessKeygenAck),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
+		events.Consume(signAck, tssMgr.ProcessSignAck),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
 		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),

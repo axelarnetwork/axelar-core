@@ -229,6 +229,9 @@
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
   
+- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [SignInfo](#tss.v1beta1.SignInfo)
+  
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
   
@@ -3154,6 +3157,40 @@ Msg defines the tss Msg service.
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/types.proto
+
+
+
+<a name="tss.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

@@ -10,10 +10,46 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+// ProcessSignAck broadcasts an acknowledgment for a signature
+func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) error {
+	keyID, sigID, err := parseSignAckParams(mgr.cdc, attributes)
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	request := &tofnd.KeyPresenceRequest{
+		KeyUid: keyID,
+	}
+
+	response, err := mgr.client.KeyPresence(grpcCtx, request)
+	if err != nil {
+		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc for key ID '%s'", keyID)
+	}
+
+	switch response.Response {
+	case tofnd.KeyPresenceResponse_RESPONSE_UNSPECIFIED:
+		fallthrough
+	case tofnd.KeyPresenceResponse_RESPONSE_FAIL:
+		return sdkerrors.Wrap(err, "tofnd not set up correctly")
+	case tofnd.KeyPresenceResponse_RESPONSE_ABSENT:
+		return sdkerrors.Wrap(err, "key ID '%s' not present at tofnd")
+	case tofnd.KeyPresenceResponse_RESPONSE_PRESENT:
+		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s' and sig ID '%s'", keyID, sigID))
+		tssMsg := &tss.AckRequest{Sender: mgr.sender, ID: sigID, AckType: exported.AckSign}
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
+			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+		}
+	default:
+		return sdkerrors.Wrap(err, "unknown tofnd response")
+	}
+
+	return nil
+}
 
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
@@ -90,6 +126,27 @@ func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 		return sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
 	}
 	return nil
+}
+
+func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, err error) {
+	var keyIDFound, sigIDFound bool
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case tss.AttributeKeyKeyID:
+			keyID = attribute.Value
+			keyIDFound = true
+		case tss.AttributeKeySigID:
+			sigID = attribute.Value
+			sigIDFound = true
+		default:
+		}
+	}
+
+	if keyIDFound && sigIDFound {
+		return "", "", fmt.Errorf("insufficient event attributes")
+	}
+
+	return keyID, sigID, nil
 }
 
 func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, err error) {

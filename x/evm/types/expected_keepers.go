@@ -114,6 +114,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
+	//ScheduleSign(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshot.Snapshot)
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
