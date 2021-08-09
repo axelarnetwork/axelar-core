@@ -178,15 +178,23 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.Poll))),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
+	attributes := []sdk.Attribute{}
+	defer func(eventPtr *sdk.Event, attributes *[]sdk.Attribute) {
+		event := *eventPtr
+		for _, attr := range *attributes {
+			event = event.AppendAttributes(attr)
+		}
+		ctx.EventManager().EmitEvent(event)
+		//ctx.EventManager().EmitEvent( event.AppendAttributes(*(...attributes))
+	}(&event, &attributes)
+
 	if !confirmed.Value {
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		attributes = append(attributes, sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("outpoint %s was discarded ", req.OutPoint),
 		}, nil
 	}
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+	attributes = append(attributes, sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	s.SetOutpointInfo(ctx, pendingOutPointInfo, types.CONFIRMED)
 	addr, ok := s.GetAddress(ctx, pendingOutPointInfo.Address)
@@ -202,6 +210,16 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}
+
+		recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+		if !ok {
+			return nil, sdkerrors.Wrap(err, "cross-chain sender has no recipient")
+		}
+
+		attributes = append(attributes,
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+		)
 
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),

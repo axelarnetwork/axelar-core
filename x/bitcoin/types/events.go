@@ -15,6 +15,7 @@ const (
 	AttributeKeyTxHash             = "txHash"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDestinationAddress = "destinationAddress"
+	AttributeKeyDestinationChain   = "destinationChain"
 )
 
 // Event attribute values
