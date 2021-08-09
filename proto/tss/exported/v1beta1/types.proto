@@ -36,3 +36,13 @@ enum KeyShareDistributionPolicy {
   KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
       [ (gogoproto.enumvalue_customname) = "OnePerValidator" ];
 }
+
+enum AckType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ACK_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "AckUnspecified" ];
+  ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "AckKeygen" ];
+  ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "AckSign" ];
+}

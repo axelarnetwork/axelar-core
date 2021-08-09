@@ -95,7 +95,7 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 
 	if poll == nil {
 		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.Unspecified
+		resp.VoteStatus = tssTypes.VoteUnspecified
 	} else {
 		// poll still open, pending a decision
 		resp.VoteStatus = tssTypes.Pending
@@ -121,7 +121,7 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 	poll := v.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.Unspecified
+		resp.VoteStatus = tssTypes.VoteUnspecified
 	} else {
 		// poll still open, pending a decision
 		resp.VoteStatus = tssTypes.Pending

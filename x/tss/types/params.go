@@ -27,6 +27,7 @@ var (
 	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
 	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
 	KeyTimeoutInBlocks         = []byte("TimeoutInBlocks")
+	KeyAckWindowInBlocks       = []byte("AckWindowInBlocks")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -70,6 +71,7 @@ func DefaultParams() Params {
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 200},
 		SuspendDurationInBlocks: 1000,
 		TimeoutInBlocks:         100,
+		AckWindowInBlocks:       4,
 	}
 }
 
@@ -89,7 +91,8 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
-		params.NewParamSetPair(KeyTimeoutInBlocks, &m.TimeoutInBlocks, validateTimeoutInBlocks),
+		params.NewParamSetPair(KeyTimeoutInBlocks, &m.TimeoutInBlocks, validateInt64("TimeoutInBlocks")),
+		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
 	}
 }
 
@@ -134,7 +137,11 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateTimeoutInBlocks(m.TimeoutInBlocks); err != nil {
+	if err := validateInt64("TimeoutInBlocks")(m.TimeoutInBlocks); err != nil {
+		return err
+	}
+
+	if err := validateInt64("AckWindowInBlocks")(m.AckWindowInBlocks); err != nil {
 		return err
 	}
 
@@ -223,15 +230,17 @@ func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error 
 	return nil
 }
 
-func validateTimeoutInBlocks(timeoutInBlocks interface{}) error {
-	val, ok := timeoutInBlocks.(int64)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for TimeoutInBlocks: %T", timeoutInBlocks)
-	}
+func validateInt64(field string) func(timeoutInBlocks interface{}) error {
+	return func(timeoutInBlocks interface{}) error {
+		val, ok := timeoutInBlocks.(int64)
+		if !ok {
+			return fmt.Errorf("invalid parameter type for %s: %T", field, timeoutInBlocks)
+		}
 
-	if val <= 0 {
-		return fmt.Errorf("TimeoutInBlocks must be a positive integer")
-	}
+		if val <= 0 {
+			return fmt.Errorf("%s must be a positive integer", field)
+		}
 
-	return nil
+		return nil
+	}
 }

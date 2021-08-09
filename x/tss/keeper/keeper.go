@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,6 +32,9 @@ const (
 	keyRolePrefix          = "key_role_"
 	keyTssSuspendedUntil   = "key_tss_suspended_until_"
 	keyRotatedAtPrefix     = "key_rotated_at_"
+	availablePrefix        = "available_"
+	forCounterPrefix       = "for_counter_"
+	ackPrefix              = "ack_"
 )
 
 // Keeper allows access to the broadcast state
@@ -89,7 +94,7 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 	}
 
 	for _, validator := range snap.Validators {
-		if !snapshot.IsValidatorEligibleForNewKey(ctx, k.slasher, snapshotter, k, validator.GetSDKValidator()) {
+		if !snapshot.IsValidatorEligibleForNewKey(ctx, k.slasher, snapshotter, k, counter, validator.GetSDKValidator()) {
 			return fmt.Errorf("validator %s in snapshot %d is not eligible for handling key %s", validator.GetSDKValidator().GetOperator().String(), counter, keyID)
 		}
 	}
@@ -257,4 +262,147 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 	}
 
 	return int64(binary.LittleEndian.Uint64(bz))
+}
+
+// SetKeygenAtHeight sets the height for a given keygen request to start at the specified block height
+func (k Keeper) SetKeygenAtHeight(ctx sdk.Context, height int64, req types.StartKeygenRequest) {
+	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// DeleteAtCurrentHeight removes a keygen/sign request for the current height
+func (k Keeper) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
+	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, ctx.BlockHeight(), ackType.String(), ID)
+	ctx.KVStore(k.storeKey).Delete([]byte(key))
+}
+
+// GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
+func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
+	prefix := fmt.Sprintf("%s%d_%s_", ackPrefix, ctx.BlockHeight(), exported.AckKeygen.String())
+	store := ctx.KVStore(k.storeKey)
+	var requests []types.StartKeygenRequest
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+
+		var request types.StartKeygenRequest
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &request)
+		requests = append(requests, request)
+	}
+
+	return requests
+}
+
+// SetAvailableOperator sets the height at which a validator sent his ack for some key/sign ID. Returns an error if
+// the validator already submitted a ack for the given ID and type.
+func (k Keeper) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
+	if ID == "" {
+		return fmt.Errorf("ID cannot be empty")
+	}
+
+	key := fmt.Sprintf("%s%s_%s_%s", availablePrefix, ID, ackType.String(), validator.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz != nil {
+		return fmt.Errorf("validator already submitted its ack for the specified ID and type")
+	}
+
+	bz = make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+
+	return nil
+}
+
+// LinkAvailableOperatorsToCounter links the available operators of some keygen/sign to a snapshot counter
+func (k Keeper) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
+	operators := k.getAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
+	if len(operators) > 0 {
+		k.setAvailableOperatorsForCounter(ctx, counter, operators)
+		k.deleteAvailableOperators(ctx, ID, ackType)
+	}
+}
+
+// gets all operators that sent a acknowledgment for so given keygen/sign ID until some given height
+func (k Keeper) getAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
+	if ID == "" {
+		return nil
+	}
+
+	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, ID, ackType.String())
+	store := ctx.KVStore(k.storeKey)
+	var addresses []sdk.ValAddress
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+
+		validator := strings.TrimPrefix(string(iter.Key()), prefix)
+		address, err := sdk.ValAddressFromBech32(validator)
+		if err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s due to parsing error: %s", validator, err.Error()))
+			continue
+		}
+
+		height := int64(binary.LittleEndian.Uint64(iter.Value()))
+		if height > heightLimit {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to late acknowledgement"+
+				" [received at height %d and height limit %d]", validator, height, heightLimit))
+			continue
+		}
+
+		addresses = append(addresses, address)
+	}
+
+	return addresses
+}
+
+// removes the validator that sent an ack for some key/sign ID (if it exists)
+func (k Keeper) deleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType) {
+	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, ID, ackType.String())
+	store := ctx.KVStore(k.storeKey)
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
+	}
+}
+
+// links a set of available operators to a snapshot counter
+func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, validators []sdk.ValAddress) {
+	key := fmt.Sprintf("%s%d", forCounterPrefix, counter)
+
+	values := make([]string, len(validators))
+	for i, validator := range validators {
+		values[i] = validator.String()
+	}
+	list, _ := json.Marshal(values)
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), list)
+}
+
+// OperatorIsAvailableForCounter returns true if the given validator address is available for the specified snapshot counter
+func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
+	key := fmt.Sprintf("%s%d", forCounterPrefix, counter)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+
+	if bz == nil {
+		return false
+	}
+
+	var list []string
+	_ = json.Unmarshal(bz, &list)
+
+	for _, value := range list {
+		if value == validator.String() {
+			return true
+		}
+	}
+
+	return false
 }

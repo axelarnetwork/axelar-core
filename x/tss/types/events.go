@@ -4,6 +4,7 @@ package types
 const (
 	EventTypeKeygen = "keygen"
 	EventTypeSign   = "sign"
+	EventTypeAck    = "ack"
 )
 
 // Event attribute keys
@@ -22,6 +23,8 @@ const (
 
 // Event attribute values
 const (
+	AttributeValueKeygen  = "keygen"
+	AttributeValueSign    = "sign"
 	AttributeValueStart   = "start"
 	AttributeValueMsg     = "message"
 	AttributeValueDecided = "decided"

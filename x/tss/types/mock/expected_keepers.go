@@ -1175,6 +1175,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			DeleteAllRecoveryInfosFunc: func(ctx sdk.Context, keyID string)  {
 // 				panic("mock out the DeleteAllRecoveryInfos method")
 // 			},
+// 			DeleteAtCurrentHeightFunc: func(ctx sdk.Context, ID string, ackType exported.AckType)  {
+// 				panic("mock out the DeleteAtCurrentHeight method")
+// 			},
 // 			DeleteKeyIDForSigFunc: func(ctx sdk.Context, sigID string)  {
 // 				panic("mock out the DeleteKeyIDForSig method")
 // 			},
@@ -1192,6 +1195,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			DoesValidatorParticipateInSignFunc: func(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
 // 				panic("mock out the DoesValidatorParticipateInSign method")
+// 			},
+// 			GetAllKeygenRequestsAtCurrentHeightFunc: func(ctx sdk.Context) []tsstypes.StartKeygenRequest {
+// 				panic("mock out the GetAllKeygenRequestsAtCurrentHeight method")
 // 			},
 // 			GetAllRecoveryInfosFunc: func(ctx sdk.Context, keyID string) [][]byte {
 // 				panic("mock out the GetAllRecoveryInfos method")
@@ -1238,11 +1244,20 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
+// 			HasKeygenStartFunc: func(ctx sdk.Context, keyID string) bool {
+// 				panic("mock out the HasKeygenStart method")
+// 			},
 // 			HasRecoveryInfosFunc: func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 // 				panic("mock out the HasRecoveryInfos method")
 // 			},
+// 			LinkAvailableOperatorsToCounterFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)  {
+// 				panic("mock out the LinkAvailableOperatorsToCounter method")
+// 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
+// 			},
+// 			OperatorIsAvailableForCounterFunc: func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
+// 				panic("mock out the OperatorIsAvailableForCounter method")
 // 			},
 // 			PenalizeSignCriminalFunc: func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)  {
 // 				panic("mock out the PenalizeSignCriminal method")
@@ -1250,11 +1265,17 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
+// 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
+// 				panic("mock out the SetAvailableOperator method")
+// 			},
 // 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
 // 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement exported.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
+// 			},
+// 			SetKeygenAtHeightFunc: func(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest)  {
+// 				panic("mock out the SetKeygenAtHeight method")
 // 			},
 // 			SetParamsFunc: func(ctx sdk.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
@@ -1284,6 +1305,9 @@ type TSSKeeperMock struct {
 	// DeleteAllRecoveryInfosFunc mocks the DeleteAllRecoveryInfos method.
 	DeleteAllRecoveryInfosFunc func(ctx sdk.Context, keyID string)
 
+	// DeleteAtCurrentHeightFunc mocks the DeleteAtCurrentHeight method.
+	DeleteAtCurrentHeightFunc func(ctx sdk.Context, ID string, ackType exported.AckType)
+
 	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
 	DeleteKeyIDForSigFunc func(ctx sdk.Context, sigID string)
 
@@ -1301,6 +1325,9 @@ type TSSKeeperMock struct {
 
 	// DoesValidatorParticipateInSignFunc mocks the DoesValidatorParticipateInSign method.
 	DoesValidatorParticipateInSignFunc func(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
+
+	// GetAllKeygenRequestsAtCurrentHeightFunc mocks the GetAllKeygenRequestsAtCurrentHeight method.
+	GetAllKeygenRequestsAtCurrentHeightFunc func(ctx sdk.Context) []tsstypes.StartKeygenRequest
 
 	// GetAllRecoveryInfosFunc mocks the GetAllRecoveryInfos method.
 	GetAllRecoveryInfosFunc func(ctx sdk.Context, keyID string) [][]byte
@@ -1347,11 +1374,20 @@ type TSSKeeperMock struct {
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
 
+	// HasKeygenStartFunc mocks the HasKeygenStart method.
+	HasKeygenStartFunc func(ctx sdk.Context, keyID string) bool
+
 	// HasRecoveryInfosFunc mocks the HasRecoveryInfos method.
 	HasRecoveryInfosFunc func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
 
+	// LinkAvailableOperatorsToCounterFunc mocks the LinkAvailableOperatorsToCounter method.
+	LinkAvailableOperatorsToCounterFunc func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
+
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
+
+	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
+	OperatorIsAvailableForCounterFunc func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 
 	// PenalizeSignCriminalFunc mocks the PenalizeSignCriminal method.
 	PenalizeSignCriminalFunc func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
@@ -1359,11 +1395,17 @@ type TSSKeeperMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 
+	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
+	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
+
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement exported.KeyRequirement)
+
+	// SetKeygenAtHeightFunc mocks the SetKeygenAtHeight method.
+	SetKeygenAtHeightFunc func(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx sdk.Context, p tsstypes.Params)
@@ -1401,6 +1443,15 @@ type TSSKeeperMock struct {
 			Ctx sdk.Context
 			// KeyID is the keyID argument value.
 			KeyID string
+		}
+		// DeleteAtCurrentHeight holds details about calls to the DeleteAtCurrentHeight method.
+		DeleteAtCurrentHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the ID argument value.
+			ID string
+			// AckType is the ackType argument value.
+			AckType exported.AckType
 		}
 		// DeleteKeyIDForSig holds details about calls to the DeleteKeyIDForSig method.
 		DeleteKeyIDForSig []struct {
@@ -1447,6 +1498,11 @@ type TSSKeeperMock struct {
 			SigID string
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
+		}
+		// GetAllKeygenRequestsAtCurrentHeight holds details about calls to the GetAllKeygenRequestsAtCurrentHeight method.
+		GetAllKeygenRequestsAtCurrentHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// GetAllRecoveryInfos holds details about calls to the GetAllRecoveryInfos method.
 		GetAllRecoveryInfos []struct {
@@ -1557,6 +1613,13 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
+		// HasKeygenStart holds details about calls to the HasKeygenStart method.
+		HasKeygenStart []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// HasRecoveryInfos holds details about calls to the HasRecoveryInfos method.
 		HasRecoveryInfos []struct {
 			// Ctx is the ctx argument value.
@@ -1566,10 +1629,30 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// LinkAvailableOperatorsToCounter holds details about calls to the LinkAvailableOperatorsToCounter method.
+		LinkAvailableOperatorsToCounter []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the ID argument value.
+			ID string
+			// AckType is the ackType argument value.
+			AckType exported.AckType
+			// Counter is the counter argument value.
+			Counter int64
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+		}
+		// OperatorIsAvailableForCounter holds details about calls to the OperatorIsAvailableForCounter method.
+		OperatorIsAvailableForCounter []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Counter is the counter argument value.
+			Counter int64
+			// Validator is the validator argument value.
+			Validator sdk.ValAddress
 		}
 		// PenalizeSignCriminal holds details about calls to the PenalizeSignCriminal method.
 		PenalizeSignCriminal []struct {
@@ -1589,6 +1672,17 @@ type TSSKeeperMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole exported.KeyRole
 		}
+		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
+		SetAvailableOperator []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the ID argument value.
+			ID string
+			// AckType is the ackType argument value.
+			AckType exported.AckType
+			// Validator is the validator argument value.
+			Validator sdk.ValAddress
+		}
 		// SetKey holds details about calls to the SetKey method.
 		SetKey []struct {
 			// Ctx is the ctx argument value.
@@ -1604,6 +1698,15 @@ type TSSKeeperMock struct {
 			Ctx sdk.Context
 			// KeyRequirement is the keyRequirement argument value.
 			KeyRequirement exported.KeyRequirement
+		}
+		// SetKeygenAtHeight holds details about calls to the SetKeygenAtHeight method.
+		SetKeygenAtHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Height is the height argument value.
+			Height int64
+			// Req is the req argument value.
+			Req tsstypes.StartKeygenRequest
 		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
@@ -1661,40 +1764,47 @@ type TSSKeeperMock struct {
 			S snapshot.Snapshot
 		}
 	}
-	lockAssignNextKey                    sync.RWMutex
-	lockDeleteAllRecoveryInfos           sync.RWMutex
-	lockDeleteKeyIDForSig                sync.RWMutex
-	lockDeleteKeygenStart                sync.RWMutex
-	lockDeleteParticipantsInKeygen       sync.RWMutex
-	lockDeleteSnapshotCounterForKeyID    sync.RWMutex
-	lockDoesValidatorParticipateInKeygen sync.RWMutex
-	lockDoesValidatorParticipateInSign   sync.RWMutex
-	lockGetAllRecoveryInfos              sync.RWMutex
-	lockGetCorruptionThreshold           sync.RWMutex
-	lockGetCurrentKey                    sync.RWMutex
-	lockGetCurrentKeyID                  sync.RWMutex
-	lockGetKey                           sync.RWMutex
-	lockGetKeyForSigID                   sync.RWMutex
-	lockGetKeyRequirement                sync.RWMutex
-	lockGetMinBondFractionPerShare       sync.RWMutex
-	lockGetMinKeygenThreshold            sync.RWMutex
-	lockGetNextKey                       sync.RWMutex
-	lockGetNextKeyID                     sync.RWMutex
-	lockGetParams                        sync.RWMutex
-	lockGetSig                           sync.RWMutex
-	lockGetSnapshotCounterForKeyID       sync.RWMutex
-	lockGetTssSuspendedUntil             sync.RWMutex
-	lockHasRecoveryInfos                 sync.RWMutex
-	lockLogger                           sync.RWMutex
-	lockPenalizeSignCriminal             sync.RWMutex
-	lockRotateKey                        sync.RWMutex
-	lockSetKey                           sync.RWMutex
-	lockSetKeyRequirement                sync.RWMutex
-	lockSetParams                        sync.RWMutex
-	lockSetRecoveryInfos                 sync.RWMutex
-	lockSetSig                           sync.RWMutex
-	lockStartKeygen                      sync.RWMutex
-	lockStartSign                        sync.RWMutex
+	lockAssignNextKey                       sync.RWMutex
+	lockDeleteAllRecoveryInfos              sync.RWMutex
+	lockDeleteAtCurrentHeight               sync.RWMutex
+	lockDeleteKeyIDForSig                   sync.RWMutex
+	lockDeleteKeygenStart                   sync.RWMutex
+	lockDeleteParticipantsInKeygen          sync.RWMutex
+	lockDeleteSnapshotCounterForKeyID       sync.RWMutex
+	lockDoesValidatorParticipateInKeygen    sync.RWMutex
+	lockDoesValidatorParticipateInSign      sync.RWMutex
+	lockGetAllKeygenRequestsAtCurrentHeight sync.RWMutex
+	lockGetAllRecoveryInfos                 sync.RWMutex
+	lockGetCorruptionThreshold              sync.RWMutex
+	lockGetCurrentKey                       sync.RWMutex
+	lockGetCurrentKeyID                     sync.RWMutex
+	lockGetKey                              sync.RWMutex
+	lockGetKeyForSigID                      sync.RWMutex
+	lockGetKeyRequirement                   sync.RWMutex
+	lockGetMinBondFractionPerShare          sync.RWMutex
+	lockGetMinKeygenThreshold               sync.RWMutex
+	lockGetNextKey                          sync.RWMutex
+	lockGetNextKeyID                        sync.RWMutex
+	lockGetParams                           sync.RWMutex
+	lockGetSig                              sync.RWMutex
+	lockGetSnapshotCounterForKeyID          sync.RWMutex
+	lockGetTssSuspendedUntil                sync.RWMutex
+	lockHasKeygenStart                      sync.RWMutex
+	lockHasRecoveryInfos                    sync.RWMutex
+	lockLinkAvailableOperatorsToCounter     sync.RWMutex
+	lockLogger                              sync.RWMutex
+	lockOperatorIsAvailableForCounter       sync.RWMutex
+	lockPenalizeSignCriminal                sync.RWMutex
+	lockRotateKey                           sync.RWMutex
+	lockSetAvailableOperator                sync.RWMutex
+	lockSetKey                              sync.RWMutex
+	lockSetKeyRequirement                   sync.RWMutex
+	lockSetKeygenAtHeight                   sync.RWMutex
+	lockSetParams                           sync.RWMutex
+	lockSetRecoveryInfos                    sync.RWMutex
+	lockSetSig                              sync.RWMutex
+	lockStartKeygen                         sync.RWMutex
+	lockStartSign                           sync.RWMutex
 }
 
 // AssignNextKey calls AssignNextKeyFunc.
@@ -1772,6 +1882,45 @@ func (mock *TSSKeeperMock) DeleteAllRecoveryInfosCalls() []struct {
 	mock.lockDeleteAllRecoveryInfos.RLock()
 	calls = mock.calls.DeleteAllRecoveryInfos
 	mock.lockDeleteAllRecoveryInfos.RUnlock()
+	return calls
+}
+
+// DeleteAtCurrentHeight calls DeleteAtCurrentHeightFunc.
+func (mock *TSSKeeperMock) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
+	if mock.DeleteAtCurrentHeightFunc == nil {
+		panic("TSSKeeperMock.DeleteAtCurrentHeightFunc: method is nil but TSSKeeper.DeleteAtCurrentHeight was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+	}{
+		Ctx:     ctx,
+		ID:      ID,
+		AckType: ackType,
+	}
+	mock.lockDeleteAtCurrentHeight.Lock()
+	mock.calls.DeleteAtCurrentHeight = append(mock.calls.DeleteAtCurrentHeight, callInfo)
+	mock.lockDeleteAtCurrentHeight.Unlock()
+	mock.DeleteAtCurrentHeightFunc(ctx, ID, ackType)
+}
+
+// DeleteAtCurrentHeightCalls gets all the calls that were made to DeleteAtCurrentHeight.
+// Check the length with:
+//     len(mockedTSSKeeper.DeleteAtCurrentHeightCalls())
+func (mock *TSSKeeperMock) DeleteAtCurrentHeightCalls() []struct {
+	Ctx     sdk.Context
+	ID      string
+	AckType exported.AckType
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+	}
+	mock.lockDeleteAtCurrentHeight.RLock()
+	calls = mock.calls.DeleteAtCurrentHeight
+	mock.lockDeleteAtCurrentHeight.RUnlock()
 	return calls
 }
 
@@ -1990,6 +2139,37 @@ func (mock *TSSKeeperMock) DoesValidatorParticipateInSignCalls() []struct {
 	mock.lockDoesValidatorParticipateInSign.RLock()
 	calls = mock.calls.DoesValidatorParticipateInSign
 	mock.lockDoesValidatorParticipateInSign.RUnlock()
+	return calls
+}
+
+// GetAllKeygenRequestsAtCurrentHeight calls GetAllKeygenRequestsAtCurrentHeightFunc.
+func (mock *TSSKeeperMock) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []tsstypes.StartKeygenRequest {
+	if mock.GetAllKeygenRequestsAtCurrentHeightFunc == nil {
+		panic("TSSKeeperMock.GetAllKeygenRequestsAtCurrentHeightFunc: method is nil but TSSKeeper.GetAllKeygenRequestsAtCurrentHeight was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetAllKeygenRequestsAtCurrentHeight.Lock()
+	mock.calls.GetAllKeygenRequestsAtCurrentHeight = append(mock.calls.GetAllKeygenRequestsAtCurrentHeight, callInfo)
+	mock.lockGetAllKeygenRequestsAtCurrentHeight.Unlock()
+	return mock.GetAllKeygenRequestsAtCurrentHeightFunc(ctx)
+}
+
+// GetAllKeygenRequestsAtCurrentHeightCalls gets all the calls that were made to GetAllKeygenRequestsAtCurrentHeight.
+// Check the length with:
+//     len(mockedTSSKeeper.GetAllKeygenRequestsAtCurrentHeightCalls())
+func (mock *TSSKeeperMock) GetAllKeygenRequestsAtCurrentHeightCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetAllKeygenRequestsAtCurrentHeight.RLock()
+	calls = mock.calls.GetAllKeygenRequestsAtCurrentHeight
+	mock.lockGetAllKeygenRequestsAtCurrentHeight.RUnlock()
 	return calls
 }
 
@@ -2526,6 +2706,41 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 	return calls
 }
 
+// HasKeygenStart calls HasKeygenStartFunc.
+func (mock *TSSKeeperMock) HasKeygenStart(ctx sdk.Context, keyID string) bool {
+	if mock.HasKeygenStartFunc == nil {
+		panic("TSSKeeperMock.HasKeygenStartFunc: method is nil but TSSKeeper.HasKeygenStart was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockHasKeygenStart.Lock()
+	mock.calls.HasKeygenStart = append(mock.calls.HasKeygenStart, callInfo)
+	mock.lockHasKeygenStart.Unlock()
+	return mock.HasKeygenStartFunc(ctx, keyID)
+}
+
+// HasKeygenStartCalls gets all the calls that were made to HasKeygenStart.
+// Check the length with:
+//     len(mockedTSSKeeper.HasKeygenStartCalls())
+func (mock *TSSKeeperMock) HasKeygenStartCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+	}
+	mock.lockHasKeygenStart.RLock()
+	calls = mock.calls.HasKeygenStart
+	mock.lockHasKeygenStart.RUnlock()
+	return calls
+}
+
 // HasRecoveryInfos calls HasRecoveryInfosFunc.
 func (mock *TSSKeeperMock) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 	if mock.HasRecoveryInfosFunc == nil {
@@ -2565,6 +2780,49 @@ func (mock *TSSKeeperMock) HasRecoveryInfosCalls() []struct {
 	return calls
 }
 
+// LinkAvailableOperatorsToCounter calls LinkAvailableOperatorsToCounterFunc.
+func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
+	if mock.LinkAvailableOperatorsToCounterFunc == nil {
+		panic("TSSKeeperMock.LinkAvailableOperatorsToCounterFunc: method is nil but TSSKeeper.LinkAvailableOperatorsToCounter was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+		Counter int64
+	}{
+		Ctx:     ctx,
+		ID:      ID,
+		AckType: ackType,
+		Counter: counter,
+	}
+	mock.lockLinkAvailableOperatorsToCounter.Lock()
+	mock.calls.LinkAvailableOperatorsToCounter = append(mock.calls.LinkAvailableOperatorsToCounter, callInfo)
+	mock.lockLinkAvailableOperatorsToCounter.Unlock()
+	mock.LinkAvailableOperatorsToCounterFunc(ctx, ID, ackType, counter)
+}
+
+// LinkAvailableOperatorsToCounterCalls gets all the calls that were made to LinkAvailableOperatorsToCounter.
+// Check the length with:
+//     len(mockedTSSKeeper.LinkAvailableOperatorsToCounterCalls())
+func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounterCalls() []struct {
+	Ctx     sdk.Context
+	ID      string
+	AckType exported.AckType
+	Counter int64
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+		Counter int64
+	}
+	mock.lockLinkAvailableOperatorsToCounter.RLock()
+	calls = mock.calls.LinkAvailableOperatorsToCounter
+	mock.lockLinkAvailableOperatorsToCounter.RUnlock()
+	return calls
+}
+
 // Logger calls LoggerFunc.
 func (mock *TSSKeeperMock) Logger(ctx sdk.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -2593,6 +2851,45 @@ func (mock *TSSKeeperMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// OperatorIsAvailableForCounter calls OperatorIsAvailableForCounterFunc.
+func (mock *TSSKeeperMock) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
+	if mock.OperatorIsAvailableForCounterFunc == nil {
+		panic("TSSKeeperMock.OperatorIsAvailableForCounterFunc: method is nil but TSSKeeper.OperatorIsAvailableForCounter was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Counter   int64
+		Validator sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		Counter:   counter,
+		Validator: validator,
+	}
+	mock.lockOperatorIsAvailableForCounter.Lock()
+	mock.calls.OperatorIsAvailableForCounter = append(mock.calls.OperatorIsAvailableForCounter, callInfo)
+	mock.lockOperatorIsAvailableForCounter.Unlock()
+	return mock.OperatorIsAvailableForCounterFunc(ctx, counter, validator)
+}
+
+// OperatorIsAvailableForCounterCalls gets all the calls that were made to OperatorIsAvailableForCounter.
+// Check the length with:
+//     len(mockedTSSKeeper.OperatorIsAvailableForCounterCalls())
+func (mock *TSSKeeperMock) OperatorIsAvailableForCounterCalls() []struct {
+	Ctx       sdk.Context
+	Counter   int64
+	Validator sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Counter   int64
+		Validator sdk.ValAddress
+	}
+	mock.lockOperatorIsAvailableForCounter.RLock()
+	calls = mock.calls.OperatorIsAvailableForCounter
+	mock.lockOperatorIsAvailableForCounter.RUnlock()
 	return calls
 }
 
@@ -2674,6 +2971,49 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	return calls
 }
 
+// SetAvailableOperator calls SetAvailableOperatorFunc.
+func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
+	if mock.SetAvailableOperatorFunc == nil {
+		panic("TSSKeeperMock.SetAvailableOperatorFunc: method is nil but TSSKeeper.SetAvailableOperator was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		ID        string
+		AckType   exported.AckType
+		Validator sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		ID:        ID,
+		AckType:   ackType,
+		Validator: validator,
+	}
+	mock.lockSetAvailableOperator.Lock()
+	mock.calls.SetAvailableOperator = append(mock.calls.SetAvailableOperator, callInfo)
+	mock.lockSetAvailableOperator.Unlock()
+	return mock.SetAvailableOperatorFunc(ctx, ID, ackType, validator)
+}
+
+// SetAvailableOperatorCalls gets all the calls that were made to SetAvailableOperator.
+// Check the length with:
+//     len(mockedTSSKeeper.SetAvailableOperatorCalls())
+func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
+	Ctx       sdk.Context
+	ID        string
+	AckType   exported.AckType
+	Validator sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		ID        string
+		AckType   exported.AckType
+		Validator sdk.ValAddress
+	}
+	mock.lockSetAvailableOperator.RLock()
+	calls = mock.calls.SetAvailableOperator
+	mock.lockSetAvailableOperator.RUnlock()
+	return calls
+}
+
 // SetKey calls SetKeyFunc.
 func (mock *TSSKeeperMock) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	if mock.SetKeyFunc == nil {
@@ -2745,6 +3085,45 @@ func (mock *TSSKeeperMock) SetKeyRequirementCalls() []struct {
 	mock.lockSetKeyRequirement.RLock()
 	calls = mock.calls.SetKeyRequirement
 	mock.lockSetKeyRequirement.RUnlock()
+	return calls
+}
+
+// SetKeygenAtHeight calls SetKeygenAtHeightFunc.
+func (mock *TSSKeeperMock) SetKeygenAtHeight(ctx sdk.Context, height int64, req tsstypes.StartKeygenRequest) {
+	if mock.SetKeygenAtHeightFunc == nil {
+		panic("TSSKeeperMock.SetKeygenAtHeightFunc: method is nil but TSSKeeper.SetKeygenAtHeight was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Height int64
+		Req    tsstypes.StartKeygenRequest
+	}{
+		Ctx:    ctx,
+		Height: height,
+		Req:    req,
+	}
+	mock.lockSetKeygenAtHeight.Lock()
+	mock.calls.SetKeygenAtHeight = append(mock.calls.SetKeygenAtHeight, callInfo)
+	mock.lockSetKeygenAtHeight.Unlock()
+	mock.SetKeygenAtHeightFunc(ctx, height, req)
+}
+
+// SetKeygenAtHeightCalls gets all the calls that were made to SetKeygenAtHeight.
+// Check the length with:
+//     len(mockedTSSKeeper.SetKeygenAtHeightCalls())
+func (mock *TSSKeeperMock) SetKeygenAtHeightCalls() []struct {
+	Ctx    sdk.Context
+	Height int64
+	Req    tsstypes.StartKeygenRequest
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Height int64
+		Req    tsstypes.StartKeygenRequest
+	}
+	mock.lockSetKeygenAtHeight.RLock()
+	calls = mock.calls.SetKeygenAtHeight
+	mock.lockSetKeygenAtHeight.RUnlock()
 	return calls
 }
 

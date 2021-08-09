@@ -13,9 +13,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tendermint/tendermint/libs/pubsub/query"
+
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
+	eventTypes "github.com/axelarnetwork/tm-events/pkg/tendermint/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -43,6 +46,7 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tmTypes "github.com/tendermint/tendermint/types"
 )
 
 // RW grants -rw------- file permissions
@@ -238,7 +242,22 @@ func listen(
 	blockHeaderForTSS := tmEvents.MustSubscribeNewBlockHeader(hub)
 	blockHeaderForStateUpdate := tmEvents.MustSubscribeNewBlockHeader(hub)
 
-	keygenStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
+
+	q := tmEvents.Query{
+		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+			tmTypes.EventTypeKey, tmTypes.EventNewBlock, tssTypes.EventTypeKeygen, sdk.AttributeKeyModule, tssTypes.ModuleName)),
+		Predicate: func(e eventTypes.Event) bool {
+			return e.Type == tssTypes.EventTypeKeygen && e.Module == tssTypes.ModuleName && e.Action == tssTypes.AttributeValueStart
+		},
+	}
+
+	keygenStart, err := tmEvents.Subscribe(eventBus, q)
+	if err != nil {
+		panic(fmt.Errorf("unable to create keygen event query: %v", err))
+	}
+
+	//keygenStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 	signStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
@@ -268,6 +287,7 @@ func listen(
 		fetchEvents,
 		events.Consume(blockHeaderForStateUpdate, func(height int64, _ []sdk.Attribute) error { return stateStore.SetState(height) }),
 		events.Consume(blockHeaderForTSS, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
+		events.Consume(keygenAck, tssMgr.ProcessKeygenAck),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
 		events.Consume(signStart, tssMgr.ProcessSignStart),

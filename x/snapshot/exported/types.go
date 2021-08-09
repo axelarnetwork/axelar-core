@@ -55,12 +55,14 @@ type Tss interface {
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
+	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 }
 
 // IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
-func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, validator SDKValidator) bool {
+func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, counter int64, validator SDKValidator) bool {
 	return IsValidatorActive(ctx, slasher, validator) &&
 		HasProxyRegistered(ctx, snapshotter, validator) &&
+		IsValidatorAvaiableForCounter(ctx, tss, counter, validator) &&
 		!IsValidatorTssSuspended(ctx, tss, validator)
 }
 
@@ -80,6 +82,12 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
 	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
 	return active
+}
+
+// IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
+// and was subsequently linked to a snapshot counter as an available operator
+func IsValidatorAvaiableForCounter(ctx sdk.Context, tss Tss, counter int64, validator SDKValidator) bool {
+	return tss.OperatorIsAvailableForCounter(ctx, counter, validator.GetOperator())
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false

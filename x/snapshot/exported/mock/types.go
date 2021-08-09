@@ -730,6 +730,9 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
+// 			OperatorIsAvailableForCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 				panic("mock out the OperatorIsAvailableForCounter method")
+// 			},
 // 			SetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
 // 			},
@@ -748,6 +751,9 @@ type TssMock struct {
 
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
+
+	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
+	OperatorIsAvailableForCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
 	SetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)
@@ -775,6 +781,15 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// OperatorIsAvailableForCounter holds details about calls to the OperatorIsAvailableForCounter method.
+		OperatorIsAvailableForCounter []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Counter is the counter argument value.
+			Counter int64
+			// Validator is the validator argument value.
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
 		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
 		SetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
@@ -783,10 +798,11 @@ type TssMock struct {
 			KeyRequirement tssexported.KeyRequirement
 		}
 	}
-	lockGetMinBondFractionPerShare sync.RWMutex
-	lockGetNextKey                 sync.RWMutex
-	lockGetTssSuspendedUntil       sync.RWMutex
-	lockSetKeyRequirement          sync.RWMutex
+	lockGetMinBondFractionPerShare    sync.RWMutex
+	lockGetNextKey                    sync.RWMutex
+	lockGetTssSuspendedUntil          sync.RWMutex
+	lockOperatorIsAvailableForCounter sync.RWMutex
+	lockSetKeyRequirement             sync.RWMutex
 }
 
 // GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
@@ -891,6 +907,45 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
+	return calls
+}
+
+// OperatorIsAvailableForCounter calls OperatorIsAvailableForCounterFunc.
+func (mock *TssMock) OperatorIsAvailableForCounter(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+	if mock.OperatorIsAvailableForCounterFunc == nil {
+		panic("TssMock.OperatorIsAvailableForCounterFunc: method is nil but Tss.OperatorIsAvailableForCounter was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Counter   int64
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Ctx:       ctx,
+		Counter:   counter,
+		Validator: validator,
+	}
+	mock.lockOperatorIsAvailableForCounter.Lock()
+	mock.calls.OperatorIsAvailableForCounter = append(mock.calls.OperatorIsAvailableForCounter, callInfo)
+	mock.lockOperatorIsAvailableForCounter.Unlock()
+	return mock.OperatorIsAvailableForCounterFunc(ctx, counter, validator)
+}
+
+// OperatorIsAvailableForCounterCalls gets all the calls that were made to OperatorIsAvailableForCounter.
+// Check the length with:
+//     len(mockedTss.OperatorIsAvailableForCounterCalls())
+func (mock *TssMock) OperatorIsAvailableForCounterCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Counter   int64
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Counter   int64
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockOperatorIsAvailableForCounter.RLock()
+	calls = mock.calls.OperatorIsAvailableForCounter
+	mock.lockOperatorIsAvailableForCounter.RUnlock()
 	return calls
 }
 

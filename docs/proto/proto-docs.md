@@ -35,6 +35,7 @@
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
   
+    - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
   
@@ -210,6 +211,8 @@
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
+    - [AckRequest](#tss.v1beta1.AckRequest)
+    - [AckResponse](#tss.v1beta1.AckResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -592,6 +595,19 @@ KeyRequirement defines requirements for keys
 
 
  <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.AckType"></a>
+
+### AckType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACK_TYPE_UNSPECIFIED | 0 |  |
+| ACK_TYPE_KEYGEN | 1 |  |
+| ACK_TYPE_SIGN | 2 |  |
+
 
 
 <a name="tss.exported.v1beta1.KeyRole"></a>
@@ -2762,6 +2778,7 @@ Params is the parameter set for this module
 | `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `timeout_in_blocks` | [int64](#int64) |  | TimeoutInBlocks defines the timeout in blocks for signing and keygen |
+| `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
 
 
 
@@ -2907,6 +2924,33 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/tx.proto
+
+
+
+<a name="tss.v1beta1.AckRequest"></a>
+
+### AckRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `id` | [string](#string) |  | can be either a key ID or a sig ID, depending on the type |
+| `ack_type` | [tss.exported.v1beta1.AckType](#tss.exported.v1beta1.AckType) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.AckResponse"></a>
+
+### AckResponse
+
+
+
+
 
 
 
@@ -3103,6 +3147,7 @@ Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Ack` | [AckRequest](#tss.v1beta1.AckRequest) | [AckResponse](#tss.v1beta1.AckResponse) |  | POST|/axelar/tss/ack|
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|

@@ -83,7 +83,12 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
+	SetKeygenAtHeight(ctx sdk.Context, height int64, req StartKeygenRequest)
+	DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType)
+	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
+	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
+	LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
@@ -96,8 +101,10 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
 	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
+	HasKeygenStart(ctx sdk.Context, keyID string) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
 	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
+	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 }
