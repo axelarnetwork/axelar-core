@@ -3,17 +3,16 @@ package keeper_test
 import (
 	"crypto/sha256"
 	"fmt"
-	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	mathRand "math/rand"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
+	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"

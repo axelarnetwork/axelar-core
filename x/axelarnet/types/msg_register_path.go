@@ -10,9 +10,9 @@ import (
 // NewRegisterIbcPathRequest creates a message of type RegisterIbcPathRequest
 func NewRegisterIbcPathRequest(sender sdk.AccAddress, asset, path string) *RegisterIbcPathRequest {
 	return &RegisterIbcPathRequest{
-		Sender:  sender,
-		Asset:   asset,
-		Path: path,
+		Sender: sender,
+		Asset:  asset,
+		Path:   path,
 	}
 }
 

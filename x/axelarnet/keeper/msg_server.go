@@ -64,14 +64,17 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	depositAddr := nexus.CrossChainAddress{Address: req.BurnerAddress.String(), Chain: exported.Axelarnet}
 
-	// Deposit can be either of Axelar native asset, ICS 20 token, and asset from supported chain
+	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
 	switch {
-	case validateIBCDenom(req.Token.Denom) == nil:
-		denomTrace, err := s.parseIBCDenom(ctx, req.Token.Denom)
+	// check if the format of token denomination is 'ibc/{hash}'
+	case isIbcDenom(req.Token.Denom):
+		// get base denomination and tracing path
+		denomTrace, err := s.parseIbcDenom(ctx, req.Token.Denom)
 		if err != nil {
 			return nil, err
 		}
 
+		// check if the asset registered with a path
 		path := s.BaseKeeper.GetIbcPath(ctx, denomTrace.GetBaseDenom())
 		if path == "" {
 			return nil, fmt.Errorf("path not found for asset %s", denomTrace.GetBaseDenom())
@@ -80,6 +83,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			return nil, fmt.Errorf("path %s does not match registered path %s for asset %s", denomTrace.GetPath(), path, denomTrace.GetBaseDenom())
 		}
 
+		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
 		if err := s.bank.SendCoins(
 			ctx, req.BurnerAddress, escrowAddress, sdk.NewCoins(req.Token),
@@ -87,12 +91,13 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			return nil, err
 		}
 
-		// convert IBCDenom to native asset that recognized by nexus module
+		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
 		req.Token = sdk.NewCoin(denomTrace.GetBaseDenom(), req.Token.Amount)
 		// TODO: make this public for now, we will refactor nexus module
 		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, req.Token)
 
 	case req.Token.Denom == exported.Axelarnet.NativeAsset:
+		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
 		if err := s.bank.SendCoins(
 			ctx, req.BurnerAddress, escrowAddress, sdk.NewCoins(req.Token),
@@ -116,6 +121,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			// to burn.
 			panic(fmt.Sprintf("cannot burn coins after a successful send to a module account: %v", err))
 		}
+
 	default:
 		return nil, sdkerrors.Wrap(types.ErrAxelarnet,
 			fmt.Sprintf("unrecognized %s token", req.Token.Denom))
@@ -156,9 +162,9 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			return nil, err
 		}
 
-		// token can be either of Axelar native asset, ICS 20 token, and asset from support chain
+		// pending transfer can be either of cosmos based assets from evm, Axelarnet native asset from evm, assets from supported chain
 		switch {
-		// asset is registered with an ibc path
+		// if the asset has an ibc path, it will be convert to ics20 token
 		case s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom) != "":
 			path := s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom)
 			if path == "" {
@@ -177,6 +183,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			); err != nil {
 				return nil, err
 			}
+
 		case pendingTransfer.Asset.Denom == exported.Axelarnet.NativeAsset:
 			escrowAddress := types.GetEscrowAddress(pendingTransfer.Asset.Denom)
 			// unescrow source tokens. It fails if balance insufficient.
@@ -185,6 +192,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			); err != nil {
 				return nil, err
 			}
+
 		case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet.Name, pendingTransfer.Asset.Denom):
 			if err := s.bank.MintCoins(
 				ctx, types.ModuleName, sdk.NewCoins(pendingTransfer.Asset),
@@ -199,7 +207,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			}
 
 		default:
-			// Should not reach here
+			// should not reach here
 			panic(fmt.Sprintf("unrecognized %s token", pendingTransfer.Asset.Denom))
 		}
 
@@ -209,7 +217,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 	return &types.ExecutePendingTransfersResponse{}, nil
 }
 
-// RegisterIbcPath handles register Ibc path
+// RegisterIbcPath handles register an ibc path for a asset
 func (s msgServer) RegisterIbcPath(c context.Context, req *types.RegisterIbcPathRequest) (*types.RegisterIbcPathResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if err := s.BaseKeeper.RegisterIbcPath(ctx, req.Asset, req.Path); err != nil {
@@ -219,6 +227,7 @@ func (s msgServer) RegisterIbcPath(c context.Context, req *types.RegisterIbcPath
 	return &types.RegisterIbcPathResponse{}, nil
 }
 
+// AddCosmosBasedChain handles register a cosmos based chain to nexus
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -232,23 +241,25 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
 
-func validateIBCDenom(denom string) error {
+// isIbcDenom validates that the given denomination is a valid ics token representation (ibc/{hash})
+func isIbcDenom(denom string) bool {
 	if err := sdk.ValidateDenom(denom); err != nil {
-		return err
+		return false
 	}
 
 	denomSplit := strings.SplitN(denom, "/", 2)
 	if len(denomSplit) != 2 || denomSplit[0] != ibctypes.DenomPrefix {
-		return sdkerrors.Wrapf(ibctypes.ErrInvalidDenomForTransfer, "denomination should be prefixed with the format 'ibc/{hash(trace + \"/\" + %s)}'", denom)
+		return false
 	}
 	if _, err := ibctypes.ParseHexHash(denomSplit[1]); err != nil {
-		return sdkerrors.Wrapf(err, "invalid denom trace hash %s", denomSplit[1])
+		return false
 	}
 
-	return nil
+	return true
 }
 
-func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+// parseIbcDenom retrieves the full identifiers trace and base denomination from the ibc transfer keeper store
+func (s msgServer) parseIbcDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
 	denomSplit := strings.Split(ibcDenom, "/")
 
 	hash, err := ibctypes.ParseHexHash(denomSplit[1])

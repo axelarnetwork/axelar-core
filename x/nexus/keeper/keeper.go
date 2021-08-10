@@ -131,9 +131,11 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	if !ok {
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
+
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
+
 	if sender.Chain.NativeAsset != asset.Denom {
 		k.subtractFromChainTotal(ctx, sender.Chain, asset)
 	}
@@ -163,7 +165,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
 	info, _ := k.GetChain(ctx, t.Recipient.Chain.Name)
 	if info.NativeAsset != t.Asset.Denom {
-		k.addToChainTotal(ctx, t.Recipient.Chain, t.Asset)
+		k.AddToChainTotal(ctx, t.Recipient.Chain, t.Asset)
 	}
 }
 
@@ -176,14 +178,6 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 
 	return total
 }
-
-func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
-	total := k.getChainTotal(ctx, chain, amount.Denom)
-	total = total.Add(amount)
-
-	k.getStore(ctx).Set(totalPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(amount.Denom)), &total)
-}
-
 // AddToChainTotal add balance for an asset for a chain
 func (k Keeper) AddToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)

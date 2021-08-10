@@ -117,11 +117,12 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
-// GetCmdRegisterIbcPathTx returns the cli command to register an IBC path for an asset
+
+// GetCmdRegisterIbcPathTx returns the cli command to register an ibc path for an asset
 func GetCmdRegisterIbcPathTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "register-path [asset] [path]",
-		Short: "Register an IBC path for an asset",
+		Short: "Register an ibc path for an asset",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -141,7 +142,7 @@ func GetCmdRegisterIbcPathTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdAddCosmosBasedChain returns the cli command to add a new cosmos based chain command
+// GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-cosmos-based-chain [name] [native asset]",

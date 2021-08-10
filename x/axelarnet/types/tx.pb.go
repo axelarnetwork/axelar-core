@@ -256,7 +256,7 @@ func (m *ExecutePendingTransfersResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ExecutePendingTransfersResponse proto.InternalMessageInfo
 
-// RegisterIbcPathRequest represents a message to register a path for an asset
+// MSgRegisterIbcPath represents a message to register an ibc path for an asset
 type RegisterIbcPathRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Asset  string                                        `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -332,6 +332,8 @@ func (m *RegisterIbcPathResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RegisterIbcPathResponse proto.InternalMessageInfo
 
+// MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+// to nexus
 type AddCosmosBasedChainRequest struct {
 	Sender      github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Name        string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`

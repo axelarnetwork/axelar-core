@@ -306,7 +306,8 @@ Params represent the genesis parameters for the module
 <a name="axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
 
 ### AddCosmosBasedChainRequest
-
+MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+to nexus
 
 
 | Field | Type | Label | Description |
@@ -421,7 +422,7 @@ address
 <a name="axelarnet.v1beta1.RegisterIbcPathRequest"></a>
 
 ### RegisterIbcPathRequest
-RegisterIbcPathRequest represents a message to register a path for an asset
+MSgRegisterIbcPath represents a message to register an ibc path for an asset
 
 
 | Field | Type | Label | Description |

@@ -23,7 +23,7 @@ func (m AddCosmosBasedChainRequest) Route() string {
 
 // Type returns the type of the message
 func (m AddCosmosBasedChainRequest) Type() string {
-	return "AddIbcChain"
+	return "AddCosmosBasedChain"
 }
 
 // ValidateBasic executes a stateless message validation

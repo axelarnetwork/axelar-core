@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +12,7 @@ import (
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 )
 
@@ -29,7 +29,7 @@ func TestKeeper_GetIbcPath(t *testing.T) {
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		setup()
 		path := randomIbcPath()
-		asset := rand.StrBetween(5, 20)
+		asset := randomDenom()
 		err := keeper.RegisterIbcPath(ctx, asset, path)
 		assert.NoError(t, err)
 		result := keeper.GetIbcPath(ctx, asset)
@@ -39,7 +39,7 @@ func TestKeeper_GetIbcPath(t *testing.T) {
 	t.Run("should return error when registered the same asset twice", testutils.Func(func(t *testing.T) {
 		setup()
 		path := randomIbcPath()
-		asset := rand.StrBetween(5, 20)
+		asset := randomDenom()
 		err := keeper.RegisterIbcPath(ctx, asset, path)
 		assert.NoError(t, err)
 		path2 := randomIbcPath()

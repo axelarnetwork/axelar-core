@@ -162,7 +162,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
-
 	if !ok {
 		return nil, fmt.Errorf("Could not retrieve symbol for token %s", originChain.NativeAsset)
 	}

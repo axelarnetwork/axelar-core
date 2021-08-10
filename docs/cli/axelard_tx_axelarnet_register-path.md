@@ -1,6 +1,6 @@
 ## axelard tx axelarnet register-path
 
-Register an IBC path for an asset
+Register an ibc path for an asset
 
 ```
 axelard tx axelarnet register-path [asset] [path] [flags]

@@ -2,11 +2,13 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 var (
@@ -29,7 +31,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// RegisterIbcPath register a path for an asset
+// RegisterIbcPath registers an ibc path for an asset
 func (k Keeper) RegisterIbcPath(ctx sdk.Context, asset, path string) error {
 	bz := k.getStore(ctx).GetRaw(pathPrefix.Append(utils.LowerCaseKey(asset)))
 	if bz != nil {
