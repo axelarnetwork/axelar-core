@@ -4,22 +4,197 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	transfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 
-// Ensure, that NexusMock does implement types.Nexus.
+// Ensure, that BaseKeeperMock does implement axelarnettypes.BaseKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.Nexus = &NexusMock{}
+var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 
-// NexusMock is a mock implementation of types.Nexus.
+// BaseKeeperMock is a mock implementation of axelarnettypes.BaseKeeper.
+//
+// 	func TestSomethingThatUsesBaseKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked axelarnettypes.BaseKeeper
+// 		mockedBaseKeeper := &BaseKeeperMock{
+// 			GetIbcPathFunc: func(ctx sdk.Context, asset string) string {
+// 				panic("mock out the GetIbcPath method")
+// 			},
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 			RegisterIbcPathFunc: func(ctx sdk.Context, asset string, path string) error {
+// 				panic("mock out the RegisterIbcPath method")
+// 			},
+// 		}
+//
+// 		// use mockedBaseKeeper in code that requires axelarnettypes.BaseKeeper
+// 		// and then make assertions.
+//
+// 	}
+type BaseKeeperMock struct {
+	// GetIbcPathFunc mocks the GetIbcPath method.
+	GetIbcPathFunc func(ctx sdk.Context, asset string) string
+
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx sdk.Context) log.Logger
+
+	// RegisterIbcPathFunc mocks the RegisterIbcPath method.
+	RegisterIbcPathFunc func(ctx sdk.Context, asset string, path string) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetIbcPath holds details about calls to the GetIbcPath method.
+		GetIbcPath []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Asset is the asset argument value.
+			Asset string
+		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// RegisterIbcPath holds details about calls to the RegisterIbcPath method.
+		RegisterIbcPath []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Asset is the asset argument value.
+			Asset string
+			// Path is the path argument value.
+			Path string
+		}
+	}
+	lockGetIbcPath      sync.RWMutex
+	lockLogger          sync.RWMutex
+	lockRegisterIbcPath sync.RWMutex
+}
+
+// GetIbcPath calls GetIbcPathFunc.
+func (mock *BaseKeeperMock) GetIbcPath(ctx sdk.Context, asset string) string {
+	if mock.GetIbcPathFunc == nil {
+		panic("BaseKeeperMock.GetIbcPathFunc: method is nil but BaseKeeper.GetIbcPath was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Asset string
+	}{
+		Ctx:   ctx,
+		Asset: asset,
+	}
+	mock.lockGetIbcPath.Lock()
+	mock.calls.GetIbcPath = append(mock.calls.GetIbcPath, callInfo)
+	mock.lockGetIbcPath.Unlock()
+	return mock.GetIbcPathFunc(ctx, asset)
+}
+
+// GetIbcPathCalls gets all the calls that were made to GetIbcPath.
+// Check the length with:
+//     len(mockedBaseKeeper.GetIbcPathCalls())
+func (mock *BaseKeeperMock) GetIbcPathCalls() []struct {
+	Ctx   sdk.Context
+	Asset string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Asset string
+	}
+	mock.lockGetIbcPath.RLock()
+	calls = mock.calls.GetIbcPath
+	mock.lockGetIbcPath.RUnlock()
+	return calls
+}
+
+// Logger calls LoggerFunc.
+func (mock *BaseKeeperMock) Logger(ctx sdk.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("BaseKeeperMock.LoggerFunc: method is nil but BaseKeeper.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedBaseKeeper.LoggerCalls())
+func (mock *BaseKeeperMock) LoggerCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// RegisterIbcPath calls RegisterIbcPathFunc.
+func (mock *BaseKeeperMock) RegisterIbcPath(ctx sdk.Context, asset string, path string) error {
+	if mock.RegisterIbcPathFunc == nil {
+		panic("BaseKeeperMock.RegisterIbcPathFunc: method is nil but BaseKeeper.RegisterIbcPath was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Asset string
+		Path  string
+	}{
+		Ctx:   ctx,
+		Asset: asset,
+		Path:  path,
+	}
+	mock.lockRegisterIbcPath.Lock()
+	mock.calls.RegisterIbcPath = append(mock.calls.RegisterIbcPath, callInfo)
+	mock.lockRegisterIbcPath.Unlock()
+	return mock.RegisterIbcPathFunc(ctx, asset, path)
+}
+
+// RegisterIbcPathCalls gets all the calls that were made to RegisterIbcPath.
+// Check the length with:
+//     len(mockedBaseKeeper.RegisterIbcPathCalls())
+func (mock *BaseKeeperMock) RegisterIbcPathCalls() []struct {
+	Ctx   sdk.Context
+	Asset string
+	Path  string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Asset string
+		Path  string
+	}
+	mock.lockRegisterIbcPath.RLock()
+	calls = mock.calls.RegisterIbcPath
+	mock.lockRegisterIbcPath.RUnlock()
+	return calls
+}
+
+// Ensure, that NexusMock does implement axelarnettypes.Nexus.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.Nexus = &NexusMock{}
+
+// NexusMock is a mock implementation of axelarnettypes.Nexus.
 //
 // 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked types.Nexus
+// 		// make and configure a mocked axelarnettypes.Nexus
 // 		mockedNexus := &NexusMock{
+// 			AddToChainTotalFunc: func(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)  {
+// 				panic("mock out the AddToChainTotal method")
+// 			},
 // 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
@@ -28,6 +203,9 @@ var _ types.Nexus = &NexusMock{}
 // 			},
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
+// 			},
+// 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+// 				panic("mock out the GetRecipient method")
 // 			},
 // 			GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
@@ -41,13 +219,19 @@ var _ types.Nexus = &NexusMock{}
 // 			RegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
+// 			SetChainFunc: func(ctx sdk.Context, chain nexus.Chain)  {
+// 				panic("mock out the SetChain method")
+// 			},
 // 		}
 //
-// 		// use mockedNexus in code that requires types.Nexus
+// 		// use mockedNexus in code that requires axelarnettypes.Nexus
 // 		// and then make assertions.
 //
 // 	}
 type NexusMock struct {
+	// AddToChainTotalFunc mocks the AddToChainTotal method.
+	AddToChainTotalFunc func(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)
+
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
 	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 
@@ -56,6 +240,9 @@ type NexusMock struct {
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
+
+	// GetRecipientFunc mocks the GetRecipient method.
+	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
 	GetTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
@@ -69,8 +256,20 @@ type NexusMock struct {
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx sdk.Context, chainName string, denom string)
 
+	// SetChainFunc mocks the SetChain method.
+	SetChainFunc func(ctx sdk.Context, chain nexus.Chain)
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddToChainTotal holds details about calls to the AddToChainTotal method.
+		AddToChainTotal []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// Amount is the amount argument value.
+			Amount sdk.Coin
+		}
 		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
 		ArchivePendingTransfer []struct {
 			// Ctx is the ctx argument value.
@@ -93,6 +292,13 @@ type NexusMock struct {
 			Ctx sdk.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// GetRecipient holds details about calls to the GetRecipient method.
+		GetRecipient []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Sender is the sender argument value.
+			Sender nexus.CrossChainAddress
 		}
 		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
 		GetTransfersForChain []struct {
@@ -130,14 +336,63 @@ type NexusMock struct {
 			// Denom is the denom argument value.
 			Denom string
 		}
+		// SetChain holds details about calls to the SetChain method.
+		SetChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 	}
+	lockAddToChainTotal        sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
+	lockGetRecipient           sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
 	lockIsAssetRegistered      sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
+	lockSetChain               sync.RWMutex
+}
+
+// AddToChainTotal calls AddToChainTotalFunc.
+func (mock *NexusMock) AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin) {
+	if mock.AddToChainTotalFunc == nil {
+		panic("NexusMock.AddToChainTotalFunc: method is nil but Nexus.AddToChainTotal was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Chain  nexus.Chain
+		Amount sdk.Coin
+	}{
+		Ctx:    ctx,
+		Chain:  chain,
+		Amount: amount,
+	}
+	mock.lockAddToChainTotal.Lock()
+	mock.calls.AddToChainTotal = append(mock.calls.AddToChainTotal, callInfo)
+	mock.lockAddToChainTotal.Unlock()
+	mock.AddToChainTotalFunc(ctx, chain, amount)
+}
+
+// AddToChainTotalCalls gets all the calls that were made to AddToChainTotal.
+// Check the length with:
+//     len(mockedNexus.AddToChainTotalCalls())
+func (mock *NexusMock) AddToChainTotalCalls() []struct {
+	Ctx    sdk.Context
+	Chain  nexus.Chain
+	Amount sdk.Coin
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Chain  nexus.Chain
+		Amount sdk.Coin
+	}
+	mock.lockAddToChainTotal.RLock()
+	calls = mock.calls.AddToChainTotal
+	mock.lockAddToChainTotal.RUnlock()
+	return calls
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -246,6 +501,41 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetRecipient calls GetRecipientFunc.
+func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+	if mock.GetRecipientFunc == nil {
+		panic("NexusMock.GetRecipientFunc: method is nil but Nexus.GetRecipient was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Sender nexus.CrossChainAddress
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+	}
+	mock.lockGetRecipient.Lock()
+	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
+	mock.lockGetRecipient.Unlock()
+	return mock.GetRecipientFunc(ctx, sender)
+}
+
+// GetRecipientCalls gets all the calls that were made to GetRecipient.
+// Check the length with:
+//     len(mockedNexus.GetRecipientCalls())
+func (mock *NexusMock) GetRecipientCalls() []struct {
+	Ctx    sdk.Context
+	Sender nexus.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Sender nexus.CrossChainAddress
+	}
+	mock.lockGetRecipient.RLock()
+	calls = mock.calls.GetRecipient
+	mock.lockGetRecipient.RUnlock()
 	return calls
 }
 
@@ -405,21 +695,59 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	return calls
 }
 
-// Ensure, that BankKeeperMock does implement types.BankKeeper.
-// If this is not the case, regenerate this file with moq.
-var _ types.BankKeeper = &BankKeeperMock{}
+// SetChain calls SetChainFunc.
+func (mock *NexusMock) SetChain(ctx sdk.Context, chain nexus.Chain) {
+	if mock.SetChainFunc == nil {
+		panic("NexusMock.SetChainFunc: method is nil but Nexus.SetChain was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockSetChain.Lock()
+	mock.calls.SetChain = append(mock.calls.SetChain, callInfo)
+	mock.lockSetChain.Unlock()
+	mock.SetChainFunc(ctx, chain)
+}
 
-// BankKeeperMock is a mock implementation of types.BankKeeper.
+// SetChainCalls gets all the calls that were made to SetChain.
+// Check the length with:
+//     len(mockedNexus.SetChainCalls())
+func (mock *NexusMock) SetChainCalls() []struct {
+	Ctx   sdk.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}
+	mock.lockSetChain.RLock()
+	calls = mock.calls.SetChain
+	mock.lockSetChain.RUnlock()
+	return calls
+}
+
+// Ensure, that BankKeeperMock does implement axelarnettypes.BankKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
+
+// BankKeeperMock is a mock implementation of axelarnettypes.BankKeeper.
 //
 // 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.BankKeeper
+// 		// make and configure a mocked axelarnettypes.BankKeeper
 // 		mockedBankKeeper := &BankKeeperMock{
 // 			BurnCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 // 				panic("mock out the BurnCoins method")
 // 			},
 // 			MintCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 // 				panic("mock out the MintCoins method")
+// 			},
+// 			SendCoinsFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+// 				panic("mock out the SendCoins method")
 // 			},
 // 			SendCoinsFromAccountToModuleFunc: func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 // 				panic("mock out the SendCoinsFromAccountToModule method")
@@ -429,7 +757,7 @@ var _ types.BankKeeper = &BankKeeperMock{}
 // 			},
 // 		}
 //
-// 		// use mockedBankKeeper in code that requires types.BankKeeper
+// 		// use mockedBankKeeper in code that requires axelarnettypes.BankKeeper
 // 		// and then make assertions.
 //
 // 	}
@@ -439,6 +767,9 @@ type BankKeeperMock struct {
 
 	// MintCoinsFunc mocks the MintCoins method.
 	MintCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+
+	// SendCoinsFunc mocks the SendCoins method.
+	SendCoinsFunc func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
 
 	// SendCoinsFromAccountToModuleFunc mocks the SendCoinsFromAccountToModule method.
 	SendCoinsFromAccountToModuleFunc func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
@@ -463,6 +794,17 @@ type BankKeeperMock struct {
 			Ctx sdk.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
+			// Amt is the amt argument value.
+			Amt sdk.Coins
+		}
+		// SendCoins holds details about calls to the SendCoins method.
+		SendCoins []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// FromAddr is the fromAddr argument value.
+			FromAddr sdk.AccAddress
+			// ToAddr is the toAddr argument value.
+			ToAddr sdk.AccAddress
 			// Amt is the amt argument value.
 			Amt sdk.Coins
 		}
@@ -491,6 +833,7 @@ type BankKeeperMock struct {
 	}
 	lockBurnCoins                    sync.RWMutex
 	lockMintCoins                    sync.RWMutex
+	lockSendCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
 }
@@ -570,6 +913,49 @@ func (mock *BankKeeperMock) MintCoinsCalls() []struct {
 	mock.lockMintCoins.RLock()
 	calls = mock.calls.MintCoins
 	mock.lockMintCoins.RUnlock()
+	return calls
+}
+
+// SendCoins calls SendCoinsFunc.
+func (mock *BankKeeperMock) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+	if mock.SendCoinsFunc == nil {
+		panic("BankKeeperMock.SendCoinsFunc: method is nil but BankKeeper.SendCoins was just called")
+	}
+	callInfo := struct {
+		Ctx      sdk.Context
+		FromAddr sdk.AccAddress
+		ToAddr   sdk.AccAddress
+		Amt      sdk.Coins
+	}{
+		Ctx:      ctx,
+		FromAddr: fromAddr,
+		ToAddr:   toAddr,
+		Amt:      amt,
+	}
+	mock.lockSendCoins.Lock()
+	mock.calls.SendCoins = append(mock.calls.SendCoins, callInfo)
+	mock.lockSendCoins.Unlock()
+	return mock.SendCoinsFunc(ctx, fromAddr, toAddr, amt)
+}
+
+// SendCoinsCalls gets all the calls that were made to SendCoins.
+// Check the length with:
+//     len(mockedBankKeeper.SendCoinsCalls())
+func (mock *BankKeeperMock) SendCoinsCalls() []struct {
+	Ctx      sdk.Context
+	FromAddr sdk.AccAddress
+	ToAddr   sdk.AccAddress
+	Amt      sdk.Coins
+} {
+	var calls []struct {
+		Ctx      sdk.Context
+		FromAddr sdk.AccAddress
+		ToAddr   sdk.AccAddress
+		Amt      sdk.Coins
+	}
+	mock.lockSendCoins.RLock()
+	calls = mock.calls.SendCoins
+	mock.lockSendCoins.RUnlock()
 	return calls
 }
 
@@ -656,5 +1042,76 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
 	mock.lockSendCoinsFromModuleToAccount.RLock()
 	calls = mock.calls.SendCoinsFromModuleToAccount
 	mock.lockSendCoinsFromModuleToAccount.RUnlock()
+	return calls
+}
+
+// Ensure, that IbcTransferKeeperMock does implement axelarnettypes.IbcTransferKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.IbcTransferKeeper = &IbcTransferKeeperMock{}
+
+// IbcTransferKeeperMock is a mock implementation of axelarnettypes.IbcTransferKeeper.
+//
+// 	func TestSomethingThatUsesIbcTransferKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked axelarnettypes.IbcTransferKeeper
+// 		mockedIbcTransferKeeper := &IbcTransferKeeperMock{
+// 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool) {
+// 				panic("mock out the GetDenomTrace method")
+// 			},
+// 		}
+//
+// 		// use mockedIbcTransferKeeper in code that requires axelarnettypes.IbcTransferKeeper
+// 		// and then make assertions.
+//
+// 	}
+type IbcTransferKeeperMock struct {
+	// GetDenomTraceFunc mocks the GetDenomTrace method.
+	GetDenomTraceFunc func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetDenomTrace holds details about calls to the GetDenomTrace method.
+		GetDenomTrace []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// DenomTraceHash is the denomTraceHash argument value.
+			DenomTraceHash tmbytes.HexBytes
+		}
+	}
+	lockGetDenomTrace sync.RWMutex
+}
+
+// GetDenomTrace calls GetDenomTraceFunc.
+func (mock *IbcTransferKeeperMock) GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool) {
+	if mock.GetDenomTraceFunc == nil {
+		panic("IbcTransferKeeperMock.GetDenomTraceFunc: method is nil but IbcTransferKeeper.GetDenomTrace was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		DenomTraceHash tmbytes.HexBytes
+	}{
+		Ctx:            ctx,
+		DenomTraceHash: denomTraceHash,
+	}
+	mock.lockGetDenomTrace.Lock()
+	mock.calls.GetDenomTrace = append(mock.calls.GetDenomTrace, callInfo)
+	mock.lockGetDenomTrace.Unlock()
+	return mock.GetDenomTraceFunc(ctx, denomTraceHash)
+}
+
+// GetDenomTraceCalls gets all the calls that were made to GetDenomTrace.
+// Check the length with:
+//     len(mockedIbcTransferKeeper.GetDenomTraceCalls())
+func (mock *IbcTransferKeeperMock) GetDenomTraceCalls() []struct {
+	Ctx            sdk.Context
+	DenomTraceHash tmbytes.HexBytes
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		DenomTraceHash tmbytes.HexBytes
+	}
+	mock.lockGetDenomTrace.RLock()
+	calls = mock.calls.GetDenomTrace
+	mock.lockGetDenomTrace.RUnlock()
 	return calls
 }

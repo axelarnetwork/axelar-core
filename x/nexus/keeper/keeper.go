@@ -184,6 +184,7 @@ func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sd
 	k.getStore(ctx).Set(totalPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(amount.Denom)), &total)
 }
 
+// AddToChainTotal add balance for an asset for a chain
 func (k Keeper) AddToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
 	total = total.Add(amount)

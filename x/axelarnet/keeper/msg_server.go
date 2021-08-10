@@ -87,9 +87,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			return nil, err
 		}
 
-		// convert IBCDenom to native asset
+		// convert IBCDenom to native asset that recognized by nexus module
 		req.Token = sdk.NewCoin(denomTrace.GetBaseDenom(), req.Token.Amount)
-		//TODO: think how to handle this
+		// TODO: make this public for now, we will refactor nexus module
 		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, req.Token)
 
 	case req.Token.Denom == exported.Axelarnet.NativeAsset:
@@ -156,8 +156,9 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			return nil, err
 		}
 
-		// Token can be either of Axelar native asset, ICS 20 token, and asset from support chain
+		// token can be either of Axelar native asset, ICS 20 token, and asset from support chain
 		switch {
+		// asset is registered with an ibc path
 		case s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom) != "":
 			path := s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom)
 			if path == "" {
@@ -170,6 +171,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			escrowAddress := types.GetEscrowAddress(denomTrace.IBCDenom())
 
 			token := sdk.NewCoin(denomTrace.IBCDenom(), pendingTransfer.Asset.Amount)
+			// unescrow source tokens. It fails if balance insufficient.
 			if err := s.bank.SendCoins(
 				ctx, escrowAddress, recipient, sdk.NewCoins(token),
 			); err != nil {
@@ -177,7 +179,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			}
 		case pendingTransfer.Asset.Denom == exported.Axelarnet.NativeAsset:
 			escrowAddress := types.GetEscrowAddress(pendingTransfer.Asset.Denom)
-			// escrow source tokens. It fails if balance insufficient.
+			// unescrow source tokens. It fails if balance insufficient.
 			if err := s.bank.SendCoins(
 				ctx, escrowAddress, recipient, sdk.NewCoins(pendingTransfer.Asset),
 			); err != nil {
@@ -196,7 +198,11 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 				panic(fmt.Sprintf("unable to send coins from module to account: %v", err))
 			}
 
+		default:
+			// Should not reach here
+			panic(fmt.Sprintf("unrecognized %s token", pendingTransfer.Asset.Denom))
 		}
+
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
@@ -258,4 +264,3 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 	}
 	return denomTrace, nil
 }
-

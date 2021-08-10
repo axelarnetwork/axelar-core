@@ -1,9 +1,9 @@
-## axelard tx axelarnet add-ibc-chain
+## axelard tx axelarnet add-cosmos-based-chain
 
 Add a new cosmos based chain
 
 ```
-axelard tx axelarnet add-ibc-chain [name] [native asset] [flags]
+axelard tx axelarnet add-cosmos-based-chain [name] [native asset] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard tx axelarnet add-ibc-chain [name] [native asset] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for add-ibc-chain
+  -h, --help                     help for add-cosmos-based-chain
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
