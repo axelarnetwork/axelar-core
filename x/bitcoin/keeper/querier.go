@@ -193,20 +193,22 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 		return nil, fmt.Errorf("given keyID %s has not been rotated yet and therefore cannot get its %s consolidation address", keyID, tss.MasterKey.SimpleString())
 	}
 
-	rotationCount := s.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
-	oldMasterKeyRotationCount := rotationCount - (rotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
-	oldMasterKey, ok := s.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
+	oldMasterKey, ok := getOldMasterKey(ctx, k, s)
 	if !ok {
 		return nil, fmt.Errorf("cannot find the old %s key of the given keyID %s", tss.MasterKey.SimpleString(), keyID)
 	}
 
-	externalKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
-	if !ok {
-		return nil, fmt.Errorf("external key not registered")
+	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalKeys, err := getExternalKeys(ctx, k, s)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+		return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
 	}
 
 	lockTime := key.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalKey, lockTime, k.GetNetwork(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, k.GetNetwork(ctx))
 
 	return &consolidationAddress, nil
 }

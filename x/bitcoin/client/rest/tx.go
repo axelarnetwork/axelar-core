@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -23,7 +22,7 @@ const (
 	TxCreatePendingTransfersTx    = "create-pending-transfers-tx"
 	TxCreateMasterConsolidationTx = "create-master-consolidation-tx"
 	TxSignTx                      = "sign-tx"
-	TxRegisterExternalKey         = "register-external-key"
+	TxRegisterExternalKeys        = "register-external-keys"
 	TxSubmitExternalSignature     = "submit-external-signature"
 
 	QueryDepositAddress       = "deposit-address"
@@ -42,7 +41,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerCreatePendingTransfersTx(cliCtx), TxCreatePendingTransfersTx)
 	registerTx(TxHandlerCreateMasterConsolidationTx(cliCtx), TxCreateMasterConsolidationTx)
 	registerTx(TxHandlerSignTx(cliCtx), TxSignTx)
-	registerTx(TxHandlerRegisterExternalKey(cliCtx), TxRegisterExternalKey)
+	registerTx(TxHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys)
 	registerTx(TxHandlerSubmitExternalSignature(cliCtx), TxSubmitExternalSignature)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
@@ -89,8 +88,8 @@ type ReqSignTx struct {
 // ReqRegisterExternalKey represents a request to register an external key
 type ReqRegisterExternalKey struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
-	PubKey  string       `json:"pub_key" yaml:"pub_key"`
+	KeyIDs  []string     `json:"key_ids" yaml:"key_ids"`
+	PubKeys []string     `json:"pub_keys" yaml:"pub_keys"`
 }
 
 // ReqSubmitExternalSignature represents a request to submit a signature from an external key
@@ -266,8 +265,8 @@ func TxHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// TxHandlerRegisterExternalKey returns the handler to register an external key
-func TxHandlerRegisterExternalKey(cliCtx client.Context) http.HandlerFunc {
+// TxHandlerRegisterExternalKeys returns the handler to register an external key
+func TxHandlerRegisterExternalKeys(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqRegisterExternalKey
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
@@ -284,19 +283,23 @@ func TxHandlerRegisterExternalKey(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		pubKeyBytes, err := hex.DecodeString(req.PubKey)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		if len(req.KeyIDs) != len(req.PubKeys) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "length mismatch between key IDs and pub keys")
 			return
 		}
 
-		pubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(req.KeyIDs))
+		for i, keyID := range req.KeyIDs {
+			pubKeyBytes, err := hex.DecodeString(req.PubKeys[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
 		}
 
-		msg := types.NewRegisterExternalKeyRequest(fromAddr, req.KeyID, pubKey)
+		msg := types.NewRegisterExternalKeysRequest(fromAddr, externalKeys...)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

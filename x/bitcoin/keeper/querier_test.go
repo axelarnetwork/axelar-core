@@ -8,6 +8,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
@@ -248,10 +249,6 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
 		masterKey := tss.Key{
 			ID:        keyID,
 			Value:     masterPrivKey.PublicKey,
@@ -263,16 +260,42 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			Value: oldMasterPrivKey.PublicKey,
 			Role:  tss.MasterKey,
 		}
-		externalKey := tss.Key{
-			ID:    rand.Str(10),
-			Value: externalPrivKey.PublicKey,
-			Role:  tss.ExternalKey,
+
+		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeys := make([]tss.Key, externalKeyCount)
+		for i := 0; i < int(externalKeyCount); i++ {
+			externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+			if err != nil {
+				panic(err)
+			}
+			externalKeys[i] = tss.Key{
+				ID:    rand.Str(10),
+				Value: externalPrivKey.PublicKey,
+				Role:  tss.ExternalKey,
+			}
 		}
 
 		btcKeeper.GetMasterKeyRetentionPeriodFunc = func(ctx sdk.Context) int64 { return types.DefaultParams().MasterKeyRetentionPeriod }
 		btcKeeper.GetMasterAddressLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressLockDuration }
+		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return types.DefaultParams().ExternalMultisigThreshold
+		}
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
+			externalKeyIDs := make([]string, len(externalKeys))
+			for i := 0; i < len(externalKeyIDs); i++ {
+				externalKeyIDs[i] = externalKeys[i].ID
+			}
+
+			return externalKeyIDs, true
+		}
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
 		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			for _, externalKey := range externalKeys {
+				if keyID == externalKey.ID {
+					return externalKey, true
+				}
+			}
+
 			if keyID == masterKey.ID {
 				return masterKey, true
 			}
@@ -287,25 +310,17 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 
 			return tss.Key{}, false
 		}
-		signer.GetCurrentKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.ExternalKey {
-				return externalKey, true
-			}
-
-			return tss.Key{}, false
-		}
 
 		expected := types.QueryAddressResponse{
-			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, externalKey, now.Add(types.DefaultParams().MasterAddressLockDuration), types.DefaultParams().Network).Address,
+			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressLockDuration), types.DefaultParams().Network).Address,
 			KeyID:   masterKey.ID,
 		}
 
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
+		assert.NoError(t, err)
 
 		var actual types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
-
-		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}))
 

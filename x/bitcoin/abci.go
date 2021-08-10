@@ -18,7 +18,8 @@ import (
 )
 
 type signingAbortError struct {
-	err error
+	err          error
+	abortedKeyID string
 }
 
 func (e *signingAbortError) Error() string {
@@ -51,7 +52,7 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 
 	signedTx, err := assembleTx(ctx, k, signer, &unsignedTx)
 	if err != nil {
-		switch err.(type) {
+		switch e := err.(type) {
 		case *signingAbortError:
 			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -61,6 +62,7 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 
 			unsignedTx.ConfirmationRequired = true
 			unsignedTx.Status = types.Aborted
+			unsignedTx.PrevAbortedKeyId = e.abortedKeyID
 			k.SetUnsignedTx(ctx, keyRole, unsignedTx)
 		default:
 		}
@@ -151,7 +153,7 @@ func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsigne
 
 				// TODO: keyID for sigID is deleted on signing failure/timeout. Some more explicit state is needed.
 				if _, ok := signer.GetKeyForSigID(ctx, sigID); !ok {
-					return nil, &signingAbortError{err}
+					return nil, &signingAbortError{err: err, abortedKeyID: sigRequirement.KeyID}
 				}
 
 				return nil, err

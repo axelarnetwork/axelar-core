@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -23,8 +24,8 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 		return err
 	}
 
-	myIndex, ok := indexOf(participants, mgr.principalAddr)
-	if !ok {
+	myIndex := utils.IndexOf(participants, mgr.principalAddr)
+	if myIndex == -1 {
 		// do not participate
 		return nil
 	}
@@ -32,7 +33,7 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 	done := false
 	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+mgr.sessionTimeout)
 
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants, participantShareCounts)
+	stream, cancel, err := mgr.startKeygen(keyID, threshold, int32(myIndex), participants, participantShareCounts)
 	if err != nil {
 		return err
 	}

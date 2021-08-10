@@ -29,6 +29,7 @@
   
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
+    - [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
     - [SignedTx](#bitcoin.v1beta1.SignedTx)
@@ -39,6 +40,9 @@
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
     - [TxStatus](#bitcoin.v1beta1.TxStatus)
+  
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -51,9 +55,6 @@
     - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
-  
-- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
-    - [Threshold](#utils.v1beta1.Threshold)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollKey](#vote.exported.v1beta1.PollKey)
@@ -70,8 +71,9 @@
     - [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse)
     - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
     - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
-    - [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest)
-    - [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse)
+    - [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest)
+    - [RegisterExternalKeysRequest.ExternalKey](#bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey)
+    - [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse)
     - [SignTxRequest](#bitcoin.v1beta1.SignTxRequest)
     - [SignTxResponse](#bitcoin.v1beta1.SignTxResponse)
     - [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest)
@@ -504,6 +506,24 @@ corresponding script and the underlying key
 | `redeem_script` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_sig_count` | [uint32](#uint32) |  |  |
+| `spending_condition` | [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.AddressInfo.SpendingCondition"></a>
+
+### AddressInfo.SpendingCondition
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `internal_key_ids` | [string](#string) | repeated | internal_key_ids lists the internal key IDs that one of which has to sign regardless of locktime |
+| `external_key_ids` | [string](#string) | repeated | external_key_ids lists the external key IDs that external_multisig_threshold of which have to sign to spend before locktime if set |
+| `external_multisig_threshold` | [int64](#int64) |  |  |
 | `lock_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
@@ -575,6 +595,7 @@ of a transaction
 | `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
 | `confirmation_required` | [bool](#bool) |  |  |
 | `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
+| `prev_aborted_key_id` | [string](#string) |  |  |
 
 
 
@@ -667,6 +688,38 @@ of a transaction
 
 
 
+<a name="utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/threshold.proto
+
+
+
+<a name="utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="bitcoin/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -691,6 +744,7 @@ of a transaction
 | `max_secondary_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
 | `master_key_retention_period` | [int64](#int64) |  |  |
 | `master_address_lock_duration` | [int64](#int64) |  |  |
+| `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -807,38 +861,6 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `redeem_script` | [string](#string) |  |  |
 | `amount` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="utils/v1beta1/threshold.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## utils/v1beta1/threshold.proto
-
-
-
-<a name="utils.v1beta1.Threshold"></a>
-
-### Threshold
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
-| `denominator` | [int64](#int64) |  |  |
 
 
 
@@ -1044,16 +1066,31 @@ address
 
 
 
-<a name="bitcoin.v1beta1.RegisterExternalKeyRequest"></a>
+<a name="bitcoin.v1beta1.RegisterExternalKeysRequest"></a>
 
-### RegisterExternalKeyRequest
+### RegisterExternalKeysRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
+| `external_keys` | [RegisterExternalKeysRequest.ExternalKey](#bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey"></a>
+
+### RegisterExternalKeysRequest.ExternalKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
 | `pub_key` | [bytes](#bytes) |  |  |
 
 
@@ -1061,9 +1098,9 @@ address
 
 
 
-<a name="bitcoin.v1beta1.RegisterExternalKeyResponse"></a>
+<a name="bitcoin.v1beta1.RegisterExternalKeysResponse"></a>
 
-### RegisterExternalKeyResponse
+### RegisterExternalKeysResponse
 
 
 
@@ -1193,7 +1230,7 @@ Msg defines the bitcoin Msg service.
 | `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create-pending-transfers-tx|
 | `CreateMasterTx` | [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create-master-tx|
 | `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
-| `RegisterExternalKey` | [RegisterExternalKeyRequest](#bitcoin.v1beta1.RegisterExternalKeyRequest) | [RegisterExternalKeyResponse](#bitcoin.v1beta1.RegisterExternalKeyResponse) |  | POST|/axelar/bitcoin/register-external-key|
+| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/bitcoin/register-external-key|
 | `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|
 
  <!-- end services -->
