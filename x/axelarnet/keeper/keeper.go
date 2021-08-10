@@ -13,6 +13,7 @@ var (
 	pathPrefix = utils.KeyFromStr("path")
 )
 
+// Keeper provides access to all state changes regarding the Axelarnet module
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryMarshaler
