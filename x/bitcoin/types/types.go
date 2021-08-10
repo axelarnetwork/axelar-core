@@ -267,23 +267,27 @@ func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, exte
 
 	builder = builder.AddOp(txscript.OP_0)
 	for i := 0; i < int(externalMultiSigThreshold); i++ {
-		builder = builder.AddInt64(externalMultiSigThreshold).
+		builder = builder.
+			AddInt64(externalMultiSigThreshold).
 			AddOp(txscript.OP_PICK)
 	}
 	builder = builder.AddInt64(externalMultiSigThreshold)
 	for _, externelKey := range externalKeys {
 		builder = builder.AddData(externelKey.SerializeCompressed())
 	}
-	builder = builder.AddInt64(int64(len(externalKeys))).
+	builder = builder.
+		AddInt64(int64(len(externalKeys))).
 		AddOp(txscript.OP_CHECKMULTISIGVERIFY)
 
-	builder = builder.AddInt64(externalMultiSigThreshold + 1).
+	builder = builder.
+		AddInt64(externalMultiSigThreshold + 1).
 		AddData(pubKey1.SerializeCompressed()).
 		AddData(pubKey2.SerializeCompressed())
 	for _, externelKey := range externalKeys {
 		builder = builder.AddData(externelKey.SerializeCompressed())
 	}
-	builder = builder.AddInt64(int64(len(externalKeys)) + 2).
+	builder = builder.
+		AddInt64(int64(len(externalKeys)) + 2).
 		AddOp(txscript.OP_CHECKMULTISIG)
 	// if one signature exists on the stack
 	builder = builder.AddOp(txscript.OP_ELSE).

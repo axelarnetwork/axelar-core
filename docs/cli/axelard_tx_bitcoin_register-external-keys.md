@@ -3,7 +3,7 @@
 Register the external key for bitcoin
 
 ```
-axelard tx bitcoin register-external-keys [comma separated keyIDs] [comma separated pubKeyHexes] [flags]
+axelard tx bitcoin register-external-keys [flags]
 ```
 
 ### Options
@@ -19,6 +19,7 @@ axelard tx bitcoin register-external-keys [comma separated keyIDs] [comma separa
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                     help for register-external-keys
+      --key strings              key ID and public key in the hex format, e.g. [keyID:keyHex]
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device

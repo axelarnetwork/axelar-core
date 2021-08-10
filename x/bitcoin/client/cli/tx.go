@@ -200,39 +200,46 @@ func GetCmdSignTx() *cobra.Command {
 // GetCmdRegisterExternalKeys returns the cli command to register an external key
 func GetCmdRegisterExternalKeys() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-external-keys [comma separated keyIDs] [comma separated pubKeyHexes]",
+		Use:   "register-external-keys",
 		Short: "Register the external key for bitcoin",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
+		Args:  cobra.ExactArgs(0),
+	}
+	keys := cmd.Flags().StringSlice("key", []string{}, "key ID and public key in the hex format, e.g. [keyID:keyHex]")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		if len(*keys) == 0 {
+			return fmt.Errorf("keys are required")
+		}
+
+		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(*keys))
+		for i, key := range *keys {
+			keyInfos := strings.Split(key, ":")
+			if len(keyInfos) != 2 {
+				return fmt.Errorf("key ID and public key hex have to be separated by \":\"")
+			}
+
+			keyID := keyInfos[0]
+			pubKeyHex := keyInfos[1]
+
+			pubKeyBytes, err := hex.DecodeString(pubKeyHex)
 			if err != nil {
 				return err
 			}
 
-			keyIDs := strings.Split(args[0], ",")
-			pubKeyHexes := strings.Split(args[1], ",")
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
+		}
 
-			if len(keyIDs) != len(pubKeyHexes) {
-				return fmt.Errorf("length mismatch between key IDs and pub key hexes")
-			}
+		msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), externalKeys...)
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
 
-			externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(keyIDs))
-			for i, keyID := range keyIDs {
-				pubKeyBytes, err := hex.DecodeString(pubKeyHexes[i])
-				if err != nil {
-					return err
-				}
-
-				externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
-			}
-
-			msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), externalKeys...)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
