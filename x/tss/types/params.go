@@ -67,6 +67,12 @@ func DefaultParams() Params {
 				MinValidatorSubsetSize:     5,
 				KeyShareDistributionPolicy: exported.WeightedByStake,
 			},
+			{
+				ChainName:                  evm.Ethereum.Name,
+				KeyRole:                    exported.SecondaryKey,
+				MinValidatorSubsetSize:     3,
+				KeyShareDistributionPolicy: exported.OnePerValidator,
+			},
 		},
 		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 200},
 		SuspendDurationInBlocks: 1000,

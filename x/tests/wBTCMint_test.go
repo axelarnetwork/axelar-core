@@ -88,19 +88,17 @@ func Test_wBTC_mint(t *testing.T) {
 		rotateMasterKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
-		if c == btc.Bitcoin.Name {
-			secondaryKeyID := randStrings.Next()
-			secondaryKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
-			assert.NoError(t, secondaryKeygenResult.Error)
+		secondaryKeyID := randStrings.Next()
+		secondaryKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
+		assert.NoError(t, secondaryKeygenResult.Error)
 
-			// wait for voting to be done
-			if err := waitFor(listeners.keygenDone, 1); err != nil {
-				assert.FailNow(t, "keygen", err)
-			}
-
-			rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
-			assert.NoError(t, rotateSecondaryKeyResult.Error)
+		// wait for voting to be done
+		if err := waitFor(listeners.keygenDone, 1); err != nil {
+			assert.FailNow(t, "keygen", err)
 		}
+
+		rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
+		assert.NoError(t, rotateSecondaryKeyResult.Error)
 	}
 
 	// setup axelar gateway

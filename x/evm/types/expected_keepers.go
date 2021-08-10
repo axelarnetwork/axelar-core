@@ -11,6 +11,7 @@ import (
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -74,6 +75,16 @@ type ChainKeeper interface {
 	DeletePendingTransferOwnership(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
+	GetCommandQueue(ctx sdk.Context) utils.KVQueue
+	SetCommand(ctx sdk.Context, command Command)
+	GetCommand(ctx sdk.Context, commandID CommandID) *Command
+	SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
+	DeleteUnsignedBatchedCommands(ctx sdk.Context)
+	SetSignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
+	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
+	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 }
 
 // ParamsKeeper represents a global paramstore
@@ -101,6 +112,7 @@ type Nexus interface {
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
+	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
 	RegisterAsset(ctx sdk.Context, chainName, denom string)

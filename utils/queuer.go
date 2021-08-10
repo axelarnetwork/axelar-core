@@ -14,7 +14,7 @@ import (
 // KVQueue represents a queue built with the KVStore
 type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
-	Dequeue(value codec.ProtoMarshaler) bool
+	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
 }
 
@@ -41,7 +41,7 @@ func (q BlockHeightKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 
 // Dequeue pops the bottom of the queue and stores it at the given value, and return true if anything
 // in the queue is found
-func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
+func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
@@ -53,6 +53,10 @@ func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	q.store.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &key)
 
 	if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
+		return false
+	}
+
+	if len(filter) > 0 && !filter[0](value) {
 		return false
 	}
 

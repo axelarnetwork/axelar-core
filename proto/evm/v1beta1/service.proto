@@ -107,6 +107,21 @@ service MsgService {
     };
   }
 
+  rpc CreateTransferOperatorship(CreateTransferOperatorshipRequest)
+      returns (CreateTransferOperatorshipResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create-transfer-operatorship"
+      body : "*"
+    };
+  }
+
+  rpc SignCommands(SignCommandsRequest) returns (SignCommandsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign-commands"
+      body : "*"
+    };
+  }
+
   rpc AddChain(AddChainRequest) returns (AddChainResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/add-chain"

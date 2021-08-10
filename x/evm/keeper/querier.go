@@ -122,8 +122,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 }
 
 func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
-
-	fromAddress, pk, err := getContractOwner(ctx, s, n, chainName)
+	fromAddress, pk, err := getAddressAndKeyForRole(ctx, s, n, chainName, tss.MasterKey)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
@@ -254,7 +253,12 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find RPC for chain '%s'", params.Chain))
 	}
 
-	contractOwner, _, err := getContractOwner(ctx, s, n, params.Chain)
+	contractOwner, _, err := getAddressAndKeyForRole(ctx, s, n, params.Chain, tss.MasterKey)
+	if err != nil {
+		return nil, err
+	}
+
+	contractOperator, _, err := getAddressAndKeyForRole(ctx, s, n, params.Chain, tss.SecondaryKey)
 	if err != nil {
 		return nil, err
 	}
@@ -272,16 +276,21 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 		}
 	}
 
-	byteCodes, ok := k.ForChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
+	byteCode, ok := k.ForChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("Could not retrieve gateway bytecodes for chain %s", params.Chain))
+	}
+
+	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	gasLimit := params.GasLimit
 	if gasLimit == 0 {
 		gasLimit, err = rpc.EstimateGas(context.Background(), evm.CallMsg{
 			To:   nil,
-			Data: byteCodes,
+			Data: deploymentBytecode,
 		})
 
 		if err != nil {
@@ -289,7 +298,7 @@ func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]ty
 		}
 	}
 
-	tx := evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, byteCodes)
+	tx := evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode)
 	result := types.DeployResult{
 		Tx:              tx,
 		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
@@ -477,17 +486,16 @@ func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n ty
 	return executeData, nil
 }
 
-func getContractOwner(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) (common.Address, tss.Key, error) {
+func getAddressAndKeyForRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRole tss.KeyRole) (common.Address, tss.Key, error) {
 	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return common.Address{}, tss.Key{}, fmt.Errorf("%s is not a registered chain", chainName)
 	}
 
-	pk, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
+	key, ok := s.GetCurrentKey(ctx, chain, keyRole)
 	if !ok {
-		return common.Address{}, tss.Key{}, fmt.Errorf("key not found")
+		return common.Address{}, tss.Key{}, fmt.Errorf("%s key not found", keyRole.SimpleString())
 	}
 
-	fromAddress := crypto.PubkeyToAddress(pk.Value)
-	return fromAddress, pk, nil
+	return crypto.PubkeyToAddress(key.Value), key, nil
 }

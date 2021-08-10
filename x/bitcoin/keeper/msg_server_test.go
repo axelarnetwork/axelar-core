@@ -517,7 +517,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 					return &utilsmock.KVQueueMock{
 						IsEmptyFunc: func() bool { return true },
-						DequeueFunc: func(value codec.ProtoMarshaler) bool {
+						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 							if dequeueCount >= len(inputs) {
 								return false
 							}
@@ -745,7 +745,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return false },
-					DequeueFunc: func(value codec.ProtoMarshaler) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}
@@ -846,7 +846,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 					return &utilsmock.KVQueueMock{
 						IsEmptyFunc: func() bool { return true },
-						DequeueFunc: func(value codec.ProtoMarshaler) bool {
+						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 							if dequeueCount >= len(inputs) {
 								return false
 							}
@@ -1092,7 +1092,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return false },
-					DequeueFunc: func(value codec.ProtoMarshaler) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}

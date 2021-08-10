@@ -125,6 +125,13 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("successfully started signing protocol for transfer-ownership command %s", hex.EncodeToString(res.CommandID))
 			}
 			return result, err
+		case *types.CreateTransferOperatorshipRequest:
+			res, err := server.CreateTransferOperatorship(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully created command for transfering operatorship with ID %s", hex.EncodeToString(res.CommandID))
+			}
+			return result, err
 		case *types.AddChainRequest:
 
 			res, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)

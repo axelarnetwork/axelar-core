@@ -11,6 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
@@ -27,6 +28,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 			RotateKeyFunc:     func(sdk.Context, nexus.Chain, exported.KeyRole) error { return nil },
 			LoggerFunc:        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, exported.KeyRole, string) error { return nil },
+			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+				return nil
+			},
 		}
 		snapshotter := &mock.SnapshotterMock{}
 		staker := &mock.StakingKeeperMock{}

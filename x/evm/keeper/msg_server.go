@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -83,7 +84,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve symbol for token %s", req.Asset)
+		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.Asset)
 	}
 
 	s.nexus.LinkAddresses(ctx,
@@ -154,7 +155,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
 	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
@@ -163,7 +164,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 
 	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve symbol for token %s", originChain.NativeAsset)
+		return nil, fmt.Errorf("could not retrieve symbol for token %s", originChain.NativeAsset)
 	}
 
 	deploy := types.ERC20TokenDeployment{
@@ -216,7 +217,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Name)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Name)
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
@@ -273,7 +274,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
@@ -345,7 +346,7 @@ func (s msgServer) ConfirmTransferOwnership(c context.Context, req *types.Confir
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve revote locking period for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.KeyID)
@@ -701,7 +702,7 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {
-		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	originChain, found := s.nexus.GetChain(ctx, req.OriginChain)
@@ -764,12 +765,17 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 
 func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRequest) (*types.SignBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
-	keeper := s.ForChain(ctx, chain.Name)
 
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
+	}
+
+	keeper := s.ForChain(ctx, chain.Name)
 	deposits := keeper.GetConfirmedDeposits(ctx)
 
 	if len(deposits) == 0 {
@@ -778,7 +784,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {
-		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	var burnerInfos []types.BurnerInfo
@@ -802,9 +808,9 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 
 	commandID := getCommandID(data, chainID)
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -814,9 +820,9 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetSignHash(data)
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, secondaryKeyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", secondaryKeyID)
 	}
 
 	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
@@ -825,7 +831,7 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	}
 
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           keyID,
+		KeyID:           secondaryKeyID,
 		SigID:           commandIDHex,
 		Msg:             signHash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
@@ -891,15 +897,24 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
-	byteCodes, ok := keeper.GetGatewayByteCodes(ctx)
+	byteCode, ok := keeper.GetGatewayByteCodes(ctx)
 	if !ok {
-		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve gateway bytecodes for chain %s", req.Chain)
+	}
+
+	secondaryKey, ok := s.signer.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+	if !ok {
+		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
+	}
+
+	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, crypto.PubkeyToAddress(secondaryKey.Value))
+	if err != nil {
+		return nil, err
 	}
 
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
 	// TODO: this is something that should be done after the signature has been successfully confirmed
-	if tx.To() == nil && bytes.Equal(tx.Data(), byteCodes) {
-
+	if tx.To() == nil && bytes.Equal(tx.Data(), deploymentBytecode) {
 		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
 		if !ok {
 			return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
@@ -925,9 +940,14 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
@@ -938,7 +958,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {
-		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -958,9 +978,9 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 	commandID := getCommandID(data, chainID)
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
@@ -970,9 +990,9 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetSignHash(data)
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, secondaryKeyID)
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", secondaryKeyID)
 	}
 
 	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
@@ -981,7 +1001,7 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 	}
 
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           keyID,
+		KeyID:           secondaryKeyID,
 		SigID:           commandIDHex,
 		Msg:             signHash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
@@ -1016,7 +1036,7 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {
-		return nil, fmt.Errorf("Could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	key, ok := s.signer.GetKey(ctx, req.KeyID)
@@ -1034,7 +1054,6 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	}
 
 	newOwner := crypto.PubkeyToAddress(key.Value)
-
 	commandID := getCommandID(newOwner.Bytes(), chainID)
 
 	data, err := types.CreateTransferOwnershipCommandData(chainID, commandID, newOwner)
@@ -1084,6 +1103,134 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	return &types.SignTransferOwnershipResponse{CommandID: commandID[:]}, nil
 }
 
+func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
+	}
+
+	nextSecondaryKey, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("unkown key %s", req.KeyID)
+	}
+
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
+	}
+
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextSecondaryKey.ID, tss.SecondaryKey); err != nil {
+		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextSecondaryKey.ID, tss.SecondaryKey.SimpleString())
+	}
+
+	newOperator := crypto.PubkeyToAddress(nextSecondaryKey.Value)
+
+	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
+	}
+
+	command, err := types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newOperator)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed create transfer operatorship command")
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-operatorship command %s", command.ID.Hex()))
+	s.ForChain(ctx, chain.Name).SetCommand(ctx, command)
+
+	if err := s.signer.AssignNextKey(ctx, chain, tss.SecondaryKey, req.KeyID); err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", tss.SecondaryKey.SimpleString(), chain.Name)
+	}
+
+	return &types.CreateTransferOperatorshipResponse{CommandID: command.ID[:]}, nil
+}
+
+func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsRequest) (*types.SignCommandsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
+	}
+
+	keeper := s.ForChain(ctx, chain.Name)
+	batchedCommands, err := getBatchedCommandsToSign(ctx, keeper, chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)
+	}
+
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
+	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+		KeyID:           batchedCommands.KeyID,
+		SigID:           batchedCommandsIDHex,
+		Msg:             batchedCommands.SigHash.Bytes(),
+		SnapshotCounter: counter,
+	}); err != nil {
+		return nil, err
+	}
+
+	keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(types.AttributeKeyCommandID, batchedCommandsIDHex),
+		),
+	)
+
+	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.ID}, nil
+}
+
+func getBatchedCommandsToSign(ctx sdk.Context, keeper types.ChainKeeper, chainID *big.Int) (types.BatchedCommands, error) {
+	if unsignedBatchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx); ok {
+		if unsignedBatchedCommands.Is(types.BatchedCommands_Aborted) {
+			return unsignedBatchedCommands, nil
+		}
+
+		return types.BatchedCommands{}, fmt.Errorf("signing for batched commands %s is still in progress", hex.EncodeToString(unsignedBatchedCommands.ID))
+	}
+
+	commandQueue := keeper.GetCommandQueue(ctx)
+	if commandQueue.IsEmpty() {
+		return types.BatchedCommands{}, fmt.Errorf("no commands are found to sign for chain %s", keeper.GetName())
+	}
+
+	var commands []types.Command
+	var command types.Command
+
+	commandQueue.Dequeue(&command)
+	// Only batching commands to be signed by the same key
+	keyID := command.KeyID
+	filter := func(value codec.ProtoMarshaler) bool {
+		command, ok := value.(*types.Command)
+
+		return ok && command.KeyID == keyID
+	}
+
+	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
+	for commandQueue.Dequeue(&command, filter) {
+		commands = append(commands, command)
+	}
+
+	return types.NewBatchedCommands(chainID, keyID, commands)
+}
+
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -1109,7 +1256,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
-		if strings.ToLower(p.Chain) == strings.ToLower(chain) {
+		if strings.EqualFold(p.Chain, chain) {
 			chainID = s.ForChain(ctx, chain).GetChainIDByNetwork(ctx, p.Network)
 		}
 	}

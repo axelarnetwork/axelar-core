@@ -210,6 +210,28 @@ message SignTransferOwnershipResponse {
   bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
 }
 
+message CreateTransferOperatorshipRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
+}
+
+message CreateTransferOperatorshipResponse {
+  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
+}
+
+message SignCommandsRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+}
+
+message SignCommandsResponse {
+  bytes batched_commands_id = 1
+      [ (gogoproto.customname) = "BatchedCommandsID" ];
+}
+
 message AddChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];

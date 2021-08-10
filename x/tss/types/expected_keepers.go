@@ -18,7 +18,7 @@ import (
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
 
-// Snapshotter provides validator snapshot functionality
+// Snapshotter provides snapshot functionality
 type Snapshotter = snapshot.Snapshotter
 
 // Nexus provides access to the nexus functionality
@@ -114,4 +114,5 @@ type TSSKeeper interface {
 	MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool
 	GetTotalShareCount(ctx sdk.Context, sigID string) int64
 	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
+	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error
 }
