@@ -23,6 +23,7 @@ import (
 // Query labels
 const (
 	QTokenAddress         = "token-address"
+	QDepositState         = "deposit-state"
 	QMasterAddress        = "master-address"
 	QNextMasterAddress    = "next-master-address"
 	QKeyAddress           = "query-key-address"
@@ -63,6 +64,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddress:
 			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
+		case QDepositState:
+			return QueryDepositState(ctx, chainKeeper, n, path[2], path[3])
 		case QCommandData:
 			return queryCommandData(ctx, chainKeeper, s, n, path[2])
 		case QDepositAddress:
@@ -199,6 +202,30 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symb
 	}
 
 	return addr.Bytes(), nil
+}
+
+// QueryDepositState returns the state of an ERC20 deposit confirmation
+func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID string, depositAddress string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
+
+	var message string
+	_, state, ok := k.GetDeposit(ctx, common.HexToHash(txID), common.HexToAddress(depositAddress))
+	switch {
+	case !ok:
+		message = "deposit transaction state is not confirmed"
+	case state == types.CONFIRMED:
+		message = "deposit transaction state is confirmed"
+	case state == types.BURNED:
+		message = "deposit transaction state is burned"
+	default:
+		message = "unexpected deposit transaction state"
+	}
+
+	return []byte(message), nil
 }
 
 /*
