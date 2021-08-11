@@ -195,6 +195,8 @@
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
+    - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
     - [Signature](#tss.v1beta1.Signature)
@@ -2693,6 +2695,42 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyShareResponse"></a>
+
+### QueryKeyShareResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `share_infos` | [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyShareResponse.ShareInfo"></a>
+
+### QueryKeyShareResponse.ShareInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_chain` | [string](#string) |  |  |
+| `key_role` | [string](#string) |  |  |
+| `snapshot_block_number` | [int64](#int64) |  |  |
+| `validator_address` | [string](#string) |  |  |
+| `num_validator_shares` | [int64](#int64) |  |  |
+| `num_total_shares` | [int64](#int64) |  |  |
 
 
 

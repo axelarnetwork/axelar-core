@@ -29,6 +29,7 @@ type Snapshotter interface {
 // Nexus provides access to the nexus functionality
 type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetChains(ctx sdk.Context) ([]nexus.Chain)
 }
 
 // Voter provides voting functionality
