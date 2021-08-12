@@ -1,0 +1,4 @@
+**/mock/*.go  linguist-generated=true
+docs/**/*.md  linguist-generated=true
+*.pb.go       linguist-generated=true
+go.sum        linguist-generated=true
