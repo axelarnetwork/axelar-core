@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/armon/go-metrics"
@@ -44,8 +45,9 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "register", "proxy"},
-		float32(time.Now().Unix()),
+		0,
 		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
 			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
 			telemetry.NewLabel("proxy_address", req.ProxyAddr.String()),
 		})
@@ -73,8 +75,9 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "deactivate", "proxy"},
-		float32(time.Now().Unix()),
+		0,
 		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
 			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
 			telemetry.NewLabel("proxy_address", proxy.String()),
 		})

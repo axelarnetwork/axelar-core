@@ -100,12 +100,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
 
 	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, "corruption" , "threshold"},
+		[]string{types.ModuleName, "corruption", "threshold"},
 		float32(threshold),
 		[]metrics.Label{telemetry.NewLabel("keyID", req.NewKeyID)})
 
 	t := s.GetMinKeygenThreshold(ctx)
-	telemetry.SetGauge(float32(t.Denominator / t.Numerator), types.ModuleName, "minimum" , "keygen", "threshold")
+	telemetry.SetGauge(float32(t.Numerator*100/t.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
 	ts := time.Now().Unix()
@@ -114,8 +114,9 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 			[]string{types.ModuleName, "keygen", "participation"},
 			float32(validator.ShareCount),
 			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 				telemetry.NewLabel("keyID", req.NewKeyID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()), telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
 
@@ -172,6 +173,13 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
 
 	telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "rotation", "count")
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key"},
+		0,
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("keyID", req.KeyID),
+		})
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

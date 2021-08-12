@@ -79,8 +79,9 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 			[]string{types.ModuleName, "sign", "participation"},
 			float32(validator.ShareCount),
 			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 				telemetry.NewLabel("sigID", sigID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()), telemetry.NewLabel("time", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
 

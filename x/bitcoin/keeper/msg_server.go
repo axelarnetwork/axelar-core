@@ -819,8 +819,8 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress type
 		[]string{types.ModuleName, "secondary", "address", "balance"},
 		float32(change.Int64()),
 		[]metrics.Label{
-			telemetry.NewLabel("address", consolidationAddress.Address),
 			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("address", consolidationAddress.Address),
 		})
 
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
