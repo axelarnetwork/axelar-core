@@ -21,9 +21,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -58,7 +59,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitializePollFunc: func(sdk.Context, exported.PollKey, int64, ...exported.PollProperty) error { return nil },
+		InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
@@ -132,4 +133,32 @@ func TestComputeAndSetCorruptionThreshold(t *testing.T) {
 
 	corruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
 	assert.Equal(t, int64(-1), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
+}
+
+func TestAvailableOperator(t *testing.T) {
+	s := setup()
+	id := rand.StrBetween(5, 10)
+	acks := []exported.AckType{exported.AckKeygen, exported.AckSign}
+	index := int(rand.I64Between(0, int64(len(acks)-1)))
+	ackType := acks[index]
+	index = int(rand.I64Between(0, int64(len(snap.Validators)-1)))
+	validator := snap.Validators[index].GetSDKValidator().GetOperator()
+	counter := rand.I64Between(1, 100)
+
+	// not yet available
+	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+
+	// available
+	err := s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
+	assert.NoError(t, err)
+	assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+
+	// replaying
+	err = s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
+	assert.EqualError(t, err, "validator already submitted its ack for the specified ID and type")
+
+	// linked to counter
+	s.Keeper.LinkAvailableOperatorsToCounter(s.Ctx, id, ackType, counter)
+	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+	assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, counter, validator))
 }
