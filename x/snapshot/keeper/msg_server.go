@@ -3,7 +3,10 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -38,6 +41,15 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 			sdk.NewAttribute(types.AttributeAddress, req.ProxyAddr.String()),
 		),
 	)
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "register", "proxy"},
+		float32(time.Now().Unix()),
+		[]metrics.Label{
+			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
+			telemetry.NewLabel("proxy_address", req.ProxyAddr.String()),
+		})
+
 	return &types.RegisterProxyResponse{}, nil
 }
 
@@ -58,6 +70,14 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "deactivate", "proxy"},
+		float32(time.Now().Unix()),
+		[]metrics.Label{
+			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
+			telemetry.NewLabel("proxy_address", proxy.String()),
+		})
 
 	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.PrincipalAddr, proxy))
 	return &types.DeactivateProxyResponse{}, nil
