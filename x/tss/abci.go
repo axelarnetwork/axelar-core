@@ -17,10 +17,10 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
-	requests := keeper.GetAllKeygenRequestsAtCurrentHeight(ctx)
-	keeper.Logger(ctx).Info(fmt.Sprintf("processing %d keygens at height %d", len(requests), ctx.BlockHeight()))
+	keygenReqs := keeper.GetAllKeygenRequestsAtCurrentHeight(ctx)
+	keeper.Logger(ctx).Info(fmt.Sprintf("processing %d keygens at height %d", len(keygenReqs), ctx.BlockHeight()))
 
-	for _, request := range requests {
+	for _, request := range keygenReqs {
 		var counter int64 = 0
 		snap, found := snapshotter.GetLatestSnapshot(ctx)
 		if found {

@@ -16,6 +16,7 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -29,10 +30,10 @@ import (
 )
 
 var (
-	val1       = newValidator(sdk.ValAddress("validator1"), 100)
-	val2       = newValidator(sdk.ValAddress("validator2"), 100)
-	val3       = newValidator(sdk.ValAddress("validator3"), 100)
-	val4       = newValidator(sdk.ValAddress("validator4"), 100)
+	val1       = newValidator(rand.RandomValidator(), 100)
+	val2       = newValidator(rand.RandomValidator(), 100)
+	val3       = newValidator(rand.RandomValidator(), 100)
+	val4       = newValidator(rand.RandomValidator(), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
 		Validators:      validators,

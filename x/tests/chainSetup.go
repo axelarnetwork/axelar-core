@@ -64,7 +64,7 @@ import (
 )
 
 func randomSender() sdk.AccAddress {
-	return rand.Bytes(sdk.AddrLen)
+	return rand.RandomAddress()
 }
 func randomEthSender() common.Address {
 	return common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -109,10 +109,9 @@ func newNode(moniker string, mocks testMocks, totalNodes int) *fake.Node {
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Amino, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
 
-	// set the acknowledgment window just enough for all nodes to submit their acks
+	// set the acknowledgment window just enough for all nodes to be able to submit their acks in time
 	tssParams := tssTypes.DefaultParams()
-	tssParams.AckWindowInBlocks = int64(totalNodes) * 2
-	//tssParams.AckWindowInBlocks = 1
+	tssParams.AckWindowInBlocks = int64(totalNodes) * 16
 	signer.SetParams(ctx, tssParams)
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
@@ -150,7 +149,10 @@ func newNode(moniker string, mocks testMocks, totalNodes int) *fake.Node {
 				return vote.EndBlocker(ctx, req, voter)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-				return bitcoin.EndBlocker(ctx, req, bitcoinKeeper, signer)
+				return bitcoin.EndBlocker(ctx, req, bitcoinKeeper, signer, voter, snapKeeper)
+			},
+			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+				return evm.EndBlocker(ctx, req, EVMKeeper, signer, voter, snapKeeper, nexusK)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 				return tss.EndBlocker(ctx, req, signer, voter, snapKeeper)
@@ -264,7 +266,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	for i := 0; i < nodeCount; i++ {
 		// assign validators
 		validator := stakingtypes.Validator{
-			OperatorAddress: sdk.ValAddress(rand.Bytes(sdk.AddrLen)).String(),
+			OperatorAddress: rand.RandomValidator().String(),
 			Tokens:          tokens,
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: consPK,
@@ -275,7 +277,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		return validators[i].Tokens.GT(validators[j].Tokens)
 	})
 	// create a chain
-	chain := fake.NewBlockchain().WithBlockTimeOut(10 * time.Millisecond)
+	chain := fake.NewBlockchain().WithBlockTimeOut(40 * time.Millisecond)
 
 	t := fake.NewTofnd()
 	var data []nodeData
@@ -285,7 +287,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 
 		node := newNode(test+strconv.Itoa(i), mocks, nodeCount)
 		chain.AddNodes(node)
-		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.Bytes(sdk.AddrLen)}
+		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.RandomAddress()}
 
 		registerTSSEventListeners(n, t, chain.Submit)
 		registerBTCEventListener(n, chain.Submit)
@@ -403,12 +405,15 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		m := mapifyAttributes(event)
 		var ackType tssExported.AckType
+		var ID string
 
 		switch m[sdk.AttributeKeyAction] {
 		case tssTypes.AttributeValueKeygen:
 			ackType = tssExported.AckKeygen
+			ID = m[tssTypes.AttributeKeyKeyID]
 		case tssTypes.AttributeValueSign:
 			ackType = tssExported.AckSign
+			ID = m[tssTypes.AttributeKeySigID]
 		default:
 			return false
 		}
@@ -417,10 +422,16 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 			return false
 		}
 
+		height, err := strconv.ParseInt(m[tssTypes.AttributeKeyHeight], 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("cannot convert string to int64: %s", err.Error()))
+		}
+
 		_ = submitMsg(&tssTypes.AckRequest{
 			Sender:  n.Proxy,
-			ID:      m[tssTypes.AttributeKeyKeyID],
-			AckType: ackType})
+			ID:      ID,
+			AckType: ackType,
+			Height:  height})
 
 		return true
 	})
@@ -551,7 +562,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {
-	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*2*time.Second)
+	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*time.Minute)
 	defer cancel()
 	for i := 0; i < repeats; i++ {
 		select {

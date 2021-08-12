@@ -17,24 +17,13 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments
-func (k Keeper) ScheduleSign(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshot.Snapshot) {
-	info := types.SignInfo{
-		KeyID:    keyID,
-		SigID:    sigID,
-		Msg:      msg,
-		Snapshot: s,
-	}
-
+// AnnounceSign emits an event asking for acknowledgments for the specified key ID and sig ID.
+// It returns currentHeight + AckWindow, which is the height at which the module should schedule signing.
+func (k Keeper) AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64 {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckSign.String(), info.SigID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-	k.emitAckEvent(ctx, types.AttributeValueKeygen, info.KeyID, info.SigID)
-
-	k.Logger(ctx).Info(fmt.Sprintf("keygen scheduled for block %d (currently at %d))", height, ctx.BlockHeight()))
+	k.emitAckEvent(ctx, types.AttributeValueSign, keyID, sigID, height)
+	k.Logger(ctx).Info(fmt.Sprintf("anouncing signing for sig ID '%s' and key ID '%s'", sigID, keyID))
+	return height
 }
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
@@ -54,8 +43,16 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	var activeValidators []snapshot.Validator
 	activeShareCount := sdk.ZeroInt()
 
+	available := k.getAvailableOperators(ctx, sigID, exported.AckSign, ctx.BlockHeight())
+	validatorAvailable := make(map[string]bool)
+	for _, validator := range available {
+		validatorAvailable[validator.String()] = true
+	}
+
 	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) && !snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) &&
+			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
+			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
 			activeValidators = append(activeValidators, validator)
 			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}

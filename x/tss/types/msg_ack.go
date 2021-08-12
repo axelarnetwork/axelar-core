@@ -27,6 +27,10 @@ func (m AckRequest) ValidateBasic() error {
 			exported.AckKeygen.String(), exported.AckSign.String())
 	}
 
+	if m.Height < 0 {
+		return sdkerrors.Wrap(ErrTss, "invalid height")
+	}
+
 	return nil
 }
 

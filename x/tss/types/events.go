@@ -14,6 +14,7 @@ const (
 
 	AttributeKeyKeyID                  = "keyID"
 	AttributeKeySigID                  = "sigID"
+	AttributeKeyHeight                 = "height"
 	AttributeKeyKeyAckType             = "ackType"
 	AttributeKeySessionID              = "sessionID"
 	AttributeKeyThreshold              = "threshold"

@@ -34,6 +34,7 @@
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [SignInfo](#tss.exported.v1beta1.SignInfo)
   
     - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
@@ -44,6 +45,8 @@
     - [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+    - [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx)
+    - [ScheduledUnsignedTxs](#bitcoin.v1beta1.ScheduledUnsignedTxs)
     - [SignedTx](#bitcoin.v1beta1.SignedTx)
     - [UnsignedTx](#bitcoin.v1beta1.UnsignedTx)
     - [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info)
@@ -98,23 +101,6 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
-- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
-    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
-    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
-    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
-    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
-  
-- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
-    - [Params](#evm.v1beta1.Params)
-  
-- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
-    - [GenesisState](#evm.v1beta1.GenesisState)
-  
-- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
-    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
-    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
-  
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
@@ -146,6 +132,27 @@
     - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
     - [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest)
     - [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse)
+  
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand)
+    - [ScheduledUnsignedCommands](#evm.v1beta1.ScheduledUnsignedCommands)
+    - [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx)
+    - [ScheduledUnsignedTxs](#evm.v1beta1.ScheduledUnsignedTxs)
+    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
+  
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
+  
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
+  
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
@@ -228,9 +235,6 @@
   
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
-  
-- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
-    - [SignInfo](#tss.v1beta1.SignInfo)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
@@ -597,6 +601,24 @@ KeyRequirement defines requirements for keys
 
 
 
+
+<a name="tss.exported.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
 
@@ -720,6 +742,38 @@ of a transaction
 | `out_point` | [string](#string) |  |  |
 | `amount` | [int64](#int64) |  |  |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.ScheduledUnsignedTx"></a>
+
+### ScheduledUnsignedTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `unsigned_tx` | [UnsignedTx](#bitcoin.v1beta1.UnsignedTx) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `sign_infos` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.ScheduledUnsignedTxs"></a>
+
+### ScheduledUnsignedTxs
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `infos` | [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx) | repeated |  |
 
 
 
@@ -1429,228 +1483,6 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="evm/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/types.proto
-
-
-
-<a name="evm.v1beta1.BurnerInfo"></a>
-
-### BurnerInfo
-BurnerInfo describes information required to burn token at an burner address
-that is deposited by an user
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `token_address` | [bytes](#bytes) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
-| `salt` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20Deposit"></a>
-
-### ERC20Deposit
-ERC20Deposit contains information for an ERC20 deposit
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20TokenDeployment"></a>
-
-### ERC20TokenDeployment
-ERC20TokenDeployment describes information about an ERC20 token
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `asset` | [string](#string) |  |  |
-| `token_address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.NetworkInfo"></a>
-
-### NetworkInfo
-NetworkInfo describes information about a network
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.TransferOwnership"></a>
-
-### TransferOwnership
-TransferOwnership contains information for a transfer ownership
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `next_key_id` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/params.proto
-
-
-
-<a name="evm.v1beta1.Params"></a>
-
-### Params
-Params is the parameter set for this module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `confirmation_height` | [uint64](#uint64) |  |  |
-| `network` | [string](#string) |  |  |
-| `gateway` | [bytes](#bytes) |  |  |
-| `token` | [bytes](#bytes) |  |  |
-| `burnable` | [bytes](#bytes) |  |  |
-| `revote_locking_period` | [int64](#int64) |  |  |
-| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/genesis.proto
-
-
-
-<a name="evm.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/query.proto
-
-
-
-<a name="evm.v1beta1.DepositQueryParams"></a>
-
-### DepositQueryParams
-DepositQueryParams describe the parameters used to query for an EVM
-deposit address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
-
-### QueryMasterAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="evm/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2131,6 +1963,293 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/types.proto
+
+
+
+<a name="evm.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.NetworkInfo"></a>
+
+### NetworkInfo
+NetworkInfo describes information about a network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedCommand"></a>
+
+### ScheduledUnsignedCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `command_data` | [bytes](#bytes) |  |  |
+| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedCommands"></a>
+
+### ScheduledUnsignedCommands
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cmds` | [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedTx"></a>
+
+### ScheduledUnsignedTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedTxs"></a>
+
+### ScheduledUnsignedTxs
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `txs` | [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransferOwnership"></a>
+
+### TransferOwnership
+TransferOwnership contains information for a transfer ownership
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `next_key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/params.proto
+
+
+
+<a name="evm.v1beta1.Params"></a>
+
+### Params
+Params is the parameter set for this module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `network` | [string](#string) |  |  |
+| `gateway` | [bytes](#bytes) |  |  |
+| `token` | [bytes](#bytes) |  |  |
+| `burnable` | [bytes](#bytes) |  |  |
+| `revote_locking_period` | [int64](#int64) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/genesis.proto
+
+
+
+<a name="evm.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an EVM
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -2941,6 +3060,7 @@ Params is the parameter set for this module
 | `sender` | [bytes](#bytes) |  |  |
 | `id` | [string](#string) |  | can be either a key ID or a sig ID, depending on the type |
 | `ack_type` | [tss.exported.v1beta1.AckType](#tss.exported.v1beta1.AckType) |  |  |
+| `height` | [int64](#int64) |  |  |
 
 
 
@@ -3157,40 +3277,6 @@ Msg defines the tss Msg service.
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
-
- <!-- end services -->
-
-
-
-<a name="tss/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/v1beta1/types.proto
-
-
-
-<a name="tss.v1beta1.SignInfo"></a>
-
-### SignInfo
-SignInfo holds information about a sign request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `sig_id` | [string](#string) |  |  |
-| `msg` | [bytes](#bytes) |  |  |
-| `snapshot` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

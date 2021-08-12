@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +19,7 @@ import (
 
 // ProcessSignAck broadcasts an acknowledgment for a signature
 func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, sigID, err := parseSignAckParams(mgr.cdc, attributes)
+	keyID, sigID, height, err := parseSignAckParams(mgr.cdc, attributes)
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
@@ -40,7 +41,7 @@ func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) er
 		return sdkerrors.Wrap(err, "key ID '%s' not present at tofnd")
 	case tofnd.KeyPresenceResponse_RESPONSE_PRESENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s' and sig ID '%s'", keyID, sigID))
-		tssMsg := &tss.AckRequest{Sender: mgr.sender, ID: sigID, AckType: exported.AckSign}
+		tssMsg := &tss.AckRequest{Sender: mgr.sender, ID: sigID, AckType: exported.AckSign, Height: height}
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
@@ -128,8 +129,8 @@ func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, err error) {
-	var keyIDFound, sigIDFound bool
+func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, height int64, err error) {
+	var keyIDFound, sigIDFound, heightFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -138,15 +139,22 @@ func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (key
 		case tss.AttributeKeySigID:
 			sigID = attribute.Value
 			sigIDFound = true
+
+		case tss.AttributeKeyHeight:
+			height, err = strconv.ParseInt(attribute.Value, 10, 64)
+			if err != nil {
+				return "", "", -1, err
+			}
+			heightFound = true
 		default:
 		}
 	}
 
-	if keyIDFound && sigIDFound {
-		return "", "", fmt.Errorf("insufficient event attributes")
+	if !keyIDFound || !sigIDFound || !heightFound {
+		return "", "", -1, fmt.Errorf("insufficient event attributes")
 	}
 
-	return keyID, sigID, nil
+	return keyID, sigID, height, nil
 }
 
 func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, err error) {

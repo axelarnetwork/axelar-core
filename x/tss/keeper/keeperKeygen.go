@@ -18,16 +18,36 @@ import (
 )
 
 // ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments
-func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) {
+// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) int64 {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.NewKeyID, "")
+	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.NewKeyID, "", height)
 
-	k.Logger(ctx).Info(fmt.Sprintf("keygen scheduled for block %d (currently at %d))", height, ctx.BlockHeight()))
+	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.NewKeyID, height, ctx.BlockHeight()))
+	return height
+}
+
+// GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
+func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
+	prefix := fmt.Sprintf("%s%d_%s_", scheduledPrefix, ctx.BlockHeight(), exported.AckKeygen.String())
+	store := ctx.KVStore(k.storeKey)
+	var requests []types.StartKeygenRequest
+
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+
+		var request types.StartKeygenRequest
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &request)
+		requests = append(requests, request)
+	}
+
+	return requests
 }
 
 // StartKeygen starts a keygen protocol with the specified parameters
@@ -167,6 +187,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	k.setKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
+	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.String(), keyID))
 	k.setKeyRole(ctx, keyID, keyRole)
 
 	return nil

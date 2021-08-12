@@ -21,15 +21,16 @@ import (
 )
 
 var (
-	pendingOutpointPrefix    = utils.KeyFromStr("pend_")
-	confirmedOutPointPrefix  = utils.KeyFromStr("conf_")
-	spentOutPointPrefix      = utils.KeyFromStr("spent_")
-	addrPrefix               = utils.KeyFromStr("addr_")
-	dustAmtPrefix            = utils.KeyFromStr("dust_")
-	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
-	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
-	latestSignedTxHashPrefix = utils.KeyFromStr("latest_signed_tx_hash_")
-	unconfirmedAmountPrefix  = utils.KeyFromStr("unconfirmed_amount_")
+	pendingOutpointPrefix     = utils.KeyFromStr("pend_")
+	confirmedOutPointPrefix   = utils.KeyFromStr("conf_")
+	spentOutPointPrefix       = utils.KeyFromStr("spent_")
+	addrPrefix                = utils.KeyFromStr("addr_")
+	dustAmtPrefix             = utils.KeyFromStr("dust_")
+	signedTxPrefix            = utils.KeyFromStr("signed_tx_")
+	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx_")
+	latestSignedTxHashPrefix  = utils.KeyFromStr("latest_signed_tx_hash_")
+	unconfirmedAmountPrefix   = utils.KeyFromStr("unconfirmed_amount_")
+	scheduledUnsignedTxPrefix = utils.KeyFromStr("scheduled_unsigned_tx_")
 
 	externalKeyIDsKey        = utils.KeyFromStr("external_key_ids")
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
@@ -381,4 +382,25 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context) ([]string, bool) {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// GetScheduledTxs gets the unsigned TXs scheduled for the current height
+func (k Keeper) GetScheduledTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", ctx.BlockHeight())))
+	var txs types.ScheduledUnsignedTxs
+	if !k.getStore(ctx).Get(key, &txs) {
+		return nil
+	}
+
+	return txs.Infos
+}
+
+// ScheduleUnsignedTx schedules the unsigned TX to be signed at the specified height
+func (k Keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, tx types.ScheduledUnsignedTx) {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", height)))
+	var infos types.ScheduledUnsignedTxs
+	k.getStore(ctx).Get(key, &infos)
+
+	infos.Infos = append(infos.Infos, tx)
+	k.getStore(ctx).Set(key, &infos)
 }

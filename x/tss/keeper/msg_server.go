@@ -47,25 +47,36 @@ func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.
 func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	validator := s.snapshotter.GetOperator(ctx, req.Sender)
+	if validator.Empty() {
+		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
+	}
+
+	if s.IsOperatorAvailable(ctx, req.ID, req.AckType, validator) {
+		return nil, fmt.Errorf("sender [%s] already submitted an ACK message for keygen/sig ID %s", req.Sender, req.ID)
+	}
+
 	switch req.AckType {
 	case exported.AckKeygen:
 		if s.HasKeygenStart(ctx, req.ID) {
-			return nil, fmt.Errorf("key ID '%s' is already in use", req.ID)
+			return nil, fmt.Errorf("late keygen ACK message (key ID '%s' is already in use)", req.ID)
 		}
+		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
+			req.ID, ctx.BlockHeight(), req.Sender.String()))
+
 	case exported.AckSign:
-		//TODO
+		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
+			return nil, fmt.Errorf("late sign ACK message (sig ID '%s' is already in use)", req.ID)
+
+		}
+		s.Logger(ctx).Info(fmt.Sprintf("received sign acknowledgment for id [%s] at height %d from %s",
+			req.ID, ctx.BlockHeight(), req.Sender.String()))
+
 	default:
 		return nil, fmt.Errorf("unknown ack type")
 	}
 
-	validator := s.snapshotter.GetOperator(ctx, req.Sender)
-	if validator.Empty() {
-		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
-	}
-
 	s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
-	s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for key_id [%s] at height %d", req.ID, ctx.BlockHeight()))
-
 	return &types.AckResponse{}, nil
 }
 

@@ -46,3 +46,11 @@ enum AckType {
   ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "AckKeygen" ];
   ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "AckSign" ];
 }
+
+// SignInfo holds information about a sign request
+message SignInfo {
+  string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+  string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes msg = 3;
+  int64 snapshot_counter = 4;
+}

@@ -8,8 +8,8 @@ import (
 	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -1169,13 +1169,16 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 //
 // 		// make and configure a mocked tsstypes.TSSKeeper
 // 		mockedTSSKeeper := &TSSKeeperMock{
-// 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, keyID string) error {
+// 			AnnounceSignFunc: func(ctx sdk.Context, keyID string, sigID string) int64 {
+// 				panic("mock out the AnnounceSign method")
+// 			},
+// 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
 // 			DeleteAllRecoveryInfosFunc: func(ctx sdk.Context, keyID string)  {
 // 				panic("mock out the DeleteAllRecoveryInfos method")
 // 			},
-// 			DeleteAtCurrentHeightFunc: func(ctx sdk.Context, ID string, ackType tssexported.AckType)  {
+// 			DeleteAtCurrentHeightFunc: func(ctx sdk.Context, ID string, ackType exported.AckType)  {
 // 				panic("mock out the DeleteAtCurrentHeight method")
 // 			},
 // 			DeleteKeyIDForSigFunc: func(ctx sdk.Context, sigID string)  {
@@ -1205,19 +1208,19 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetCorruptionThresholdFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetCorruptionThreshold method")
 // 			},
-// 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
+// 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
-// 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool) {
+// 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
-// 			GetKeyFunc: func(ctx sdk.Context, keyID string) (tssexported.Key, bool) {
+// 			GetKeyFunc: func(ctx sdk.Context, keyID string) (exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (tssexported.Key, bool) {
+// 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (exported.Key, bool) {
 // 				panic("mock out the GetKeyForSigID method")
 // 			},
-// 			GetKeyRequirementFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+// 			GetKeyRequirementFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
 // 			GetMinBondFractionPerShareFunc: func(ctx sdk.Context) utils.Threshold {
@@ -1226,16 +1229,16 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetMinKeygenThresholdFunc: func(ctx sdk.Context) utils.Threshold {
 // 				panic("mock out the GetMinKeygenThreshold method")
 // 			},
-// 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
+// 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
-// 			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool) {
+// 			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 // 				panic("mock out the GetNextKeyID method")
 // 			},
 // 			GetParamsFunc: func(ctx sdk.Context) tsstypes.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			GetSigFunc: func(ctx sdk.Context, sigID string) (tssexported.Signature, bool) {
+// 			GetSigFunc: func(ctx sdk.Context, sigID string) (exported.Signature, bool) {
 // 				panic("mock out the GetSig method")
 // 			},
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
@@ -1250,7 +1253,10 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			HasRecoveryInfosFunc: func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 // 				panic("mock out the HasRecoveryInfos method")
 // 			},
-// 			LinkAvailableOperatorsToCounterFunc: func(ctx sdk.Context, ID string, ackType tssexported.AckType, counter int64)  {
+// 			IsOperatorAvailableFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
+// 				panic("mock out the IsOperatorAvailable method")
+// 			},
+// 			LinkAvailableOperatorsToCounterFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)  {
 // 				panic("mock out the LinkAvailableOperatorsToCounter method")
 // 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
@@ -1262,22 +1268,19 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			PenalizeSignCriminalFunc: func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)  {
 // 				panic("mock out the PenalizeSignCriminal method")
 // 			},
-// 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error {
+// 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
-// 			ScheduleKeygenFunc: func(ctx sdk.Context, req tsstypes.StartKeygenRequest)  {
+// 			ScheduleKeygenFunc: func(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64 {
 // 				panic("mock out the ScheduleKeygen method")
 // 			},
-// 			ScheduleSignFunc: func(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot)  {
-// 				panic("mock out the ScheduleSign method")
-// 			},
-// 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType tssexported.AckType, validator sdk.ValAddress) error {
+// 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
 // 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
-// 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement tssexported.KeyRequirement)  {
+// 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement exported.KeyRequirement)  {
 // 				panic("mock out the SetKeyRequirement method")
 // 			},
 // 			SetParamsFunc: func(ctx sdk.Context, p tsstypes.Params)  {
@@ -1289,10 +1292,10 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
-// 			StartKeygenFunc: func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshot snapshotexported.Snapshot) error {
+// 			StartKeygenFunc: func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, voter interface{InitializePoll(ctx sdk.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error}, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot) error {
+// 			StartSignFunc: func(ctx sdk.Context, voter interface{InitializePoll(ctx sdk.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -1302,14 +1305,17 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 //
 // 	}
 type TSSKeeperMock struct {
+	// AnnounceSignFunc mocks the AnnounceSign method.
+	AnnounceSignFunc func(ctx sdk.Context, keyID string, sigID string) int64
+
 	// AssignNextKeyFunc mocks the AssignNextKey method.
-	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, keyID string) error
+	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error
 
 	// DeleteAllRecoveryInfosFunc mocks the DeleteAllRecoveryInfos method.
 	DeleteAllRecoveryInfosFunc func(ctx sdk.Context, keyID string)
 
 	// DeleteAtCurrentHeightFunc mocks the DeleteAtCurrentHeight method.
-	DeleteAtCurrentHeightFunc func(ctx sdk.Context, ID string, ackType tssexported.AckType)
+	DeleteAtCurrentHeightFunc func(ctx sdk.Context, ID string, ackType exported.AckType)
 
 	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
 	DeleteKeyIDForSigFunc func(ctx sdk.Context, sigID string)
@@ -1339,19 +1345,19 @@ type TSSKeeperMock struct {
 	GetCorruptionThresholdFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
-	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool)
+	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
 
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
-	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool)
+	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
 
 	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func(ctx sdk.Context, keyID string) (tssexported.Key, bool)
+	GetKeyFunc func(ctx sdk.Context, keyID string) (exported.Key, bool)
 
 	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
-	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (tssexported.Key, bool)
+	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (exported.Key, bool)
 
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
-	GetKeyRequirementFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool)
+	GetKeyRequirementFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 
 	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
 	GetMinBondFractionPerShareFunc func(ctx sdk.Context) utils.Threshold
@@ -1360,16 +1366,16 @@ type TSSKeeperMock struct {
 	GetMinKeygenThresholdFunc func(ctx sdk.Context) utils.Threshold
 
 	// GetNextKeyFunc mocks the GetNextKey method.
-	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool)
+	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
-	GetNextKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool)
+	GetNextKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx sdk.Context) tsstypes.Params
 
 	// GetSigFunc mocks the GetSig method.
-	GetSigFunc func(ctx sdk.Context, sigID string) (tssexported.Signature, bool)
+	GetSigFunc func(ctx sdk.Context, sigID string) (exported.Signature, bool)
 
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
@@ -1383,8 +1389,11 @@ type TSSKeeperMock struct {
 	// HasRecoveryInfosFunc mocks the HasRecoveryInfos method.
 	HasRecoveryInfosFunc func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
 
+	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
+	IsOperatorAvailableFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
+
 	// LinkAvailableOperatorsToCounterFunc mocks the LinkAvailableOperatorsToCounter method.
-	LinkAvailableOperatorsToCounterFunc func(ctx sdk.Context, ID string, ackType tssexported.AckType, counter int64)
+	LinkAvailableOperatorsToCounterFunc func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
@@ -1396,22 +1405,19 @@ type TSSKeeperMock struct {
 	PenalizeSignCriminalFunc func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
 
 	// RotateKeyFunc mocks the RotateKey method.
-	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error
+	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 
 	// ScheduleKeygenFunc mocks the ScheduleKeygen method.
-	ScheduleKeygenFunc func(ctx sdk.Context, req tsstypes.StartKeygenRequest)
-
-	// ScheduleSignFunc mocks the ScheduleSign method.
-	ScheduleSignFunc func(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot)
+	ScheduleKeygenFunc func(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
-	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType tssexported.AckType, validator sdk.ValAddress) error
+	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
 	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
-	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement tssexported.KeyRequirement)
+	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement exported.KeyRequirement)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx sdk.Context, p tsstypes.Params)
@@ -1423,15 +1429,24 @@ type TSSKeeperMock struct {
 	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
 
 	// StartKeygenFunc mocks the StartKeygen method.
-	StartKeygenFunc func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshot snapshotexported.Snapshot) error
+	StartKeygenFunc func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, voter interface {
 		InitializePoll(ctx sdk.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
-	}, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot) error
+	}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AnnounceSign holds details about calls to the AnnounceSign method.
+		AnnounceSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+			// SigID is the sigID argument value.
+			SigID string
+		}
 		// AssignNextKey holds details about calls to the AssignNextKey method.
 		AssignNextKey []struct {
 			// Ctx is the ctx argument value.
@@ -1439,7 +1454,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
@@ -1457,7 +1472,7 @@ type TSSKeeperMock struct {
 			// ID is the ID argument value.
 			ID string
 			// AckType is the ackType argument value.
-			AckType tssexported.AckType
+			AckType exported.AckType
 		}
 		// DeleteKeyIDForSig holds details about calls to the DeleteKeyIDForSig method.
 		DeleteKeyIDForSig []struct {
@@ -1531,7 +1546,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
 		GetCurrentKeyID []struct {
@@ -1540,7 +1555,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
@@ -1563,7 +1578,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// GetMinBondFractionPerShare holds details about calls to the GetMinBondFractionPerShare method.
 		GetMinBondFractionPerShare []struct {
@@ -1582,7 +1597,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// GetNextKeyID holds details about calls to the GetNextKeyID method.
 		GetNextKeyID []struct {
@@ -1591,7 +1606,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
@@ -1635,6 +1650,17 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// IsOperatorAvailable holds details about calls to the IsOperatorAvailable method.
+		IsOperatorAvailable []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the ID argument value.
+			ID string
+			// AckType is the ackType argument value.
+			AckType exported.AckType
+			// Validator is the validator argument value.
+			Validator sdk.ValAddress
+		}
 		// LinkAvailableOperatorsToCounter holds details about calls to the LinkAvailableOperatorsToCounter method.
 		LinkAvailableOperatorsToCounter []struct {
 			// Ctx is the ctx argument value.
@@ -1642,7 +1668,7 @@ type TSSKeeperMock struct {
 			// ID is the ID argument value.
 			ID string
 			// AckType is the ackType argument value.
-			AckType tssexported.AckType
+			AckType exported.AckType
 			// Counter is the counter argument value.
 			Counter int64
 		}
@@ -1676,7 +1702,7 @@ type TSSKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
-			KeyRole tssexported.KeyRole
+			KeyRole exported.KeyRole
 		}
 		// ScheduleKeygen holds details about calls to the ScheduleKeygen method.
 		ScheduleKeygen []struct {
@@ -1685,19 +1711,6 @@ type TSSKeeperMock struct {
 			// Req is the req argument value.
 			Req tsstypes.StartKeygenRequest
 		}
-		// ScheduleSign holds details about calls to the ScheduleSign method.
-		ScheduleSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID string
-			// SigID is the sigID argument value.
-			SigID string
-			// Msg is the msg argument value.
-			Msg []byte
-			// S is the s argument value.
-			S snapshotexported.Snapshot
-		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
 			// Ctx is the ctx argument value.
@@ -1705,7 +1718,7 @@ type TSSKeeperMock struct {
 			// ID is the ID argument value.
 			ID string
 			// AckType is the ackType argument value.
-			AckType tssexported.AckType
+			AckType exported.AckType
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
@@ -1723,7 +1736,7 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement tssexported.KeyRequirement
+			KeyRequirement exported.KeyRequirement
 		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
@@ -1760,8 +1773,8 @@ type TSSKeeperMock struct {
 			Voter tsstypes.Voter
 			// KeyID is the keyID argument value.
 			KeyID string
-			// Snapshot is the snapshot argument value.
-			Snapshot snapshotexported.Snapshot
+			// SnapshotMoqParam is the snapshotMoqParam argument value.
+			SnapshotMoqParam snapshot.Snapshot
 		}
 		// StartSign holds details about calls to the StartSign method.
 		StartSign []struct {
@@ -1778,9 +1791,10 @@ type TSSKeeperMock struct {
 			// Msg is the msg argument value.
 			Msg []byte
 			// S is the s argument value.
-			S snapshotexported.Snapshot
+			S snapshot.Snapshot
 		}
 	}
+	lockAnnounceSign                        sync.RWMutex
 	lockAssignNextKey                       sync.RWMutex
 	lockDeleteAllRecoveryInfos              sync.RWMutex
 	lockDeleteAtCurrentHeight               sync.RWMutex
@@ -1808,13 +1822,13 @@ type TSSKeeperMock struct {
 	lockGetTssSuspendedUntil                sync.RWMutex
 	lockHasKeygenStart                      sync.RWMutex
 	lockHasRecoveryInfos                    sync.RWMutex
+	lockIsOperatorAvailable                 sync.RWMutex
 	lockLinkAvailableOperatorsToCounter     sync.RWMutex
 	lockLogger                              sync.RWMutex
 	lockOperatorIsAvailableForCounter       sync.RWMutex
 	lockPenalizeSignCriminal                sync.RWMutex
 	lockRotateKey                           sync.RWMutex
 	lockScheduleKeygen                      sync.RWMutex
-	lockScheduleSign                        sync.RWMutex
 	lockSetAvailableOperator                sync.RWMutex
 	lockSetKey                              sync.RWMutex
 	lockSetKeyRequirement                   sync.RWMutex
@@ -1825,15 +1839,54 @@ type TSSKeeperMock struct {
 	lockStartSign                           sync.RWMutex
 }
 
+// AnnounceSign calls AnnounceSignFunc.
+func (mock *TSSKeeperMock) AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64 {
+	if mock.AnnounceSignFunc == nil {
+		panic("TSSKeeperMock.AnnounceSignFunc: method is nil but TSSKeeper.AnnounceSign was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID string
+		SigID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+		SigID: sigID,
+	}
+	mock.lockAnnounceSign.Lock()
+	mock.calls.AnnounceSign = append(mock.calls.AnnounceSign, callInfo)
+	mock.lockAnnounceSign.Unlock()
+	return mock.AnnounceSignFunc(ctx, keyID, sigID)
+}
+
+// AnnounceSignCalls gets all the calls that were made to AnnounceSign.
+// Check the length with:
+//     len(mockedTSSKeeper.AnnounceSignCalls())
+func (mock *TSSKeeperMock) AnnounceSignCalls() []struct {
+	Ctx   sdk.Context
+	KeyID string
+	SigID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID string
+		SigID string
+	}
+	mock.lockAnnounceSign.RLock()
+	calls = mock.calls.AnnounceSign
+	mock.lockAnnounceSign.RUnlock()
+	return calls
+}
+
 // AssignNextKey calls AssignNextKeyFunc.
-func (mock *TSSKeeperMock) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole, keyID string) error {
+func (mock *TSSKeeperMock) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 	if mock.AssignNextKeyFunc == nil {
 		panic("TSSKeeperMock.AssignNextKeyFunc: method is nil but TSSKeeper.AssignNextKey was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 		KeyID   string
 	}{
 		Ctx:     ctx,
@@ -1853,13 +1906,13 @@ func (mock *TSSKeeperMock) AssignNextKey(ctx sdk.Context, chain nexus.Chain, key
 func (mock *TSSKeeperMock) AssignNextKeyCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 	KeyID   string
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 		KeyID   string
 	}
 	mock.lockAssignNextKey.RLock()
@@ -1904,14 +1957,14 @@ func (mock *TSSKeeperMock) DeleteAllRecoveryInfosCalls() []struct {
 }
 
 // DeleteAtCurrentHeight calls DeleteAtCurrentHeightFunc.
-func (mock *TSSKeeperMock) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType tssexported.AckType) {
+func (mock *TSSKeeperMock) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
 	if mock.DeleteAtCurrentHeightFunc == nil {
 		panic("TSSKeeperMock.DeleteAtCurrentHeightFunc: method is nil but TSSKeeper.DeleteAtCurrentHeight was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		ID      string
-		AckType tssexported.AckType
+		AckType exported.AckType
 	}{
 		Ctx:     ctx,
 		ID:      ID,
@@ -1929,12 +1982,12 @@ func (mock *TSSKeeperMock) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ack
 func (mock *TSSKeeperMock) DeleteAtCurrentHeightCalls() []struct {
 	Ctx     sdk.Context
 	ID      string
-	AckType tssexported.AckType
+	AckType exported.AckType
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		ID      string
-		AckType tssexported.AckType
+		AckType exported.AckType
 	}
 	mock.lockDeleteAtCurrentHeight.RLock()
 	calls = mock.calls.DeleteAtCurrentHeight
@@ -2262,14 +2315,14 @@ func (mock *TSSKeeperMock) GetCorruptionThresholdCalls() []struct {
 }
 
 // GetCurrentKey calls GetCurrentKeyFunc.
-func (mock *TSSKeeperMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
+func (mock *TSSKeeperMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 	if mock.GetCurrentKeyFunc == nil {
 		panic("TSSKeeperMock.GetCurrentKeyFunc: method is nil but TSSKeeper.GetCurrentKey was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2287,12 +2340,12 @@ func (mock *TSSKeeperMock) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, key
 func (mock *TSSKeeperMock) GetCurrentKeyCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetCurrentKey.RLock()
 	calls = mock.calls.GetCurrentKey
@@ -2301,14 +2354,14 @@ func (mock *TSSKeeperMock) GetCurrentKeyCalls() []struct {
 }
 
 // GetCurrentKeyID calls GetCurrentKeyIDFunc.
-func (mock *TSSKeeperMock) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool) {
+func (mock *TSSKeeperMock) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 	if mock.GetCurrentKeyIDFunc == nil {
 		panic("TSSKeeperMock.GetCurrentKeyIDFunc: method is nil but TSSKeeper.GetCurrentKeyID was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2326,12 +2379,12 @@ func (mock *TSSKeeperMock) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, k
 func (mock *TSSKeeperMock) GetCurrentKeyIDCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetCurrentKeyID.RLock()
 	calls = mock.calls.GetCurrentKeyID
@@ -2340,7 +2393,7 @@ func (mock *TSSKeeperMock) GetCurrentKeyIDCalls() []struct {
 }
 
 // GetKey calls GetKeyFunc.
-func (mock *TSSKeeperMock) GetKey(ctx sdk.Context, keyID string) (tssexported.Key, bool) {
+func (mock *TSSKeeperMock) GetKey(ctx sdk.Context, keyID string) (exported.Key, bool) {
 	if mock.GetKeyFunc == nil {
 		panic("TSSKeeperMock.GetKeyFunc: method is nil but TSSKeeper.GetKey was just called")
 	}
@@ -2375,7 +2428,7 @@ func (mock *TSSKeeperMock) GetKeyCalls() []struct {
 }
 
 // GetKeyForSigID calls GetKeyForSigIDFunc.
-func (mock *TSSKeeperMock) GetKeyForSigID(ctx sdk.Context, sigID string) (tssexported.Key, bool) {
+func (mock *TSSKeeperMock) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
 	if mock.GetKeyForSigIDFunc == nil {
 		panic("TSSKeeperMock.GetKeyForSigIDFunc: method is nil but TSSKeeper.GetKeyForSigID was just called")
 	}
@@ -2410,14 +2463,14 @@ func (mock *TSSKeeperMock) GetKeyForSigIDCalls() []struct {
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
-func (mock *TSSKeeperMock) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+func (mock *TSSKeeperMock) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
 	if mock.GetKeyRequirementFunc == nil {
 		panic("TSSKeeperMock.GetKeyRequirementFunc: method is nil but TSSKeeper.GetKeyRequirement was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2435,12 +2488,12 @@ func (mock *TSSKeeperMock) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain,
 func (mock *TSSKeeperMock) GetKeyRequirementCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetKeyRequirement.RLock()
 	calls = mock.calls.GetKeyRequirement
@@ -2511,14 +2564,14 @@ func (mock *TSSKeeperMock) GetMinKeygenThresholdCalls() []struct {
 }
 
 // GetNextKey calls GetNextKeyFunc.
-func (mock *TSSKeeperMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
+func (mock *TSSKeeperMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool) {
 	if mock.GetNextKeyFunc == nil {
 		panic("TSSKeeperMock.GetNextKeyFunc: method is nil but TSSKeeper.GetNextKey was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2536,12 +2589,12 @@ func (mock *TSSKeeperMock) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRol
 func (mock *TSSKeeperMock) GetNextKeyCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetNextKey.RLock()
 	calls = mock.calls.GetNextKey
@@ -2550,14 +2603,14 @@ func (mock *TSSKeeperMock) GetNextKeyCalls() []struct {
 }
 
 // GetNextKeyID calls GetNextKeyIDFunc.
-func (mock *TSSKeeperMock) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (string, bool) {
+func (mock *TSSKeeperMock) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 	if mock.GetNextKeyIDFunc == nil {
 		panic("TSSKeeperMock.GetNextKeyIDFunc: method is nil but TSSKeeper.GetNextKeyID was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2575,12 +2628,12 @@ func (mock *TSSKeeperMock) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyR
 func (mock *TSSKeeperMock) GetNextKeyIDCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockGetNextKeyID.RLock()
 	calls = mock.calls.GetNextKeyID
@@ -2620,7 +2673,7 @@ func (mock *TSSKeeperMock) GetParamsCalls() []struct {
 }
 
 // GetSig calls GetSigFunc.
-func (mock *TSSKeeperMock) GetSig(ctx sdk.Context, sigID string) (tssexported.Signature, bool) {
+func (mock *TSSKeeperMock) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool) {
 	if mock.GetSigFunc == nil {
 		panic("TSSKeeperMock.GetSigFunc: method is nil but TSSKeeper.GetSig was just called")
 	}
@@ -2798,15 +2851,58 @@ func (mock *TSSKeeperMock) HasRecoveryInfosCalls() []struct {
 	return calls
 }
 
+// IsOperatorAvailable calls IsOperatorAvailableFunc.
+func (mock *TSSKeeperMock) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
+	if mock.IsOperatorAvailableFunc == nil {
+		panic("TSSKeeperMock.IsOperatorAvailableFunc: method is nil but TSSKeeper.IsOperatorAvailable was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		ID        string
+		AckType   exported.AckType
+		Validator sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		ID:        ID,
+		AckType:   ackType,
+		Validator: validator,
+	}
+	mock.lockIsOperatorAvailable.Lock()
+	mock.calls.IsOperatorAvailable = append(mock.calls.IsOperatorAvailable, callInfo)
+	mock.lockIsOperatorAvailable.Unlock()
+	return mock.IsOperatorAvailableFunc(ctx, ID, ackType, validator)
+}
+
+// IsOperatorAvailableCalls gets all the calls that were made to IsOperatorAvailable.
+// Check the length with:
+//     len(mockedTSSKeeper.IsOperatorAvailableCalls())
+func (mock *TSSKeeperMock) IsOperatorAvailableCalls() []struct {
+	Ctx       sdk.Context
+	ID        string
+	AckType   exported.AckType
+	Validator sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		ID        string
+		AckType   exported.AckType
+		Validator sdk.ValAddress
+	}
+	mock.lockIsOperatorAvailable.RLock()
+	calls = mock.calls.IsOperatorAvailable
+	mock.lockIsOperatorAvailable.RUnlock()
+	return calls
+}
+
 // LinkAvailableOperatorsToCounter calls LinkAvailableOperatorsToCounterFunc.
-func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType tssexported.AckType, counter int64) {
+func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
 	if mock.LinkAvailableOperatorsToCounterFunc == nil {
 		panic("TSSKeeperMock.LinkAvailableOperatorsToCounterFunc: method is nil but TSSKeeper.LinkAvailableOperatorsToCounter was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		ID      string
-		AckType tssexported.AckType
+		AckType exported.AckType
 		Counter int64
 	}{
 		Ctx:     ctx,
@@ -2826,13 +2922,13 @@ func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID s
 func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounterCalls() []struct {
 	Ctx     sdk.Context
 	ID      string
-	AckType tssexported.AckType
+	AckType exported.AckType
 	Counter int64
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		ID      string
-		AckType tssexported.AckType
+		AckType exported.AckType
 		Counter int64
 	}
 	mock.lockLinkAvailableOperatorsToCounter.RLock()
@@ -2951,14 +3047,14 @@ func (mock *TSSKeeperMock) PenalizeSignCriminalCalls() []struct {
 }
 
 // RotateKey calls RotateKeyFunc.
-func (mock *TSSKeeperMock) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tssexported.KeyRole) error {
+func (mock *TSSKeeperMock) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 	if mock.RotateKeyFunc == nil {
 		panic("TSSKeeperMock.RotateKeyFunc: method is nil but TSSKeeper.RotateKey was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -2976,12 +3072,12 @@ func (mock *TSSKeeperMock) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole
 func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	Ctx     sdk.Context
 	Chain   nexus.Chain
-	KeyRole tssexported.KeyRole
+	KeyRole exported.KeyRole
 } {
 	var calls []struct {
 		Ctx     sdk.Context
 		Chain   nexus.Chain
-		KeyRole tssexported.KeyRole
+		KeyRole exported.KeyRole
 	}
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
@@ -2990,7 +3086,7 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 }
 
 // ScheduleKeygen calls ScheduleKeygenFunc.
-func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKeygenRequest) {
+func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64 {
 	if mock.ScheduleKeygenFunc == nil {
 		panic("TSSKeeperMock.ScheduleKeygenFunc: method is nil but TSSKeeper.ScheduleKeygen was just called")
 	}
@@ -3004,7 +3100,7 @@ func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKey
 	mock.lockScheduleKeygen.Lock()
 	mock.calls.ScheduleKeygen = append(mock.calls.ScheduleKeygen, callInfo)
 	mock.lockScheduleKeygen.Unlock()
-	mock.ScheduleKeygenFunc(ctx, req)
+	return mock.ScheduleKeygenFunc(ctx, req)
 }
 
 // ScheduleKeygenCalls gets all the calls that were made to ScheduleKeygen.
@@ -3024,62 +3120,15 @@ func (mock *TSSKeeperMock) ScheduleKeygenCalls() []struct {
 	return calls
 }
 
-// ScheduleSign calls ScheduleSignFunc.
-func (mock *TSSKeeperMock) ScheduleSign(ctx sdk.Context, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot) {
-	if mock.ScheduleSignFunc == nil {
-		panic("TSSKeeperMock.ScheduleSignFunc: method is nil but TSSKeeper.ScheduleSign was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID string
-		SigID string
-		Msg   []byte
-		S     snapshotexported.Snapshot
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-		SigID: sigID,
-		Msg:   msg,
-		S:     s,
-	}
-	mock.lockScheduleSign.Lock()
-	mock.calls.ScheduleSign = append(mock.calls.ScheduleSign, callInfo)
-	mock.lockScheduleSign.Unlock()
-	mock.ScheduleSignFunc(ctx, keyID, sigID, msg, s)
-}
-
-// ScheduleSignCalls gets all the calls that were made to ScheduleSign.
-// Check the length with:
-//     len(mockedTSSKeeper.ScheduleSignCalls())
-func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
-	Ctx   sdk.Context
-	KeyID string
-	SigID string
-	Msg   []byte
-	S     snapshotexported.Snapshot
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		KeyID string
-		SigID string
-		Msg   []byte
-		S     snapshotexported.Snapshot
-	}
-	mock.lockScheduleSign.RLock()
-	calls = mock.calls.ScheduleSign
-	mock.lockScheduleSign.RUnlock()
-	return calls
-}
-
 // SetAvailableOperator calls SetAvailableOperatorFunc.
-func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackType tssexported.AckType, validator sdk.ValAddress) error {
+func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 	if mock.SetAvailableOperatorFunc == nil {
 		panic("TSSKeeperMock.SetAvailableOperatorFunc: method is nil but TSSKeeper.SetAvailableOperator was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
 		ID        string
-		AckType   tssexported.AckType
+		AckType   exported.AckType
 		Validator sdk.ValAddress
 	}{
 		Ctx:       ctx,
@@ -3099,13 +3148,13 @@ func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackT
 func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
 	Ctx       sdk.Context
 	ID        string
-	AckType   tssexported.AckType
+	AckType   exported.AckType
 	Validator sdk.ValAddress
 } {
 	var calls []struct {
 		Ctx       sdk.Context
 		ID        string
-		AckType   tssexported.AckType
+		AckType   exported.AckType
 		Validator sdk.ValAddress
 	}
 	mock.lockSetAvailableOperator.RLock()
@@ -3154,13 +3203,13 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 }
 
 // SetKeyRequirement calls SetKeyRequirementFunc.
-func (mock *TSSKeeperMock) SetKeyRequirement(ctx sdk.Context, keyRequirement tssexported.KeyRequirement) {
+func (mock *TSSKeeperMock) SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
 	if mock.SetKeyRequirementFunc == nil {
 		panic("TSSKeeperMock.SetKeyRequirementFunc: method is nil but TSSKeeper.SetKeyRequirement was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
-		KeyRequirement tssexported.KeyRequirement
+		KeyRequirement exported.KeyRequirement
 	}{
 		Ctx:            ctx,
 		KeyRequirement: keyRequirement,
@@ -3176,11 +3225,11 @@ func (mock *TSSKeeperMock) SetKeyRequirement(ctx sdk.Context, keyRequirement tss
 //     len(mockedTSSKeeper.SetKeyRequirementCalls())
 func (mock *TSSKeeperMock) SetKeyRequirementCalls() []struct {
 	Ctx            sdk.Context
-	KeyRequirement tssexported.KeyRequirement
+	KeyRequirement exported.KeyRequirement
 } {
 	var calls []struct {
 		Ctx            sdk.Context
-		KeyRequirement tssexported.KeyRequirement
+		KeyRequirement exported.KeyRequirement
 	}
 	mock.lockSetKeyRequirement.RLock()
 	calls = mock.calls.SetKeyRequirement
@@ -3306,41 +3355,41 @@ func (mock *TSSKeeperMock) SetSigCalls() []struct {
 }
 
 // StartKeygen calls StartKeygenFunc.
-func (mock *TSSKeeperMock) StartKeygen(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshot snapshotexported.Snapshot) error {
+func (mock *TSSKeeperMock) StartKeygen(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
 	if mock.StartKeygenFunc == nil {
 		panic("TSSKeeperMock.StartKeygenFunc: method is nil but TSSKeeper.StartKeygen was just called")
 	}
 	callInfo := struct {
-		Ctx      sdk.Context
-		Voter    tsstypes.Voter
-		KeyID    string
-		Snapshot snapshotexported.Snapshot
+		Ctx              sdk.Context
+		Voter            tsstypes.Voter
+		KeyID            string
+		SnapshotMoqParam snapshot.Snapshot
 	}{
-		Ctx:      ctx,
-		Voter:    voter,
-		KeyID:    keyID,
-		Snapshot: snapshot,
+		Ctx:              ctx,
+		Voter:            voter,
+		KeyID:            keyID,
+		SnapshotMoqParam: snapshotMoqParam,
 	}
 	mock.lockStartKeygen.Lock()
 	mock.calls.StartKeygen = append(mock.calls.StartKeygen, callInfo)
 	mock.lockStartKeygen.Unlock()
-	return mock.StartKeygenFunc(ctx, voter, keyID, snapshot)
+	return mock.StartKeygenFunc(ctx, voter, keyID, snapshotMoqParam)
 }
 
 // StartKeygenCalls gets all the calls that were made to StartKeygen.
 // Check the length with:
 //     len(mockedTSSKeeper.StartKeygenCalls())
 func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
-	Ctx      sdk.Context
-	Voter    tsstypes.Voter
-	KeyID    string
-	Snapshot snapshotexported.Snapshot
+	Ctx              sdk.Context
+	Voter            tsstypes.Voter
+	KeyID            string
+	SnapshotMoqParam snapshot.Snapshot
 } {
 	var calls []struct {
-		Ctx      sdk.Context
-		Voter    tsstypes.Voter
-		KeyID    string
-		Snapshot snapshotexported.Snapshot
+		Ctx              sdk.Context
+		Voter            tsstypes.Voter
+		KeyID            string
+		SnapshotMoqParam snapshot.Snapshot
 	}
 	mock.lockStartKeygen.RLock()
 	calls = mock.calls.StartKeygen
@@ -3351,7 +3400,7 @@ func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 // StartSign calls StartSignFunc.
 func (mock *TSSKeeperMock) StartSign(ctx sdk.Context, voter interface {
 	InitializePoll(ctx sdk.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
-}, keyID string, sigID string, msg []byte, s snapshotexported.Snapshot) error {
+}, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
 	if mock.StartSignFunc == nil {
 		panic("TSSKeeperMock.StartSignFunc: method is nil but TSSKeeper.StartSign was just called")
 	}
@@ -3363,7 +3412,7 @@ func (mock *TSSKeeperMock) StartSign(ctx sdk.Context, voter interface {
 		KeyID string
 		SigID string
 		Msg   []byte
-		S     snapshotexported.Snapshot
+		S     snapshot.Snapshot
 	}{
 		Ctx:   ctx,
 		Voter: voter,
@@ -3389,7 +3438,7 @@ func (mock *TSSKeeperMock) StartSignCalls() []struct {
 	KeyID string
 	SigID string
 	Msg   []byte
-	S     snapshotexported.Snapshot
+	S     snapshot.Snapshot
 } {
 	var calls []struct {
 		Ctx   sdk.Context
@@ -3399,7 +3448,7 @@ func (mock *TSSKeeperMock) StartSignCalls() []struct {
 		KeyID string
 		SigID string
 		Msg   []byte
-		S     snapshotexported.Snapshot
+		S     snapshot.Snapshot
 	}
 	mock.lockStartSign.RLock()
 	calls = mock.calls.StartSign
@@ -3417,16 +3466,22 @@ var _ tsstypes.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked tsstypes.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetLatestSnapshotFunc: func(ctx sdk.Context) (snapshotexported.Snapshot, bool) {
+// 			GetLatestCounterFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetLatestCounter method")
+// 			},
+// 			GetLatestSnapshotFunc: func(ctx sdk.Context) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
 // 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
-// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (snapshotexported.Snapshot, bool) {
+// 			GetProxyFunc: func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
+// 				panic("mock out the GetProxy method")
+// 			},
+// 			GetSnapshotFunc: func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -3436,20 +3491,31 @@ var _ tsstypes.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// GetLatestCounterFunc mocks the GetLatestCounter method.
+	GetLatestCounterFunc func(ctx sdk.Context) int64
+
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
-	GetLatestSnapshotFunc func(ctx sdk.Context) (snapshotexported.Snapshot, bool)
+	GetLatestSnapshotFunc func(ctx sdk.Context) (snapshot.Snapshot, bool)
 
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool)
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx sdk.Context, counter int64) (snapshotexported.Snapshot, bool)
+	GetSnapshotFunc func(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
+	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetLatestCounter holds details about calls to the GetLatestCounter method.
+		GetLatestCounter []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -3461,6 +3527,13 @@ type SnapshotterMock struct {
 			Ctx sdk.Context
 			// Proxy is the proxy argument value.
 			Proxy sdk.AccAddress
+		}
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Principal is the principal argument value.
+			Principal sdk.ValAddress
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
@@ -3476,17 +3549,50 @@ type SnapshotterMock struct {
 			// SubsetSize is the subsetSize argument value.
 			SubsetSize int64
 			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-			KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+			KeyShareDistributionPolicy exported.KeyShareDistributionPolicy
 		}
 	}
+	lockGetLatestCounter  sync.RWMutex
 	lockGetLatestSnapshot sync.RWMutex
 	lockGetOperator       sync.RWMutex
+	lockGetProxy          sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
 
+// GetLatestCounter calls GetLatestCounterFunc.
+func (mock *SnapshotterMock) GetLatestCounter(ctx sdk.Context) int64 {
+	if mock.GetLatestCounterFunc == nil {
+		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetLatestCounter.Lock()
+	mock.calls.GetLatestCounter = append(mock.calls.GetLatestCounter, callInfo)
+	mock.lockGetLatestCounter.Unlock()
+	return mock.GetLatestCounterFunc(ctx)
+}
+
+// GetLatestCounterCalls gets all the calls that were made to GetLatestCounter.
+// Check the length with:
+//     len(mockedSnapshotter.GetLatestCounterCalls())
+func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetLatestCounter.RLock()
+	calls = mock.calls.GetLatestCounter
+	mock.lockGetLatestCounter.RUnlock()
+	return calls
+}
+
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
-func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context) (snapshotexported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool) {
 	if mock.GetLatestSnapshotFunc == nil {
 		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
 	}
@@ -3551,8 +3657,43 @@ func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	return calls
 }
 
+// GetProxy calls GetProxyFunc.
+func (mock *SnapshotterMock) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (sdk.AccAddress, bool) {
+	if mock.GetProxyFunc == nil {
+		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}{
+		Ctx:       ctx,
+		Principal: principal,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, principal)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//     len(mockedSnapshotter.GetProxyCalls())
+func (mock *SnapshotterMock) GetProxyCalls() []struct {
+	Ctx       sdk.Context
+	Principal sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Principal sdk.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
+	return calls
+}
+
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (snapshotexported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
@@ -3587,14 +3728,14 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
 		Ctx                        sdk.Context
 		SubsetSize                 int64
-		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+		KeyShareDistributionPolicy exported.KeyShareDistributionPolicy
 	}{
 		Ctx:                        ctx,
 		SubsetSize:                 subsetSize,
@@ -3612,12 +3753,12 @@ func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, key
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 	Ctx                        sdk.Context
 	SubsetSize                 int64
-	KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+	KeyShareDistributionPolicy exported.KeyShareDistributionPolicy
 } {
 	var calls []struct {
 		Ctx                        sdk.Context
 		SubsetSize                 int64
-		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+		KeyShareDistributionPolicy exported.KeyShareDistributionPolicy
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot

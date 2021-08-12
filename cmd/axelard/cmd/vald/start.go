@@ -245,21 +245,19 @@ func listen(
 	keygenAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
 	signAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
 
-	q := tmEvents.Query{
-		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
-			tmTypes.EventTypeKey, tmTypes.EventNewBlock, tssTypes.EventTypeKeygen, sdk.AttributeKeyModule, tssTypes.ModuleName)),
-		Predicate: func(e eventTypes.Event) bool {
-			return e.Type == tssTypes.EventTypeKeygen && e.Module == tssTypes.ModuleName && e.Action == tssTypes.AttributeValueStart
-		},
+	queryKeygen := createNewBlockEventQuery(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenStart, err := tmEvents.Subscribe(eventBus, queryKeygen)
+	if err != nil {
+		panic(fmt.Errorf("unable to subscribe with keygen event query: %v", err))
 	}
 
-	keygenStart, err := tmEvents.Subscribe(eventBus, q)
+	querySign := createNewBlockEventQuery(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signStart, err := tmEvents.Subscribe(eventBus, querySign)
 	if err != nil {
-		panic(fmt.Errorf("unable to create keygen event query: %v", err))
+		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
 	}
 
 	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
 	btcConf := tmEvents.MustSubscribeTx(eventBus, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
@@ -307,6 +305,16 @@ func listen(
 	mgr := jobs.NewMgr(logErr)
 	mgr.AddJobs(js...)
 	mgr.Wait()
+}
+
+func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
+	return tmEvents.Query{
+		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+			tmTypes.EventTypeKey, tmTypes.EventNewBlock, eventType, sdk.AttributeKeyModule, module)),
+		Predicate: func(e eventTypes.Event) bool {
+			return e.Type == eventType && e.Module == module && e.Action == action
+		},
+	}
 }
 
 func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *events.EventBus {

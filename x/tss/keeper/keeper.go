@@ -34,7 +34,7 @@ const (
 	keyRotatedAtPrefix     = "key_rotated_at_"
 	availablePrefix        = "available_"
 	forCounterPrefix       = "for_counter_"
-	ackPrefix              = "ack_"
+	scheduledPrefix        = "scheduled_"
 )
 
 // Keeper allows access to the broadcast state
@@ -266,27 +266,8 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 
 // DeleteAtCurrentHeight removes a keygen/sign request for the current height
 func (k Keeper) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
-	key := fmt.Sprintf("%s%d_%s_%s", ackPrefix, ctx.BlockHeight(), ackType.String(), ID)
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, ctx.BlockHeight(), ackType.String(), ID)
 	ctx.KVStore(k.storeKey).Delete([]byte(key))
-}
-
-// GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
-func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
-	prefix := fmt.Sprintf("%s%d_%s_", ackPrefix, ctx.BlockHeight(), exported.AckKeygen.String())
-	store := ctx.KVStore(k.storeKey)
-	var requests []types.StartKeygenRequest
-
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-
-		var request types.StartKeygenRequest
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &request)
-		requests = append(requests, request)
-	}
-
-	return requests
 }
 
 // SetAvailableOperator sets the height at which a validator sent his ack for some key/sign ID. Returns an error if
@@ -307,6 +288,12 @@ func (k Keeper) SetAvailableOperator(ctx sdk.Context, ID string, ackType exporte
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 
 	return nil
+}
+
+// IsOperatorAvailable returns true if the validator already submitted an acknowledgments for the given ID
+func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
+	key := fmt.Sprintf("%s%s_%s_%s", availablePrefix, ID, ackType.String(), validator.String())
+	return ctx.KVStore(k.storeKey).Has([]byte(key))
 }
 
 // LinkAvailableOperatorsToCounter links the available operators of some keygen/sign to a snapshot counter
@@ -400,11 +387,12 @@ func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, va
 	return false
 }
 
-func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string) {
+func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string, height int64) {
 	event := sdk.NewEvent(types.EventTypeAck,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, action),
 		sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
+		sdk.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
 	)
 	if action == types.AttributeValueSign {
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigID, sigID))

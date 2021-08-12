@@ -66,6 +66,8 @@ type BTCKeeper interface {
 
 	SetExternalKeyIDs(ctx sdk.Context, keyIDs []string)
 	GetExternalKeyIDs(ctx sdk.Context) ([]string, bool)
+	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
+	GetScheduledTxs(ctx sdk.Context) []ScheduledUnsignedTx
 }
 
 // Voter is the interface that provides voting functionality
@@ -83,6 +85,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
+	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
