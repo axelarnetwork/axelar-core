@@ -43,15 +43,16 @@ message ExecutePendingTransfersRequest {
 
 message ExecutePendingTransfersResponse {}
 
-// MSgRegisterIbcPath represents a message to register an ibc path for an asset
-message RegisterIbcPathRequest {
+// MSgRegisterIBCPath represents a message to register an IBC tracing path for
+// an asset
+message RegisterIBCPathRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string asset = 2;
   string path = 3;
 }
 
-message RegisterIbcPathResponse {}
+message RegisterIBCPathResponse {}
 
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus

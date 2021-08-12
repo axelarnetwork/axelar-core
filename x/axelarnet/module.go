@@ -81,7 +81,7 @@ type AppModule struct {
 	keeper   keeper.Keeper
 	nexus    types.Nexus
 	bank     types.BankKeeper
-	transfer types.IbcTransferKeeper
+	transfer types.IBCTransferKeeper
 }
 
 // NewAppModule creates a new AppModule object
@@ -89,7 +89,7 @@ func NewAppModule(
 	k keeper.Keeper,
 	nexus types.Nexus,
 	bank types.BankKeeper,
-	transfer types.IbcTransferKeeper,
+	transfer types.IBCTransferKeeper,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},

@@ -23,14 +23,14 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked axelarnettypes.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			GetIbcPathFunc: func(ctx sdk.Context, asset string) string {
-// 				panic("mock out the GetIbcPath method")
+// 			GetIBCPathFunc: func(ctx sdk.Context, asset string) string {
+// 				panic("mock out the GetIBCPath method")
 // 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterIbcPathFunc: func(ctx sdk.Context, asset string, path string) error {
-// 				panic("mock out the RegisterIbcPath method")
+// 			RegisterIBCPathFunc: func(ctx sdk.Context, asset string, path string) error {
+// 				panic("mock out the RegisterIBCPath method")
 // 			},
 // 		}
 //
@@ -39,19 +39,19 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// GetIbcPathFunc mocks the GetIbcPath method.
-	GetIbcPathFunc func(ctx sdk.Context, asset string) string
+	// GetIBCPathFunc mocks the GetIBCPath method.
+	GetIBCPathFunc func(ctx sdk.Context, asset string) string
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
-	// RegisterIbcPathFunc mocks the RegisterIbcPath method.
-	RegisterIbcPathFunc func(ctx sdk.Context, asset string, path string) error
+	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
+	RegisterIBCPathFunc func(ctx sdk.Context, asset string, path string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetIbcPath holds details about calls to the GetIbcPath method.
-		GetIbcPath []struct {
+		// GetIBCPath holds details about calls to the GetIBCPath method.
+		GetIBCPath []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Asset is the asset argument value.
@@ -62,8 +62,8 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// RegisterIbcPath holds details about calls to the RegisterIbcPath method.
-		RegisterIbcPath []struct {
+		// RegisterIBCPath holds details about calls to the RegisterIBCPath method.
+		RegisterIBCPath []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Asset is the asset argument value.
@@ -72,15 +72,15 @@ type BaseKeeperMock struct {
 			Path string
 		}
 	}
-	lockGetIbcPath      sync.RWMutex
+	lockGetIBCPath      sync.RWMutex
 	lockLogger          sync.RWMutex
-	lockRegisterIbcPath sync.RWMutex
+	lockRegisterIBCPath sync.RWMutex
 }
 
-// GetIbcPath calls GetIbcPathFunc.
-func (mock *BaseKeeperMock) GetIbcPath(ctx sdk.Context, asset string) string {
-	if mock.GetIbcPathFunc == nil {
-		panic("BaseKeeperMock.GetIbcPathFunc: method is nil but BaseKeeper.GetIbcPath was just called")
+// GetIBCPath calls GetIBCPathFunc.
+func (mock *BaseKeeperMock) GetIBCPath(ctx sdk.Context, asset string) string {
+	if mock.GetIBCPathFunc == nil {
+		panic("BaseKeeperMock.GetIBCPathFunc: method is nil but BaseKeeper.GetIBCPath was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -89,16 +89,16 @@ func (mock *BaseKeeperMock) GetIbcPath(ctx sdk.Context, asset string) string {
 		Ctx:   ctx,
 		Asset: asset,
 	}
-	mock.lockGetIbcPath.Lock()
-	mock.calls.GetIbcPath = append(mock.calls.GetIbcPath, callInfo)
-	mock.lockGetIbcPath.Unlock()
-	return mock.GetIbcPathFunc(ctx, asset)
+	mock.lockGetIBCPath.Lock()
+	mock.calls.GetIBCPath = append(mock.calls.GetIBCPath, callInfo)
+	mock.lockGetIBCPath.Unlock()
+	return mock.GetIBCPathFunc(ctx, asset)
 }
 
-// GetIbcPathCalls gets all the calls that were made to GetIbcPath.
+// GetIBCPathCalls gets all the calls that were made to GetIBCPath.
 // Check the length with:
-//     len(mockedBaseKeeper.GetIbcPathCalls())
-func (mock *BaseKeeperMock) GetIbcPathCalls() []struct {
+//     len(mockedBaseKeeper.GetIBCPathCalls())
+func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	Ctx   sdk.Context
 	Asset string
 } {
@@ -106,9 +106,9 @@ func (mock *BaseKeeperMock) GetIbcPathCalls() []struct {
 		Ctx   sdk.Context
 		Asset string
 	}
-	mock.lockGetIbcPath.RLock()
-	calls = mock.calls.GetIbcPath
-	mock.lockGetIbcPath.RUnlock()
+	mock.lockGetIBCPath.RLock()
+	calls = mock.calls.GetIBCPath
+	mock.lockGetIBCPath.RUnlock()
 	return calls
 }
 
@@ -143,10 +143,10 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 	return calls
 }
 
-// RegisterIbcPath calls RegisterIbcPathFunc.
-func (mock *BaseKeeperMock) RegisterIbcPath(ctx sdk.Context, asset string, path string) error {
-	if mock.RegisterIbcPathFunc == nil {
-		panic("BaseKeeperMock.RegisterIbcPathFunc: method is nil but BaseKeeper.RegisterIbcPath was just called")
+// RegisterIBCPath calls RegisterIBCPathFunc.
+func (mock *BaseKeeperMock) RegisterIBCPath(ctx sdk.Context, asset string, path string) error {
+	if mock.RegisterIBCPathFunc == nil {
+		panic("BaseKeeperMock.RegisterIBCPathFunc: method is nil but BaseKeeper.RegisterIBCPath was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -157,16 +157,16 @@ func (mock *BaseKeeperMock) RegisterIbcPath(ctx sdk.Context, asset string, path 
 		Asset: asset,
 		Path:  path,
 	}
-	mock.lockRegisterIbcPath.Lock()
-	mock.calls.RegisterIbcPath = append(mock.calls.RegisterIbcPath, callInfo)
-	mock.lockRegisterIbcPath.Unlock()
-	return mock.RegisterIbcPathFunc(ctx, asset, path)
+	mock.lockRegisterIBCPath.Lock()
+	mock.calls.RegisterIBCPath = append(mock.calls.RegisterIBCPath, callInfo)
+	mock.lockRegisterIBCPath.Unlock()
+	return mock.RegisterIBCPathFunc(ctx, asset, path)
 }
 
-// RegisterIbcPathCalls gets all the calls that were made to RegisterIbcPath.
+// RegisterIBCPathCalls gets all the calls that were made to RegisterIBCPath.
 // Check the length with:
-//     len(mockedBaseKeeper.RegisterIbcPathCalls())
-func (mock *BaseKeeperMock) RegisterIbcPathCalls() []struct {
+//     len(mockedBaseKeeper.RegisterIBCPathCalls())
+func (mock *BaseKeeperMock) RegisterIBCPathCalls() []struct {
 	Ctx   sdk.Context
 	Asset string
 	Path  string
@@ -176,9 +176,9 @@ func (mock *BaseKeeperMock) RegisterIbcPathCalls() []struct {
 		Asset string
 		Path  string
 	}
-	mock.lockRegisterIbcPath.RLock()
-	calls = mock.calls.RegisterIbcPath
-	mock.lockRegisterIbcPath.RUnlock()
+	mock.lockRegisterIBCPath.RLock()
+	calls = mock.calls.RegisterIBCPath
+	mock.lockRegisterIBCPath.RUnlock()
 	return calls
 }
 
@@ -1045,26 +1045,26 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
 	return calls
 }
 
-// Ensure, that IbcTransferKeeperMock does implement axelarnettypes.IbcTransferKeeper.
+// Ensure, that IBCTransferKeeperMock does implement axelarnettypes.IBCTransferKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ axelarnettypes.IbcTransferKeeper = &IbcTransferKeeperMock{}
+var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 
-// IbcTransferKeeperMock is a mock implementation of axelarnettypes.IbcTransferKeeper.
+// IBCTransferKeeperMock is a mock implementation of axelarnettypes.IBCTransferKeeper.
 //
-// 	func TestSomethingThatUsesIbcTransferKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesIBCTransferKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked axelarnettypes.IbcTransferKeeper
-// 		mockedIbcTransferKeeper := &IbcTransferKeeperMock{
+// 		// make and configure a mocked axelarnettypes.IBCTransferKeeper
+// 		mockedIBCTransferKeeper := &IBCTransferKeeperMock{
 // 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool) {
 // 				panic("mock out the GetDenomTrace method")
 // 			},
 // 		}
 //
-// 		// use mockedIbcTransferKeeper in code that requires axelarnettypes.IbcTransferKeeper
+// 		// use mockedIBCTransferKeeper in code that requires axelarnettypes.IBCTransferKeeper
 // 		// and then make assertions.
 //
 // 	}
-type IbcTransferKeeperMock struct {
+type IBCTransferKeeperMock struct {
 	// GetDenomTraceFunc mocks the GetDenomTrace method.
 	GetDenomTraceFunc func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool)
 
@@ -1082,9 +1082,9 @@ type IbcTransferKeeperMock struct {
 }
 
 // GetDenomTrace calls GetDenomTraceFunc.
-func (mock *IbcTransferKeeperMock) GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool) {
+func (mock *IBCTransferKeeperMock) GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (transfertypes.DenomTrace, bool) {
 	if mock.GetDenomTraceFunc == nil {
-		panic("IbcTransferKeeperMock.GetDenomTraceFunc: method is nil but IbcTransferKeeper.GetDenomTrace was just called")
+		panic("IBCTransferKeeperMock.GetDenomTraceFunc: method is nil but IBCTransferKeeper.GetDenomTrace was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
@@ -1101,8 +1101,8 @@ func (mock *IbcTransferKeeperMock) GetDenomTrace(ctx sdk.Context, denomTraceHash
 
 // GetDenomTraceCalls gets all the calls that were made to GetDenomTrace.
 // Check the length with:
-//     len(mockedIbcTransferKeeper.GetDenomTraceCalls())
-func (mock *IbcTransferKeeperMock) GetDenomTraceCalls() []struct {
+//     len(mockedIBCTransferKeeper.GetDenomTraceCalls())
+func (mock *IBCTransferKeeperMock) GetDenomTraceCalls() []struct {
 	Ctx            sdk.Context
 	DenomTraceHash tmbytes.HexBytes
 } {

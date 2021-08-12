@@ -19,8 +19,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
-    - [RegisterIbcPathRequest](#axelarnet.v1beta1.RegisterIbcPathRequest)
-    - [RegisterIbcPathResponse](#axelarnet.v1beta1.RegisterIbcPathResponse)
+    - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
+    - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
@@ -419,10 +419,11 @@ address
 
 
 
-<a name="axelarnet.v1beta1.RegisterIbcPathRequest"></a>
+<a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
-### RegisterIbcPathRequest
-MSgRegisterIbcPath represents a message to register an ibc path for an asset
+### RegisterIBCPathRequest
+MSgRegisterIBCPath represents a message to register an IBC tracing path for
+an asset
 
 
 | Field | Type | Label | Description |
@@ -436,9 +437,9 @@ MSgRegisterIbcPath represents a message to register an ibc path for an asset
 
 
 
-<a name="axelarnet.v1beta1.RegisterIbcPathResponse"></a>
+<a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
 
-### RegisterIbcPathResponse
+### RegisterIBCPathResponse
 
 
 
@@ -478,7 +479,7 @@ Msg defines the axelarnet Msg service.
 | `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link/{recipient_chain}|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm-deposit|
 | `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
-| `RegisterIbcPath` | [RegisterIbcPathRequest](#axelarnet.v1beta1.RegisterIbcPathRequest) | [RegisterIbcPathResponse](#axelarnet.v1beta1.RegisterIbcPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
+| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 
  <!-- end services -->

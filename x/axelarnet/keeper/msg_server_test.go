@@ -44,7 +44,7 @@ func TestHandleMsgLink(t *testing.T) {
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IbcTransferKeeperMock{})
+		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -80,14 +80,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		axelarnetKeeper *mock.BaseKeeperMock
 		nexusKeeper     *mock.NexusMock
 		bankKeeper      *mock.BankKeeperMock
-		transferKeeper  *mock.IbcTransferKeeperMock
+		transferKeeper  *mock.IBCTransferKeeperMock
 		ctx             sdk.Context
 		msg             *types.ConfirmDepositRequest
 	)
 	setup := func() {
-		ibcPath := randomIbcPath()
+		ibcPath := randomIBCPath()
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			GetIbcPathFunc: func(sdk.Context, string) string {
+			GetIBCPathFunc: func(sdk.Context, string) string {
 				return ibcPath
 			},
 		}
@@ -108,7 +108,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error { return nil },
 			SendCoinsFunc:                    func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil },
 		}
-		transferKeeper = &mock.IbcTransferKeeperMock{
+		transferKeeper = &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(sdk.Context, tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
 				return ibctypes.DenomTrace{
 					Path:      ibcPath,
@@ -168,11 +168,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
-	t.Run("should enqueue transfer in nexus keeper when registered ibc tokens are sent from burner address to escrow address", testutils.Func(func(t *testing.T) {
+	t.Run("should enqueue transfer in nexus keeper when registered ICS20 tokens are sent from burner address to escrow address", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIbcDenom()
+		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
@@ -183,14 +183,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when ibc token hash not found in ibc transfer keeper", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when ICS20 token hash not found in IBCTransferKeeper", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
 		transferKeeper.GetDenomTraceFunc = func(sdk.Context, tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
 			return ibctypes.DenomTrace{}, false
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIbcDenom()
+		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -199,14 +199,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when ibc token path not registered in axelarnet keeper", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when ICS20 token path not registered in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
-		axelarnetKeeper.GetIbcPathFunc = func(sdk.Context, string) string {
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) string {
 			return ""
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIbcDenom()
+		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -215,14 +215,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when ibc token path does not match registered path in axelarnet keeper", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when ICS20 token tracing path does not match registered path in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
-		axelarnetKeeper.GetIbcPathFunc = func(sdk.Context, string) string {
-			return randomIbcPath()
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) string {
+			return randomIBCPath()
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIbcDenom()
+		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
@@ -238,7 +238,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return fmt.Errorf("failed")
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIbcDenom()
+		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
@@ -262,7 +262,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when asset is not a valid ibc denom and not registered", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when asset is not a valid IBC denom and not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
@@ -288,7 +288,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			GetIbcPathFunc: func(sdk.Context, string) string {
+			GetIBCPathFunc: func(sdk.Context, string) string {
 				return ""
 			},
 		}
@@ -318,7 +318,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			SendCoinsFunc:                    func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IbcTransferKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IBCTransferKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -355,11 +355,11 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
-	t.Run("should send ibc token from escrow account to recipients, and archive pending transfers \\"+
-		"when pending transfer asset is registered with an ibc path ", testutils.Func(func(t *testing.T) {
+	t.Run("should send ICS20 token from escrow account to recipients, and archive pending transfers \\"+
+		"when pending transfer asset is registered with an IBC tracing path ", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetIbcPathFunc = func(sdk.Context, string) string {
-			return randomIbcPath()
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) string {
+			return randomIBCPath()
 		}
 
 		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
@@ -396,38 +396,38 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	}).Repeat(repeatCount))
 }
 
-func TestHandleMsgRegisterIbcPath(t *testing.T) {
+func TestHandleMsgRegisterIBCPath(t *testing.T) {
 	var (
 		server          types.MsgServiceServer
 		axelarnetKeeper *mock.BaseKeeperMock
 		ctx             sdk.Context
-		msg             *types.RegisterIbcPathRequest
+		msg             *types.RegisterIBCPathRequest
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			RegisterIbcPathFunc: func(sdk.Context, string, string) error { return nil },
+			RegisterIBCPathFunc: func(sdk.Context, string, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IbcTransferKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{})
 
 	}
 
 	repeatCount := 20
-	t.Run("should register an ibc path for an asset if not registered yet", testutils.Func(func(t *testing.T) {
+	t.Run("should register an IBC tracing path for an asset if not registered yet", testutils.Func(func(t *testing.T) {
 		setup()
-		msg = randomMsgRegisterIbcPath()
-		_, err := server.RegisterIbcPath(sdk.WrapSDKContext(ctx), msg)
+		msg = randomMsgRegisterIBCPath()
+		_, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, axelarnetKeeper.RegisterIbcPathCalls(), 1)
+		assert.Len(t, axelarnetKeeper.RegisterIBCPathCalls(), 1)
 	}).Repeat(repeatCount))
 
 	t.Run("should return error if an asset is already registered", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.RegisterIbcPathFunc = func(sdk.Context, string, string) error { return fmt.Errorf("failed") }
-		msg = randomMsgRegisterIbcPath()
-		_, err := server.RegisterIbcPath(sdk.WrapSDKContext(ctx), msg)
+		axelarnetKeeper.RegisterIBCPathFunc = func(sdk.Context, string, string) error { return fmt.Errorf("failed") }
+		msg = randomMsgRegisterIBCPath()
+		_, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, axelarnetKeeper.RegisterIbcPathCalls(), 1)
+		assert.Len(t, axelarnetKeeper.RegisterIBCPathCalls(), 1)
 	}).Repeat(repeatCount))
 }
 
@@ -447,11 +447,11 @@ func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 		sdk.NewCoin(randomDenom(), sdk.NewInt(rand.I64Between(1, 10000000000))),
 		rand.Bytes(sdk.AddrLen))
 }
-func randomMsgRegisterIbcPath() *types.RegisterIbcPathRequest {
-	return types.NewRegisterIbcPathRequest(
+func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
+	return types.NewRegisterIBCPathRequest(
 		rand.Bytes(sdk.AddrLen),
 		randomDenom(),
-		randomIbcPath(),
+		randomIBCPath(),
 	)
 
 }
@@ -467,7 +467,7 @@ func randomTransfer() nexus.CrossChainTransfer {
 	}
 }
 
-func randomIbcDenom() string {
+func randomIBCDenom() string {
 	return "ibc/" + rand.HexStr(64)
 }
 

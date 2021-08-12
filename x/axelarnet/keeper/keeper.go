@@ -31,8 +31,8 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// RegisterIbcPath registers an ibc path for an asset
-func (k Keeper) RegisterIbcPath(ctx sdk.Context, asset, path string) error {
+// RegisterIBCPath registers an IBC path for an asset
+func (k Keeper) RegisterIBCPath(ctx sdk.Context, asset, path string) error {
 	bz := k.getStore(ctx).GetRaw(pathPrefix.Append(utils.LowerCaseKey(asset)))
 	if bz != nil {
 		return fmt.Errorf("asset %s already registered", asset)
@@ -41,8 +41,8 @@ func (k Keeper) RegisterIbcPath(ctx sdk.Context, asset, path string) error {
 	return nil
 }
 
-// GetIbcPath retrieves the ibc path associated to the specified asset
-func (k Keeper) GetIbcPath(ctx sdk.Context, asset string) string {
+// GetIBCPath retrieves the IBC path associated to the specified asset
+func (k Keeper) GetIBCPath(ctx sdk.Context, asset string) string {
 	bz := k.getStore(ctx).GetRaw(pathPrefix.Append(utils.LowerCaseKey(asset)))
 	if bz == nil {
 		return ""

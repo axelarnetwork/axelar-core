@@ -18,7 +18,7 @@ const (
 	TxLink                    = "link"
 	TxConfirmDeposit          = "confirm-deposit"
 	TxExecutePendingTransfers = "execute-pending"
-	TxRegisterIbcPath         = "register-path"
+	TxRegisterIBCPath         = "register-path"
 	TxAddCosmosBasedChain     = "add-cosmos-based-chain"
 )
 
@@ -43,8 +43,8 @@ type ReqExecutePendingTransfers struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqRegisterIbcPath represents a request to register an ibc tracing path for an asset
-type ReqRegisterIbcPath struct {
+// ReqRegisterIBCPath represents a request to register an IBC tracing path for an asset
+type ReqRegisterIBCPath struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Asset   string       `json:"asset" yaml:"asset"`
 	Path    string       `json:"path" yaml:"path"`
@@ -63,7 +63,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
 	registerTx(TxHandlerConfirmDeposit(cliCtx), TxConfirmDeposit)
 	registerTx(TxHandlerExecutePendingTransfers(cliCtx), TxExecutePendingTransfers)
-	registerTx(TxHandlerRegisterIbcPath(cliCtx), TxRegisterIbcPath)
+	registerTx(TxHandlerRegisterIBCPath(cliCtx), TxRegisterIBCPath)
 	registerTx(TxHandlerAddCosmosBasedChain(cliCtx), TxAddCosmosBasedChain)
 }
 
@@ -160,10 +160,10 @@ func TxHandlerExecutePendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// TxHandlerRegisterIbcPath returns the handler to register an ibc tracing path for an asset
-func TxHandlerRegisterIbcPath(cliCtx client.Context) http.HandlerFunc {
+// TxHandlerRegisterIBCPath returns the handler to register an IBC tracing path for an asset
+func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqRegisterIbcPath
+		var req ReqRegisterIBCPath
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -177,7 +177,7 @@ func TxHandlerRegisterIbcPath(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterIbcPathRequest(fromAddr, req.Asset, req.Path)
+		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Asset, req.Path)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -9,13 +9,13 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper  Nexus  BankKeeper IbcTransferKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper  Nexus  BankKeeper IBCTransferKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
-	RegisterIbcPath(ctx sdk.Context, asset, path string) error
-	GetIbcPath(ctx sdk.Context, asset string) string
+	RegisterIBCPath(ctx sdk.Context, asset, path string) error
+	GetIBCPath(ctx sdk.Context, asset string) string
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -42,7 +42,7 @@ type BankKeeper interface {
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 }
 
-// IbcTransferKeeper provides functionality to manage IBC transfers
-type IbcTransferKeeper interface {
+// IBCTransferKeeper provides functionality to manage IBC transfers
+type IBCTransferKeeper interface {
 	GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (types.DenomTrace, bool)
 }

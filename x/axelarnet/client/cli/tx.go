@@ -27,7 +27,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdConfirmDeposit(),
 		GetCmdExecutePendingTransfersTx(),
-		GetCmdRegisterIbcPathTx(),
+		GetCmdRegisterIBCPathTx(),
 		GetCmdAddCosmosBasedChain(),
 	)
 
@@ -118,8 +118,8 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterIbcPathTx returns the cli command to register an ibc path for an asset
-func GetCmdRegisterIbcPathTx() *cobra.Command {
+// GetCmdRegisterIBCPathTx returns the cli command to register an IBC tracing path for an asset
+func GetCmdRegisterIBCPathTx() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "register-path [asset] [path]",
 		Short: "Register an ibc path for an asset",
@@ -130,7 +130,7 @@ func GetCmdRegisterIbcPathTx() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewRegisterIbcPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -16,7 +16,7 @@ import (
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 )
 
-func TestKeeper_GetIbcPath(t *testing.T) {
+func TestKeeper_GetIBCPath(t *testing.T) {
 	var (
 		ctx    sdk.Context
 		keeper axelarnetKeeper.Keeper
@@ -28,27 +28,27 @@ func TestKeeper_GetIbcPath(t *testing.T) {
 	}
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		setup()
-		path := randomIbcPath()
+		path := randomIBCPath()
 		asset := randomDenom()
-		err := keeper.RegisterIbcPath(ctx, asset, path)
+		err := keeper.RegisterIBCPath(ctx, asset, path)
 		assert.NoError(t, err)
-		result := keeper.GetIbcPath(ctx, asset)
+		result := keeper.GetIBCPath(ctx, asset)
 		assert.Equal(t, path, result)
 	}).Repeat(20))
 
 	t.Run("should return error when registered the same asset twice", testutils.Func(func(t *testing.T) {
 		setup()
-		path := randomIbcPath()
+		path := randomIBCPath()
 		asset := randomDenom()
-		err := keeper.RegisterIbcPath(ctx, asset, path)
+		err := keeper.RegisterIBCPath(ctx, asset, path)
 		assert.NoError(t, err)
-		path2 := randomIbcPath()
-		err2 := keeper.RegisterIbcPath(ctx, asset, path2)
+		path2 := randomIBCPath()
+		err2 := keeper.RegisterIBCPath(ctx, asset, path2)
 		assert.Error(t, err2)
 	}).Repeat(20))
 
 }
-func randomIbcPath() string {
+func randomIBCPath() string {
 	port := rand.StrBetween(5, 10)
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return port + "/" + identifier

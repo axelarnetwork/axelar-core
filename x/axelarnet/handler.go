@@ -11,7 +11,7 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IbcTransferKeeper) sdk.Handler {
+func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper) sdk.Handler {
 	server := keeper.NewMsgServerImpl(k, n, b, t)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -37,8 +37,8 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 				result.Log = fmt.Sprintf("successfully executed pending transfers")
 			}
 			return result, err
-		case *types.RegisterIbcPathRequest:
-			res, err := server.RegisterIbcPath(sdk.WrapSDKContext(ctx), msg)
+		case *types.RegisterIBCPathRequest:
+			res, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully registered asset %s with path %s", msg.Asset, msg.Path)

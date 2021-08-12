@@ -23,11 +23,11 @@ type msgServer struct {
 	types.BaseKeeper
 	nexus    types.Nexus
 	bank     types.BankKeeper
-	transfer types.IbcTransferKeeper
+	transfer types.IBCTransferKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IbcTransferKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper: k,
 		nexus:      n,
@@ -67,15 +67,15 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
 	switch {
 	// check if the format of token denomination is 'ibc/{hash}'
-	case isIbcDenom(req.Token.Denom):
+	case isIBCDenom(req.Token.Denom):
 		// get base denomination and tracing path
-		denomTrace, err := s.parseIbcDenom(ctx, req.Token.Denom)
+		denomTrace, err := s.parseIBCDenom(ctx, req.Token.Denom)
 		if err != nil {
 			return nil, err
 		}
 
 		// check if the asset registered with a path
-		path := s.BaseKeeper.GetIbcPath(ctx, denomTrace.GetBaseDenom())
+		path := s.BaseKeeper.GetIBCPath(ctx, denomTrace.GetBaseDenom())
 		if path == "" {
 			return nil, fmt.Errorf("path not found for asset %s", denomTrace.GetBaseDenom())
 		}
@@ -164,9 +164,9 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 		// pending transfer can be either of cosmos based assets from evm, Axelarnet native asset from evm, assets from supported chain
 		switch {
-		// if the asset has an ibc path, it will be convert to ics20 token
-		case s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom) != "":
-			path := s.BaseKeeper.GetIbcPath(ctx, pendingTransfer.Asset.Denom)
+		// if the asset has an IBC path, it will be convert to ICS20 token
+		case s.BaseKeeper.GetIBCPath(ctx, pendingTransfer.Asset.Denom) != "":
+			path := s.BaseKeeper.GetIBCPath(ctx, pendingTransfer.Asset.Denom)
 			if path == "" {
 				return nil, fmt.Errorf("channelID %s not found for asset %s", path, pendingTransfer.Asset.Denom)
 			}
@@ -217,14 +217,14 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 	return &types.ExecutePendingTransfersResponse{}, nil
 }
 
-// RegisterIbcPath handles register an ibc path for a asset
-func (s msgServer) RegisterIbcPath(c context.Context, req *types.RegisterIbcPathRequest) (*types.RegisterIbcPathResponse, error) {
+// RegisterIBCPath handles register an IBC path for a asset
+func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPathRequest) (*types.RegisterIBCPathResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if err := s.BaseKeeper.RegisterIbcPath(ctx, req.Asset, req.Path); err != nil {
+	if err := s.BaseKeeper.RegisterIBCPath(ctx, req.Asset, req.Path); err != nil {
 		return nil, err
 	}
 
-	return &types.RegisterIbcPathResponse{}, nil
+	return &types.RegisterIBCPathResponse{}, nil
 }
 
 // AddCosmosBasedChain handles register a cosmos based chain to nexus
@@ -241,8 +241,8 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
 
-// isIbcDenom validates that the given denomination is a valid ics token representation (ibc/{hash})
-func isIbcDenom(denom string) bool {
+// isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})
+func isIBCDenom(denom string) bool {
 	if err := sdk.ValidateDenom(denom); err != nil {
 		return false
 	}
@@ -258,8 +258,8 @@ func isIbcDenom(denom string) bool {
 	return true
 }
 
-// parseIbcDenom retrieves the full identifiers trace and base denomination from the ibc transfer keeper store
-func (s msgServer) parseIbcDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+// parseIBCDenom retrieves the full identifiers trace and base denomination from the IBC transfer keeper store
+func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
 	denomSplit := strings.Split(ibcDenom, "/")
 
 	hash, err := ibctypes.ParseHexHash(denomSplit[1])

@@ -30,8 +30,8 @@ service MsgService {
       body : "*"
     };
   }
-  rpc RegisterIbcPath(RegisterIbcPathRequest)
-      returns (RegisterIbcPathResponse) {
+  rpc RegisterIBCPath(RegisterIBCPathRequest)
+      returns (RegisterIBCPathResponse) {
     option (google.api.http) = {
       post : "/axelar/axelarnet/register-ibc-path"
       body : "*"

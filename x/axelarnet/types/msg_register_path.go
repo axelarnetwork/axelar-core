@@ -7,9 +7,9 @@ import (
 	host "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
 )
 
-// NewRegisterIbcPathRequest creates a message of type RegisterIbcPathRequest
-func NewRegisterIbcPathRequest(sender sdk.AccAddress, asset, path string) *RegisterIbcPathRequest {
-	return &RegisterIbcPathRequest{
+// NewRegisterIBCPathRequest creates a message of type RegisterIBCPathRequest
+func NewRegisterIBCPathRequest(sender sdk.AccAddress, asset, path string) *RegisterIBCPathRequest {
+	return &RegisterIBCPathRequest{
 		Sender: sender,
 		Asset:  asset,
 		Path:   path,
@@ -17,17 +17,17 @@ func NewRegisterIbcPathRequest(sender sdk.AccAddress, asset, path string) *Regis
 }
 
 // Route returns the route for this message
-func (m RegisterIbcPathRequest) Route() string {
+func (m RegisterIBCPathRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m RegisterIbcPathRequest) Type() string {
-	return "RegisterIbcPath"
+func (m RegisterIBCPathRequest) Type() string {
+	return "RegisterIBCPath"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m RegisterIbcPathRequest) ValidateBasic() error {
+func (m RegisterIBCPathRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -47,11 +47,11 @@ func (m RegisterIbcPathRequest) ValidateBasic() error {
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m RegisterIbcPathRequest) GetSignBytes() []byte {
+func (m RegisterIBCPathRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m RegisterIbcPathRequest) GetSigners() []sdk.AccAddress {
+func (m RegisterIBCPathRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
