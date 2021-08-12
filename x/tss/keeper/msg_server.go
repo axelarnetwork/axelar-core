@@ -174,7 +174,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 
 	telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "rotation", "count")
 	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key"},
+		[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "id"},
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
