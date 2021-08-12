@@ -167,9 +167,6 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 		// if the asset has an IBC path, it will be convert to ICS20 token
 		case s.BaseKeeper.GetIBCPath(ctx, pendingTransfer.Asset.Denom) != "":
 			path := s.BaseKeeper.GetIBCPath(ctx, pendingTransfer.Asset.Denom)
-			if path == "" {
-				return nil, fmt.Errorf("channelID %s not found for asset %s", path, pendingTransfer.Asset.Denom)
-			}
 
 			prefixedDenom := path + "/" + pendingTransfer.Asset.Denom
 			// construct the denomination trace from the full raw denomination
@@ -231,12 +228,12 @@ func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPath
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, found := s.nexus.GetChain(ctx, req.Name); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
+	if _, found := s.nexus.GetChain(ctx, req.Chain.Name); found {
+		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Chain.Name)
 	}
-	chain := nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true}
-	s.nexus.SetChain(ctx, chain)
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, chain.NativeAsset)
+
+	s.nexus.SetChain(ctx, req.Chain)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
 
 	return &types.AddCosmosBasedChainResponse{}, nil
 }

@@ -10,9 +10,12 @@ import (
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
 func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
-		Sender:      sender,
-		Name:        name,
-		NativeAsset: nativeAsset,
+		Sender: sender,
+		Chain: nexus.Chain{
+			Name:                  name,
+			NativeAsset:           nativeAsset,
+			SupportsForeignAssets: true,
+		},
 	}
 }
 
@@ -32,13 +35,7 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	chain := nexus.Chain{
-		Name:                  m.Name,
-		NativeAsset:           m.NativeAsset,
-		SupportsForeignAssets: true,
-	}
-
-	if err := chain.Validate(); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return fmt.Errorf("invalid chain spec: %v", err)
 	}
 

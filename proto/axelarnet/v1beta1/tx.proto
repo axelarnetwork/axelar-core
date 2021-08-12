@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -59,8 +60,7 @@ message RegisterIBCPathResponse {}
 message AddCosmosBasedChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string name = 2;
-  string native_asset = 3;
+  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
 }
 
 message AddCosmosBasedChainResponse {}

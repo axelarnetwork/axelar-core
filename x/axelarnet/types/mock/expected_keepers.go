@@ -5,7 +5,7 @@ package mock
 
 import (
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	transfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -192,34 +192,34 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //
 // 		// make and configure a mocked axelarnettypes.Nexus
 // 		mockedNexus := &NexusMock{
-// 			AddToChainTotalFunc: func(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)  {
+// 			AddToChainTotalFunc: func(ctx sdk.Context, chain exported.Chain, amount sdk.Coin)  {
 // 				panic("mock out the AddToChainTotal method")
 // 			},
-// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
+// 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer exported.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+// 			GetChainFunc: func(ctx sdk.Context, chain string) (exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+// 			GetRecipientFunc: func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+// 			GetTransfersForChainFunc: func(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx sdk.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
-// 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 			RegisterAssetFunc: func(ctx sdk.Context, chainName string, denom string)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
-// 			SetChainFunc: func(ctx sdk.Context, chain nexus.Chain)  {
+// 			SetChainFunc: func(ctx sdk.Context, chain exported.Chain)  {
 // 				panic("mock out the SetChain method")
 // 			},
 // 		}
@@ -230,34 +230,34 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 	}
 type NexusMock struct {
 	// AddToChainTotalFunc mocks the AddToChainTotal method.
-	AddToChainTotalFunc func(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)
+	AddToChainTotalFunc func(ctx sdk.Context, chain exported.Chain, amount sdk.Coin)
 
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
-	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
+	ArchivePendingTransferFunc func(ctx sdk.Context, transfer exported.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
+	EnqueueForTransferFunc func(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetChainFunc func(ctx sdk.Context, chain string) (exported.Chain, bool)
 
 	// GetRecipientFunc mocks the GetRecipient method.
-	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
+	GetRecipientFunc func(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
-	GetTransfersForChainFunc func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
+	GetTransfersForChainFunc func(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx sdk.Context, chainName string, denom string) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
+	LinkAddressesFunc func(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx sdk.Context, chainName string, denom string)
 
 	// SetChainFunc mocks the SetChain method.
-	SetChainFunc func(ctx sdk.Context, chain nexus.Chain)
+	SetChainFunc func(ctx sdk.Context, chain exported.Chain)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -266,7 +266,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain nexus.Chain
+			Chain exported.Chain
 			// Amount is the amount argument value.
 			Amount sdk.Coin
 		}
@@ -275,14 +275,14 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Transfer is the transfer argument value.
-			Transfer nexus.CrossChainTransfer
+			Transfer exported.CrossChainTransfer
 		}
 		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
 		EnqueueForTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender nexus.CrossChainAddress
+			Sender exported.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount sdk.Coin
 		}
@@ -298,16 +298,16 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender nexus.CrossChainAddress
+			Sender exported.CrossChainAddress
 		}
 		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
 		GetTransfersForChain []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain nexus.Chain
+			Chain exported.Chain
 			// State is the state argument value.
-			State nexus.TransferState
+			State exported.TransferState
 		}
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
@@ -323,9 +323,9 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sender is the sender argument value.
-			Sender nexus.CrossChainAddress
+			Sender exported.CrossChainAddress
 			// Recipient is the recipient argument value.
-			Recipient nexus.CrossChainAddress
+			Recipient exported.CrossChainAddress
 		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
@@ -341,7 +341,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain nexus.Chain
+			Chain exported.Chain
 		}
 	}
 	lockAddToChainTotal        sync.RWMutex
@@ -357,13 +357,13 @@ type NexusMock struct {
 }
 
 // AddToChainTotal calls AddToChainTotalFunc.
-func (mock *NexusMock) AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin) {
+func (mock *NexusMock) AddToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	if mock.AddToChainTotalFunc == nil {
 		panic("NexusMock.AddToChainTotalFunc: method is nil but Nexus.AddToChainTotal was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
-		Chain  nexus.Chain
+		Chain  exported.Chain
 		Amount sdk.Coin
 	}{
 		Ctx:    ctx,
@@ -381,12 +381,12 @@ func (mock *NexusMock) AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amoun
 //     len(mockedNexus.AddToChainTotalCalls())
 func (mock *NexusMock) AddToChainTotalCalls() []struct {
 	Ctx    sdk.Context
-	Chain  nexus.Chain
+	Chain  exported.Chain
 	Amount sdk.Coin
 } {
 	var calls []struct {
 		Ctx    sdk.Context
-		Chain  nexus.Chain
+		Chain  exported.Chain
 		Amount sdk.Coin
 	}
 	mock.lockAddToChainTotal.RLock()
@@ -396,13 +396,13 @@ func (mock *NexusMock) AddToChainTotalCalls() []struct {
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
-func (mock *NexusMock) ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer) {
+func (mock *NexusMock) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossChainTransfer) {
 	if mock.ArchivePendingTransferFunc == nil {
 		panic("NexusMock.ArchivePendingTransferFunc: method is nil but Nexus.ArchivePendingTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx      sdk.Context
-		Transfer nexus.CrossChainTransfer
+		Transfer exported.CrossChainTransfer
 	}{
 		Ctx:      ctx,
 		Transfer: transfer,
@@ -418,11 +418,11 @@ func (mock *NexusMock) ArchivePendingTransfer(ctx sdk.Context, transfer nexus.Cr
 //     len(mockedNexus.ArchivePendingTransferCalls())
 func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 	Ctx      sdk.Context
-	Transfer nexus.CrossChainTransfer
+	Transfer exported.CrossChainTransfer
 } {
 	var calls []struct {
 		Ctx      sdk.Context
-		Transfer nexus.CrossChainTransfer
+		Transfer exported.CrossChainTransfer
 	}
 	mock.lockArchivePendingTransfer.RLock()
 	calls = mock.calls.ArchivePendingTransfer
@@ -431,13 +431,13 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, amount sdk.Coin) error {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
+		Sender exported.CrossChainAddress
 		Amount sdk.Coin
 	}{
 		Ctx:    ctx,
@@ -455,12 +455,12 @@ func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossCha
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	Ctx    sdk.Context
-	Sender nexus.CrossChainAddress
+	Sender exported.CrossChainAddress
 	Amount sdk.Coin
 } {
 	var calls []struct {
 		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
+		Sender exported.CrossChainAddress
 		Amount sdk.Coin
 	}
 	mock.lockEnqueueForTransfer.RLock()
@@ -470,7 +470,7 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (exported.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
@@ -505,13 +505,13 @@ func (mock *NexusMock) GetChainCalls() []struct {
 }
 
 // GetRecipient calls GetRecipientFunc.
-func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 	if mock.GetRecipientFunc == nil {
 		panic("NexusMock.GetRecipientFunc: method is nil but Nexus.GetRecipient was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
+		Sender exported.CrossChainAddress
 	}{
 		Ctx:    ctx,
 		Sender: sender,
@@ -527,11 +527,11 @@ func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddr
 //     len(mockedNexus.GetRecipientCalls())
 func (mock *NexusMock) GetRecipientCalls() []struct {
 	Ctx    sdk.Context
-	Sender nexus.CrossChainAddress
+	Sender exported.CrossChainAddress
 } {
 	var calls []struct {
 		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
+		Sender exported.CrossChainAddress
 	}
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
@@ -540,14 +540,14 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 }
 
 // GetTransfersForChain calls GetTransfersForChainFunc.
-func (mock *NexusMock) GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+func (mock *NexusMock) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 	if mock.GetTransfersForChainFunc == nil {
 		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain nexus.Chain
-		State nexus.TransferState
+		Chain exported.Chain
+		State exported.TransferState
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -564,13 +564,13 @@ func (mock *NexusMock) GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, 
 //     len(mockedNexus.GetTransfersForChainCalls())
 func (mock *NexusMock) GetTransfersForChainCalls() []struct {
 	Ctx   sdk.Context
-	Chain nexus.Chain
-	State nexus.TransferState
+	Chain exported.Chain
+	State exported.TransferState
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain nexus.Chain
-		State nexus.TransferState
+		Chain exported.Chain
+		State exported.TransferState
 	}
 	mock.lockGetTransfersForChain.RLock()
 	calls = mock.calls.GetTransfersForChain
@@ -618,14 +618,14 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
-		Sender    nexus.CrossChainAddress
-		Recipient nexus.CrossChainAddress
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
 	}{
 		Ctx:       ctx,
 		Sender:    sender,
@@ -642,13 +642,13 @@ func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAdd
 //     len(mockedNexus.LinkAddressesCalls())
 func (mock *NexusMock) LinkAddressesCalls() []struct {
 	Ctx       sdk.Context
-	Sender    nexus.CrossChainAddress
-	Recipient nexus.CrossChainAddress
+	Sender    exported.CrossChainAddress
+	Recipient exported.CrossChainAddress
 } {
 	var calls []struct {
 		Ctx       sdk.Context
-		Sender    nexus.CrossChainAddress
-		Recipient nexus.CrossChainAddress
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
 	}
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
@@ -696,13 +696,13 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 }
 
 // SetChain calls SetChainFunc.
-func (mock *NexusMock) SetChain(ctx sdk.Context, chain nexus.Chain) {
+func (mock *NexusMock) SetChain(ctx sdk.Context, chain exported.Chain) {
 	if mock.SetChainFunc == nil {
 		panic("NexusMock.SetChainFunc: method is nil but Nexus.SetChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain nexus.Chain
+		Chain exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -718,11 +718,11 @@ func (mock *NexusMock) SetChain(ctx sdk.Context, chain nexus.Chain) {
 //     len(mockedNexus.SetChainCalls())
 func (mock *NexusMock) SetChainCalls() []struct {
 	Ctx   sdk.Context
-	Chain nexus.Chain
+	Chain exported.Chain
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain nexus.Chain
+		Chain exported.Chain
 	}
 	mock.lockSetChain.RLock()
 	calls = mock.calls.SetChain
