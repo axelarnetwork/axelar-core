@@ -3,7 +3,10 @@ package tss
 import (
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -103,6 +106,27 @@ func startKeygen(
 	)
 
 	keeper.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "corruption", "threshold"},
+		float32(threshold),
+		[]metrics.Label{telemetry.NewLabel("keyID", req.NewKeyID)})
+
+	t := keeper.GetMinKeygenThreshold(ctx)
+	telemetry.SetGauge(float32(t.Numerator*100/t.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
+
+	// metrics for keygen participation
+	ts := time.Now().Unix()
+	for _, validator := range snapshot.Validators {
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "keygen", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("keyID", req.NewKeyID),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
+	}
 
 	return nil
 }
