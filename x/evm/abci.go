@@ -67,6 +67,12 @@ func processScheduledTx(
 		return
 	}
 
+	unsignedTx := keeper.GetUnsignedTx(ctx, tx.TxID)
+	if unsignedTx == nil {
+		baseKeeper.Logger(ctx).Error(fmt.Sprintf("Could not retrieve unsigned TX '%s' for chain %s", tx.TxID, tx.Chain))
+		return
+	}
+
 	err := signer.StartSign(ctx, voter, tx.SignInfo.KeyID, tx.SignInfo.SigID, tx.SignInfo.Msg, snapshot)
 	if err != nil {
 		baseKeeper.Logger(ctx).Error(fmt.Sprintf("error while starting sign for sig ID %s: %s", tx.SignInfo.SigID, err.Error()))
@@ -74,11 +80,6 @@ func processScheduledTx(
 	}
 
 	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
-	unsignedTx := keeper.GetUnsignedTx(ctx, tx.TxID)
-	if unsignedTx == nil {
-		baseKeeper.Logger(ctx).Error(fmt.Sprintf("Could not retrieve unsigned TX '%s' for chain %s", tx.TxID, tx.Chain))
-		return
-	}
 	if unsignedTx.To() == nil && bytes.Equal(unsignedTx.Data(), byteCodes) {
 
 		pub, ok := signer.GetCurrentKey(ctx, chain, tss.MasterKey)
