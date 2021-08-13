@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"strconv"
 	"time"
 
@@ -284,6 +285,9 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}
+
+		telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, "total", "deposit")
+		telemetry.IncrCounter(1, types.ModuleName, "total", "deposit", "count")
 
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
@@ -586,6 +590,10 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
+
+	telemetry.IncrCounter(float32(totalOut.Int64()), types.ModuleName, "total", "withdrawal")
+	telemetry.IncrCounter(float32(len(outputs)), types.ModuleName, "total", "withdrawal", "count")
+
 	if len(outputs) == 0 {
 		s.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
@@ -807,8 +815,13 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress type
 
 	k.SetAddress(ctx, consolidationAddress)
 
-	telemetry.NewLabel("btc_secondary_addr", consolidationAddress.Address)
-	telemetry.SetGauge(float32(change.Int64()), "btc_secondary_addr_balance")
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "secondary", "address", "balance"},
+		float32(change.Int64()),
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("address", consolidationAddress.Address),
+		})
 
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
 }
