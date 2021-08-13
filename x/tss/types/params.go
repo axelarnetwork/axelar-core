@@ -230,11 +230,11 @@ func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error 
 	return nil
 }
 
-func validateInt64(field string) func(timeoutInBlocks interface{}) error {
-	return func(timeoutInBlocks interface{}) error {
-		val, ok := timeoutInBlocks.(int64)
+func validateInt64(field string) func(value interface{}) error {
+	return func(value interface{}) error {
+		val, ok := value.(int64)
 		if !ok {
-			return fmt.Errorf("invalid parameter type for %s: %T", field, timeoutInBlocks)
+			return fmt.Errorf("invalid parameter type for %s: %T", field, value)
 		}
 
 		if val <= 0 {
