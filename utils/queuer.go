@@ -39,8 +39,8 @@ func (q BlockHeightKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 	q.store.Set(key, value)
 }
 
-// Dequeue pops the bottom of the queue and stores it at the given value, and return true if anything
-// in the queue is found
+// Dequeue pops the bottom of the queue and unmarshals it into the given object, and return true if anything
+// in the queue is found and the value passes the optional filter function
 func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)

@@ -666,7 +666,7 @@ func (k keeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
 }
 
 func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
-	batchedCommands.Status = types.BatchedCommands_Signed
+	batchedCommands.Status = types.Signed
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
 	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(batchedCommands.ID))
 

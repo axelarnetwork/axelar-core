@@ -68,6 +68,8 @@ message Command {
 
 message BatchedCommands {
   enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+
     STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
     STATUS_SIGNING = 1 [ (gogoproto.enumvalue_customname) = "Signing" ];
     STATUS_ABORTED = 2 [ (gogoproto.enumvalue_customname) = "Aborted" ];

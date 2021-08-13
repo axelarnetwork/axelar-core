@@ -1199,7 +1199,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 func getBatchedCommandsToSign(ctx sdk.Context, keeper types.ChainKeeper, chainID *big.Int) (types.BatchedCommands, error) {
 	if unsignedBatchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx); ok {
-		if unsignedBatchedCommands.Is(types.BatchedCommands_Aborted) {
+		if unsignedBatchedCommands.Is(types.Aborted) {
 			return unsignedBatchedCommands, nil
 		}
 

@@ -31,7 +31,7 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, si
 	}
 
 	batchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx)
-	if !ok || !batchedCommands.Is(types.BatchedCommands_Signing) {
+	if !ok || !batchedCommands.Is(types.Signing) {
 		return
 	}
 
@@ -45,7 +45,7 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, si
 	case tss.SigStatus_Scheduled, tss.SigStatus_Signing:
 		return
 	default:
-		batchedCommands.Status = types.BatchedCommands_Aborted
+		batchedCommands.Status = types.Aborted
 		keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
 		return
 	}

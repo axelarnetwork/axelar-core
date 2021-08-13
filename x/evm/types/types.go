@@ -395,7 +395,7 @@ func NewBatchedCommands(chainID *big.Int, keyID string, cmds []Command) (Batched
 		CommandIDs: commandIDs,
 		Data:       data,
 		SigHash:    Hash(GetSignHash(data)),
-		Status:     BatchedCommands_Signing,
+		Status:     Signing,
 		KeyID:      keyID,
 	}, nil
 }
