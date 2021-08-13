@@ -59,10 +59,10 @@ type Tss interface {
 }
 
 // IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
-func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, counter int64, validator SDKValidator) bool {
+func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, seqNo int64, validator SDKValidator) bool {
 	return IsValidatorActive(ctx, slasher, validator) &&
 		HasProxyRegistered(ctx, snapshotter, validator) &&
-		IsValidatorAvaiableForCounter(ctx, tss, counter, validator) &&
+		IsValidatorAvaiableForCounter(ctx, tss, seqNo, validator) &&
 		!IsValidatorTssSuspended(ctx, tss, validator)
 }
 
@@ -85,9 +85,9 @@ func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKV
 }
 
 // IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
-// and was subsequently linked to a snapshot counter as an available operator
-func IsValidatorAvaiableForCounter(ctx sdk.Context, tss Tss, counter int64, validator SDKValidator) bool {
-	return tss.OperatorIsAvailableForCounter(ctx, counter, validator.GetOperator())
+// and was subsequently linked to a snapshot number as an available operator
+func IsValidatorAvaiableForCounter(ctx sdk.Context, tss Tss, seqNo int64, validator SDKValidator) bool {
+	return tss.OperatorIsAvailableForCounter(ctx, seqNo, validator.GetOperator())
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
@@ -110,7 +110,7 @@ func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
