@@ -204,12 +204,12 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 	key := utils.LowerCaseKey(outPoint.String())
 	ok := k.getStore(ctx).Get(confirmedOutPointPrefix.Append(key), &info)
 	if ok {
-		return info, types.CONFIRMED, true
+		return info, types.OutPointState_Confirmed, true
 	}
 
 	ok = k.getStore(ctx).Get(spentOutPointPrefix.Append(key), &info)
 	if ok {
-		return info, types.SPENT, true
+		return info, types.OutPointState_Spent, true
 	}
 
 	return types.OutPointInfo{}, 0, false

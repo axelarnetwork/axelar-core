@@ -154,9 +154,9 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	switch {
 	case !ok:
 		break
-	case state == types.CONFIRMED:
+	case state == types.OutPointState_Confirmed:
 		return nil, fmt.Errorf("already confirmed")
-	case state == types.SPENT:
+	case state == types.OutPointState_Spent:
 		return nil, fmt.Errorf("already spent")
 	}
 
@@ -209,9 +209,9 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case confirmedBefore:
 		switch state {
-		case types.CONFIRMED:
+		case types.OutPointState_Confirmed:
 			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already confirmed", req.OutPoint)}, nil
-		case types.SPENT:
+		case types.OutPointState_Spent:
 			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already spent", req.OutPoint)}, nil
 		default:
 			panic(fmt.Sprintf("invalid outpoint state %v", state))

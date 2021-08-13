@@ -37,12 +37,37 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositAddr).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrDepositAddr).Error())
 			return
 		}
 
 		var res types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// QueryHandlerDepositStatus returns a handler to query the deposit status for a given outpoint
+func QueryHandlerDepositStatus(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		vars := mux.Vars(r)
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositStatus, vars[utils.PathVarOutpoint])
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrDepositStatus).Error())
+			return
+		}
+
+		var res types.QueryDepositStatusResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -77,7 +102,7 @@ func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFConsolidationAddr).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrConsolidationAddr).Error())
 			return
 		}
 
@@ -101,7 +126,7 @@ func QueryHandlerNextKeyID(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFNextKeyID).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrNextKeyID).Error())
 			return
 		}
 
@@ -123,7 +148,7 @@ func QueryHandlerMinOutputAmount(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMinOutputAmount).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrMinOutputAmount).Error())
 			return
 		}
 
@@ -146,7 +171,7 @@ func QueryHandlerLatestTx(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFLatestTx).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrLatestTx).Error())
 		}
 
 		var res types.QueryTxResponse
@@ -169,7 +194,7 @@ func QueryHandlerSignedTx(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFSignedTx).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrSignedTx).Error())
 		}
 
 		var res types.QueryTxResponse

@@ -214,7 +214,7 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]t
 			return nil, fmt.Errorf("cannot find %s", in.PreviousOutPoint.String())
 		}
 
-		if state != types.SPENT {
+		if state != types.OutPointState_Spent {
 			return nil, fmt.Errorf("outpoint %s is not set as spent", in.PreviousOutPoint.String())
 		}
 

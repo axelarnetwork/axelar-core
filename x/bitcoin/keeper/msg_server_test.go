@@ -181,7 +181,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("already confirmed", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return msg.OutPointInfo, types.CONFIRMED, true
+			return msg.OutPointInfo, types.OutPointState_Confirmed, true
 		}
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -190,7 +190,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("already spent", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return msg.OutPointInfo, types.SPENT, true
+			return msg.OutPointInfo, types.OutPointState_Spent, true
 		}
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -393,7 +393,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return types.OutPointInfo{}, false
 		}
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.CONFIRMED, true
+			return info, types.OutPointState_Confirmed, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
@@ -406,7 +406,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path second poll (outpoint already confirmed)", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.CONFIRMED, true
+			return info, types.OutPointState_Confirmed, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
@@ -419,7 +419,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path already spent", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.SPENT, true
+			return info, types.OutPointState_Spent, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
