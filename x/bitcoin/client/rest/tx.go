@@ -4,12 +4,13 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
+
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -26,6 +27,7 @@ const (
 	TxSubmitExternalSignature     = "submit-external-signature"
 
 	QueryDepositAddress       = "deposit-address"
+	QueryDepositStatus        = "deposit-status"
 	QueryConsolidationAddress = "consolidation-address"
 	QueryMinOutputAmount      = "min-output-amount"
 	QueryNextKeyID            = "next-key-id"
@@ -46,6 +48,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(QueryHandlerDepositStatus(cliCtx), QueryDepositStatus, clientUtils.PathVarOutpoint)
 	registerQuery(QueryHandlerConsolidationAddress(cliCtx), QueryConsolidationAddress)
 	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerMinOutputAmount(cliCtx), QueryMinOutputAmount)

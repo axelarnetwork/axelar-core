@@ -20,6 +20,11 @@ message QueryAddressResponse {
   string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
 }
 
+message QueryDepositStatusResponse {
+  string message = 1;
+  OutPointState status = 2;
+}
+
 message QueryTxResponse {
   message SigningInfo {
     string redeem_script = 1;

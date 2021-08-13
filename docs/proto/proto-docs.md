@@ -39,6 +39,7 @@
     - [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [OutPointState](#bitcoin.v1beta1.OutPointState)
     - [TxStatus](#bitcoin.v1beta1.TxStatus)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
@@ -53,6 +54,7 @@
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
+    - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
@@ -666,6 +668,20 @@ of a transaction
 
 
 
+<a name="bitcoin.v1beta1.OutPointState"></a>
+
+### OutPointState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OUT_POINT_STATE_UNSPECIFIED | 0 |  |
+| OUT_POINT_STATE_PENDING | 1 |  |
+| OUT_POINT_STATE_CONFIRMED | 2 |  |
+| OUT_POINT_STATE_SPENT | 3 |  |
+
+
+
 <a name="bitcoin.v1beta1.TxStatus"></a>
 
 ### TxStatus
@@ -825,6 +841,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryDepositStatusResponse"></a>
+
+### QueryDepositStatusResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message` | [string](#string) |  |  |
+| `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
 
 
 
