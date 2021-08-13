@@ -277,11 +277,11 @@ func (g DistinctStrGen) Next() string {
 }
 
 // RandomValidator generates a random validator address
-func RandomValidator() sdk.ValAddress {
-	return sdk.ValAddress(Str(sdk.AddrLen))
+func ValAddr() sdk.ValAddress {
+	return Bytes(sdk.AddrLen)
 }
 
 // RandomAddress generates a random cosmos address
-func RandomAddress() sdk.AccAddress {
-	return sdk.AccAddress(Str(sdk.AddrLen))
+func AccAddr() sdk.AccAddress {
+	return Bytes(sdk.AddrLen)
 }

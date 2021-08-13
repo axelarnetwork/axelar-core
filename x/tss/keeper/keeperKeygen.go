@@ -207,8 +207,8 @@ func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.K
 	return nil
 }
 
-// HasKeygenStart returns true if there is a start height for the given key ID
-func (k Keeper) HasKeygenStart(ctx sdk.Context, keyID string) bool {
+// HasKeygenStart returns true if a keygen for the given key ID has been started
+func (k Keeper) HasKeygenStarted(ctx sdk.Context, keyID string) bool {
 	return ctx.KVStore(k.storeKey).Get([]byte(keygenStartHeight+keyID)) != nil
 }
 

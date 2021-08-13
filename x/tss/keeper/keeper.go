@@ -297,7 +297,7 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported
 }
 
 // LinkAvailableOperatorsToCounter links the available operators of some keygen/sign to a snapshot counter
-func (k Keeper) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
+func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, snapshotSeqNo int64) {
 	operators := k.getAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
 	if len(operators) > 0 {
 		k.setAvailableOperatorsForCounter(ctx, counter, operators)
@@ -392,7 +392,7 @@ func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string, heigh
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, action),
 		sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
-		sdk.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
+		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(height, 10)),
 	)
 	if action == types.AttributeValueSign {
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigID, sigID))

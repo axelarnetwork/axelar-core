@@ -38,7 +38,7 @@ enum KeyShareDistributionPolicy {
 }
 
 enum AckType {
-  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_prefix) = true;
   option (gogoproto.goproto_enum_stringer) = true;
 
   ACK_TYPE_UNSPECIFIED = 0

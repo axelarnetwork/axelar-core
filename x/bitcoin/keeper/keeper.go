@@ -386,7 +386,7 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 
 // GetScheduledTxs gets the unsigned TXs scheduled for the current height
 func (k Keeper) GetScheduledTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
-	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", ctx.BlockHeight())))
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(strconv.FormatInt(ctx.BlockHeight(), 10)))
 	var txs types.ScheduledUnsignedTxs
 	if !k.getStore(ctx).Get(key, &txs) {
 		return nil
