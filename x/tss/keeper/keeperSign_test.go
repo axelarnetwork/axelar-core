@@ -19,8 +19,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	sigID := "sigID"
 	keyID := "keyID"
 	msg := []byte("message")
-	val1 := rand.RandomValidator()
-	val2 := rand.RandomValidator()
+	val1 := rand.ValAddr()
+	val2 := rand.ValAddr()
 
 	snap := snapshot.Snapshot{
 		Validators: []snapshot.Validator{
@@ -50,7 +50,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
 
 	for _, val := range snap.Validators {
-		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckSign, val.GetSDKValidator().GetOperator())
+		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_AckSign, val.GetSDKValidator().GetOperator())
 		assert.NoError(t, err)
 	}
 
@@ -72,7 +72,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
 
 	for _, val := range snap.Validators {
-		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckSign, val.GetSDKValidator().GetOperator())
+		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_AckSign, val.GetSDKValidator().GetOperator())
 		assert.NoError(t, err)
 	}
 

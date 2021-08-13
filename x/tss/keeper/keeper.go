@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -296,11 +297,11 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported
 	return ctx.KVStore(k.storeKey).Has([]byte(key))
 }
 
-// LinkAvailableOperatorsToCounter links the available operators of some keygen/sign to a snapshot counter
+// LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
 func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, snapshotSeqNo int64) {
 	operators := k.getAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
 	if len(operators) > 0 {
-		k.setAvailableOperatorsForCounter(ctx, counter, operators)
+		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
 		k.deleteAvailableOperators(ctx, ID, ackType)
 	}
 }

@@ -64,7 +64,7 @@ import (
 )
 
 func randomSender() sdk.AccAddress {
-	return rand.RandomAddress()
+	return rand.AccAddr()
 }
 func randomEthSender() common.Address {
 	return common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -266,7 +266,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	for i := 0; i < nodeCount; i++ {
 		// assign validators
 		validator := stakingtypes.Validator{
-			OperatorAddress: rand.RandomValidator().String(),
+			OperatorAddress: rand.ValAddr().String(),
 			Tokens:          tokens,
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: consPK,
@@ -287,7 +287,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 
 		node := newNode(test+strconv.Itoa(i), mocks, nodeCount)
 		chain.AddNodes(node)
-		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.RandomAddress()}
+		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.AccAddr()}
 
 		registerTSSEventListeners(n, t, chain.Submit)
 		registerBTCEventListener(n, chain.Submit)
@@ -409,10 +409,10 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		switch m[sdk.AttributeKeyAction] {
 		case tssTypes.AttributeValueKeygen:
-			ackType = tssExported.AckKeygen
+			ackType = tssExported.AckType_AckKeygen
 			ID = m[tssTypes.AttributeKeyKeyID]
 		case tssTypes.AttributeValueSign:
-			ackType = tssExported.AckSign
+			ackType = tssExported.AckType_AckSign
 			ID = m[tssTypes.AttributeKeySigID]
 		default:
 			return false

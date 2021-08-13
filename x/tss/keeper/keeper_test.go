@@ -31,10 +31,10 @@ import (
 )
 
 var (
-	val1       = newValidator(rand.RandomValidator(), 100)
-	val2       = newValidator(rand.RandomValidator(), 100)
-	val3       = newValidator(rand.RandomValidator(), 100)
-	val4       = newValidator(rand.RandomValidator(), 100)
+	val1       = newValidator(rand.ValAddr(), 100)
+	val2       = newValidator(rand.ValAddr(), 100)
+	val3       = newValidator(rand.ValAddr(), 100)
+	val4       = newValidator(rand.ValAddr(), 100)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
 		Validators:      validators,
@@ -138,12 +138,12 @@ func TestComputeAndSetCorruptionThreshold(t *testing.T) {
 func TestAvailableOperator(t *testing.T) {
 	s := setup()
 	id := rand.StrBetween(5, 10)
-	acks := []exported.AckType{exported.AckKeygen, exported.AckSign}
+	acks := []exported.AckType{exported.AckType_AckKeygen, exported.AckType_AckKeygen}
 	index := int(rand.I64Between(0, int64(len(acks)-1)))
 	ackType := acks[index]
 	index = int(rand.I64Between(0, int64(len(snap.Validators)-1)))
 	validator := snap.Validators[index].GetSDKValidator().GetOperator()
-	counter := rand.I64Between(1, 100)
+	snapshotSeq := rand.I64Between(1, 100)
 
 	// not yet available
 	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
@@ -158,7 +158,7 @@ func TestAvailableOperator(t *testing.T) {
 	assert.EqualError(t, err, "validator already submitted its ack for the specified ID and type")
 
 	// linked to counter
-	s.Keeper.LinkAvailableOperatorsToCounter(s.Ctx, id, ackType, counter)
+	s.Keeper.LinkAvailableOperatorsToSnapshot(s.Ctx, id, ackType, snapshotSeq)
 	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
-	assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, counter, validator))
+	assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
 }

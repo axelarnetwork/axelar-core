@@ -21,7 +21,7 @@ import (
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) int64 {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, height, exported.AckKeygen.String(), req.NewKeyID)
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, height, exported.AckType_AckKeygen.String(), req.NewKeyID)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
@@ -33,7 +33,7 @@ func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) in
 
 // GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
 func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
-	prefix := fmt.Sprintf("%s%d_%s_", scheduledPrefix, ctx.BlockHeight(), exported.AckKeygen.String())
+	prefix := fmt.Sprintf("%s%d_%s_", scheduledPrefix, ctx.BlockHeight(), exported.AckType_AckKeygen.String())
 	store := ctx.KVStore(k.storeKey)
 	var requests []types.StartKeygenRequest
 

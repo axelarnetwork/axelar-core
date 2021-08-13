@@ -85,7 +85,7 @@ type TSSKeeper interface {
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
 	IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
-	LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
+	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
@@ -98,7 +98,7 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
 	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
-	HasKeygenStart(ctx sdk.Context, keyID string) bool
+	HasKeygenStarted(ctx sdk.Context, keyID string) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
 	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)

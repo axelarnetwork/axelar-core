@@ -57,14 +57,14 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	switch req.AckType {
-	case exported.AckKeygen:
-		if s.HasKeygenStart(ctx, req.ID) {
+	case exported.AckType_AckKeygen:
+		if s.HasKeygenStarted(ctx, req.ID) {
 			return nil, fmt.Errorf("late keygen ACK message (key ID '%s' is already in use)", req.ID)
 		}
 		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
 			req.ID, ctx.BlockHeight(), req.Sender.String()))
 
-	case exported.AckSign:
+	case exported.AckType_AckSign:
 		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
 			return nil, fmt.Errorf("late sign ACK message (sig ID '%s' is already in use)", req.ID)
 
@@ -83,7 +83,7 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if s.HasKeygenStart(ctx, req.NewKeyID) {
+	if s.HasKeygenStarted(ctx, req.NewKeyID) {
 		return nil, fmt.Errorf("key ID '%s' is already in use", req.NewKeyID)
 	}
 

@@ -1247,8 +1247,8 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			HasKeygenStartFunc: func(ctx sdk.Context, keyID string) bool {
-// 				panic("mock out the HasKeygenStart method")
+// 			HasKeygenStartedFunc: func(ctx sdk.Context, keyID string) bool {
+// 				panic("mock out the HasKeygenStarted method")
 // 			},
 // 			HasRecoveryInfosFunc: func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 // 				panic("mock out the HasRecoveryInfos method")
@@ -1256,8 +1256,8 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			IsOperatorAvailableFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
 // 				panic("mock out the IsOperatorAvailable method")
 // 			},
-// 			LinkAvailableOperatorsToCounterFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)  {
-// 				panic("mock out the LinkAvailableOperatorsToCounter method")
+// 			LinkAvailableOperatorsToSnapshotFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)  {
+// 				panic("mock out the LinkAvailableOperatorsToSnapshot method")
 // 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -1383,8 +1383,8 @@ type TSSKeeperMock struct {
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
 
-	// HasKeygenStartFunc mocks the HasKeygenStart method.
-	HasKeygenStartFunc func(ctx sdk.Context, keyID string) bool
+	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
+	HasKeygenStartedFunc func(ctx sdk.Context, keyID string) bool
 
 	// HasRecoveryInfosFunc mocks the HasRecoveryInfos method.
 	HasRecoveryInfosFunc func(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
@@ -1392,8 +1392,8 @@ type TSSKeeperMock struct {
 	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
 	IsOperatorAvailableFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
 
-	// LinkAvailableOperatorsToCounterFunc mocks the LinkAvailableOperatorsToCounter method.
-	LinkAvailableOperatorsToCounterFunc func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
+	// LinkAvailableOperatorsToSnapshotFunc mocks the LinkAvailableOperatorsToSnapshot method.
+	LinkAvailableOperatorsToSnapshotFunc func(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
@@ -1634,8 +1634,8 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
-		// HasKeygenStart holds details about calls to the HasKeygenStart method.
-		HasKeygenStart []struct {
+		// HasKeygenStarted holds details about calls to the HasKeygenStarted method.
+		HasKeygenStarted []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// KeyID is the keyID argument value.
@@ -1661,8 +1661,8 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
-		// LinkAvailableOperatorsToCounter holds details about calls to the LinkAvailableOperatorsToCounter method.
-		LinkAvailableOperatorsToCounter []struct {
+		// LinkAvailableOperatorsToSnapshot holds details about calls to the LinkAvailableOperatorsToSnapshot method.
+		LinkAvailableOperatorsToSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// ID is the ID argument value.
@@ -1820,10 +1820,10 @@ type TSSKeeperMock struct {
 	lockGetSig                              sync.RWMutex
 	lockGetSnapshotCounterForKeyID          sync.RWMutex
 	lockGetTssSuspendedUntil                sync.RWMutex
-	lockHasKeygenStart                      sync.RWMutex
+	lockHasKeygenStarted                    sync.RWMutex
 	lockHasRecoveryInfos                    sync.RWMutex
 	lockIsOperatorAvailable                 sync.RWMutex
-	lockLinkAvailableOperatorsToCounter     sync.RWMutex
+	lockLinkAvailableOperatorsToSnapshot    sync.RWMutex
 	lockLogger                              sync.RWMutex
 	lockOperatorIsAvailableForCounter       sync.RWMutex
 	lockPenalizeSignCriminal                sync.RWMutex
@@ -2777,10 +2777,10 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 	return calls
 }
 
-// HasKeygenStart calls HasKeygenStartFunc.
-func (mock *TSSKeeperMock) HasKeygenStart(ctx sdk.Context, keyID string) bool {
-	if mock.HasKeygenStartFunc == nil {
-		panic("TSSKeeperMock.HasKeygenStartFunc: method is nil but TSSKeeper.HasKeygenStart was just called")
+// HasKeygenStarted calls HasKeygenStartedFunc.
+func (mock *TSSKeeperMock) HasKeygenStarted(ctx sdk.Context, keyID string) bool {
+	if mock.HasKeygenStartedFunc == nil {
+		panic("TSSKeeperMock.HasKeygenStartedFunc: method is nil but TSSKeeper.HasKeygenStarted was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -2789,16 +2789,16 @@ func (mock *TSSKeeperMock) HasKeygenStart(ctx sdk.Context, keyID string) bool {
 		Ctx:   ctx,
 		KeyID: keyID,
 	}
-	mock.lockHasKeygenStart.Lock()
-	mock.calls.HasKeygenStart = append(mock.calls.HasKeygenStart, callInfo)
-	mock.lockHasKeygenStart.Unlock()
-	return mock.HasKeygenStartFunc(ctx, keyID)
+	mock.lockHasKeygenStarted.Lock()
+	mock.calls.HasKeygenStarted = append(mock.calls.HasKeygenStarted, callInfo)
+	mock.lockHasKeygenStarted.Unlock()
+	return mock.HasKeygenStartedFunc(ctx, keyID)
 }
 
-// HasKeygenStartCalls gets all the calls that were made to HasKeygenStart.
+// HasKeygenStartedCalls gets all the calls that were made to HasKeygenStarted.
 // Check the length with:
-//     len(mockedTSSKeeper.HasKeygenStartCalls())
-func (mock *TSSKeeperMock) HasKeygenStartCalls() []struct {
+//     len(mockedTSSKeeper.HasKeygenStartedCalls())
+func (mock *TSSKeeperMock) HasKeygenStartedCalls() []struct {
 	Ctx   sdk.Context
 	KeyID string
 } {
@@ -2806,9 +2806,9 @@ func (mock *TSSKeeperMock) HasKeygenStartCalls() []struct {
 		Ctx   sdk.Context
 		KeyID string
 	}
-	mock.lockHasKeygenStart.RLock()
-	calls = mock.calls.HasKeygenStart
-	mock.lockHasKeygenStart.RUnlock()
+	mock.lockHasKeygenStarted.RLock()
+	calls = mock.calls.HasKeygenStarted
+	mock.lockHasKeygenStarted.RUnlock()
 	return calls
 }
 
@@ -2894,10 +2894,10 @@ func (mock *TSSKeeperMock) IsOperatorAvailableCalls() []struct {
 	return calls
 }
 
-// LinkAvailableOperatorsToCounter calls LinkAvailableOperatorsToCounterFunc.
-func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
-	if mock.LinkAvailableOperatorsToCounterFunc == nil {
-		panic("TSSKeeperMock.LinkAvailableOperatorsToCounterFunc: method is nil but TSSKeeper.LinkAvailableOperatorsToCounter was just called")
+// LinkAvailableOperatorsToSnapshot calls LinkAvailableOperatorsToSnapshotFunc.
+func (mock *TSSKeeperMock) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64) {
+	if mock.LinkAvailableOperatorsToSnapshotFunc == nil {
+		panic("TSSKeeperMock.LinkAvailableOperatorsToSnapshotFunc: method is nil but TSSKeeper.LinkAvailableOperatorsToSnapshot was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
@@ -2910,16 +2910,16 @@ func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounter(ctx sdk.Context, ID s
 		AckType: ackType,
 		Counter: counter,
 	}
-	mock.lockLinkAvailableOperatorsToCounter.Lock()
-	mock.calls.LinkAvailableOperatorsToCounter = append(mock.calls.LinkAvailableOperatorsToCounter, callInfo)
-	mock.lockLinkAvailableOperatorsToCounter.Unlock()
-	mock.LinkAvailableOperatorsToCounterFunc(ctx, ID, ackType, counter)
+	mock.lockLinkAvailableOperatorsToSnapshot.Lock()
+	mock.calls.LinkAvailableOperatorsToSnapshot = append(mock.calls.LinkAvailableOperatorsToSnapshot, callInfo)
+	mock.lockLinkAvailableOperatorsToSnapshot.Unlock()
+	mock.LinkAvailableOperatorsToSnapshotFunc(ctx, ID, ackType, counter)
 }
 
-// LinkAvailableOperatorsToCounterCalls gets all the calls that were made to LinkAvailableOperatorsToCounter.
+// LinkAvailableOperatorsToSnapshotCalls gets all the calls that were made to LinkAvailableOperatorsToSnapshot.
 // Check the length with:
-//     len(mockedTSSKeeper.LinkAvailableOperatorsToCounterCalls())
-func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounterCalls() []struct {
+//     len(mockedTSSKeeper.LinkAvailableOperatorsToSnapshotCalls())
+func (mock *TSSKeeperMock) LinkAvailableOperatorsToSnapshotCalls() []struct {
 	Ctx     sdk.Context
 	ID      string
 	AckType exported.AckType
@@ -2931,9 +2931,9 @@ func (mock *TSSKeeperMock) LinkAvailableOperatorsToCounterCalls() []struct {
 		AckType exported.AckType
 		Counter int64
 	}
-	mock.lockLinkAvailableOperatorsToCounter.RLock()
-	calls = mock.calls.LinkAvailableOperatorsToCounter
-	mock.lockLinkAvailableOperatorsToCounter.RUnlock()
+	mock.lockLinkAvailableOperatorsToSnapshot.RLock()
+	calls = mock.calls.LinkAvailableOperatorsToSnapshot
+	mock.lockLinkAvailableOperatorsToSnapshot.RUnlock()
 	return calls
 }
 

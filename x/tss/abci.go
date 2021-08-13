@@ -28,8 +28,8 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		}
 
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-		keeper.LinkAvailableOperatorsToCounter(ctx, request.NewKeyID, exported.AckKeygen, counter)
-		keeper.DeleteAtCurrentHeight(ctx, request.NewKeyID, exported.AckKeygen)
+		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.NewKeyID, exported.AckType_AckKeygen, counter)
+		keeper.DeleteAtCurrentHeight(ctx, request.NewKeyID, exported.AckType_AckKeygen)
 
 		err := types.StartKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {

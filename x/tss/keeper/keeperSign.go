@@ -43,7 +43,7 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	var activeValidators []snapshot.Validator
 	activeShareCount := sdk.ZeroInt()
 
-	available := k.getAvailableOperators(ctx, sigID, exported.AckSign, ctx.BlockHeight())
+	available := k.getAvailableOperators(ctx, sigID, exported.AckType_AckSign, ctx.BlockHeight())
 	validatorAvailable := make(map[string]bool)
 	for _, validator := range available {
 		validatorAvailable[validator.String()] = true

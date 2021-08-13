@@ -22,9 +22,9 @@ func (m AckRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrTss, "id must be set")
 	}
 
-	if m.AckType != exported.AckKeygen && m.AckType != exported.AckSign {
+	if m.AckType != exported.AckType_AckKeygen && m.AckType != exported.AckType_AckSign {
 		return sdkerrors.Wrapf(ErrTss, "ack type must be either '%s' or '%s'",
-			exported.AckKeygen.String(), exported.AckSign.String())
+			exported.AckType_AckKeygen.String(), exported.AckType_AckSign.String())
 	}
 
 	if m.Height < 0 {

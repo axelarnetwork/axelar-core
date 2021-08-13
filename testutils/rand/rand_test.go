@@ -112,14 +112,14 @@ func TestRandDistinctStringGen_Take_SameLength(t *testing.T) {
 }
 
 func TestRandomValidator(t *testing.T) {
-	address1 := RandomValidator()
+	address1 := ValAddr()
 	address2, err := sdk.ValAddressFromBech32(address1.String())
 	assert.NoError(t, err)
 	assert.Equal(t, address1, address2)
 }
 
 func TestRandomAddress(t *testing.T) {
-	address1 := RandomAddress()
+	address1 := AccAddr()
 	address2, err := sdk.AccAddressFromBech32(address1.String())
 	assert.NoError(t, err)
 	assert.Equal(t, address1, address2)
