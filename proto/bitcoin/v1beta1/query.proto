@@ -21,7 +21,7 @@ message QueryAddressResponse {
 }
 
 message QueryDepositStatusResponse {
-  string message = 1;
+  string log = 1;
   OutPointState status = 2;
 }
 

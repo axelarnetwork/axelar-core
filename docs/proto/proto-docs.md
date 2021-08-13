@@ -855,7 +855,7 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `message` | [string](#string) |  |  |
+| `log` | [string](#string) |  |  |
 | `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
 
 

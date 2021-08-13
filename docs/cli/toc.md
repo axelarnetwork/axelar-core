@@ -34,6 +34,7 @@
     - [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
       - [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
       - [deposit-address \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
+      - [deposit-status \[txID:voutIdx\]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
       - [latest-tx \[keyRole\]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
       - [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
       - [next-key-id \[keyRole\]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key

@@ -63,6 +63,7 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 	}
 }
 
+// QueryDepositStatus returns the status of the queried depoist
 func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) ([]byte, error) {
 	outpoint, err := types.OutPointFromStr(outpointStr)
 	if err != nil {
@@ -78,13 +79,13 @@ func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) 
 
 	switch {
 	case pending:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Pending, Message: "deposit is waiting for confirmation"}
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Pending, Log: "deposit is waiting for confirmation"}
 	case !pending && !ok:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_None, Message: "deposit is unknown"}
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_None, Log: "deposit is unknown"}
 	case state == types.OutPointState_Confirmed:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Confirmed, Message: "deposit has been confirmed and is pending for transfer"}
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Confirmed, Log: "deposit has been confirmed and is pending for transfer"}
 	case state == types.OutPointState_Spent:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Spent, Message: "deposit has been transferred to the destination address"}
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Spent, Log: "deposit has been transferred to the destination address"}
 	default:
 		return nil, fmt.Errorf("deposit is in an unexpected state")
 	}
