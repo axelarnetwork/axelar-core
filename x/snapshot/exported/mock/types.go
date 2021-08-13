@@ -352,7 +352,7 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 // 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
 // 				panic("mock out the GetProxy method")
 // 			},
-// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool) {
+// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
@@ -378,7 +378,7 @@ type SnapshotterMock struct {
 	GetProxyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool)
+	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error)
@@ -413,8 +413,8 @@ type SnapshotterMock struct {
 		GetSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Counter is the counter argument value.
-			Counter int64
+			// SeqNo is the seqNo argument value.
+			SeqNo int64
 		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
@@ -567,33 +567,33 @@ func (mock *SnapshotterMock) GetProxyCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) (snapshotexported.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Counter int64
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		SeqNo int64
 	}{
-		Ctx:     ctx,
-		Counter: counter,
+		Ctx:   ctx,
+		SeqNo: seqNo,
 	}
 	mock.lockGetSnapshot.Lock()
 	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
 	mock.lockGetSnapshot.Unlock()
-	return mock.GetSnapshotFunc(ctx, counter)
+	return mock.GetSnapshotFunc(ctx, seqNo)
 }
 
 // GetSnapshotCalls gets all the calls that were made to GetSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.GetSnapshotCalls())
 func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Counter int64
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	SeqNo int64
 } {
 	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Counter int64
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		SeqNo int64
 	}
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot

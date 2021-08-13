@@ -6,6 +6,16 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// NewAckRequest constructor for AckRequest
+func NewAckRequest(sender sdk.AccAddress, ID string, ackType exported.AckType, height int64) *AckRequest {
+	return &AckRequest{
+		Sender:  sender,
+		ID:      ID,
+		AckType: ackType,
+		Height:  height,
+	}
+}
+
 // Route implements the sdk.Msg interface.
 func (m AckRequest) Route() string { return RouterKey }
 

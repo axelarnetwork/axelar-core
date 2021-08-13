@@ -41,7 +41,7 @@ func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) er
 		return sdkerrors.Wrap(err, "key ID '%s' not present at tofnd")
 	case tofnd.KeyPresenceResponse_RESPONSE_PRESENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s' and sig ID '%s'", keyID, sigID))
-		tssMsg := &tss.AckRequest{Sender: mgr.sender, ID: sigID, AckType: exported.AckType_AckSign, Height: height}
+		tssMsg := tss.NewAckRequest(mgr.sender, sigID, exported.AckType_AckSign, height)
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
