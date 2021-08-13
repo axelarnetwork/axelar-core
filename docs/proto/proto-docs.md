@@ -176,6 +176,9 @@
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
   
+- [snapshot/v1beta1/query.proto](#snapshot/v1beta1/query.proto)
+    - [QueryDeactivatedPrincipleResponse](#snapshot.v1beta1.QueryDeactivatedPrincipleResponse)
+  
 - [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
     - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
     - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
@@ -2499,6 +2502,37 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/query.proto
+
+
+
+<a name="snapshot.v1beta1.QueryDeactivatedPrincipleResponse"></a>
+
+### QueryDeactivatedPrincipleResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `principal_addresses` | [string](#string) | repeated |  |
 
 
 

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+
+message QueryDeactivatedPrincipleResponse {
+  repeated string principal_addresses = 1;
+}

@@ -27,6 +27,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetProxy(queryRoute),
 		GetCmdGetOperator(queryRoute),
 		GetCmdGetSnapshot(queryRoute),
+		GetCmdGetDeactivatedPrinciple(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -102,6 +103,32 @@ func GetCmdGetSnapshot(queryRoute string) *cobra.Command {
 
 			fmt.Println(string(res))
 			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetDeactivatedPrinciple returns the list of deactivated principle addresses
+func GetCmdGetDeactivatedPrinciple(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deactivated-principle [keyID]",
+		Short: "Fetch the list of deactivated principle addresses",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDeactivated, args[0]), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrFDeactivated)
+			}
+			var res types.QueryDeactivatedPrincipleResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return cliCtx.PrintProto(&res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

@@ -436,7 +436,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibc.NewAppModule(app.ibcKeeper),
 		transferModule,
 
-		snapshot.NewAppModule(snapK),
+		snapshot.NewAppModule(snapK, tssK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK),

@@ -172,3 +172,74 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	mock.lockValidator.RUnlock()
 	return calls
 }
+
+// Ensure, that TSSMock does implement types.TSS.
+// If this is not the case, regenerate this file with moq.
+var _ types.TSS = &TSSMock{}
+
+// TSSMock is a mock implementation of types.TSS.
+//
+// 	func TestSomethingThatUsesTSS(t *testing.T) {
+//
+// 		// make and configure a mocked types.TSS
+// 		mockedTSS := &TSSMock{
+// 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
+// 				panic("mock out the GetSnapshotCounterForKeyID method")
+// 			},
+// 		}
+//
+// 		// use mockedTSS in code that requires types.TSS
+// 		// and then make assertions.
+//
+// 	}
+type TSSMock struct {
+	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
+	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetSnapshotCounterForKeyID holds details about calls to the GetSnapshotCounterForKeyID method.
+		GetSnapshotCounterForKeyID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
+	}
+	lockGetSnapshotCounterForKeyID sync.RWMutex
+}
+
+// GetSnapshotCounterForKeyID calls GetSnapshotCounterForKeyIDFunc.
+func (mock *TSSMock) GetSnapshotCounterForKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
+	if mock.GetSnapshotCounterForKeyIDFunc == nil {
+		panic("TSSMock.GetSnapshotCounterForKeyIDFunc: method is nil but TSS.GetSnapshotCounterForKeyID was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetSnapshotCounterForKeyID.Lock()
+	mock.calls.GetSnapshotCounterForKeyID = append(mock.calls.GetSnapshotCounterForKeyID, callInfo)
+	mock.lockGetSnapshotCounterForKeyID.Unlock()
+	return mock.GetSnapshotCounterForKeyIDFunc(ctx, keyID)
+}
+
+// GetSnapshotCounterForKeyIDCalls gets all the calls that were made to GetSnapshotCounterForKeyID.
+// Check the length with:
+//     len(mockedTSS.GetSnapshotCounterForKeyIDCalls())
+func (mock *TSSMock) GetSnapshotCounterForKeyIDCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
+	}
+	mock.lockGetSnapshotCounterForKeyID.RLock()
+	calls = mock.calls.GetSnapshotCounterForKeyID
+	mock.lockGetSnapshotCounterForKeyID.RUnlock()
+	return calls
+}
