@@ -19,7 +19,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedChains: []string{"Bitcoin"},
+		SupportedChains: []string{"Bitcoin", "Ethereum"},
 	}
 }
 

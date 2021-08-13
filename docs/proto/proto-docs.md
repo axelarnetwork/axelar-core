@@ -10,13 +10,24 @@
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
+- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
+  
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
+  
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
+    - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
     - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
+    - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
@@ -135,13 +146,6 @@
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
-  
-- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
-    - [Chain](#nexus.exported.v1beta1.Chain)
-    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
-    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
-  
-    - [TransferState](#nexus.exported.v1beta1.TransferState)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -292,10 +296,117 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="nexus/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/exported/v1beta1/types.proto
+
+
+
+<a name="nexus.exported.v1beta1.Chain"></a>
+
+### Chain
+Chain represents the properties of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+| `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="nexus.exported.v1beta1.TransferState"></a>
+
+### TransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| TRANSFER_STATE_PENDING | 1 |  |
+| TRANSFER_STATE_ARCHIVED | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelarnet/v1beta1/tx.proto
+
+
+
+<a name="axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
+
+### AddCosmosBasedChainRequest
+MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+to nexus
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
+
+### AddCosmosBasedChainResponse
+
+
+
+
 
 
 
@@ -386,6 +497,34 @@ address
 
 
 
+
+<a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
+
+### RegisterIBCPathRequest
+MSgRegisterIBCPath represents a message to register an IBC tracing path for
+an asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `path` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
+
+### RegisterIBCPathResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -416,9 +555,11 @@ Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/cosmos/link/{recipient_chain}|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/cosmos/confirm-deposit|
-| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/cosmos/execute-pending-transfers|
+| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link/{recipient_chain}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm-deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
+| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
+| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 
  <!-- end services -->
 
@@ -1256,6 +1397,7 @@ that is deposited by an user
 | `token_address` | [bytes](#bytes) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `salt` | [bytes](#bytes) |  |  |
 
 
@@ -1273,6 +1415,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 
@@ -1987,86 +2130,6 @@ Msg defines the evm Msg service.
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
-
- <!-- end services -->
-
-
-
-<a name="nexus/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## nexus/exported/v1beta1/types.proto
-
-
-
-<a name="nexus.exported.v1beta1.Chain"></a>
-
-### Chain
-Chain represents the properties of a registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
-| `supports_foreign_assets` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
-
-### CrossChainAddress
-CrossChainAddress represents a generalized address on any registered chain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
-
-### CrossChainTransfer
-CrossChainTransfer represents a generalized transfer of some asset to a
-registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
-| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-| `id` | [uint64](#uint64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="nexus.exported.v1beta1.TransferState"></a>
-
-### TransferState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TRANSFER_STATE_UNSPECIFIED | 0 |  |
-| TRANSFER_STATE_PENDING | 1 |  |
-| TRANSFER_STATE_ARCHIVED | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
