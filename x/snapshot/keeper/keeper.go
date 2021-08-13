@@ -125,6 +125,8 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
 	var validators []exported.SDKValidator
+	var participants []exported.Validator
+	var nonParticipants []exported.Validator
 	snapshotConsensusPower, totalConsensusPower = sdk.ZeroInt(), sdk.ZeroInt()
 
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
@@ -151,19 +153,65 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
+	// Get list of validators who are NOT participating. Only used for the logging event
+	validatorIter2 := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
+
+		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
+		// and it is not exposed in the ValidatorI interface
+		v, ok := validator.(stakingtypes.Validator)
+
+		if !ok {
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
+			return false
+		}
+
+		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, &v) {
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
+			return false
+		}
+
+		return false
+	}
+	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
+	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter2)
+
 	minBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
-	var participants []exported.Validator
 
 	for _, validator := range validators {
 		if !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
-			// Since IterateBondedValidatorsByPower iterates validators by power in descending order, once
-			// we find a validator with consensus power below minimum, we don't have to continue anymore
-			break
+			nonParticipants = append(nonParticipants, exported.NewValidator(validator, 0))
+			continue
 		}
 
 		snapshotConsensusPower = snapshotConsensusPower.AddRaw(validator.GetConsensusPower())
 		participants = append(participants, exported.NewValidator(validator, 0))
 	}
+
+	participantsAddr := make([]string, 0, len(participants))
+	participantsStake := make([]uint32, 0, len(participants))
+	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
+	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
+
+	for _, participant := range participants {
+		participantsAddr = append(participantsAddr, participant.GetSDKValidator().GetOperator().String())
+		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower()))
+	}
+
+	for _, nonParticipant := range nonParticipants {
+		nonParticipantsAddr = append(nonParticipantsAddr, nonParticipant.GetSDKValidator().GetOperator().String())
+		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower()))
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeCreateSnapshot,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsAddr))),
+			sdk.NewAttribute(types.AttributeParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsStake))),
+			sdk.NewAttribute(types.AttributeNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsAddr))),
+			sdk.NewAttribute(types.AttributeNonParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsStake))),
+		),
+	)
 
 	if len(participants) == 0 {
 		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("no validator is eligible for keygen")
