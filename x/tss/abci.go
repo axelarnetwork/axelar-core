@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -31,11 +32,76 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.NewKeyID, exported.AckType_AckKeygen, counter)
 		keeper.DeleteAtCurrentHeight(ctx, request.NewKeyID, exported.AckType_AckKeygen)
 
-		err := types.StartKeygen(ctx, keeper, voter, snapshotter, &request)
+		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
 			keeper.Logger(ctx).Error(fmt.Sprintf("error starting keygen: %s", err.Error()))
 		}
 	}
+
+	return nil
+}
+
+// StartKeygen initiates a keygen
+func startKeygen(
+	ctx sdk.Context,
+	keeper types.TSSKeeper,
+	voter types.Voter,
+	snapshotter types.Snapshotter,
+	req *types.StartKeygenRequest,
+) error {
+
+	// record the snapshot of active validators that we'll use for the key
+	snapshotConsensusPower, totalConsensusPower, err := snapshotter.TakeSnapshot(ctx, req.SubsetSize, req.KeyShareDistributionPolicy)
+	if err != nil {
+		return err
+	}
+
+	snapshot, ok := snapshotter.GetLatestSnapshot(ctx)
+	if !ok {
+		return fmt.Errorf("the system needs to have at least one validator snapshot")
+	}
+
+	if !keeper.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
+		msg := fmt.Sprintf(
+			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
+			snapshotConsensusPower.String(),
+			totalConsensusPower.String(),
+		)
+		keeper.Logger(ctx).Info(msg)
+
+		return fmt.Errorf(msg)
+	}
+
+	if err := keeper.StartKeygen(ctx, voter, req.NewKeyID, snapshot); err != nil {
+		return err
+	}
+
+	participants := make([]string, 0, len(snapshot.Validators))
+	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
+	for _, validator := range snapshot.Validators {
+		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
+		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
+	}
+
+	threshold, found := keeper.GetCorruptionThreshold(ctx, req.NewKeyID)
+	// if this value is set to false, then something is really wrong, since a successful
+	// invocation of StartKeygen should automatically set the corruption threshold for the key ID
+	if !found {
+		return fmt.Errorf("could not find corruption threshold for key ID %s", req.NewKeyID)
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
+			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+		),
+	)
+
+	keeper.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
 
 	return nil
 }
