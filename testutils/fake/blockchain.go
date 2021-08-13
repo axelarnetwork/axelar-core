@@ -336,17 +336,11 @@ func (n *Node) start() {
 		}
 		// end block
 		for _, endBlocker := range n.endBlockers {
+			previousEventCount := len(n.Ctx.EventManager().ABCIEvents())
+			endBlocker(n.Ctx, abci.RequestEndBlock{Height: b.header.Height})
+			newEvents := n.Ctx.EventManager().ABCIEvents()[previousEventCount:]
 
-			// use clean event manager so that we do not emit duplicate events
-			ctx := n.Ctx.WithEventManager(sdk.NewEventManager())
-			endBlocker(ctx, abci.RequestEndBlock{Height: b.header.Height})
-
-			var events []abci.Event
-			if evtMgr := ctx.EventManager(); evtMgr != nil {
-				events = evtMgr.ABCIEvents()
-			}
-
-			for _, event := range events {
+			for _, event := range newEvents {
 				n.events <- event
 			}
 		}
