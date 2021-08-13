@@ -34,7 +34,7 @@ const (
 	keyTssSuspendedUntil   = "key_tss_suspended_until_"
 	keyRotatedAtPrefix     = "key_rotated_at_"
 	availablePrefix        = "available_"
-	forCounterPrefix       = "for_counter_"
+	linkedSeqNumPrefix     = "linked_seq_number_"
 	scheduledPrefix        = "scheduled_"
 )
 
@@ -356,7 +356,7 @@ func (k Keeper) deleteAvailableOperators(ctx sdk.Context, ID string, ackType exp
 
 // links a set of available operators to a snapshot counter
 func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, validators []sdk.ValAddress) {
-	key := fmt.Sprintf("%s%d", forCounterPrefix, counter)
+	key := fmt.Sprintf("%s%d", linkedSeqNumPrefix, counter)
 
 	values := make([]string, len(validators))
 	for i, validator := range validators {
@@ -369,7 +369,7 @@ func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, 
 
 // OperatorIsAvailableForCounter returns true if the given validator address is available for the specified snapshot counter
 func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
-	key := fmt.Sprintf("%s%d", forCounterPrefix, counter)
+	key := fmt.Sprintf("%s%d", linkedSeqNumPrefix, counter)
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
 	if bz == nil {
