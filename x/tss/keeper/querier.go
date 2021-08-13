@@ -81,7 +81,7 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 	if sig, ok := k.GetSig(ctx, sigID); ok {
 		// poll was successful
 		resp := tssTypes.QuerySigResponse{
-			VoteStatus: tssTypes.Decided,
+			VoteStatus: tssTypes.VoteStatus_Decided,
 			Signature: &tssTypes.Signature{
 				R: sig.R.Bytes(),
 				S: sig.S.Bytes(),
@@ -95,10 +95,10 @@ func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sig
 
 	if poll == nil {
 		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.VoteUnspecified
+		resp.VoteStatus = tssTypes.VoteStatus_Unspecified
 	} else {
 		// poll still open, pending a decision
-		resp.VoteStatus = tssTypes.Pending
+		resp.VoteStatus = tssTypes.VoteStatus_Pending
 	}
 
 	return resp.Marshal()
@@ -110,7 +110,7 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 	if key, ok := k.GetKey(ctx, keyID); ok {
 		// poll was successful
 		resp = tssTypes.QueryKeyResponse{
-			VoteStatus: tssTypes.Decided,
+			VoteStatus: tssTypes.VoteStatus_Decided,
 			Role:       key.Role,
 		}
 
@@ -121,10 +121,10 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 	poll := v.GetPoll(ctx, pollMeta)
 	if poll == nil {
 		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.VoteUnspecified
+		resp.VoteStatus = tssTypes.VoteStatus_Unspecified
 	} else {
 		// poll still open, pending a decision
-		resp.VoteStatus = tssTypes.Pending
+		resp.VoteStatus = tssTypes.VoteStatus_Pending
 	}
 
 	return resp.Marshal()
