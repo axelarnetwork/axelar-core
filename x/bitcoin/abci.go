@@ -264,7 +264,7 @@ func processScheduledTx(
 	}
 
 	if err != nil {
-		k.Logger(ctx).Error(fmt.Sprintf("could not start signing for all outpoints in tx %s, skipping", tx.UnsignedTx.GetTx().TxHash()))
+		k.Logger(ctx).Error(fmt.Sprintf("could not start signing for all outpoints in tx %s", tx.UnsignedTx.GetTx().TxHash()))
 		return
 	}
 	k.Logger(ctx).Info(fmt.Sprintf("started signing on %d outpoints at block %d", len(tx.SignInfos), ctx.BlockHeight()))
