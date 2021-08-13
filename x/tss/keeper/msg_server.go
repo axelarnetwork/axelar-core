@@ -57,14 +57,14 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	switch req.AckType {
-	case exported.AckType_AckKeygen:
+	case exported.AckType_Keygen:
 		if s.HasKeygenStarted(ctx, req.ID) {
 			return nil, fmt.Errorf("late keygen ACK message (key ID '%s' is already in use)", req.ID)
 		}
 		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
 			req.ID, ctx.BlockHeight(), req.Sender.String()))
 
-	case exported.AckType_AckSign:
+	case exported.AckType_Sign:
 		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
 			return nil, fmt.Errorf("late sign ACK message (sig ID '%s' is already in use)", req.ID)
 

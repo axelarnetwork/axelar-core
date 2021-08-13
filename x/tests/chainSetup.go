@@ -409,10 +409,10 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		switch m[sdk.AttributeKeyAction] {
 		case tssTypes.AttributeValueKeygen:
-			ackType = tssExported.AckType_AckKeygen
+			ackType = tssExported.AckType_Keygen
 			ID = m[tssTypes.AttributeKeyKeyID]
 		case tssTypes.AttributeValueSign:
-			ackType = tssExported.AckType_AckSign
+			ackType = tssExported.AckType_Sign
 			ID = m[tssTypes.AttributeKeySigID]
 		default:
 			return false

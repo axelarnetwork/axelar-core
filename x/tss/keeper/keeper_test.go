@@ -138,7 +138,7 @@ func TestComputeAndSetCorruptionThreshold(t *testing.T) {
 func TestAvailableOperator(t *testing.T) {
 	s := setup()
 	id := rand.StrBetween(5, 10)
-	acks := []exported.AckType{exported.AckType_AckKeygen, exported.AckType_AckKeygen}
+	acks := []exported.AckType{exported.AckType_Keygen, exported.AckType_Keygen}
 	index := int(rand.I64Between(0, int64(len(acks)-1)))
 	ackType := acks[index]
 	index = int(rand.I64Between(0, int64(len(snap.Validators)-1)))

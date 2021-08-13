@@ -41,10 +41,9 @@ enum AckType {
   option (gogoproto.goproto_enum_prefix) = true;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  ACK_TYPE_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "AckUnspecified" ];
-  ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "AckKeygen" ];
-  ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "AckSign" ];
+  ACK_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "Keygen" ];
+  ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "Sign" ];
 }
 
 // SignInfo holds information about a sign request
