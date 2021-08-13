@@ -92,13 +92,6 @@ func processScheduledTx(
 
 		telemetry.NewLabel("eth_factory_addr", addr.String())
 	}
-
-	hash, err := keeper.GetHashToSign(ctx, tx.TxID)
-	if err != nil {
-		baseKeeper.Logger(ctx).Error(fmt.Sprintf("cound not get hash to sign for tx '%s' for chain %s", tx.TxID, chain.Name))
-		return
-	}
-	baseKeeper.Logger(ctx).Info(fmt.Sprintf("%s tx [%s] to sign: %s", chain.Name, tx.TxID, hash.Hex()))
 }
 
 func processScheduledCommand(
