@@ -302,7 +302,6 @@ func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ack
 	operators := k.getAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
 	if len(operators) > 0 {
 		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
-		k.deleteAvailableOperators(ctx, ID, ackType)
 	}
 }
 
@@ -341,8 +340,8 @@ func (k Keeper) getAvailableOperators(ctx sdk.Context, ID string, ackType export
 	return addresses
 }
 
-// removes the validator that sent an ack for some key/sign ID (if it exists)
-func (k Keeper) deleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType) {
+// DeleteAvailableOperators removes the validator that sent an ack for some key/sign ID (if it exists)
+func (k Keeper) DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType) {
 	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, ID, ackType.String())
 	store := ctx.KVStore(k.storeKey)
 

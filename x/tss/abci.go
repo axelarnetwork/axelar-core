@@ -31,6 +31,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
 		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.NewKeyID, exported.AckType_Keygen, counter)
 		keeper.DeleteAtCurrentHeight(ctx, request.NewKeyID, exported.AckType_Keygen)
+		keeper.DeleteAvailableOperators(ctx, request.NewKeyID, exported.AckType_Keygen)
 
 		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
@@ -41,7 +42,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 	return nil
 }
 
-// StartKeygen initiates a keygen
+// initiates a keygen
 func startKeygen(
 	ctx sdk.Context,
 	keeper types.TSSKeeper,

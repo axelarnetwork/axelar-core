@@ -1181,6 +1181,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			DeleteAtCurrentHeightFunc: func(ctx sdk.Context, ID string, ackType exported.AckType)  {
 // 				panic("mock out the DeleteAtCurrentHeight method")
 // 			},
+// 			DeleteAvailableOperatorsFunc: func(ctx sdk.Context, ID string, ackType exported.AckType)  {
+// 				panic("mock out the DeleteAvailableOperators method")
+// 			},
 // 			DeleteKeyIDForSigFunc: func(ctx sdk.Context, sigID string)  {
 // 				panic("mock out the DeleteKeyIDForSig method")
 // 			},
@@ -1316,6 +1319,9 @@ type TSSKeeperMock struct {
 
 	// DeleteAtCurrentHeightFunc mocks the DeleteAtCurrentHeight method.
 	DeleteAtCurrentHeightFunc func(ctx sdk.Context, ID string, ackType exported.AckType)
+
+	// DeleteAvailableOperatorsFunc mocks the DeleteAvailableOperators method.
+	DeleteAvailableOperatorsFunc func(ctx sdk.Context, ID string, ackType exported.AckType)
 
 	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
 	DeleteKeyIDForSigFunc func(ctx sdk.Context, sigID string)
@@ -1467,6 +1473,15 @@ type TSSKeeperMock struct {
 		}
 		// DeleteAtCurrentHeight holds details about calls to the DeleteAtCurrentHeight method.
 		DeleteAtCurrentHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the ID argument value.
+			ID string
+			// AckType is the ackType argument value.
+			AckType exported.AckType
+		}
+		// DeleteAvailableOperators holds details about calls to the DeleteAvailableOperators method.
+		DeleteAvailableOperators []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// ID is the ID argument value.
@@ -1798,6 +1813,7 @@ type TSSKeeperMock struct {
 	lockAssignNextKey                       sync.RWMutex
 	lockDeleteAllRecoveryInfos              sync.RWMutex
 	lockDeleteAtCurrentHeight               sync.RWMutex
+	lockDeleteAvailableOperators            sync.RWMutex
 	lockDeleteKeyIDForSig                   sync.RWMutex
 	lockDeleteKeygenStart                   sync.RWMutex
 	lockDeleteParticipantsInKeygen          sync.RWMutex
@@ -1992,6 +2008,45 @@ func (mock *TSSKeeperMock) DeleteAtCurrentHeightCalls() []struct {
 	mock.lockDeleteAtCurrentHeight.RLock()
 	calls = mock.calls.DeleteAtCurrentHeight
 	mock.lockDeleteAtCurrentHeight.RUnlock()
+	return calls
+}
+
+// DeleteAvailableOperators calls DeleteAvailableOperatorsFunc.
+func (mock *TSSKeeperMock) DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType) {
+	if mock.DeleteAvailableOperatorsFunc == nil {
+		panic("TSSKeeperMock.DeleteAvailableOperatorsFunc: method is nil but TSSKeeper.DeleteAvailableOperators was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+	}{
+		Ctx:     ctx,
+		ID:      ID,
+		AckType: ackType,
+	}
+	mock.lockDeleteAvailableOperators.Lock()
+	mock.calls.DeleteAvailableOperators = append(mock.calls.DeleteAvailableOperators, callInfo)
+	mock.lockDeleteAvailableOperators.Unlock()
+	mock.DeleteAvailableOperatorsFunc(ctx, ID, ackType)
+}
+
+// DeleteAvailableOperatorsCalls gets all the calls that were made to DeleteAvailableOperators.
+// Check the length with:
+//     len(mockedTSSKeeper.DeleteAvailableOperatorsCalls())
+func (mock *TSSKeeperMock) DeleteAvailableOperatorsCalls() []struct {
+	Ctx     sdk.Context
+	ID      string
+	AckType exported.AckType
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		ID      string
+		AckType exported.AckType
+	}
+	mock.lockDeleteAvailableOperators.RLock()
+	calls = mock.calls.DeleteAvailableOperators
+	mock.lockDeleteAvailableOperators.RUnlock()
 	return calls
 }
 

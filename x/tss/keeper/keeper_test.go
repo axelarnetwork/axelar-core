@@ -159,6 +159,9 @@ func TestAvailableOperator(t *testing.T) {
 
 	// linked to counter
 	s.Keeper.LinkAvailableOperatorsToSnapshot(s.Ctx, id, ackType, snapshotSeq)
-	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
 	assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
+
+	// delete available
+	s.Keeper.DeleteAvailableOperators(s.Ctx, id, ackType)
+	assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
 }
