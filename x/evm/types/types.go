@@ -342,7 +342,7 @@ func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, n
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
-// CreateTransferOperatorshipCommand creates an command to transfer operatorship of the contract
+// CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
 func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperatorAddr common.Address) (Command, error) {
 	params, err := createTransferOperatorshipParams(newOperatorAddr)
 	if err != nil {
