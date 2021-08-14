@@ -33,6 +33,7 @@
 		- [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
 			- [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
 			- [deposit-address [chain] [recipient address]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
+			- [deposit-status [txID:voutIdx]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
 			- [latest-tx [keyRole]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
 			- [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
 			- [next-key-id [keyRole]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
@@ -154,9 +155,11 @@
 		- [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
 	- [tx](axelard_tx.md)	 - Transactions subcommands
 		- [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+			- [add-cosmos-based-chain [name] [native asset]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
 			- [confirm-deposit [txID] [amount] [burnerAddr]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
 			- [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
 			- [link [recipient chain] [recipient address] [asset]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+			- [register-path [asset] [path]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for an asset
 		- [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
 			- [send [from_key_or_address] [to_address] [amount]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
 ignored as it is implied from [from_key_or_address].
@@ -165,7 +168,7 @@ ignored as it is implied from [from_key_or_address].
 			- [create-master-tx [keyID]](axelard_tx_bitcoin_create-master-tx.md)	 - Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by [keyID]
 			- [create-pending-transfers-tx [keyID]](axelard_tx_bitcoin_create-pending-transfers-tx.md)	 - Create a Bitcoin transaction for all pending transfers
 			- [link [chain] [address]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-			- [register-external-key [keyID] [pubKeyHex]](axelard_tx_bitcoin_register-external-key.md)	 - Register the external key for bitcoin
+			- [register-external-keys](axelard_tx_bitcoin_register-external-keys.md)	 - Register the external key for bitcoin
 			- [sign-tx [keyRole]](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role
 			- [submit-external-signature [keyID] [signatureHex] [sigHashHex]](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash
 		- [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
