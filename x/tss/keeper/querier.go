@@ -202,34 +202,37 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 		for _, keyRole := range exported.GetKeyRoles() {
 
 			keyID, found := k.GetCurrentKeyID(ctx, chain, keyRole)
-			if found {
 
-				counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
-				if !ok {
-					return nil, fmt.Errorf("could not get snapshot counter from keyID %s", keyID)
-				}
-			
-				snapshot, ok := s.GetSnapshot(ctx, counter)
-				if !ok {
-					return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
-				}
+			if !found {
+				continue
+			}
 
-				for _, validator := range snapshot.Validators {
+			counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+			if !ok {
+				return nil, fmt.Errorf("could not get snapshot counter from keyID %s", keyID)
+			}
+		
+			snapshot, ok := s.GetSnapshot(ctx, counter)
+			if !ok {
+				return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
+			}
 
-					validatorAddr := validator.GetSDKValidator().GetOperator().String()
-					if validatorAddr == targetValidatorAddr{
+			for _, validator := range snapshot.Validators {
 
-						thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo {
-							KeyID:					keyID,
-							// KeyChain:			"dasd",
-							// KeyRole:				k.getKeyRole(ctx, keyID),
-							SnapshotBlockNumber:	snapshot.Height,
-							ValidatorAddress:		validator.GetSDKValidator().GetOperator().String(),
-							NumValidatorShares:		validator.ShareCount,
-							NumTotalShares:			snapshot.TotalShareCount.Int64(),
-						}
-						allShareInfos = append(allShareInfos, thisShareInfo)
+				validatorAddr := validator.GetSDKValidator().GetOperator().String()
+				if validatorAddr == targetValidatorAddr{
+
+					thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo {
+						KeyID:					keyID,
+						KeyChain:				chain.Name,
+						KeyRole:				keyRole.String(),
+						SnapshotBlockNumber:	snapshot.Height,
+						ValidatorAddress:		validator.GetSDKValidator().GetOperator().String(),
+						NumValidatorShares:		validator.ShareCount,
+						NumTotalShares:			snapshot.TotalShareCount.Int64(),
 					}
+					allShareInfos = append(allShareInfos, thisShareInfo)
+					break
 				}
 			}
 		}

@@ -163,7 +163,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 // GetCmdGetKeyID returns the command for the keyID of the most recent key given the keyChain and keyRole
 func GetCmdGetKeyID(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "keyID [key chain] [key role]",
+		Use:   "keyID [chain] [role]",
 		Short: "Query the keyID using keyChain and keyRole",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -210,8 +210,8 @@ func GetCmdGetKeySharesByKeyID(queryRoute string) *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
-
-			return cliCtx.PrintProto(&keyShareResponse)
+			
+			return cliCtx.PrintObjectLegacy(keyShareResponse.ShareInfos)
 		},
 	}
 
@@ -243,7 +243,7 @@ func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
 
-			return cliCtx.PrintProto(&keyShareResponse)
+			return cliCtx.PrintObjectLegacy(keyShareResponse.ShareInfos)
 		},
 	}
 
