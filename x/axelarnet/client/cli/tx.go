@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -28,6 +27,8 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdConfirmDeposit(),
 		GetCmdExecutePendingTransfersTx(),
+		GetCmdRegisterIBCPathTx(),
+		GetCmdAddCosmosBasedChain(),
 	)
 
 	return axelarTxCmd
@@ -106,6 +107,56 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 			}
 
 			msg := types.NewExecutePendingTransfersRequest(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterIBCPathTx returns the cli command to register an IBC tracing path for an asset
+func GetCmdRegisterIBCPathTx() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-path [asset] [path]",
+		Short: "Register an ibc path for an asset",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
+func GetCmdAddCosmosBasedChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-cosmos-based-chain [name] [native asset]",
+		Short: "Add a new cosmos based chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			name := args[0]
+			nativeAsset := args[1]
+
+			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

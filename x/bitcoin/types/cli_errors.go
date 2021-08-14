@@ -2,10 +2,11 @@ package types
 
 // CLI query error message formats
 const (
-	ErrFDepositAddr       = "could not resolve deposit address"
-	ErrFConsolidationAddr = "could not resolve consolidation address"
-	ErrFNextKeyID         = "could not resolve the next key ID"
-	ErrFMinOutputAmount   = "could not resolve the minimum output amount allowed"
-	ErrFLatestTx          = "could not resolve the latest consolidation transaction"
-	ErrFSignedTx          = "could not resolve the signed consolidation transaction"
+	ErrDepositAddr       = "could not resolve deposit address"
+	ErrDepositStatus     = "could not resolve deposit status"
+	ErrConsolidationAddr = "could not resolve consolidation address"
+	ErrNextKeyID         = "could not resolve the next key ID"
+	ErrMinOutputAmount   = "could not resolve the minimum output amount allowed"
+	ErrLatestTx          = "could not resolve the latest consolidation transaction"
+	ErrSignedTx          = "could not resolve the signed consolidation transaction"
 )

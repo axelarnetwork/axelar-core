@@ -2,6 +2,10 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
+	"strconv"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -67,6 +71,19 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 			sdk.NewAttribute(types.AttributeKeySigID, sigID),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg))))
+
+	// metrics for sign participation
+	ts := time.Now().Unix()
+	for _, validator := range activeValidators {
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "sign", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("sigID", sigID),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
+	}
 
 	return nil
 }

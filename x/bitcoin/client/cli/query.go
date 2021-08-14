@@ -27,6 +27,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	cmd.AddCommand(
 		GetCmdDepositAddress(queryRoute),
+		GetCmdDepositStatus(queryRoute),
 		GetCmdConsolidationAddress(queryRoute),
 		GetCmdNextKeyID(queryRoute),
 		GetCmdMinOutputAmount(queryRoute),
@@ -54,10 +55,43 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 			bz, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFDepositAddr)
+				return sdkerrors.Wrap(err, types.ErrDepositAddr)
 			}
 
 			var res types.QueryAddressResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdDepositStatus returns the status of a bitcoin deposit given the outpoint
+func GetCmdDepositStatus(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deposit-status [txID:voutIdx]",
+		Short: "Returns the status of the bitcoin deposit with the given outpoint",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			_, err = types.OutPointFromStr(args[0])
+			if err != nil {
+				return err
+			}
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositStatus, args[0])
+			bz, _, err := clientCtx.Query(path)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrDepositStatus)
+			}
+
+			var res types.QueryDepositStatusResponse
 			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
@@ -101,7 +135,7 @@ func GetCmdConsolidationAddress(queryRoute string) *cobra.Command {
 
 		bz, _, err := clientCtx.Query(path)
 		if err != nil {
-			return sdkerrors.Wrap(err, types.ErrFConsolidationAddr)
+			return sdkerrors.Wrap(err, types.ErrConsolidationAddr)
 		}
 
 		var res types.QueryAddressResponse
@@ -130,7 +164,7 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 
 			bz, _, err := clientCtx.Query(path)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFNextKeyID)
+				return sdkerrors.Wrap(err, types.ErrNextKeyID)
 			}
 
 			keyID := string(bz)
@@ -159,7 +193,7 @@ func GetCmdMinOutputAmount(queryRoute string) *cobra.Command {
 
 			bz, _, err := clientCtx.Query(path)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFMinOutputAmount)
+				return sdkerrors.Wrap(err, types.ErrMinOutputAmount)
 			}
 
 			minOutputAmount := int64(binary.LittleEndian.Uint64(bz))
@@ -188,7 +222,7 @@ func GetCmdLatestTx(queryRoute string) *cobra.Command {
 
 			bz, _, err := clientCtx.Query(path)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFLatestTx)
+				return sdkerrors.Wrap(err, types.ErrLatestTx)
 			}
 
 			var res types.QueryTxResponse
@@ -218,7 +252,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 
 			bz, _, err := clientCtx.Query(path)
 			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFSignedTx)
+				return sdkerrors.Wrap(err, types.ErrSignedTx)
 			}
 
 			var res types.QueryTxResponse

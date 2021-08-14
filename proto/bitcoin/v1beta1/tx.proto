@@ -54,14 +54,18 @@ message VoteConfirmOutpointRequest {
 
 message VoteConfirmOutpointResponse { string status = 1; };
 
-message RegisterExternalKeyRequest {
+message RegisterExternalKeysRequest {
+  message ExternalKey {
+    string id = 1 [ (gogoproto.customname) = "ID" ];
+    bytes pub_key = 2;
+  }
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
-  bytes pub_key = 3;
+  repeated ExternalKey external_keys = 2 [ (gogoproto.nullable) = false ];
 }
 
-message RegisterExternalKeyResponse {};
+message RegisterExternalKeysResponse {};
 
 message SubmitExternalSignatureRequest {
   bytes sender = 1 [ (gogoproto.casttype) =

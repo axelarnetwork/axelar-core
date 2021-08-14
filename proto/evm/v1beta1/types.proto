@@ -23,7 +23,8 @@ message BurnerInfo {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string destination_chain = 2;
   string symbol = 3;
-  bytes salt = 4
+  string asset = 4;
+  bytes salt = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
 }
 
@@ -38,8 +39,9 @@ message ERC20Deposit {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  string destination_chain = 3;
-  bytes burner_address = 4
+  string asset = 3;
+  string destination_chain = 4;
+  bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 

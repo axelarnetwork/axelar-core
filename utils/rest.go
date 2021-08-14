@@ -22,6 +22,7 @@ const (
 	PathVarKeyRole         = "KeyRole"
 	PathVarKeyID           = "KeyID"
 	PathVarSigID           = "SigID"
+	PathVarOutpoint        = "Outpoint"
 )
 
 // ExtractReqSender extracts the sender address from an SDK base request

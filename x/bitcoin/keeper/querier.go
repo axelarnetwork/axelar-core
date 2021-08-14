@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths
@@ -25,6 +26,7 @@ const (
 	QMinOutputAmount               = "minOutputAmount"
 	QLatestTxByKeyRole             = "latestTxByKeyRole"
 	QSignedTx                      = "signedTx"
+	QDepositStatus                 = "depositStatus"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -35,6 +37,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 		switch path[0] {
 		case QDepositAddress:
 			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
+		case QDepositStatus:
+			res, err = QueryDepositStatus(ctx, k, path[1])
 		case QConsolidationAddressByKeyRole:
 			res, err = QueryConsolidationAddressByKeyRole(ctx, k, s, path[1])
 		case QConsolidationAddressByKeyID:
@@ -57,6 +61,36 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 
 		return res, nil
 	}
+}
+
+// QueryDepositStatus returns the status of the queried depoist
+func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) ([]byte, error) {
+	outpoint, err := types.OutPointFromStr(outpointStr)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "cannot parse outpoint")
+	}
+
+	key := vote.NewPollKey(types.ModuleName, outpointStr)
+
+	var resp types.QueryDepositStatusResponse
+
+	_, pending := k.GetPendingOutPointInfo(ctx, key)
+	_, state, ok := k.GetOutPointInfo(ctx, *outpoint)
+
+	switch {
+	case pending:
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Pending, Log: "deposit is waiting for confirmation"}
+	case !pending && !ok:
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_None, Log: "deposit is unknown"}
+	case state == types.OutPointState_Confirmed:
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Confirmed, Log: "deposit has been confirmed and is pending for transfer"}
+	case state == types.OutPointState_Spent:
+		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Spent, Log: "deposit has been transferred to the destination address"}
+	default:
+		return nil, fmt.Errorf("deposit is in an unexpected state")
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns deposit address
@@ -193,20 +227,22 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 		return nil, fmt.Errorf("given keyID %s has not been rotated yet and therefore cannot get its %s consolidation address", keyID, tss.MasterKey.SimpleString())
 	}
 
-	rotationCount := s.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
-	oldMasterKeyRotationCount := rotationCount - (rotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
-	oldMasterKey, ok := s.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
+	oldMasterKey, ok := getOldMasterKey(ctx, k, s)
 	if !ok {
 		return nil, fmt.Errorf("cannot find the old %s key of the given keyID %s", tss.MasterKey.SimpleString(), keyID)
 	}
 
-	externalKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
-	if !ok {
-		return nil, fmt.Errorf("external key not registered")
+	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalKeys, err := getExternalKeys(ctx, k, s)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+		return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
 	}
 
 	lockTime := key.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalKey, lockTime, k.GetNetwork(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, k.GetNetwork(ctx))
 
 	return &consolidationAddress, nil
 }

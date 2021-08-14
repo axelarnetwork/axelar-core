@@ -10,6 +10,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
@@ -134,15 +135,9 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 					return sdkerrors.Wrapf(err, "failed to get recovery data")
 				}
 
-				var index int32 = -1
-				for i, participant := range recResponse.PartyUids {
-					if address.String() == participant {
-						index = int32(i)
-						break
-					}
-				}
-				// not participating
+				index := utils.IndexOf(recResponse.PartyUids, address.String())
 				if index == -1 {
+					// not participating
 					return sdkerrors.Wrapf(err, "recovery data does not contain address %s", address.String())
 				}
 
@@ -152,7 +147,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 						Threshold:        recResponse.Threshold,
 						PartyUids:        recResponse.PartyUids,
 						PartyShareCounts: recResponse.PartyShareCounts,
-						MyPartyIndex:     index,
+						MyPartyIndex:     int32(index),
 					},
 					ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
 				}

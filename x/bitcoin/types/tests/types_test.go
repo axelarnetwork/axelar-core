@@ -71,13 +71,13 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	privKey3, err := btcec.NewPrivateKey(btcec.S256())
+	externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		panic(err)
 	}
 	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
 	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.MasterKey}
-	pubKey3 := tss.Key{ID: rand.Str(10), Value: privKey3.PublicKey, Role: tss.Unknown}
+	externalPubKey := tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.Unknown}
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
@@ -86,7 +86,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	}
 
 	t.Run("should not be spendable by (pubKey1 or pubKey2) before the timelock elapses", testutils.Func(func(t *testing.T) {
-		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, 1, []tss.Key{externalPubKey}, time.Now(), types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -116,7 +116,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		assert.NoError(t, err)
 		sig2, err := privKey2.Sign(sigHash)
 		assert.NoError(t, err)
-		sig3, err := privKey3.Sign(sigHash)
+		sig3, err := externalPrivKey.Sign(sigHash)
 		assert.NoError(t, err)
 
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1}})
@@ -128,7 +128,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	}))
 
 	t.Run("should be spendable by (pubKey1 or pubKey2) after the timelock elapses", testutils.Func(func(t *testing.T) {
-		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, 1, []tss.Key{externalPubKey}, time.Now(), types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -158,7 +158,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		assert.NoError(t, err)
 		sig2, err := privKey2.Sign(sigHash)
 		assert.NoError(t, err)
-		sig3, err := privKey3.Sign(sigHash)
+		sig3, err := externalPrivKey.Sign(sigHash)
 		assert.NoError(t, err)
 
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1}})
@@ -169,8 +169,8 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		assert.Error(t, err)
 	}))
 
-	t.Run("should be spendable by ((pubKey1 or pubKey2) and pubKey3) before the timelock elapses", testutils.Func(func(t *testing.T) {
-		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, pubKey3, time.Now(), types.Testnet3)
+	t.Run("should be spendable by ((pubKey1 or pubKey2) and externalPubKey) before the timelock elapses", testutils.Func(func(t *testing.T) {
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, 1, []tss.Key{externalPubKey}, time.Now(), types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -200,7 +200,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		assert.NoError(t, err)
 		sig2, err := privKey2.Sign(sigHash)
 		assert.NoError(t, err)
-		sig3, err := privKey3.Sign(sigHash)
+		sig3, err := externalPrivKey.Sign(sigHash)
 		assert.NoError(t, err)
 
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig3}})

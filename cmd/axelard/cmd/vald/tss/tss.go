@@ -332,19 +332,3 @@ func prepareTrafficIn(principalAddr string, from string, sessionID string, paylo
 
 	return msgIn
 }
-
-func indexOf(participants []string, address string) (int32, bool) {
-	var index int32 = -1
-	for i, participant := range participants {
-		if address == participant {
-			index = int32(i)
-			break
-		}
-	}
-	// not participating
-	if index == -1 {
-		return -1, false
-	}
-
-	return index, true
-}

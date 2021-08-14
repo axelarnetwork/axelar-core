@@ -3,8 +3,8 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -32,7 +32,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreatePendingTransfersTx(),
 		GetCmdCreateMasterConsolidationTx(),
 		GetCmdSignTx(),
-		GetCmdRegisterExternalKey(),
+		GetCmdRegisterExternalKeys(),
 		GetCmdSubmitExternalSignature(),
 	)
 
@@ -197,38 +197,49 @@ func GetCmdSignTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterExternalKey returns the cli command to register an external key
-func GetCmdRegisterExternalKey() *cobra.Command {
+// GetCmdRegisterExternalKeys returns the cli command to register an external key
+func GetCmdRegisterExternalKeys() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-external-key [keyID] [pubKeyHex]",
+		Use:   "register-external-keys",
 		Short: "Register the external key for bitcoin",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
+		Args:  cobra.ExactArgs(0),
+	}
+	keys := cmd.Flags().StringSlice("key", []string{}, "key ID and public key in the hex format, e.g. [keyID:keyHex]")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		if len(*keys) == 0 {
+			return fmt.Errorf("keys are required")
+		}
+
+		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(*keys))
+		for i, key := range *keys {
+			keyInfos := strings.Split(key, ":")
+			if len(keyInfos) != 2 {
+				return fmt.Errorf("key ID and public key hex have to be separated by \":\"")
 			}
 
-			keyID := args[0]
-			pubKeyHex := args[1]
+			keyID := keyInfos[0]
+			pubKeyHex := keyInfos[1]
 
 			pubKeyBytes, err := hex.DecodeString(pubKeyHex)
 			if err != nil {
 				return err
 			}
 
-			pubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-			if err != nil {
-				return err
-			}
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
+		}
 
-			msg := types.NewRegisterExternalKeyRequest(clientCtx.GetFromAddress(), keyID, pubKey)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
+		msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), externalKeys...)
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
