@@ -1274,7 +1274,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
-// 			ScheduleKeygenFunc: func(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64 {
+// 			ScheduleKeygenFunc: func(ctx sdk.Context, req tsstypes.StartKeygenRequest) (int64, error) {
 // 				panic("mock out the ScheduleKeygen method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -1414,7 +1414,7 @@ type TSSKeeperMock struct {
 	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 
 	// ScheduleKeygenFunc mocks the ScheduleKeygen method.
-	ScheduleKeygenFunc func(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64
+	ScheduleKeygenFunc func(ctx sdk.Context, req tsstypes.StartKeygenRequest) (int64, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
@@ -3141,7 +3141,7 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 }
 
 // ScheduleKeygen calls ScheduleKeygenFunc.
-func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKeygenRequest) int64 {
+func (mock *TSSKeeperMock) ScheduleKeygen(ctx sdk.Context, req tsstypes.StartKeygenRequest) (int64, error) {
 	if mock.ScheduleKeygenFunc == nil {
 		panic("TSSKeeperMock.ScheduleKeygenFunc: method is nil but TSSKeeper.ScheduleKeygen was just called")
 	}

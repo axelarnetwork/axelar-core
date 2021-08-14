@@ -78,7 +78,7 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
-	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) int64
+	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
 	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
 	DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest

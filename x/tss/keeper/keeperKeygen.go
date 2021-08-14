@@ -19,16 +19,19 @@ import (
 
 // ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
-func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) int64 {
+func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
 	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, height, exported.AckType_Keygen.String(), req.NewKeyID)
+	if ctx.KVStore(k.storeKey).Has([]byte(key)) {
+		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.NewKeyID)
+	}
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.NewKeyID, "", height)
 
 	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.NewKeyID, height, ctx.BlockHeight()))
-	return height
+	return height, nil
 }
 
 // GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height

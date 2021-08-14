@@ -1,8 +1,10 @@
 package keeper
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
@@ -147,5 +150,52 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 			assert.True(t, ok)
 			assert.Equal(t, key.Value, actualKey.Value)
 		}
+	}
+}
+
+func TestScheduleKeygenAtHeight(t *testing.T) {
+	s := setup()
+	sender := rand2.AccAddr()
+	policies := []exported.KeyShareDistributionPolicy{exported.WeightedByStake, exported.OnePerValidator}
+	numReqs := int(rand2.I64Between(10, 30))
+	currentHeight := s.Ctx.BlockHeight()
+	expectedReqs := make([]types.StartKeygenRequest, numReqs)
+
+	// schedule keygens
+	for i := 0; i < numReqs; i++ {
+		index := int(rand2.I64Between(0, int64(len(policies)-1)))
+		keyID := rand2.StrBetween(5, 10)
+		req := types.NewStartKeygenRequest(sender, keyID, int64(len(snap.Validators)), policies[index])
+		expectedReqs[i] = *req
+		height, err := s.Keeper.ScheduleKeygen(s.Ctx, *req)
+
+		assert.NoError(t, err)
+		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+
+		height, err = s.Keeper.ScheduleKeygen(s.Ctx, *req)
+		assert.EqualError(t, err, fmt.Sprintf("keygen for key ID '%s' already set", req.NewKeyID))
+	}
+
+	// verify keygens from above
+	s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckWindowInBlocks)
+	reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
+
+	actualNumReqs := 0
+	for _, expected := range expectedReqs {
+		for _, actual := range reqs {
+			if bytes.Equal(expected.GetSignBytes(), actual.GetSignBytes()) {
+				actualNumReqs++
+				break
+			}
+		}
+	}
+	assert.Len(t, expectedReqs, actualNumReqs)
+	assert.Equal(t, numReqs, actualNumReqs)
+
+	// check that we can delete scheduled keygens
+	for i, req := range reqs {
+		s.Keeper.DeleteAtCurrentHeight(s.Ctx, req.NewKeyID, exported.AckType_Keygen)
+		reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
+		assert.Len(t, reqs, actualNumReqs-(i+1))
 	}
 }
