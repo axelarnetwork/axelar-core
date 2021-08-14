@@ -138,10 +138,12 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 
 		if !ok {
 			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}
 
 		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, &v) {
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}
 
@@ -152,28 +154,6 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 	}
 	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
-
-	// Get list of validators who are NOT participating. Only used for the logging event
-	validatorIter2 := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
-
-		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
-		// and it is not exposed in the ValidatorI interface
-		v, ok := validator.(stakingtypes.Validator)
-
-		if !ok {
-			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
-			return false
-		}
-
-		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, &v) {
-			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
-			return false
-		}
-
-		return false
-	}
-	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
-	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter2)
 
 	minBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
 
@@ -189,14 +169,13 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 
 	participantsAddr := make([]string, 0, len(participants))
 	participantsStake := make([]uint32, 0, len(participants))
-	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
-	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
-
 	for _, participant := range participants {
 		participantsAddr = append(participantsAddr, participant.GetSDKValidator().GetOperator().String())
 		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower()))
 	}
 
+	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
+	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
 	for _, nonParticipant := range nonParticipants {
 		nonParticipantsAddr = append(nonParticipantsAddr, nonParticipant.GetSDKValidator().GetOperator().String())
 		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower()))
