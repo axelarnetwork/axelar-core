@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -86,4 +88,38 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
 	assert.EqualError(t, err, "sigID sigID has been used before")
+}
+
+func TestAnnounceSign(t *testing.T) {
+	s := setup()
+	currentHeight := s.Ctx.BlockHeight()
+	keyID := rand2.Str(20)
+	sigID := rand2.Str(20)
+	height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
+	assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+
+	assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)
+	assert.Equal(t, s.Ctx.EventManager().ABCIEvents()[0].Type, types.EventTypeAck)
+
+	var heightFound, keyIDFound, sigIDFound bool
+	for _, attribute := range s.Ctx.EventManager().ABCIEvents()[0].Attributes {
+		switch string(attribute.Key) {
+		case types.AttributeKeyHeight:
+			if string(attribute.Value) == strconv.FormatInt(height, 10) {
+				heightFound = true
+			}
+		case types.AttributeKeyKeyID:
+			if string(attribute.Value) == keyID {
+				keyIDFound = true
+			}
+		case types.AttributeKeySigID:
+			if string(attribute.Value) == sigID {
+				sigIDFound = true
+			}
+		}
+	}
+
+	assert.True(t, heightFound)
+	assert.True(t, keyIDFound)
+	assert.True(t, sigIDFound)
 }
