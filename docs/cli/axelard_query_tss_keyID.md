@@ -3,7 +3,7 @@
 Query the keyID using keyChain and keyRole
 
 ```
-axelard query tss keyID [key chain] [key role] [flags]
+axelard query tss keyID [chain] [role] [flags]
 ```
 
 ### Options
