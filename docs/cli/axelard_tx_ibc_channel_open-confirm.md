@@ -44,5 +44,4 @@ axelard tx ibc channel open-confirm [port-id] [channel-id] [/path/to/proof_ack.j
 
 ### SEE ALSO
 
-* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-
+- [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands

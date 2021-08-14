@@ -35,5 +35,4 @@ axelard tx ibc solo misbehaviour [path/to/misbehaviour.json] [flags]
 
 ### SEE ALSO
 
-* [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
-
+- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands

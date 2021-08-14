@@ -1,6 +1,6 @@
 ## axelard query evm sendTx
 
-Send a transaction that spends tx [txID] to chain [chain]
+Send a transaction that spends tx \[txID\] to chain \[chain\]
 
 ```
 axelard query evm sendTx [chain] [txID] [flags]
@@ -27,5 +27,4 @@ axelard query evm sendTx [chain] [txID] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

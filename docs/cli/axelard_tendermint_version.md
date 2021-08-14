@@ -7,7 +7,6 @@ Print tendermint libraries' version
 Print protocols' and libraries' version numbers
 against which this app has been compiled.
 
-
 ```
 axelard tendermint version [flags]
 ```
@@ -30,5 +29,4 @@ axelard tendermint version [flags]
 
 ### SEE ALSO
 
-* [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
-
+- [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands

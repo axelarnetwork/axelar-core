@@ -27,5 +27,4 @@ axelard query auth account [address] [flags]
 
 ### SEE ALSO
 
-* [axelard query auth](axelard_query_auth.md)	 - Querying commands for the auth module
-
+- [axelard query auth](axelard_query_auth.md)	 - Querying commands for the auth module

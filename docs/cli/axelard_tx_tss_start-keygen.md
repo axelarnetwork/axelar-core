@@ -47,5 +47,4 @@ axelard tx tss start-keygen [flags]
 
 ### SEE ALSO
 
-* [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
-
+- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands

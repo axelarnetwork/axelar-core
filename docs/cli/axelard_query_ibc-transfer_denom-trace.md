@@ -37,5 +37,4 @@ axelard query ibc-transfer denom-trace [hash] [flags]
 
 ### SEE ALSO
 
-* [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
-
+- [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands

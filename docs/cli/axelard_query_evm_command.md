@@ -1,6 +1,6 @@
 ## axelard query evm command
 
-Get the signed command data that can be wrapped in an EVM transaction to execute the command [commandID] on Axelar Gateway
+Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
 
 ```
 axelard query evm command [chain] [commandID] [flags]
@@ -27,5 +27,4 @@ axelard query evm command [chain] [commandID] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

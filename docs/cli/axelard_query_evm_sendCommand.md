@@ -1,6 +1,6 @@
 ## axelard query evm sendCommand
 
-Send a transaction signed by [fromAddress] that executes the command [commandID] to Axelar Gateway
+Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
 
 ```
 axelard query evm sendCommand [chain] [commandID] [fromAddress] [flags]
@@ -27,5 +27,4 @@ axelard query evm sendCommand [chain] [commandID] [fromAddress] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

@@ -48,5 +48,4 @@ axelard tx bitcoin confirm-tx-out [txID:voutIdx] [amount] [address] [flags]
 
 ### SEE ALSO
 
-* [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-
+- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands

@@ -1,6 +1,6 @@
 ## axelard tx bitcoin create-master-tx
 
-Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by [keyID]
+Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by \[keyID\]
 
 ```
 axelard tx bitcoin create-master-tx [keyID] [flags]
@@ -45,5 +45,4 @@ axelard tx bitcoin create-master-tx [keyID] [flags]
 
 ### SEE ALSO
 
-* [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-
+- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands

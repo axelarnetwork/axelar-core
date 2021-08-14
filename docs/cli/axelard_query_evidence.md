@@ -40,5 +40,4 @@ axelard query evidence [flags]
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-
+- [axelard query](axelard_query.md)	 - Querying subcommands

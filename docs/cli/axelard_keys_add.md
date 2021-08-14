@@ -21,7 +21,6 @@ key to be composed of to the --multisig flag and the minimum number of signature
 required through --multisig-threshold. The keys are sorted by address, unless
 the flag --nosort is set.
 
-
 ```
 axelard keys add <name> [flags]
 ```
@@ -60,5 +59,4 @@ axelard keys add <name> [flags]
 
 ### SEE ALSO
 
-* [axelard keys](axelard_keys.md)	 - Manage your application's keys
-
+- [axelard keys](axelard_keys.md)	 - Manage your application's keys

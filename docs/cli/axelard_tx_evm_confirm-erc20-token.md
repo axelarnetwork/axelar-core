@@ -44,5 +44,4 @@ axelard tx evm confirm-erc20-token [chain] [origin chain] [txID] [flags]
 
 ### SEE ALSO
 
-* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
-
+- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands

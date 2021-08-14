@@ -27,5 +27,4 @@ axelard query bitcoin signed-tx [txHash] [flags]
 
 ### SEE ALSO
 
-* [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
-
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

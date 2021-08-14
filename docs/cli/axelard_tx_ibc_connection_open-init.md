@@ -5,8 +5,8 @@ Initialize connection on chain A
 ### Synopsis
 
 Initialize a connection on chain A with a given counterparty chain B.
-	- 'version-identifier' flag can be a single pre-selected version identifier to be used in the handshake.
-	- 'version-features' flag can be a list of features separated by commas to accompany the version identifier.
+\- 'version-identifier' flag can be a single pre-selected version identifier to be used in the handshake.
+\- 'version-features' flag can be a list of features separated by commas to accompany the version identifier.
 
 ```
 axelard tx ibc connection open-init [client-id] [counterparty-client-id] [path/to/counterparty_prefix.json] [flags]
@@ -59,5 +59,4 @@ axelard tx ibc connection open-init [client-id] [counterparty-client-id] [path/t
 
 ### SEE ALSO
 
-* [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
-
+- [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands

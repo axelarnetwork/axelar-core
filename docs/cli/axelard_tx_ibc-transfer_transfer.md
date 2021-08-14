@@ -61,5 +61,4 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
 
 ### SEE ALSO
 
-* [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
-
+- [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands

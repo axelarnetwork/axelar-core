@@ -44,5 +44,4 @@ axelard tx bitcoin submit-external-signature [keyID] [signatureHex] [sigHashHex]
 
 ### SEE ALSO
 
-* [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-
+- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands

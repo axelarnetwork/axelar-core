@@ -44,5 +44,4 @@ axelard tx ibc channel close-init [port-id] [channel-id] [flags]
 
 ### SEE ALSO
 
-* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-
+- [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands

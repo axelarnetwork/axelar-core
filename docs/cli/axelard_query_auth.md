@@ -25,7 +25,6 @@ axelard query auth [flags]
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-* [axelard query auth account](axelard_query_auth_account.md)	 - Query for account by address
-* [axelard query auth params](axelard_query_auth_params.md)	 - Query the current auth parameters
-
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query auth account](axelard_query_auth_account.md)	 - Query for account by address
+- [axelard query auth params](axelard_query_auth_params.md)	 - Query the current auth parameters

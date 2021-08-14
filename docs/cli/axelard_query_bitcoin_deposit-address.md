@@ -27,5 +27,4 @@ axelard query bitcoin deposit-address [chain] [recipient address] [flags]
 
 ### SEE ALSO
 
-* [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
-
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

@@ -26,7 +26,6 @@ will not be able to commit subsequent blocks.
 For profiling and benchmarking purposes, CPU profiling can be enabled via the '--cpu-profile' flag
 which accepts a path for the resulting pprof file.
 
-
 ```
 axelard start [flags]
 ```
@@ -93,5 +92,4 @@ axelard start [flags]
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md)	 - Axelar App

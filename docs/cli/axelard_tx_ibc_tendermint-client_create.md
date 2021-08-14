@@ -5,9 +5,10 @@ create new tendermint client
 ### Synopsis
 
 Create a new tendermint IBC client.
-  - 'trust-level' flag can be a fraction (eg: '1/3') or 'default'
-  - 'proof-specs' flag can be JSON input, a path to a .json file or 'default'
-  - 'upgrade-path' flag is a string specifying the upgrade path for this chain where a future upgraded client will be stored. The path is a comma-separated list representing the keys in order of the keyPath to the committed upgraded client.
+
+- 'trust-level' flag can be a fraction (eg: '1/3') or 'default'
+- 'proof-specs' flag can be JSON input, a path to a .json file or 'default'
+- 'upgrade-path' flag is a string specifying the upgrade path for this chain where a future upgraded client will be stored. The path is a comma-separated list representing the keys in order of the keyPath to the committed upgraded client.
   e.g. 'upgrade/upgradedClient'
 
 ```
@@ -62,5 +63,4 @@ axelard tx ibc tendermint-client create [path/to/consensus_state.json] [trusting
 
 ### SEE ALSO
 
-* [axelard tx ibc tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
-
+- [axelard tx ibc tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands

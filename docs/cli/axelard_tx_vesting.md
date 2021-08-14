@@ -25,6 +25,5 @@ axelard tx vesting [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx vesting create-vesting-account](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
-
+- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx vesting create-vesting-account](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
