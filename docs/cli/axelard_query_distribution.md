@@ -25,10 +25,11 @@ axelard query distribution [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query distribution commission](axelard_query_distribution_commission.md)	 - Query distribution validator commission
-- [axelard query distribution community-pool](axelard_query_distribution_community-pool.md)	 - Query the amount of coins in the community pool
-- [axelard query distribution params](axelard_query_distribution_params.md)	 - Query distribution params
-- [axelard query distribution rewards](axelard_query_distribution_rewards.md)	 - Query all distribution delegator rewards or rewards from a particular validator
-- [axelard query distribution slashes](axelard_query_distribution_slashes.md)	 - Query distribution validator slashes
-- [axelard query distribution validator-outstanding-rewards](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
+* [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query distribution commission](axelard_query_distribution_commission.md)	 - Query distribution validator commission
+* [axelard query distribution community-pool](axelard_query_distribution_community-pool.md)	 - Query the amount of coins in the community pool
+* [axelard query distribution params](axelard_query_distribution_params.md)	 - Query distribution params
+* [axelard query distribution rewards](axelard_query_distribution_rewards.md)	 - Query all distribution delegator rewards or rewards from a particular validator
+* [axelard query distribution slashes](axelard_query_distribution_slashes.md)	 - Query distribution validator slashes
+* [axelard query distribution validator-outstanding-rewards](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
+

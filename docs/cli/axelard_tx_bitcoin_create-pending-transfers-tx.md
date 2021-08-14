@@ -45,4 +45,5 @@ axelard tx bitcoin create-pending-transfers-tx [keyID] [flags]
 
 ### SEE ALSO
 
-- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+* [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+

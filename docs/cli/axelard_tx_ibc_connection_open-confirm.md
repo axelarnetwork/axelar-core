@@ -54,4 +54,5 @@ axelard tx ibc connection open-confirm [connection-id] [proof-height] [path/to/p
 
 ### SEE ALSO
 
-- [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+* [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+

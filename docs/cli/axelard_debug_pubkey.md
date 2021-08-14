@@ -9,6 +9,7 @@ Decode a pubkey from hex, base64, or bech32.
 Example:
 $ <appd> debug pubkey TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz
 $ <appd> debug pubkey cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
+			
 
 ```
 axelard debug pubkey [pubkey] [flags]
@@ -32,4 +33,5 @@ axelard debug pubkey [pubkey] [flags]
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+

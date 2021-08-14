@@ -5,7 +5,7 @@ create new solo machine client
 ### Synopsis
 
 create a new solo machine client with the specified identifier and public key
-\- ConsensusState json example: {"public_key":{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A/3SXL2ONYaOkxpdR5P8tHTlSlPv1AwQwSFxKRee5JQW"},"diversifier":"diversifier","timestamp":"10"}
+	- ConsensusState json example: {"public_key":{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A/3SXL2ONYaOkxpdR5P8tHTlSlPv1AwQwSFxKRee5JQW"},"diversifier":"diversifier","timestamp":"10"}
 
 ```
 axelard tx ibc solo create [sequence] [path/to/consensus_state.json] [flags]
@@ -56,4 +56,5 @@ axelard tx ibc solo create [sequence] [path/to/consensus_state.json] [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+* [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+

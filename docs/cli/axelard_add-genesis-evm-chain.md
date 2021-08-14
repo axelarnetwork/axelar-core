@@ -24,4 +24,5 @@ axelard add-genesis-evm-chain [name] [native asset] [flags]
 
 ### SEE ALSO
 
-- [axelard](axelard.md)	 - Axelar App
+* [axelard](axelard.md)	 - Axelar App
+

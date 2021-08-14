@@ -37,4 +37,5 @@ axelard keys show [name_or_address [name_or_address...]] [flags]
 
 ### SEE ALSO
 
-- [axelard keys](axelard_keys.md)	 - Manage your application's keys
+* [axelard keys](axelard_keys.md)	 - Manage your application's keys
+

@@ -26,4 +26,5 @@ axelard query block [height] [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query](axelard_query.md)	 - Querying subcommands
+

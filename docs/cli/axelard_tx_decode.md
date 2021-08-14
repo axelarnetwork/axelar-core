@@ -45,4 +45,5 @@ axelard tx decode [amino-byte-string] [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+

@@ -1,6 +1,6 @@
 ## axelard query evm signedTx
 
-Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
+Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]
 
 ```
 axelard query evm signedTx [chain] [txID] [flags]
@@ -27,4 +27,5 @@ axelard query evm signedTx [chain] [txID] [flags]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+

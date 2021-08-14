@@ -40,4 +40,5 @@ axelard query ibc client consensus-state [client-id] [height] [flags]
 
 ### SEE ALSO
 
-- [axelard query ibc client](axelard_query_ibc_client.md)	 - IBC client query subcommands
+* [axelard query ibc client](axelard_query_ibc_client.md)	 - IBC client query subcommands
+

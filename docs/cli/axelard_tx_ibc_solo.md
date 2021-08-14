@@ -25,7 +25,8 @@ axelard tx ibc solo machine [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
-- [axelard tx ibc solo create](axelard_tx_ibc_solo_create.md)	 - create new solo machine client
-- [axelard tx ibc solo misbehaviour](axelard_tx_ibc_solo_misbehaviour.md)	 - submit a client misbehaviour
-- [axelard tx ibc solo update](axelard_tx_ibc_solo_update.md)	 - update existing client with a header
+* [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
+* [axelard tx ibc solo create](axelard_tx_ibc_solo_create.md)	 - create new solo machine client
+* [axelard tx ibc solo misbehaviour](axelard_tx_ibc_solo_misbehaviour.md)	 - submit a client misbehaviour
+* [axelard tx ibc solo update](axelard_tx_ibc_solo_update.md)	 - update existing client with a header
+

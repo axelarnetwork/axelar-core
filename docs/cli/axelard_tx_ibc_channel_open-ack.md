@@ -45,4 +45,5 @@ axelard tx ibc channel open-ack [port-id] [channel-id] [counterparty-channel-id]
 
 ### SEE ALSO
 
-- [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+

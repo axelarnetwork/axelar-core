@@ -27,4 +27,5 @@ axelard query tss recover [validator address] [key ID #1] ... [key ID #N] [flags
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+* [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+

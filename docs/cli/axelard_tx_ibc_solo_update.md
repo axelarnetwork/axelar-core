@@ -35,4 +35,5 @@ axelard tx ibc solo update [client-id] [path/to/header.json] [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+* [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+

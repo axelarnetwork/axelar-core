@@ -59,4 +59,5 @@ axelard tx ibc connection open-try [connection-id] [client-id]
 
 ### SEE ALSO
 
-- [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+* [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+

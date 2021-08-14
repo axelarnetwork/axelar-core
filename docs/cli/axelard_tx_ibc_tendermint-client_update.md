@@ -54,4 +54,5 @@ $ <appd> tx ibc tendermint-client update [client-id] [path/to/header.json] --fro
 
 ### SEE ALSO
 
-- [axelard tx ibc tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
+* [axelard tx ibc tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
+

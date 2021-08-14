@@ -46,4 +46,5 @@ axelard tx ibc channel open-init [port-id] [counterparty-port-id] [connection-ho
 
 ### SEE ALSO
 
-- [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+

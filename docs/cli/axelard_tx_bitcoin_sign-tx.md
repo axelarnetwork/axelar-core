@@ -44,4 +44,5 @@ axelard tx bitcoin sign-tx [keyRole] [flags]
 
 ### SEE ALSO
 
-- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+* [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+

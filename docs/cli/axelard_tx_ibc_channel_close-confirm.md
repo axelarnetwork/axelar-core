@@ -44,4 +44,5 @@ axelard tx ibc channel close-confirm [port-id] [channel-id] [/path/to/proof_init
 
 ### SEE ALSO
 
-- [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+

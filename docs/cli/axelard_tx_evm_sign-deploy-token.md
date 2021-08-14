@@ -44,4 +44,5 @@ axelard tx evm sign-deploy-token [evm chain] [origin chain] [name] [symbol] [dec
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

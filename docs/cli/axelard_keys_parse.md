@@ -7,6 +7,7 @@ Parse address from hex to bech32 and vice versa
 Convert and print to stdout key addresses and fingerprints from
 hexadecimal into bech32 cosmos prefixed format and vice versa.
 
+
 ```
 axelard keys parse <hex-or-bech32-address> [flags]
 ```
@@ -31,4 +32,5 @@ axelard keys parse <hex-or-bech32-address> [flags]
 
 ### SEE ALSO
 
-- [axelard keys](axelard_keys.md)	 - Manage your application's keys
+* [axelard keys](axelard_keys.md)	 - Manage your application's keys
+

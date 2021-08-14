@@ -25,7 +25,8 @@ axelard tx axelarnet [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx axelarnet confirm-deposit](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
-- [axelard tx axelarnet execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
-- [axelard tx axelarnet link](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx axelarnet confirm-deposit](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
+* [axelard tx axelarnet execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
+* [axelard tx axelarnet link](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+
