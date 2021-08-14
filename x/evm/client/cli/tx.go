@@ -35,10 +35,13 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
+		GetCmdConfirmTransferOperatorship(),
 		GetCmdSignPendingTransfersTx(),
 		GetCmdSignDeployToken(),
 		GetCmdSignBurnTokens(),
-		GetCmdSignTransferOwnership(),
+		GetCmdCreateTransferOwnership(),
+		GetCmdCreateTransferOperatorship(),
+		GetCmdSignCommands(),
 		GetCmdAddChain(),
 	)
 
@@ -199,7 +202,34 @@ func GetCmdConfirmTransferOwnership() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			keyID := args[2]
-			msg := types.NewConfirmTransferOwnershipRequest(cliCtx.GetFromAddress(), chain, txID, keyID)
+			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Ownership, keyID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConfirmTransferOperatorship returns the cli command to confirm a transfer operatorship for the gateway contract
+func GetCmdConfirmTransferOperatorship() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-transfer-operatorship [chain] [txID] [keyID]",
+		Short: "Confirm a transfer operatorship in an EVM chain transaction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			txID := common.HexToHash(args[1])
+			keyID := args[2]
+			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -296,11 +326,11 @@ func GetCmdSignBurnTokens() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignTransferOwnership returns the cli command to sign transfer-ownership command for an EVM chain contract
-func GetCmdSignTransferOwnership() *cobra.Command {
+// GetCmdCreateTransferOwnership returns the cli command to create transfer-ownership command for an EVM chain contract
+func GetCmdCreateTransferOwnership() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-ownership [chain] [keyID]",
-		Short: "Sign transfer ownership command for an EVM chain contract",
+		Short: "Create transfer ownership command for an EVM chain contract",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -308,7 +338,55 @@ func GetCmdSignTransferOwnership() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSignTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewCreateTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCreateTransferOperatorship returns the cli command to create transfer-operatorship command for an EVM chain contract
+func GetCmdCreateTransferOperatorship() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer-operatorship [chain] [keyID]",
+		Short: "Create transfer operatorship command for an EVM chain contract",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSignCommands returns the cli command to sign pending commands for an EVM chain contract
+func GetCmdSignCommands() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sign-commands [chain]",
+		Short: "Sign pending commands for an EVM chain contract",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewSignCommandsRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

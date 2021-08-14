@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -25,14 +27,15 @@ import (
 const (
 	QTokenAddress         = "token-address"
 	QDepositState         = "deposit-state"
-	QMasterAddress        = "master-address"
+	QAddressByKeyRole     = "address-by-key-role"
+	QAddressByKeyID       = "address-by-key-iD"
 	QNextMasterAddress    = "next-master-address"
-	QKeyAddress           = "query-key-address"
 	QAxelarGatewayAddress = "gateway-address"
 	QCommandData          = "command-data"
 	QDepositAddress       = "deposit-address"
 	QBytecode             = "bytecode"
 	QSignedTx             = "signed-tx"
+	QBatchedCommands      = "batched-commands"
 	CreateDeployTx        = "deploy-gateway"
 	SendTx                = "send-tx"
 	SendCommand           = "send-command"
@@ -55,12 +58,12 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 		}
 
 		switch path[0] {
-		case QMasterAddress:
-			return queryMasterAddress(ctx, s, n, path[1])
+		case QAddressByKeyRole:
+			return QueryAddressByKeyRole(ctx, s, n, path[1], path[2])
+		case QAddressByKeyID:
+			return QueryAddressByKeyID(ctx, s, n, path[1], path[2])
 		case QNextMasterAddress:
 			return queryNextMasterAddress(ctx, s, n, path[1])
-		case QKeyAddress:
-			return queryKeyAddress(ctx, s, req.Data)
 		case QAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddress:
@@ -69,6 +72,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return QueryDepositState(ctx, chainKeeper, n, path[2], path[3])
 		case QCommandData:
 			return queryCommandData(ctx, chainKeeper, s, n, path[2])
+		case QBatchedCommands:
+			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
@@ -85,6 +90,41 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+// QueryAddressByKeyRole returns the current address of the given key role
+func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRoleStr string) ([]byte, error) {
+	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
+	if err != nil {
+		return nil, err
+	}
+
+	address, key, err := getAddressAndKeyForRole(ctx, s, n, chainName, keyRole)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+}
+
+// QueryAddressByKeyID returns the address of the given key ID
+func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID string) ([]byte, error) {
+	_, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", chainName)
+	}
+
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("key %s not found", keyID)
+	}
+
+	address := crypto.PubkeyToAddress(key.Value)
+	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
@@ -119,34 +159,6 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 	}
 
 	return depositAddr.Bytes(), nil
-}
-
-func queryMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
-	fromAddress, pk, err := getAddressAndKeyForRole(ctx, s, n, chainName, tss.MasterKey)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	resp := types.QueryMasterAddressResponse{
-		Address: fromAddress.Bytes(),
-		KeyId:   pk.ID,
-	}
-
-	return resp.Marshal()
-}
-
-func queryKeyAddress(ctx sdk.Context, s types.Signer, keyIDBytes []byte) ([]byte, error) {
-	keyID := string(keyIDBytes)
-	pk, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "no key found for key ID "+keyID)
-	}
-
-	fromAddress := crypto.PubkeyToAddress(pk.Value)
-
-	bz := fromAddress.Bytes()
-
-	return bz, nil
 }
 
 func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
@@ -452,8 +464,82 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 	return common.FromHex(txHash), nil
 }
 
-func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, commandIDHex string) ([]byte, error) {
+// QueryBatchedCommands returns the batched commands for the given ID
+func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, batchedCommandsIDHex string) ([]byte, error) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
 
+	batchedCommandsID, err := hex.DecodeString(batchedCommandsIDHex)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err))
+	}
+
+	batchedCommands, ok := getBatchedCommands(ctx, k, batchedCommandsID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", batchedCommandsIDHex))
+	}
+
+	var resp types.QueryBatchedCommandsResponse
+
+	switch batchedCommands.Status {
+	case types.Signed:
+		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
+		if sigStatus != tss.SigStatus_Signed {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
+		}
+
+		key, ok := s.GetKey(ctx, batchedCommands.KeyID)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for batched commands with ID %s", batchedCommandsIDHex))
+		}
+
+		batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands.SigHash), key.Value)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
+		}
+
+		executeData, err := types.CreateExecuteData(batchedCommands.Data, batchedCommandsSig)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+		}
+
+		resp = types.QueryBatchedCommandsResponse{
+			ID:          batchedCommandsIDHex,
+			Data:        hex.EncodeToString(batchedCommands.Data),
+			Status:      batchedCommands.Status,
+			KeyID:       batchedCommands.KeyID,
+			Signature:   hex.EncodeToString(batchedCommandsSig[:]),
+			ExecuteData: hex.EncodeToString(executeData),
+		}
+	default:
+		resp = types.QueryBatchedCommandsResponse{
+			ID:          batchedCommandsIDHex,
+			Data:        hex.EncodeToString(batchedCommands.Data),
+			Status:      batchedCommands.Status,
+			KeyID:       batchedCommands.KeyID,
+			Signature:   "",
+			ExecuteData: "",
+		}
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+}
+
+func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.BatchedCommands, bool) {
+	if batchedCommands, ok := k.GetSignedBatchedCommands(ctx, id); ok {
+		return batchedCommands, true
+	}
+
+	if batchedCommands, ok := k.GetUnsignedBatchedCommands(ctx); ok && bytes.Equal(batchedCommands.ID, id) {
+		return batchedCommands, true
+	}
+
+	return types.BatchedCommands{}, false
+}
+
+func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, commandIDHex string) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))

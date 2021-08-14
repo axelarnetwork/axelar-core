@@ -28,6 +28,7 @@ var (
 	ERC20TransferSig        = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 	ERC20TokenDeploymentSig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 	TransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
+	TransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -129,7 +130,7 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 
 // ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
 func (mgr Mgr) ProcessTransferOwnershipConfirmation(attributes []sdk.Attribute) (err error) {
-	chain, txID, gatewayAddr, newOwnerAddr, confHeight, pollKey, err := parseTransferOwnershipConfirmationParams(mgr.cdc, attributes)
+	chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, err := parseTransferOwnershipConfirmationParams(mgr.cdc, attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -140,15 +141,15 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(attributes []sdk.Attribute) 
 	}
 
 	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
-		err = confirmTransferOwnership(txReceipt, gatewayAddr, newOwnerAddr)
-		if err != nil {
+		if err = confirmTransferKey(txReceipt, transferKeyType, gatewayAddr, newOwnerAddr); err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "transfer ownership confirmation failed").Error())
 			return false
 		}
+
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTransferOwnershipRequest(mgr.sender, chain, pollKey, txID, evmTypes.Address(newOwnerAddr), confirmed)
+	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.sender, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(msg)
 }
@@ -305,12 +306,13 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
 	chain string,
 	txID common.Hash,
+	transferKeyType evmTypes.TransferKeyType,
 	gatewayAddr, newOwnerAddr common.Address,
 	confHeight uint64,
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, txIDFound, gatewayAddrFound, newOwnerAddrFound, confHeightFound, pollKeyFound bool
+	var chainFound, txIDFound, transferKeyTypeFound, gatewayAddrFound, newOwnerAddrFound, confHeightFound, pollKeyFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case evmTypes.AttributeKeyChain:
@@ -319,17 +321,23 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		case evmTypes.AttributeKeyTxID:
 			txID = common.HexToHash(attribute.Value)
 			txIDFound = true
+		case evmTypes.AttributeKeyTransferKeyType:
+			transferKeyType, err = evmTypes.TransferKeyTypeFromSimpleStr(attribute.Value)
+			if err != nil {
+				return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
+					sdkerrors.Wrap(err, "parsing transfer key type failed")
+			}
+			transferKeyTypeFound = true
 		case evmTypes.AttributeKeyGatewayAddress:
 			gatewayAddr = common.HexToAddress(attribute.Value)
 			gatewayAddrFound = true
 		case evmTypes.AttributeKeyAddress:
 			newOwnerAddr = common.HexToAddress(attribute.Value)
 			newOwnerAddrFound = true
-
 		case evmTypes.AttributeKeyConfHeight:
 			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
 			if err != nil {
-				return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
+				return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
 					sdkerrors.Wrap(err, "parsing confirmation height failed")
 			}
 			confHeightFound = true
@@ -339,11 +347,11 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		default:
 		}
 	}
-	if !chainFound || !txIDFound || !gatewayAddrFound || !newOwnerAddrFound || !confHeightFound || !pollKeyFound {
-		return "", common.Hash{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
+	if !chainFound || !txIDFound || !transferKeyTypeFound || !gatewayAddrFound || !newOwnerAddrFound || !confHeightFound || !pollKeyFound {
+		return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
 			fmt.Errorf("insufficient event attributes")
 	}
-	return chain, txID, gatewayAddr, newOwnerAddr, confHeight, pollKey, nil
+	return chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, nil
 }
 
 func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
@@ -430,7 +438,7 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
-func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewOwnerAddr common.Address) error {
+func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr, expectedNewAddr common.Address) (err error) {
 	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		log := txReceipt.Logs[i]
 		// Event is not emitted by the axelar gateway
@@ -438,16 +446,24 @@ func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewO
 			continue
 		}
 
-		// There might be several transfer ownership event. Only interest in the last one.
-		// Event is not for a transfer ownership
-		newOwner, err := decodeTransferOwnershipEvent(log)
+		var actualNewAddr common.Address
+		// There might be several transfer ownership/operatorship event. Only interest in the last one.
+		switch transferKeyType {
+		case evmTypes.Ownership:
+			actualNewAddr, err = decodeTransferOwnershipEvent(log)
+		case evmTypes.Operatorship:
+			actualNewAddr, err = decodeTransferOperatorshipEvent(log)
+		default:
+			return fmt.Errorf("invalid transfer key type")
+		}
+
 		if err != nil {
 			continue
 		}
 
-		// New owner addr does not match
-		if newOwner != expectedNewOwnerAddr {
-			return fmt.Errorf("failed to confirm transfer ownership for new owner '%s' at contract address '%s'", expectedNewOwnerAddr.String(), gatewayAddr.String())
+		// New addr does not match
+		if actualNewAddr != expectedNewAddr {
+			return fmt.Errorf("failed to confirm %s for new address '%s' at contract address '%s'", transferKeyType.SimpleString(), expectedNewAddr.String(), gatewayAddr.String())
 		}
 
 		// if we reach this point, it means that the log matches what we want to verify,
@@ -455,7 +471,7 @@ func confirmTransferOwnership(txReceipt *geth.Receipt, gatewayAddr, expectedNewO
 		return nil
 	}
 
-	return fmt.Errorf("failed to confirm transfer ownership for new owner '%s' at contract address '%s'", expectedNewOwnerAddr.String(), gatewayAddr.String())
+	return fmt.Errorf("failed to confirm %s for new address '%s' at contract address '%s'", transferKeyType.SimpleString(), expectedNewAddr.String(), gatewayAddr.String())
 }
 
 func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
@@ -510,4 +526,14 @@ func decodeTransferOwnershipEvent(log *geth.Log) (common.Address, error) {
 	newOwnerAddr := common.BytesToAddress(log.Topics[2][:])
 
 	return newOwnerAddr, nil
+}
+
+func decodeTransferOperatorshipEvent(log *geth.Log) (common.Address, error) {
+	if len(log.Topics) != 3 || log.Topics[0] != TransferOperatorshipSig {
+		return common.Address{}, fmt.Errorf("event is not for a transfer operatorship")
+	}
+
+	newOperatorAddr := common.BytesToAddress(log.Topics[2][:])
+
+	return newOperatorAddr, nil
 }

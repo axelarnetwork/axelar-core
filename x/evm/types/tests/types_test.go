@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"encoding/hex"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -15,6 +17,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -212,20 +215,36 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 	assert.Equal(t, expectedSalt, actualSalt[:])
 }
 
-func TestCreateTransferOwnershipCommandData_CorrectData(t *testing.T) {
+func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
-	var commandID types.CommandID
-	copy(commandID[:], common.FromHex("0x5763814b98a3aa86f212797af3273868b5dd6e2a532d764a79b98ca859e7bbad"))
-	newOwnerAddr := common.HexToAddress("0xE5251FcFFde3a5BA84A427158A60a07816502590")
+	keyID := rand.Str(10)
+	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
-	expected := "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000015763814b98a3aa86f212797af3273868b5dd6e2a532d764a79b98ca859e7bbad0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000117472616e736665724f776e657273686970000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e5251fcffde3a5ba84a427158a60a07816502590"
+	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
 
-	actual, err := types.CreateTransferOwnershipCommandData(
+	actual, err := types.CreateTransferOwnershipCommand(
 		chainID,
-		commandID,
+		keyID,
 		newOwnerAddr,
 	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, expected, common.Bytes2Hex(actual))
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+}
+
+func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
+	chainID := big.NewInt(1)
+	keyID := rand.Str(10)
+	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+
+	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
+
+	actual, err := types.CreateTransferOperatorshipCommand(
+		chainID,
+		keyID,
+		newOperatorAddr,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 }

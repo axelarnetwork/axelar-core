@@ -325,21 +325,19 @@ func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerI
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
-// CreateTransferOwnershipCommandData returns the command data to transfer ownership of the contract
-func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, newOwnerAddr common.Address) ([]byte, error) {
-	transferOwnershipParams, err := createTransferOwnershipParams(newOwnerAddr)
+// CreateTransferOwnershipCommand creates an command to transfer ownership of the contract
+func CreateTransferOwnershipCommand(chainID *big.Int, keyID string, newOwnerAddr common.Address) (Command, error) {
+	params, err := createTransferOwnershipParams(newOwnerAddr)
 	if err != nil {
-		return nil, err
+		return Command{}, err
 	}
-	var commandIDs []CommandID
-	var commands []string
-	var commandParams [][]byte
 
-	commandIDs = append(commandIDs, commandID)
-	commands = append(commands, axelarGatewayCommandTransferOwnership)
-	commandParams = append(commandParams, transferOwnershipParams)
-
-	return packArguments(chainID, commandIDs, commands, commandParams)
+	return Command{
+		ID:      NewCommandID(newOwnerAddr.Bytes(), chainID),
+		Command: axelarGatewayCommandTransferOwnership,
+		Params:  params,
+		KeyID:   keyID,
+	}, nil
 }
 
 // CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
@@ -373,6 +371,19 @@ func GetGatewayDeploymentBytecode(contractBytecode []byte, operator common.Addre
 	return append(contractBytecode, argBytes...), nil
 }
 
+// Clone returns an exacy copy of Command
+func (c Command) Clone() Command {
+	var clone Command
+
+	clone.Command = c.Command
+	clone.ID = c.ID
+	clone.KeyID = c.KeyID
+	clone.Params = make([]byte, len(c.Params))
+	copy(clone.Params, c.Params)
+
+	return clone
+}
+
 // NewBatchedCommands is the constructor for BatchedCommands
 func NewBatchedCommands(chainID *big.Int, keyID string, cmds []Command) (BatchedCommands, error) {
 	var commandIDs []CommandID
@@ -401,7 +412,7 @@ func NewBatchedCommands(chainID *big.Int, keyID string, cmds []Command) (Batched
 }
 
 // Is returns true if batched commands is in the given status; false otherwise
-func (b BatchedCommands) Is(status BatchedCommands_Status) bool {
+func (b BatchedCommands) Is(status BatchedCommandsStatus) bool {
 	return b.Status == status
 }
 
@@ -451,6 +462,40 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	}
 
 	return nil
+}
+
+// TransferKeyTypeFromSimpleStr converts a given string into TransferKeyType
+func TransferKeyTypeFromSimpleStr(str string) (TransferKeyType, error) {
+	switch strings.ToLower(str) {
+	case Ownership.SimpleString():
+		return Ownership, nil
+	case Operatorship.SimpleString():
+		return Operatorship, nil
+	default:
+		return -1, fmt.Errorf("invalid transfer key type %s", str)
+	}
+}
+
+// Validate returns an error if the TransferKeyType is invalid; nil otherwise
+func (t TransferKeyType) Validate() error {
+	switch t {
+	case Ownership, Operatorship:
+		return nil
+	default:
+		return fmt.Errorf("invalid transfer key type")
+	}
+}
+
+// SimpleString returns a human-readable string representing the TransferKeyType
+func (t TransferKeyType) SimpleString() string {
+	switch t {
+	case Ownership:
+		return "transfer_ownership"
+	case Operatorship:
+		return "transfer_operatorship"
+	default:
+		return "unknown"
+	}
 }
 
 func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {

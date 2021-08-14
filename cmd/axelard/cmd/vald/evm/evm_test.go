@@ -428,6 +428,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		attributes = []sdk.Attribute{
 			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
 			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
+			sdk.NewAttribute(evmTypes.AttributeKeyTransferKeyType, evmTypes.Ownership.SimpleString()),
 			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyAddress, common.Bytes2Hex(newOwnerAddrBytes)),
 			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
@@ -511,7 +512,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -536,7 +537,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -549,7 +550,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("new owner mismatch", testutils.Func(func(t *testing.T) {
@@ -566,7 +567,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
@@ -583,7 +584,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
@@ -600,7 +601,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferOwnershipRequest).Confirmed)
+		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 }
 

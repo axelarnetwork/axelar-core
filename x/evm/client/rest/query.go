@@ -24,32 +24,48 @@ const (
 	QueryParamCommandID   = "command_id"
 	QueryParamGasPrice    = "gas_price"
 	QueryParamGasLimit    = "gas_limit"
+	QueryParamKeyRole     = "key_role"
+	QueryParamKeyID       = "key_id"
 )
 
-// GetHandlerQueryMasterAddress returns a handler to query an EVM chain master address
-func GetHandlerQueryMasterAddress(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryAddress returns a handler to query an EVM chain address
+func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
+
 		chain := mux.Vars(r)[utils.PathVarChain]
+		keyID := r.URL.Query().Get(QueryParamKeyID)
+		keyRole := r.URL.Query().Get(QueryParamKeyRole)
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QMasterAddress, chain), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+		var query string
+		var param string
+		switch {
+		case keyRole != "" && keyID == "":
+			query = keeper.QAddressByKeyRole
+			param = keyRole
+		case keyRole == "" && keyID != "":
+			query = keeper.QAddressByKeyID
+			param = keyID
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "one and only one of the two flags key_role and key_id has to be set")
 			return
 		}
 
-		var resp types.QueryMasterAddressResponse
-		err = resp.Unmarshal(res)
+		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, query, chain, param)
+
+		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, resp)
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
@@ -65,32 +81,7 @@ func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
-			return
-		}
-
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
-	}
-}
-
-// GetHandlerQueryKeyAddress returns a handler to query to query the EVM address of any key
-func GetHandlerQueryKeyAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QKeyAddress), []byte(keyID))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFMasterKey, keyID).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
 			return
 		}
 
@@ -115,7 +106,7 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QAxelarGatewayAddress, chain), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFMasterKey).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
 			return
 		}
 

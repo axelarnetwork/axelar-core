@@ -35,20 +35,20 @@ const (
 	unsignedBatchedCommandsKey       = "unsigned_batched_commands"
 	latestSignedBatchedCommandsIDKey = "latest_signed_batched_commands_id"
 
-	chainPrefix                     = "chain_"
-	subspacePrefix                  = "subspace_"
-	unsignedPrefix                  = "unsigned_"
-	pendingTokenPrefix              = "pending_token_"
-	pendingDepositPrefix            = "pending_deposit_"
-	confirmedDepositPrefix          = "confirmed_deposit_"
-	burnedDepositPrefix             = "burned_deposit_"
-	commandPrefix                   = "command_"
-	assetPrefix                     = "asset_"
-	burnerAddrPrefix                = "burnerAddr_"
-	tokenAddrPrefix                 = "tokenAddr_"
-	pendingTransferOwnershipPrefix  = "pending_transfer_ownership_"
-	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
-	signedBatchedCommandsPrefix     = "signed_batched_commands_"
+	chainPrefix                 = "chain_"
+	subspacePrefix              = "subspace_"
+	unsignedPrefix              = "unsigned_"
+	pendingTokenPrefix          = "pending_token_"
+	pendingDepositPrefix        = "pending_deposit_"
+	confirmedDepositPrefix      = "confirmed_deposit_"
+	burnedDepositPrefix         = "burned_deposit_"
+	commandPrefix               = "command_"
+	assetPrefix                 = "asset_"
+	burnerAddrPrefix            = "burnerAddr_"
+	tokenAddrPrefix             = "tokenAddr_"
+	pendingTransferKeyPrefix    = "pending_transfer_key_"
+	archivedTransferKeyPrefix   = "archived_transfer_key_"
+	signedBatchedCommandsPrefix = "signed_batched_commands_"
 
 	commandQueueName = "command_queue"
 )
@@ -553,48 +553,49 @@ func (k keeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 	k.getStore(ctx, k.chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
 }
 
-// SetPendingTransferOwnership stores a pending transfer ownership
-func (k keeper) SetPendingTransferOwnership(ctx sdk.Context, key exported.PollKey, transferOwnership *types.TransferOwnership) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(transferOwnership)
-	k.getStore(ctx, k.chain).Set([]byte(pendingTransferOwnershipPrefix+key.String()), bz)
+// SetPendingTransferKey stores a pending transfer ownership/operatorship
+func (k keeper) SetPendingTransferKey(ctx sdk.Context, key exported.PollKey, transferKey *types.TransferKey) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(transferKey)
+	k.getStore(ctx, k.chain).Set([]byte(pendingTransferKeyPrefix+key.String()), bz)
 }
 
-// DeletePendingTransferOwnership deletes a pending transfer ownership
-func (k keeper) DeletePendingTransferOwnership(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete([]byte(pendingTransferOwnershipPrefix + key.String()))
+// DeletePendingTransferKey deletes a pending transfer ownership/operatorship
+func (k keeper) DeletePendingTransferKey(ctx sdk.Context, key exported.PollKey) {
+	k.getStore(ctx, k.chain).Delete([]byte(pendingTransferKeyPrefix + key.String()))
 }
 
-// ArchiveTransferOwnership archives an ownership transfer so it is no longer pending but can still be queried
-func (k keeper) ArchiveTransferOwnership(ctx sdk.Context, key exported.PollKey) {
-	transfer := k.getStore(ctx, k.chain).Get([]byte(pendingTransferOwnershipPrefix + key.String()))
+// ArchiveTransferKey archives an ownership transfer so it is no longer pending but can still be queried
+func (k keeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
+	transfer := k.getStore(ctx, k.chain).Get([]byte(pendingTransferKeyPrefix + key.String()))
+
 	if transfer != nil {
-		k.DeletePendingTransferOwnership(ctx, key)
-		k.getStore(ctx, k.chain).Set([]byte(archivedTransferOwnershipPrefix+key.String()), transfer)
+		k.DeletePendingTransferKey(ctx, key)
+		k.getStore(ctx, k.chain).Set([]byte(archivedTransferKeyPrefix+key.String()), transfer)
 	}
 }
 
-// GetArchivedTransferOwnership returns an archived transfer of ownership associated with the given poll
-func (k keeper) GetArchivedTransferOwnership(ctx sdk.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(archivedTransferOwnershipPrefix + key.String()))
+// GetArchivedTransferKey returns an archived transfer of ownership/operatorship associated with the given poll
+func (k keeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
+	bz := k.getStore(ctx, k.chain).Get([]byte(archivedTransferKeyPrefix + key.String()))
 	if bz == nil {
-		return types.TransferOwnership{}, false
+		return types.TransferKey{}, false
 	}
-	var transferOwnership types.TransferOwnership
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferOwnership)
+	var transferKey types.TransferKey
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferKey)
 
-	return transferOwnership, true
+	return transferKey, true
 }
 
-// GetPendingTransferOwnership returns the transfer ownership associated with the given poll
-func (k keeper) GetPendingTransferOwnership(ctx sdk.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTransferOwnershipPrefix + key.String()))
+// GetPendingTransferKey returns the transfer ownership/operatorship associated with the given poll
+func (k keeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
+	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTransferKeyPrefix + key.String()))
 	if bz == nil {
-		return types.TransferOwnership{}, false
+		return types.TransferKey{}, false
 	}
-	var transferOwnership types.TransferOwnership
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferOwnership)
+	var transferKey types.TransferKey
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferKey)
 
-	return transferOwnership, true
+	return transferKey, true
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
@@ -644,11 +645,13 @@ func (k keeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewBlockHeightKVQueue(commandQueueName, utils.NewNormalizedStore(k.getStore(ctx, k.chain), k.cdc), ctx.BlockHeight(), k.Logger(ctx))
 }
 
+// SetUnsignedBatchedCommands stores the given unsigned batched commands
 func (k keeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
 	k.getStore(ctx, k.chain).Set([]byte(unsignedBatchedCommandsKey), bz)
 }
 
+// GetUnsignedBatchedCommands retrieves the unsigned batched commands
 func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedCommands, bool) {
 	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedBatchedCommandsKey))
 	if bz == nil {
@@ -661,10 +664,12 @@ func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedComman
 	return batchedCommands, true
 }
 
+// DeleteUnsignedBatchedCommands deletes the unsigned batched commands
 func (k keeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
 	k.getStore(ctx, k.chain).Delete([]byte(unsignedBatchedCommandsKey))
 }
 
+// SetSignedBatchedCommands stores the signed batched commands
 func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
 	batchedCommands.Status = types.Signed
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
@@ -673,6 +678,7 @@ func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.
 	k.getStore(ctx, k.chain).Set([]byte(key), bz)
 }
 
+// GetSignedBatchedCommands retrieves the signed batched commands of given ID
 func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.BatchedCommands, bool) {
 	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(id))
 	bz := k.getStore(ctx, k.chain).Get([]byte(key))
@@ -686,10 +692,12 @@ func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.Batc
 	return batchedCommands, true
 }
 
+// SetLatestSignedBatchedCommandsID stores the ID of the latest signed batched commands
 func (k keeper) SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte) {
 	k.getStore(ctx, k.chain).Set([]byte(latestSignedBatchedCommandsIDKey), id)
 }
 
+// GetLatestSignedBatchedCommandsID retrieves the ID of the latest signed batched commands
 func (k keeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool) {
 	id := k.getStore(ctx, k.chain).Get([]byte(latestSignedBatchedCommandsIDKey))
 

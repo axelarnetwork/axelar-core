@@ -29,7 +29,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	evmQueryCmd.AddCommand(
 		GetCmdDepositAddress(queryRoute),
-		GetCmdMasterAddress(queryRoute),
+		GetCmdAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdDepositState(queryRoute),
@@ -39,6 +39,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdSendTx(queryRoute),
 		GetCmdSendCommand(queryRoute),
 		GetCmdQueryCommandData(queryRoute),
+		GetCmdQueryBatchedCommands(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -72,44 +73,47 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdMasterAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
-func GetCmdMasterAddress(queryRoute string) *cobra.Command {
-	var IncludeKeyID bool
+// GetCmdAddress returns the query for an EVM chain address
+func GetCmdAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "master-address [chain]",
-		Short: "Returns the EVM address of the current master key, and optionally the key's ID",
+		Use:   "address [chain]",
+		Short: "Returns the EVM address",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
+	}
+	keyRole := cmd.Flags().String("key-role", "", "the role of the key to get the address for")
+	keyID := cmd.Flags().String("key-id", "", "the ID of the key to get the address for")
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QMasterAddress, args[0]), nil)
-			if err != nil {
-				fmt.Printf(types.ErrFMasterKey, err.Error())
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
 
-				return nil
-			}
+		var query string
+		var param string
+		switch {
+		case *keyRole != "" && *keyID == "":
+			query = keeper.QAddressByKeyRole
+			param = *keyRole
+		case *keyRole == "" && *keyID != "":
+			query = keeper.QAddressByKeyID
+			param = *keyID
+		default:
+			return fmt.Errorf("one and only one of the two flags key-role and key-id has to be set")
+		}
 
-			var resp types.QueryMasterAddressResponse
-			err = resp.Unmarshal(res)
-			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFMasterKey)
-			}
+		bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, query, args[0], param))
+		if err != nil {
+			return sdkerrors.Wrap(err, types.ErrFAddress)
+		}
 
-			if IncludeKeyID {
-				return cliCtx.PrintObjectLegacy(resp)
-			}
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
-			address := common.BytesToAddress(resp.Address)
-
-			return cliCtx.PrintObjectLegacy(address.Hex())
-		},
+		return clientCtx.PrintProto(&res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
-	cmd.Flags().BoolVar(&IncludeKeyID, "include-key-id", false, "include the current master key ID in the output")
 	return cmd
 }
 
@@ -377,6 +381,36 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 
 			fmt.Println("0x" + common.Bytes2Hex(res))
 			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdQueryBatchedCommands returns the query to get the batched commands
+func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "batched-commands [chain] [ID]",
+		Short: "Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			idHex := args[1]
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBatchedCommands, chain, idHex))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get batched commands %s", idHex)
+			}
+
+			var res types.QueryBatchedCommandsResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

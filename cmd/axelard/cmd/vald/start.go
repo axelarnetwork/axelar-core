@@ -266,7 +266,7 @@ func listen(
 	evmChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmDepConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTokConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTransferOwnershipConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTraConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	// stop the jobs if process gets interrupted/terminated

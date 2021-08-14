@@ -14,17 +14,18 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteConfirmTokenRequest{}, "evm/VoteConfirmToken", nil)
 	cdc.RegisterConcrete(&VoteConfirmDepositRequest{}, "evm/VoteConfirmDeposit", nil)
 	cdc.RegisterConcrete(&VoteConfirmChainRequest{}, "evm/VoteConfirmChain", nil)
-	cdc.RegisterConcrete(&VoteConfirmTransferOwnershipRequest{}, "evm/VoteConfirmTransferOwnership", nil)
+	cdc.RegisterConcrete(&VoteConfirmTransferKeyRequest{}, "evm/VoteConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "evm/ConfirmToken", nil)
 	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "evm/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
-	cdc.RegisterConcrete(&ConfirmTransferOwnershipRequest{}, "evm/ConfirmTransferOwnership", nil)
+	cdc.RegisterConcrete(&ConfirmTransferKeyRequest{}, "evm/ConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&SignTxRequest{}, "evm/SignTx", nil)
 	cdc.RegisterConcrete(&SignPendingTransfersRequest{}, "evm/SignPendingTransfers", nil)
 	cdc.RegisterConcrete(&SignDeployTokenRequest{}, "evm/SignDeployToken", nil)
 	cdc.RegisterConcrete(&SignBurnTokensRequest{}, "evm/SignBurnTokens", nil)
-	cdc.RegisterConcrete(&SignTransferOwnershipRequest{}, "evm/SignTransferOwnership", nil)
+	cdc.RegisterConcrete(&CreateTransferOwnershipRequest{}, "evm/CreateTransferOwnership", nil)
 	cdc.RegisterConcrete(&CreateTransferOperatorshipRequest{}, "evm/CreateTransferOperatorship", nil)
+	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
 }
 
@@ -35,17 +36,18 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmTokenRequest{},
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
-		&VoteConfirmTransferOwnershipRequest{},
+		&VoteConfirmTransferKeyRequest{},
 		&ConfirmTokenRequest{},
 		&ConfirmDepositRequest{},
 		&ConfirmChainRequest{},
-		&ConfirmTransferOwnershipRequest{},
+		&ConfirmTransferKeyRequest{},
 		&SignTxRequest{},
 		&SignPendingTransfersRequest{},
 		&SignDeployTokenRequest{},
 		&SignBurnTokensRequest{},
-		&SignTransferOwnershipRequest{},
+		&CreateTransferOwnershipRequest{},
 		&CreateTransferOperatorshipRequest{},
+		&SignCommandsRequest{},
 		&AddChainRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),

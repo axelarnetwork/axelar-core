@@ -259,6 +259,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
+// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) error {
+// 				panic("mock out the RotateKey method")
+// 			},
 // 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info tss.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
@@ -295,6 +298,9 @@ type SignerMock struct {
 
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) (int64, bool)
+
+	// RotateKeyFunc mocks the RotateKey method.
+	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 
 	// ScheduleSignFunc mocks the ScheduleSign method.
 	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info tss.SignInfo) (int64, error)
@@ -380,6 +386,15 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// RotateKey holds details about calls to the RotateKey method.
+		RotateKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// ScheduleSign holds details about calls to the ScheduleSign method.
 		ScheduleSign []struct {
 			// Ctx is the ctx argument value.
@@ -397,6 +412,7 @@ type SignerMock struct {
 	lockGetNextKey                 sync.RWMutex
 	lockGetSig                     sync.RWMutex
 	lockGetSnapshotCounterForKeyID sync.RWMutex
+	lockRotateKey                  sync.RWMutex
 	lockScheduleSign               sync.RWMutex
 }
 
@@ -744,6 +760,45 @@ func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockGetSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.GetSnapshotCounterForKeyID
 	mock.lockGetSnapshotCounterForKeyID.RUnlock()
+	return calls
+}
+
+// RotateKey calls RotateKeyFunc.
+func (mock *SignerMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tss.KeyRole) error {
+	if mock.RotateKeyFunc == nil {
+		panic("SignerMock.RotateKeyFunc: method is nil but Signer.RotateKey was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockRotateKey.Lock()
+	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
+	mock.lockRotateKey.Unlock()
+	return mock.RotateKeyFunc(ctx, chain, keyRole)
+}
+
+// RotateKeyCalls gets all the calls that were made to RotateKey.
+// Check the length with:
+//     len(mockedSigner.RotateKeyCalls())
+func (mock *SignerMock) RotateKeyCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}
+	mock.lockRotateKey.RLock()
+	calls = mock.calls.RotateKey
+	mock.lockRotateKey.RUnlock()
 	return calls
 }
 
@@ -1991,8 +2046,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //
 // 		// make and configure a mocked types.ChainKeeper
 // 		mockedChainKeeper := &ChainKeeperMock{
-// 			ArchiveTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)  {
-// 				panic("mock out the ArchiveTransferOwnership method")
+// 			ArchiveTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)  {
+// 				panic("mock out the ArchiveTransferKey method")
 // 			},
 // 			AssembleTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error) {
 // 				panic("mock out the AssembleTx method")
@@ -2006,14 +2061,14 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			DeletePendingTokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)  {
 // 				panic("mock out the DeletePendingToken method")
 // 			},
-// 			DeletePendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)  {
-// 				panic("mock out the DeletePendingTransferOwnership method")
+// 			DeletePendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)  {
+// 				panic("mock out the DeletePendingTransferKey method")
 // 			},
 // 			DeleteUnsignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
 // 				panic("mock out the DeleteUnsignedBatchedCommands method")
 // 			},
-// 			GetArchivedTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-// 				panic("mock out the GetArchivedTransferOwnership method")
+// 			GetArchivedTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool) {
+// 				panic("mock out the GetArchivedTransferKey method")
 // 			},
 // 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
@@ -2069,8 +2124,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetPendingTokenDeploymentFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.ERC20TokenDeployment, bool) {
 // 				panic("mock out the GetPendingTokenDeployment method")
 // 			},
-// 			GetPendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-// 				panic("mock out the GetPendingTransferOwnership method")
+// 			GetPendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool) {
+// 				panic("mock out the GetPendingTransferKey method")
 // 			},
 // 			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool) {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
@@ -2123,8 +2178,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetPendingTokenDeploymentFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported.PollKey, tokenDeploy types.ERC20TokenDeployment)  {
 // 				panic("mock out the SetPendingTokenDeployment method")
 // 			},
-// 			SetPendingTransferOwnershipFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferOwnership)  {
-// 				panic("mock out the SetPendingTransferOwnership method")
+// 			SetPendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferKey)  {
+// 				panic("mock out the SetPendingTransferKey method")
 // 			},
 // 			SetSignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
 // 				panic("mock out the SetSignedBatchedCommands method")
@@ -2145,8 +2200,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //
 // 	}
 type ChainKeeperMock struct {
-	// ArchiveTransferOwnershipFunc mocks the ArchiveTransferOwnership method.
-	ArchiveTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)
+	// ArchiveTransferKeyFunc mocks the ArchiveTransferKey method.
+	ArchiveTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)
 
 	// AssembleTxFunc mocks the AssembleTx method.
 	AssembleTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error)
@@ -2160,14 +2215,14 @@ type ChainKeeperMock struct {
 	// DeletePendingTokenFunc mocks the DeletePendingToken method.
 	DeletePendingTokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)
 
-	// DeletePendingTransferOwnershipFunc mocks the DeletePendingTransferOwnership method.
-	DeletePendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)
+	// DeletePendingTransferKeyFunc mocks the DeletePendingTransferKey method.
+	DeletePendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey)
 
 	// DeleteUnsignedBatchedCommandsFunc mocks the DeleteUnsignedBatchedCommands method.
 	DeleteUnsignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context)
 
-	// GetArchivedTransferOwnershipFunc mocks the GetArchivedTransferOwnership method.
-	GetArchivedTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool)
+	// GetArchivedTransferKeyFunc mocks the GetArchivedTransferKey method.
+	GetArchivedTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool)
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
 	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
@@ -2223,8 +2278,8 @@ type ChainKeeperMock struct {
 	// GetPendingTokenDeploymentFunc mocks the GetPendingTokenDeployment method.
 	GetPendingTokenDeploymentFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.ERC20TokenDeployment, bool)
 
-	// GetPendingTransferOwnershipFunc mocks the GetPendingTransferOwnership method.
-	GetPendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool)
+	// GetPendingTransferKeyFunc mocks the GetPendingTransferKey method.
+	GetPendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool)
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
 	GetRequiredConfirmationHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool)
@@ -2277,8 +2332,8 @@ type ChainKeeperMock struct {
 	// SetPendingTokenDeploymentFunc mocks the SetPendingTokenDeployment method.
 	SetPendingTokenDeploymentFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey exported.PollKey, tokenDeploy types.ERC20TokenDeployment)
 
-	// SetPendingTransferOwnershipFunc mocks the SetPendingTransferOwnership method.
-	SetPendingTransferOwnershipFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferOwnership)
+	// SetPendingTransferKeyFunc mocks the SetPendingTransferKey method.
+	SetPendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferKey)
 
 	// SetSignedBatchedCommandsFunc mocks the SetSignedBatchedCommands method.
 	SetSignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
@@ -2294,8 +2349,8 @@ type ChainKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// ArchiveTransferOwnership holds details about calls to the ArchiveTransferOwnership method.
-		ArchiveTransferOwnership []struct {
+		// ArchiveTransferKey holds details about calls to the ArchiveTransferKey method.
+		ArchiveTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
@@ -2333,8 +2388,8 @@ type ChainKeeperMock struct {
 			// Key is the key argument value.
 			Key exported.PollKey
 		}
-		// DeletePendingTransferOwnership holds details about calls to the DeletePendingTransferOwnership method.
-		DeletePendingTransferOwnership []struct {
+		// DeletePendingTransferKey holds details about calls to the DeletePendingTransferKey method.
+		DeletePendingTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
@@ -2345,8 +2400,8 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetArchivedTransferOwnership holds details about calls to the GetArchivedTransferOwnership method.
-		GetArchivedTransferOwnership []struct {
+		// GetArchivedTransferKey holds details about calls to the GetArchivedTransferKey method.
+		GetArchivedTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
@@ -2466,8 +2521,8 @@ type ChainKeeperMock struct {
 			// Key is the key argument value.
 			Key exported.PollKey
 		}
-		// GetPendingTransferOwnership holds details about calls to the GetPendingTransferOwnership method.
-		GetPendingTransferOwnership []struct {
+		// GetPendingTransferKey holds details about calls to the GetPendingTransferKey method.
+		GetPendingTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
@@ -2594,14 +2649,14 @@ type ChainKeeperMock struct {
 			// TokenDeploy is the tokenDeploy argument value.
 			TokenDeploy types.ERC20TokenDeployment
 		}
-		// SetPendingTransferOwnership holds details about calls to the SetPendingTransferOwnership method.
-		SetPendingTransferOwnership []struct {
+		// SetPendingTransferKey holds details about calls to the SetPendingTransferKey method.
+		SetPendingTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key exported.PollKey
 			// TransferOwnership is the transferOwnership argument value.
-			TransferOwnership *types.TransferOwnership
+			TransferOwnership *types.TransferKey
 		}
 		// SetSignedBatchedCommands holds details about calls to the SetSignedBatchedCommands method.
 		SetSignedBatchedCommands []struct {
@@ -2636,14 +2691,14 @@ type ChainKeeperMock struct {
 			Tx *evmTypes.Transaction
 		}
 	}
-	lockArchiveTransferOwnership         sync.RWMutex
+	lockArchiveTransferKey               sync.RWMutex
 	lockAssembleTx                       sync.RWMutex
 	lockDeleteDeposit                    sync.RWMutex
 	lockDeletePendingDeposit             sync.RWMutex
 	lockDeletePendingToken               sync.RWMutex
-	lockDeletePendingTransferOwnership   sync.RWMutex
+	lockDeletePendingTransferKey         sync.RWMutex
 	lockDeleteUnsignedBatchedCommands    sync.RWMutex
-	lockGetArchivedTransferOwnership     sync.RWMutex
+	lockGetArchivedTransferKey           sync.RWMutex
 	lockGetBurnerAddressAndSalt          sync.RWMutex
 	lockGetBurnerByteCodes               sync.RWMutex
 	lockGetBurnerInfo                    sync.RWMutex
@@ -2662,7 +2717,7 @@ type ChainKeeperMock struct {
 	lockGetNetworkByID                   sync.RWMutex
 	lockGetPendingDeposit                sync.RWMutex
 	lockGetPendingTokenDeployment        sync.RWMutex
-	lockGetPendingTransferOwnership      sync.RWMutex
+	lockGetPendingTransferKey            sync.RWMutex
 	lockGetRequiredConfirmationHeight    sync.RWMutex
 	lockGetRevoteLockingPeriod           sync.RWMutex
 	lockGetSignedBatchedCommands         sync.RWMutex
@@ -2680,17 +2735,17 @@ type ChainKeeperMock struct {
 	lockSetLatestSignedBatchedCommandsID sync.RWMutex
 	lockSetPendingDeposit                sync.RWMutex
 	lockSetPendingTokenDeployment        sync.RWMutex
-	lockSetPendingTransferOwnership      sync.RWMutex
+	lockSetPendingTransferKey            sync.RWMutex
 	lockSetSignedBatchedCommands         sync.RWMutex
 	lockSetTokenInfo                     sync.RWMutex
 	lockSetUnsignedBatchedCommands       sync.RWMutex
 	lockSetUnsignedTx                    sync.RWMutex
 }
 
-// ArchiveTransferOwnership calls ArchiveTransferOwnershipFunc.
-func (mock *ChainKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) {
-	if mock.ArchiveTransferOwnershipFunc == nil {
-		panic("ChainKeeperMock.ArchiveTransferOwnershipFunc: method is nil but ChainKeeper.ArchiveTransferOwnership was just called")
+// ArchiveTransferKey calls ArchiveTransferKeyFunc.
+func (mock *ChainKeeperMock) ArchiveTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) {
+	if mock.ArchiveTransferKeyFunc == nil {
+		panic("ChainKeeperMock.ArchiveTransferKeyFunc: method is nil but ChainKeeper.ArchiveTransferKey was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2699,16 +2754,16 @@ func (mock *ChainKeeperMock) ArchiveTransferOwnership(ctx github_com_cosmos_cosm
 		Ctx: ctx,
 		Key: key,
 	}
-	mock.lockArchiveTransferOwnership.Lock()
-	mock.calls.ArchiveTransferOwnership = append(mock.calls.ArchiveTransferOwnership, callInfo)
-	mock.lockArchiveTransferOwnership.Unlock()
-	mock.ArchiveTransferOwnershipFunc(ctx, key)
+	mock.lockArchiveTransferKey.Lock()
+	mock.calls.ArchiveTransferKey = append(mock.calls.ArchiveTransferKey, callInfo)
+	mock.lockArchiveTransferKey.Unlock()
+	mock.ArchiveTransferKeyFunc(ctx, key)
 }
 
-// ArchiveTransferOwnershipCalls gets all the calls that were made to ArchiveTransferOwnership.
+// ArchiveTransferKeyCalls gets all the calls that were made to ArchiveTransferKey.
 // Check the length with:
-//     len(mockedChainKeeper.ArchiveTransferOwnershipCalls())
-func (mock *ChainKeeperMock) ArchiveTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.ArchiveTransferKeyCalls())
+func (mock *ChainKeeperMock) ArchiveTransferKeyCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Key exported.PollKey
 } {
@@ -2716,9 +2771,9 @@ func (mock *ChainKeeperMock) ArchiveTransferOwnershipCalls() []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Key exported.PollKey
 	}
-	mock.lockArchiveTransferOwnership.RLock()
-	calls = mock.calls.ArchiveTransferOwnership
-	mock.lockArchiveTransferOwnership.RUnlock()
+	mock.lockArchiveTransferKey.RLock()
+	calls = mock.calls.ArchiveTransferKey
+	mock.lockArchiveTransferKey.RUnlock()
 	return calls
 }
 
@@ -2870,10 +2925,10 @@ func (mock *ChainKeeperMock) DeletePendingTokenCalls() []struct {
 	return calls
 }
 
-// DeletePendingTransferOwnership calls DeletePendingTransferOwnershipFunc.
-func (mock *ChainKeeperMock) DeletePendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) {
-	if mock.DeletePendingTransferOwnershipFunc == nil {
-		panic("ChainKeeperMock.DeletePendingTransferOwnershipFunc: method is nil but ChainKeeper.DeletePendingTransferOwnership was just called")
+// DeletePendingTransferKey calls DeletePendingTransferKeyFunc.
+func (mock *ChainKeeperMock) DeletePendingTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) {
+	if mock.DeletePendingTransferKeyFunc == nil {
+		panic("ChainKeeperMock.DeletePendingTransferKeyFunc: method is nil but ChainKeeper.DeletePendingTransferKey was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2882,16 +2937,16 @@ func (mock *ChainKeeperMock) DeletePendingTransferOwnership(ctx github_com_cosmo
 		Ctx: ctx,
 		Key: key,
 	}
-	mock.lockDeletePendingTransferOwnership.Lock()
-	mock.calls.DeletePendingTransferOwnership = append(mock.calls.DeletePendingTransferOwnership, callInfo)
-	mock.lockDeletePendingTransferOwnership.Unlock()
-	mock.DeletePendingTransferOwnershipFunc(ctx, key)
+	mock.lockDeletePendingTransferKey.Lock()
+	mock.calls.DeletePendingTransferKey = append(mock.calls.DeletePendingTransferKey, callInfo)
+	mock.lockDeletePendingTransferKey.Unlock()
+	mock.DeletePendingTransferKeyFunc(ctx, key)
 }
 
-// DeletePendingTransferOwnershipCalls gets all the calls that were made to DeletePendingTransferOwnership.
+// DeletePendingTransferKeyCalls gets all the calls that were made to DeletePendingTransferKey.
 // Check the length with:
-//     len(mockedChainKeeper.DeletePendingTransferOwnershipCalls())
-func (mock *ChainKeeperMock) DeletePendingTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.DeletePendingTransferKeyCalls())
+func (mock *ChainKeeperMock) DeletePendingTransferKeyCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Key exported.PollKey
 } {
@@ -2899,9 +2954,9 @@ func (mock *ChainKeeperMock) DeletePendingTransferOwnershipCalls() []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Key exported.PollKey
 	}
-	mock.lockDeletePendingTransferOwnership.RLock()
-	calls = mock.calls.DeletePendingTransferOwnership
-	mock.lockDeletePendingTransferOwnership.RUnlock()
+	mock.lockDeletePendingTransferKey.RLock()
+	calls = mock.calls.DeletePendingTransferKey
+	mock.lockDeletePendingTransferKey.RUnlock()
 	return calls
 }
 
@@ -2936,10 +2991,10 @@ func (mock *ChainKeeperMock) DeleteUnsignedBatchedCommandsCalls() []struct {
 	return calls
 }
 
-// GetArchivedTransferOwnership calls GetArchivedTransferOwnershipFunc.
-func (mock *ChainKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-	if mock.GetArchivedTransferOwnershipFunc == nil {
-		panic("ChainKeeperMock.GetArchivedTransferOwnershipFunc: method is nil but ChainKeeper.GetArchivedTransferOwnership was just called")
+// GetArchivedTransferKey calls GetArchivedTransferKeyFunc.
+func (mock *ChainKeeperMock) GetArchivedTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool) {
+	if mock.GetArchivedTransferKeyFunc == nil {
+		panic("ChainKeeperMock.GetArchivedTransferKeyFunc: method is nil but ChainKeeper.GetArchivedTransferKey was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -2948,16 +3003,16 @@ func (mock *ChainKeeperMock) GetArchivedTransferOwnership(ctx github_com_cosmos_
 		Ctx: ctx,
 		Key: key,
 	}
-	mock.lockGetArchivedTransferOwnership.Lock()
-	mock.calls.GetArchivedTransferOwnership = append(mock.calls.GetArchivedTransferOwnership, callInfo)
-	mock.lockGetArchivedTransferOwnership.Unlock()
-	return mock.GetArchivedTransferOwnershipFunc(ctx, key)
+	mock.lockGetArchivedTransferKey.Lock()
+	mock.calls.GetArchivedTransferKey = append(mock.calls.GetArchivedTransferKey, callInfo)
+	mock.lockGetArchivedTransferKey.Unlock()
+	return mock.GetArchivedTransferKeyFunc(ctx, key)
 }
 
-// GetArchivedTransferOwnershipCalls gets all the calls that were made to GetArchivedTransferOwnership.
+// GetArchivedTransferKeyCalls gets all the calls that were made to GetArchivedTransferKey.
 // Check the length with:
-//     len(mockedChainKeeper.GetArchivedTransferOwnershipCalls())
-func (mock *ChainKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.GetArchivedTransferKeyCalls())
+func (mock *ChainKeeperMock) GetArchivedTransferKeyCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Key exported.PollKey
 } {
@@ -2965,9 +3020,9 @@ func (mock *ChainKeeperMock) GetArchivedTransferOwnershipCalls() []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Key exported.PollKey
 	}
-	mock.lockGetArchivedTransferOwnership.RLock()
-	calls = mock.calls.GetArchivedTransferOwnership
-	mock.lockGetArchivedTransferOwnership.RUnlock()
+	mock.lockGetArchivedTransferKey.RLock()
+	calls = mock.calls.GetArchivedTransferKey
+	mock.lockGetArchivedTransferKey.RUnlock()
 	return calls
 }
 
@@ -3576,10 +3631,10 @@ func (mock *ChainKeeperMock) GetPendingTokenDeploymentCalls() []struct {
 	return calls
 }
 
-// GetPendingTransferOwnership calls GetPendingTransferOwnershipFunc.
-func (mock *ChainKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferOwnership, bool) {
-	if mock.GetPendingTransferOwnershipFunc == nil {
-		panic("ChainKeeperMock.GetPendingTransferOwnershipFunc: method is nil but ChainKeeper.GetPendingTransferOwnership was just called")
+// GetPendingTransferKey calls GetPendingTransferKeyFunc.
+func (mock *ChainKeeperMock) GetPendingTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) (types.TransferKey, bool) {
+	if mock.GetPendingTransferKeyFunc == nil {
+		panic("ChainKeeperMock.GetPendingTransferKeyFunc: method is nil but ChainKeeper.GetPendingTransferKey was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -3588,16 +3643,16 @@ func (mock *ChainKeeperMock) GetPendingTransferOwnership(ctx github_com_cosmos_c
 		Ctx: ctx,
 		Key: key,
 	}
-	mock.lockGetPendingTransferOwnership.Lock()
-	mock.calls.GetPendingTransferOwnership = append(mock.calls.GetPendingTransferOwnership, callInfo)
-	mock.lockGetPendingTransferOwnership.Unlock()
-	return mock.GetPendingTransferOwnershipFunc(ctx, key)
+	mock.lockGetPendingTransferKey.Lock()
+	mock.calls.GetPendingTransferKey = append(mock.calls.GetPendingTransferKey, callInfo)
+	mock.lockGetPendingTransferKey.Unlock()
+	return mock.GetPendingTransferKeyFunc(ctx, key)
 }
 
-// GetPendingTransferOwnershipCalls gets all the calls that were made to GetPendingTransferOwnership.
+// GetPendingTransferKeyCalls gets all the calls that were made to GetPendingTransferKey.
 // Check the length with:
-//     len(mockedChainKeeper.GetPendingTransferOwnershipCalls())
-func (mock *ChainKeeperMock) GetPendingTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.GetPendingTransferKeyCalls())
+func (mock *ChainKeeperMock) GetPendingTransferKeyCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Key exported.PollKey
 } {
@@ -3605,9 +3660,9 @@ func (mock *ChainKeeperMock) GetPendingTransferOwnershipCalls() []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		Key exported.PollKey
 	}
-	mock.lockGetPendingTransferOwnership.RLock()
-	calls = mock.calls.GetPendingTransferOwnership
-	mock.lockGetPendingTransferOwnership.RUnlock()
+	mock.lockGetPendingTransferKey.RLock()
+	calls = mock.calls.GetPendingTransferKey
+	mock.lockGetPendingTransferKey.RUnlock()
 	return calls
 }
 
@@ -4210,42 +4265,42 @@ func (mock *ChainKeeperMock) SetPendingTokenDeploymentCalls() []struct {
 	return calls
 }
 
-// SetPendingTransferOwnership calls SetPendingTransferOwnershipFunc.
-func (mock *ChainKeeperMock) SetPendingTransferOwnership(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferOwnership) {
-	if mock.SetPendingTransferOwnershipFunc == nil {
-		panic("ChainKeeperMock.SetPendingTransferOwnershipFunc: method is nil but ChainKeeper.SetPendingTransferOwnership was just called")
+// SetPendingTransferKey calls SetPendingTransferKeyFunc.
+func (mock *ChainKeeperMock) SetPendingTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey, transferOwnership *types.TransferKey) {
+	if mock.SetPendingTransferKeyFunc == nil {
+		panic("ChainKeeperMock.SetPendingTransferKeyFunc: method is nil but ChainKeeper.SetPendingTransferKey was just called")
 	}
 	callInfo := struct {
 		Ctx               github_com_cosmos_cosmos_sdk_types.Context
 		Key               exported.PollKey
-		TransferOwnership *types.TransferOwnership
+		TransferOwnership *types.TransferKey
 	}{
 		Ctx:               ctx,
 		Key:               key,
 		TransferOwnership: transferOwnership,
 	}
-	mock.lockSetPendingTransferOwnership.Lock()
-	mock.calls.SetPendingTransferOwnership = append(mock.calls.SetPendingTransferOwnership, callInfo)
-	mock.lockSetPendingTransferOwnership.Unlock()
-	mock.SetPendingTransferOwnershipFunc(ctx, key, transferOwnership)
+	mock.lockSetPendingTransferKey.Lock()
+	mock.calls.SetPendingTransferKey = append(mock.calls.SetPendingTransferKey, callInfo)
+	mock.lockSetPendingTransferKey.Unlock()
+	mock.SetPendingTransferKeyFunc(ctx, key, transferOwnership)
 }
 
-// SetPendingTransferOwnershipCalls gets all the calls that were made to SetPendingTransferOwnership.
+// SetPendingTransferKeyCalls gets all the calls that were made to SetPendingTransferKey.
 // Check the length with:
-//     len(mockedChainKeeper.SetPendingTransferOwnershipCalls())
-func (mock *ChainKeeperMock) SetPendingTransferOwnershipCalls() []struct {
+//     len(mockedChainKeeper.SetPendingTransferKeyCalls())
+func (mock *ChainKeeperMock) SetPendingTransferKeyCalls() []struct {
 	Ctx               github_com_cosmos_cosmos_sdk_types.Context
 	Key               exported.PollKey
-	TransferOwnership *types.TransferOwnership
+	TransferOwnership *types.TransferKey
 } {
 	var calls []struct {
 		Ctx               github_com_cosmos_cosmos_sdk_types.Context
 		Key               exported.PollKey
-		TransferOwnership *types.TransferOwnership
+		TransferOwnership *types.TransferKey
 	}
-	mock.lockSetPendingTransferOwnership.RLock()
-	calls = mock.calls.SetPendingTransferOwnership
-	mock.lockSetPendingTransferOwnership.RUnlock()
+	mock.lockSetPendingTransferKey.RLock()
+	calls = mock.calls.SetPendingTransferKey
+	mock.lockSetPendingTransferKey.RUnlock()
 	return calls
 }
 

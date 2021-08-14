@@ -94,7 +94,7 @@ func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 			query = keeper.QConsolidationAddressByKeyID
 			param = keyID
 		default:
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "one and only one of the two flags key-role and key-id has to be set")
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "one and only one of the two flags key_role and key_id has to be set")
 			return
 		}
 

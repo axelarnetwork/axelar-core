@@ -1,18 +1,19 @@
-## axelard query evm master-address
+## axelard query evm address
 
-Returns the EVM address of the current master key, and optionally the key's ID
+Returns the EVM address
 
 ```
-axelard query evm master-address [chain] [flags]
+axelard query evm address [chain] [flags]
 ```
 
 ### Options
 
 ```
-      --height int       Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help             help for master-address
-      --include-key-id   include the current master key ID in the output
-      --node string      <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --height int        Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help              help for address
+      --key-id string     the ID of the key to get the address for
+      --key-role string   the role of the key to get the address for
+      --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands
