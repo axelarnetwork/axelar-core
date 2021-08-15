@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/armon/go-metrics"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -43,82 +44,51 @@ func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.
 	}
 }
 
+func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	validator := s.snapshotter.GetOperator(ctx, req.Sender)
+	if validator.Empty() {
+		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
+	}
+
+	if s.IsOperatorAvailable(ctx, req.ID, req.AckType, validator) {
+		return nil, fmt.Errorf("sender [%s] already submitted an ACK message for keygen/sig ID %s", req.Sender, req.ID)
+	}
+
+	switch req.AckType {
+	case exported.AckType_Keygen:
+		if s.HasKeygenStarted(ctx, req.ID) {
+			return nil, fmt.Errorf("late keygen ACK message (key ID '%s' is already in use)", req.ID)
+		}
+		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
+			req.ID, ctx.BlockHeight(), req.Sender.String()))
+
+	case exported.AckType_Sign:
+		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
+			return nil, fmt.Errorf("late sign ACK message (sig ID '%s' is already in use)", req.ID)
+
+		}
+		s.Logger(ctx).Info(fmt.Sprintf("received sign acknowledgment for id [%s] at height %d from %s",
+			req.ID, ctx.BlockHeight(), req.Sender.String()))
+
+	default:
+		return nil, fmt.Errorf("unknown ack type")
+	}
+
+	s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
+	return &types.AckResponse{}, nil
+}
+
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	// record the snapshot of active validators that we'll use for the key
-	snapshotConsensusPower, totalConsensusPower, err := s.snapshotter.TakeSnapshot(ctx, req.SubsetSize, req.KeyShareDistributionPolicy)
-	if err != nil {
-		return nil, err
+	if s.HasKeygenStarted(ctx, req.NewKeyID) {
+		return nil, fmt.Errorf("key ID '%s' is already in use", req.NewKeyID)
 	}
 
-	snapshot, ok := s.snapshotter.GetLatestSnapshot(ctx)
-	if !ok {
-		return nil, fmt.Errorf("the system needs to have at least one validator snapshot")
-	}
-
-	if !s.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
-		msg := fmt.Sprintf(
-			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
-			snapshotConsensusPower.String(),
-			totalConsensusPower.String(),
-		)
-		s.Logger(ctx).Info(msg)
-
-		return nil, fmt.Errorf(msg)
-	}
-
-	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.NewKeyID, snapshot); err != nil {
-		return nil, err
-	}
-
-	participants := make([]string, 0, len(snapshot.Validators))
-	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
-	for _, validator := range snapshot.Validators {
-		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
-		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
-	}
-
-	threshold, found := s.GetCorruptionThreshold(ctx, req.NewKeyID)
-	// if this value is set to false, then something is really wrong, since a successful
-	// invocation of StartKeygen should automatically set the corruption threshold for the key ID
-	if !found {
-		return nil, fmt.Errorf("could not find corruption threshold for key ID %s", req.NewKeyID)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
-			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
-		),
-	)
-
-	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
-
-	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, "corruption", "threshold"},
-		float32(threshold),
-		[]metrics.Label{telemetry.NewLabel("keyID", req.NewKeyID)})
-
-	t := s.GetMinKeygenThreshold(ctx)
-	telemetry.SetGauge(float32(t.Numerator*100/t.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
-
-	// metrics for keygen participation
-	ts := time.Now().Unix()
-	for _, validator := range snapshot.Validators {
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "keygen", "participation"},
-			float32(validator.ShareCount),
-			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("keyID", req.NewKeyID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-			})
-	}
+	s.ScheduleKeygen(ctx, *req)
+	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.NewKeyID))
 
 	return &types.StartKeygenResponse{}, nil
 }

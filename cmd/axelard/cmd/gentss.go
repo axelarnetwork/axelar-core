@@ -17,17 +17,21 @@ import (
 )
 
 const (
-	flagKeygen     = "keygen"
-	flagCorruption = "corruption"
+	flagKeygen       = "keygen"
+	flagCorruption   = "corruption"
+	flagAck          = "ack-window"
+	flagBondFraction = "bond-fraction"
 )
 
 // SetGenesisTSSCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		period     int64
-		keygen     string
-		corruption string
+		period       int64
+		ackWindow    int64
+		keygen       string
+		corruption   string
+		bondFraction string
 	)
 
 	cmd := &cobra.Command{
@@ -55,6 +59,10 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 				genesisTSS.Params.LockingPeriod = period
 			}
 
+			if ackWindow > 0 {
+				genesisTSS.Params.AckWindowInBlocks = ackWindow
+			}
+
 			if keygen != "" {
 				threshold, err := parseThreshold(keygen)
 				if err != nil {
@@ -69,6 +77,14 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 					return err
 				}
 				genesisTSS.Params.CorruptionThreshold = threshold
+			}
+
+			if bondFraction != "" {
+				threshold, err := parseThreshold(bondFraction)
+				if err != nil {
+					return err
+				}
+				genesisTSS.Params.MinBondFractionPerShare = threshold
 			}
 
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
@@ -90,8 +106,10 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
 	cmd.Flags().Int64Var(&period, flagLockingPeriod, 0, "A positive integer representing the locking period for validators in terms of number of blocks")
+	cmd.Flags().Int64Var(&ackWindow, flagAck, 0, "A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks")
 	cmd.Flags().StringVar(&keygen, flagKeygen, "", "The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., \"9/10\").")
 	cmd.Flags().StringVar(&corruption, flagCorruption, "", "The corruption threshold with which Axelar Core will run the keygen protocol (e.g., \"2/3\").")
+	cmd.Flags().StringVar(&bondFraction, flagBondFraction, "", "The % of stake validators have to bond per key share (e.g., \"1/200\").")
 
 	return cmd
 }

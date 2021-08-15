@@ -12,6 +12,7 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&AckRequest{}, "tss/AckRequest", nil)
 	cdc.RegisterConcrete(&StartKeygenRequest{}, "tss/StartKeygen", nil)
 	cdc.RegisterConcrete(&ProcessKeygenTrafficResponse{}, "tss/KeygenTraffic", nil)
 	cdc.RegisterConcrete(&ProcessSignTrafficRequest{}, "tss/SignTraffic", nil)
@@ -23,6 +24,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&AckRequest{},
 		&StartKeygenRequest{},
 		&ProcessKeygenTrafficRequest{},
 		&ProcessSignTrafficRequest{},

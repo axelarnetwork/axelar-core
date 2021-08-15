@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/ethereum/go-ethereum/common/math"
 )
 
@@ -272,4 +274,14 @@ func (g DistinctStrGen) Next() string {
 		g.previous[s] = true
 		return s
 	}
+}
+
+// ValAddr generates a random validator address
+func ValAddr() sdk.ValAddress {
+	return Bytes(sdk.AddrLen)
+}
+
+// AccAddr generates a random cosmos address
+func AccAddr() sdk.AccAddress {
+	return Bytes(sdk.AddrLen)
 }
