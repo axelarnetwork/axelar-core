@@ -1857,6 +1857,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeletePendingOutPointInfoFunc: func(ctx sdk.Context, key voteexported.PollKey)  {
 // 				panic("mock out the DeletePendingOutPointInfo method")
 // 			},
+// 			DeleteScheduledTxsFunc: func(ctx sdk.Context)  {
+// 				panic("mock out the DeleteScheduledTxs method")
+// 			},
 // 			DeleteUnsignedTxFunc: func(ctx sdk.Context, keyRole tssexported.KeyRole)  {
 // 				panic("mock out the DeleteUnsignedTx method")
 // 			},
@@ -1983,6 +1986,9 @@ type BTCKeeperMock struct {
 
 	// DeletePendingOutPointInfoFunc mocks the DeletePendingOutPointInfo method.
 	DeletePendingOutPointInfoFunc func(ctx sdk.Context, key voteexported.PollKey)
+
+	// DeleteScheduledTxsFunc mocks the DeleteScheduledTxs method.
+	DeleteScheduledTxsFunc func(ctx sdk.Context)
 
 	// DeleteUnsignedTxFunc mocks the DeleteUnsignedTx method.
 	DeleteUnsignedTxFunc func(ctx sdk.Context, keyRole tssexported.KeyRole)
@@ -2117,6 +2123,11 @@ type BTCKeeperMock struct {
 			Ctx sdk.Context
 			// Key is the key argument value.
 			Key voteexported.PollKey
+		}
+		// DeleteScheduledTxs holds details about calls to the DeleteScheduledTxs method.
+		DeleteScheduledTxs []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// DeleteUnsignedTx holds details about calls to the DeleteUnsignedTx method.
 		DeleteUnsignedTx []struct {
@@ -2367,6 +2378,7 @@ type BTCKeeperMock struct {
 	lockDeleteDustAmount                    sync.RWMutex
 	lockDeleteOutpointInfo                  sync.RWMutex
 	lockDeletePendingOutPointInfo           sync.RWMutex
+	lockDeleteScheduledTxs                  sync.RWMutex
 	lockDeleteUnsignedTx                    sync.RWMutex
 	lockGetAddress                          sync.RWMutex
 	lockGetAnyoneCanSpendAddress            sync.RWMutex
@@ -2508,6 +2520,37 @@ func (mock *BTCKeeperMock) DeletePendingOutPointInfoCalls() []struct {
 	mock.lockDeletePendingOutPointInfo.RLock()
 	calls = mock.calls.DeletePendingOutPointInfo
 	mock.lockDeletePendingOutPointInfo.RUnlock()
+	return calls
+}
+
+// DeleteScheduledTxs calls DeleteScheduledTxsFunc.
+func (mock *BTCKeeperMock) DeleteScheduledTxs(ctx sdk.Context) {
+	if mock.DeleteScheduledTxsFunc == nil {
+		panic("BTCKeeperMock.DeleteScheduledTxsFunc: method is nil but BTCKeeper.DeleteScheduledTxs was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDeleteScheduledTxs.Lock()
+	mock.calls.DeleteScheduledTxs = append(mock.calls.DeleteScheduledTxs, callInfo)
+	mock.lockDeleteScheduledTxs.Unlock()
+	mock.DeleteScheduledTxsFunc(ctx)
+}
+
+// DeleteScheduledTxsCalls gets all the calls that were made to DeleteScheduledTxs.
+// Check the length with:
+//     len(mockedBTCKeeper.DeleteScheduledTxsCalls())
+func (mock *BTCKeeperMock) DeleteScheduledTxsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockDeleteScheduledTxs.RLock()
+	calls = mock.calls.DeleteScheduledTxs
+	mock.lockDeleteScheduledTxs.RUnlock()
 	return calls
 }
 

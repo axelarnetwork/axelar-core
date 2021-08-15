@@ -66,8 +66,10 @@ type BTCKeeper interface {
 
 	SetExternalKeyIDs(ctx sdk.Context, keyIDs []string)
 	GetExternalKeyIDs(ctx sdk.Context) ([]string, bool)
+
 	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
 	GetScheduledTxs(ctx sdk.Context) []ScheduledUnsignedTx
+	DeleteScheduledTxs(ctx sdk.Context)
 }
 
 // Voter is the interface that provides voting functionality

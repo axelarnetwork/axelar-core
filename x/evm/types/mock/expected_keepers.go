@@ -1688,6 +1688,12 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
 // 				panic("mock out the DeletePendingChain method")
 // 			},
+// 			DeleteScheduledCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
+// 				panic("mock out the DeleteScheduledCommands method")
+// 			},
+// 			DeleteScheduledTxsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
+// 				panic("mock out the DeleteScheduledTxs method")
+// 			},
 // 			ForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper {
 // 				panic("mock out the ForChain method")
 // 			},
@@ -1728,6 +1734,12 @@ type BaseKeeperMock struct {
 	// DeletePendingChainFunc mocks the DeletePendingChain method.
 	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
 
+	// DeleteScheduledCommandsFunc mocks the DeleteScheduledCommands method.
+	DeleteScheduledCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context)
+
+	// DeleteScheduledTxsFunc mocks the DeleteScheduledTxs method.
+	DeleteScheduledTxsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context)
+
 	// ForChainFunc mocks the ForChain method.
 	ForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) types.ChainKeeper
 
@@ -1766,6 +1778,16 @@ type BaseKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// DeleteScheduledCommands holds details about calls to the DeleteScheduledCommands method.
+		DeleteScheduledCommands []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// DeleteScheduledTxs holds details about calls to the DeleteScheduledTxs method.
+		DeleteScheduledTxs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
@@ -1835,6 +1857,8 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockDeletePendingChain           sync.RWMutex
+	lockDeleteScheduledCommands      sync.RWMutex
+	lockDeleteScheduledTxs           sync.RWMutex
 	lockForChain                     sync.RWMutex
 	lockGetParams                    sync.RWMutex
 	lockGetPendingChain              sync.RWMutex
@@ -1879,6 +1903,68 @@ func (mock *BaseKeeperMock) DeletePendingChainCalls() []struct {
 	mock.lockDeletePendingChain.RLock()
 	calls = mock.calls.DeletePendingChain
 	mock.lockDeletePendingChain.RUnlock()
+	return calls
+}
+
+// DeleteScheduledCommands calls DeleteScheduledCommandsFunc.
+func (mock *BaseKeeperMock) DeleteScheduledCommands(ctx github_com_cosmos_cosmos_sdk_types.Context) {
+	if mock.DeleteScheduledCommandsFunc == nil {
+		panic("BaseKeeperMock.DeleteScheduledCommandsFunc: method is nil but BaseKeeper.DeleteScheduledCommands was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDeleteScheduledCommands.Lock()
+	mock.calls.DeleteScheduledCommands = append(mock.calls.DeleteScheduledCommands, callInfo)
+	mock.lockDeleteScheduledCommands.Unlock()
+	mock.DeleteScheduledCommandsFunc(ctx)
+}
+
+// DeleteScheduledCommandsCalls gets all the calls that were made to DeleteScheduledCommands.
+// Check the length with:
+//     len(mockedBaseKeeper.DeleteScheduledCommandsCalls())
+func (mock *BaseKeeperMock) DeleteScheduledCommandsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockDeleteScheduledCommands.RLock()
+	calls = mock.calls.DeleteScheduledCommands
+	mock.lockDeleteScheduledCommands.RUnlock()
+	return calls
+}
+
+// DeleteScheduledTxs calls DeleteScheduledTxsFunc.
+func (mock *BaseKeeperMock) DeleteScheduledTxs(ctx github_com_cosmos_cosmos_sdk_types.Context) {
+	if mock.DeleteScheduledTxsFunc == nil {
+		panic("BaseKeeperMock.DeleteScheduledTxsFunc: method is nil but BaseKeeper.DeleteScheduledTxs was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDeleteScheduledTxs.Lock()
+	mock.calls.DeleteScheduledTxs = append(mock.calls.DeleteScheduledTxs, callInfo)
+	mock.lockDeleteScheduledTxs.Unlock()
+	mock.DeleteScheduledTxsFunc(ctx)
+}
+
+// DeleteScheduledTxsCalls gets all the calls that were made to DeleteScheduledTxs.
+// Check the length with:
+//     len(mockedBaseKeeper.DeleteScheduledTxsCalls())
+func (mock *BaseKeeperMock) DeleteScheduledTxsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockDeleteScheduledTxs.RLock()
+	calls = mock.calls.DeleteScheduledTxs
+	mock.lockDeleteScheduledTxs.RUnlock()
 	return calls
 }
 

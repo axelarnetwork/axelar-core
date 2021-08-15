@@ -78,7 +78,7 @@ func (k keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetScheduledUnsignedCommand returns all sign infos scheduled for the current height
+// GetScheduledUnsignedCommand returns all commands scheduled for the current height
 func (k keeper) GetScheduledUnsignedCommands(ctx sdk.Context) []types.ScheduledUnsignedCommand {
 	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
 	bz := ctx.KVStore(k.storeKey).Get(key)
@@ -95,7 +95,7 @@ func (k keeper) GetScheduledUnsignedCommands(ctx sdk.Context) []types.ScheduledU
 	return cmds.Cmds
 }
 
-// ScheduleUnsignedCommand schedules a sign info for processing at the specified height
+// ScheduleUnsignedCommand schedules a command for processing at the specified height
 func (k keeper) ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedCommand) {
 	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, height))
 	bz := ctx.KVStore(k.storeKey).Get(key)
@@ -111,7 +111,13 @@ func (k keeper) ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd types
 	ctx.KVStore(k.storeKey).Set(key, bz)
 }
 
-// GetScheduledUnsignedTxs returns all sign infos scheduled for the current height
+// DeleteScheduledCommands deletes all commands scheduled for the current height
+func (k keeper) DeleteScheduledCommands(ctx sdk.Context) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Delete(key)
+}
+
+// GetScheduledUnsignedTxs returns all txs scheduled for the current height
 func (k keeper) GetScheduledUnsignedTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
 	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
 	bz := ctx.KVStore(k.storeKey).Get(key)
@@ -129,7 +135,7 @@ func (k keeper) GetScheduledUnsignedTxs(ctx sdk.Context) []types.ScheduledUnsign
 	return cmds.Txs
 }
 
-// ScheduleUnsignedTx schedules a sign info for processing at the specified height
+// ScheduleUnsignedTx schedules a tx for processing at the specified height
 func (k keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedTx) {
 	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, height))
 	bz := ctx.KVStore(k.storeKey).Get(key)
@@ -142,6 +148,12 @@ func (k keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, cmd types.Sche
 
 	bz = k.cdc.MustMarshalBinaryLengthPrefixed(&cmds)
 	ctx.KVStore(k.storeKey).Set(key, bz)
+}
+
+// DeleteScheduledTxs deletes all txs scheduled for the current height
+func (k keeper) DeleteScheduledTxs(ctx sdk.Context) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Delete(key)
 }
 
 // GetChain returns the keeper associated to the given chain

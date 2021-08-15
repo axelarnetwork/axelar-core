@@ -16,6 +16,7 @@ import (
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -136,38 +137,40 @@ func TestComputeAndSetCorruptionThreshold(t *testing.T) {
 }
 
 func TestAvailableOperator(t *testing.T) {
-	s := setup()
-	acks := []exported.AckType{exported.AckType_Keygen, exported.AckType_Keygen}
-	repeats := int(rand.I64Between(5, 20))
-	snapshotSeq := rand.I64Between(1, 100)
+	t.Run("testing available operators", testutils.Func(func(t *testing.T) {
+		s := setup()
+		acks := []exported.AckType{exported.AckType_Keygen, exported.AckType_Keygen}
+		repeats := int(rand.I64Between(5, 20))
+		snapshotSeq := rand.I64Between(1, 100)
 
-	for i := 0; i < repeats; i++ {
-		id := rand.StrBetween(5, 10)
-		index := int(rand.I64Between(0, int64(len(acks)-1)))
-		ackType := acks[index]
-		index = int(rand.I64Between(0, int64(len(snap.Validators)-1)))
-		validator := snap.Validators[index].GetSDKValidator().GetOperator()
-		snapshotSeq = snapshotSeq + rand.I64Between(1, 10)
+		for i := 0; i < repeats; i++ {
+			id := rand.StrBetween(5, 10)
+			index := int(rand.I64Between(0, int64(len(acks)-1)))
+			ackType := acks[index]
+			index = int(rand.I64Between(0, int64(len(snap.Validators)-1)))
+			validator := snap.Validators[index].GetSDKValidator().GetOperator()
+			snapshotSeq = snapshotSeq + rand.I64Between(1, 10)
 
-		// not yet available
-		assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+			// not yet available
+			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
 
-		// available
-		err := s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
-		assert.NoError(t, err)
-		assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+			// available
+			err := s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
+			assert.NoError(t, err)
+			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
 
-		// replaying
-		err = s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
-		assert.EqualError(t, err, "validator already submitted its ack for the specified ID and type")
+			// replaying
+			err = s.Keeper.SetAvailableOperator(s.Ctx, id, ackType, validator)
+			assert.EqualError(t, err, "validator already submitted its ack for the specified ID and type")
 
-		// linked to counter
-		assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
-		s.Keeper.LinkAvailableOperatorsToSnapshot(s.Ctx, id, ackType, snapshotSeq)
-		assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
+			// linked to counter
+			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
+			s.Keeper.LinkAvailableOperatorsToSnapshot(s.Ctx, id, ackType, snapshotSeq)
+			assert.True(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, validator))
 
-		// delete available
-		s.Keeper.DeleteAvailableOperators(s.Ctx, id, ackType)
-		assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
-	}
+			// delete available
+			s.Keeper.DeleteAvailableOperators(s.Ctx, id, ackType)
+			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
+		}
+	}).Repeat(20))
 }

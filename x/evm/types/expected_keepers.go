@@ -28,8 +28,11 @@ type BaseKeeper interface {
 
 	GetScheduledUnsignedCommands(ctx sdk.Context) []ScheduledUnsignedCommand
 	ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd ScheduledUnsignedCommand)
+	DeleteScheduledCommands(ctx sdk.Context)
+
 	GetScheduledUnsignedTxs(ctx sdk.Context) []ScheduledUnsignedTx
 	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
+	DeleteScheduledTxs(ctx sdk.Context)
 
 	ForChain(ctx sdk.Context, chain string) ChainKeeper
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)

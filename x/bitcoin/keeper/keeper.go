@@ -405,3 +405,9 @@ func (k Keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, tx types.Sched
 	infos.Infos = append(infos.Infos, tx)
 	k.getStore(ctx).Set(key, &infos)
 }
+
+// DeleteScheduledTxs deletes all unsigned txs scheduled for the current height
+func (k Keeper) DeleteScheduledTxs(ctx sdk.Context) {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", ctx.BlockHeight())))
+	k.getStore(ctx).Delete(key)
+}
