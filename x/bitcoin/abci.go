@@ -40,6 +40,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	for _, tx := range txs {
 		processScheduledTx(ctx, tx, k, signer, voter, snapshotter)
 	}
+	k.DeleteScheduledTxs(ctx)
 
 	if req.Height%k.GetSigCheckInterval(ctx) != 0 {
 		return nil

@@ -26,6 +26,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, baseKeeper types.BaseKe
 	for _, tx := range txs {
 		processScheduledTx(ctx, tx, baseKeeper, signer, voter, snapshotter, nexus)
 	}
+	baseKeeper.DeleteScheduledTxs(ctx)
 
 	cmds := baseKeeper.GetScheduledUnsignedCommands(ctx)
 	if len(cmds) > 0 {
@@ -34,6 +35,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, baseKeeper types.BaseKe
 	for _, cmd := range cmds {
 		processScheduledCommand(ctx, cmd, baseKeeper, signer, voter, snapshotter)
 	}
+	baseKeeper.DeleteScheduledCommands(ctx)
 
 	return nil
 }
