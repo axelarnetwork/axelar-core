@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -212,20 +213,25 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	var message string
+	pollKey := vote.NewPollKey(types.ModuleName, txID+"_"+depositAddress)
+	_, isPending := k.GetPendingDeposit(ctx, pollKey)
 	_, state, ok := k.GetDeposit(ctx, common.HexToHash(txID), common.HexToAddress(depositAddress))
+
+	var depositState types.QueryDepositStateResponse
 	switch {
-	case !ok:
-		message = "deposit transaction state is not confirmed"
+	case isPending:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Pending, Log: "deposit transaction is waiting for confirmation"}
+	case !isPending && !ok:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_None, Log: "deposit transaction is not confirmed"}
 	case state == types.CONFIRMED:
-		message = "deposit transaction state is confirmed"
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Confirmed, Log: "deposit transaction is confirmed"}
 	case state == types.BURNED:
-		message = "deposit transaction state is burned"
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
 	default:
-		message = "unexpected deposit transaction state"
+		return nil, fmt.Errorf("deposit is in an unexpected state")
 	}
 
-	return []byte(message), nil
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
 }
 
 /*

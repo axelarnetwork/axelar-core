@@ -4,6 +4,7 @@ package evm.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
+import "evm/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -18,4 +19,9 @@ message DepositQueryParams {
 message QueryMasterAddressResponse {
   bytes address = 1;
   string key_id = 2;
+}
+
+message QueryDepositStateResponse {
+  string log = 1;
+  DepositStatus status = 2;
 }

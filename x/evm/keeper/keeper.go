@@ -497,7 +497,7 @@ func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey)
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
 func (k keeper) DeletePendingDeposit(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete([]byte(pendingTokenPrefix + key.String()))
+	k.getStore(ctx, k.chain).Delete([]byte(pendingDepositPrefix + key.String()))
 }
 
 // GetPendingDeposit returns the deposit associated with the given poll

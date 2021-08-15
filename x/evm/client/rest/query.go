@@ -292,6 +292,32 @@ func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// GetHandlerQueryDepositState returns a handler to query the state of an ERC20 deposit confirmation
+func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		txID := mux.Vars(r)[utils.PathVarTxID]
+		depositAddress := mux.Vars(r)[utils.PathVarEthereumAddress]
+
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", types.QuerierRoute, keeper.QDepositState, chain, txID, depositAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
+			return
+		}
+
+		var res types.QueryDepositStateResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
 func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, bool) {
 	glStr := r.URL.Query().Get(QueryParamGasLimit)
 	gl, err := strconv.ParseUint(glStr, 10, 64)

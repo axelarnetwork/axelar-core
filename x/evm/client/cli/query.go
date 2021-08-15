@@ -153,14 +153,17 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.QDepositState, args[0], args[1], args[2]), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.QDepositState, args[0], args[1], args[2]), nil)
 			if err != nil {
 				fmt.Printf(types.ErrFTokenAddress, err.Error())
 
 				return nil
 			}
 
-			return cliCtx.PrintObjectLegacy(string(res))
+			var res types.QueryDepositStateResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return cliCtx.PrintProto(&res)
 		},
 	}
 
