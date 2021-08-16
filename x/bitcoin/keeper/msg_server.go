@@ -401,6 +401,8 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		}
 	}
 
+	signInfos := make([]tss.SignInfo, 0)
+	var height int64
 	for _, inputInfo := range unsignedTx.Info.InputInfos {
 		for _, sigRequirement := range inputInfo.SigRequirements {
 			sigID := getSigID(sigRequirement.SigHash, sigRequirement.KeyID)
@@ -420,21 +422,23 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			if err := s.signer.StartSign(ctx, s.voter, sigRequirement.KeyID, sigID, sigRequirement.SigHash, snapshot); err != nil {
-				return nil, err
-			}
+			// since it is invoked always with the same context, the function will always return the same height
+			height = s.signer.AnnounceSign(ctx, sigRequirement.KeyID, sigID)
+			signInfos = append(signInfos, tss.SignInfo{
+				KeyID:           sigRequirement.KeyID,
+				SigID:           sigID,
+				Msg:             sigRequirement.SigHash,
+				SnapshotCounter: snapshot.Counter,
+			})
 		}
 	}
-
 	unsignedTx.SetTx(tx)
 	unsignedTx.Status = types.Signing
-	s.SetUnsignedTx(ctx, req.KeyRole, unsignedTx)
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigning),
-		sdk.NewAttribute(types.AttributeKeyRole, req.KeyRole.SimpleString()),
-	))
+	s.ScheduleUnsignedTx(ctx, height, types.ScheduledUnsignedTx{
+		UnsignedTx: unsignedTx,
+		KeyRole:    req.KeyRole,
+		SignInfos:  signInfos,
+	})
 
 	return &types.SignTxResponse{}, nil
 }

@@ -32,6 +32,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdMasterAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
+		GetCmdDepositState(queryRoute),
 		GetCmdCreateDeployTx(queryRoute),
 		GetCmdBytecode(queryRoute),
 		GetCmdSignedTx(queryRoute),
@@ -133,6 +134,36 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 
 			out := common.BytesToAddress(res)
 			return cliCtx.PrintObjectLegacy(out.Hex())
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdDepositState returns the query for an ERC20 deposit transaction state
+func GetCmdDepositState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deposit-state [chain] [txID] [deposit address]",
+		Short: "Query the state of a deposit transaction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", queryRoute, keeper.QDepositState, args[0], args[1], args[2]), nil)
+			if err != nil {
+				fmt.Printf(types.ErrFTokenAddress, err.Error())
+
+				return nil
+			}
+
+			var res types.QueryDepositStateResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return cliCtx.PrintProto(&res)
 		},
 	}
 

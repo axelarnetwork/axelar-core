@@ -27,9 +27,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type VoteStatus int32
 
 const (
-	Unspecified VoteStatus = 0
-	Pending     VoteStatus = 1
-	Decided     VoteStatus = 2
+	VoteStatus_Unspecified VoteStatus = 0
+	VoteStatus_Pending     VoteStatus = 1
+	VoteStatus_Decided     VoteStatus = 2
 )
 
 var VoteStatus_name = map[int32]string{

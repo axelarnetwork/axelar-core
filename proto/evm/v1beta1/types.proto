@@ -4,8 +4,32 @@ package evm.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
+import "evm/v1beta1/tx.proto";
+import "nexus/exported/v1beta1/types.proto";
+import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+
+message ScheduledUnsignedTxs {
+  repeated ScheduledUnsignedTx txs = 1 [ (gogoproto.nullable) = false ];
+}
+
+message ScheduledUnsignedTx {
+  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string chain = 2;
+  tss.exported.v1beta1.SignInfo sign_info = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ScheduledUnsignedCommands {
+  repeated ScheduledUnsignedCommand cmds = 1 [ (gogoproto.nullable) = false ];
+}
+
+message ScheduledUnsignedCommand {
+  string chain = 2;
+  bytes command_id = 3 [ (gogoproto.customname) = "CommandID" ];
+  bytes command_data = 4;
+  tss.exported.v1beta1.SignInfo sign_info = 5 [ (gogoproto.nullable) = false ];
+}
 
 // NetworkInfo describes information about a network
 message NetworkInfo {
@@ -61,4 +85,15 @@ message TransferOwnership {
   ];
 
   string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
+}
+
+enum DepositStatus {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  DEPOSIT_STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  DEPOSIT_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  DEPOSIT_STATUS_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  DEPOSIT_STATUS_BURNED = 3 [ (gogoproto.enumvalue_customname) = "Burned" ];
 }

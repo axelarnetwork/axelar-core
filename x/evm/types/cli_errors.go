@@ -12,4 +12,5 @@ const (
 	ErrFBytecode       = "could not get the bytecodes for contract %s"
 	ErrFSendTx         = "could not send the transaction with txID %s"
 	ErrFSendCommandTx  = "could not send %s transaction executing command %s"
+	ErrFDepositState   = "could not get the deposit transaction state"
 )

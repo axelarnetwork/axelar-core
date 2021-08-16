@@ -24,7 +24,7 @@ message QueryKeyResponse {
 }
 
 enum VoteStatus {
-  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_prefix) = true;
   option (gogoproto.goproto_enum_stringer) = true;
 
   VOTE_STATUS_UNSPECIFIED = 0

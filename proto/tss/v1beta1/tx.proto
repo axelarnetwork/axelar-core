@@ -70,3 +70,14 @@ message VoteSigRequest {
 }
 
 message VoteSigResponse {}
+
+message AckRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // can be either a key ID or a sig ID, depending on the type
+  string id = 2 [ (gogoproto.customname) = "ID" ];
+  tss.exported.v1beta1.AckType ack_type = 3;
+  int64 height = 4;
+}
+
+message AckResponse {}

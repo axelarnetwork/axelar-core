@@ -88,6 +88,18 @@ func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
 			return utils.Threshold{Numerator: 1, Denominator: 200}
 		},
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
+		OperatorIsAvailableForCounterFunc: func(_ sdk.Context, c int64, v sdk.ValAddress) bool {
+			if c != 0 {
+				return false
+			}
+
+			for _, validator := range validators {
+				if validator.GetOperator().String() == v.String() {
+					return true
+				}
+			}
+			return false
+		},
 	}
 
 	snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
@@ -111,7 +123,7 @@ func TestSnapshots(t *testing.T) {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
 			staker := newMockStaker(validators...)
-
+			var counter int64 = 0
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
 			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
@@ -136,6 +148,18 @@ func TestSnapshots(t *testing.T) {
 					return utils.Threshold{Numerator: 1, Denominator: 200}
 				},
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
+				OperatorIsAvailableForCounterFunc: func(_ sdk.Context, c int64, v sdk.ValAddress) bool {
+					if c != counter {
+						return false
+					}
+
+					for _, validator := range validators {
+						if validator.GetOperator().String() == v.String() {
+							return true
+						}
+					}
+					return false
+				},
 			}
 
 			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
@@ -172,6 +196,7 @@ func TestSnapshots(t *testing.T) {
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
+			counter++
 			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
 
 			assert.NoError(t, err)

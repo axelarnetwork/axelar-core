@@ -21,6 +21,17 @@ enum TxStatus {
   TX_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
 }
 
+message ScheduledUnsignedTxs {
+  repeated ScheduledUnsignedTx infos = 1 [ (gogoproto.nullable) = false ];
+}
+
+message ScheduledUnsignedTx {
+  UnsignedTx unsigned_tx = 1 [ (gogoproto.nullable) = false ];
+  tss.exported.v1beta1.KeyRole key_role = 2;
+  repeated tss.exported.v1beta1.SignInfo sign_infos = 3
+      [ (gogoproto.nullable) = false ];
+}
+
 message UnsignedTx {
   message Info {
     message InputInfo {
