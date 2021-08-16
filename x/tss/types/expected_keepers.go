@@ -72,18 +72,19 @@ type TSSKeeper interface {
 	GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
-	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error
-	GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool)
+	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
-	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
-	DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType)
+	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
+	DeleteScheduledKeygen(ctx sdk.Context, ID string)
+	DeleteScheduledSign(ctx sdk.Context, ID string)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
+	GetAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
 	DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType)
 	IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
 	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
@@ -105,4 +106,12 @@ type TSSKeeper interface {
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
+	GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus
+	SetSigIDStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
+	GetSignParticipants(ctx sdk.Context, sigID string) []string
+	SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator)
+	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
+	MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool
+	GetTotalShareCount(ctx sdk.Context, sigID string) int64
+	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
 }

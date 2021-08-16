@@ -50,7 +50,12 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
 
-	height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
+	height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+		KeyID:           keyID,
+		SigID:           sigID,
+		Msg:             msg,
+		SnapshotCounter: snap.Counter,
+	})
 
 	for _, val := range snap.Validators {
 		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
@@ -58,9 +63,14 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
+	s.Keeper.SetSignParticipants(s.Ctx, sigID, snap.Validators)
 
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msg, snap)
-	assert.EqualError(t, err, "not enough active validators are online: threshold [132], online share count [100]")
+	threshold, ok := s.Keeper.GetCorruptionThreshold(s.Ctx, keyID)
+	assert.True(t, ok)
+
+	ok = s.Keeper.MeetsThreshold(s.Ctx, sigID, threshold)
+	assert.False(t, ok)
+	assert.Equal(t, int64(100), s.Keeper.GetTotalShareCount(s.Ctx, sigID))
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
@@ -72,32 +82,40 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
-
-	for _, val := range snap.Validators {
-		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
-		assert.NoError(t, err)
-	}
-
-	s.Ctx = s.Ctx.WithBlockHeight(height)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
+	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+		KeyID:           keyID,
+		SigID:           sigID,
+		Msg:             msgToSign,
+		SnapshotCounter: snap.Counter,
+	})
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
 	assert.NoError(t, err)
-	err = s.Keeper.StartSign(s.Ctx, s.Voter, keyID, sigID, msgToSign, snap)
-	assert.EqualError(t, err, "sigID sigID has been used before")
+	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+		KeyID:           keyID,
+		SigID:           sigID,
+		Msg:             msgToSign,
+		SnapshotCounter: snap.Counter,
+	})
+	assert.EqualError(t, err, "sigID 'sigID' has been used before")
 }
 
-func TestAnnounceSign(t *testing.T) {
-	t.Run("testing announce sign", testutils.Func(func(t *testing.T) {
+func TestScheduleSignEvents(t *testing.T) {
+	t.Run("testing scheduled sign events", testutils.Func(func(t *testing.T) {
 		s := setup()
 		currentHeight := s.Ctx.BlockHeight()
 		keyID := rand2.Str(20)
 		sigID := rand2.Str(20)
-		height := s.Keeper.AnnounceSign(s.Ctx, keyID, sigID)
+		height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+			KeyID:           keyID,
+			SigID:           sigID,
+			Msg:             rand.Bytes(20),
+			SnapshotCounter: snap.Counter,
+		})
+		assert.NoError(t, err)
 		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
 
 		assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)

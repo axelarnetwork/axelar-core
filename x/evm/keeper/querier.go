@@ -301,8 +301,8 @@ func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
 	}
 
-	sig, ok := s.GetSig(ctx, txID)
-	if !ok {
+	sig, status := s.GetSig(ctx, txID)
+	if status != tss.SigStatus_Signed {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
@@ -331,8 +331,8 @@ func sendSignedTx(ctx sdk.Context, k types.ChainKeeper, rpcs map[string]types.RP
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
 	}
 
-	sig, ok := s.GetSig(ctx, txID)
-	if !ok {
+	sig, status := s.GetSig(ctx, txID)
+	if status != tss.SigStatus_Signed {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
 	}
 
@@ -367,8 +367,8 @@ func createTxAndSend(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.
 	}
 
 	commandIDHex := common.Bytes2Hex(params.CommandID[:])
-	sig, ok := s.GetSig(ctx, commandIDHex)
-	if !ok {
+	sig, status := s.GetSig(ctx, commandIDHex)
+	if status != tss.SigStatus_Signed {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
 	}
 
@@ -417,8 +417,8 @@ func queryCommandData(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n ty
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	sig, ok := s.GetSig(ctx, commandIDHex)
-	if !ok {
+	sig, status := s.GetSig(ctx, commandIDHex)
+	if status != tss.SigStatus_Signed {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", commandIDHex))
 	}
 

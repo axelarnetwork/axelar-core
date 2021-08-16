@@ -1,125 +1,90 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
-	"strconv"
-	"time"
-
-	"github.com/armon/go-metrics"
-	"github.com/cosmos/cosmos-sdk/telemetry"
+	"math/big"
+	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-// AnnounceSign emits an event asking for acknowledgments for the specified key ID and sig ID.
-// It returns currentHeight + AckWindow, which is the height at which the module should schedule signing.
-func (k Keeper) AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64 {
+// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
+// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
+	status := k.GetSigStatus(ctx, info.SigID)
+	if status != exported.SigStatus_Unspecified && status != exported.SigStatus_Aborted {
+		return -1, fmt.Errorf("sigID '%s' has been used before", info.SigID)
+	}
+	k.SetSigIDStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
+
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	k.emitAckEvent(ctx, types.AttributeValueSign, keyID, sigID, height)
-	k.Logger(ctx).Info(fmt.Sprintf("anouncing signing for sig ID '%s' and key ID '%s'", sigID, keyID))
-	return height
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
+
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+
+	k.emitAckEvent(ctx, types.AttributeValueSign, info.KeyID, info.SigID, height)
+	k.Logger(ctx).Info(fmt.Sprintf(
+		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
+		info.SigID, info.KeyID, height, ctx.BlockHeight()))
+
+	return height, nil
 }
 
-// StartSign starts a tss signing protocol using the specified key for the given chain.
-func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
-	if _, ok := k.getKeyIDForSig(ctx, sigID); ok {
-		return fmt.Errorf("sigID %s has been used before", sigID)
-	}
-	k.SetKeyIDForSig(ctx, sigID, keyID)
+// GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
+func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignInfo {
+	prefix := fmt.Sprintf("%s%d_%s_", scheduledSignPrefix, ctx.BlockHeight(), exported.AckType_Sign.String())
+	store := ctx.KVStore(k.storeKey)
+	var infos []exported.SignInfo
 
-	// for now we recalculate the threshold
-	// might make sense to store it with the snapshot after keygen is done.
-	threshold, found := k.GetCorruptionThreshold(ctx, keyID)
-	if !found {
-		return fmt.Errorf("keyID %s has no corruption threshold defined", keyID)
-	}
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
-	var activeValidators []snapshot.Validator
-	activeShareCount := sdk.ZeroInt()
+	for ; iter.Valid(); iter.Next() {
 
-	available := k.getAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
-	validatorAvailable := make(map[string]bool)
-	for _, validator := range available {
-		validatorAvailable[validator.String()] = true
+		var info exported.SignInfo
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
+		infos = append(infos, info)
 	}
 
-	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) &&
-			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
-			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
-			activeValidators = append(activeValidators, validator)
-			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
-		}
-	}
+	return infos
+}
 
-	if activeShareCount.Int64() <= threshold {
-		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
-			threshold, activeShareCount.Int64()))
-	}
-
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d]",
-		threshold, threshold+1, activeShareCount.Int64()))
-
-	// set sign participants
-	var participants []string
-	for _, v := range activeValidators {
-		participants = append(participants, v.GetSDKValidator().GetOperator().String())
-		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, sigID)
-	if err := voter.InitializePoll(ctx, pollKey, s.Counter, vote.ExpiryAt(0)); err != nil {
-		return err
-	}
-
-	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", sigID, keyID, string(msg)))
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
-			sdk.NewAttribute(types.AttributeKeySigID, sigID),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants))),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(msg))))
-
-	// metrics for sign participation
-	ts := time.Now().Unix()
-	for _, validator := range activeValidators {
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "sign", "participation"},
-			float32(validator.ShareCount),
-			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("sigID", sigID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-			})
-	}
-
-	return nil
+// DeleteScheduledSign removes a keygen request for the current height
+func (k Keeper) DeleteScheduledSign(ctx sdk.Context, sigID string) {
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, ctx.BlockHeight(), exported.AckType_Sign, sigID)
+	ctx.KVStore(k.storeKey).Delete([]byte(key))
 }
 
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
-func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, bool) {
+func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus) {
+	status := k.GetSigStatus(ctx, sigID)
+
+	if status != exported.SigStatus_Signed {
+		return exported.Signature{}, status
+	}
+
 	bz := ctx.KVStore(k.storeKey).Get([]byte(sigPrefix + sigID))
+
 	if bz == nil {
-		return exported.Signature{}, false
+		return exported.Signature{}, exported.SigStatus_Invalid
 	}
 	btcecSig, err := btcec.ParseDERSignature(bz, btcec.S256())
 	if err != nil {
-		// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
-		panic(err)
+		return exported.Signature{}, exported.SigStatus_Invalid
+
 	}
 
-	return exported.Signature{R: btcecSig.R, S: btcecSig.S}, true
+	return exported.Signature{R: btcecSig.R, S: btcecSig.S}, exported.SigStatus_Signed
 }
 
 // SetSig stores the given signature by its ID
@@ -129,11 +94,11 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
-	keyID, ok := k.getKeyIDForSig(ctx, sigID)
-	if !ok {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDForSigPrefix + sigID))
+	if bz == nil {
 		return exported.Key{}, false
 	}
-	return k.GetKey(ctx, keyID)
+	return k.GetKey(ctx, string(bz))
 }
 
 // SetKeyIDForSig stores key ID for the given sig ID
@@ -141,21 +106,94 @@ func (k Keeper) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
 	ctx.KVStore(k.storeKey).Set([]byte(keyIDForSigPrefix+sigID), []byte(keyID))
 }
 
-func (k Keeper) getKeyIDForSig(ctx sdk.Context, sigID string) (string, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDForSigPrefix + sigID))
-	if bz == nil {
-		return "", false
-	}
-	return string(bz), true
-}
-
 // DeleteKeyIDForSig deletes the key ID associated with the given signature
 func (k Keeper) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
 	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
 }
 
+// SetSigIDStatus defines the status of some sign sig ID
+func (k Keeper) SetSigIDStatus(ctx sdk.Context, sigID string, status exported.SigStatus) {
+	bz := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bz, uint32(status))
+	ctx.KVStore(k.storeKey).Set([]byte(sigStatusPrefix+sigID), bz)
+}
+
+// GetSigStatus returns the status of a sig ID
+func (k Keeper) GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(sigStatusPrefix + sigID))
+	if bz == nil {
+		return exported.SigStatus_Unspecified
+	}
+	return exported.SigStatus(binary.LittleEndian.Uint32(bz))
+}
+
+// SetSignParticipants appoints a subset of the specified validators to participate in sign ID
+func (k Keeper) SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
+	activeShareCount := sdk.ZeroInt()
+	var activeValidators []snapshot.Validator
+	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
+	validatorAvailable := make(map[string]bool)
+	for _, validator := range available {
+		validatorAvailable[validator.String()] = true
+	}
+
+	for _, validator := range validators {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) &&
+			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
+			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
+			activeValidators = append(activeValidators, validator)
+		}
+	}
+
+	for _, v := range activeValidators {
+		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
+	ctx.KVStore(k.storeKey).Set([]byte(participateShareCountPrefix+"sign_"+sigID), activeShareCount.BigInt().Bytes())
+}
+
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
+}
+
+// MeetsThreshold returns true if the specified signing threshold is met for the given sign ID
+func (k Keeper) MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool {
+	count := k.GetTotalShareCount(ctx, sigID)
+
+	if count <= threshold {
+		return false
+	}
+
+	return true
+}
+
+// GetTotalShareCount returns to total share count for the given key ID
+func (k Keeper) GetTotalShareCount(ctx sdk.Context, sigID string) int64 {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(participateShareCountPrefix + "sign_" + sigID))
+	if bz == nil {
+		return -1
+	}
+	return big.NewInt(0).SetBytes(bz).Int64()
+
+}
+
+// GetSignParticipants returns the list of participants for specified sig ID
+func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
+	prefix := participatePrefix + "sign_" + sigID
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	participants := make([]string, 0)
+	for ; iter.Valid(); iter.Next() {
+		participants = append(participants, string(strings.TrimPrefix(prefix, string(iter.Key()))))
+	}
+
+	return participants
+}
+
+// GetSignParticipantsAsJSON returns the list of participants for specified sig ID in JSON format
+func (k Keeper) GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte {
+	return k.cdc.MustMarshalJSON(k.GetSignParticipants(ctx, sigID))
 }
 
 // DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false
