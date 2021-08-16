@@ -31,6 +31,9 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetSig(queryRoute),
 		GetCmdGetKey(queryRoute),
 		GetCmdRecovery(queryRoute),
+		GetCmdGetKeyID(queryRoute),
+		GetCmdGetKeySharesByKeyID(queryRoute),
+		GetCmdGetKeySharesByValidator(queryRoute),
 		GetCmdGetDeactivatedOperators(queryRoute),
 	)
 
@@ -151,6 +154,97 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 				}
 			}
 			return cliCtx.PrintObjectLegacy(requests)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetKeyID returns the command for the keyID of the most recent key given the keyChain and keyRole
+func GetCmdGetKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "keyID [chain] [role]",
+		Short: "Query the keyID using keyChain and keyRole",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyChain := args[0]
+			keyRole := args[1]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryKeyID, keyChain, keyRole), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get keyID")
+			}
+
+			return cliCtx.PrintObjectLegacy(string(res))
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetKeySharesByKeyID returns the query for a list of key shares for a given keyID
+func GetCmdGetKeySharesByKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "keySharesKeyID [key ID]",
+		Short: "Query key shares information by key ID",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyID := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryKeySharesByKeyID, keyID), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			var keyShareResponse types.QueryKeyShareResponse
+			err = keyShareResponse.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			return cliCtx.PrintObjectLegacy(keyShareResponse.ShareInfos)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetKeySharesByValidator returns the query for a list of key shares held by a validator address
+func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "keySharesValidator [validator address]",
+		Short: "Query key shares information by validator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			validatorAddress := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryKeySharesByValidator, validatorAddress), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			var keyShareResponse types.QueryKeyShareResponse
+			err = keyShareResponse.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			return cliCtx.PrintObjectLegacy(keyShareResponse.ShareInfos)
 		},
 	}
 

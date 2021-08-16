@@ -3834,6 +3834,9 @@ var _ tsstypes.Nexus = &NexusMock{}
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
+// 			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
+// 				panic("mock out the GetChains method")
+// 			},
 // 		}
 //
 // 		// use mockedNexus in code that requires tsstypes.Nexus
@@ -3844,6 +3847,9 @@ type NexusMock struct {
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
 
+	// GetChainsFunc mocks the GetChains method.
+	GetChainsFunc func(ctx sdk.Context) []nexus.Chain
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetChain holds details about calls to the GetChain method.
@@ -3853,8 +3859,14 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// GetChains holds details about calls to the GetChains method.
+		GetChains []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 	}
-	lockGetChain sync.RWMutex
+	lockGetChain  sync.RWMutex
+	lockGetChains sync.RWMutex
 }
 
 // GetChain calls GetChainFunc.
@@ -3889,5 +3901,36 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetChains calls GetChainsFunc.
+func (mock *NexusMock) GetChains(ctx sdk.Context) []nexus.Chain {
+	if mock.GetChainsFunc == nil {
+		panic("NexusMock.GetChainsFunc: method is nil but Nexus.GetChains was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetChains.Lock()
+	mock.calls.GetChains = append(mock.calls.GetChains, callInfo)
+	mock.lockGetChains.Unlock()
+	return mock.GetChainsFunc(ctx)
+}
+
+// GetChainsCalls gets all the calls that were made to GetChains.
+// Check the length with:
+//     len(mockedNexus.GetChainsCalls())
+func (mock *NexusMock) GetChainsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetChains.RLock()
+	calls = mock.calls.GetChains
+	mock.lockGetChains.RUnlock()
 	return calls
 }

@@ -21,9 +21,12 @@ const (
 	TxKeygenStart     = "start"
 	TxMasterKeyRotate = "rotate"
 
-	QuerySigStatus   = keeper.QuerySigStatus
-	QueryKeyStatus   = keeper.QueryKeyStatus
-	QueryRecovery    = keeper.QueryRecovery
+	QuerySigStatus 				= keeper.QuerySigStatus
+	QueryKeyStatus 				= keeper.QueryKeyStatus
+	QueryRecovery  				= keeper.QueryRecovery
+	QueryKeyID	  				= keeper.QueryKeyID
+	QueryKeySharesByKeyID		= keeper.QueryKeySharesByKeyID
+	QueryKeySharesByValidator	= keeper.QueryKeySharesByValidator
 	QueryDeactivated = keeper.QueryDeactivated
 )
 
@@ -53,6 +56,9 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySigStatus, clientUtils.PathVarSigID)
 	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKeyStatus, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerRecovery(cliCtx), QueryRecovery)
+	registerQuery(QueryHandlerKeyID(cliCtx), QueryKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
+	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
+	registerQuery(QueryHandlerKeySharesByValidator(cliCtx), QueryKeySharesByValidator, clientUtils.PathVarCosmosAddress)
 	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated, clientUtils.PathVarKeyID)
 }
 

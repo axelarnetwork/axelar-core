@@ -135,6 +135,84 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// QueryHandlerKeyID returns a handler to query the keyID of the most recent key given the keyChain and keyRole
+func QueryHandlerKeyID(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		role := mux.Vars(r)[utils.PathVarKeyRole]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryKeyID, chain, role), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, string(res))
+	}
+}
+
+// QueryHandlerKeySharesByKeyID returns a handler to query for a list of key shares for a given keyID
+func QueryHandlerKeySharesByKeyID(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		keyID := mux.Vars(r)[utils.PathVarKeyID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryKeySharesByKeyID, keyID), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var keyShareResponse types.QueryKeyShareResponse
+		err = keyShareResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse)
+	}
+}
+
+// QueryHandlerKeySharesByValidator returns a handler to query for a list of key shares held by a validator address
+func QueryHandlerKeySharesByValidator(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		validatorAddress := mux.Vars(r)[utils.PathVarCosmosAddress]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryKeySharesByValidator, validatorAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var keyShareResponse types.QueryKeyShareResponse
+		err = keyShareResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse)
+	}
+}
+
 // QueryHandlerDeactivatedOperator returns a list of deactivated operator addresses by keyID
 func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
