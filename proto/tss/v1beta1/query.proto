@@ -40,3 +40,17 @@ message QueryRecoveryResponse {
 
   repeated bytes share_recovery_infos = 4;
 }
+
+message QueryKeyShareResponse {
+  message ShareInfo {
+    string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+    string key_chain = 2;
+    string key_role = 3;
+    int64 snapshot_block_number = 4;
+    string validator_address = 5;
+    int64 num_validator_shares = 6;
+    int64 num_total_shares = 7;
+  }
+
+  repeated ShareInfo share_infos = 1 [ (gogoproto.nullable) = false ];
+}
