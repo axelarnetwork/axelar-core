@@ -93,6 +93,7 @@ enum DepositStatus {
 
   DEPOSIT_STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
   DEPOSIT_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
-  DEPOSIT_STATUS_CONFIRMED = 2 [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  DEPOSIT_STATUS_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
   DEPOSIT_STATUS_BURNED = 3 [ (gogoproto.enumvalue_customname) = "Burned" ];
 }

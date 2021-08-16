@@ -101,26 +101,6 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
-- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
-    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
-    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
-    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
-    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
-  
-    - [DepositStatus](#evm.v1beta1.DepositStatus)
-  
-- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
-    - [Params](#evm.v1beta1.Params)
-  
-- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
-    - [GenesisState](#evm.v1beta1.GenesisState)
-  
-- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
-    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
-    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
-    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
-  
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
@@ -164,6 +144,8 @@
     - [ScheduledUnsignedTxs](#evm.v1beta1.ScheduledUnsignedTxs)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
+    - [DepositStatus](#evm.v1beta1.DepositStatus)
+  
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
   
@@ -172,6 +154,7 @@
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
@@ -1612,21 +1595,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-
-<a name="evm.v1beta1.DepositStatus"></a>
-
-### DepositStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
-| DEPOSIT_STATUS_PENDING | 1 |  |
-| DEPOSIT_STATUS_CONFIRMED | 2 |  |
-| DEPOSIT_STATUS_BURNED | 3 |  |
-
-
- <!-- end enums -->
+<a name="evm.v1beta1.ConfirmTokenResponse"></a>
 
 ### ConfirmTokenResponse
 
@@ -1716,23 +1685,7 @@ AxelarGateway
 
 
 
-<a name="evm.v1beta1.QueryDepositStateResponse"></a>
-
-### QueryDepositStateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+<a name="evm.v1beta1.SignBurnTokensResponse"></a>
 
 ### SignBurnTokensResponse
 
@@ -2188,6 +2141,20 @@ TransferOwnership contains information for a transfer ownership
 
  <!-- end messages -->
 
+
+<a name="evm.v1beta1.DepositStatus"></a>
+
+### DepositStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
+| DEPOSIT_STATUS_PENDING | 1 |  |
+| DEPOSIT_STATUS_CONFIRMED | 2 |  |
+| DEPOSIT_STATUS_BURNED | 3 |  |
+
+
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -2284,6 +2251,22 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateResponse"></a>
+
+### QueryDepositStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
 
 
 
