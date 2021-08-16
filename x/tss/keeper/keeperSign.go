@@ -185,7 +185,7 @@ func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
 
 	participants := make([]string, 0)
 	for ; iter.Valid(); iter.Next() {
-		participants = append(participants, string(strings.TrimPrefix(prefix, string(iter.Key()))))
+		participants = append(participants, strings.TrimPrefix(string(iter.Key()), prefix))
 	}
 
 	return participants
