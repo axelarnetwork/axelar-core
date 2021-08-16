@@ -144,6 +144,8 @@
     - [ScheduledUnsignedTxs](#evm.v1beta1.ScheduledUnsignedTxs)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
+    - [DepositStatus](#evm.v1beta1.DepositStatus)
+  
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
   
@@ -152,6 +154,7 @@
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
@@ -2138,6 +2141,20 @@ TransferOwnership contains information for a transfer ownership
 
  <!-- end messages -->
 
+
+<a name="evm.v1beta1.DepositStatus"></a>
+
+### DepositStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
+| DEPOSIT_STATUS_PENDING | 1 |  |
+| DEPOSIT_STATUS_CONFIRMED | 2 |  |
+| DEPOSIT_STATUS_BURNED | 3 |  |
+
+
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -2234,6 +2251,22 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateResponse"></a>
+
+### QueryDepositStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
 
 
 

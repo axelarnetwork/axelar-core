@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -23,6 +24,7 @@ import (
 // Query labels
 const (
 	QTokenAddress         = "token-address"
+	QDepositState         = "deposit-state"
 	QMasterAddress        = "master-address"
 	QNextMasterAddress    = "next-master-address"
 	QKeyAddress           = "query-key-address"
@@ -63,6 +65,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddress:
 			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
+		case QDepositState:
+			return QueryDepositState(ctx, chainKeeper, n, path[2], path[3])
 		case QCommandData:
 			return queryCommandData(ctx, chainKeeper, s, n, path[2])
 		case QDepositAddress:
@@ -199,6 +203,35 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symb
 	}
 
 	return addr.Bytes(), nil
+}
+
+// QueryDepositState returns the state of an ERC20 deposit confirmation
+func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID string, depositAddress string) ([]byte, error) {
+
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, txID+"_"+depositAddress)
+	_, isPending := k.GetPendingDeposit(ctx, pollKey)
+	_, state, ok := k.GetDeposit(ctx, common.HexToHash(txID), common.HexToAddress(depositAddress))
+
+	var depositState types.QueryDepositStateResponse
+	switch {
+	case isPending:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Pending, Log: "deposit transaction is waiting for confirmation"}
+	case !isPending && !ok:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_None, Log: "deposit transaction is not confirmed"}
+	case state == types.CONFIRMED:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Confirmed, Log: "deposit transaction is confirmed"}
+	case state == types.BURNED:
+		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
+	default:
+		return nil, fmt.Errorf("deposit is in an unexpected state")
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
 }
 
 /*

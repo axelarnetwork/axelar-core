@@ -86,3 +86,14 @@ message TransferOwnership {
 
   string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
 }
+
+enum DepositStatus {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  DEPOSIT_STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  DEPOSIT_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  DEPOSIT_STATUS_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  DEPOSIT_STATUS_BURNED = 3 [ (gogoproto.enumvalue_customname) = "Burned" ];
+}
