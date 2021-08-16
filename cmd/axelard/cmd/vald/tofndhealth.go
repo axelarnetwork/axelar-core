@@ -2,12 +2,14 @@ package vald
 
 import (
 	"context"
+	"io"
 	"math/rand"
 	"time"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -32,7 +34,7 @@ func GetTofndPingCommand() *cobra.Command {
 		Use: "tofnd-healthcheck",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			logger := serverCtx.Logger.With("module", "ping")
+			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
 			axelarCfg := app.DefaultConfig()
 			if err := serverCtx.Viper.Unmarshal(&axelarCfg); err != nil {
