@@ -108,7 +108,7 @@ type TSSKeeper interface {
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus
-	SetSigIDStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
+	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
 	SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte

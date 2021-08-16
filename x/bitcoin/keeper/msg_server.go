@@ -67,7 +67,7 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 
 	sigID := getSigID(req.SigHash, req.KeyID)
 	s.signer.SetSig(ctx, sigID, req.Signature)
-	s.signer.SetSigIDStatus(ctx, sigID, tss.SigStatus_Signed)
+	s.signer.SetSigStatus(ctx, sigID, tss.SigStatus_Signed)
 	s.signer.SetKeyIDForSig(ctx, sigID, req.KeyID)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeExternalSignature,

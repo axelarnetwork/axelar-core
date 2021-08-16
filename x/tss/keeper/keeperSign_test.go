@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 	"time"
@@ -100,7 +101,60 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 		Msg:             msgToSign,
 		SnapshotCounter: snap.Counter,
 	})
-	assert.EqualError(t, err, "sigID 'sigID' has been used before")
+	assert.EqualError(t, err, "sig ID 'sigID' has been used before")
+}
+
+func TestScheduleSignAtHeight(t *testing.T) {
+	t.Run("testing schedule sign", testutils.Func(func(t *testing.T) {
+		s := setup()
+		numSigns := int(rand2.I64Between(10, 30))
+		currentHeight := s.Ctx.BlockHeight()
+		expectedInfos := make([]exported.SignInfo, numSigns)
+		snapshotSeq := rand2.I64Between(20, 50)
+
+		// schedule signs
+		for i := 0; i < numSigns; i++ {
+			info := exported.SignInfo{
+				KeyID:           rand2.StrBetween(5, 10),
+				SigID:           rand2.StrBetween(10, 20),
+				Msg:             []byte(rand2.StrBetween(20, 50)),
+				SnapshotCounter: snapshotSeq + int64(i),
+			}
+			expectedInfos[i] = info
+			height, err := s.Keeper.ScheduleSign(s.Ctx, info)
+
+			assert.NoError(t, err)
+			assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+		}
+
+		// verify signs from above
+		s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckWindowInBlocks)
+		infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
+
+		actualNumInfos := 0
+		for _, expected := range expectedInfos {
+			for _, actual := range infos {
+				bz1, err := actual.Marshal()
+				assert.NoError(t, err)
+				bz2, err := expected.Marshal()
+				assert.NoError(t, err)
+
+				if bytes.Equal(bz1, bz2) {
+					actualNumInfos++
+					break
+				}
+			}
+		}
+		assert.Len(t, expectedInfos, actualNumInfos)
+		assert.Equal(t, numSigns, actualNumInfos)
+
+		// check that we can delete scheduled signs
+		for i, info := range infos {
+			s.Keeper.DeleteScheduledSign(s.Ctx, info.SigID)
+			infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
+			assert.Len(t, infos, actualNumInfos-(i+1))
+		}
+	}).Repeat(20))
 }
 
 func TestScheduleSignEvents(t *testing.T) {

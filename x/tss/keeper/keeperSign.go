@@ -21,9 +21,9 @@ import (
 func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 	status := k.GetSigStatus(ctx, info.SigID)
 	if status != exported.SigStatus_Unspecified && status != exported.SigStatus_Aborted {
-		return -1, fmt.Errorf("sigID '%s' has been used before", info.SigID)
+		return -1, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
-	k.SetSigIDStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
 	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
@@ -111,8 +111,8 @@ func (k Keeper) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
 	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
 }
 
-// SetSigIDStatus defines the status of some sign sig ID
-func (k Keeper) SetSigIDStatus(ctx sdk.Context, sigID string, status exported.SigStatus) {
+// SetSigStatus defines the status of some sign sig ID
+func (k Keeper) SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus) {
 	bz := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bz, uint32(status))
 	ctx.KVStore(k.storeKey).Set([]byte(sigStatusPrefix+sigID), bz)

@@ -86,7 +86,7 @@ type Signer interface {
 	ScheduleSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
-	SetSigIDStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
+	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
 	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)

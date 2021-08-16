@@ -210,8 +210,8 @@ var _ types.Signer = &SignerMock{}
 // 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
-// 			SetSigIDStatusFunc: func(ctx sdk.Context, sigID string, status tss.SigStatus)  {
-// 				panic("mock out the SetSigIDStatus method")
+// 			SetSigStatusFunc: func(ctx sdk.Context, sigID string, status tss.SigStatus)  {
+// 				panic("mock out the SetSigStatus method")
 // 			},
 // 		}
 //
@@ -268,8 +268,8 @@ type SignerMock struct {
 	// SetSigFunc mocks the SetSig method.
 	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
 
-	// SetSigIDStatusFunc mocks the SetSigIDStatus method.
-	SetSigIDStatusFunc func(ctx sdk.Context, sigID string, status tss.SigStatus)
+	// SetSigStatusFunc mocks the SetSigStatus method.
+	SetSigStatusFunc func(ctx sdk.Context, sigID string, status tss.SigStatus)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -415,8 +415,8 @@ type SignerMock struct {
 			// Signature is the signature argument value.
 			Signature []byte
 		}
-		// SetSigIDStatus holds details about calls to the SetSigIDStatus method.
-		SetSigIDStatus []struct {
+		// SetSigStatus holds details about calls to the SetSigStatus method.
+		SetSigStatus []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// SigID is the sigID argument value.
@@ -441,7 +441,7 @@ type SignerMock struct {
 	lockSetKey                     sync.RWMutex
 	lockSetKeyIDForSig             sync.RWMutex
 	lockSetSig                     sync.RWMutex
-	lockSetSigIDStatus             sync.RWMutex
+	lockSetSigStatus               sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -1064,10 +1064,10 @@ func (mock *SignerMock) SetSigCalls() []struct {
 	return calls
 }
 
-// SetSigIDStatus calls SetSigIDStatusFunc.
-func (mock *SignerMock) SetSigIDStatus(ctx sdk.Context, sigID string, status tss.SigStatus) {
-	if mock.SetSigIDStatusFunc == nil {
-		panic("SignerMock.SetSigIDStatusFunc: method is nil but Signer.SetSigIDStatus was just called")
+// SetSigStatus calls SetSigStatusFunc.
+func (mock *SignerMock) SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus) {
+	if mock.SetSigStatusFunc == nil {
+		panic("SignerMock.SetSigStatusFunc: method is nil but Signer.SetSigStatus was just called")
 	}
 	callInfo := struct {
 		Ctx    sdk.Context
@@ -1078,16 +1078,16 @@ func (mock *SignerMock) SetSigIDStatus(ctx sdk.Context, sigID string, status tss
 		SigID:  sigID,
 		Status: status,
 	}
-	mock.lockSetSigIDStatus.Lock()
-	mock.calls.SetSigIDStatus = append(mock.calls.SetSigIDStatus, callInfo)
-	mock.lockSetSigIDStatus.Unlock()
-	mock.SetSigIDStatusFunc(ctx, sigID, status)
+	mock.lockSetSigStatus.Lock()
+	mock.calls.SetSigStatus = append(mock.calls.SetSigStatus, callInfo)
+	mock.lockSetSigStatus.Unlock()
+	mock.SetSigStatusFunc(ctx, sigID, status)
 }
 
-// SetSigIDStatusCalls gets all the calls that were made to SetSigIDStatus.
+// SetSigStatusCalls gets all the calls that were made to SetSigStatus.
 // Check the length with:
-//     len(mockedSigner.SetSigIDStatusCalls())
-func (mock *SignerMock) SetSigIDStatusCalls() []struct {
+//     len(mockedSigner.SetSigStatusCalls())
+func (mock *SignerMock) SetSigStatusCalls() []struct {
 	Ctx    sdk.Context
 	SigID  string
 	Status tss.SigStatus
@@ -1097,9 +1097,9 @@ func (mock *SignerMock) SetSigIDStatusCalls() []struct {
 		SigID  string
 		Status tss.SigStatus
 	}
-	mock.lockSetSigIDStatus.RLock()
-	calls = mock.calls.SetSigIDStatus
-	mock.lockSetSigIDStatus.RUnlock()
+	mock.lockSetSigStatus.RLock()
+	calls = mock.calls.SetSigStatus
+	mock.lockSetSigStatus.RUnlock()
 	return calls
 }
 

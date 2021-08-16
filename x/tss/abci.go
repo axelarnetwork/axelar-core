@@ -54,8 +54,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 	for _, info := range signInfos {
 		err := startSign(ctx, keeper, voter, snapshotter, info)
 		if err != nil {
-			//keeper.Logger(ctx).Error(fmt.Sprintf("error starting keygen: %s", err.Error()))
-			panic(fmt.Sprintf("error starting keygen: %s", err.Error()))
+			keeper.Logger(ctx).Error(fmt.Sprintf("error starting signing: %s", err.Error()))
 		}
 
 		keeper.DeleteScheduledSign(ctx, info.SigID)
@@ -166,6 +165,7 @@ func startSign(
 
 	snap, ok := snapshotter.GetSnapshot(ctx, info.SnapshotCounter)
 	if !ok {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
@@ -173,18 +173,21 @@ func startSign(
 	// might make sense to store it with the snapshot after keygen is done.
 	threshold, found := k.GetCorruptionThreshold(ctx, info.KeyID)
 	if !found {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf("keyID %s has no corruption threshold defined", info.KeyID)
 	}
 
 	k.SetSignParticipants(ctx, info.SigID, snap.Validators)
 
 	if !k.MeetsThreshold(ctx, info.SigID, threshold) {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
 			threshold, k.GetTotalShareCount(ctx, info.SigID)))
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
 	if err := voter.InitializePoll(ctx, pollKey, snap.Counter, vote.ExpiryAt(0)); err != nil {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
 	}
 
@@ -192,7 +195,7 @@ func startSign(
 		threshold, threshold+1, k.GetTotalShareCount(ctx, info.SigID)))
 
 	k.SetKeyIDForSig(ctx, info.SigID, info.KeyID)
-	k.SetSigIDStatus(ctx, info.SigID, exported.SigStatus_Signing)
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
