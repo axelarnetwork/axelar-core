@@ -1,14 +1,14 @@
-## axelard tofnd-healthcheck
+## axelard tofnd-ping
 
 ```
-axelard tofnd-healthcheck [flags]
+axelard tofnd-ping [flags]
 ```
 
 ### Options
 
 ```
       --context-timeout string   context timeout for the grpc (default "2h0m0s")
-  -h, --help                     help for tofnd-healthcheck
+  -h, --help                     help for tofnd-ping
       --tofnd-host string        host name for tss daemon (default "localhost")
       --tofnd-port string        port for tss daemon (default "50051")
 ```
