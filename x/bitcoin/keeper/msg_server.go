@@ -5,9 +5,10 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"github.com/armon/go-metrics"
 	"strconv"
 	"time"
+
+	"github.com/armon/go-metrics"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
@@ -66,6 +67,7 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 
 	sigID := getSigID(req.SigHash, req.KeyID)
 	s.signer.SetSig(ctx, sigID, req.Signature)
+	s.signer.SetSigIDStatus(ctx, sigID, tss.SigStatus_Signed)
 	s.signer.SetKeyIDForSig(ctx, sigID, req.KeyID)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeExternalSignature,
@@ -385,7 +387,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 					break
 				}
 
-				if _, ok := s.signer.GetSig(ctx, getSigID(sigHash, externalKeyID)); ok {
+				if _, status := s.signer.GetSig(ctx, getSigID(sigHash, externalKeyID)); status == tss.SigStatus_Signed {
 					existingExternalSigCount++
 					unsignedTx.Info.InputInfos[i].SigRequirements = append(
 						unsignedTx.Info.InputInfos[i].SigRequirements,
@@ -401,13 +403,11 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		}
 	}
 
-	signInfos := make([]tss.SignInfo, 0)
-	var height int64
 	for _, inputInfo := range unsignedTx.Info.InputInfos {
 		for _, sigRequirement := range inputInfo.SigRequirements {
 			sigID := getSigID(sigRequirement.SigHash, sigRequirement.KeyID)
 			// if the signature already exists, ignore it
-			if _, ok := s.signer.GetSig(ctx, sigID); ok {
+			if _, status := s.signer.GetSig(ctx, sigID); status == tss.SigStatus_Signed {
 				s.Logger(ctx).Debug(fmt.Sprintf("signature %s for %s transaction exists already and therefore skipping", req.KeyRole.SimpleString(), sigID))
 				continue
 			}
@@ -422,23 +422,26 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			// since it is invoked always with the same context, the function will always return the same height
-			height = s.signer.AnnounceSign(ctx, sigRequirement.KeyID, sigID)
-			signInfos = append(signInfos, tss.SignInfo{
+			if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 				KeyID:           sigRequirement.KeyID,
 				SigID:           sigID,
 				Msg:             sigRequirement.SigHash,
 				SnapshotCounter: snapshot.Counter,
-			})
+			}); err != nil {
+				return nil, err
+			}
 		}
 	}
+
 	unsignedTx.SetTx(tx)
 	unsignedTx.Status = types.Signing
-	s.ScheduleUnsignedTx(ctx, height, types.ScheduledUnsignedTx{
-		UnsignedTx: unsignedTx,
-		KeyRole:    req.KeyRole,
-		SignInfos:  signInfos,
-	})
+	s.SetUnsignedTx(ctx, req.KeyRole, unsignedTx)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigning),
+		sdk.NewAttribute(types.AttributeKeyRole, req.KeyRole.SimpleString()),
+	))
 
 	return &types.SignTxResponse{}, nil
 }

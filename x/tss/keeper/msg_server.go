@@ -339,7 +339,7 @@ func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignT
 func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types.VoteSigResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, ok := s.GetSig(ctx, req.PollKey.ID); ok {
+	if _, status := s.GetSig(ctx, req.PollKey.ID); status == exported.SigStatus_Signed {
 		// the signature is already set, no need for further processing of the vote
 		s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.PollKey.ID))
 		return &types.VoteSigResponse{}, nil
@@ -382,6 +382,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollKey.ID, signature)
+			s.SetSigIDStatus(ctx, req.PollKey.ID, exported.SigStatus_Signed)
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
 			ctx.EventManager().EmitEvent(
@@ -396,6 +397,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
+		s.SetSigIDStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)

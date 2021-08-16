@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -196,9 +197,47 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 
 		// check that we can delete scheduled keygens
 		for i, req := range reqs {
-			s.Keeper.DeleteAtCurrentHeight(s.Ctx, req.NewKeyID, exported.AckType_Keygen)
+			s.Keeper.DeleteScheduledKeygen(s.Ctx, req.NewKeyID)
 			reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 			assert.Len(t, reqs, actualNumReqs-(i+1))
 		}
+	}).Repeat(20))
+}
+
+func TestScheduleKeygenEvents(t *testing.T) {
+	t.Run("testing scheduled keygen events", testutils.Func(func(t *testing.T) {
+		s := setup()
+		currentHeight := s.Ctx.BlockHeight()
+		keyID := rand2.Str(20)
+		policies := []exported.KeyShareDistributionPolicy{exported.WeightedByStake, exported.OnePerValidator}
+		index := int(rand2.I64Between(0, int64(len(policies)-1)))
+		height, err := s.Keeper.ScheduleKeygen(s.Ctx, types.StartKeygenRequest{
+			Sender:                     rand2.AccAddr(),
+			NewKeyID:                   keyID,
+			SubsetSize:                 rand2.I64Between(5, 10),
+			KeyShareDistributionPolicy: policies[index],
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+
+		assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)
+		assert.Equal(t, s.Ctx.EventManager().ABCIEvents()[0].Type, types.EventTypeAck)
+
+		var heightFound, keyIDFound bool
+		for _, attribute := range s.Ctx.EventManager().ABCIEvents()[0].Attributes {
+			switch string(attribute.Key) {
+			case types.AttributeKeyHeight:
+				if string(attribute.Value) == strconv.FormatInt(height, 10) {
+					heightFound = true
+				}
+			case types.AttributeKeyKeyID:
+				if string(attribute.Value) == keyID {
+					keyIDFound = true
+				}
+			}
+		}
+
+		assert.True(t, heightFound)
+		assert.True(t, keyIDFound)
 	}).Repeat(20))
 }
