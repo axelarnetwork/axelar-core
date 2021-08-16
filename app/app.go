@@ -162,7 +162,7 @@ var (
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		axelarnetTypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -436,7 +436,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibc.NewAppModule(app.ibcKeeper),
 		transferModule,
 
-		snapshot.NewAppModule(snapK, tssK),
+		snapshot.NewAppModule(snapK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK),

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -14,9 +15,10 @@ import (
 
 // Query paths
 const (
-	QuerySigStatus = "sig-status"
-	QueryKeyStatus = "key-status"
-	QueryRecovery  = "recovery"
+	QuerySigStatus   = "sig-status"
+	QueryKeyStatus   = "key-status"
+	QueryRecovery    = "recovery"
+	QueryDeactivated = "deactivated"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -31,6 +33,8 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter) 
 			res, err = queryKeygenStatus(ctx, k, v, path[1])
 		case QueryRecovery:
 			res, err = queryRecovery(ctx, k, s, path[1])
+		case QueryDeactivated:
+			res, err = queryDeactivatedOperator(ctx, k, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown tss query endpoint: %s", path[0]))
 		}
@@ -128,4 +132,34 @@ func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, 
 	}
 
 	return resp.Marshal()
+}
+
+func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+	var found bool
+	var snapshot exported.Snapshot
+
+	counter, found := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !found {
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
+	}
+
+	snapshot, found = s.GetSnapshot(ctx, counter)
+	if !found {
+		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	}
+
+	var res []string
+	for _, validator := range snapshot.Validators {
+		_, active := s.GetProxy(ctx, validator.GetSDKValidator().GetOperator())
+		if !active {
+			res = append(res, validator.GetSDKValidator().GetOperator().String())
+		}
+	}
+
+	resp := tssTypes.QueryDeactivatedOperatorsResponse{
+		OperatorAddresses: res,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+
 }

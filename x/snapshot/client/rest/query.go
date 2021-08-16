@@ -74,28 +74,3 @@ func GetHandlerQuerySnapshot(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
-
-// GetHandlerQueryDeactivatedPrinciple returns the list of deactivated principle addresses
-func GetHandlerQueryDeactivatedPrinciple(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		vars := mux.Vars(r)
-		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDeactivated, vars[utils.PathVarKeyID])
-
-		bz, _, err := cliCtx.Query(path)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDeactivated).Error())
-			return
-		}
-
-		var res types.QueryDeactivatedPrincipleResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}

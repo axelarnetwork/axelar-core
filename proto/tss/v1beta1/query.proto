@@ -40,3 +40,7 @@ message QueryRecoveryResponse {
 
   repeated bytes share_recovery_infos = 4;
 }
+
+message QueryDeactivatedOperatorsResponse {
+  repeated string operator_addresses = 1;
+}

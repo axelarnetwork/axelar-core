@@ -176,9 +176,6 @@
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
   
-- [snapshot/v1beta1/query.proto](#snapshot/v1beta1/query.proto)
-    - [QueryDeactivatedPrincipleResponse](#snapshot.v1beta1.QueryDeactivatedPrincipleResponse)
-  
 - [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
     - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
     - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
@@ -216,6 +213,7 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
@@ -2517,37 +2515,6 @@ GenesisState represents the genesis state
 
 
 
-<a name="snapshot/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## snapshot/v1beta1/query.proto
-
-
-
-<a name="snapshot.v1beta1.QueryDeactivatedPrincipleResponse"></a>
-
-### QueryDeactivatedPrincipleResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `principal_addresses` | [string](#string) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="snapshot/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3018,6 +2985,21 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
+
+### QueryDeactivatedOperatorsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operator_addresses` | [string](#string) | repeated |  |
+
+
+
 
 
 

@@ -82,15 +82,13 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper keeper.Keeper
-	tss    types.TSS
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, tss types.TSS) AppModule {
+func NewAppModule(k keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		tss:            tss,
 	}
 }
 
@@ -143,5 +141,5 @@ func (AppModule) QuerierRoute() string {
 
 // LegacyQuerierHandler returns a new query handler for this module
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.tss)
+	return keeper.NewQuerier(am.keeper)
 }

@@ -34,7 +34,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryProxy(cliCtx), keeper.QProxy, clientUtils.PathVarCosmosAddress)
 	registerQuery(GetHandlerQueryOperator(cliCtx), keeper.QOperator, clientUtils.PathVarCosmosAddress)
 	registerQuery(GetHandlerQuerySnapshot(cliCtx), keeper.QInfo, clientUtils.PathVarCounter)
-	registerQuery(GetHandlerQueryDeactivatedPrinciple(cliCtx), keeper.QDeactivated, clientUtils.PathVarKeyID)
 }
 
 func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {

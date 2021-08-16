@@ -26,7 +26,6 @@ axelard query snapshot [flags]
 ### SEE ALSO
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query snapshot deactivated-principle](axelard_query_snapshot_deactivated-principle.md)	 - Fetch the list of deactivated principle addresses
 - [axelard query snapshot info](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
 - [axelard query snapshot operator](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
 - [axelard query snapshot proxy](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)

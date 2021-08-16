@@ -8,4 +8,5 @@ var (
 
 	// ErrTss generic error because I want to use cosmos-sdk logging without the need to register a million error codes
 	ErrTss = sdkerrors.Register(ModuleName, 2, "tss error")
+
 )

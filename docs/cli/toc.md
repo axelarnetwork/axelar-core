@@ -111,7 +111,6 @@
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
       - [signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
     - [snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
-      - [deactivated-principle \[keyID\]](axelard_query_snapshot_deactivated-principle.md)	 - Fetch the list of deactivated principle addresses
       - [info \[counter\]](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
       - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
       - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
