@@ -64,7 +64,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	s.Keeper.SetSignParticipants(s.Ctx, sigID, snap.Validators)
+	s.Keeper.SelectSignParticipants(s.Ctx, sigID, snap.Validators)
 
 	threshold, ok := s.Keeper.GetCorruptionThreshold(s.Ctx, keyID)
 	assert.True(t, ok)
