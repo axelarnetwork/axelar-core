@@ -127,8 +127,8 @@ func (k Keeper) GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 	return exported.SigStatus(binary.LittleEndian.Uint32(bz))
 }
 
-// SetSignParticipants appoints a subset of the specified validators to participate in sign ID
-func (k Keeper) SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
+// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())

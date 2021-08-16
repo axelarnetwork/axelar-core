@@ -177,7 +177,7 @@ func startSign(
 		return fmt.Errorf("keyID %s has no corruption threshold defined", info.KeyID)
 	}
 
-	k.SetSignParticipants(ctx, info.SigID, snap.Validators)
+	k.SelectSignParticipants(ctx, info.SigID, snap.Validators)
 
 	if !k.MeetsThreshold(ctx, info.SigID, threshold) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)

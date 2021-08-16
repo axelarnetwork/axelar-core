@@ -24,7 +24,7 @@ type Snapshotter = snapshot.Snapshotter
 // Nexus provides access to the nexus functionality
 type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	GetChains(ctx sdk.Context) ([]nexus.Chain)
+	GetChains(ctx sdk.Context) []nexus.Chain
 }
 
 // Voter provides voting functionality
@@ -110,7 +110,7 @@ type TSSKeeper interface {
 	GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator)
+	SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool
 	GetTotalShareCount(ctx sdk.Context, sigID string) int64

@@ -1298,6 +1298,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
+// 			SelectSignParticipantsFunc: func(ctx sdk.Context, sigID string, validators []snapshot.Validator)  {
+// 				panic("mock out the SelectSignParticipants method")
+// 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
@@ -1321,9 +1324,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			SetSigStatusFunc: func(ctx sdk.Context, sigID string, status exported.SigStatus)  {
 // 				panic("mock out the SetSigStatus method")
-// 			},
-// 			SetSignParticipantsFunc: func(ctx sdk.Context, sigID string, validators []snapshot.Validator)  {
-// 				panic("mock out the SetSignParticipants method")
 // 			},
 // 			StartKeygenFunc: func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
@@ -1464,6 +1464,9 @@ type TSSKeeperMock struct {
 	// ScheduleSignFunc mocks the ScheduleSign method.
 	ScheduleSignFunc func(ctx sdk.Context, info exported.SignInfo) (int64, error)
 
+	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
+	SelectSignParticipantsFunc func(ctx sdk.Context, sigID string, validators []snapshot.Validator)
+
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
 
@@ -1487,9 +1490,6 @@ type TSSKeeperMock struct {
 
 	// SetSigStatusFunc mocks the SetSigStatus method.
 	SetSigStatusFunc func(ctx sdk.Context, sigID string, status exported.SigStatus)
-
-	// SetSignParticipantsFunc mocks the SetSignParticipants method.
-	SetSignParticipantsFunc func(ctx sdk.Context, sigID string, validators []snapshot.Validator)
 
 	// StartKeygenFunc mocks the StartKeygen method.
 	StartKeygenFunc func(ctx sdk.Context, voter tsstypes.Voter, keyID string, snapshotMoqParam snapshot.Snapshot) error
@@ -1829,6 +1829,15 @@ type TSSKeeperMock struct {
 			// Info is the info argument value.
 			Info exported.SignInfo
 		}
+		// SelectSignParticipants holds details about calls to the SelectSignParticipants method.
+		SelectSignParticipants []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
+			// Validators is the validators argument value.
+			Validators []snapshot.Validator
+		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
 			// Ctx is the ctx argument value.
@@ -1901,15 +1910,6 @@ type TSSKeeperMock struct {
 			// Status is the status argument value.
 			Status exported.SigStatus
 		}
-		// SetSignParticipants holds details about calls to the SetSignParticipants method.
-		SetSignParticipants []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-			// Validators is the validators argument value.
-			Validators []snapshot.Validator
-		}
 		// StartKeygen holds details about calls to the StartKeygen method.
 		StartKeygen []struct {
 			// Ctx is the ctx argument value.
@@ -1965,6 +1965,7 @@ type TSSKeeperMock struct {
 	lockRotateKey                           sync.RWMutex
 	lockScheduleKeygen                      sync.RWMutex
 	lockScheduleSign                        sync.RWMutex
+	lockSelectSignParticipants              sync.RWMutex
 	lockSetAvailableOperator                sync.RWMutex
 	lockSetKey                              sync.RWMutex
 	lockSetKeyIDForSig                      sync.RWMutex
@@ -1973,7 +1974,6 @@ type TSSKeeperMock struct {
 	lockSetRecoveryInfos                    sync.RWMutex
 	lockSetSig                              sync.RWMutex
 	lockSetSigStatus                        sync.RWMutex
-	lockSetSignParticipants                 sync.RWMutex
 	lockStartKeygen                         sync.RWMutex
 }
 
@@ -3546,6 +3546,45 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 	return calls
 }
 
+// SelectSignParticipants calls SelectSignParticipantsFunc.
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
+	if mock.SelectSignParticipantsFunc == nil {
+		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
+	}
+	callInfo := struct {
+		Ctx        sdk.Context
+		SigID      string
+		Validators []snapshot.Validator
+	}{
+		Ctx:        ctx,
+		SigID:      sigID,
+		Validators: validators,
+	}
+	mock.lockSelectSignParticipants.Lock()
+	mock.calls.SelectSignParticipants = append(mock.calls.SelectSignParticipants, callInfo)
+	mock.lockSelectSignParticipants.Unlock()
+	mock.SelectSignParticipantsFunc(ctx, sigID, validators)
+}
+
+// SelectSignParticipantsCalls gets all the calls that were made to SelectSignParticipants.
+// Check the length with:
+//     len(mockedTSSKeeper.SelectSignParticipantsCalls())
+func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
+	Ctx        sdk.Context
+	SigID      string
+	Validators []snapshot.Validator
+} {
+	var calls []struct {
+		Ctx        sdk.Context
+		SigID      string
+		Validators []snapshot.Validator
+	}
+	mock.lockSelectSignParticipants.RLock()
+	calls = mock.calls.SelectSignParticipants
+	mock.lockSelectSignParticipants.RUnlock()
+	return calls
+}
+
 // SetAvailableOperator calls SetAvailableOperatorFunc.
 func (mock *TSSKeeperMock) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
 	if mock.SetAvailableOperatorFunc == nil {
@@ -3855,45 +3894,6 @@ func (mock *TSSKeeperMock) SetSigStatusCalls() []struct {
 	mock.lockSetSigStatus.RLock()
 	calls = mock.calls.SetSigStatus
 	mock.lockSetSigStatus.RUnlock()
-	return calls
-}
-
-// SetSignParticipants calls SetSignParticipantsFunc.
-func (mock *TSSKeeperMock) SetSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
-	if mock.SetSignParticipantsFunc == nil {
-		panic("TSSKeeperMock.SetSignParticipantsFunc: method is nil but TSSKeeper.SetSignParticipants was just called")
-	}
-	callInfo := struct {
-		Ctx        sdk.Context
-		SigID      string
-		Validators []snapshot.Validator
-	}{
-		Ctx:        ctx,
-		SigID:      sigID,
-		Validators: validators,
-	}
-	mock.lockSetSignParticipants.Lock()
-	mock.calls.SetSignParticipants = append(mock.calls.SetSignParticipants, callInfo)
-	mock.lockSetSignParticipants.Unlock()
-	mock.SetSignParticipantsFunc(ctx, sigID, validators)
-}
-
-// SetSignParticipantsCalls gets all the calls that were made to SetSignParticipants.
-// Check the length with:
-//     len(mockedTSSKeeper.SetSignParticipantsCalls())
-func (mock *TSSKeeperMock) SetSignParticipantsCalls() []struct {
-	Ctx        sdk.Context
-	SigID      string
-	Validators []snapshot.Validator
-} {
-	var calls []struct {
-		Ctx        sdk.Context
-		SigID      string
-		Validators []snapshot.Validator
-	}
-	mock.lockSetSignParticipants.RLock()
-	calls = mock.calls.SetSignParticipants
-	mock.lockSetSignParticipants.RUnlock()
 	return calls
 }
 
