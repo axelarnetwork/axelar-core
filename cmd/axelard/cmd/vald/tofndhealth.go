@@ -31,8 +31,8 @@ func init() {
 // GetTofndPingCommand returns the command to ping tofnd
 func GetTofndPingCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "tofnd-healthcheck",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Use: "tofnd-ping",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
