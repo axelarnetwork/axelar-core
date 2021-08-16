@@ -21,13 +21,13 @@ const (
 	TxKeygenStart     = "start"
 	TxMasterKeyRotate = "rotate"
 
-	QuerySigStatus 				= keeper.QuerySigStatus
-	QueryKeyStatus 				= keeper.QueryKeyStatus
-	QueryRecovery  				= keeper.QueryRecovery
-	QueryKeyID	  				= keeper.QueryKeyID
-	QueryKeySharesByKeyID		= keeper.QueryKeySharesByKeyID
-	QueryKeySharesByValidator	= keeper.QueryKeySharesByValidator
-	QueryDeactivated = keeper.QueryDeactivated
+	QuerySigStatus            = keeper.QuerySigStatus
+	QueryKeyStatus            = keeper.QueryKeyStatus
+	QueryRecovery             = keeper.QueryRecovery
+	QueryKeyID                = keeper.QueryKeyID
+	QueryKeySharesByKeyID     = keeper.QueryKeySharesByKeyID
+	QueryKeySharesByValidator = keeper.QueryKeySharesByValidator
+	QueryDeactivated          = keeper.QueryDeactivated
 )
 
 // ReqKeygenStart represents a key-gen request
