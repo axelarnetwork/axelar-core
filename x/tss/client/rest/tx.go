@@ -53,7 +53,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySigStatus, clientUtils.PathVarSigID)
 	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKeyStatus, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerRecovery(cliCtx), QueryRecovery)
-	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated)
+	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated, clientUtils.PathVarKeyID)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen

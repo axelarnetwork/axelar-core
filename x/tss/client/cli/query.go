@@ -158,7 +158,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetDeactivatedOperators returns the list of deactivated operator addresses
+// GetCmdGetDeactivatedOperators returns the list of deactivated operator addresses by keyID
 func GetCmdGetDeactivatedOperators(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deactivated-operators [keyID]",
