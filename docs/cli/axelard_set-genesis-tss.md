@@ -9,10 +9,12 @@ axelard set-genesis-tss [flags]
 ### Options
 
 ```
-      --corruption string    The corruption threshold with which Axelar Core will run the keygen protocol (e.g., "2/3").
-  -h, --help                 help for set-genesis-tss
-      --keygen string        The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., "9/10").
-      --locking-period int   A positive integer representing the locking period for validators in terms of number of blocks
+      --ack-window int         A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks
+      --bond-fraction string   The % of stake validators have to bond per key share (e.g., "1/200").
+      --corruption string      The corruption threshold with which Axelar Core will run the keygen protocol (e.g., "2/3").
+  -h, --help                   help for set-genesis-tss
+      --keygen string          The minimum % of stake that must be online to authorize generation of a new key in the system (e.g., "9/10").
+      --locking-period int     A positive integer representing the locking period for validators in terms of number of blocks
 ```
 
 ### Options inherited from parent commands

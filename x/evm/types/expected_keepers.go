@@ -26,6 +26,14 @@ type BaseKeeper interface {
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params ...Params)
 
+	GetScheduledUnsignedCommands(ctx sdk.Context) []ScheduledUnsignedCommand
+	ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd ScheduledUnsignedCommand)
+	DeleteScheduledCommands(ctx sdk.Context)
+
+	GetScheduledUnsignedTxs(ctx sdk.Context) []ScheduledUnsignedTx
+	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
+	DeleteScheduledTxs(ctx sdk.Context)
+
 	ForChain(ctx sdk.Context, chain string) ChainKeeper
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
@@ -63,6 +71,7 @@ type ChainKeeper interface {
 	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
 	SetTokenInfo(ctx sdk.Context, assetName string, msg *SignDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
+	GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
@@ -114,6 +123,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
+	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)

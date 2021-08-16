@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -25,6 +26,7 @@ var (
 	KeyMaxSecondaryOutputAmount  = []byte("KeyMaxSecondaryOutputAmount")
 	KeyMasterKeyRetentionPeriod  = []byte("KeyMasterKeyRetentionPeriod")
 	KeyMasterAddressLockDuration = []byte("KeyMasterAddressLockDuration")
+	KeyExternalMultisigThreshold = []byte("KeyExternalMultisigThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -44,6 +46,7 @@ func DefaultParams() Params {
 		MaxSecondaryOutputAmount:  sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
 		MasterKeyRetentionPeriod:  8,
 		MasterAddressLockDuration: 2 * 7 * 24 * time.Hour, // 2 weeks
+		ExternalMultisigThreshold: utils.Threshold{Numerator: 3, Denominator: 6},
 	}
 }
 
@@ -66,6 +69,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
 		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
 		paramtypes.NewParamSetPair(KeyMasterAddressLockDuration, &m.MasterAddressLockDuration, validateMasterAddressLockDuration),
+		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 	}
 }
 
@@ -189,6 +193,27 @@ func validateMasterAddressLockDuration(masterAddressLockDuration interface{}) er
 	return nil
 }
 
+func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) error {
+	t, ok := externalMultisigThreshold.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for external multisig threshold: %T", externalMultisigThreshold)
+	}
+
+	if t.Numerator <= 0 {
+		return fmt.Errorf("numerator must be greater than 0 for external multisig threshold")
+	}
+
+	if t.Denominator <= 0 {
+		return fmt.Errorf("denominator must be greater than 0 for external multisig threshold")
+	}
+
+	if t.Numerator > t.Denominator {
+		return fmt.Errorf("threshold must be <=1 for external multisig threshold")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -219,6 +244,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMasterKeyRetentionPeriod(m.MasterKeyRetentionPeriod); err != nil {
+		return err
+	}
+
+	if err := validateExternalMultisigThreshold(m.ExternalMultisigThreshold); err != nil {
 		return err
 	}
 

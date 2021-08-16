@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"strconv"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -48,13 +50,9 @@ func NewMsgServerImpl(keeper types.BTCKeeper, s types.Signer, n types.Nexus, v t
 func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitExternalSignatureRequest) (*types.SubmitExternalSignatureResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
-	if !ok {
-		return nil, fmt.Errorf("external key not found")
-	}
-
-	if externalKey.ID != req.KeyID {
-		return nil, fmt.Errorf("unknown key ID %s", req.KeyID)
+	externalKey, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok || externalKey.Role != tss.ExternalKey {
+		return nil, fmt.Errorf("external key %s not found", req.KeyID)
 	}
 
 	sig, err := btcec.ParseDERSignature(req.Signature, btcec.S256())
@@ -80,34 +78,43 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 	return &types.SubmitExternalSignatureResponse{}, nil
 }
 
-func (s msgServer) RegisterExternalKey(c context.Context, req *types.RegisterExternalKeyRequest) (*types.RegisterExternalKeyResponse, error) {
+func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterExternalKeysRequest) (*types.RegisterExternalKeysResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	// TODO: allow rotation for the external key?
-	if _, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.ExternalKey); ok {
-		return nil, fmt.Errorf("external key ID already registered")
+	requiredExternalKeyCount := s.GetExternalMultisigThreshold(ctx).Denominator
+	if len(req.ExternalKeys) != int(requiredExternalKeyCount) {
+		return nil, fmt.Errorf("%d external keys are required", requiredExternalKeyCount)
 	}
 
-	if _, ok := s.signer.GetKey(ctx, req.KeyID); ok {
-		return nil, fmt.Errorf("keyID %s already exists", req.KeyID)
+	keyIDs := make([]string, len(req.ExternalKeys))
+	for i, externalKey := range req.ExternalKeys {
+		if _, ok := s.signer.GetKey(ctx, externalKey.ID); ok {
+			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
+		}
+
+		pubKey, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("invalid external key received")
+		}
+
+		s.signer.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
+		// TODO: it's a bit odd that we are assigning and rotating the external key when it's always a set of them
+		// being used. This is to keep things consistent until a proper solution is figured out.
+		s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.ExternalKey, externalKey.ID)
+		s.signer.RotateKey(ctx, exported.Bitcoin, tss.ExternalKey)
+		keyIDs[i] = externalKey.ID
+
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+			sdk.NewAttribute(types.AttributeKeyRole, tss.ExternalKey.SimpleString()),
+			sdk.NewAttribute(types.AttributeKeyKeyID, externalKey.ID),
+		))
 	}
 
-	key, err := btcec.ParsePubKey(req.PubKey, btcec.S256())
-	if err != nil {
-		return nil, fmt.Errorf("invalid external key received")
-	}
+	s.SetExternalKeyIDs(ctx, keyIDs)
 
-	s.signer.SetKey(ctx, req.KeyID, *key.ToECDSA())
-	s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.ExternalKey, req.KeyID)
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
-		sdk.NewAttribute(types.AttributeKeyRole, tss.ExternalKey.SimpleString()),
-		sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
-	))
-
-	return &types.RegisterExternalKeyResponse{}, nil
+	return &types.RegisterExternalKeysResponse{}, nil
 }
 
 // Link handles address linking
@@ -147,9 +154,9 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	switch {
 	case !ok:
 		break
-	case state == types.CONFIRMED:
+	case state == types.OutPointState_Confirmed:
 		return nil, fmt.Errorf("already confirmed")
-	case state == types.SPENT:
+	case state == types.OutPointState_Spent:
 		return nil, fmt.Errorf("already spent")
 	}
 
@@ -202,9 +209,9 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case confirmedBefore:
 		switch state {
-		case types.CONFIRMED:
+		case types.OutPointState_Confirmed:
 			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already confirmed", req.OutPoint)}, nil
-		case types.SPENT:
+		case types.OutPointState_Spent:
 			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already spent", req.OutPoint)}, nil
 		default:
 			panic(fmt.Sprintf("invalid outpoint state %v", state))
@@ -279,6 +286,9 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}
 
+		telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, "total", "deposit")
+		telemetry.IncrCounter(1, types.ModuleName, "total", "deposit", "count")
+
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
 		}, nil
@@ -313,16 +323,23 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 		outpointsToSign = append(outpointsToSign, types.OutPointToSign{OutPointInfo: inputInfo.OutPointInfo, AddressInfo: addressInfo})
 
-		if addressInfo.LockTime != nil && (maxLockTime == nil || addressInfo.LockTime.After(*maxLockTime)) {
-			maxLockTime = addressInfo.LockTime
+		if addressInfo.SpendingCondition.LockTime != nil && (maxLockTime == nil || addressInfo.SpendingCondition.LockTime.After(*maxLockTime)) {
+			maxLockTime = addressInfo.SpendingCondition.LockTime
 		}
 	}
 
 	tx := unsignedTx.GetTx()
+	externalSigsRequired := false
 
 	switch {
-	// when no UTXO is locked or some UTXOs cannot be spent without the external key
-	case maxLockTime == nil || maxLockTime.After(ctx.BlockTime()):
+	// when some UTXOs cannot be spent without the external key
+	case maxLockTime != nil && maxLockTime.After(ctx.BlockTime()):
+		externalSigsRequired = true
+
+		s.Logger(ctx).Debug(fmt.Sprintf("%s consolidation transaction requires external signatures", req.KeyRole.SimpleString()))
+		fallthrough
+	// when no UTXO is locked
+	case maxLockTime == nil:
 		tx.LockTime = 0
 		tx = types.DisableTimelockAndRBF(tx)
 
@@ -343,34 +360,49 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		}
 
 		sigHashes = append(sigHashes, sigHash)
+		internalKeyIDs := outpointsToSign[i].SpendingCondition.InternalKeyIds
+		keyID := internalKeyIDs[0]
+		// if the unsigned transaction has aborted due to signing failure, try signing with a different key if necessary and possible
+		if unsignedTx.Is(types.Aborted) {
+			keyID = internalKeyIDs[(utils.IndexOf(internalKeyIDs, unsignedTx.PrevAbortedKeyId)+1)%len(internalKeyIDs)]
+		}
 
 		unsignedTx.Info.InputInfos[i].SigRequirements = []types.UnsignedTx_Info_InputInfo_SigRequirement{
-			types.NewSigRequirement(outpointsToSign[i].KeyID, sigHash),
+			types.NewSigRequirement(keyID, sigHash),
 		}
 	}
 
-	// when some UTXOs cannot be spent without the external key
-	if maxLockTime != nil && maxLockTime.After(ctx.BlockTime()) {
-		externalKeyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.ExternalKey)
-		if !ok {
-			return nil, fmt.Errorf("external key ID not found")
-		}
-
-		// Verify that external key has submitted all signatures
-		for i := range outpointsToSign {
+	if externalSigsRequired {
+		// Verify that external keys have submitted all signatures
+		for i, outpointToSign := range outpointsToSign {
 			sigHash := sigHashes[i]
-			sigID := getSigID(sigHash, externalKeyID)
-			if _, ok := s.signer.GetSig(ctx, sigID); !ok {
-				return nil, fmt.Errorf("missing signature from external key %s for sig hash %s", externalKeyID, hex.EncodeToString(sigHash))
+
+			requiredExternalSigCount := outpointToSign.AddressInfo.SpendingCondition.ExternalMultisigThreshold
+			existingExternalSigCount := int64(0)
+
+			for _, externalKeyID := range outpointToSign.AddressInfo.SpendingCondition.ExternalKeyIds {
+				if existingExternalSigCount == requiredExternalSigCount {
+					break
+				}
+
+				if _, ok := s.signer.GetSig(ctx, getSigID(sigHash, externalKeyID)); ok {
+					existingExternalSigCount++
+					unsignedTx.Info.InputInfos[i].SigRequirements = append(
+						unsignedTx.Info.InputInfos[i].SigRequirements,
+						types.NewSigRequirement(externalKeyID, sigHash),
+					)
+				}
+
 			}
 
-			unsignedTx.Info.InputInfos[i].SigRequirements = append(
-				unsignedTx.Info.InputInfos[i].SigRequirements,
-				types.NewSigRequirement(externalKeyID, sigHash),
-			)
+			if existingExternalSigCount < requiredExternalSigCount {
+				return nil, fmt.Errorf("not enough external signatures have been submitted yet for sig hash %s", hex.EncodeToString(sigHash))
+			}
 		}
 	}
 
+	signInfos := make([]tss.SignInfo, 0)
+	var height int64
 	for _, inputInfo := range unsignedTx.Info.InputInfos {
 		for _, sigRequirement := range inputInfo.SigRequirements {
 			sigID := getSigID(sigRequirement.SigHash, sigRequirement.KeyID)
@@ -390,21 +422,23 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			if err := s.signer.StartSign(ctx, s.voter, sigRequirement.KeyID, sigID, sigRequirement.SigHash, snapshot); err != nil {
-				return nil, err
-			}
+			// since it is invoked always with the same context, the function will always return the same height
+			height = s.signer.AnnounceSign(ctx, sigRequirement.KeyID, sigID)
+			signInfos = append(signInfos, tss.SignInfo{
+				KeyID:           sigRequirement.KeyID,
+				SigID:           sigID,
+				Msg:             sigRequirement.SigHash,
+				SnapshotCounter: snapshot.Counter,
+			})
 		}
 	}
-
 	unsignedTx.SetTx(tx)
 	unsignedTx.Status = types.Signing
-	s.SetUnsignedTx(ctx, req.KeyRole, unsignedTx)
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigning),
-		sdk.NewAttribute(types.AttributeKeyRole, req.KeyRole.SimpleString()),
-	))
+	s.ScheduleUnsignedTx(ctx, height, types.ScheduledUnsignedTx{
+		UnsignedTx: unsignedTx,
+		KeyRole:    req.KeyRole,
+		SignInfos:  signInfos,
+	})
 
 	return &types.SignTxResponse{}, nil
 }
@@ -427,9 +461,13 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("consolidation in progress")
 	}
 
-	externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
-	if !ok {
-		return nil, fmt.Errorf("external key not registered")
+	externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
+	externalKeys, err := getExternalKeys(ctx, s.BTCKeeper, s.signer)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+		return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
 	}
 
 	consolidationKey, ok := s.signer.GetKey(ctx, req.KeyID)
@@ -479,7 +517,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 	}
 
 	lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, lockTime, s.GetNetwork(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, s.GetNetwork(ctx))
 	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
@@ -556,6 +594,10 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	}
 
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
+
+	telemetry.IncrCounter(float32(totalOut.Int64()), types.ModuleName, "total", "withdrawal")
+	telemetry.IncrCounter(float32(len(outputs)), types.ModuleName, "total", "withdrawal", "count")
+
 	if len(outputs) == 0 {
 		s.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
@@ -566,9 +608,13 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
 		}
 
-		externalKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.ExternalKey)
-		if !ok {
-			return nil, fmt.Errorf("external key not registered")
+		externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
+		externalKeys, err := getExternalKeys(ctx, s.BTCKeeper, s.signer)
+		if err != nil {
+			return nil, err
+		}
+		if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+			return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
 		}
 
 		prevMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)
@@ -577,7 +623,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		}
 
 		lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
-		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalKey, lockTime, s.GetNetwork(ctx))
+		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, s.GetNetwork(ctx))
 		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: currMasterAddress.GetAddress()}
 
 		outputs = append(outputs, masterOutput)
@@ -644,6 +690,25 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	))
 
 	return &types.CreatePendingTransfersTxResponse{}, nil
+}
+
+func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]tss.Key, error) {
+	externalKeyIDs, ok := k.GetExternalKeyIDs(ctx)
+	if !ok {
+		return nil, fmt.Errorf("external keys not registered yet")
+	}
+
+	externalKeys := make([]tss.Key, len(externalKeyIDs))
+	for i, externalKeyID := range externalKeyIDs {
+		externalKey, ok := signer.GetKey(ctx, externalKeyID)
+		if !ok || externalKey.Role != tss.ExternalKey {
+			return nil, fmt.Errorf("external key %s not found", externalKeyID)
+		}
+
+		externalKeys[i] = externalKey
+	}
+
+	return externalKeys, nil
 }
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
@@ -754,8 +819,13 @@ func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress type
 
 	k.SetAddress(ctx, consolidationAddress)
 
-	telemetry.NewLabel("btc_secondary_addr", consolidationAddress.Address)
-	telemetry.SetGauge(float32(change.Int64()), "btc_secondary_addr_balance")
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "secondary", "address", "balance"},
+		float32(change.Int64()),
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("address", consolidationAddress.Address),
+		})
 
 	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
 }

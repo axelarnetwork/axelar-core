@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 import "gogoproto/gogo.proto";
 import "bitcoin/v1beta1/types.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -23,4 +24,6 @@ message Params {
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "time.Duration"
   ];
+  utils.v1beta1.Threshold external_multisig_threshold = 10
+      [ (gogoproto.nullable) = false ];
 }

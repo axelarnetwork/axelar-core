@@ -35,6 +35,7 @@ type BTCKeeper interface {
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
 	GetMasterAddressLockDuration(ctx sdk.Context) time.Duration
+	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -62,6 +63,13 @@ type BTCKeeper interface {
 
 	SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount)
 	GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount
+
+	SetExternalKeyIDs(ctx sdk.Context, keyIDs []string)
+	GetExternalKeyIDs(ctx sdk.Context) ([]string, bool)
+
+	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
+	GetScheduledTxs(ctx sdk.Context) []ScheduledUnsignedTx
+	DeleteScheduledTxs(ctx sdk.Context)
 }
 
 // Voter is the interface that provides voting functionality
@@ -79,6 +87,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
+	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
 	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)

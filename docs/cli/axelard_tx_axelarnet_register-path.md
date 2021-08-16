@@ -1,9 +1,9 @@
-## axelard tx bitcoin register-external-key
+## axelard tx axelarnet register-path
 
-Register the external key for bitcoin
+Register an ibc path for an asset
 
 ```
-axelard tx bitcoin register-external-key [keyID] [pubKeyHex] [flags]
+axelard tx axelarnet register-path [asset] [path] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard tx bitcoin register-external-key [keyID] [pubKeyHex] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for register-external-key
+  -h, --help                     help for register-path
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -44,4 +44,4 @@ axelard tx bitcoin register-external-key [keyID] [pubKeyHex] [flags]
 
 ### SEE ALSO
 
-- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands

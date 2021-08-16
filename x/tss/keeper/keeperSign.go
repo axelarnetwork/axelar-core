@@ -2,6 +2,11 @@ package keeper
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +17,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+// AnnounceSign emits an event asking for acknowledgments for the specified key ID and sig ID.
+// It returns currentHeight + AckWindow, which is the height at which the module should schedule signing.
+func (k Keeper) AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64 {
+	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
+	k.emitAckEvent(ctx, types.AttributeValueSign, keyID, sigID, height)
+	k.Logger(ctx).Info(fmt.Sprintf("anouncing signing for sig ID '%s' and key ID '%s'", sigID, keyID))
+	return height
+}
 
 // StartSign starts a tss signing protocol using the specified key for the given chain.
 func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string, sigID string, msg []byte, s snapshot.Snapshot) error {
@@ -30,8 +44,16 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 	var activeValidators []snapshot.Validator
 	activeShareCount := sdk.ZeroInt()
 
+	available := k.getAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
+	validatorAvailable := make(map[string]bool)
+	for _, validator := range available {
+		validatorAvailable[validator.String()] = true
+	}
+
 	for _, validator := range s.Validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) && !snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) &&
+			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
+			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
 			activeValidators = append(activeValidators, validator)
 			activeShareCount = activeShareCount.AddRaw(validator.ShareCount)
 		}
@@ -67,6 +89,19 @@ func (k Keeper) StartSign(ctx sdk.Context, voter types.InitPoller, keyID string,
 			sdk.NewAttribute(types.AttributeKeySigID, sigID),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.cdc.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(msg))))
+
+	// metrics for sign participation
+	ts := time.Now().Unix()
+	for _, validator := range activeValidators {
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "sign", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("sigID", sigID),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
+	}
 
 	return nil
 }

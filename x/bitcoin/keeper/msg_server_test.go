@@ -181,7 +181,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("already confirmed", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return msg.OutPointInfo, types.CONFIRMED, true
+			return msg.OutPointInfo, types.OutPointState_Confirmed, true
 		}
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -190,7 +190,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("already spent", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return msg.OutPointInfo, types.SPENT, true
+			return msg.OutPointInfo, types.OutPointState_Spent, true
 		}
 		_, err := server.ConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -393,7 +393,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			return types.OutPointInfo{}, false
 		}
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.CONFIRMED, true
+			return info, types.OutPointState_Confirmed, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
@@ -406,7 +406,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path second poll (outpoint already confirmed)", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.CONFIRMED, true
+			return info, types.OutPointState_Confirmed, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
@@ -419,7 +419,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	t.Run("happy path already spent", testutils.Func(func(t *testing.T) {
 		setup()
 		btcKeeper.GetOutPointInfoFunc = func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
-			return info, types.SPENT, true
+			return info, types.OutPointState_Spent, true
 		}
 
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
@@ -481,7 +481,7 @@ func TestCreateMasterTx(t *testing.T) {
 		oldMasterKey           tss.Key
 		secondaryKey           tss.Key
 		consolidationKey       tss.Key
-		externalKey            tss.Key
+		externalKeys           []tss.Key
 		masterKeyRotationCount int64
 		inputs                 []types.OutPointInfo
 		inputTotal             btcutil.Amount
@@ -492,7 +492,13 @@ func TestCreateMasterTx(t *testing.T) {
 		oldMasterKey = createRandomKey(tss.MasterKey)
 		secondaryKey = createRandomKey(tss.SecondaryKey)
 		consolidationKey = createRandomKey(tss.MasterKey)
-		externalKey = createRandomKey(tss.ExternalKey)
+
+		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeys = make([]tss.Key, externalKeyCount)
+		for i := 0; i < int(externalKeyCount); i++ {
+			externalKeys[i] = createRandomKey(tss.ExternalKey)
+		}
+
 		masterKeyRotationCount = rand.I64Between(100, 1000)
 		oldMasterKeyRotationCount := masterKeyRotationCount - (masterKeyRotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
 
@@ -548,6 +554,9 @@ func TestCreateMasterTx(t *testing.T) {
 			GetMaxInputCountFunc: func(ctx sdk.Context) int64 {
 				return types.DefaultParams().MaxInputCount
 			},
+			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold {
+				return types.DefaultParams().ExternalMultisigThreshold
+			},
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
@@ -570,6 +579,14 @@ func TestCreateMasterTx(t *testing.T) {
 					KeyID:        masterKey.ID,
 				}, true
 			},
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
+				externalKeyIDs := make([]string, len(externalKeys))
+				for i := 0; i < len(externalKeyIDs); i++ {
+					externalKeyIDs[i] = externalKeys[i].ID
+				}
+
+				return externalKeyIDs, true
+			},
 			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID string) btcutil.Amount { return 0 },
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
@@ -585,8 +602,6 @@ func TestCreateMasterTx(t *testing.T) {
 					return masterKey, true
 				case tss.SecondaryKey:
 					return secondaryKey, true
-				case tss.ExternalKey:
-					return externalKey, true
 				default:
 					return tss.Key{}, false
 				}
@@ -601,9 +616,13 @@ func TestCreateMasterTx(t *testing.T) {
 					return secondaryKey, true
 				case consolidationKey.ID:
 					return consolidationKey, true
-				case externalKey.ID:
-					return externalKey, true
 				default:
+					for _, externalKey := range externalKeys {
+						if keyID == externalKey.ID {
+							return externalKey, true
+						}
+					}
+
 					return tss.Key{}, false
 				}
 			},
@@ -641,7 +660,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -682,7 +701,7 @@ func TestCreateMasterTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalKey, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -777,7 +796,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		oldMasterKey           tss.Key
 		secondaryKey           tss.Key
 		consolidationKey       tss.Key
-		externalKey            tss.Key
+		externalKeys           []tss.Key
 		masterKeyRotationCount int64
 		inputs                 []types.OutPointInfo
 		inputTotal             btcutil.Amount
@@ -789,7 +808,13 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		oldMasterKey = createRandomKey(tss.MasterKey)
 		secondaryKey = createRandomKey(tss.SecondaryKey)
 		consolidationKey = createRandomKey(tss.SecondaryKey)
-		externalKey = createRandomKey(tss.ExternalKey)
+
+		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeys = make([]tss.Key, externalKeyCount)
+		for i := 0; i < int(externalKeyCount); i++ {
+			externalKeys[i] = createRandomKey(tss.ExternalKey)
+		}
+
 		masterKeyRotationCount = rand.I64Between(100, 1000)
 		oldMasterKeyRotationCount := masterKeyRotationCount - (masterKeyRotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
 
@@ -850,6 +875,9 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetMaxInputCountFunc: func(ctx sdk.Context) int64 {
 				return types.DefaultParams().MaxInputCount
 			},
+			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold {
+				return types.DefaultParams().ExternalMultisigThreshold
+			},
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
@@ -871,6 +899,14 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					RedeemScript: nil,
 					KeyID:        masterKey.ID,
 				}, true
+			},
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
+				externalKeyIDs := make([]string, len(externalKeys))
+				for i := 0; i < len(externalKeyIDs); i++ {
+					externalKeyIDs[i] = externalKeys[i].ID
+				}
+
+				return externalKeyIDs, true
 			},
 			GetDustAmountFunc:        func(ctx sdk.Context, encodedAddress string) btcutil.Amount { return 0 },
 			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID string) btcutil.Amount { return 0 },
@@ -898,8 +934,6 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					return masterKey, true
 				case tss.SecondaryKey:
 					return secondaryKey, true
-				case tss.ExternalKey:
-					return externalKey, true
 				default:
 					return tss.Key{}, false
 				}
@@ -914,9 +948,13 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					return secondaryKey, true
 				case consolidationKey.ID:
 					return consolidationKey, true
-				case externalKey.ID:
-					return externalKey, true
 				default:
+					for _, externalKey := range externalKeys {
+						if keyID == externalKey.ID {
+							return externalKey, true
+						}
+					}
+
 					return tss.Key{}, false
 				}
 			},
@@ -1003,7 +1041,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, externalKey, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)

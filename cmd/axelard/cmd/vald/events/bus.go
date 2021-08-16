@@ -11,7 +11,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	"github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"

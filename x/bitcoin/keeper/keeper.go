@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -21,16 +22,18 @@ import (
 )
 
 var (
-	pendingOutpointPrefix    = utils.KeyFromStr("pend_")
-	confirmedOutPointPrefix  = utils.KeyFromStr("conf_")
-	spentOutPointPrefix      = utils.KeyFromStr("spent_")
-	addrPrefix               = utils.KeyFromStr("addr_")
-	dustAmtPrefix            = utils.KeyFromStr("dust_")
-	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
-	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
-	latestSignedTxHashPrefix = utils.KeyFromStr("latest_signed_tx_hash_")
-	unconfirmedAmountPrefix  = utils.KeyFromStr("unconfirmed_amount_")
+	pendingOutpointPrefix     = utils.KeyFromStr("pend_")
+	confirmedOutPointPrefix   = utils.KeyFromStr("conf_")
+	spentOutPointPrefix       = utils.KeyFromStr("spent_")
+	addrPrefix                = utils.KeyFromStr("addr_")
+	dustAmtPrefix             = utils.KeyFromStr("dust_")
+	signedTxPrefix            = utils.KeyFromStr("signed_tx_")
+	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx_")
+	latestSignedTxHashPrefix  = utils.KeyFromStr("latest_signed_tx_hash_")
+	unconfirmedAmountPrefix   = utils.KeyFromStr("unconfirmed_amount_")
+	scheduledUnsignedTxPrefix = utils.KeyFromStr("scheduled_unsigned_tx_")
 
+	externalKeyIDsKey        = utils.KeyFromStr("external_key_ids")
 	anyoneCanSpendAddressKey = utils.KeyFromStr("anyone_can_spend_address")
 
 	confirmedOutpointQueueName = "confirmed_outpoint"
@@ -161,6 +164,14 @@ func (k Keeper) GetMasterAddressLockDuration(ctx sdk.Context) time.Duration {
 	return result
 }
 
+// GetExternalMultisigThreshold returns the external multisig threshold
+func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
+	var result utils.Threshold
+	k.params.Get(ctx, types.KeyExternalMultisigThreshold, &result)
+
+	return result
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	k.getStore(ctx).Set(addrPrefix.Append(utils.LowerCaseKey(address.Address)), &address)
@@ -195,12 +206,12 @@ func (k Keeper) GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (types.
 	key := utils.LowerCaseKey(outPoint.String())
 	ok := k.getStore(ctx).Get(confirmedOutPointPrefix.Append(key), &info)
 	if ok {
-		return info, types.CONFIRMED, true
+		return info, types.OutPointState_Confirmed, true
 	}
 
 	ok = k.getStore(ctx).Get(spentOutPointPrefix.Append(key), &info)
 	if ok {
-		return info, types.SPENT, true
+		return info, types.OutPointState_Spent, true
 	}
 
 	return types.OutPointInfo{}, 0, false
@@ -343,6 +354,60 @@ func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amou
 	return btcutil.Amount(result.Value)
 }
 
+// SetExternalKeyIDs stores the given list of external key IDs
+func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, keyIDs []string) {
+	values := make([]*gogoprototypes.Value, len(keyIDs))
+	for i, keyID := range keyIDs {
+		values[i] = &gogoprototypes.Value{
+			Kind: &gogoprototypes.Value_StringValue{StringValue: keyID},
+		}
+	}
+
+	k.getStore(ctx).Set(externalKeyIDsKey, &gogoprototypes.ListValue{Values: values})
+}
+
+// GetExternalKeyIDs retrieves the current list of external key IDs
+func (k Keeper) GetExternalKeyIDs(ctx sdk.Context) ([]string, bool) {
+	var listValue gogoprototypes.ListValue
+	if !k.getStore(ctx).Get(externalKeyIDsKey, &listValue) {
+		return nil, false
+	}
+
+	keyIDs := make([]string, len(listValue.Values))
+	for i, value := range listValue.Values {
+		keyIDs[i] = value.GetStringValue()
+	}
+
+	return keyIDs, true
+}
+
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// GetScheduledTxs gets the unsigned TXs scheduled for the current height
+func (k Keeper) GetScheduledTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(strconv.FormatInt(ctx.BlockHeight(), 10)))
+	var txs types.ScheduledUnsignedTxs
+	if !k.getStore(ctx).Get(key, &txs) {
+		return nil
+	}
+
+	return txs.Infos
+}
+
+// ScheduleUnsignedTx schedules the unsigned TX to be signed at the specified height
+func (k Keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, tx types.ScheduledUnsignedTx) {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", height)))
+	var infos types.ScheduledUnsignedTxs
+	k.getStore(ctx).Get(key, &infos)
+
+	infos.Infos = append(infos.Infos, tx)
+	k.getStore(ctx).Set(key, &infos)
+}
+
+// DeleteScheduledTxs deletes all unsigned txs scheduled for the current height
+func (k Keeper) DeleteScheduledTxs(ctx sdk.Context) {
+	key := scheduledUnsignedTxPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%d", ctx.BlockHeight())))
+	k.getStore(ctx).Delete(key)
 }

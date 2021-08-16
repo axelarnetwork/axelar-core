@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -42,3 +43,24 @@ message ExecutePendingTransfersRequest {
 }
 
 message ExecutePendingTransfersResponse {}
+
+// MSgRegisterIBCPath represents a message to register an IBC tracing path for
+// an asset
+message RegisterIBCPathRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string asset = 2;
+  string path = 3;
+}
+
+message RegisterIBCPathResponse {}
+
+// MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+// to nexus
+message AddCosmosBasedChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+}
+
+message AddCosmosBasedChainResponse {}

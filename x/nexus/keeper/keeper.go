@@ -165,7 +165,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
 	info, _ := k.GetChain(ctx, t.Recipient.Chain.Name)
 	if info.NativeAsset != t.Asset.Denom {
-		k.addToChainTotal(ctx, t.Recipient.Chain, t.Asset)
+		k.AddToChainTotal(ctx, t.Recipient.Chain, t.Asset)
 	}
 }
 
@@ -178,8 +178,8 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 
 	return total
 }
-
-func (k Keeper) addToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
+// AddToChainTotal add balance for an asset for a chain
+func (k Keeper) AddToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
 	total = total.Add(amount)
 

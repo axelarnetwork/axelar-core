@@ -18,7 +18,8 @@ import (
 )
 
 type signingAbortError struct {
-	err error
+	err          error
+	abortedKeyID string
 }
 
 func (e *signingAbortError) Error() string {
@@ -30,7 +31,17 @@ func (e *signingAbortError) Error() string {
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.BTCKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, signer types.Signer) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, signer types.Signer, voter types.InitPoller, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
+	txs := k.GetScheduledTxs(ctx)
+	if len(txs) > 0 {
+		k.Logger(ctx).Info(fmt.Sprintf("processing %d unsigned tx", len(txs)))
+	}
+
+	for _, tx := range txs {
+		processScheduledTx(ctx, tx, k, signer, voter, snapshotter)
+	}
+	k.DeleteScheduledTxs(ctx)
+
 	if req.Height%k.GetSigCheckInterval(ctx) != 0 {
 		return nil
 	}
@@ -51,7 +62,7 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 
 	signedTx, err := assembleTx(ctx, k, signer, &unsignedTx)
 	if err != nil {
-		switch err.(type) {
+		switch e := err.(type) {
 		case *signingAbortError:
 			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -61,6 +72,7 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 
 			unsignedTx.ConfirmationRequired = true
 			unsignedTx.Status = types.Aborted
+			unsignedTx.PrevAbortedKeyId = e.abortedKeyID
 			k.SetUnsignedTx(ctx, keyRole, unsignedTx)
 		default:
 		}
@@ -151,7 +163,7 @@ func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsigne
 
 				// TODO: keyID for sigID is deleted on signing failure/timeout. Some more explicit state is needed.
 				if _, ok := signer.GetKeyForSigID(ctx, sigID); !ok {
-					return nil, &signingAbortError{err}
+					return nil, &signingAbortError{err: err, abortedKeyID: sigRequirement.KeyID}
 				}
 
 				return nil, err
@@ -212,7 +224,7 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]t
 			return nil, fmt.Errorf("cannot find %s", in.PreviousOutPoint.String())
 		}
 
-		if state != types.SPENT {
+		if state != types.OutPointState_Spent {
 			return nil, fmt.Errorf("outpoint %s is not set as spent", in.PreviousOutPoint.String())
 		}
 
@@ -227,4 +239,42 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]t
 		})
 	}
 	return toSign, nil
+}
+
+func processScheduledTx(
+	ctx sdk.Context,
+	tx types.ScheduledUnsignedTx,
+	k types.BTCKeeper,
+	signer types.Signer,
+	voter types.InitPoller,
+	snapshotter types.Snapshotter) {
+	var err error
+
+	for _, signInfo := range tx.SignInfos {
+		snapshot, found := snapshotter.GetSnapshot(ctx, signInfo.SnapshotCounter)
+		if !found {
+			k.Logger(ctx).Error(fmt.Sprintf("could not find snapshot for counter %d", signInfo.SnapshotCounter))
+			break
+		}
+
+		err := signer.StartSign(ctx, voter, signInfo.KeyID, signInfo.SigID, signInfo.Msg, snapshot)
+		if err != nil {
+			k.Logger(ctx).Error(fmt.Sprintf("error while starting sign for sig ID %s: %s", signInfo.SigID, err.Error()))
+			break
+		}
+	}
+
+	if err != nil {
+		k.Logger(ctx).Error(fmt.Sprintf("could not start signing for all outpoints in tx %s", tx.UnsignedTx.GetTx().TxHash()))
+		return
+	}
+	k.Logger(ctx).Info(fmt.Sprintf("started signing on %d outpoints at block %d", len(tx.SignInfos), ctx.BlockHeight()))
+
+	k.SetUnsignedTx(ctx, tx.KeyRole, tx.UnsignedTx)
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigning),
+		sdk.NewAttribute(types.AttributeKeyRole, tx.KeyRole.SimpleString()),
+	))
+
 }

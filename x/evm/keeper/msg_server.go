@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -94,6 +93,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		TokenAddress:     types.Address(tokenAddr),
 		DestinationChain: req.RecipientChain,
 		Symbol:           symbol,
+		Asset:            req.Asset,
 		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
@@ -283,6 +283,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	erc20Deposit := types.ERC20Deposit{
 		TxID:             req.TxID,
 		Amount:           req.Amount,
+		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    req.BurnerAddress,
 	}
@@ -447,7 +448,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
 
-	destChain, ok := s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
 	if !ok {
 		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
 	}
@@ -520,7 +521,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	amount := sdk.NewInt64Coin(destChain.NativeAsset, pendingDeposit.Amount.BigInt().Int64())
+	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
 	}
@@ -722,9 +723,6 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 	keeper := s.ForChain(ctx, chain.Name)
 
 	commandIDHex := common.Bytes2Hex(commandID[:])
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
-
 	signHash := types.GetSignHash(data)
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -737,11 +735,23 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
-	if err != nil {
-		return nil, err
+	signInfo := tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           commandIDHex,
+		Msg:             signHash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
 	}
+	height := s.signer.AnnounceSign(ctx, keyID, commandIDHex)
+	s.ScheduleUnsignedCommand(ctx, height, types.ScheduledUnsignedCommand{
+		Chain:       req.Chain,
+		CommandID:   commandID[:],
+		CommandData: data,
+		SignInfo:    signInfo,
+	})
 
+	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
+
+	//TODO: do we need to undo changes done here if signing cannot start when triggered?
 	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
 
 	ctx.EventManager().EmitEvent(
@@ -801,8 +811,6 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for burn command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
 
 	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetSignHash(data)
@@ -817,11 +825,21 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
-	if err != nil {
-		return nil, err
+	signInfo := tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           commandIDHex,
+		Msg:             signHash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
 	}
+	height := s.signer.AnnounceSign(ctx, keyID, commandIDHex)
+	s.ScheduleUnsignedCommand(ctx, height, types.ScheduledUnsignedCommand{
+		Chain:       req.Chain,
+		CommandID:   commandID[:],
+		CommandData: data,
+		SignInfo:    signInfo,
+	})
 
+	//TODO: do we need to undo changes done here if signing cannot start when triggered?
 	for _, deposit := range deposits {
 		keeper.DeleteDeposit(ctx, deposit)
 		keeper.SetDeposit(ctx, deposit, types.BURNED)
@@ -856,16 +874,6 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s tx [%s] to sign: %s", chain.Name, txID, hash.Hex()))
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, txID),
-		),
-	)
-
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
@@ -881,30 +889,27 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, txID, hash.Bytes(), snapshot)
-	if err != nil {
-		return nil, err
+	signInfo := tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           txID,
+		Msg:             hash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
 	}
+	height := s.signer.AnnounceSign(ctx, keyID, txID)
+	s.ScheduleUnsignedTx(ctx, height, types.ScheduledUnsignedTx{
+		Chain:    req.Chain,
+		TxID:     txID,
+		SignInfo: signInfo,
+	})
 
-	byteCodes, ok := keeper.GetGatewayByteCodes(ctx)
-	if !ok {
-		return nil, fmt.Errorf("Could not retrieve gateway bytecodes for chain %s", req.Chain)
-	}
-
-	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
-	// TODO: this is something that should be done after the signature has been successfully confirmed
-	if tx.To() == nil && bytes.Equal(tx.Data(), byteCodes) {
-
-		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
-		if !ok {
-			return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-		}
-
-		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
-		keeper.SetGatewayAddress(ctx, addr)
-
-		telemetry.NewLabel("eth_factory_addr", addr.String())
-	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(types.AttributeKeyTxID, txID),
+		),
+	)
 
 	return &types.SignTxResponse{TxID: txID}, nil
 }
@@ -951,9 +956,6 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 
 	commandIDHex := hex.EncodeToString(commandID[:])
 
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
-
 	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
 	signHash := types.GetSignHash(data)
 
@@ -967,12 +969,22 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
-	if err != nil {
-		return nil, err
+	signInfo := tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           commandIDHex,
+		Msg:             signHash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
 	}
+	height := s.signer.AnnounceSign(ctx, keyID, commandIDHex)
+	s.ScheduleUnsignedCommand(ctx, height, types.ScheduledUnsignedCommand{
+		Chain:       req.Chain,
+		CommandID:   commandID[:],
+		CommandData: data,
+		SignInfo:    signInfo,
+	})
 
 	// TODO: Archive pending transfers after signing is completed
+	// TODO: do we need to undo changes done here if signing cannot start when triggered?
 	for _, pendingTransfer := range pendingTransfers {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
@@ -1030,10 +1042,6 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	}
 
 	commandIDHex := hex.EncodeToString(commandID[:])
-	keeper := s.ForChain(ctx, chain.Name)
-
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for transfer-ownership command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
 
 	signHash := types.GetSignHash(data)
 
@@ -1046,11 +1054,19 @@ func (s msgServer) SignTransferOwnership(c context.Context, req *types.SignTrans
 	if !ok {
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
-
-	err = s.signer.StartSign(ctx, s.voter, keyID, commandIDHex, signHash.Bytes(), snapshot)
-	if err != nil {
-		return nil, err
+	signInfo := tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           commandIDHex,
+		Msg:             signHash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
 	}
+	height := s.signer.AnnounceSign(ctx, keyID, commandIDHex)
+	s.ScheduleUnsignedCommand(ctx, height, types.ScheduledUnsignedCommand{
+		Chain:       req.Chain,
+		CommandID:   commandID[:],
+		CommandData: data,
+		SignInfo:    signInfo,
+	})
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

@@ -43,6 +43,8 @@ const (
 	assetPrefix            = "asset_"
 	burnerAddrPrefix       = "burnerAddr_"
 	tokenAddrPrefix        = "tokenAddr_"
+	scheduledCommandPrefix = "scheduled_command_"
+	scheduledTxPrefix      = "scheduled_tx_"
 
 	pendingTransferOwnershipPrefix  = "pending_transfer_ownership_"
 	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
@@ -74,6 +76,84 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 // Logger returns a module-specific logger.
 func (k keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// GetScheduledUnsignedCommand returns all commands scheduled for the current height
+func (k keeper) GetScheduledUnsignedCommands(ctx sdk.Context) []types.ScheduledUnsignedCommand {
+	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	var cmds types.ScheduledUnsignedCommands
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
+	if len(cmds.Cmds) == 0 {
+		return nil
+	}
+
+	return cmds.Cmds
+}
+
+// ScheduleUnsignedCommand schedules a command for processing at the specified height
+func (k keeper) ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedCommand) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, height))
+	bz := ctx.KVStore(k.storeKey).Get(key)
+
+	var cmds types.ScheduledUnsignedCommands
+
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
+	}
+	cmds.Cmds = append(cmds.Cmds, cmd)
+
+	bz = k.cdc.MustMarshalBinaryLengthPrefixed(&cmds)
+	ctx.KVStore(k.storeKey).Set(key, bz)
+}
+
+// DeleteScheduledCommands deletes all commands scheduled for the current height
+func (k keeper) DeleteScheduledCommands(ctx sdk.Context) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Delete(key)
+}
+
+// GetScheduledUnsignedTxs returns all txs scheduled for the current height
+func (k keeper) GetScheduledUnsignedTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
+	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	var cmds types.ScheduledUnsignedTxs
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
+
+	if len(cmds.Txs) == 0 {
+		return nil
+	}
+
+	return cmds.Txs
+}
+
+// ScheduleUnsignedTx schedules a tx for processing at the specified height
+func (k keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedTx) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, height))
+	bz := ctx.KVStore(k.storeKey).Get(key)
+
+	var cmds types.ScheduledUnsignedTxs
+	if bz != nil {
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
+	}
+	cmds.Txs = append(cmds.Txs, cmd)
+
+	bz = k.cdc.MustMarshalBinaryLengthPrefixed(&cmds)
+	ctx.KVStore(k.storeKey).Set(key, bz)
+}
+
+// DeleteScheduledTxs deletes all txs scheduled for the current height
+func (k keeper) DeleteScheduledTxs(ctx sdk.Context) {
+	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Delete(key)
 }
 
 // GetChain returns the keeper associated to the given chain
@@ -377,7 +457,7 @@ func (k keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byt
 	return k.getStore(ctx, k.chain).Get(key)
 }
 
-func (k keeper) getUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
+func (k keeper) GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
 	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedPrefix + txID))
 	if bz == nil {
 		return nil
@@ -446,7 +526,7 @@ func (k keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 
 // AssembleTx sets a signature for a previously stored raw transaction
 func (k keeper) AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error) {
-	rawTx := k.getUnsignedTx(ctx, txID)
+	rawTx := k.GetUnsignedTx(ctx, txID)
 	if rawTx == nil {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
 	}
@@ -463,7 +543,7 @@ func (k keeper) AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig
 
 // GetHashToSign returns the hash to sign of a previously stored raw transaction
 func (k keeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
-	rawTx := k.getUnsignedTx(ctx, txID)
+	rawTx := k.GetUnsignedTx(ctx, txID)
 	if rawTx == nil {
 		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
 	}

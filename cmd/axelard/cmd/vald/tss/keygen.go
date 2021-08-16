@@ -11,10 +11,47 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+// ProcessKeygenAck broadcasts an acknowledgment for a keygen
+func (mgr *Mgr) ProcessKeygenAck(blockHeight int64, attributes []sdk.Attribute) error {
+	keyID, height, err := parseKeygenAckParams(mgr.cdc, attributes)
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	request := &tofnd.KeyPresenceRequest{
+		KeyUid: keyID,
+	}
+
+	response, err := mgr.client.KeyPresence(grpcCtx, request)
+	if err != nil {
+		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc for key ID '%s'", keyID)
+	}
+
+	switch response.Response {
+	case tofnd.KeyPresenceResponse_RESPONSE_UNSPECIFIED:
+		fallthrough
+	case tofnd.KeyPresenceResponse_RESPONSE_FAIL:
+		return sdkerrors.Wrap(err, "tofnd not set up correctly")
+	case tofnd.KeyPresenceResponse_RESPONSE_PRESENT:
+		return sdkerrors.Wrap(err, "key ID '%s' already present at tofnd")
+	case tofnd.KeyPresenceResponse_RESPONSE_ABSENT:
+		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
+		tssMsg := tss.NewAckRequest(mgr.sender, keyID, exported.AckType_Keygen, height)
+		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
+			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+		}
+	default:
+		return sdkerrors.Wrap(err, "unknown tofnd response")
+	}
+
+	return nil
+}
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute) error {
@@ -23,8 +60,8 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 		return err
 	}
 
-	myIndex, ok := indexOf(participants, mgr.principalAddr)
-	if !ok {
+	myIndex := utils.IndexOf(participants, mgr.principalAddr)
+	if myIndex == -1 {
 		// do not participate
 		return nil
 	}
@@ -32,7 +69,7 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 	done := false
 	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+mgr.sessionTimeout)
 
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, myIndex, participants, participantShareCounts)
+	stream, cancel, err := mgr.startKeygen(keyID, threshold, int32(myIndex), participants, participantShareCounts)
 	if err != nil {
 		return err
 	}
@@ -88,6 +125,30 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 		return sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
 	}
 	return nil
+}
+
+func parseKeygenAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, height int64, err error) {
+	var keyIDFound, heightFound bool
+	for _, attribute := range attributes {
+		switch attribute.Key {
+		case tss.AttributeKeyKeyID:
+			keyID = attribute.Value
+			keyIDFound = true
+		case tss.AttributeKeyHeight:
+			height, err = strconv.ParseInt(attribute.Value, 10, 64)
+			if err != nil {
+				return "", -1, err
+			}
+			heightFound = true
+		default:
+		}
+	}
+
+	if !keyIDFound || !heightFound {
+		return "", -1, fmt.Errorf("insufficient event attributes")
+	}
+
+	return keyID, height, nil
 }
 
 func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32, err error) {
