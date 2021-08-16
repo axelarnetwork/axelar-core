@@ -212,3 +212,28 @@ func QueryHandlerKeySharesByValidator(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, keyShareResponse)
 	}
 }
+
+// QueryHandlerDeactivatedOperator returns a list of deactivated operator addresses by keyID
+func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		vars := mux.Vars(r)
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryDeactivated, vars[utils.PathVarKeyID])
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get deactivated operator addresses").Error())
+			return
+		}
+
+		var res types.QueryDeactivatedOperatorsResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}

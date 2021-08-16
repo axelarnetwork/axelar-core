@@ -3,24 +3,27 @@ package keeper
 import (
 	"fmt"
 
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 // Query paths
 const (
-	QuerySigStatus 				= "sig-status"
-	QueryKeyStatus 				= "key-status"
-	QueryRecovery  				= "recovery"
-	QueryKeyID	  				= "key-id"
-	QueryKeySharesByKeyID		= "key-share-id"
-	QueryKeySharesByValidator	= "key-share-validator"
+	QuerySigStatus            = "sig-status"
+	QueryKeyStatus            = "key-status"
+	QueryRecovery             = "recovery"
+	QueryKeyID                = "key-id"
+	QueryKeySharesByKeyID     = "key-share-id"
+	QueryKeySharesByValidator = "key-share-validator"
+	QueryDeactivated          = "deactivated"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -41,6 +44,8 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, 
 			res, err = queryKeySharesByKeyID(ctx, k, s, path[1])
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
+		case QueryDeactivated:
+			res, err = queryDeactivatedOperator(ctx, k, s, path[1])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown tss query endpoint: %s", path[0]))
 		}
@@ -172,23 +177,22 @@ func queryKeySharesByKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Sna
 		return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
 	}
 
-	
 	var allShareInfos []tssTypes.QueryKeyShareResponse_ShareInfo
 	for _, validator := range snapshot.Validators {
 
-		thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo {
-			KeyID:					keyID,
-			SnapshotBlockNumber:	snapshot.Height,
-			ValidatorAddress:		validator.GetSDKValidator().GetOperator().String(),
-			NumValidatorShares:		validator.ShareCount,
-			NumTotalShares:			snapshot.TotalShareCount.Int64(),
+		thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo{
+			KeyID:               keyID,
+			SnapshotBlockNumber: snapshot.Height,
+			ValidatorAddress:    validator.GetSDKValidator().GetOperator().String(),
+			NumValidatorShares:  validator.ShareCount,
+			NumTotalShares:      snapshot.TotalShareCount.Int64(),
 		}
 
 		allShareInfos = append(allShareInfos, thisShareInfo)
 	}
 
-	keyShareInfos := tssTypes.QueryKeyShareResponse {
-		ShareInfos:		allShareInfos,
+	keyShareInfos := tssTypes.QueryKeyShareResponse{
+		ShareInfos: allShareInfos,
 	}
 
 	return keyShareInfos.Marshal()
@@ -211,7 +215,7 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 			if !ok {
 				return nil, fmt.Errorf("could not get snapshot counter from keyID %s", keyID)
 			}
-		
+
 			snapshot, ok := s.GetSnapshot(ctx, counter)
 			if !ok {
 				return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
@@ -220,16 +224,16 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 			for _, validator := range snapshot.Validators {
 
 				validatorAddr := validator.GetSDKValidator().GetOperator().String()
-				if validatorAddr == targetValidatorAddr{
+				if validatorAddr == targetValidatorAddr {
 
-					thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo {
-						KeyID:					keyID,
-						KeyChain:				chain.Name,
-						KeyRole:				keyRole.String(),
-						SnapshotBlockNumber:	snapshot.Height,
-						ValidatorAddress:		validator.GetSDKValidator().GetOperator().String(),
-						NumValidatorShares:		validator.ShareCount,
-						NumTotalShares:			snapshot.TotalShareCount.Int64(),
+					thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo{
+						KeyID:               keyID,
+						KeyChain:            chain.Name,
+						KeyRole:             keyRole.String(),
+						SnapshotBlockNumber: snapshot.Height,
+						ValidatorAddress:    validator.GetSDKValidator().GetOperator().String(),
+						NumValidatorShares:  validator.ShareCount,
+						NumTotalShares:      snapshot.TotalShareCount.Int64(),
 					}
 					allShareInfos = append(allShareInfos, thisShareInfo)
 					break
@@ -237,10 +241,40 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 			}
 		}
 	}
-	
-	keyShareInfos := tssTypes.QueryKeyShareResponse {
-		ShareInfos:		allShareInfos,
+
+	keyShareInfos := tssTypes.QueryKeyShareResponse{
+		ShareInfos: allShareInfos,
 	}
 
 	return keyShareInfos.Marshal()
+}
+
+func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+	var found bool
+	var snapshot snapshot.Snapshot
+
+	counter, found := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !found {
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
+	}
+
+	snapshot, found = s.GetSnapshot(ctx, counter)
+	if !found {
+		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	}
+
+	var res []string
+	for _, validator := range snapshot.Validators {
+		_, active := s.GetProxy(ctx, validator.GetSDKValidator().GetOperator())
+		if !active {
+			res = append(res, validator.GetSDKValidator().GetOperator().String())
+		}
+	}
+
+	resp := tssTypes.QueryDeactivatedOperatorsResponse{
+		OperatorAddresses: res,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+
 }

@@ -213,6 +213,7 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
@@ -2986,6 +2987,21 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
+
+### QueryDeactivatedOperatorsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operator_addresses` | [string](#string) | repeated |  |
+
+
+
 
 
 

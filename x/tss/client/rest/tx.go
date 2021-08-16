@@ -21,12 +21,13 @@ const (
 	TxKeygenStart     = "start"
 	TxMasterKeyRotate = "rotate"
 
-	QuerySigStatus 				= keeper.QuerySigStatus
-	QueryKeyStatus 				= keeper.QueryKeyStatus
-	QueryRecovery  				= keeper.QueryRecovery
-	QueryKeyID	  				= keeper.QueryKeyID
-	QueryKeySharesByKeyID		= keeper.QueryKeySharesByKeyID
-	QueryKeySharesByValidator	= keeper.QueryKeySharesByValidator
+	QuerySigStatus            = keeper.QuerySigStatus
+	QueryKeyStatus            = keeper.QueryKeyStatus
+	QueryRecovery             = keeper.QueryRecovery
+	QueryKeyID                = keeper.QueryKeyID
+	QueryKeySharesByKeyID     = keeper.QueryKeySharesByKeyID
+	QueryKeySharesByValidator = keeper.QueryKeySharesByValidator
+	QueryDeactivated          = keeper.QueryDeactivated
 )
 
 // ReqKeygenStart represents a key-gen request
@@ -58,6 +59,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerKeyID(cliCtx), QueryKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerKeySharesByValidator(cliCtx), QueryKeySharesByValidator, clientUtils.PathVarCosmosAddress)
+	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated, clientUtils.PathVarKeyID)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen

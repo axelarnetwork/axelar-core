@@ -54,3 +54,7 @@ message QueryKeyShareResponse {
 
   repeated ShareInfo share_infos = 1 [ (gogoproto.nullable) = false ];
 }
+
+message QueryDeactivatedOperatorsResponse {
+  repeated string operator_addresses = 1;
+}
