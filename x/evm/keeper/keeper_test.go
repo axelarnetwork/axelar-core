@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"bytes"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,6 +18,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
@@ -94,5 +96,128 @@ func TestKeeper_GetParams(t *testing.T) {
 		gasWithoutSubspace := ctx.GasMeter().GasConsumed()
 
 		assert.Equal(t, gasWithSubspace, gasWithoutSubspace)
+	}).Repeat(20))
+}
+
+func TestScheduleCommands(t *testing.T) {
+	t.Run("scheduling commands", testutils.Func(func(t *testing.T) {
+		encCfg := params.MakeEncodingConfig()
+		paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
+		chain := "Ethereum"
+
+		numCmds := int(rand.I64Between(10, 30))
+		currentHeight := ctx.BlockHeight()
+		scheduledHeight := currentHeight + rand.I64Between(10, 30)
+		expectedCmds := make([]types.ScheduledUnsignedCommand, numCmds)
+		counter := rand.I64Between(1, 10)
+
+		// schedule commands
+		for i := 0; i < numCmds; i++ {
+			cmd := types.ScheduledUnsignedCommand{
+				Chain:       chain,
+				CommandID:   rand.Bytes(20),
+				CommandData: rand.BytesBetween(50, 100),
+				SignInfo: tss.SignInfo{
+					KeyID:           rand.StrBetween(5, 10),
+					SigID:           rand.StrBetween(5, 10),
+					Msg:             rand.BytesBetween(50, 100),
+					SnapshotCounter: counter + 1,
+				},
+			}
+			keeper.ScheduleUnsignedCommand(ctx, scheduledHeight, cmd)
+			expectedCmds[i] = cmd
+		}
+
+		// verify commands from above
+		ctx = ctx.WithBlockHeight(scheduledHeight)
+		cmds := keeper.GetScheduledUnsignedCommands(ctx)
+
+		actualNumCmds := 0
+		for _, expected := range expectedCmds {
+			for _, actual := range cmds {
+				bz1, err := expected.Marshal()
+				if err != nil {
+					panic(err.Error())
+				}
+				bz2, err := actual.Marshal()
+				if err != nil {
+					panic(err.Error())
+				}
+				if bytes.Equal(bz1, bz2) {
+					actualNumCmds++
+					break
+				}
+			}
+		}
+
+		assert.Len(t, expectedCmds, actualNumCmds)
+		assert.Equal(t, numCmds, actualNumCmds)
+
+		// delete scheduled commands
+		keeper.DeleteScheduledCommands(ctx)
+		assert.Len(t, keeper.GetScheduledUnsignedCommands(ctx), 0)
+	}).Repeat(20))
+}
+
+func TestScheduleTxs(t *testing.T) {
+	t.Run("scheduling txs", testutils.Func(func(t *testing.T) {
+		encCfg := params.MakeEncodingConfig()
+		paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper := evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
+		chain := "Ethereum"
+
+		numTxs := int(rand.I64Between(10, 30))
+		currentHeight := ctx.BlockHeight()
+		scheduledHeight := currentHeight + rand.I64Between(10, 30)
+		expectedTxs := make([]types.ScheduledUnsignedTx, numTxs)
+		counter := rand.I64Between(1, 10)
+
+		// schedule txs
+		for i := 0; i < numTxs; i++ {
+			tx := types.ScheduledUnsignedTx{
+				Chain: chain,
+				TxID:  rand.Str(50),
+				SignInfo: tss.SignInfo{
+					KeyID:           rand.StrBetween(5, 10),
+					SigID:           rand.StrBetween(5, 10),
+					Msg:             rand.BytesBetween(50, 100),
+					SnapshotCounter: counter + 1,
+				},
+			}
+			keeper.ScheduleUnsignedTx(ctx, scheduledHeight, tx)
+			expectedTxs[i] = tx
+		}
+
+		// verify txs from above
+		ctx = ctx.WithBlockHeight(scheduledHeight)
+		txs := keeper.GetScheduledUnsignedTxs(ctx)
+
+		actualNumTxs := 0
+		for _, expected := range expectedTxs {
+			for _, actual := range txs {
+				bz1, err := expected.Marshal()
+				if err != nil {
+					panic(err.Error())
+				}
+				bz2, err := actual.Marshal()
+				if err != nil {
+					panic(err.Error())
+				}
+				if bytes.Equal(bz1, bz2) {
+					actualNumTxs++
+					break
+				}
+			}
+		}
+
+		assert.Len(t, expectedTxs, actualNumTxs)
+		assert.Equal(t, numTxs, actualNumTxs)
+
+		// delete scheduled txs
+		keeper.DeleteScheduledTxs(ctx)
+		assert.Len(t, keeper.GetScheduledUnsignedTxs(ctx), 0)
 	}).Repeat(20))
 }

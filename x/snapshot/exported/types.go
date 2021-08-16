@@ -55,12 +55,14 @@ type Tss interface {
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
+	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 }
 
 // IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
-func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, validator SDKValidator) bool {
+func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, seqNo int64, validator SDKValidator) bool {
 	return IsValidatorActive(ctx, slasher, validator) &&
 		HasProxyRegistered(ctx, snapshotter, validator) &&
+		IsValidatorAvaiableForCounter(ctx, tss, seqNo, validator) &&
 		!IsValidatorTssSuspended(ctx, tss, validator)
 }
 
@@ -80,6 +82,12 @@ func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator)
 func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
 	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
 	return active
+}
+
+// IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
+// and was subsequently linked to a snapshot number as an available operator
+func IsValidatorAvaiableForCounter(ctx sdk.Context, tss Tss, seqNo int64, validator SDKValidator) bool {
+	return tss.OperatorIsAvailableForCounter(ctx, seqNo, validator.GetOperator())
 }
 
 // IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
@@ -102,7 +110,7 @@ func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
-	GetSnapshot(ctx sdk.Context, counter int64) (Snapshot, bool)
+	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)

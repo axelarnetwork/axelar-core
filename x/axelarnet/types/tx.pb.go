@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
@@ -256,6 +257,159 @@ func (m *ExecutePendingTransfersResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ExecutePendingTransfersResponse proto.InternalMessageInfo
 
+// MSgRegisterIBCPath represents a message to register an IBC tracing path for
+// an asset
+type RegisterIBCPathRequest struct {
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Asset  string                                        `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
+	Path   string                                        `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (m *RegisterIBCPathRequest) Reset()         { *m = RegisterIBCPathRequest{} }
+func (m *RegisterIBCPathRequest) String() string { return proto.CompactTextString(m) }
+func (*RegisterIBCPathRequest) ProtoMessage()    {}
+func (*RegisterIBCPathRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a791a0da77994a4e, []int{6}
+}
+func (m *RegisterIBCPathRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RegisterIBCPathRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RegisterIBCPathRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RegisterIBCPathRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterIBCPathRequest.Merge(m, src)
+}
+func (m *RegisterIBCPathRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RegisterIBCPathRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterIBCPathRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterIBCPathRequest proto.InternalMessageInfo
+
+type RegisterIBCPathResponse struct {
+}
+
+func (m *RegisterIBCPathResponse) Reset()         { *m = RegisterIBCPathResponse{} }
+func (m *RegisterIBCPathResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterIBCPathResponse) ProtoMessage()    {}
+func (*RegisterIBCPathResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a791a0da77994a4e, []int{7}
+}
+func (m *RegisterIBCPathResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RegisterIBCPathResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RegisterIBCPathResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RegisterIBCPathResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterIBCPathResponse.Merge(m, src)
+}
+func (m *RegisterIBCPathResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RegisterIBCPathResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterIBCPathResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterIBCPathResponse proto.InternalMessageInfo
+
+// MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+// to nexus
+type AddCosmosBasedChainRequest struct {
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  exported.Chain                                `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain"`
+}
+
+func (m *AddCosmosBasedChainRequest) Reset()         { *m = AddCosmosBasedChainRequest{} }
+func (m *AddCosmosBasedChainRequest) String() string { return proto.CompactTextString(m) }
+func (*AddCosmosBasedChainRequest) ProtoMessage()    {}
+func (*AddCosmosBasedChainRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a791a0da77994a4e, []int{8}
+}
+func (m *AddCosmosBasedChainRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddCosmosBasedChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddCosmosBasedChainRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddCosmosBasedChainRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddCosmosBasedChainRequest.Merge(m, src)
+}
+func (m *AddCosmosBasedChainRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddCosmosBasedChainRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddCosmosBasedChainRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddCosmosBasedChainRequest proto.InternalMessageInfo
+
+type AddCosmosBasedChainResponse struct {
+}
+
+func (m *AddCosmosBasedChainResponse) Reset()         { *m = AddCosmosBasedChainResponse{} }
+func (m *AddCosmosBasedChainResponse) String() string { return proto.CompactTextString(m) }
+func (*AddCosmosBasedChainResponse) ProtoMessage()    {}
+func (*AddCosmosBasedChainResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a791a0da77994a4e, []int{9}
+}
+func (m *AddCosmosBasedChainResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddCosmosBasedChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddCosmosBasedChainResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddCosmosBasedChainResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddCosmosBasedChainResponse.Merge(m, src)
+}
+func (m *AddCosmosBasedChainResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddCosmosBasedChainResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddCosmosBasedChainResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddCosmosBasedChainResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*LinkRequest)(nil), "axelarnet.v1beta1.LinkRequest")
 	proto.RegisterType((*LinkResponse)(nil), "axelarnet.v1beta1.LinkResponse")
@@ -263,41 +417,52 @@ func init() {
 	proto.RegisterType((*ConfirmDepositResponse)(nil), "axelarnet.v1beta1.ConfirmDepositResponse")
 	proto.RegisterType((*ExecutePendingTransfersRequest)(nil), "axelarnet.v1beta1.ExecutePendingTransfersRequest")
 	proto.RegisterType((*ExecutePendingTransfersResponse)(nil), "axelarnet.v1beta1.ExecutePendingTransfersResponse")
+	proto.RegisterType((*RegisterIBCPathRequest)(nil), "axelarnet.v1beta1.RegisterIBCPathRequest")
+	proto.RegisterType((*RegisterIBCPathResponse)(nil), "axelarnet.v1beta1.RegisterIBCPathResponse")
+	proto.RegisterType((*AddCosmosBasedChainRequest)(nil), "axelarnet.v1beta1.AddCosmosBasedChainRequest")
+	proto.RegisterType((*AddCosmosBasedChainResponse)(nil), "axelarnet.v1beta1.AddCosmosBasedChainResponse")
 }
 
 func init() { proto.RegisterFile("axelarnet/v1beta1/tx.proto", fileDescriptor_a791a0da77994a4e) }
 
 var fileDescriptor_a791a0da77994a4e = []byte{
-	// 456 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x53, 0x41, 0x6f, 0xd3, 0x30,
-	0x14, 0x4e, 0x46, 0x3b, 0x81, 0xdb, 0x0d, 0x11, 0x0d, 0x14, 0x2a, 0xe1, 0x6e, 0x91, 0x10, 0xbb,
-	0x34, 0x51, 0x41, 0x70, 0x5f, 0x3b, 0x0e, 0x95, 0x38, 0xa0, 0xa8, 0x07, 0xc4, 0x65, 0x4a, 0xec,
-	0xb7, 0xce, 0x0a, 0xb5, 0x83, 0x9f, 0x0b, 0xe1, 0x5f, 0x20, 0x7e, 0x10, 0xe7, 0x1e, 0x77, 0xe4,
-	0x54, 0x41, 0xfb, 0x2f, 0x38, 0xa1, 0xd8, 0xa1, 0x45, 0x48, 0x5c, 0x10, 0x9c, 0x92, 0xf7, 0xbe,
-	0xcf, 0xdf, 0x7b, 0xdf, 0x67, 0x99, 0xf4, 0xb2, 0x0a, 0xde, 0x64, 0x5a, 0x82, 0x49, 0xde, 0x0d,
-	0x73, 0x30, 0xd9, 0x30, 0x31, 0x55, 0x5c, 0x6a, 0x65, 0x54, 0x70, 0x67, 0x8b, 0xc5, 0x0d, 0xd6,
-	0x3b, 0x9a, 0xa9, 0x99, 0xb2, 0x68, 0x52, 0xff, 0x39, 0x62, 0x8f, 0x32, 0x85, 0x73, 0x85, 0x49,
-	0x9e, 0x21, 0x6c, 0x65, 0x98, 0x12, 0xd2, 0xe1, 0xd1, 0x67, 0x9f, 0x74, 0x5e, 0x08, 0x59, 0xa4,
-	0xf0, 0x76, 0x01, 0x68, 0x82, 0x09, 0xd9, 0x47, 0x90, 0x1c, 0x74, 0xe8, 0x1f, 0xfb, 0xa7, 0xdd,
-	0xd1, 0xf0, 0xfb, 0xaa, 0x3f, 0x98, 0x09, 0x73, 0xb5, 0xc8, 0x63, 0xa6, 0xe6, 0x49, 0x23, 0xe7,
-	0x3e, 0x03, 0xe4, 0x45, 0x62, 0x3e, 0x94, 0x80, 0xf1, 0x19, 0x63, 0x67, 0x9c, 0x6b, 0x40, 0x4c,
-	0x1b, 0x81, 0xe0, 0x21, 0x39, 0xd4, 0xc0, 0x44, 0x29, 0x40, 0x9a, 0x8b, 0x8c, 0x73, 0x1d, 0xee,
-	0x1d, 0xfb, 0xa7, 0xb7, 0xd2, 0x83, 0x6d, 0xb7, 0x3e, 0x11, 0x3c, 0x22, 0xb7, 0x77, 0x34, 0x76,
-	0x95, 0x09, 0x19, 0xde, 0xb0, 0xbc, 0xdd, 0xe9, 0x71, 0xdd, 0x0d, 0x8e, 0x48, 0x3b, 0x43, 0x04,
-	0x13, 0xb6, 0x2c, 0xec, 0x8a, 0x68, 0x48, 0xba, 0x6e, 0x7f, 0x2c, 0x95, 0x44, 0x08, 0x4e, 0x48,
-	0x97, 0x43, 0xa9, 0x50, 0x34, 0x33, 0x7d, 0x4b, 0xee, 0x34, 0xbd, 0x7a, 0x62, 0xf4, 0x69, 0x8f,
-	0xdc, 0x1d, 0x2b, 0x79, 0x29, 0xf4, 0xfc, 0xdc, 0xb5, 0xff, 0x83, 0xfb, 0x07, 0xa4, 0x6d, 0xaa,
-	0x0b, 0xc1, 0xad, 0xe9, 0xee, 0xe8, 0xe6, 0x7a, 0xd5, 0x6f, 0x4d, 0xab, 0xc9, 0x79, 0xda, 0x32,
-	0xd5, 0x84, 0x07, 0x4f, 0x49, 0xdb, 0xa8, 0x02, 0x9c, 0xd7, 0xce, 0xe3, 0xfb, 0xb1, 0xd3, 0x8c,
-	0xeb, 0x7b, 0xfa, 0x79, 0xa5, 0xf1, 0x58, 0x09, 0x39, 0x6a, 0x2d, 0x57, 0x7d, 0x2f, 0x75, 0xec,
-	0xe0, 0x15, 0x39, 0xcc, 0x17, 0x5a, 0x82, 0xb6, 0xe6, 0x00, 0xd1, 0x86, 0xf1, 0x57, 0x8b, 0x1e,
-	0x38, 0xa1, 0xa6, 0x8c, 0x42, 0x72, 0xef, 0xf7, 0x4c, 0x5c, 0xa2, 0x51, 0x41, 0xe8, 0xf3, 0x0a,
-	0xd8, 0xc2, 0xc0, 0x4b, 0x90, 0x5c, 0xc8, 0xd9, 0x54, 0x67, 0x12, 0x2f, 0x41, 0xe3, 0xbf, 0x8f,
-	0x2d, 0x3a, 0x21, 0xfd, 0x3f, 0x0e, 0x73, 0xfb, 0x8c, 0xa6, 0xcb, 0x6f, 0xd4, 0x5b, 0xae, 0xa9,
-	0x7f, 0xbd, 0xa6, 0xfe, 0xd7, 0x35, 0xf5, 0x3f, 0x6e, 0xa8, 0x77, 0xbd, 0xa1, 0xde, 0x97, 0x0d,
-	0xf5, 0x5e, 0x3f, 0xfb, 0x65, 0xee, 0xf6, 0x91, 0xbc, 0x57, 0xba, 0x68, 0xaa, 0x01, 0x53, 0x1a,
-	0x92, 0x6a, 0x87, 0xb9, 0x5d, 0xf2, 0x7d, 0xfb, 0x1e, 0x9e, 0xfc, 0x08, 0x00, 0x00, 0xff, 0xff,
-	0x69, 0x7c, 0x4c, 0xbd, 0x76, 0x03, 0x00, 0x00,
+	// 565 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0x4f, 0x6f, 0xd3, 0x30,
+	0x14, 0x6f, 0x4a, 0x3b, 0x81, 0xd7, 0x0d, 0x11, 0x8d, 0xd1, 0x15, 0x35, 0xdd, 0x22, 0x21, 0x76,
+	0x69, 0xa2, 0x82, 0x40, 0xe2, 0xd8, 0x74, 0x1c, 0x2a, 0x71, 0x98, 0xa2, 0x1e, 0x10, 0x97, 0xc9,
+	0x8d, 0xdf, 0x5a, 0xab, 0xd4, 0x0e, 0xb6, 0x0b, 0xe1, 0x43, 0x20, 0x21, 0x3e, 0x02, 0x1f, 0x84,
+	0x73, 0x8f, 0x3b, 0x72, 0xaa, 0xa0, 0xfd, 0x16, 0x9c, 0x50, 0x6c, 0xb7, 0x99, 0xf8, 0x73, 0x41,
+	0xf4, 0x94, 0xf8, 0xbd, 0x9f, 0xdf, 0xfb, 0xfd, 0x9e, 0x7f, 0x36, 0x6a, 0xe0, 0x0c, 0x5e, 0x63,
+	0xc1, 0x40, 0x85, 0x6f, 0x3b, 0x43, 0x50, 0xb8, 0x13, 0xaa, 0x2c, 0x48, 0x05, 0x57, 0xdc, 0xbd,
+	0xb3, 0xc9, 0x05, 0x36, 0xd7, 0x38, 0x18, 0xf1, 0x11, 0xd7, 0xd9, 0x30, 0xff, 0x33, 0xc0, 0x86,
+	0x97, 0x70, 0x39, 0xe5, 0x32, 0x1c, 0x62, 0x09, 0x9b, 0x32, 0x09, 0xa7, 0xcc, 0xe6, 0x7d, 0x06,
+	0xd9, 0x4c, 0x86, 0x90, 0xa5, 0x5c, 0x28, 0x20, 0x45, 0xa7, 0xf7, 0x29, 0x48, 0x83, 0xf1, 0xbf,
+	0x38, 0x68, 0xf7, 0x05, 0x65, 0x93, 0x18, 0xde, 0xcc, 0x40, 0x2a, 0xb7, 0x8f, 0x76, 0x24, 0x30,
+	0x02, 0xa2, 0xee, 0x1c, 0x3b, 0xa7, 0xb5, 0xa8, 0xf3, 0x63, 0xd1, 0x6a, 0x8f, 0xa8, 0x1a, 0xcf,
+	0x86, 0x41, 0xc2, 0xa7, 0xa1, 0x6d, 0x69, 0x3e, 0x6d, 0x49, 0x26, 0xb6, 0x5a, 0x37, 0x49, 0xba,
+	0x84, 0x08, 0x90, 0x32, 0xb6, 0x05, 0xdc, 0x07, 0x68, 0x5f, 0x40, 0x42, 0x53, 0x0a, 0x4c, 0x5d,
+	0x60, 0x42, 0x44, 0xbd, 0x7c, 0xec, 0x9c, 0xde, 0x8a, 0xf7, 0x36, 0xd1, 0x7c, 0x87, 0xfb, 0x10,
+	0xdd, 0x2e, 0x60, 0xc9, 0x18, 0x53, 0x56, 0xbf, 0xa1, 0x71, 0xc5, 0xee, 0x5e, 0x1e, 0x75, 0x0f,
+	0x50, 0x15, 0x4b, 0x09, 0xaa, 0x5e, 0xd1, 0x69, 0xb3, 0xf0, 0x3b, 0xa8, 0x66, 0xf8, 0xcb, 0x94,
+	0x33, 0x09, 0xee, 0x09, 0xaa, 0x11, 0x48, 0xb9, 0xa4, 0xb6, 0xa7, 0xa3, 0xc1, 0xbb, 0x36, 0x96,
+	0x77, 0xf4, 0x3f, 0x95, 0xd1, 0xdd, 0x1e, 0x67, 0x97, 0x54, 0x4c, 0xcf, 0x4c, 0x78, 0x0b, 0xea,
+	0x9b, 0xa8, 0xaa, 0xb2, 0x0b, 0x4a, 0xb4, 0xe8, 0x5a, 0x74, 0x73, 0xb9, 0x68, 0x55, 0x06, 0x59,
+	0xff, 0x2c, 0xae, 0xa8, 0xac, 0x4f, 0xdc, 0x27, 0xa8, 0xaa, 0xf8, 0x04, 0x8c, 0xd6, 0xdd, 0x47,
+	0x47, 0x81, 0xa9, 0x19, 0xe4, 0x67, 0xb9, 0x3e, 0xf6, 0xa0, 0xc7, 0x29, 0x8b, 0x2a, 0xf3, 0x45,
+	0xab, 0x14, 0x1b, 0xb4, 0xfb, 0x12, 0xed, 0x0f, 0x67, 0x82, 0x81, 0xd0, 0xe2, 0x40, 0x4a, 0x3d,
+	0x8c, 0x7f, 0x22, 0xba, 0x67, 0x0a, 0xd9, 0xa5, 0x5f, 0x47, 0x87, 0xbf, 0xce, 0xc4, 0x4c, 0xd4,
+	0x9f, 0x20, 0xef, 0x79, 0x06, 0xc9, 0x4c, 0xc1, 0x39, 0x30, 0x42, 0xd9, 0x68, 0x20, 0x30, 0x93,
+	0x97, 0x20, 0xe4, 0xff, 0x1f, 0x9b, 0x7f, 0x82, 0x5a, 0x7f, 0x6d, 0x66, 0xf9, 0x7c, 0x70, 0xd0,
+	0x61, 0x0c, 0x23, 0x2a, 0x15, 0x88, 0x7e, 0xd4, 0x3b, 0xc7, 0x6a, 0xbc, 0x85, 0xf3, 0xdb, 0xb8,
+	0xad, 0x7c, 0xcd, 0x6d, 0xae, 0x8b, 0x2a, 0x29, 0x56, 0x63, 0xeb, 0x50, 0xfd, 0xef, 0x1f, 0xa1,
+	0x7b, 0xbf, 0xd1, 0xb1, 0x54, 0x3f, 0x3b, 0xa8, 0xd1, 0x25, 0xa4, 0xa7, 0xfb, 0x45, 0x58, 0x02,
+	0xd1, 0x56, 0xde, 0x02, 0xdd, 0x67, 0xa8, 0x6a, 0xee, 0x4e, 0x59, 0xfb, 0xa9, 0x19, 0xe8, 0xbb,
+	0x1f, 0xac, 0xef, 0x7e, 0x61, 0xa9, 0x1c, 0xb4, 0xf6, 0x94, 0xde, 0xe1, 0x37, 0xd1, 0xfd, 0x3f,
+	0x72, 0x34, 0x1a, 0xa2, 0xc1, 0xfc, 0xbb, 0x57, 0x9a, 0x2f, 0x3d, 0xe7, 0x6a, 0xe9, 0x39, 0xdf,
+	0x96, 0x9e, 0xf3, 0x71, 0xe5, 0x95, 0xae, 0x56, 0x5e, 0xe9, 0xeb, 0xca, 0x2b, 0xbd, 0x7a, 0x7a,
+	0x8d, 0xee, 0xe6, 0xdd, 0x7a, 0xc7, 0xc5, 0xc4, 0xae, 0xda, 0x09, 0x17, 0x10, 0x66, 0x45, 0xce,
+	0x48, 0x18, 0xee, 0xe8, 0xe7, 0xe7, 0xf1, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x99, 0xa8, 0x57,
+	0xb1, 0x09, 0x05, 0x00, 0x00,
 }
 
 func (m *LinkRequest) Marshal() (dAtA []byte, err error) {
@@ -511,6 +676,136 @@ func (m *ExecutePendingTransfersResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
+func (m *RegisterIBCPathRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RegisterIBCPathRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RegisterIBCPathRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Path) > 0 {
+		i -= len(m.Path)
+		copy(dAtA[i:], m.Path)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Path)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Asset) > 0 {
+		i -= len(m.Asset)
+		copy(dAtA[i:], m.Asset)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Asset)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RegisterIBCPathResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RegisterIBCPathResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RegisterIBCPathResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *AddCosmosBasedChainRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddCosmosBasedChainRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddCosmosBasedChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Chain.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddCosmosBasedChainResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddCosmosBasedChainResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddCosmosBasedChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -606,6 +901,60 @@ func (m *ExecutePendingTransfersRequest) Size() (n int) {
 }
 
 func (m *ExecutePendingTransfersResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *RegisterIBCPathRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Asset)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Path)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *RegisterIBCPathResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *AddCosmosBasedChainRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.Chain.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *AddCosmosBasedChainResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1228,6 +1577,371 @@ func (m *ExecutePendingTransfersResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: ExecutePendingTransfersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RegisterIBCPathRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RegisterIBCPathRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RegisterIBCPathRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Asset", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Asset = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Path = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RegisterIBCPathResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RegisterIBCPathResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RegisterIBCPathResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddCosmosBasedChainRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddCosmosBasedChainRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddCosmosBasedChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Chain.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddCosmosBasedChainResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddCosmosBasedChainResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddCosmosBasedChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

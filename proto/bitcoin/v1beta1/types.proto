@@ -21,6 +21,17 @@ enum TxStatus {
   TX_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
 }
 
+message ScheduledUnsignedTxs {
+  repeated ScheduledUnsignedTx infos = 1 [ (gogoproto.nullable) = false ];
+}
+
+message ScheduledUnsignedTx {
+  UnsignedTx unsigned_tx = 1 [ (gogoproto.nullable) = false ];
+  tss.exported.v1beta1.KeyRole key_role = 2;
+  repeated tss.exported.v1beta1.SignInfo sign_infos = 3
+      [ (gogoproto.nullable) = false ];
+}
+
 message UnsignedTx {
   message Info {
     message InputInfo {
@@ -63,6 +74,17 @@ message OutPointInfo {
   int64 amount = 2
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
   string address = 3;
+}
+
+enum OutPointState {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  OUT_POINT_STATE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  OUT_POINT_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  OUT_POINT_STATE_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  OUT_POINT_STATE_SPENT = 3 [ (gogoproto.enumvalue_customname) = "Spent" ];
 }
 
 enum AddressRole {

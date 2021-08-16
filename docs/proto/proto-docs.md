@@ -10,20 +10,33 @@
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
+- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
+  
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
+  
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
+    - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
     - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
+    - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [SignInfo](#tss.exported.v1beta1.SignInfo)
   
+    - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
   
@@ -32,6 +45,8 @@
     - [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+    - [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx)
+    - [ScheduledUnsignedTxs](#bitcoin.v1beta1.ScheduledUnsignedTxs)
     - [SignedTx](#bitcoin.v1beta1.SignedTx)
     - [UnsignedTx](#bitcoin.v1beta1.UnsignedTx)
     - [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info)
@@ -39,6 +54,7 @@
     - [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
   
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [OutPointState](#bitcoin.v1beta1.OutPointState)
     - [TxStatus](#bitcoin.v1beta1.TxStatus)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
@@ -53,6 +69,7 @@
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
+    - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
@@ -83,23 +100,6 @@
   
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
-  
-- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
-    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
-    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
-    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
-    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
-  
-- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
-    - [Params](#evm.v1beta1.Params)
-  
-- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
-    - [GenesisState](#evm.v1beta1.GenesisState)
-  
-- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
-    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
-    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
@@ -133,15 +133,29 @@
     - [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest)
     - [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse)
   
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand)
+    - [ScheduledUnsignedCommands](#evm.v1beta1.ScheduledUnsignedCommands)
+    - [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx)
+    - [ScheduledUnsignedTxs](#evm.v1beta1.ScheduledUnsignedTxs)
+    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
+  
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
+  
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
+  
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
+  
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
-  
-- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
-    - [Chain](#nexus.exported.v1beta1.Chain)
-    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
-    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
-  
-    - [TransferState](#nexus.exported.v1beta1.TransferState)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -204,6 +218,8 @@
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
+    - [AckRequest](#tss.v1beta1.AckRequest)
+    - [AckResponse](#tss.v1beta1.AckResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -292,10 +308,117 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="nexus/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/exported/v1beta1/types.proto
+
+
+
+<a name="nexus.exported.v1beta1.Chain"></a>
+
+### Chain
+Chain represents the properties of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
+| `supports_foreign_assets` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="nexus.exported.v1beta1.TransferState"></a>
+
+### TransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| TRANSFER_STATE_PENDING | 1 |  |
+| TRANSFER_STATE_ARCHIVED | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelarnet/v1beta1/tx.proto
+
+
+
+<a name="axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
+
+### AddCosmosBasedChainRequest
+MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+to nexus
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
+
+### AddCosmosBasedChainResponse
+
+
+
+
 
 
 
@@ -386,6 +509,34 @@ address
 
 
 
+
+<a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
+
+### RegisterIBCPathRequest
+MSgRegisterIBCPath represents a message to register an IBC tracing path for
+an asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `path` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
+
+### RegisterIBCPathResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -416,9 +567,11 @@ Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/cosmos/link/{recipient_chain}|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/cosmos/confirm-deposit|
-| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/cosmos/execute-pending-transfers|
+| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link/{recipient_chain}|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm-deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
+| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
+| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 
  <!-- end services -->
 
@@ -448,7 +601,38 @@ KeyRequirement defines requirements for keys
 
 
 
+
+<a name="tss.exported.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+
+
+
+
+
  <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.AckType"></a>
+
+### AckType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACK_TYPE_UNSPECIFIED | 0 |  |
+| ACK_TYPE_KEYGEN | 1 |  |
+| ACK_TYPE_SIGN | 2 |  |
+
 
 
 <a name="tss.exported.v1beta1.KeyRole"></a>
@@ -564,6 +748,38 @@ of a transaction
 
 
 
+<a name="bitcoin.v1beta1.ScheduledUnsignedTx"></a>
+
+### ScheduledUnsignedTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `unsigned_tx` | [UnsignedTx](#bitcoin.v1beta1.UnsignedTx) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `sign_infos` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) | repeated |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.ScheduledUnsignedTxs"></a>
+
+### ScheduledUnsignedTxs
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `infos` | [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx) | repeated |  |
+
+
+
+
+
+
 <a name="bitcoin.v1beta1.SignedTx"></a>
 
 ### SignedTx
@@ -663,6 +879,20 @@ of a transaction
 | ADDRESS_ROLE_UNSPECIFIED | 0 |  |
 | ADDRESS_ROLE_DEPOSIT | 1 |  |
 | ADDRESS_ROLE_CONSOLIDATION | 2 |  |
+
+
+
+<a name="bitcoin.v1beta1.OutPointState"></a>
+
+### OutPointState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OUT_POINT_STATE_UNSPECIFIED | 0 |  |
+| OUT_POINT_STATE_PENDING | 1 |  |
+| OUT_POINT_STATE_CONFIRMED | 2 |  |
+| OUT_POINT_STATE_SPENT | 3 |  |
 
 
 
@@ -825,6 +1055,22 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryDepositStatusResponse"></a>
+
+### QueryDepositStatusResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+| `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
 
 
 
@@ -1232,226 +1478,6 @@ Msg defines the bitcoin Msg service.
 | `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
 | `RegisterExternalKeys` | [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/bitcoin/register-external-key|
 | `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/types.proto
-
-
-
-<a name="evm.v1beta1.BurnerInfo"></a>
-
-### BurnerInfo
-BurnerInfo describes information required to burn token at an burner address
-that is deposited by an user
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `token_address` | [bytes](#bytes) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `salt` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20Deposit"></a>
-
-### ERC20Deposit
-ERC20Deposit contains information for an ERC20 deposit
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20TokenDeployment"></a>
-
-### ERC20TokenDeployment
-ERC20TokenDeployment describes information about an ERC20 token
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `asset` | [string](#string) |  |  |
-| `token_address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.NetworkInfo"></a>
-
-### NetworkInfo
-NetworkInfo describes information about a network
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.TransferOwnership"></a>
-
-### TransferOwnership
-TransferOwnership contains information for a transfer ownership
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `next_key_id` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/params.proto
-
-
-
-<a name="evm.v1beta1.Params"></a>
-
-### Params
-Params is the parameter set for this module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `confirmation_height` | [uint64](#uint64) |  |  |
-| `network` | [string](#string) |  |  |
-| `gateway` | [bytes](#bytes) |  |  |
-| `token` | [bytes](#bytes) |  |  |
-| `burnable` | [bytes](#bytes) |  |  |
-| `revote_locking_period` | [int64](#int64) |  |  |
-| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/genesis.proto
-
-
-
-<a name="evm.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/query.proto
-
-
-
-<a name="evm.v1beta1.DepositQueryParams"></a>
-
-### DepositQueryParams
-DepositQueryParams describe the parameters used to query for an EVM
-deposit address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
-
-### QueryMasterAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
@@ -1952,6 +1978,293 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
+<a name="evm/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/types.proto
+
+
+
+<a name="evm.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.NetworkInfo"></a>
+
+### NetworkInfo
+NetworkInfo describes information about a network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedCommand"></a>
+
+### ScheduledUnsignedCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `command_data` | [bytes](#bytes) |  |  |
+| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedCommands"></a>
+
+### ScheduledUnsignedCommands
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cmds` | [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedTx"></a>
+
+### ScheduledUnsignedTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ScheduledUnsignedTxs"></a>
+
+### ScheduledUnsignedTxs
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `txs` | [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransferOwnership"></a>
+
+### TransferOwnership
+TransferOwnership contains information for a transfer ownership
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `next_key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/params.proto
+
+
+
+<a name="evm.v1beta1.Params"></a>
+
+### Params
+Params is the parameter set for this module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `network` | [string](#string) |  |  |
+| `gateway` | [bytes](#bytes) |  |  |
+| `token` | [bytes](#bytes) |  |  |
+| `burnable` | [bytes](#bytes) |  |  |
+| `revote_locking_period` | [int64](#int64) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/genesis.proto
+
+
+
+<a name="evm.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an EVM
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
+
+### QueryMasterAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="evm/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1987,86 +2300,6 @@ Msg defines the evm Msg service.
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
-
- <!-- end services -->
-
-
-
-<a name="nexus/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## nexus/exported/v1beta1/types.proto
-
-
-
-<a name="nexus.exported.v1beta1.Chain"></a>
-
-### Chain
-Chain represents the properties of a registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
-| `supports_foreign_assets` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
-
-### CrossChainAddress
-CrossChainAddress represents a generalized address on any registered chain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
-
-### CrossChainTransfer
-CrossChainTransfer represents a generalized transfer of some asset to a
-registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
-| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-| `id` | [uint64](#uint64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="nexus.exported.v1beta1.TransferState"></a>
-
-### TransferState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TRANSFER_STATE_UNSPECIFIED | 0 |  |
-| TRANSFER_STATE_PENDING | 1 |  |
-| TRANSFER_STATE_ARCHIVED | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
@@ -2667,6 +2900,7 @@ Params is the parameter set for this module
 | `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `timeout_in_blocks` | [int64](#int64) |  | TimeoutInBlocks defines the timeout in blocks for signing and keygen |
+| `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
 
 
 
@@ -2812,6 +3046,34 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/tx.proto
+
+
+
+<a name="tss.v1beta1.AckRequest"></a>
+
+### AckRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `id` | [string](#string) |  | can be either a key ID or a sig ID, depending on the type |
+| `ack_type` | [tss.exported.v1beta1.AckType](#tss.exported.v1beta1.AckType) |  |  |
+| `height` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.AckResponse"></a>
+
+### AckResponse
+
+
+
+
 
 
 
@@ -3008,6 +3270,7 @@ Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Ack` | [AckRequest](#tss.v1beta1.AckRequest) | [AckResponse](#tss.v1beta1.AckResponse) |  | POST|/axelar/tss/ack|
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|

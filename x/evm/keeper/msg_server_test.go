@@ -237,7 +237,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.Symbol, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {

@@ -19,12 +19,7 @@ import (
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
 
 // Snapshotter provides validator snapshot functionality
-type Snapshotter interface {
-	GetLatestSnapshot(ctx sdk.Context) (snapshot.Snapshot, bool)
-	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
-	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-}
+type Snapshotter = snapshot.Snapshotter
 
 // Nexus provides access to the nexus functionality
 type Nexus interface {
@@ -83,7 +78,15 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
+	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
+	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
+	DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType)
+	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
+	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
+	DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType)
+	IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
+	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
@@ -96,8 +99,10 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
 	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
 	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
+	HasKeygenStarted(ctx sdk.Context, keyID string) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
 	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
+	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 }

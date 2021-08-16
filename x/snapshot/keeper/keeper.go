@@ -142,7 +142,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 			return false
 		}
 
-		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, &v) {
+		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, counter, &v) {
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}

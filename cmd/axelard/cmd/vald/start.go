@@ -13,9 +13,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tendermint/tendermint/libs/pubsub/query"
+
 	"github.com/axelarnetwork/tm-events/pkg/pubsub"
 	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
 	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
+	eventTypes "github.com/axelarnetwork/tm-events/pkg/tendermint/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -43,6 +46,7 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tmTypes "github.com/tendermint/tendermint/types"
 )
 
 // RW grants -rw------- file permissions
@@ -238,9 +242,22 @@ func listen(
 	blockHeaderForTSS := tmEvents.MustSubscribeNewBlockHeader(hub)
 	blockHeaderForStateUpdate := tmEvents.MustSubscribeNewBlockHeader(hub)
 
-	keygenStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
+	signAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
+
+	queryKeygen := createNewBlockEventQuery(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	keygenStart, err := tmEvents.Subscribe(eventBus, queryKeygen)
+	if err != nil {
+		panic(fmt.Errorf("unable to subscribe with keygen event query: %v", err))
+	}
+
+	querySign := createNewBlockEventQuery(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	signStart, err := tmEvents.Subscribe(eventBus, querySign)
+	if err != nil {
+		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
+	}
+
 	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signStart := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
 	btcConf := tmEvents.MustSubscribeTx(eventBus, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
@@ -268,8 +285,10 @@ func listen(
 		fetchEvents,
 		events.Consume(blockHeaderForStateUpdate, func(height int64, _ []sdk.Attribute) error { return stateStore.SetState(height) }),
 		events.Consume(blockHeaderForTSS, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
+		events.Consume(keygenAck, tssMgr.ProcessKeygenAck),
 		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
+		events.Consume(signAck, tssMgr.ProcessSignAck),
 		events.Consume(signStart, tssMgr.ProcessSignStart),
 		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
 		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),
@@ -286,6 +305,16 @@ func listen(
 	mgr := jobs.NewMgr(logErr)
 	mgr.AddJobs(js...)
 	mgr.Wait()
+}
+
+func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
+	return tmEvents.Query{
+		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+			tmTypes.EventTypeKey, tmTypes.EventNewBlock, eventType, sdk.AttributeKeyModule, module)),
+		Predicate: func(e eventTypes.Event) bool {
+			return e.Type == eventType && e.Module == module && e.Action == action
+		},
+	}
 }
 
 func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *events.EventBus {

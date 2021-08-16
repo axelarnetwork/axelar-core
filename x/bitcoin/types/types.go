@@ -81,15 +81,6 @@ func (m *Network) Validate() error {
 	}
 }
 
-// OutPointState is an enum for the state of an outpoint
-type OutPointState int
-
-// States of confirmed out points
-const (
-	CONFIRMED OutPointState = iota
-	SPENT
-)
-
 // NewOutPointInfo returns a new OutPointInfo instance
 func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address string) OutPointInfo {
 	return OutPointInfo{

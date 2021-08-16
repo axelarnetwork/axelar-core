@@ -36,3 +36,20 @@ enum KeyShareDistributionPolicy {
   KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
       [ (gogoproto.enumvalue_customname) = "OnePerValidator" ];
 }
+
+enum AckType {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ACK_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "Keygen" ];
+  ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "Sign" ];
+}
+
+// SignInfo holds information about a sign request
+message SignInfo {
+  string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+  string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes msg = 3;
+  int64 snapshot_counter = 4;
+}

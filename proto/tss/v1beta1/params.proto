@@ -32,4 +32,7 @@ message Params {
   int64 suspend_duration_in_blocks = 6;
   // TimeoutInBlocks defines the timeout in blocks for signing and keygen
   int64 timeout_in_blocks = 7;
+  // AckWindowInBlocks defines the time limit in blocks for a broadcaster to
+  // submit their acknowledgment of a sign/keygen start
+  int64 ack_window_in_blocks = 8;
 }
