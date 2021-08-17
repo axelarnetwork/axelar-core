@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -29,23 +30,27 @@ import (
 )
 
 const (
-	gatewayKey      = "gateway"
-	pendingChainKey = "pending_chain_asset"
+	gatewayKey                       = "gateway"
+	pendingChainKey                  = "pending_chain_asset"
+	unsignedBatchedCommandsKey       = "unsigned_batched_commands"
+	latestSignedBatchedCommandsIDKey = "latest_signed_batched_commands_id"
 
-	chainPrefix            = "chain_"
-	subspacePrefix         = "subspace_"
-	unsignedPrefix         = "unsigned_"
-	pendingTokenPrefix     = "pending_token_"
-	pendingDepositPrefix   = "pending_deposit_"
-	confirmedDepositPrefix = "confirmed_deposit_"
-	burnedDepositPrefix    = "burned_deposit_"
-	commandPrefix          = "command_"
-	assetPrefix            = "asset_"
-	burnerAddrPrefix       = "burnerAddr_"
-	tokenAddrPrefix        = "tokenAddr_"
-
+	chainPrefix                     = "chain_"
+	subspacePrefix                  = "subspace_"
+	unsignedPrefix                  = "unsigned_"
+	pendingTokenPrefix              = "pending_token_"
+	pendingDepositPrefix            = "pending_deposit_"
+	confirmedDepositPrefix          = "confirmed_deposit_"
+	burnedDepositPrefix             = "burned_deposit_"
+	commandPrefix                   = "command_"
+	assetPrefix                     = "asset_"
+	burnerAddrPrefix                = "burnerAddr_"
+	tokenAddrPrefix                 = "tokenAddr_"
 	pendingTransferOwnershipPrefix  = "pending_transfer_ownership_"
 	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
+	signedBatchedCommandsPrefix     = "signed_batched_commands_"
+
+	commandQueueName = "command_queue"
 )
 
 var _ types.BaseKeeper = keeper{}
@@ -377,6 +382,22 @@ func (k keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byt
 	return k.getStore(ctx, k.chain).Get(key)
 }
 
+func (k keeper) SetCommand(ctx sdk.Context, command types.Command) {
+	k.GetCommandQueue(ctx).Enqueue(utils.KeyFromStr(commandPrefix).AppendStr(command.ID.Hex()), &command)
+}
+
+func (k keeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Command {
+	bz := k.getStore(ctx, k.chain).Get(utils.KeyFromStr(commandPrefix).AppendStr(commandID.Hex()).AsKey())
+	if bz == nil {
+		return nil
+	}
+
+	var command types.Command
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &command)
+
+	return &command
+}
+
 func (k keeper) GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
 	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedPrefix + txID))
 	if bz == nil {
@@ -616,6 +637,63 @@ func (k keeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int {
 	}
 
 	return nil
+}
+
+// GetCommandQueue returns the queue of commands
+func (k keeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
+	return utils.NewBlockHeightKVQueue(commandQueueName, utils.NewNormalizedStore(k.getStore(ctx, k.chain), k.cdc), ctx.BlockHeight(), k.Logger(ctx))
+}
+
+func (k keeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
+	k.getStore(ctx, k.chain).Set([]byte(unsignedBatchedCommandsKey), bz)
+}
+
+func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedCommands, bool) {
+	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedBatchedCommandsKey))
+	if bz == nil {
+		return types.BatchedCommands{}, false
+	}
+
+	var batchedCommands types.BatchedCommands
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &batchedCommands)
+
+	return batchedCommands, true
+}
+
+func (k keeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
+	k.getStore(ctx, k.chain).Delete([]byte(unsignedBatchedCommandsKey))
+}
+
+func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
+	batchedCommands.Status = types.Signed
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
+	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(batchedCommands.ID))
+
+	k.getStore(ctx, k.chain).Set([]byte(key), bz)
+}
+
+func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.BatchedCommands, bool) {
+	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(id))
+	bz := k.getStore(ctx, k.chain).Get([]byte(key))
+	if bz == nil {
+		return types.BatchedCommands{}, false
+	}
+
+	var batchedCommands types.BatchedCommands
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &batchedCommands)
+
+	return batchedCommands, true
+}
+
+func (k keeper) SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte) {
+	k.getStore(ctx, k.chain).Set([]byte(latestSignedBatchedCommandsIDKey), id)
+}
+
+func (k keeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool) {
+	id := k.getStore(ctx, k.chain).Get([]byte(latestSignedBatchedCommandsIDKey))
+
+	return id, id != nil
 }
 
 func (k keeper) getStore(ctx sdk.Context, chain string) prefix.Store {

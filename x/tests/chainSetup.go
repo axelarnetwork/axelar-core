@@ -152,7 +152,7 @@ func newNode(moniker string, mocks testMocks, totalNodes int) *fake.Node {
 				return bitcoin.EndBlocker(ctx, req, bitcoinKeeper, signer, voter, snapKeeper)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-				return evm.EndBlocker(ctx, req, EVMKeeper, signer, voter, snapKeeper, nexusK)
+				return evm.EndBlocker(ctx, req, EVMKeeper, nexusK, signer)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 				return tss.EndBlocker(ctx, req, signer, voter, snapKeeper)

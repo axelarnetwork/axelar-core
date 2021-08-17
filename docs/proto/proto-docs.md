@@ -111,10 +111,14 @@
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest)
     - [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse)
+    - [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest)
+    - [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse)
     - [LinkRequest](#evm.v1beta1.LinkRequest)
     - [LinkResponse](#evm.v1beta1.LinkResponse)
     - [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest)
     - [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse)
+    - [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest)
+    - [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse)
     - [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest)
     - [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse)
     - [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest)
@@ -133,12 +137,15 @@
     - [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse)
   
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [Command](#evm.v1beta1.Command)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
+    - [BatchedCommands.Status](#evm.v1beta1.BatchedCommands.Status)
     - [DepositStatus](#evm.v1beta1.DepositStatus)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
@@ -1615,6 +1622,38 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
+<a name="evm.v1beta1.CreateTransferOperatorshipRequest"></a>
+
+### CreateTransferOperatorshipRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateTransferOperatorshipResponse"></a>
+
+### CreateTransferOperatorshipResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
@@ -1676,6 +1715,37 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.SignCommandsRequest"></a>
+
+### SignCommandsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.SignCommandsResponse"></a>
+
+### SignCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -1970,6 +2040,26 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
+<a name="evm.v1beta1.BatchedCommands"></a>
+
+### BatchedCommands
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command_ids` | [bytes](#bytes) | repeated |  |
+| `data` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
+| `status` | [BatchedCommands.Status](#evm.v1beta1.BatchedCommands.Status) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.BurnerInfo"></a>
 
 ### BurnerInfo
@@ -1984,6 +2074,24 @@ that is deposited by an user
 | `symbol` | [string](#string) |  |  |
 | `asset` | [string](#string) |  |  |
 | `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.Command"></a>
+
+### Command
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command` | [string](#string) |  |  |
+| `params` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -2057,6 +2165,20 @@ TransferOwnership contains information for a transfer ownership
 
 
  <!-- end messages -->
+
+
+<a name="evm.v1beta1.BatchedCommands.Status"></a>
+
+### BatchedCommands.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_SIGNING | 1 |  |
+| STATUS_ABORTED | 2 |  |
+| STATUS_SIGNED | 3 |  |
+
 
 
 <a name="evm.v1beta1.DepositStatus"></a>
@@ -2249,6 +2371,8 @@ Msg defines the evm Msg service.
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
 | `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
+| `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
+| `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
 
  <!-- end services -->

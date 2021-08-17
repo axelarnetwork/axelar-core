@@ -1169,6 +1169,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 //
 // 		// make and configure a mocked tsstypes.TSSKeeper
 // 		mockedTSSKeeper := &TSSKeeperMock{
+// 			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+// 				panic("mock out the AssertMatchesRequirements method")
+// 			},
 // 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
@@ -1332,6 +1335,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 //
 // 	}
 type TSSKeeperMock struct {
+	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
+	AssertMatchesRequirementsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error
+
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error
 
@@ -1490,6 +1496,19 @@ type TSSKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
+		AssertMatchesRequirements []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter snapshot.Snapshotter
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyID is the keyID argument value.
+			KeyID string
+			// KeyRole is the keyRole argument value.
+			KeyRole exported.KeyRole
+		}
 		// AssignNextKey holds details about calls to the AssignNextKey method.
 		AssignNextKey []struct {
 			// Ctx is the ctx argument value.
@@ -1909,6 +1928,7 @@ type TSSKeeperMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
+	lockAssertMatchesRequirements           sync.RWMutex
 	lockAssignNextKey                       sync.RWMutex
 	lockDeleteAllRecoveryInfos              sync.RWMutex
 	lockDeleteAvailableOperators            sync.RWMutex
@@ -1961,6 +1981,53 @@ type TSSKeeperMock struct {
 	lockSetSig                              sync.RWMutex
 	lockSetSigStatus                        sync.RWMutex
 	lockStartKeygen                         sync.RWMutex
+}
+
+// AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
+func (mock *TSSKeeperMock) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+	if mock.AssertMatchesRequirementsFunc == nil {
+		panic("TSSKeeperMock.AssertMatchesRequirementsFunc: method is nil but TSSKeeper.AssertMatchesRequirements was just called")
+	}
+	callInfo := struct {
+		Ctx         sdk.Context
+		Snapshotter snapshot.Snapshotter
+		Chain       nexus.Chain
+		KeyID       string
+		KeyRole     exported.KeyRole
+	}{
+		Ctx:         ctx,
+		Snapshotter: snapshotter,
+		Chain:       chain,
+		KeyID:       keyID,
+		KeyRole:     keyRole,
+	}
+	mock.lockAssertMatchesRequirements.Lock()
+	mock.calls.AssertMatchesRequirements = append(mock.calls.AssertMatchesRequirements, callInfo)
+	mock.lockAssertMatchesRequirements.Unlock()
+	return mock.AssertMatchesRequirementsFunc(ctx, snapshotter, chain, keyID, keyRole)
+}
+
+// AssertMatchesRequirementsCalls gets all the calls that were made to AssertMatchesRequirements.
+// Check the length with:
+//     len(mockedTSSKeeper.AssertMatchesRequirementsCalls())
+func (mock *TSSKeeperMock) AssertMatchesRequirementsCalls() []struct {
+	Ctx         sdk.Context
+	Snapshotter snapshot.Snapshotter
+	Chain       nexus.Chain
+	KeyID       string
+	KeyRole     exported.KeyRole
+} {
+	var calls []struct {
+		Ctx         sdk.Context
+		Snapshotter snapshot.Snapshotter
+		Chain       nexus.Chain
+		KeyID       string
+		KeyRole     exported.KeyRole
+	}
+	mock.lockAssertMatchesRequirements.RLock()
+	calls = mock.calls.AssertMatchesRequirements
+	mock.lockAssertMatchesRequirements.RUnlock()
+	return calls
 }
 
 // AssignNextKey calls AssignNextKeyFunc.

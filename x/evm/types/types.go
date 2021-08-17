@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -44,11 +45,12 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMint              = "mintToken"
-	axelarGatewayCommandDeployToken       = "deployToken"
-	axelarGatewayCommandBurnToken         = "burnToken"
-	axelarGatewayCommandTransferOwnership = "transferOwnership"
-	axelarGatewayFuncExecute              = "execute"
+	axelarGatewayCommandMint                 = "mintToken"
+	axelarGatewayCommandDeployToken          = "deployToken"
+	axelarGatewayCommandBurnToken            = "burnToken"
+	axelarGatewayCommandTransferOwnership    = "transferOwnership"
+	axelarGatewayCommandTransferOperatorship = "transferOperatorship"
+	axelarGatewayFuncExecute                 = "execute"
 )
 
 // Address wraps EVM Address
@@ -340,8 +342,116 @@ func CreateTransferOwnershipCommandData(chainID *big.Int, commandID CommandID, n
 	return packArguments(chainID, commandIDs, commands, commandParams)
 }
 
+// CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
+func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperatorAddr common.Address) (Command, error) {
+	params, err := createTransferOperatorshipParams(newOperatorAddr)
+	if err != nil {
+		return Command{}, err
+	}
+
+	return Command{
+		ID:      NewCommandID(newOperatorAddr.Bytes(), chainID),
+		Command: axelarGatewayCommandTransferOperatorship,
+		Params:  params,
+		KeyID:   keyID,
+	}, nil
+}
+
+// GetGatewayDeploymentBytecode returns the deployment bytecode for the gateway contract
+func GetGatewayDeploymentBytecode(contractBytecode []byte, operator common.Address) ([]byte, error) {
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments{{Type: addressType}}
+	argBytes, err := args.Pack(operator)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(contractBytecode, argBytes...), nil
+}
+
+// NewBatchedCommands is the constructor for BatchedCommands
+func NewBatchedCommands(chainID *big.Int, keyID string, cmds []Command) (BatchedCommands, error) {
+	var commandIDs []CommandID
+	var commands []string
+	var commandParams [][]byte
+
+	for _, cmd := range cmds {
+		commandIDs = append(commandIDs, cmd.ID)
+		commands = append(commands, cmd.Command)
+		commandParams = append(commandParams, cmd.Params)
+	}
+
+	data, err := packArguments(chainID, commandIDs, commands, commandParams)
+	if err != nil {
+		return BatchedCommands{}, err
+	}
+
+	return BatchedCommands{
+		ID:         crypto.Keccak256(data),
+		CommandIDs: commandIDs,
+		Data:       data,
+		SigHash:    Hash(GetSignHash(data)),
+		Status:     Signing,
+		KeyID:      keyID,
+	}, nil
+}
+
+// Is returns true if batched commands is in the given status; false otherwise
+func (b BatchedCommands) Is(status BatchedCommands_Status) bool {
+	return b.Status == status
+}
+
+const commandIDSize = 32
+
 // CommandID represents the unique command identifier
-type CommandID [32]byte
+type CommandID [commandIDSize]byte
+
+// NewCommandID is the constructor for CommandID
+func NewCommandID(data []byte, chainID *big.Int) CommandID {
+	var commandID CommandID
+	copy(commandID[:], crypto.Keccak256(append(data, chainID.Bytes()...))[:commandIDSize])
+
+	return commandID
+}
+
+// Hex returns the hex representation of command ID
+func (c CommandID) Hex() string {
+	return hex.EncodeToString(c[:])
+}
+
+// Size implements codec.ProtoMarshaler
+func (c CommandID) Size() int {
+	return commandIDSize
+}
+
+// Marshal implements codec.ProtoMarshaler
+func (c CommandID) Marshal() ([]byte, error) {
+	return c[:], nil
+}
+
+// MarshalTo implements codec.ProtoMarshaler
+func (c CommandID) MarshalTo(data []byte) (n int, err error) {
+	bytesCopied := copy(data, c[:])
+	if bytesCopied != commandIDSize {
+		return 0, fmt.Errorf("expected data size to be %d, actual %d", commandIDSize, len(data))
+	}
+
+	return commandIDSize, nil
+}
+
+// Unmarshal implements codec.ProtoMarshaler
+func (c *CommandID) Unmarshal(data []byte) error {
+	bytesCopied := copy(c[:], data)
+	if bytesCopied != commandIDSize {
+		return fmt.Errorf("expected data size to be %d, actual %d", commandIDSize, len(data))
+	}
+
+	return nil
+}
 
 func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
@@ -465,6 +575,21 @@ func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) 
 
 	arguments := abi.Arguments{{Type: addressType}}
 	result, err := arguments.Pack(newOwnerAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func createTransferOperatorshipParams(newOperatorAddr common.Address) ([]byte, error) {
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: addressType}}
+	result, err := arguments.Pack(newOperatorAddr)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ var _ utils.KVQueue = &KVQueueMock{}
 //
 // 		// make and configure a mocked utils.KVQueue
 // 		mockedKVQueue := &KVQueueMock{
-// 			DequeueFunc: func(value codec.ProtoMarshaler) bool {
+// 			DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 // 				panic("mock out the Dequeue method")
 // 			},
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
@@ -36,7 +36,7 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 	}
 type KVQueueMock struct {
 	// DequeueFunc mocks the Dequeue method.
-	DequeueFunc func(value codec.ProtoMarshaler) bool
+	DequeueFunc func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
@@ -50,6 +50,8 @@ type KVQueueMock struct {
 		Dequeue []struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
+			// Filter is the filter argument value.
+			Filter []func(value codec.ProtoMarshaler) bool
 		}
 		// Enqueue holds details about calls to the Enqueue method.
 		Enqueue []struct {
@@ -68,29 +70,33 @@ type KVQueueMock struct {
 }
 
 // Dequeue calls DequeueFunc.
-func (mock *KVQueueMock) Dequeue(value codec.ProtoMarshaler) bool {
+func (mock *KVQueueMock) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 	if mock.DequeueFunc == nil {
 		panic("KVQueueMock.DequeueFunc: method is nil but KVQueue.Dequeue was just called")
 	}
 	callInfo := struct {
-		Value codec.ProtoMarshaler
+		Value  codec.ProtoMarshaler
+		Filter []func(value codec.ProtoMarshaler) bool
 	}{
-		Value: value,
+		Value:  value,
+		Filter: filter,
 	}
 	mock.lockDequeue.Lock()
 	mock.calls.Dequeue = append(mock.calls.Dequeue, callInfo)
 	mock.lockDequeue.Unlock()
-	return mock.DequeueFunc(value)
+	return mock.DequeueFunc(value, filter...)
 }
 
 // DequeueCalls gets all the calls that were made to Dequeue.
 // Check the length with:
 //     len(mockedKVQueue.DequeueCalls())
 func (mock *KVQueueMock) DequeueCalls() []struct {
-	Value codec.ProtoMarshaler
+	Value  codec.ProtoMarshaler
+	Filter []func(value codec.ProtoMarshaler) bool
 } {
 	var calls []struct {
-		Value codec.ProtoMarshaler
+		Value  codec.ProtoMarshaler
+		Filter []func(value codec.ProtoMarshaler) bool
 	}
 	mock.lockDequeue.RLock()
 	calls = mock.calls.Dequeue

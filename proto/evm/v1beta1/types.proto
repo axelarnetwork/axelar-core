@@ -55,6 +55,40 @@ message ERC20TokenDeployment {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
+message Command {
+  bytes id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "ID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string command = 2;
+  bytes params = 3;
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+}
+
+message BatchedCommands {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+
+    STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+    STATUS_SIGNING = 1 [ (gogoproto.enumvalue_customname) = "Signing" ];
+    STATUS_ABORTED = 2 [ (gogoproto.enumvalue_customname) = "Aborted" ];
+    STATUS_SIGNED = 3 [ (gogoproto.enumvalue_customname) = "Signed" ];
+  }
+
+  bytes id = 1 [ (gogoproto.customname) = "ID" ];
+  repeated bytes command_ids = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandIDs",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  bytes data = 3;
+  bytes sig_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  Status status = 5;
+  string key_id = 6 [ (gogoproto.customname) = "KeyID" ];
+}
+
 // TransferOwnership contains information for a transfer ownership
 message TransferOwnership {
   bytes tx_id = 1 [
