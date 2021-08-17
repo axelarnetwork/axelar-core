@@ -212,11 +212,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		// check that the number of shares is the same as the number of recovery info
-		if val.ShareCount != int64(len(privateInfos)) {
-			return nil, fmt.Errorf("number of shares is not the same as the number of recovery infos"+
-				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(privateInfos))
-		}
 
 		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, *res.Data)
 
