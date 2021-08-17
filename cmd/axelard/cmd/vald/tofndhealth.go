@@ -65,8 +65,8 @@ func GetTofndPingCommand() *cobra.Command {
 				return fmt.Errorf("failed to invoke tofnd grpc: %s", err.Error())
 			}
 
-			if response.Response == tofnd.KeyPresenceResponse_RESPONSE_FAIL ||
-				response.Response == tofnd.KeyPresenceResponse_RESPONSE_UNSPECIFIED {
+			if response.Response == tofnd.RESPONSE_FAIL ||
+				response.Response == tofnd.RESPONSE_UNSPECIFIED {
 				return fmt.Errorf("obtained FAIL response, tofnd not properly configured")
 			}
 
