@@ -142,27 +142,6 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 	}
 }
 
-// GetHandlerQueryCommandData returns a handler to query command data by id
-func GetHandlerQueryCommandData(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-		chain := mux.Vars(r)[utils.PathVarChain]
-		commandID := mux.Vars(r)[utils.PathVarCommandID]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommandData, chain, commandID), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandID).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(res))
-	}
-}
-
 // GetHandlerQueryCreateDeployTx returns a handler to create an EVM chain transaction to deploy a smart contract
 func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -260,45 +239,6 @@ func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.SendTx, chain, txID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendTx, txID).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
-	}
-}
-
-// GetHandlerQuerySendCommandTx returns a handler to send an EVM chain transaction containing a smart contract call
-// to a wallet to be signed and submitted by a specified account
-func GetHandlerQuerySendCommandTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		fromAddr := r.URL.Query().Get(QueryParamFromAddress)
-		commandIDHex := r.URL.Query().Get(QueryParamCommandID)
-
-		var commandID types.CommandID
-		copy(commandID[:], common.Hex2Bytes(commandIDHex))
-
-		params := types.CommandParams{
-			Chain:     chain,
-			CommandID: commandID,
-			Sender:    fromAddr,
-		}
-
-		json, err := cliCtx.LegacyAmino.MarshalJSON(params)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.SendCommand), json)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendCommandTx, chain, commandIDHex).Error())
 			return
 		}
 

@@ -351,41 +351,35 @@ func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey,
 }
 
 // SetTokenInfo stores the token info
-func (k keeper) SetTokenInfo(ctx sdk.Context, assetName string, msg *types.SignDeployTokenRequest) {
+func (k keeper) SetTokenInfo(ctx sdk.Context, assetName string, msg *types.CreateDeployTokenRequest) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
 	k.getStore(ctx, k.chain).Set([]byte(assetPrefix+strings.ToLower(assetName)), bz)
 }
 
 // getTokenInfo retrieves the token info
-func (k keeper) getTokenInfo(ctx sdk.Context, assetName string) *types.SignDeployTokenRequest {
+func (k keeper) getTokenInfo(ctx sdk.Context, assetName string) *types.CreateDeployTokenRequest {
 	bz := k.getStore(ctx, k.chain).Get([]byte(assetPrefix + strings.ToLower(assetName)))
 	if bz == nil {
 		return nil
 	}
-	var msg types.SignDeployTokenRequest
+	var msg types.CreateDeployTokenRequest
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
 
 	return &msg
 }
 
-// SetCommandData stores command data by ID
-func (k keeper) SetCommandData(ctx sdk.Context, commandID types.CommandID, commandData []byte) {
-	key := append([]byte(commandPrefix), commandID[:]...)
+// SetCommand stores the given command; note that overwriting is not allowed
+func (k keeper) SetCommand(ctx sdk.Context, command types.Command) error {
+	key := utils.KeyFromStr(commandPrefix).AppendStr(command.ID.Hex())
+	if bz := k.getStore(ctx, k.chain).Get(key.AsKey()); bz != nil {
+		return fmt.Errorf("command %s already exists", command.ID.Hex())
+	}
 
-	k.getStore(ctx, k.chain).Set(key, commandData)
+	k.GetCommandQueue(ctx).Enqueue(key, &command)
+	return nil
 }
 
-// GetCommandData retrieves command data by ID
-func (k keeper) GetCommandData(ctx sdk.Context, commandID types.CommandID) []byte {
-	key := append([]byte(commandPrefix), commandID[:]...)
-
-	return k.getStore(ctx, k.chain).Get(key)
-}
-
-func (k keeper) SetCommand(ctx sdk.Context, command types.Command) {
-	k.GetCommandQueue(ctx).Enqueue(utils.KeyFromStr(commandPrefix).AppendStr(command.ID.Hex()), &command)
-}
-
+// GetCommand retrieves the command for the given ID
 func (k keeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Command {
 	bz := k.getStore(ctx, k.chain).Get(utils.KeyFromStr(commandPrefix).AppendStr(commandID.Hex()).AsKey())
 	if bz == nil {

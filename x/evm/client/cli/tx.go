@@ -36,9 +36,9 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
 		GetCmdConfirmTransferOperatorship(),
-		GetCmdSignPendingTransfersTx(),
-		GetCmdSignDeployToken(),
-		GetCmdSignBurnTokens(),
+		GetCmdCreatePendingTransfers(),
+		GetCmdCreateDeployToken(),
+		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOwnership(),
 		GetCmdCreateTransferOperatorship(),
 		GetCmdSignCommands(),
@@ -241,11 +241,11 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignPendingTransfersTx returns the cli command to sign all pending token transfers to an EVM chain
-func GetCmdSignPendingTransfersTx() *cobra.Command {
+// GetCmdCreatePendingTransfers returns the cli command to create commands for handling all pending token transfers to an EVM chain
+func GetCmdCreatePendingTransfers() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-pending-transfers [chain]",
-		Short: "Sign all pending transfers to an EVM chain",
+		Use:   "create-pending-transfers [chain]",
+		Short: "Create commands for handling all pending transfers to an EVM chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -253,7 +253,7 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSignPendingTransfersRequest(cliCtx.GetFromAddress(), args[0])
+			msg := types.NewCreatePendingTransfersRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -265,11 +265,11 @@ func GetCmdSignPendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignDeployToken returns the cli command to sign deploy-token command data for an EVM chain
-func GetCmdSignDeployToken() *cobra.Command {
+// GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
+func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity]",
-		Short: "Signs the call data to deploy a token with the AxelarGateway contract",
+		Use:   "create-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity]",
+		Short: "Create a deploy token command with the AxelarGateway contract",
 		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -290,7 +290,7 @@ func GetCmdSignDeployToken() *cobra.Command {
 				return fmt.Errorf("could not parse capacity")
 			}
 
-			msg := types.NewSignDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, name, symbol, uint8(decs), capacity)
+			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, name, symbol, uint8(decs), capacity)
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -302,11 +302,11 @@ func GetCmdSignDeployToken() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignBurnTokens returns the cli command to sign burn command for all confirmed token deposits in an EVM chain
-func GetCmdSignBurnTokens() *cobra.Command {
+// GetCmdCreateBurnTokens returns the cli command to create burn commands for all confirmed token deposits in an EVM chain
+func GetCmdCreateBurnTokens() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sign-burn-tokens [chain]",
-		Short: "Sign burn command for all confirmed token deposits in an EVM chain",
+		Use:   "create-burn-tokens [chain]",
+		Short: "Create burn commands for all confirmed token deposits in an EVM chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -314,7 +314,7 @@ func GetCmdSignBurnTokens() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSignBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
+			msg := types.NewCreateBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

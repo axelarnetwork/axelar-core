@@ -15,7 +15,6 @@ import (
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -45,7 +44,7 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMint                 = "mintToken"
+	axelarGatewayCommandMintToken            = "mintToken"
 	axelarGatewayCommandDeployToken          = "deployToken"
 	axelarGatewayCommandBurnToken            = "burnToken"
 	axelarGatewayCommandTransferOwnership    = "transferOwnership"
@@ -255,77 +254,55 @@ func transferIDtoCommandID(transferID uint64) CommandID {
 	return commandID
 }
 
-// CreateMintCommandData returns the command data to mint tokens for the specified transfers
-func CreateMintCommandData(chainID *big.Int, transfers []nexus.CrossChainTransfer, symbolRetriever func(denom string) (string, bool)) ([]byte, error) {
-	var commandIDs []CommandID
-	var commands []string
-	var commandParams [][]byte
-
-	for _, transfer := range transfers {
-
-		symbol, found := symbolRetriever(transfer.Asset.Denom)
-		if !found {
-			return nil, fmt.Errorf("could not find symbol for asset %s", transfer.Asset.Denom)
-		}
-
-		commandParam, err := createMintParams(common.HexToAddress(transfer.Recipient.Address), symbol, transfer.Asset.Amount.BigInt())
-		if err != nil {
-			return nil, err
-		}
-
-		commandIDs = append(commandIDs, transferIDtoCommandID(transfer.ID))
-		commands = append(commands, axelarGatewayCommandMint)
-		commandParams = append(commandParams, commandParam)
-	}
-
-	return packArguments(chainID, commandIDs, commands, commandParams)
-}
-
-// CreateDeployTokenCommandData returns the command data to deploy the specified token
-func CreateDeployTokenCommandData(chainID *big.Int, commandID CommandID, tokenName string, symbol string, decimals uint8, capacity sdk.Int) ([]byte, error) {
-	deployParams, err := createDeployTokenParams(tokenName, symbol, decimals, capacity.BigInt())
+// CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
+func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burnerInfo BurnerInfo) (Command, error) {
+	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 	if err != nil {
-		return nil, err
+		return Command{}, err
 	}
-
-	var commandIDs []CommandID
-	var commands []string
-	var commandParams [][]byte
-
-	commandIDs = append(commandIDs, commandID)
-	commands = append(commands, axelarGatewayCommandDeployToken)
-	commandParams = append(commandParams, deployParams)
-
-	return packArguments(chainID, commandIDs, commands, commandParams)
-}
-
-// CreateBurnCommandData returns the command data to burn tokens given burners' information
-func CreateBurnCommandData(chainID *big.Int, height int64, burnerInfos []BurnerInfo) ([]byte, error) {
-	var commandIDs []CommandID
-	var commands []string
-	var commandParams [][]byte
 
 	heightBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
-	for _, burnerInfo := range burnerInfos {
-		commandParam, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: A sequential ID for burns instead of hashing block height and salt together?
-		commandID := CommandID(crypto.Keccak256Hash(append(burnerInfo.Salt.Bytes(), heightBytes...)))
-
-		commandIDs = append(commandIDs, commandID)
-		commands = append(commands, axelarGatewayCommandBurnToken)
-		commandParams = append(commandParams, commandParam)
-	}
-
-	return packArguments(chainID, commandIDs, commands, commandParams)
+	return Command{
+		ID:      NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
+		Command: axelarGatewayCommandBurnToken,
+		Params:  params,
+		KeyID:   keyID,
+	}, nil
 }
 
-// CreateTransferOwnershipCommand creates an command to transfer ownership of the contract
+// CreateDeployTokenCommand creates a command to deploy a token
+func CreateDeployTokenCommand(chainID *big.Int, keyID string, name string, symbol string, decimals uint8, capacity *big.Int) (Command, error) {
+	params, err := createDeployTokenParams(name, symbol, decimals, capacity)
+	if err != nil {
+		return Command{}, err
+	}
+
+	return Command{
+		ID:      NewCommandID([]byte(symbol), chainID),
+		Command: axelarGatewayCommandDeployToken,
+		Params:  params,
+		KeyID:   keyID,
+	}, nil
+}
+
+// CreateMintTokenCommand creates a command to mint token to the given address
+func CreateMintTokenCommand(chainID *big.Int, keyID string, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
+	params, err := createMintTokenParams(symbol, address, amount)
+	if err != nil {
+		return Command{}, err
+	}
+
+	return Command{
+		ID:      id,
+		Command: axelarGatewayCommandMintToken,
+		Params:  params,
+		KeyID:   keyID,
+	}, nil
+}
+
+// CreateTransferOwnershipCommand creates a command to transfer ownership of the contract
 func CreateTransferOwnershipCommand(chainID *big.Int, keyID string, newOwnerAddr common.Address) (Command, error) {
 	params, err := createTransferOwnershipParams(newOwnerAddr)
 	if err != nil {
@@ -537,13 +514,13 @@ func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, 
 	return result, nil
 }
 
-func createMintParams(address common.Address, denom string, amount *big.Int) ([]byte, error) {
-	addressType, err := abi.NewType("address", "address", nil)
+func createMintTokenParams(symbol string, address common.Address, amount *big.Int) ([]byte, error) {
+	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	stringType, err := abi.NewType("string", "string", nil)
+	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -554,7 +531,7 @@ func createMintParams(address common.Address, denom string, amount *big.Int) ([]
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	result, err := arguments.Pack(denom, address, amount)
+	result, err := arguments.Pack(symbol, address, amount)
 	if err != nil {
 		return nil, err
 	}

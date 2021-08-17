@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	goEth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	goEthTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gogo/protobuf/proto"
@@ -134,33 +133,17 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, err)
 
 	// deploy token
-	deployTokenResult := <-chain.Submit(
-		&evmTypes.SignDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
-	assert.NoError(t, deployTokenResult.Error)
+	createDeployTokenResult := <-chain.Submit(
+		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+	assert.NoError(t, createDeployTokenResult.Error)
+	signDeployTokenResult := <-chain.Submit(
+		&evmTypes.SignCommandsRequest{Sender: randomSender(), Chain: "ethereum"})
+	assert.NoError(t, signDeployTokenResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
 	if err := waitFor(listeners.signDone, 1); err != nil {
 		assert.FailNow(t, "signing", err)
 	}
-
-	// send token deployment tx to ethereum
-	commandID1 := common.BytesToHash(deployTokenResult.Data)
-	nodeData[0].Mocks.ETH.SendAndSignTransactionFunc = func(_ context.Context, _ goEth.CallMsg) (string, error) {
-		return "", nil
-	}
-
-	sender1 := randomEthSender()
-	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.SendCommand},
-		abci.RequestQuery{
-			Data: cdc.MustMarshalJSON(
-				evmTypes.CommandParams{
-					Chain:     "ethereum",
-					CommandID: evmTypes.CommandID(commandID1),
-					Sender:    sender1.String(),
-				})},
-	)
-	assert.NoError(t, err)
 
 	// confirm the token deployment
 	txHash := common.BytesToHash(bz)
@@ -181,7 +164,6 @@ func Test_wBTC_mint(t *testing.T) {
 	ethBlock := rand.I64Between(10, 100)
 
 	for _, node := range nodeData {
-
 		node.Mocks.ETH.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
 			return uint64(ethBlock), nil
 		}
@@ -227,23 +209,6 @@ func Test_wBTC_mint(t *testing.T) {
 	}
 
 	// Sign all pending transfers to Ethereum
-	res := <-chain.Submit(evmTypes.NewSignPendingTransfersRequest(randomSender(), "ethereum"))
-	assert.NoError(t, res.Error)
-
-	commandID2 := common.BytesToHash(res.Data)
-
-	// wait for voting to be done (signing takes longer to tally up)
-	if err := waitFor(listeners.signDone, 1); err != nil {
-		assert.FailNow(t, "signing", err)
-	}
-
-	// Submit the minting command from an externally controlled address to AxelarGateway
-	sender2 := randomEthSender()
-
-	_, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.SendCommand},
-		abci.RequestQuery{Data: cdc.MustMarshalJSON(
-			evmTypes.CommandParams{Chain: "ethereum", CommandID: evmTypes.CommandID(commandID2), Sender: sender2.String()})},
-	)
-	assert.NoError(t, err)
+	createPendingTransfersResult := <-chain.Submit(evmTypes.NewCreatePendingTransfersRequest(randomSender(), "ethereum"))
+	assert.NoError(t, createPendingTransfersResult.Error)
 }

@@ -901,12 +901,12 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 	return k
 }
 
-func createMsgSignDeploy() *types.SignDeployTokenRequest {
+func createMsgSignDeploy() *types.CreateDeployTokenRequest {
 	account := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
 	symbol := rand.Str(3)
 	name := rand.Str(10)
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
-	return &types.SignDeployTokenRequest{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+	return &types.CreateDeployTokenRequest{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
 }

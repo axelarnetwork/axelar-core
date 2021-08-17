@@ -28,9 +28,9 @@ const (
 	TxConfirmTransferOwnership    = "confirm-transfer-ownership"
 	TxConfirmTransferOperatorship = "confirm-transfer-operatorship"
 	TxSignTx                      = "sign-tx"
-	TxSignPending                 = "sign-pending"
-	TxSignDeployToken             = "sign-deploy-token"
-	TxSignBurnTokens              = "sign-burn"
+	TxCreatePendingTransfers      = "create-pending-transfers"
+	TxCreateDeployToken           = "create-deploy-token"
+	TxCreateBurnTokens            = "create-burn-token"
 	TxCreateTransferOwnership     = "create-transfer-ownership"
 	TxCreateTransferOperatorship  = "create-transfer-operatorship"
 	TxSignCommands                = "sign-commands"
@@ -40,13 +40,11 @@ const (
 	QueryBatchedCommands      = "batched-commands"
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
-	QueryCommandData          = keeper.QCommandData
 	QueryBytecode             = keeper.QBytecode
 	QuerySignedTx             = keeper.QSignedTx
 	QueryDepositState         = keeper.QDepositState
 	QueryCreateDeployTx       = keeper.CreateDeployTx
 	QuerySendTx               = keeper.SendTx
-	QuerySendCommand          = keeper.SendCommand
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -58,9 +56,9 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Ownership), TxConfirmTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Operatorship), TxConfirmTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
+	registerTx(GetHandlerCreatePendingTransfers(cliCtx), TxCreatePendingTransfers, clientUtils.PathVarChain)
+	registerTx(GetHandlerCreateDeployToken(cliCtx), TxCreateDeployToken, clientUtils.PathVarChain)
+	registerTx(GetHandlerCreateBurnTokens(cliCtx), TxCreateBurnTokens, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateTransferOwnership(cliCtx), TxCreateTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateTransferOperatorship(cliCtx), TxCreateTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignCommands(cliCtx), TxSignCommands, clientUtils.PathVarChain)
@@ -72,13 +70,11 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryAddress(cliCtx), QueryAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQuerySignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress)
 	registerQuery(GetHandlerQueryCreateDeployTx(cliCtx), QueryCreateDeployTx, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQuerySendTx(cliCtx), QuerySendTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
-	registerQuery(GetHandlerQuerySendCommandTx(cliCtx), QuerySendCommand, clientUtils.PathVarChain)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
@@ -123,13 +119,13 @@ type ReqSignTx struct {
 	TxJSON  string       `json:"tx_json" yaml:"tx_json"`
 }
 
-// ReqSignPendingTransfers represents a request to sign all pending transfers
-type ReqSignPendingTransfers struct {
+// ReqCreatePendingTransfers represents a request to create commands for all pending transfers
+type ReqCreatePendingTransfers struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqSignDeployToken represents a request to sign a deploy token command
-type ReqSignDeployToken struct {
+// ReqCreateDeployToken represents a request to create a deploy token command
+type ReqCreateDeployToken struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
 	Symbol      string       `json:"symbol" yaml:"symbol"`
@@ -138,8 +134,8 @@ type ReqSignDeployToken struct {
 	Capacity    string       `json:"capacity" yaml:"capacity"`
 }
 
-// ReqSignBurnTokens represents a request to sign all outstanding burn commands
-type ReqSignBurnTokens struct {
+// ReqCreateBurnTokens represents a request to create commands for all outstanding burns
+type ReqCreateBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
@@ -347,10 +343,10 @@ func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerSignPendingTransfers returns a handler to sign all pending transfers
-func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerCreatePendingTransfers returns a handler to create commands for all pending transfers
+func GetHandlerCreatePendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignPendingTransfers
+		var req ReqCreatePendingTransfers
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -363,7 +359,7 @@ func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignPendingTransfersRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
+		msg := types.NewCreatePendingTransfersRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -372,10 +368,10 @@ func GetHandlerSignPendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerSignDeployToken returns a handler to sign a deploy token command
-func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerCreateDeployToken returns a handler to create a deploy token command
+func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignDeployToken
+		var req ReqCreateDeployToken
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -397,7 +393,7 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewSignDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, req.Symbol, uint8(decs), capacity)
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, req.Symbol, uint8(decs), capacity)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -406,10 +402,10 @@ func GetHandlerSignDeployToken(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerSignBurnTokens returns a handler to sign all outstanding burn commands
-func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerCreateBurnTokens returns a handler to create commands for all outstanding burns
+func GetHandlerCreateBurnTokens(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignBurnTokens
+		var req ReqCreateBurnTokens
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -422,7 +418,7 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewSignBurnTokensRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
+		msg := types.NewCreateBurnTokensRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

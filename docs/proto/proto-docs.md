@@ -136,20 +136,20 @@
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
     - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
+    - [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest)
+    - [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse)
+    - [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest)
+    - [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse)
+    - [CreatePendingTransfersRequest](#evm.v1beta1.CreatePendingTransfersRequest)
+    - [CreatePendingTransfersResponse](#evm.v1beta1.CreatePendingTransfersResponse)
     - [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest)
     - [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse)
     - [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest)
     - [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse)
     - [LinkRequest](#evm.v1beta1.LinkRequest)
     - [LinkResponse](#evm.v1beta1.LinkResponse)
-    - [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest)
-    - [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse)
     - [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest)
     - [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse)
-    - [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest)
-    - [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse)
-    - [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest)
-    - [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse)
     - [SignTxRequest](#evm.v1beta1.SignTxRequest)
     - [SignTxResponse](#evm.v1beta1.SignTxResponse)
     - [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest)
@@ -1963,6 +1963,92 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
+<a name="evm.v1beta1.CreateBurnTokensRequest"></a>
+
+### CreateBurnTokensRequest
+CreateBurnTokensRequest represents the message to create commands to burn
+tokens with AxelarGateway
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateBurnTokensResponse"></a>
+
+### CreateBurnTokensResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateDeployTokenRequest"></a>
+
+### CreateDeployTokenRequest
+CreateDeployTokenRequest represents the message to create a deploy token
+command for AxelarGateway
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `origin_chain` | [string](#string) |  |  |
+| `capacity` | [bytes](#bytes) |  |  |
+| `decimals` | [uint32](#uint32) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `token_name` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateDeployTokenResponse"></a>
+
+### CreateDeployTokenResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.CreatePendingTransfersRequest"></a>
+
+### CreatePendingTransfersRequest
+CreatePendingTransfersRequest represents a message to trigger the creation of
+commands handling all pending transfers
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreatePendingTransfersResponse"></a>
+
+### CreatePendingTransfersResponse
+
+
+
+
+
+
+
 <a name="evm.v1beta1.CreateTransferOperatorshipRequest"></a>
 
 ### CreateTransferOperatorshipRequest
@@ -1984,11 +2070,6 @@ MsgConfirmToken represents a token deploy confirmation message
 
 ### CreateTransferOperatorshipResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2016,11 +2097,6 @@ MsgConfirmToken represents a token deploy confirmation message
 
 ### CreateTransferOwnershipResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2062,38 +2138,6 @@ address
 
 
 
-<a name="evm.v1beta1.SignBurnTokensRequest"></a>
-
-### SignBurnTokensRequest
-MsgSignBurnTokens represents the message to sign commands to burn tokens with
-AxelarGateway
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignBurnTokensResponse"></a>
-
-### SignBurnTokensResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.SignCommandsRequest"></a>
 
 ### SignCommandsRequest
@@ -2119,75 +2163,6 @@ AxelarGateway
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `batched_commands_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignDeployTokenRequest"></a>
-
-### SignDeployTokenRequest
-MsgSignDeployToken represents the message to sign a deploy token command for
-AxelarGateway
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `origin_chain` | [string](#string) |  |  |
-| `capacity` | [bytes](#bytes) |  |  |
-| `decimals` | [uint32](#uint32) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `token_name` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignDeployTokenResponse"></a>
-
-### SignDeployTokenResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignPendingTransfersRequest"></a>
-
-### SignPendingTransfersRequest
-MsgSignPendingTransfers represents a message to trigger the signing of all
-pending transfers
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignPendingTransfersResponse"></a>
-
-### SignPendingTransfersResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2403,10 +2378,10 @@ Msg defines the evm Msg service.
 | `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | POST|/axelar/evm/vote-confirm-deposit|
 | `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | POST|/axelar/evm/vote-confirm-token|
 | `VoteConfirmTransferKey` | [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest) | [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
-| `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token|
-| `SignBurnTokens` | [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
+| `CreateDeployToken` | [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create-deploy-token|
+| `CreateBurnTokens` | [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
-| `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
+| `CreatePendingTransfers` | [CreatePendingTransfersRequest](#evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create-pending-transfers|
 | `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create-transfer-ownership|
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
 | `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
