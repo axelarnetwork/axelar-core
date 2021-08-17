@@ -34,13 +34,13 @@ func (mgr *Mgr) ProcessKeygenAck(blockHeight int64, attributes []sdk.Attribute) 
 	}
 
 	switch response.Response {
-	case tofnd.KeyPresenceResponse_RESPONSE_UNSPECIFIED:
+	case tofnd.RESPONSE_UNSPECIFIED:
 		fallthrough
-	case tofnd.KeyPresenceResponse_RESPONSE_FAIL:
+	case tofnd.RESPONSE_FAIL:
 		return sdkerrors.Wrap(err, "tofnd not set up correctly")
-	case tofnd.KeyPresenceResponse_RESPONSE_PRESENT:
+	case tofnd.RESPONSE_PRESENT:
 		return sdkerrors.Wrap(err, "key ID '%s' already present at tofnd")
-	case tofnd.KeyPresenceResponse_RESPONSE_ABSENT:
+	case tofnd.RESPONSE_ABSENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
 		tssMsg := tss.NewAckRequest(mgr.sender, keyID, exported.AckType_Keygen, height)
 		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
