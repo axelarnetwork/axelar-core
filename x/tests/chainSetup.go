@@ -455,13 +455,14 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		// we mock a single recovery info. This way we force the amount of recovery infos to match
 		// the number of shares.
 
-		// TODO: find a way to correctly mock the amount of recovery infos from the number of shares
+		// TODO: find a way to correctly mock the amount of group infos and party infos from the number of shares
 		// held by any  given validators,  even if we assign an arbitrary number of tokens to each
-		recoveryInfo := [][]byte{{1}}
+		groupInfo := []byte{1}
+		partyInfo := [][]byte{{1}}
 		result := &tofnd.MessageOut_KeygenResult{
 			KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
-				Data: &tofnd.MessageOut_KeygenResult_KeygenOutput{
-					PubKey: pk, ShareRecoveryInfos: recoveryInfo,
+				Data: &tofnd.KeygenOutput{
+					PubKey: pk, GroupInfo: groupInfo, RecoveryInfo: partyInfo,
 				},
 			},
 		}

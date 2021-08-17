@@ -76,7 +76,7 @@ func (x MessageOut_CriminalList_Criminal_CrimeType) String() string {
 }
 
 func (MessageOut_CriminalList_Criminal_CrimeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 2, 0, 0}
+	return fileDescriptor_762181cc22940332, []int{4, 2, 0, 0}
 }
 
 type KeyPresenceResponse_Response int32
@@ -107,12 +107,12 @@ func (x KeyPresenceResponse_Response) String() string {
 }
 
 func (KeyPresenceResponse_Response) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{9, 0}
+	return fileDescriptor_762181cc22940332, []int{10, 0}
 }
 
 type RecoverRequest struct {
-	KeygenInit         *KeygenInit `protobuf:"bytes,1,opt,name=keygen_init,json=keygenInit,proto3" json:"keygen_init,omitempty"`
-	ShareRecoveryInfos [][]byte    `protobuf:"bytes,2,rep,name=share_recovery_infos,json=shareRecoveryInfos,proto3" json:"share_recovery_infos,omitempty"`
+	KeygenInit   *KeygenInit   `protobuf:"bytes,1,opt,name=keygen_init,json=keygenInit,proto3" json:"keygen_init,omitempty"`
+	KeygenOutput *KeygenOutput `protobuf:"bytes,2,opt,name=keygen_output,json=keygenOutput,proto3" json:"keygen_output,omitempty"`
 }
 
 func (m *RecoverRequest) Reset()         { *m = RecoverRequest{} }
@@ -155,9 +155,9 @@ func (m *RecoverRequest) GetKeygenInit() *KeygenInit {
 	return nil
 }
 
-func (m *RecoverRequest) GetShareRecoveryInfos() [][]byte {
+func (m *RecoverRequest) GetKeygenOutput() *KeygenOutput {
 	if m != nil {
-		return m.ShareRecoveryInfos
+		return m.KeygenOutput
 	}
 	return nil
 }
@@ -206,6 +206,67 @@ func (m *RecoverResponse) GetResponse() RecoverResponse_Response {
 	return RecoverResponse_RESPONSE_UNSPECIFIED
 }
 
+// Keygen's success response
+type KeygenOutput struct {
+	PubKey       []byte   `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+	GroupInfo    []byte   `protobuf:"bytes,2,opt,name=group_info,json=groupInfo,proto3" json:"group_info,omitempty"`
+	RecoveryInfo [][]byte `protobuf:"bytes,3,rep,name=recovery_info,json=recoveryInfo,proto3" json:"recovery_info,omitempty"`
+}
+
+func (m *KeygenOutput) Reset()         { *m = KeygenOutput{} }
+func (m *KeygenOutput) String() string { return proto.CompactTextString(m) }
+func (*KeygenOutput) ProtoMessage()    {}
+func (*KeygenOutput) Descriptor() ([]byte, []int) {
+	return fileDescriptor_762181cc22940332, []int{2}
+}
+func (m *KeygenOutput) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeygenOutput) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeygenOutput.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeygenOutput) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenOutput.Merge(m, src)
+}
+func (m *KeygenOutput) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeygenOutput) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenOutput.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenOutput proto.InternalMessageInfo
+
+func (m *KeygenOutput) GetPubKey() []byte {
+	if m != nil {
+		return m.PubKey
+	}
+	return nil
+}
+
+func (m *KeygenOutput) GetGroupInfo() []byte {
+	if m != nil {
+		return m.GroupInfo
+	}
+	return nil
+}
+
+func (m *KeygenOutput) GetRecoveryInfo() [][]byte {
+	if m != nil {
+		return m.RecoveryInfo
+	}
+	return nil
+}
+
 type MessageIn struct {
 	// Types that are valid to be assigned to Data:
 	//	*MessageIn_KeygenInit
@@ -219,7 +280,7 @@ func (m *MessageIn) Reset()         { *m = MessageIn{} }
 func (m *MessageIn) String() string { return proto.CompactTextString(m) }
 func (*MessageIn) ProtoMessage()    {}
 func (*MessageIn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{2}
+	return fileDescriptor_762181cc22940332, []int{3}
 }
 func (m *MessageIn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -330,7 +391,7 @@ func (m *MessageOut) Reset()         { *m = MessageOut{} }
 func (m *MessageOut) String() string { return proto.CompactTextString(m) }
 func (*MessageOut) ProtoMessage()    {}
 func (*MessageOut) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3}
+	return fileDescriptor_762181cc22940332, []int{4}
 }
 func (m *MessageOut) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -440,7 +501,7 @@ func (m *MessageOut_KeygenResult) Reset()         { *m = MessageOut_KeygenResult
 func (m *MessageOut_KeygenResult) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_KeygenResult) ProtoMessage()    {}
 func (*MessageOut_KeygenResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 0}
+	return fileDescriptor_762181cc22940332, []int{4, 0}
 }
 func (m *MessageOut_KeygenResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -476,7 +537,7 @@ type isMessageOut_KeygenResult_KeygenResultData interface {
 }
 
 type MessageOut_KeygenResult_Data struct {
-	Data *MessageOut_KeygenResult_KeygenOutput `protobuf:"bytes,1,opt,name=data,proto3,oneof" json:"data,omitempty"`
+	Data *KeygenOutput `protobuf:"bytes,1,opt,name=data,proto3,oneof" json:"data,omitempty"`
 }
 type MessageOut_KeygenResult_Criminals struct {
 	Criminals *MessageOut_CriminalList `protobuf:"bytes,2,opt,name=criminals,proto3,oneof" json:"criminals,omitempty"`
@@ -492,7 +553,7 @@ func (m *MessageOut_KeygenResult) GetKeygenResultData() isMessageOut_KeygenResul
 	return nil
 }
 
-func (m *MessageOut_KeygenResult) GetData() *MessageOut_KeygenResult_KeygenOutput {
+func (m *MessageOut_KeygenResult) GetData() *KeygenOutput {
 	if x, ok := m.GetKeygenResultData().(*MessageOut_KeygenResult_Data); ok {
 		return x.Data
 	}
@@ -514,59 +575,6 @@ func (*MessageOut_KeygenResult) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// Keygen's success response
-type MessageOut_KeygenResult_KeygenOutput struct {
-	PubKey             []byte   `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
-	ShareRecoveryInfos [][]byte `protobuf:"bytes,2,rep,name=share_recovery_infos,json=shareRecoveryInfos,proto3" json:"share_recovery_infos,omitempty"`
-}
-
-func (m *MessageOut_KeygenResult_KeygenOutput) Reset()         { *m = MessageOut_KeygenResult_KeygenOutput{} }
-func (m *MessageOut_KeygenResult_KeygenOutput) String() string { return proto.CompactTextString(m) }
-func (*MessageOut_KeygenResult_KeygenOutput) ProtoMessage()    {}
-func (*MessageOut_KeygenResult_KeygenOutput) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 0, 0}
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.Merge(m, src)
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) XXX_Size() int {
-	return m.Size()
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) XXX_DiscardUnknown() {
-	xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MessageOut_KeygenResult_KeygenOutput proto.InternalMessageInfo
-
-func (m *MessageOut_KeygenResult_KeygenOutput) GetPubKey() []byte {
-	if m != nil {
-		return m.PubKey
-	}
-	return nil
-}
-
-func (m *MessageOut_KeygenResult_KeygenOutput) GetShareRecoveryInfos() [][]byte {
-	if m != nil {
-		return m.ShareRecoveryInfos
-	}
-	return nil
-}
-
 // Sign's response types
 type MessageOut_SignResult struct {
 	// Types that are valid to be assigned to SignResultData:
@@ -579,7 +587,7 @@ func (m *MessageOut_SignResult) Reset()         { *m = MessageOut_SignResult{} }
 func (m *MessageOut_SignResult) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_SignResult) ProtoMessage()    {}
 func (*MessageOut_SignResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 1}
+	return fileDescriptor_762181cc22940332, []int{4, 1}
 }
 func (m *MessageOut_SignResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -662,7 +670,7 @@ func (m *MessageOut_CriminalList) Reset()         { *m = MessageOut_CriminalList
 func (m *MessageOut_CriminalList) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_CriminalList) ProtoMessage()    {}
 func (*MessageOut_CriminalList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 2}
+	return fileDescriptor_762181cc22940332, []int{4, 2}
 }
 func (m *MessageOut_CriminalList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -707,7 +715,7 @@ func (m *MessageOut_CriminalList_Criminal) Reset()         { *m = MessageOut_Cri
 func (m *MessageOut_CriminalList_Criminal) String() string { return proto.CompactTextString(m) }
 func (*MessageOut_CriminalList_Criminal) ProtoMessage()    {}
 func (*MessageOut_CriminalList_Criminal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{3, 2, 0}
+	return fileDescriptor_762181cc22940332, []int{4, 2, 0}
 }
 func (m *MessageOut_CriminalList_Criminal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -760,7 +768,7 @@ func (m *TrafficIn) Reset()         { *m = TrafficIn{} }
 func (m *TrafficIn) String() string { return proto.CompactTextString(m) }
 func (*TrafficIn) ProtoMessage()    {}
 func (*TrafficIn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{4}
+	return fileDescriptor_762181cc22940332, []int{5}
 }
 func (m *TrafficIn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -820,7 +828,7 @@ func (m *TrafficOut) Reset()         { *m = TrafficOut{} }
 func (m *TrafficOut) String() string { return proto.CompactTextString(m) }
 func (*TrafficOut) ProtoMessage()    {}
 func (*TrafficOut) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{5}
+	return fileDescriptor_762181cc22940332, []int{6}
 }
 func (m *TrafficOut) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -882,7 +890,7 @@ func (m *KeygenInit) Reset()         { *m = KeygenInit{} }
 func (m *KeygenInit) String() string { return proto.CompactTextString(m) }
 func (*KeygenInit) ProtoMessage()    {}
 func (*KeygenInit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{6}
+	return fileDescriptor_762181cc22940332, []int{7}
 }
 func (m *KeygenInit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -957,7 +965,7 @@ func (m *SignInit) Reset()         { *m = SignInit{} }
 func (m *SignInit) String() string { return proto.CompactTextString(m) }
 func (*SignInit) ProtoMessage()    {}
 func (*SignInit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{7}
+	return fileDescriptor_762181cc22940332, []int{8}
 }
 func (m *SignInit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1023,7 +1031,7 @@ func (m *KeyPresenceRequest) Reset()         { *m = KeyPresenceRequest{} }
 func (m *KeyPresenceRequest) String() string { return proto.CompactTextString(m) }
 func (*KeyPresenceRequest) ProtoMessage()    {}
 func (*KeyPresenceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{8}
+	return fileDescriptor_762181cc22940332, []int{9}
 }
 func (m *KeyPresenceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1067,7 +1075,7 @@ func (m *KeyPresenceResponse) Reset()         { *m = KeyPresenceResponse{} }
 func (m *KeyPresenceResponse) String() string { return proto.CompactTextString(m) }
 func (*KeyPresenceResponse) ProtoMessage()    {}
 func (*KeyPresenceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_762181cc22940332, []int{9}
+	return fileDescriptor_762181cc22940332, []int{10}
 }
 func (m *KeyPresenceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1109,10 +1117,10 @@ func init() {
 	proto.RegisterEnum("tss.tofnd.v1beta1.KeyPresenceResponse_Response", KeyPresenceResponse_Response_name, KeyPresenceResponse_Response_value)
 	proto.RegisterType((*RecoverRequest)(nil), "tss.tofnd.v1beta1.RecoverRequest")
 	proto.RegisterType((*RecoverResponse)(nil), "tss.tofnd.v1beta1.RecoverResponse")
+	proto.RegisterType((*KeygenOutput)(nil), "tss.tofnd.v1beta1.KeygenOutput")
 	proto.RegisterType((*MessageIn)(nil), "tss.tofnd.v1beta1.MessageIn")
 	proto.RegisterType((*MessageOut)(nil), "tss.tofnd.v1beta1.MessageOut")
 	proto.RegisterType((*MessageOut_KeygenResult)(nil), "tss.tofnd.v1beta1.MessageOut.KeygenResult")
-	proto.RegisterType((*MessageOut_KeygenResult_KeygenOutput)(nil), "tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput")
 	proto.RegisterType((*MessageOut_SignResult)(nil), "tss.tofnd.v1beta1.MessageOut.SignResult")
 	proto.RegisterType((*MessageOut_CriminalList)(nil), "tss.tofnd.v1beta1.MessageOut.CriminalList")
 	proto.RegisterType((*MessageOut_CriminalList_Criminal)(nil), "tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal")
@@ -1216,14 +1224,17 @@ func (m *RecoverRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ShareRecoveryInfos) > 0 {
-		for iNdEx := len(m.ShareRecoveryInfos) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ShareRecoveryInfos[iNdEx])
-			copy(dAtA[i:], m.ShareRecoveryInfos[iNdEx])
-			i = encodeVarintTofnd(dAtA, i, uint64(len(m.ShareRecoveryInfos[iNdEx])))
-			i--
-			dAtA[i] = 0x12
+	if m.KeygenOutput != nil {
+		{
+			size, err := m.KeygenOutput.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTofnd(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x12
 	}
 	if m.KeygenInit != nil {
 		{
@@ -1264,6 +1275,52 @@ func (m *RecoverResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintTofnd(dAtA, i, uint64(m.Response))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeygenOutput) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeygenOutput) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeygenOutput) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.RecoveryInfo) > 0 {
+		for iNdEx := len(m.RecoveryInfo) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.RecoveryInfo[iNdEx])
+			copy(dAtA[i:], m.RecoveryInfo[iNdEx])
+			i = encodeVarintTofnd(dAtA, i, uint64(len(m.RecoveryInfo[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.GroupInfo) > 0 {
+		i -= len(m.GroupInfo)
+		copy(dAtA[i:], m.GroupInfo)
+		i = encodeVarintTofnd(dAtA, i, uint64(len(m.GroupInfo)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.PubKey) > 0 {
+		i -= len(m.PubKey)
+		copy(dAtA[i:], m.PubKey)
+		i = encodeVarintTofnd(dAtA, i, uint64(len(m.PubKey)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1566,45 +1623,6 @@ func (m *MessageOut_KeygenResult_Criminals) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MessageOut_KeygenResult_KeygenOutput) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MessageOut_KeygenResult_KeygenOutput) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MessageOut_KeygenResult_KeygenOutput) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.ShareRecoveryInfos) > 0 {
-		for iNdEx := len(m.ShareRecoveryInfos) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ShareRecoveryInfos[iNdEx])
-			copy(dAtA[i:], m.ShareRecoveryInfos[iNdEx])
-			i = encodeVarintTofnd(dAtA, i, uint64(len(m.ShareRecoveryInfos[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.PubKey) > 0 {
-		i -= len(m.PubKey)
-		copy(dAtA[i:], m.PubKey)
-		i = encodeVarintTofnd(dAtA, i, uint64(len(m.PubKey)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *MessageOut_SignResult) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1861,20 +1879,20 @@ func (m *KeygenInit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.PartyShareCounts) > 0 {
-		dAtA12 := make([]byte, len(m.PartyShareCounts)*10)
-		var j11 int
+		dAtA13 := make([]byte, len(m.PartyShareCounts)*10)
+		var j12 int
 		for _, num := range m.PartyShareCounts {
 			for num >= 1<<7 {
-				dAtA12[j11] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA13[j12] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j11++
+				j12++
 			}
-			dAtA12[j11] = uint8(num)
-			j11++
+			dAtA13[j12] = uint8(num)
+			j12++
 		}
-		i -= j11
-		copy(dAtA[i:], dAtA12[:j11])
-		i = encodeVarintTofnd(dAtA, i, uint64(j11))
+		i -= j12
+		copy(dAtA[i:], dAtA13[:j12])
+		i = encodeVarintTofnd(dAtA, i, uint64(j12))
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -2039,11 +2057,9 @@ func (m *RecoverRequest) Size() (n int) {
 		l = m.KeygenInit.Size()
 		n += 1 + l + sovTofnd(uint64(l))
 	}
-	if len(m.ShareRecoveryInfos) > 0 {
-		for _, b := range m.ShareRecoveryInfos {
-			l = len(b)
-			n += 1 + l + sovTofnd(uint64(l))
-		}
+	if m.KeygenOutput != nil {
+		l = m.KeygenOutput.Size()
+		n += 1 + l + sovTofnd(uint64(l))
 	}
 	return n
 }
@@ -2056,6 +2072,29 @@ func (m *RecoverResponse) Size() (n int) {
 	_ = l
 	if m.Response != 0 {
 		n += 1 + sovTofnd(uint64(m.Response))
+	}
+	return n
+}
+
+func (m *KeygenOutput) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PubKey)
+	if l > 0 {
+		n += 1 + l + sovTofnd(uint64(l))
+	}
+	l = len(m.GroupInfo)
+	if l > 0 {
+		n += 1 + l + sovTofnd(uint64(l))
+	}
+	if len(m.RecoveryInfo) > 0 {
+		for _, b := range m.RecoveryInfo {
+			l = len(b)
+			n += 1 + l + sovTofnd(uint64(l))
+		}
 	}
 	return n
 }
@@ -2210,25 +2249,6 @@ func (m *MessageOut_KeygenResult_Criminals) Size() (n int) {
 	}
 	return n
 }
-func (m *MessageOut_KeygenResult_KeygenOutput) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.PubKey)
-	if l > 0 {
-		n += 1 + l + sovTofnd(uint64(l))
-	}
-	if len(m.ShareRecoveryInfos) > 0 {
-		for _, b := range m.ShareRecoveryInfos {
-			l = len(b)
-			n += 1 + l + sovTofnd(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *MessageOut_SignResult) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2493,9 +2513,9 @@ func (m *RecoverRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShareRecoveryInfos", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field KeygenOutput", wireType)
 			}
-			var byteLen int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTofnd
@@ -2505,23 +2525,27 @@ func (m *RecoverRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthTofnd
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthTofnd
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ShareRecoveryInfos = append(m.ShareRecoveryInfos, make([]byte, postIndex-iNdEx))
-			copy(m.ShareRecoveryInfos[len(m.ShareRecoveryInfos)-1], dAtA[iNdEx:postIndex])
+			if m.KeygenOutput == nil {
+				m.KeygenOutput = &KeygenOutput{}
+			}
+			if err := m.KeygenOutput.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2592,6 +2616,156 @@ func (m *RecoverResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTofnd(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeygenOutput) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTofnd
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenOutput: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenOutput: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PubKey = append(m.PubKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.PubKey == nil {
+				m.PubKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupInfo", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GroupInfo = append(m.GroupInfo[:0], dAtA[iNdEx:postIndex]...)
+			if m.GroupInfo == nil {
+				m.GroupInfo = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecoveryInfo", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTofnd
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTofnd
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecoveryInfo = append(m.RecoveryInfo, make([]byte, postIndex-iNdEx))
+			copy(m.RecoveryInfo[len(m.RecoveryInfo)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTofnd(dAtA[iNdEx:])
@@ -3023,7 +3197,7 @@ func (m *MessageOut_KeygenResult) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &MessageOut_KeygenResult_KeygenOutput{}
+			v := &KeygenOutput{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -3063,122 +3237,6 @@ func (m *MessageOut_KeygenResult) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			m.KeygenResultData = &MessageOut_KeygenResult_Criminals{v}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTofnd(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTofnd
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MessageOut_KeygenResult_KeygenOutput) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTofnd
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: KeygenOutput: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: KeygenOutput: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTofnd
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthTofnd
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTofnd
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.PubKey = append(m.PubKey[:0], dAtA[iNdEx:postIndex]...)
-			if m.PubKey == nil {
-				m.PubKey = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShareRecoveryInfos", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTofnd
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthTofnd
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTofnd
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ShareRecoveryInfos = append(m.ShareRecoveryInfos, make([]byte, postIndex-iNdEx))
-			copy(m.ShareRecoveryInfos[len(m.ShareRecoveryInfos)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

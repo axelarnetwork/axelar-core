@@ -170,10 +170,10 @@ func (m *QueryKeyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_QueryKeyResponse proto.InternalMessageInfo
 
 type QueryRecoveryResponse struct {
-	PartyUids          []string `protobuf:"bytes,1,rep,name=party_uids,json=partyUids,proto3" json:"party_uids,omitempty"`
-	PartyShareCounts   []uint32 `protobuf:"varint,2,rep,packed,name=party_share_counts,json=partyShareCounts,proto3" json:"party_share_counts,omitempty"`
-	Threshold          int32    `protobuf:"varint,3,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	ShareRecoveryInfos [][]byte `protobuf:"bytes,4,rep,name=share_recovery_infos,json=shareRecoveryInfos,proto3" json:"share_recovery_infos,omitempty"`
+	PartyUids        []string                            `protobuf:"bytes,1,rep,name=party_uids,json=partyUids,proto3" json:"party_uids,omitempty"`
+	PartyShareCounts []uint32                            `protobuf:"varint,2,rep,packed,name=party_share_counts,json=partyShareCounts,proto3" json:"party_share_counts,omitempty"`
+	Threshold        int32                               `protobuf:"varint,3,opt,name=threshold,proto3" json:"threshold,omitempty"`
+	KeygenOutput     *QueryRecoveryResponse_KeygenOutput `protobuf:"bytes,4,opt,name=keygen_output,json=keygenOutput,proto3" json:"keygen_output,omitempty"`
 }
 
 func (m *QueryRecoveryResponse) Reset()         { *m = QueryRecoveryResponse{} }
@@ -524,14 +524,17 @@ func (m *QueryRecoveryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ShareRecoveryInfos) > 0 {
-		for iNdEx := len(m.ShareRecoveryInfos) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ShareRecoveryInfos[iNdEx])
-			copy(dAtA[i:], m.ShareRecoveryInfos[iNdEx])
-			i = encodeVarintQuery(dAtA, i, uint64(len(m.ShareRecoveryInfos[iNdEx])))
-			i--
-			dAtA[i] = 0x22
+	if m.KeygenOutput != nil {
+		{
+			size, err := m.KeygenOutput.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.Threshold != 0 {
 		i = encodeVarintQuery(dAtA, i, uint64(m.Threshold))
@@ -539,20 +542,20 @@ func (m *QueryRecoveryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x18
 	}
 	if len(m.PartyShareCounts) > 0 {
-		dAtA3 := make([]byte, len(m.PartyShareCounts)*10)
-		var j2 int
+		dAtA4 := make([]byte, len(m.PartyShareCounts)*10)
+		var j3 int
 		for _, num := range m.PartyShareCounts {
 			for num >= 1<<7 {
-				dAtA3[j2] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA4[j3] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j2++
+				j3++
 			}
-			dAtA3[j2] = uint8(num)
-			j2++
+			dAtA4[j3] = uint8(num)
+			j3++
 		}
-		i -= j2
-		copy(dAtA[i:], dAtA3[:j2])
-		i = encodeVarintQuery(dAtA, i, uint64(j2))
+		i -= j3
+		copy(dAtA[i:], dAtA4[:j3])
+		i = encodeVarintQuery(dAtA, i, uint64(j3))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -784,8 +787,29 @@ func (m *QueryRecoveryResponse) Size() (n int) {
 	if m.Threshold != 0 {
 		n += 1 + sovQuery(uint64(m.Threshold))
 	}
-	if len(m.ShareRecoveryInfos) > 0 {
-		for _, b := range m.ShareRecoveryInfos {
+	if m.KeygenOutput != nil {
+		l = m.KeygenOutput.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryRecoveryResponse_KeygenOutput) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PubKey)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = len(m.GroupInfo)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if len(m.RecoveryInfo) > 0 {
+		for _, b := range m.RecoveryInfo {
 			l = len(b)
 			n += 1 + l + sovQuery(uint64(l))
 		}
@@ -1328,7 +1352,93 @@ func (m *QueryRecoveryResponse) Unmarshal(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShareRecoveryInfos", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field KeygenOutput", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.KeygenOutput == nil {
+				m.KeygenOutput = &QueryRecoveryResponse_KeygenOutput{}
+			}
+			if err := m.KeygenOutput.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryRecoveryResponse_KeygenOutput) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenOutput: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenOutput: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -1355,8 +1465,76 @@ func (m *QueryRecoveryResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ShareRecoveryInfos = append(m.ShareRecoveryInfos, make([]byte, postIndex-iNdEx))
-			copy(m.ShareRecoveryInfos[len(m.ShareRecoveryInfos)-1], dAtA[iNdEx:postIndex])
+			m.PubKey = append(m.PubKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.PubKey == nil {
+				m.PubKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupInfo", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GroupInfo = append(m.GroupInfo[:0], dAtA[iNdEx:postIndex]...)
+			if m.GroupInfo == nil {
+				m.GroupInfo = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecoveryInfo", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecoveryInfo = append(m.RecoveryInfo, make([]byte, postIndex-iNdEx))
+			copy(m.RecoveryInfo[len(m.RecoveryInfo)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

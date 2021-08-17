@@ -67,7 +67,11 @@ func (m *MessageOut_KeygenResult) Validate() error {
 		if pubKeyBytes == nil {
 			return fmt.Errorf("pubkey is nil")
 		}
-		recoveryInfos := keygenData.GetShareRecoveryInfos()
+		groupInfo := keygenData.GetGroupInfo()
+		if groupInfo == nil {
+			return fmt.Errorf("group info is nil")
+		}
+		recoveryInfos := keygenData.GetRecoveryInfo()
 		if recoveryInfos == nil || len(recoveryInfos) == 0 {
 			return fmt.Errorf("recovery info is nil")
 		}

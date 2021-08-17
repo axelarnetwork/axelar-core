@@ -36,7 +36,7 @@ import (
 
 // Testing the key rotation functionality.
 // (0. Register proxies for all validators)
-//  2. Create a key (creates a snapshot automatically
+//  1. Create a key (creates a snapshot automatically
 //  2. Wait for vote
 //  3. Designate that key to be the first master key for bitcoin
 //  4. Rotate to the designated master key

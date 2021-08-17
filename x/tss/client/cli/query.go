@@ -147,7 +147,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 						PartyShareCounts: recResponse.PartyShareCounts,
 						MyPartyIndex:     int32(index),
 					},
-					ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
+					KeygenOutput: (*tofnd.KeygenOutput)(recResponse.KeygenOutput),
 				}
 			}
 			return cliCtx.PrintObjectLegacy(requests)

@@ -19,7 +19,7 @@ package tss.tofnd.v1beta1;
 
 message RecoverRequest {
   KeygenInit keygen_init = 1;
-  repeated bytes share_recovery_infos = 2;
+  KeygenOutput keygen_output = 2;
 }
 message RecoverResponse {
   enum Response {
@@ -28,6 +28,15 @@ message RecoverResponse {
     RESPONSE_FAIL = 2;
   }
   Response response = 1;
+}
+
+// Keygen's success response
+message KeygenOutput {
+  bytes pub_key = 1; // pub_key; common for all parties
+  bytes group_info =
+      2; // recovery info of all parties' shares; common for all parties
+  repeated bytes recovery_info =
+      3; // private recovery info of this party's shares; unique for each party
 }
 
 // generic message types shared by Keygen, Sign
@@ -45,7 +54,6 @@ message MessageIn {
 }
 
 message MessageOut {
-
   oneof data {                      // TODO don't reuse `data`
     TrafficOut traffic = 1;         // all but final message
     KeygenResult keygen_result = 2; // final message only, Keygen
@@ -55,12 +63,6 @@ message MessageOut {
 
   // Keygen's response types
   message KeygenResult {
-    // Keygen's success response
-    message KeygenOutput {
-      bytes pub_key = 1;                       // pub_key
-      repeated bytes share_recovery_infos = 2; // recovery info
-    }
-
     oneof keygen_result_data {
       KeygenOutput data = 1;      // Success response
       CriminalList criminals = 2; // Faiilure response

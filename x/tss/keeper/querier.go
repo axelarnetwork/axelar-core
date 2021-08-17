@@ -74,13 +74,13 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	infos := k.GetAllRecoveryInfos(ctx, keyID)
+	keygenOutput := k.GetRecoveryInfos(ctx, sdk.ValAddress(keyID), keyID)
 
-	resp := types.QueryRecoveryResponse{
-		Threshold:          int32(snapshot.CorruptionThreshold),
-		PartyUids:          participants,
-		PartyShareCounts:   participantShareCounts,
-		ShareRecoveryInfos: infos,
+	resp := tssTypes.QueryRecoveryResponse{
+		Threshold:        int32(snapshot.CorruptionThreshold),
+		PartyUids:        participants,
+		PartyShareCounts: participantShareCounts,
+		KeygenOutput:     &keygenOutput,
 	}
 
 	return resp.Marshal()

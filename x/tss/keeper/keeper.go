@@ -16,6 +16,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -141,11 +142,16 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // SetRecoveryInfos sets the recovery infos for a given party
-func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte) {
+func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, keygenOutput tofnd.KeygenOutput) {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 
+	// TODO: Should QueryRecoveryResponse include only RecoveryInfo?
 	data := types.QueryRecoveryResponse{
-		ShareRecoveryInfos: infos,
+		KeygenOutput: &types.QueryRecoveryResponse_KeygenOutput{
+			PubKey:       keygenOutput.PubKey,
+			GroupInfo:    keygenOutput.GroupInfo,
+			RecoveryInfo: keygenOutput.RecoveryInfo,
+		},
 	}
 
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
@@ -164,23 +170,15 @@ func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID s
 	return true
 }
 
-// GetAllRecoveryInfos returns the recovery infos for all parties of a specific key ID
-func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
-	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
-	store := ctx.KVStore(k.storeKey)
-	var infos [][]byte
+// GetRecoveryInfo returns a party's recovery infos of a specific key ID
+func (k Keeper) GetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) types.QueryRecoveryResponse_KeygenOutput {
+	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
+	var queryResponse types.QueryRecoveryResponse
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryResponse)
 
-	for ; iter.Valid(); iter.Next() {
-
-		var data types.QueryRecoveryResponse
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &data)
-		infos = append(infos, data.ShareRecoveryInfos...)
-	}
-
-	return infos
+	return *queryResponse.KeygenOutput
 }
 
 // DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID

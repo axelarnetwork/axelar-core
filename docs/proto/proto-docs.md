@@ -203,12 +203,12 @@
     - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
     - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
+    - [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput)
     - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
     - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
     - [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList)
     - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
     - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
-    - [MessageOut.KeygenResult.KeygenOutput](#tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput)
     - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
     - [RecoverRequest](#tss.tofnd.v1beta1.RecoverRequest)
     - [RecoverResponse](#tss.tofnd.v1beta1.RecoverResponse)
@@ -232,8 +232,14 @@
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
+<<<<<<< HEAD
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
+=======
+    - [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput)
+    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
+    - [Signature](#tss.v1beta1.Signature)
+>>>>>>> 84d3f91 (chore: accomodate safe recovery)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -2871,6 +2877,23 @@ Key presence check types
 
 
 
+<a name="tss.tofnd.v1beta1.KeygenOutput"></a>
+
+### KeygenOutput
+Keygen's success response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
+| `group_info` | [bytes](#bytes) |  | recovery info of all parties' shares; common for all parties |
+| `recovery_info` | [bytes](#bytes) | repeated | private recovery info of this party's shares; unique for each party |
+
+
+
+
+
+
 <a name="tss.tofnd.v1beta1.MessageIn"></a>
 
 ### MessageIn
@@ -2946,24 +2969,8 @@ Keygen's response types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [MessageOut.KeygenResult.KeygenOutput](#tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput) |  | Success response |
+| `data` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  | Success response |
 | `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Faiilure response |
-
-
-
-
-
-
-<a name="tss.tofnd.v1beta1.MessageOut.KeygenResult.KeygenOutput"></a>
-
-### MessageOut.KeygenResult.KeygenOutput
-Keygen's success response
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pub_key` | [bytes](#bytes) |  | pub_key |
-| `share_recovery_infos` | [bytes](#bytes) | repeated | recovery info |
 
 
 
@@ -2995,7 +3002,7 @@ Sign's response types
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  |  |
-| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
+| `keygen_output` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 
 
@@ -3270,7 +3277,24 @@ Params is the parameter set for this module
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
 | `threshold` | [int32](#int32) |  |  |
-| `share_recovery_infos` | [bytes](#bytes) | repeated |  |
+| `keygen_output` | [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryRecoveryResponse.KeygenOutput"></a>
+
+### QueryRecoveryResponse.KeygenOutput
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
+| `group_info` | [bytes](#bytes) |  | parties' common recovery info |
+| `recovery_info` | [bytes](#bytes) | repeated | party's private recovery info |
 
 
 

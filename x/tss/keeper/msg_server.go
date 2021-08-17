@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -168,6 +169,13 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	return &types.RotateKeyResponse{}, nil
 }
 
+// TODO: where to put this?
+// use pub fields to unMarshal
+type VoteStruct struct {
+	PubKey    []byte
+	GroupInfo []byte
+}
+
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -185,8 +193,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
 		}
 
-		infos := res.Data.GetShareRecoveryInfos()
-		if infos == nil {
+		private_infos := res.Data.GetRecoveryInfo()
+		if private_infos == nil {
 			return nil, fmt.Errorf("could not obtain recovery info from result")
 		}
 
@@ -205,12 +213,12 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		// check that the number of shares is the same as the number of recovery info
-		if val.ShareCount != int64(len(infos)) {
+		if val.ShareCount != int64(len(private_infos)) {
 			return nil, fmt.Errorf("number of shares is not the same as the number of recovery infos"+
-				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(infos))
+				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(private_infos))
 		}
 
-		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, infos)
+		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, *res.Data)
 
 		// TODO: in the near future we need to change the voting value to include both the pubkey and
 		// and the public recovery infos of all parties. The way that is currently done, if a single
@@ -220,7 +228,24 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		// was voted on, so that tofnd can re-construct the shares.
 		//
 		// Check issue #694 on axelar-core repo for details.
-		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
+
+		// vote on pubkey bytes and common recovery info bytes
+		pubKey := res.Data.GetPubKey()
+		if pubKey == nil {
+			return nil, fmt.Errorf("public key is nil")
+		}
+
+		groupInfo := res.Data.GetGroupInfo()
+		if groupInfo == nil {
+			return nil, fmt.Errorf("group info is nil")
+		}
+
+		vote := VoteStruct{PubKey: pubKey, GroupInfo: groupInfo}
+		bytes, err := json.Marshal(vote)
+		if err != nil {
+			return nil, fmt.Errorf("cannot marshal vote [%s, %s]", vote.PubKey, vote.GroupInfo)
+		}
+		voteData = &gogoprototypes.BytesValue{Value: bytes}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
@@ -267,9 +292,16 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
+		var voteData VoteStruct
+		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
 		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+			return nil, fmt.Errorf("could not unmarshal vote data [%s]: [%w]", keygenResult.GetValue(), err)
+		}
+
+		// try to get public ky from vote data
+		btcecPK, err := btcec.ParsePubKey(voteData.PubKey, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
 		pubKey := btcecPK.ToECDSA()
