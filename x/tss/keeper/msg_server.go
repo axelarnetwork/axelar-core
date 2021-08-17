@@ -170,7 +170,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 }
 
 // TODO: where to put this?
-// use pub fields to unMarshal
+// VoteStruct combines vote data
 type VoteStruct struct {
 	PubKey    []byte
 	GroupInfo []byte
@@ -193,8 +193,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
 		}
 
-		private_infos := res.Data.GetRecoveryInfo()
-		if private_infos == nil {
+		privateInfos := res.Data.GetRecoveryInfo()
+		if privateInfos == nil {
 			return nil, fmt.Errorf("could not obtain recovery info from result")
 		}
 
@@ -213,9 +213,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		// check that the number of shares is the same as the number of recovery info
-		if val.ShareCount != int64(len(private_infos)) {
+		if val.ShareCount != int64(len(privateInfos)) {
 			return nil, fmt.Errorf("number of shares is not the same as the number of recovery infos"+
-				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(private_infos))
+				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(privateInfos))
 		}
 
 		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, *res.Data)

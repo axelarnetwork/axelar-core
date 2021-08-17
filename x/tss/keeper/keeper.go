@@ -170,7 +170,7 @@ func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID s
 	return true
 }
 
-// GetRecoveryInfo returns a party's recovery infos of a specific key ID
+// GetRecoveryInfos returns a party's recovery infos of a specific key ID
 func (k Keeper) GetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) types.QueryRecoveryResponse_KeygenOutput {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
