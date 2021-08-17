@@ -32,6 +32,9 @@ var _ types.Store = &StoreMock{}
 // 			GetTotalShareCountFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetTotalShareCount method")
 // 			},
+// 			GetTotalVoterCountFunc: func() int64 {
+// 				panic("mock out the GetTotalVoterCount method")
+// 			},
 // 			GetVoteFunc: func(hash string) (types.TalliedVote, bool) {
 // 				panic("mock out the GetVote method")
 // 			},
@@ -66,6 +69,9 @@ type StoreMock struct {
 	// GetTotalShareCountFunc mocks the GetTotalShareCount method.
 	GetTotalShareCountFunc func() github_com_cosmos_cosmos_sdk_types.Int
 
+	// GetTotalVoterCountFunc mocks the GetTotalVoterCount method.
+	GetTotalVoterCountFunc func() int64
+
 	// GetVoteFunc mocks the GetVote method.
 	GetVoteFunc func(hash string) (types.TalliedVote, bool)
 
@@ -99,6 +105,9 @@ type StoreMock struct {
 		// GetTotalShareCount holds details about calls to the GetTotalShareCount method.
 		GetTotalShareCount []struct {
 		}
+		// GetTotalVoterCount holds details about calls to the GetTotalVoterCount method.
+		GetTotalVoterCount []struct {
+		}
 		// GetVote holds details about calls to the GetVote method.
 		GetVote []struct {
 			// Hash is the hash argument value.
@@ -129,6 +138,7 @@ type StoreMock struct {
 	lockGetPoll            sync.RWMutex
 	lockGetShareCount      sync.RWMutex
 	lockGetTotalShareCount sync.RWMutex
+	lockGetTotalVoterCount sync.RWMutex
 	lockGetVote            sync.RWMutex
 	lockGetVotes           sync.RWMutex
 	lockHasVoted           sync.RWMutex
@@ -247,6 +257,32 @@ func (mock *StoreMock) GetTotalShareCountCalls() []struct {
 	mock.lockGetTotalShareCount.RLock()
 	calls = mock.calls.GetTotalShareCount
 	mock.lockGetTotalShareCount.RUnlock()
+	return calls
+}
+
+// GetTotalVoterCount calls GetTotalVoterCountFunc.
+func (mock *StoreMock) GetTotalVoterCount() int64 {
+	if mock.GetTotalVoterCountFunc == nil {
+		panic("StoreMock.GetTotalVoterCountFunc: method is nil but Store.GetTotalVoterCount was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetTotalVoterCount.Lock()
+	mock.calls.GetTotalVoterCount = append(mock.calls.GetTotalVoterCount, callInfo)
+	mock.lockGetTotalVoterCount.Unlock()
+	return mock.GetTotalVoterCountFunc()
+}
+
+// GetTotalVoterCountCalls gets all the calls that were made to GetTotalVoterCount.
+// Check the length with:
+//     len(mockedStore.GetTotalVoterCountCalls())
+func (mock *StoreMock) GetTotalVoterCountCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetTotalVoterCount.RLock()
+	calls = mock.calls.GetTotalVoterCount
+	mock.lockGetTotalVoterCount.RUnlock()
 	return calls
 }
 

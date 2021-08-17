@@ -3,14 +3,23 @@ package tss.exported.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/tss/exported";
 
+import "utils/v1beta1/threshold.proto";
 import "gogoproto/gogo.proto";
 
 // KeyRequirement defines requirements for keys
 message KeyRequirement {
-  string chain_name = 1;
-  KeyRole key_role = 2;
-  int64 min_validator_subset_size = 3;
+  KeyRole key_role = 1;
+  utils.v1beta1.Threshold min_keygen_threshold = 2
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold safety_threshold = 3 [ (gogoproto.nullable) = false ];
   KeyShareDistributionPolicy key_share_distribution_policy = 4;
+  int64 max_total_share_count = 5;
+  utils.v1beta1.Threshold keygen_voting_threshold = 6
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold sign_voting_threshold = 7
+      [ (gogoproto.nullable) = false ];
+  int64 keygen_timeout = 8;
+  int64 sign_timeout = 9;
 }
 
 enum KeyRole {

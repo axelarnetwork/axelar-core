@@ -137,19 +137,18 @@ func (l *LockableStream) CloseSend() error {
 
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
-	client         rpc.Client
-	keygen         *sync.RWMutex
-	sign           *sync.RWMutex
-	keygenStreams  map[string]*LockableStream
-	signStreams    map[string]*LockableStream
-	timeoutQueue   *TimeoutQueue
-	sessionTimeout int64
-	Timeout        time.Duration
-	principalAddr  string
-	Logger         log.Logger
-	broadcaster    broadcasterTypes.Broadcaster
-	sender         sdk.AccAddress
-	cdc            *codec.LegacyAmino
+	client        rpc.Client
+	keygen        *sync.RWMutex
+	sign          *sync.RWMutex
+	keygenStreams map[string]*LockableStream
+	signStreams   map[string]*LockableStream
+	timeoutQueue  *TimeoutQueue
+	Timeout       time.Duration
+	principalAddr string
+	Logger        log.Logger
+	broadcaster   broadcasterTypes.Broadcaster
+	sender        sdk.AccAddress
+	cdc           *codec.LegacyAmino
 }
 
 // CreateTOFNDClient creates a client to communicate with the external tofnd process
@@ -168,21 +167,20 @@ func CreateTOFNDClient(host string, port string, timeout time.Duration, logger l
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, sessionTimeout int64, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
-		client:         client,
-		keygen:         &sync.RWMutex{},
-		sign:           &sync.RWMutex{},
-		keygenStreams:  make(map[string]*LockableStream),
-		signStreams:    make(map[string]*LockableStream),
-		timeoutQueue:   NewTimeoutQueue(),
-		sessionTimeout: sessionTimeout,
-		Timeout:        timeout,
-		principalAddr:  principalAddr,
-		Logger:         logger.With("listener", "tss"),
-		broadcaster:    broadcaster,
-		sender:         sender,
-		cdc:            cdc,
+		client:        client,
+		keygen:        &sync.RWMutex{},
+		sign:          &sync.RWMutex{},
+		keygenStreams: make(map[string]*LockableStream),
+		signStreams:   make(map[string]*LockableStream),
+		timeoutQueue:  NewTimeoutQueue(),
+		Timeout:       timeout,
+		principalAddr: principalAddr,
+		Logger:        logger.With("listener", "tss"),
+		broadcaster:   broadcaster,
+		sender:        sender,
+		cdc:           cdc,
 	}
 }
 

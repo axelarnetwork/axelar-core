@@ -196,7 +196,6 @@ func listen(
 ) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
-	protoCdc := encCfg.Marshaler
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
@@ -204,8 +203,6 @@ func listen(
 	ctx = ctx.
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
-
-	tssGenesisState := tssTypes.GetGenesisStateFromAppState(protoCdc, appState)
 
 	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
 
@@ -228,7 +225,7 @@ func listen(
 	}
 	eventBus := createEventBus(client, startBlock, logger)
 
-	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, &tssGenesisState, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
 	if recoveryJSON != nil && len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
@@ -327,13 +324,13 @@ func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Conf
 	return broadcaster.NewBroadcaster(ctx, txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, genesisState *tssTypes.GenesisState, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
 			return nil, err
 		}
-		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, genesisState.Params.TimeoutInBlocks, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, logger, cdc)
 
 		return tssMgr, nil
 	}

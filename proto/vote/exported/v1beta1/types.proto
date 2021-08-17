@@ -29,6 +29,7 @@ message PollMetadata {
             "github.com/cosmos/codec/ProtoMarshaler" ];
   utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
   exported.v1beta1.PollState state = 6;
+  int64 min_voter_count = 7;
 }
 
 enum PollState {

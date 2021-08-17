@@ -125,6 +125,10 @@ type pollStore struct {
 	key      exported.PollKey
 }
 
+func (p *pollStore) GetTotalVoterCount() int64 {
+	return int64(len(p.snapshot.Validators))
+}
+
 func (p *pollStore) GetTotalShareCount() sdk.Int {
 	return p.snapshot.TotalShareCount
 }

@@ -28,22 +28,18 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 	}
 
 	for _, request := range keygenReqs {
-		var counter int64 = 0
-		snap, found := snapshotter.GetLatestSnapshot(ctx)
-		if found {
-			counter = snap.Counter + 1
-		}
+		counter := snapshotter.GetLatestCounter(ctx) + 1
 
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.NewKeyID, exported.AckType_Keygen, counter)
+		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.KeyID, exported.AckType_Keygen, counter)
 
 		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
 			keeper.Logger(ctx).Error(fmt.Sprintf("error starting keygen: %s", err.Error()))
 		}
 
-		keeper.DeleteKeygenStart(ctx, request.NewKeyID)
-		keeper.DeleteAvailableOperators(ctx, request.NewKeyID, exported.AckType_Keygen)
+		keeper.DeleteKeygenStart(ctx, request.KeyID)
+		keeper.DeleteAvailableOperators(ctx, request.KeyID, exported.AckType_Keygen)
 	}
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
@@ -72,30 +68,18 @@ func startKeygen(
 	snapshotter types.Snapshotter,
 	req *types.StartKeygenRequest,
 ) error {
+	keyRequirement, ok := keeper.GetKeyRequirement(ctx, req.KeyRole)
+	if !ok {
+		return fmt.Errorf("key requirement for key role %s not found", req.KeyRole.SimpleString())
+	}
 
 	// record the snapshot of active validators that we'll use for the key
-	snapshotConsensusPower, totalConsensusPower, err := snapshotter.TakeSnapshot(ctx, req.SubsetSize, req.KeyShareDistributionPolicy)
+	snapshot, err := snapshotter.TakeSnapshot(ctx, keyRequirement)
 	if err != nil {
 		return err
 	}
 
-	snapshot, ok := snapshotter.GetLatestSnapshot(ctx)
-	if !ok {
-		return fmt.Errorf("the system needs to have at least one validator snapshot")
-	}
-
-	if !keeper.GetMinKeygenThreshold(ctx).IsMet(snapshotConsensusPower, totalConsensusPower) {
-		msg := fmt.Sprintf(
-			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
-			snapshotConsensusPower.String(),
-			totalConsensusPower.String(),
-		)
-		keeper.Logger(ctx).Info(msg)
-
-		return fmt.Errorf(msg)
-	}
-
-	if err := keeper.StartKeygen(ctx, voter, req.NewKeyID, snapshot); err != nil {
+	if err := keeper.StartKeygen(ctx, voter, req.KeyID, req.KeyRole, snapshot); err != nil {
 		return err
 	}
 
@@ -106,33 +90,27 @@ func startKeygen(
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	threshold, found := keeper.GetCorruptionThreshold(ctx, req.NewKeyID)
-	// if this value is set to false, then something is really wrong, since a successful
-	// invocation of StartKeygen should automatically set the corruption threshold for the key ID
-	if !found {
-		return fmt.Errorf("could not find corruption threshold for key ID %s", req.NewKeyID)
-	}
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeKeygen,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, req.NewKeyID),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(threshold, 10)),
+			sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(snapshot.CorruptionThreshold, 10)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.KeygenTimeout, 10)),
 		),
 	)
 
-	keeper.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.NewKeyID, threshold, req.KeyShareDistributionPolicy.SimpleString()))
+	keeper.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
 
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "corruption", "threshold"},
-		float32(threshold),
-		[]metrics.Label{telemetry.NewLabel("keyID", req.NewKeyID)})
+		float32(snapshot.CorruptionThreshold),
+		[]metrics.Label{telemetry.NewLabel("keyID", req.KeyID)})
 
-	t := keeper.GetMinKeygenThreshold(ctx)
-	telemetry.SetGauge(float32(t.Numerator*100/t.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
+	minKeygenThreshold := keyRequirement.MinKeygenThreshold
+	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
 	ts := time.Now().Unix()
@@ -142,7 +120,7 @@ func startKeygen(
 			float32(validator.ShareCount),
 			[]metrics.Label{
 				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("keyID", req.NewKeyID),
+				telemetry.NewLabel("keyID", req.KeyID),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
@@ -169,30 +147,38 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	// for now we recalculate the threshold
-	// might make sense to store it with the snapshot after keygen is done.
-	threshold, found := k.GetCorruptionThreshold(ctx, info.KeyID)
-	if !found {
-		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
-		return fmt.Errorf("keyID %s has no corruption threshold defined", info.KeyID)
-	}
-
 	k.SelectSignParticipants(ctx, info.SigID, snap.Validators)
 
-	if !k.MeetsThreshold(ctx, info.SigID, threshold) {
+	if !k.MeetsThreshold(ctx, info.SigID, snap.CorruptionThreshold) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
-			threshold, k.GetTotalShareCount(ctx, info.SigID)))
+			snap.CorruptionThreshold, k.GetTotalShareCount(ctx, info.SigID)))
+	}
+
+	key, ok := k.GetKey(ctx, info.KeyID)
+	if !ok {
+		return fmt.Errorf("key %s not found", info.KeyID)
+	}
+
+	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role)
+	if !ok {
+		return fmt.Errorf("key requirement for key role %s not found", key.Role.SimpleString())
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
-	if err := voter.InitializePoll(ctx, pollKey, snap.Counter, vote.ExpiryAt(0)); err != nil {
+	if err := voter.InitializePoll(
+		ctx,
+		pollKey,
+		snap.Counter,
+		vote.ExpiryAt(0),
+		vote.Threshold(keyRequirement.SignVotingThreshold),
+	); err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d]",
-		threshold, threshold+1, k.GetTotalShareCount(ctx, info.SigID)))
+		snap.CorruptionThreshold, snap.CorruptionThreshold+1, k.GetTotalShareCount(ctx, info.SigID)))
 
 	k.SetKeyIDForSig(ctx, info.SigID, info.KeyID)
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
@@ -206,7 +192,9 @@ func startSign(
 			sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
 			sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg))))
+			sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)),
+			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
+		))
 
 	// metrics for sign participation
 	ts := time.Now().Unix()

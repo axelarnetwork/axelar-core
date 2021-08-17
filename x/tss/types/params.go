@@ -3,13 +3,9 @@ package types
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -20,14 +16,12 @@ const (
 
 // Parameter keys
 var (
-	KeyLockingPeriod           = []byte("lockingPeriod")
-	KeyMinKeygenThreshold      = []byte("minKeygenThreshold")
-	KeyCorruptionThreshold     = []byte("corruptionThreshold")
-	KeyKeyRequirements         = []byte("keyRequirements")
-	KeyMinBondFractionPerShare = []byte("MinBondFractionPerShare")
-	KeySuspendDurationInBlocks = []byte("SuspendDurationInBlocks")
-	KeyTimeoutInBlocks         = []byte("TimeoutInBlocks")
-	KeyAckWindowInBlocks       = []byte("AckWindowInBlocks")
+	KeyLockingPeriod                    = []byte("lockingPeriod")
+	KeyKeyRequirements                  = []byte("keyRequirements")
+	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
+	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
+	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
+	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -39,45 +33,34 @@ func KeyTable() params.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		LockingPeriod: 0,
-		// Set MinKeygenThreshold >= CorruptionThreshold
-		MinKeygenThreshold:  utils.Threshold{Numerator: 9, Denominator: 10},
-		CorruptionThreshold: utils.Threshold{Numerator: 2, Denominator: 3},
 		KeyRequirements: []exported.KeyRequirement{
 			{
-				ChainName:                  bitcoin.Bitcoin.Name,
 				KeyRole:                    exported.MasterKey,
-				MinValidatorSubsetSize:     5,
+				MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
+				SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
 				KeyShareDistributionPolicy: exported.WeightedByStake,
+				MaxTotalShareCount:         75,
+				KeygenVotingThreshold:      utils.Threshold{Numerator: 5, Denominator: 6},
+				SignVotingThreshold:        utils.Threshold{Numerator: 2, Denominator: 3},
+				KeygenTimeout:              250,
+				SignTimeout:                250,
 			},
 			{
-				ChainName:                  bitcoin.Bitcoin.Name,
 				KeyRole:                    exported.SecondaryKey,
-				MinValidatorSubsetSize:     3,
+				MinKeygenThreshold:         utils.Threshold{Numerator: 15, Denominator: 20},
+				SafetyThreshold:            utils.Threshold{Numerator: 11, Denominator: 20},
 				KeyShareDistributionPolicy: exported.OnePerValidator,
-			},
-			{
-				ChainName:                  bitcoin.Bitcoin.Name,
-				KeyRole:                    exported.ExternalKey,
-				MinValidatorSubsetSize:     0,
-				KeyShareDistributionPolicy: exported.Unspecified,
-			},
-			{
-				ChainName:                  evm.Ethereum.Name,
-				KeyRole:                    exported.MasterKey,
-				MinValidatorSubsetSize:     5,
-				KeyShareDistributionPolicy: exported.WeightedByStake,
-			},
-			{
-				ChainName:                  evm.Ethereum.Name,
-				KeyRole:                    exported.SecondaryKey,
-				MinValidatorSubsetSize:     3,
-				KeyShareDistributionPolicy: exported.OnePerValidator,
+				MaxTotalShareCount:         20,
+				KeygenVotingThreshold:      utils.Threshold{Numerator: 15, Denominator: 20},
+				SignVotingThreshold:        utils.Threshold{Numerator: 11, Denominator: 20},
+				KeygenTimeout:              150,
+				SignTimeout:                150,
 			},
 		},
-		MinBondFractionPerShare: utils.Threshold{Numerator: 1, Denominator: 200},
-		SuspendDurationInBlocks: 1000,
-		TimeoutInBlocks:         100,
-		AckWindowInBlocks:       4,
+		SuspendDurationInBlocks:          2000,
+		AckWindowInBlocks:                4,
+		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 2, Denominator: 100},
+		UnbondingLockingKeyRotationCount: 7,
 	}
 }
 
@@ -92,13 +75,11 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
-		params.NewParamSetPair(KeyMinKeygenThreshold, &m.MinKeygenThreshold, validateThreshold),
-		params.NewParamSetPair(KeyCorruptionThreshold, &m.CorruptionThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
-		params.NewParamSetPair(KeyMinBondFractionPerShare, &m.MinBondFractionPerShare, validateMinBondFractionPerShare),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
-		params.NewParamSetPair(KeyTimeoutInBlocks, &m.TimeoutInBlocks, validateInt64("TimeoutInBlocks")),
 		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
+		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
+		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validateInt64("UnbondingLockingKeyRotationCount")),
 	}
 }
 
@@ -119,23 +100,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateThreshold(m.MinKeygenThreshold); err != nil {
-		return err
-	}
-
-	if err := validateThreshold(m.CorruptionThreshold); err != nil {
-		return err
-	}
-
-	if err := validateTssThresholds(m.MinKeygenThreshold, m.CorruptionThreshold); err != nil {
-		return err
-	}
-
 	if err := validateKeyRequirements(m.KeyRequirements); err != nil {
-		return err
-	}
-
-	if err := validateMinBondFractionPerShare(m.MinBondFractionPerShare); err != nil {
 		return err
 	}
 
@@ -143,47 +108,18 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateInt64("TimeoutInBlocks")(m.TimeoutInBlocks); err != nil {
-		return err
-	}
-
 	if err := validateInt64("AckWindowInBlocks")(m.AckWindowInBlocks); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func validateThreshold(threshold interface{}) error {
-	val, ok := threshold.(utils.Threshold)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for threshold: %T", threshold)
-	}
-	if val.Denominator <= 0 {
-		return fmt.Errorf("threshold denominator must be a positive integer")
+	if err := validateMaxMissedBlocksPerWindow(m.MaxMissedBlocksPerWindow); err != nil {
+		return err
 	}
 
-	if val.Numerator < 0 {
-		return fmt.Errorf("threshold numerator must be a non-negative integer")
+	if err := validateInt64("UnbondingLockingKeyRotationCount")(m.UnbondingLockingKeyRotationCount); err != nil {
+		return err
 	}
 
-	if val.Numerator >= val.Denominator {
-		return fmt.Errorf("threshold must be <1")
-	}
-	return nil
-}
-
-// validateTssThresholds checks that minKeygenThreshold >= corruptionThreshold
-func validateTssThresholds(minKeygenThreshold interface{}, corruptionThreshold interface{}) error {
-	val1, ok1 := minKeygenThreshold.(utils.Threshold)
-	val2, ok2 := corruptionThreshold.(utils.Threshold)
-
-	if !ok1 || !ok2 {
-		return fmt.Errorf("invalid parameter types for tss thresholds")
-	}
-	if !val2.IsMet(sdk.NewInt(val1.Numerator), sdk.NewInt(val1.Denominator)) {
-		return fmt.Errorf("min keygen threshold must >= corruption threshold")
-	}
 	return nil
 }
 
@@ -193,31 +129,17 @@ func validateKeyRequirements(keyRequirements interface{}) error {
 		return fmt.Errorf("invalid parameter type for keyRequirements: %T", keyRequirements)
 	}
 
+	keyRoleSeen := map[string]bool{}
 	for _, keyRequirement := range val {
+		if keyRoleSeen[keyRequirement.KeyRole.SimpleString()] {
+			return fmt.Errorf("duplicate key role found in KeyRequirements")
+		}
+
 		if err := keyRequirement.Validate(); err != nil {
 			return err
 		}
-	}
 
-	return nil
-}
-
-func validateMinBondFractionPerShare(minBondFractionPerShare interface{}) error {
-	val, ok := minBondFractionPerShare.(utils.Threshold)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for MinBondFractionPerShare: %T", minBondFractionPerShare)
-	}
-
-	if val.Numerator <= 0 {
-		return fmt.Errorf("threshold numerator must be a positive integer for MinBondFractionPerShare")
-	}
-
-	if val.Denominator <= 0 {
-		return fmt.Errorf("threshold denominator must be a positive integer for MinBondFractionPerShare")
-	}
-
-	if val.Numerator >= val.Denominator {
-		return fmt.Errorf("threshold must be <=1 for MinBondFractionPerShare")
+		keyRoleSeen[keyRequirement.KeyRole.SimpleString()] = true
 	}
 
 	return nil
@@ -249,4 +171,25 @@ func validateInt64(field string) func(value interface{}) error {
 
 		return nil
 	}
+}
+
+func validateMaxMissedBlocksPerWindow(maxMissedBlocksPerWindow interface{}) error {
+	val, ok := maxMissedBlocksPerWindow.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for MaxMissedBlocksPerWindow: %T", maxMissedBlocksPerWindow)
+	}
+
+	if val.Numerator <= 0 {
+		return fmt.Errorf("threshold numerator must be a positive integer for MaxMissedBlocksPerWindow")
+	}
+
+	if val.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer for MaxMissedBlocksPerWindow")
+	}
+
+	if val.Numerator > val.Denominator {
+		return fmt.Errorf("threshold must be <=1 for MaxMissedBlocksPerWindow")
+	}
+
+	return nil
 }

@@ -61,6 +61,10 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 		return fmt.Errorf("could not find snapshot for given key ID %s", keyID)
 	}
 
+	if keyRole != k.getKeyRole(ctx, keyID) {
+		return fmt.Errorf("key %s is not a %s key", keyID, keyRole.SimpleString())
+	}
+
 	currentKeyID, ok := k.GetCurrentKeyID(ctx, chain, keyRole)
 	if ok {
 		currentCounter, ok := k.GetSnapshotCounterForKeyID(ctx, currentKeyID)
@@ -70,31 +74,6 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 		if currentCounter >= counter {
 			return fmt.Errorf("choose a key that is newer than the current one for role %s on chain %s", keyRole.SimpleString(), chain.Name)
 		}
-	}
-
-	keyRequirement, found := k.GetKeyRequirement(ctx, chain, keyRole)
-	if !found {
-		return fmt.Errorf("%s key is not required for chain %s", keyRole.SimpleString(), chain.Name)
-	}
-
-	if len(snap.Validators) < int(keyRequirement.MinValidatorSubsetSize) {
-		return fmt.Errorf(
-			"expected %s's %s key to be generated with at least %d validators, actual %d",
-			chain.Name,
-			keyRole.SimpleString(),
-			keyRequirement.MinValidatorSubsetSize,
-			len(snap.Validators),
-		)
-	}
-
-	if snap.KeyShareDistributionPolicy != keyRequirement.KeyShareDistributionPolicy {
-		return fmt.Errorf(
-			"expected %s's %s key to have tss shares distributed with policy %s, actual %s",
-			chain.Name,
-			keyRole.SimpleString(),
-			keyRequirement.KeyShareDistributionPolicy.SimpleString(),
-			snap.KeyShareDistributionPolicy.SimpleString(),
-		)
 	}
 
 	for _, validator := range snap.Validators {
@@ -128,7 +107,7 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	for _, keyRequirement := range p.KeyRequirements {
 		// By copying this data to the KV store, we avoid having to iterate across all element
 		// in the parameters table when a caller needs to fetch information from it
-		k.SetKeyRequirement(ctx, keyRequirement)
+		k.setKeyRequirement(ctx, keyRequirement)
 	}
 }
 
@@ -194,19 +173,18 @@ func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
 	}
 }
 
-// SetKeyRequirement sets the key requirement for a given chain of a given role
-func (k Keeper) SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, keyRequirement.ChainName, keyRequirement.KeyRole.SimpleString())
+func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
+	key := fmt.Sprintf("%s%s", keyRequirementPrefix, keyRequirement.KeyRole.SimpleString())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
 // GetKeyRequirement gets the key requirement for a given chain of a given role
-func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-	key := fmt.Sprintf("%s%s_%s", keyRequirementPrefix, chain.Name, keyRole.SimpleString())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+	key := fmt.Sprintf("%s%s", keyRequirementPrefix, keyRole.SimpleString())
 
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz == nil {
 		return exported.KeyRequirement{}, false
 	}
@@ -217,36 +195,18 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole ex
 	return keyRequirement, true
 }
 
-// compute and save the corruption threshold to be used by tss.
-// Second return value is set to true if no threhold was already defined for the given key ID
-func (k Keeper) computeAndSetCorruptionThreshold(ctx sdk.Context, totalShareCount sdk.Int, keyID string) (int64, bool) {
+func (k Keeper) GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyCorruptionThreshold, &threshold)
+	k.params.Get(ctx, types.KeyMaxMissedBlocksPerWindow, &threshold)
 
-	result := types.ComputeCorruptionThreshold(threshold, totalShareCount)
-	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
-
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz != nil {
-		return result, false
-	}
-
-	bz = make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(result))
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-
-	return result, true
+	return threshold
 }
 
-// GetCorruptionThreshold returns the corruption threshold set for some key ID
-func (k Keeper) GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool) {
-	key := fmt.Sprintf("%s%s", thresholdPrefix, keyID)
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return 0, false
-	}
+func (k Keeper) GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64 {
+	var count int64
+	k.params.Get(ctx, types.KeyUnbondingLockingKeyRotationCount, &count)
 
-	return int64(binary.LittleEndian.Uint64(bz)), true
+	return count
 }
 
 func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {

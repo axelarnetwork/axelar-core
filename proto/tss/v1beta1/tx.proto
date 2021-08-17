@@ -14,10 +14,8 @@ option (gogoproto.goproto_getters_all) = false;
 message StartKeygenRequest {
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string new_key_id = 2 [ (gogoproto.customname) = "NewKeyID" ];
-  int64 subset_size = 3;
-  tss.exported.v1beta1.KeyShareDistributionPolicy
-      key_share_distribution_policy = 4;
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  tss.exported.v1beta1.KeyRole key_role = 3;
 }
 
 message StartKeygenResponse {}

@@ -32,10 +32,9 @@ const (
 
 // ReqKeygenStart represents a key-gen request
 type ReqKeygenStart struct {
-	BaseReq                    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	NewKeyID                   string       `json:"key_id" yaml:"key_id"`
-	SubsetSize                 int64        `json:"validator_count" yaml:"validator_count"`
-	KeyShareDistributionPolicy string       `json:"key_share_distribution_policy" yaml:"key_share_distribution_policy"`
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
+	KeyRole string       `json:"key_role" yaml:"key_role"`
 }
 
 // ReqKeyRotate represents a request to rotate a key
@@ -80,13 +79,13 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromSimpleStr(req.KeyShareDistributionPolicy)
+		keyRole, err := exported.KeyRoleFromSimpleStr(req.KeyRole)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewStartKeygenRequest(sender, req.NewKeyID, req.SubsetSize, keyShareDistributionPolicy)
+		msg := types.NewStartKeygenRequest(sender, req.KeyID, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

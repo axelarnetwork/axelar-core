@@ -355,7 +355,7 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -381,7 +381,7 @@ type SnapshotterMock struct {
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error)
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -420,10 +420,8 @@ type SnapshotterMock struct {
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SubsetSize is the subsetSize argument value.
-			SubsetSize int64
-			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-			KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+			// KeyRequirement is the keyRequirement argument value.
+			KeyRequirement tssexported.KeyRequirement
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -602,37 +600,33 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tssexported.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tssexported.KeyRequirement
 	}{
-		Ctx:                        ctx,
-		SubsetSize:                 subsetSize,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+		Ctx:            ctx,
+		KeyRequirement: keyRequirement,
 	}
 	mock.lockTakeSnapshot.Lock()
 	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
 	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx, subsetSize, keyShareDistributionPolicy)
+	return mock.TakeSnapshotFunc(ctx, keyRequirement)
 }
 
 // TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-	SubsetSize                 int64
-	KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	KeyRequirement tssexported.KeyRequirement
 } {
 	var calls []struct {
-		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tssexported.KeyShareDistributionPolicy
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tssexported.KeyRequirement
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
@@ -653,6 +647,9 @@ var _ snapshotexported.Slasher = &SlasherMock{}
 // 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool) {
 // 				panic("mock out the GetValidatorSigningInfo method")
 // 			},
+// 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the SignedBlocksWindow method")
+// 			},
 // 		}
 //
 // 		// use mockedSlasher in code that requires snapshotexported.Slasher
@@ -663,6 +660,9 @@ type SlasherMock struct {
 	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
 	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool)
 
+	// SignedBlocksWindowFunc mocks the SignedBlocksWindow method.
+	SignedBlocksWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
@@ -672,8 +672,14 @@ type SlasherMock struct {
 			// Address is the address argument value.
 			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
 		}
+		// SignedBlocksWindow holds details about calls to the SignedBlocksWindow method.
+		SignedBlocksWindow []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 	}
 	lockGetValidatorSigningInfo sync.RWMutex
+	lockSignedBlocksWindow      sync.RWMutex
 }
 
 // GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
@@ -711,6 +717,37 @@ func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
 	return calls
 }
 
+// SignedBlocksWindow calls SignedBlocksWindowFunc.
+func (mock *SlasherMock) SignedBlocksWindow(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.SignedBlocksWindowFunc == nil {
+		panic("SlasherMock.SignedBlocksWindowFunc: method is nil but Slasher.SignedBlocksWindow was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockSignedBlocksWindow.Lock()
+	mock.calls.SignedBlocksWindow = append(mock.calls.SignedBlocksWindow, callInfo)
+	mock.lockSignedBlocksWindow.Unlock()
+	return mock.SignedBlocksWindowFunc(ctx)
+}
+
+// SignedBlocksWindowCalls gets all the calls that were made to SignedBlocksWindow.
+// Check the length with:
+//     len(mockedSlasher.SignedBlocksWindowCalls())
+func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockSignedBlocksWindow.RLock()
+	calls = mock.calls.SignedBlocksWindow
+	mock.lockSignedBlocksWindow.RUnlock()
+	return calls
+}
+
 // Ensure, that TssMock does implement snapshotexported.Tss.
 // If this is not the case, regenerate this file with moq.
 var _ snapshotexported.Tss = &TssMock{}
@@ -721,8 +758,8 @@ var _ snapshotexported.Tss = &TssMock{}
 //
 // 		// make and configure a mocked snapshotexported.Tss
 // 		mockedTss := &TssMock{
-// 			GetMinBondFractionPerShareFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
-// 				panic("mock out the GetMinBondFractionPerShare method")
+// 			GetMaxMissedBlocksPerWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+// 				panic("mock out the GetMaxMissedBlocksPerWindow method")
 // 			},
 // 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
@@ -733,9 +770,6 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			OperatorIsAvailableForCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the OperatorIsAvailableForCounter method")
 // 			},
-// 			SetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)  {
-// 				panic("mock out the SetKeyRequirement method")
-// 			},
 // 		}
 //
 // 		// use mockedTss in code that requires snapshotexported.Tss
@@ -743,8 +777,8 @@ var _ snapshotexported.Tss = &TssMock{}
 //
 // 	}
 type TssMock struct {
-	// GetMinBondFractionPerShareFunc mocks the GetMinBondFractionPerShare method.
-	GetMinBondFractionPerShareFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+	// GetMaxMissedBlocksPerWindowFunc mocks the GetMaxMissedBlocksPerWindow method.
+	GetMaxMissedBlocksPerWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool)
@@ -755,13 +789,10 @@ type TssMock struct {
 	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
 	OperatorIsAvailableForCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
-	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
-	SetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetMinBondFractionPerShare holds details about calls to the GetMinBondFractionPerShare method.
-		GetMinBondFractionPerShare []struct {
+		// GetMaxMissedBlocksPerWindow holds details about calls to the GetMaxMissedBlocksPerWindow method.
+		GetMaxMissedBlocksPerWindow []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -790,49 +821,41 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
-		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
-		SetKeyRequirement []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement tssexported.KeyRequirement
-		}
 	}
-	lockGetMinBondFractionPerShare    sync.RWMutex
+	lockGetMaxMissedBlocksPerWindow   sync.RWMutex
 	lockGetNextKey                    sync.RWMutex
 	lockGetTssSuspendedUntil          sync.RWMutex
 	lockOperatorIsAvailableForCounter sync.RWMutex
-	lockSetKeyRequirement             sync.RWMutex
 }
 
-// GetMinBondFractionPerShare calls GetMinBondFractionPerShareFunc.
-func (mock *TssMock) GetMinBondFractionPerShare(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
-	if mock.GetMinBondFractionPerShareFunc == nil {
-		panic("TssMock.GetMinBondFractionPerShareFunc: method is nil but Tss.GetMinBondFractionPerShare was just called")
+// GetMaxMissedBlocksPerWindow calls GetMaxMissedBlocksPerWindowFunc.
+func (mock *TssMock) GetMaxMissedBlocksPerWindow(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+	if mock.GetMaxMissedBlocksPerWindowFunc == nil {
+		panic("TssMock.GetMaxMissedBlocksPerWindowFunc: method is nil but Tss.GetMaxMissedBlocksPerWindow was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockGetMinBondFractionPerShare.Lock()
-	mock.calls.GetMinBondFractionPerShare = append(mock.calls.GetMinBondFractionPerShare, callInfo)
-	mock.lockGetMinBondFractionPerShare.Unlock()
-	return mock.GetMinBondFractionPerShareFunc(ctx)
+	mock.lockGetMaxMissedBlocksPerWindow.Lock()
+	mock.calls.GetMaxMissedBlocksPerWindow = append(mock.calls.GetMaxMissedBlocksPerWindow, callInfo)
+	mock.lockGetMaxMissedBlocksPerWindow.Unlock()
+	return mock.GetMaxMissedBlocksPerWindowFunc(ctx)
 }
 
-// GetMinBondFractionPerShareCalls gets all the calls that were made to GetMinBondFractionPerShare.
+// GetMaxMissedBlocksPerWindowCalls gets all the calls that were made to GetMaxMissedBlocksPerWindow.
 // Check the length with:
-//     len(mockedTss.GetMinBondFractionPerShareCalls())
-func (mock *TssMock) GetMinBondFractionPerShareCalls() []struct {
+//     len(mockedTss.GetMaxMissedBlocksPerWindowCalls())
+func (mock *TssMock) GetMaxMissedBlocksPerWindowCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
-	mock.lockGetMinBondFractionPerShare.RLock()
-	calls = mock.calls.GetMinBondFractionPerShare
-	mock.lockGetMinBondFractionPerShare.RUnlock()
+	mock.lockGetMaxMissedBlocksPerWindow.RLock()
+	calls = mock.calls.GetMaxMissedBlocksPerWindow
+	mock.lockGetMaxMissedBlocksPerWindow.RUnlock()
 	return calls
 }
 
@@ -946,40 +969,5 @@ func (mock *TssMock) OperatorIsAvailableForCounterCalls() []struct {
 	mock.lockOperatorIsAvailableForCounter.RLock()
 	calls = mock.calls.OperatorIsAvailableForCounter
 	mock.lockOperatorIsAvailableForCounter.RUnlock()
-	return calls
-}
-
-// SetKeyRequirement calls SetKeyRequirementFunc.
-func (mock *TssMock) SetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) {
-	if mock.SetKeyRequirementFunc == nil {
-		panic("TssMock.SetKeyRequirementFunc: method is nil but Tss.SetKeyRequirement was just called")
-	}
-	callInfo := struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tssexported.KeyRequirement
-	}{
-		Ctx:            ctx,
-		KeyRequirement: keyRequirement,
-	}
-	mock.lockSetKeyRequirement.Lock()
-	mock.calls.SetKeyRequirement = append(mock.calls.SetKeyRequirement, callInfo)
-	mock.lockSetKeyRequirement.Unlock()
-	mock.SetKeyRequirementFunc(ctx, keyRequirement)
-}
-
-// SetKeyRequirementCalls gets all the calls that were made to SetKeyRequirement.
-// Check the length with:
-//     len(mockedTss.SetKeyRequirementCalls())
-func (mock *TssMock) SetKeyRequirementCalls() []struct {
-	Ctx            github_com_cosmos_cosmos_sdk_types.Context
-	KeyRequirement tssexported.KeyRequirement
-} {
-	var calls []struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tssexported.KeyRequirement
-	}
-	mock.lockSetKeyRequirement.RLock()
-	calls = mock.calls.SetKeyRequirement
-	mock.lockSetKeyRequirement.RUnlock()
 	return calls
 }
