@@ -156,6 +156,7 @@
     - [show-node-id](axelard_tendermint_show-node-id.md)	 - Show this node's ID
     - [show-validator](axelard_tendermint_show-validator.md)	 - Show this node's tendermint validator info
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
+  - [tofnd-ping](axelard_tofnd-ping.md)	 -
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
       - [add-cosmos-based-chain \[name\] \[native asset\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
