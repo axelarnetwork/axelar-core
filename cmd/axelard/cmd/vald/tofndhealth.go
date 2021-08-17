@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand"
 	"time"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -18,17 +17,11 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-var alphabet = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12234567890")
-
 const (
-	idLen int = 10
+	keyID = "testkey"
 
 	defaultTimeout time.Duration = 2 * time.Hour
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // GetTofndPingCommand returns the command to ping tofnd
 func GetTofndPingCommand() *cobra.Command {
@@ -63,7 +56,7 @@ func GetTofndPingCommand() *cobra.Command {
 			request := &tofnd.KeyPresenceRequest{
 				// we do not need to look for a key ID that exists to obtain a successful healthcheck,
 				// all we need to do is obtain err == nil && response != FAIL
-				KeyUid: randomID(idLen),
+				KeyUid: keyID,
 			}
 
 			response, err := gg20client.KeyPresence(grpcCtx, request)
@@ -72,7 +65,8 @@ func GetTofndPingCommand() *cobra.Command {
 				return fmt.Errorf("failed to invoke tofnd grpc: %s", err.Error())
 			}
 
-			if response.Response == tofnd.KeyPresenceResponse_RESPONSE_FAIL {
+			if response.Response == tofnd.KeyPresenceResponse_RESPONSE_FAIL ||
+				response.Response == tofnd.KeyPresenceResponse_RESPONSE_UNSPECIFIED {
 				return fmt.Errorf("obtained FAIL response, tofnd not properly configured")
 			}
 
@@ -86,13 +80,4 @@ func GetTofndPingCommand() *cobra.Command {
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("context-timeout", defaultTimeout.String(), "context timeout for the grpc")
 	return cmd
-}
-
-// using duplicate function instead of the testutils package to avoid having that package included in the build
-func randomID(length int) string {
-	buffer := make([]rune, length)
-	for i := range buffer {
-		buffer[i] = alphabet[rand.Intn(len(alphabet))]
-	}
-	return string(buffer)
 }
