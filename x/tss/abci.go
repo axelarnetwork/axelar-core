@@ -158,7 +158,7 @@ func startSign(
 	snapshotter types.Snapshotter,
 	info exported.SignInfo,
 ) error {
-	status := k.GetSigStatus(ctx, info.SigID)
+	_, status := k.GetSig(ctx, info.SigID)
 	if status != exported.SigStatus_Scheduled {
 		return fmt.Errorf("sigID '%s' is not scheduled", info.SigID)
 	}

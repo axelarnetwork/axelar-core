@@ -1247,9 +1247,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetSigFunc: func(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus) {
 // 				panic("mock out the GetSig method")
 // 			},
-// 			GetSigStatusFunc: func(ctx sdk.Context, sigID string) exported.SigStatus {
-// 				panic("mock out the GetSigStatus method")
-// 			},
 // 			GetSignParticipantsFunc: func(ctx sdk.Context, sigID string) []string {
 // 				panic("mock out the GetSignParticipants method")
 // 			},
@@ -1412,9 +1409,6 @@ type TSSKeeperMock struct {
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
-
-	// GetSigStatusFunc mocks the GetSigStatus method.
-	GetSigStatusFunc func(ctx sdk.Context, sigID string) exported.SigStatus
 
 	// GetSignParticipantsFunc mocks the GetSignParticipants method.
 	GetSignParticipantsFunc func(ctx sdk.Context, sigID string) []string
@@ -1694,13 +1688,6 @@ type TSSKeeperMock struct {
 			// SigID is the sigID argument value.
 			SigID string
 		}
-		// GetSigStatus holds details about calls to the GetSigStatus method.
-		GetSigStatus []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetSignParticipants holds details about calls to the GetSignParticipants method.
 		GetSignParticipants []struct {
 			// Ctx is the ctx argument value.
@@ -1948,7 +1935,6 @@ type TSSKeeperMock struct {
 	lockGetNextKeyID                        sync.RWMutex
 	lockGetParams                           sync.RWMutex
 	lockGetSig                              sync.RWMutex
-	lockGetSigStatus                        sync.RWMutex
 	lockGetSignParticipants                 sync.RWMutex
 	lockGetSignParticipantsAsJSON           sync.RWMutex
 	lockGetSnapshotCounterForKeyID          sync.RWMutex
@@ -2916,41 +2902,6 @@ func (mock *TSSKeeperMock) GetSigCalls() []struct {
 	mock.lockGetSig.RLock()
 	calls = mock.calls.GetSig
 	mock.lockGetSig.RUnlock()
-	return calls
-}
-
-// GetSigStatus calls GetSigStatusFunc.
-func (mock *TSSKeeperMock) GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
-	if mock.GetSigStatusFunc == nil {
-		panic("TSSKeeperMock.GetSigStatusFunc: method is nil but TSSKeeper.GetSigStatus was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetSigStatus.Lock()
-	mock.calls.GetSigStatus = append(mock.calls.GetSigStatus, callInfo)
-	mock.lockGetSigStatus.Unlock()
-	return mock.GetSigStatusFunc(ctx, sigID)
-}
-
-// GetSigStatusCalls gets all the calls that were made to GetSigStatus.
-// Check the length with:
-//     len(mockedTSSKeeper.GetSigStatusCalls())
-func (mock *TSSKeeperMock) GetSigStatusCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-	}
-	mock.lockGetSigStatus.RLock()
-	calls = mock.calls.GetSigStatus
-	mock.lockGetSigStatus.RUnlock()
 	return calls
 }
 

@@ -19,8 +19,10 @@ import (
 // ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
 func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
-	status := k.GetSigStatus(ctx, info.SigID)
-	if status != exported.SigStatus_Unspecified && status != exported.SigStatus_Aborted {
+	status := k.getSigStatus(ctx, info.SigID)
+	if status == exported.SigStatus_Signed ||
+		status == exported.SigStatus_Signing ||
+		status == exported.SigStatus_Scheduled {
 		return -1, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
@@ -67,17 +69,16 @@ func (k Keeper) DeleteScheduledSign(ctx sdk.Context, sigID string) {
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
 func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus) {
-	status := k.GetSigStatus(ctx, sigID)
-
+	status := k.getSigStatus(ctx, sigID)
 	if status != exported.SigStatus_Signed {
 		return exported.Signature{}, status
 	}
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(sigPrefix + sigID))
-
 	if bz == nil {
 		return exported.Signature{}, exported.SigStatus_Invalid
 	}
+
 	btcecSig, err := btcec.ParseDERSignature(bz, btcec.S256())
 	if err != nil {
 		return exported.Signature{}, exported.SigStatus_Invalid
@@ -118,8 +119,8 @@ func (k Keeper) SetSigStatus(ctx sdk.Context, sigID string, status exported.SigS
 	ctx.KVStore(k.storeKey).Set([]byte(sigStatusPrefix+sigID), bz)
 }
 
-// GetSigStatus returns the status of a sig ID
-func (k Keeper) GetSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
+// returns the status of a sig ID
+func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(sigStatusPrefix + sigID))
 	if bz == nil {
 		return exported.SigStatus_Unspecified
