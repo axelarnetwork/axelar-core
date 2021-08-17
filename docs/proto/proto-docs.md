@@ -32,6 +32,9 @@
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
   
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
+  
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
     - [SignInfo](#tss.exported.v1beta1.SignInfo)
@@ -55,9 +58,6 @@
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
     - [OutPointState](#bitcoin.v1beta1.OutPointState)
     - [TxStatus](#bitcoin.v1beta1.TxStatus)
-  
-- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
-    - [Threshold](#utils.v1beta1.Threshold)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -587,6 +587,38 @@ Msg defines the axelarnet Msg service.
 
 
 
+<a name="utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/threshold.proto
+
+
+
+<a name="utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="tss/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -602,10 +634,15 @@ KeyRequirement defines requirements for keys
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain_name` | [string](#string) |  |  |
 | `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `min_validator_subset_size` | [int64](#int64) |  |  |
+| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `max_total_share_count` | [int64](#int64) |  |  |
+| `keygen_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+| `sign_timeout` | [int64](#int64) |  |  |
 
 
 
@@ -912,38 +949,6 @@ of a transaction
 
 
 
-<a name="utils/v1beta1/threshold.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## utils/v1beta1/threshold.proto
-
-
-
-<a name="utils.v1beta1.Threshold"></a>
-
-### Threshold
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
-| `denominator` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="bitcoin/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -969,6 +974,7 @@ of a transaction
 | `master_key_retention_period` | [int64](#int64) |  |  |
 | `master_address_lock_duration` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -1154,6 +1160,7 @@ vote can have any data type
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `state` | [PollState](#vote.exported.v1beta1.PollState) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
 
 
 
@@ -1684,6 +1691,7 @@ Params is the parameter set for this module
 | `burnable` | [bytes](#bytes) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -1835,7 +1843,6 @@ deposit address
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
-| `key_requirement` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 
@@ -2476,6 +2483,7 @@ GenesisState represents the genesis state
 | `total_share_count` | [bytes](#bytes) |  |  |
 | `counter` | [int64](#int64) |  |  |
 | `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `corruption_threshold` | [int64](#int64) |  |  |
 
 
 
@@ -2982,13 +2990,11 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `locking_period` | [int64](#int64) |  | **Deprecated.**  |
-| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinKeygenThreshold defines the minimum % of stake that must be online to authorize generation of a new key in the system. |
-| `corruption_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | CorruptionThreshold defines the corruption threshold with which we'll run keygen protocol. |
-| `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement of each key for each chain |
-| `min_bond_fraction_per_share` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  | MinBondFractionPerShare defines the % of stake validators have to bond per key share |
+| `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
-| `timeout_in_blocks` | [int64](#int64) |  | TimeoutInBlocks defines the timeout in blocks for signing and keygen |
 | `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
+| `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 
 
 
@@ -3307,9 +3313,8 @@ StartKeygenRequest indicate the start of keygen
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `new_key_id` | [string](#string) |  |  |
-| `subset_size` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 
 
 

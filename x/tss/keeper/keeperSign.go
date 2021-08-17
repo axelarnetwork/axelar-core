@@ -139,7 +139,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, sigID string, validators
 	}
 
 	for _, validator := range validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator()) &&
+		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator(), k.GetMaxMissedBlocksPerWindow(ctx)) &&
 			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
 			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
 			activeValidators = append(activeValidators, validator)

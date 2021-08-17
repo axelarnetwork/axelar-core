@@ -2,8 +2,9 @@ syntax = "proto3";
 package evm.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
-import "gogoproto/gogo.proto";
+import "utils/v1beta1/threshold.proto";
 import "evm/v1beta1/types.proto";
+import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -18,4 +19,5 @@ message Params {
   int64 revote_locking_period = 7;
   repeated evm.v1beta1.NetworkInfo networks = 8
       [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold voting_threshold = 9 [ (gogoproto.nullable) = false ];
 }

@@ -1,19 +1,17 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewStartKeygenRequest constructor for StartKeygenRequest
-func NewStartKeygenRequest(sender sdk.AccAddress, newKeyID string, subsetSize int64, keyShareDistributionPolicy exported.KeyShareDistributionPolicy) *StartKeygenRequest {
+func NewStartKeygenRequest(sender sdk.AccAddress, keyID string, keyRole exported.KeyRole) *StartKeygenRequest {
 	return &StartKeygenRequest{
-		Sender:                     sender,
-		NewKeyID:                   newKeyID,
-		SubsetSize:                 subsetSize,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+		Sender:  sender,
+		KeyID:   keyID,
+		KeyRole: keyRole,
 	}
 }
 
@@ -30,19 +28,15 @@ func (m StartKeygenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.NewKeyID == "" {
-		return sdkerrors.Wrap(ErrTss, "new key id must be set")
+	if m.KeyID == "" {
+		return sdkerrors.Wrap(ErrTss, "key id must be set")
 	}
 
-	if m.SubsetSize < 0 {
-		return sdkerrors.Wrap(ErrTss, "subset size has to be greater than or equal to 0")
-	}
-
-	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
+	if err := m.KeyRole.Validate(); err != nil {
 		return err
 	}
 
-	// TODO enforce a maximum length for m.NewKeyID?
+	// TODO enforce a maximum length for m.KeyID?
 	return nil
 }
 

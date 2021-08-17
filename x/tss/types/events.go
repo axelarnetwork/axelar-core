@@ -21,6 +21,7 @@ const (
 	AttributeKeyParticipants           = "participants"
 	AttributeKeyParticipantShareCounts = "participantShareCounts"
 	AttributeKeyPayload                = "payload"
+	AttributeKeyTimeout                = "timeout"
 )
 
 // Event attribute values

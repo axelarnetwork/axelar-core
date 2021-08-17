@@ -19,14 +19,15 @@ const (
 var (
 	KeyConfirmationHeight        = []byte("confirmationHeight")
 	KeyNetwork                   = []byte("network")
-	KeyRevoteLockingPeriod       = []byte("RevoteLockingPeriod")
-	KeySigCheckInterval          = []byte("KeySigCheckInterval")
-	KeyMinOutputAmount           = []byte("KeyMinOutputAmount")
-	KeyMaxInputCount             = []byte("KeyMaxInputCount")
-	KeyMaxSecondaryOutputAmount  = []byte("KeyMaxSecondaryOutputAmount")
-	KeyMasterKeyRetentionPeriod  = []byte("KeyMasterKeyRetentionPeriod")
-	KeyMasterAddressLockDuration = []byte("KeyMasterAddressLockDuration")
-	KeyExternalMultisigThreshold = []byte("KeyExternalMultisigThreshold")
+	KeyRevoteLockingPeriod       = []byte("revoteLockingPeriod")
+	KeySigCheckInterval          = []byte("sigCheckInterval")
+	KeyMinOutputAmount           = []byte("minOutputAmount")
+	KeyMaxInputCount             = []byte("maxInputCount")
+	KeyMaxSecondaryOutputAmount  = []byte("maxSecondaryOutputAmount")
+	KeyMasterKeyRetentionPeriod  = []byte("masterKeyRetentionPeriod")
+	KeyMasterAddressLockDuration = []byte("masterAddressLockDuration")
+	KeyExternalMultisigThreshold = []byte("externalMultisigThreshold")
+	KeyVotingThreshold           = []byte("votingThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -47,6 +48,7 @@ func DefaultParams() Params {
 		MasterKeyRetentionPeriod:  8,
 		MasterAddressLockDuration: 2 * 7 * 24 * time.Hour, // 2 weeks
 		ExternalMultisigThreshold: utils.Threshold{Numerator: 3, Denominator: 6},
+		VotingThreshold:           utils.Threshold{Numerator: 15, Denominator: 100},
 	}
 }
 
@@ -70,6 +72,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
 		paramtypes.NewParamSetPair(KeyMasterAddressLockDuration, &m.MasterAddressLockDuration, validateMasterAddressLockDuration),
 		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
+		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 	}
 }
 
@@ -214,6 +217,27 @@ func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) er
 	return nil
 }
 
+func validateVotingThreshold(votingThreshold interface{}) error {
+	val, ok := votingThreshold.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for VotingThreshold: %T", votingThreshold)
+	}
+
+	if val.Numerator <= 0 {
+		return fmt.Errorf("threshold numerator must be a positive integer for VotingThreshold")
+	}
+
+	if val.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer for VotingThreshold")
+	}
+
+	if val.Numerator > val.Denominator {
+		return fmt.Errorf("threshold must be <=1 for VotingThreshold")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -248,6 +272,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateExternalMultisigThreshold(m.ExternalMultisigThreshold); err != nil {
+		return err
+	}
+
+	if err := validateVotingThreshold(m.VotingThreshold); err != nil {
 		return err
 	}
 

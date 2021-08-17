@@ -37,17 +37,12 @@ func getCmdKeygenStart() *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 
-	newKeyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
+	keyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
 	if cmd.MarkFlagRequired("id") != nil {
 		panic("flag not set")
 	}
 
-	subsetSize := cmd.Flags().Int64("subset-size", 0, "number of top validators to participate in the key generation")
-	keyShareDistributionPolicy := cmd.Flags().String(
-		"key-share-distribution-policy",
-		exported.WeightedByStake.SimpleString(),
-		fmt.Sprintf("policy for distributing key shares; available options: %s, %s", exported.WeightedByStake.SimpleString(), exported.OnePerValidator.SimpleString()),
-	)
+	keyRoleStr := cmd.Flags().String("key-role", exported.MasterKey.SimpleString(), "role of the key to be generated")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientTxContext(cmd)
@@ -55,12 +50,12 @@ func getCmdKeygenStart() *cobra.Command {
 			return err
 		}
 
-		keyShareDistributionPolicy, err := exported.KeyShareDistributionPolicyFromSimpleStr(*keyShareDistributionPolicy)
+		keyRole, err := exported.KeyRoleFromSimpleStr(*keyRoleStr)
 		if err != nil {
 			return err
 		}
 
-		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *newKeyID, *subsetSize, keyShareDistributionPolicy)
+		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *keyID, keyRole)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

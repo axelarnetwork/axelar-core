@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -419,15 +418,14 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 			var chainConf struct {
-				KeyRequirement tss.KeyRequirement `json:"key_requirement"`
-				Params         types.Params       `json:"params"`
+				Params types.Params `json:"params"`
 			}
 			err = json.Unmarshal([]byte(byteValue), &chainConf)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, chainConf.KeyRequirement, chainConf.Params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

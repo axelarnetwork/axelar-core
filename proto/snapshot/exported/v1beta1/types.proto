@@ -33,4 +33,5 @@ message Snapshot {
   int64 counter = 5;
   tss.exported.v1beta1.KeyShareDistributionPolicy
       key_share_distribution_policy = 6;
+  int64 corruption_threshold = 7;
 }

@@ -54,7 +54,7 @@ func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) er
 
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, sigID, participants, payload, err := parseSignStartParams(mgr.cdc, attributes)
+	keyID, sigID, participants, payload, timeout, err := parseSignStartParams(mgr.cdc, attributes)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 	}
 
 	done := false
-	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+mgr.sessionTimeout)
+	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+timeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 	if err != nil {
@@ -157,8 +157,8 @@ func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (key
 	return keyID, sigID, height, nil
 }
 
-func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, err error) {
-	var keyIDFound, sigIDFound, participantsFound, payloadFound bool
+func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, timeout int64, err error) {
+	var keyIDFound, sigIDFound, participantsFound, payloadFound, timeoutFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -173,15 +173,22 @@ func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (k
 		case tss.AttributeKeyPayload:
 			payload = []byte(attribute.Value)
 			payloadFound = true
+		case tss.AttributeKeyTimeout:
+			t, err := strconv.ParseInt(attribute.Value, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			timeout = int64(t)
+			timeoutFound = true
 		default:
 		}
 	}
 
-	if !keyIDFound || !sigIDFound || !participantsFound || !payloadFound {
-		return "", "", nil, nil, fmt.Errorf("insufficient event attributes")
+	if !keyIDFound || !sigIDFound || !participantsFound || !payloadFound || !timeoutFound {
+		return "", "", nil, nil, 0, fmt.Errorf("insufficient event attributes")
 	}
 
-	return keyID, sigID, participants, payload, nil
+	return keyID, sigID, participants, payload, timeout, nil
 }
 
 func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (Stream, context.CancelFunc, error) {

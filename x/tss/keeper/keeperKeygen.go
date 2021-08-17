@@ -21,16 +21,16 @@ import (
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledKeygenPrefix, height, exported.AckType_Keygen.String(), req.NewKeyID)
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledKeygenPrefix, height, exported.AckType_Keygen.String(), req.KeyID)
 	if ctx.KVStore(k.storeKey).Has([]byte(key)) {
-		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.NewKeyID)
+		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.KeyID)
 	}
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.NewKeyID, "", height)
+	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.KeyID, "", height)
 
-	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.NewKeyID, height, ctx.BlockHeight()))
+	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.KeyID, height, ctx.BlockHeight()))
 	return height, nil
 }
 
@@ -60,15 +60,7 @@ func (k Keeper) DeleteScheduledKeygen(ctx sdk.Context, keyID string) {
 }
 
 // StartKeygen starts a keygen protocol with the specified parameters
-func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, snapshot snapshot.Snapshot) error {
-	threshold, set := k.computeAndSetCorruptionThreshold(ctx, snapshot.TotalShareCount, keyID)
-	if !set {
-		return fmt.Errorf("key ID %s already has a corruption threshold defined", keyID)
-	}
-	if threshold < 1 || snapshot.TotalShareCount.Int64() <= threshold {
-		return fmt.Errorf("invalid threshold: %d, total power: %d", threshold, snapshot.TotalShareCount.Int64())
-	}
-
+func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error {
 	if _, found := k.getKeygenStart(ctx, keyID); found {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
@@ -80,14 +72,27 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, sn
 
 	// store block height for this keygen to be able to confirm later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
-
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
+	// set key role
+	k.setKeyRole(ctx, keyID, keyRole)
+
+	keyRequirement, ok := k.GetKeyRequirement(ctx, keyRole)
+	if !ok {
+		return fmt.Errorf("key requirement for key role %s not found", keyRole.SimpleString())
+	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, keyID)
-	if err := voter.InitializePoll(ctx, pollKey, snapshot.Counter, vote.ExpiryAt(0)); err != nil {
+	if err := voter.InitializePoll(
+		ctx,
+		pollKey,
+		snapshot.Counter,
+		vote.ExpiryAt(0),
+		vote.Threshold(keyRequirement.KeygenVotingThreshold),
+	); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -197,7 +202,6 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	k.setKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
 	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.String(), keyID))
-	k.setKeyRole(ctx, keyID, keyRole)
 
 	return nil
 }
@@ -316,19 +320,4 @@ func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator
 // DoesValidatorParticipateInKeygen returns true if given validator participates in key gen for the given key ID; otherwise, false
 func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "key_" + keyID + validator.String()))
-}
-
-// GetMinKeygenThreshold returns minimum threshold of stake that must be met to execute keygen
-func (k Keeper) GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold {
-	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyMinKeygenThreshold, &threshold)
-	return threshold
-}
-
-// GetMinBondFractionPerShare returns the % of stake validators have to bond per key share
-func (k Keeper) GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold {
-	var threshold utils.Threshold
-	k.params.Get(ctx, types.KeyMinBondFractionPerShare, &threshold)
-
-	return threshold
 }

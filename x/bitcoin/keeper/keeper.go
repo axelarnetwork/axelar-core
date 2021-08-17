@@ -133,6 +133,13 @@ func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 	return result
 }
 
+func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
+	var threshold utils.Threshold
+	k.params.Get(ctx, types.KeyVotingThreshold, &threshold)
+
+	return threshold
+}
+
 // GetMaxSecondaryOutputAmount returns the max secondary output amount
 func (k Keeper) GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount {
 	var coin sdk.DecCoin

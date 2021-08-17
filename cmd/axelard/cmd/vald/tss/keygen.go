@@ -55,7 +55,7 @@ func (mgr *Mgr) ProcessKeygenAck(blockHeight int64, attributes []sdk.Attribute) 
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, threshold, participants, participantShareCounts, err := parseKeygenStartParams(mgr.cdc, attributes)
+	keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, attributes)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 	}
 
 	done := false
-	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+mgr.sessionTimeout)
+	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+timeout)
 
 	stream, cancel, err := mgr.startKeygen(keyID, threshold, int32(myIndex), participants, participantShareCounts)
 	if err != nil {
@@ -151,8 +151,8 @@ func parseKeygenAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (k
 	return keyID, height, nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32, err error) {
-	var keyIDFound, thresholdFound, participantsFound, sharesFound bool
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
+	var keyIDFound, thresholdFound, participantsFound, sharesFound, timeoutFound bool
 	for _, attribute := range attributes {
 		switch attribute.Key {
 		case tss.AttributeKeyKeyID:
@@ -171,14 +171,21 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) 
 		case tss.AttributeKeyParticipantShareCounts:
 			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participantShareCounts)
 			sharesFound = true
+		case tss.AttributeKeyTimeout:
+			t, err := strconv.ParseInt(attribute.Value, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			timeout = int64(t)
+			timeoutFound = true
 		default:
 		}
 	}
-	if !keyIDFound || !thresholdFound || !participantsFound || !sharesFound {
-		return "", 0, nil, nil, fmt.Errorf("insufficient event attributes")
+	if !keyIDFound || !thresholdFound || !participantsFound || !sharesFound || !timeoutFound {
+		return "", 0, nil, nil, 0, fmt.Errorf("insufficient event attributes")
 	}
 
-	return keyID, threshold, participants, participantShareCounts, nil
+	return keyID, threshold, participants, participantShareCounts, timeout, nil
 }
 
 func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {
