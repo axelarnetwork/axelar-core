@@ -232,14 +232,9 @@
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
-<<<<<<< HEAD
+    - [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
-=======
-    - [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput)
-    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
-    - [Signature](#tss.v1beta1.Signature)
->>>>>>> 84d3f91 (chore: accomodate safe recovery)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   

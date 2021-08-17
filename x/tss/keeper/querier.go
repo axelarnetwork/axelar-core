@@ -36,7 +36,7 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		case QueryKey:
 			res, err = queryKey(ctx, k, v, path[1])
 		case QueryRecovery:
-			res, err = queryRecovery(ctx, k, s, path[1])
+			res, err = queryRecovery(ctx, k, s, path[1], path[2])
 		case QueryKeyID:
 			res, err = queryKeyID(ctx, k, n, path[1], path[2])
 		case QueryKeySharesByKeyID:
