@@ -43,8 +43,6 @@ const (
 	assetPrefix            = "asset_"
 	burnerAddrPrefix       = "burnerAddr_"
 	tokenAddrPrefix        = "tokenAddr_"
-	scheduledCommandPrefix = "scheduled_command_"
-	scheduledTxPrefix      = "scheduled_tx_"
 
 	pendingTransferOwnershipPrefix  = "pending_transfer_ownership_"
 	archivedTransferOwnershipPrefix = "archived_transfer_ownership_"
@@ -76,84 +74,6 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper ty
 // Logger returns a module-specific logger.
 func (k keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// GetScheduledUnsignedCommand returns all commands scheduled for the current height
-func (k keeper) GetScheduledUnsignedCommands(ctx sdk.Context) []types.ScheduledUnsignedCommand {
-	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
-	bz := ctx.KVStore(k.storeKey).Get(key)
-	if bz == nil {
-		return nil
-	}
-
-	var cmds types.ScheduledUnsignedCommands
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
-	if len(cmds.Cmds) == 0 {
-		return nil
-	}
-
-	return cmds.Cmds
-}
-
-// ScheduleUnsignedCommand schedules a command for processing at the specified height
-func (k keeper) ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedCommand) {
-	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, height))
-	bz := ctx.KVStore(k.storeKey).Get(key)
-
-	var cmds types.ScheduledUnsignedCommands
-
-	if bz != nil {
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
-	}
-	cmds.Cmds = append(cmds.Cmds, cmd)
-
-	bz = k.cdc.MustMarshalBinaryLengthPrefixed(&cmds)
-	ctx.KVStore(k.storeKey).Set(key, bz)
-}
-
-// DeleteScheduledCommands deletes all commands scheduled for the current height
-func (k keeper) DeleteScheduledCommands(ctx sdk.Context) {
-	key := []byte(fmt.Sprintf("%s%d", scheduledCommandPrefix, ctx.BlockHeight()))
-	ctx.KVStore(k.storeKey).Delete(key)
-}
-
-// GetScheduledUnsignedTxs returns all txs scheduled for the current height
-func (k keeper) GetScheduledUnsignedTxs(ctx sdk.Context) []types.ScheduledUnsignedTx {
-	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
-	bz := ctx.KVStore(k.storeKey).Get(key)
-	if bz == nil {
-		return nil
-	}
-
-	var cmds types.ScheduledUnsignedTxs
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
-
-	if len(cmds.Txs) == 0 {
-		return nil
-	}
-
-	return cmds.Txs
-}
-
-// ScheduleUnsignedTx schedules a tx for processing at the specified height
-func (k keeper) ScheduleUnsignedTx(ctx sdk.Context, height int64, cmd types.ScheduledUnsignedTx) {
-	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, height))
-	bz := ctx.KVStore(k.storeKey).Get(key)
-
-	var cmds types.ScheduledUnsignedTxs
-	if bz != nil {
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &cmds)
-	}
-	cmds.Txs = append(cmds.Txs, cmd)
-
-	bz = k.cdc.MustMarshalBinaryLengthPrefixed(&cmds)
-	ctx.KVStore(k.storeKey).Set(key, bz)
-}
-
-// DeleteScheduledTxs deletes all txs scheduled for the current height
-func (k keeper) DeleteScheduledTxs(ctx sdk.Context) {
-	key := []byte(fmt.Sprintf("%s%d", scheduledTxPrefix, ctx.BlockHeight()))
-	ctx.KVStore(k.storeKey).Delete(key)
 }
 
 // GetChain returns the keeper associated to the given chain

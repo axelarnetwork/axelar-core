@@ -26,14 +26,6 @@ type BaseKeeper interface {
 	GetParams(ctx sdk.Context) []Params
 	SetParams(ctx sdk.Context, params ...Params)
 
-	GetScheduledUnsignedCommands(ctx sdk.Context) []ScheduledUnsignedCommand
-	ScheduleUnsignedCommand(ctx sdk.Context, height int64, cmd ScheduledUnsignedCommand)
-	DeleteScheduledCommands(ctx sdk.Context)
-
-	GetScheduledUnsignedTxs(ctx sdk.Context) []ScheduledUnsignedTx
-	ScheduleUnsignedTx(ctx sdk.Context, height int64, tx ScheduledUnsignedTx)
-	DeleteScheduledTxs(ctx sdk.Context)
-
 	ForChain(ctx sdk.Context, chain string) ChainKeeper
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
 	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
@@ -123,9 +115,8 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	AnnounceSign(ctx sdk.Context, keyID string, sigID string) int64
-	StartSign(ctx sdk.Context, voter InitPoller, keyID string, sigID string, msg []byte, snapshot snapshot.Snapshot) error
-	GetSig(ctx sdk.Context, sigID string) (tss.Signature, bool)
+	ScheduleSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
+	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)

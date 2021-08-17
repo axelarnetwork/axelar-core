@@ -3,14 +3,14 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -93,7 +93,7 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 
 func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sigID string) ([]byte, error) {
 	var resp tssTypes.QuerySigResponse
-	if sig, ok := k.GetSig(ctx, sigID); ok {
+	if sig, status := k.GetSig(ctx, sigID); status == exported.SigStatus_Signed {
 		// poll was successful
 		resp := tssTypes.QuerySigResponse{
 			VoteStatus: tssTypes.VoteStatus_Decided,

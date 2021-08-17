@@ -39,14 +39,13 @@
     - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [SigStatus](#tss.exported.v1beta1.SigStatus)
   
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
     - [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition)
     - [Network](#bitcoin.v1beta1.Network)
     - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
-    - [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx)
-    - [ScheduledUnsignedTxs](#bitcoin.v1beta1.ScheduledUnsignedTxs)
     - [SignedTx](#bitcoin.v1beta1.SignedTx)
     - [UnsignedTx](#bitcoin.v1beta1.UnsignedTx)
     - [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info)
@@ -138,10 +137,6 @@
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
-    - [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand)
-    - [ScheduledUnsignedCommands](#evm.v1beta1.ScheduledUnsignedCommands)
-    - [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx)
-    - [ScheduledUnsignedTxs](#evm.v1beta1.ScheduledUnsignedTxs)
     - [TransferOwnership](#evm.v1beta1.TransferOwnership)
   
     - [DepositStatus](#evm.v1beta1.DepositStatus)
@@ -667,6 +662,22 @@ SignInfo holds information about a sign request
 | KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
 
 
+
+<a name="tss.exported.v1beta1.SigStatus"></a>
+
+### SigStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_STATUS_UNSPECIFIED | 0 |  |
+| SIG_STATUS_SCHEDULED | 1 |  |
+| SIG_STATUS_SIGNING | 2 |  |
+| SIG_STATUS_SIGNED | 3 |  |
+| SIG_STATUS_ABORTED | 4 |  |
+| SIG_STATUS_INVALID | 5 |  |
+
+
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -748,38 +759,6 @@ of a transaction
 | `out_point` | [string](#string) |  |  |
 | `amount` | [int64](#int64) |  |  |
 | `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.ScheduledUnsignedTx"></a>
-
-### ScheduledUnsignedTx
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `unsigned_tx` | [UnsignedTx](#bitcoin.v1beta1.UnsignedTx) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `sign_infos` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) | repeated |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.ScheduledUnsignedTxs"></a>
-
-### ScheduledUnsignedTxs
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `infos` | [ScheduledUnsignedTx](#bitcoin.v1beta1.ScheduledUnsignedTx) | repeated |  |
 
 
 
@@ -2056,71 +2035,6 @@ NetworkInfo describes information about a network
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ScheduledUnsignedCommand"></a>
-
-### ScheduledUnsignedCommand
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `command_id` | [bytes](#bytes) |  |  |
-| `command_data` | [bytes](#bytes) |  |  |
-| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ScheduledUnsignedCommands"></a>
-
-### ScheduledUnsignedCommands
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `cmds` | [ScheduledUnsignedCommand](#evm.v1beta1.ScheduledUnsignedCommand) | repeated |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ScheduledUnsignedTx"></a>
-
-### ScheduledUnsignedTx
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-| `sign_info` | [tss.exported.v1beta1.SignInfo](#tss.exported.v1beta1.SignInfo) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ScheduledUnsignedTxs"></a>
-
-### ScheduledUnsignedTxs
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `txs` | [ScheduledUnsignedTx](#evm.v1beta1.ScheduledUnsignedTx) | repeated |  |
 
 
 

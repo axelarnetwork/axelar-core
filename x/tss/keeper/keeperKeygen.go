@@ -21,7 +21,7 @@ import (
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, height, exported.AckType_Keygen.String(), req.NewKeyID)
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledKeygenPrefix, height, exported.AckType_Keygen.String(), req.NewKeyID)
 	if ctx.KVStore(k.storeKey).Has([]byte(key)) {
 		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.NewKeyID)
 	}
@@ -36,7 +36,7 @@ func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (i
 
 // GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
 func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
-	prefix := fmt.Sprintf("%s%d_%s_", scheduledPrefix, ctx.BlockHeight(), exported.AckType_Keygen.String())
+	prefix := fmt.Sprintf("%s%d_%s_", scheduledKeygenPrefix, ctx.BlockHeight(), exported.AckType_Keygen.String())
 	store := ctx.KVStore(k.storeKey)
 	var requests []types.StartKeygenRequest
 
@@ -51,6 +51,12 @@ func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.Sta
 	}
 
 	return requests
+}
+
+// DeleteScheduledKeygen removes a keygen request for the current height
+func (k Keeper) DeleteScheduledKeygen(ctx sdk.Context, keyID string) {
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledKeygenPrefix, ctx.BlockHeight(), exported.AckType_Keygen, keyID)
+	ctx.KVStore(k.storeKey).Delete([]byte(key))
 }
 
 // StartKeygen starts a keygen protocol with the specified parameters

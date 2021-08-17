@@ -20,22 +20,25 @@ import (
 )
 
 const (
-	rotationPrefix         = "rotationCount_"
-	keygenStartHeight      = "blockHeight_"
-	pkPrefix               = "pk_"
-	recoveryPrefix         = "recovery_"
-	thresholdPrefix        = "threshold_"
-	snapshotForKeyIDPrefix = "sfkid_"
-	sigPrefix              = "sig_"
-	keyIDForSigPrefix      = "kidfs_"
-	participatePrefix      = "part_"
-	keyRequirementPrefix   = "key_requirement_"
-	keyRolePrefix          = "key_role_"
-	keyTssSuspendedUntil   = "key_tss_suspended_until_"
-	keyRotatedAtPrefix     = "key_rotated_at_"
-	availablePrefix        = "available_"
-	linkedSeqNumPrefix     = "linked_seq_number_"
-	scheduledPrefix        = "scheduled_"
+	rotationPrefix              = "rotationCount_"
+	keygenStartHeight           = "blockHeight_"
+	pkPrefix                    = "pk_"
+	recoveryPrefix              = "recovery_"
+	thresholdPrefix             = "threshold_"
+	snapshotForKeyIDPrefix      = "sfkid_"
+	sigPrefix                   = "sig_"
+	keyIDForSigPrefix           = "kidfs_"
+	participatePrefix           = "part_"
+	participateShareCountPrefix = "part_share_count_"
+	keyRequirementPrefix        = "key_requirement_"
+	keyRolePrefix               = "key_role_"
+	keyTssSuspendedUntil        = "key_tss_suspended_until_"
+	keyRotatedAtPrefix          = "key_rotated_at_"
+	availablePrefix             = "available_"
+	linkedSeqNumPrefix          = "linked_seq_number_"
+	scheduledKeygenPrefix       = "scheduled_keygen_"
+	scheduledSignPrefix         = "scheduled_sign_"
+	sigStatusPrefix             = "sig_status_"
 )
 
 // Keeper allows access to the broadcast state
@@ -265,12 +268,6 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 	return int64(binary.LittleEndian.Uint64(bz))
 }
 
-// DeleteAtCurrentHeight removes a keygen/sign request for the current height
-func (k Keeper) DeleteAtCurrentHeight(ctx sdk.Context, ID string, ackType exported.AckType) {
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledPrefix, ctx.BlockHeight(), ackType.String(), ID)
-	ctx.KVStore(k.storeKey).Delete([]byte(key))
-}
-
 // SetAvailableOperator sets the height at which a validator sent his ack for some key/sign ID. Returns an error if
 // the validator already submitted a ack for the given ID and type.
 func (k Keeper) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -299,14 +296,14 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
 func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, snapshotSeqNo int64) {
-	operators := k.getAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
+	operators := k.GetAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
 	if len(operators) > 0 {
 		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
 	}
 }
 
-// gets all operators that sent a acknowledgment for so given keygen/sign ID until some given height
-func (k Keeper) getAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
+// GetAvailableOperators gets all operators that sent a acknowledgment for so given keygen/sign ID until some given height
+func (k Keeper) GetAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
 	if ID == "" {
 		return nil
 	}

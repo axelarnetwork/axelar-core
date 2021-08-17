@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -35,13 +36,29 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
 		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.NewKeyID, exported.AckType_Keygen, counter)
-		keeper.DeleteAtCurrentHeight(ctx, request.NewKeyID, exported.AckType_Keygen)
-		keeper.DeleteAvailableOperators(ctx, request.NewKeyID, exported.AckType_Keygen)
 
 		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
 			keeper.Logger(ctx).Error(fmt.Sprintf("error starting keygen: %s", err.Error()))
 		}
+
+		keeper.DeleteKeygenStart(ctx, request.NewKeyID)
+		keeper.DeleteAvailableOperators(ctx, request.NewKeyID, exported.AckType_Keygen)
+	}
+
+	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
+	if len(signInfos) > 0 {
+		keeper.Logger(ctx).Info(fmt.Sprintf("processing %d signs at height %d", len(keygenReqs), ctx.BlockHeight()))
+	}
+
+	for _, info := range signInfos {
+		err := startSign(ctx, keeper, voter, snapshotter, info)
+		if err != nil {
+			keeper.Logger(ctx).Error(fmt.Sprintf("error starting signing: %s", err.Error()))
+		}
+
+		keeper.DeleteScheduledSign(ctx, info.SigID)
+		keeper.DeleteAvailableOperators(ctx, info.SigID, exported.AckType_Sign)
 	}
 
 	return nil
@@ -126,6 +143,84 @@ func startKeygen(
 			[]metrics.Label{
 				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 				telemetry.NewLabel("keyID", req.NewKeyID),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
+	}
+
+	return nil
+}
+
+// starts a tss signing protocol using the specified key for the given chain.
+func startSign(
+	ctx sdk.Context,
+	k types.TSSKeeper,
+	voter types.InitPoller,
+	snapshotter types.Snapshotter,
+	info exported.SignInfo,
+) error {
+	_, status := k.GetSig(ctx, info.SigID)
+	if status != exported.SigStatus_Scheduled {
+		return fmt.Errorf("sigID '%s' is not scheduled", info.SigID)
+	}
+
+	snap, ok := snapshotter.GetSnapshot(ctx, info.SnapshotCounter)
+	if !ok {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
+		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
+	}
+
+	// for now we recalculate the threshold
+	// might make sense to store it with the snapshot after keygen is done.
+	threshold, found := k.GetCorruptionThreshold(ctx, info.KeyID)
+	if !found {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
+		return fmt.Errorf("keyID %s has no corruption threshold defined", info.KeyID)
+	}
+
+	k.SelectSignParticipants(ctx, info.SigID, snap.Validators)
+
+	if !k.MeetsThreshold(ctx, info.SigID, threshold) {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
+		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
+			threshold, k.GetTotalShareCount(ctx, info.SigID)))
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
+	if err := voter.InitializePoll(ctx, pollKey, snap.Counter, vote.ExpiryAt(0)); err != nil {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
+		return err
+	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d]",
+		threshold, threshold+1, k.GetTotalShareCount(ctx, info.SigID)))
+
+	k.SetKeyIDForSig(ctx, info.SigID, info.KeyID)
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
+
+	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
+			sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
+			sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg))))
+
+	// metrics for sign participation
+	ts := time.Now().Unix()
+	for _, validator := range snap.Validators {
+		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
+			continue
+		}
+
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "sign", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("sigID", info.SigID),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
