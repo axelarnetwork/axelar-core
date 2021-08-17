@@ -35,7 +35,7 @@ message KeygenOutput {
   bytes pub_key = 1; // pub_key; common for all parties
   bytes group_info =
       2; // recovery info of all parties' shares; common for all parties
-  repeated bytes recovery_info =
+  bytes recovery_info =
       3; // private recovery info of this party's shares; unique for each party
 }
 

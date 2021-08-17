@@ -808,11 +808,9 @@ func (m *QueryRecoveryResponse_KeygenOutput) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovQuery(uint64(l))
 	}
-	if len(m.RecoveryInfo) > 0 {
-		for _, b := range m.RecoveryInfo {
-			l = len(b)
-			n += 1 + l + sovQuery(uint64(l))
-		}
+	l = len(m.RecoveryInfo)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
 	}
 	return n
 }
@@ -1533,8 +1531,10 @@ func (m *QueryRecoveryResponse_KeygenOutput) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RecoveryInfo = append(m.RecoveryInfo, make([]byte, postIndex-iNdEx))
-			copy(m.RecoveryInfo[len(m.RecoveryInfo)-1], dAtA[iNdEx:postIndex])
+			m.RecoveryInfo = append(m.RecoveryInfo[:0], dAtA[iNdEx:postIndex]...)
+			if m.RecoveryInfo == nil {
+				m.RecoveryInfo = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -458,7 +458,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		// TODO: find a way to correctly mock the amount of group infos and party infos from the number of shares
 		// held by any  given validators,  even if we assign an arbitrary number of tokens to each
 		groupInfo := []byte{1}
-		partyInfo := [][]byte{{1}}
+		partyInfo := []byte{1}
 		result := &tofnd.MessageOut_KeygenResult{
 			KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
 				Data: &tofnd.KeygenOutput{

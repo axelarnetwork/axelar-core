@@ -40,9 +40,9 @@ message QueryRecoveryResponse {
   int32 threshold = 3;
 
   message KeygenOutput {
-    bytes pub_key = 1;                // pub_key; common for all parties
-    bytes group_info = 2;             // parties' common recovery info
-    repeated bytes recovery_info = 3; // party's private recovery info
+    bytes pub_key = 1;       // pub_key; common for all parties
+    bytes group_info = 2;    // parties' common recovery info
+    bytes recovery_info = 3; // party's private recovery info
   }
   KeygenOutput keygen_output = 4;
 }

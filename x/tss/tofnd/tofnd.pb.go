@@ -208,9 +208,9 @@ func (m *RecoverResponse) GetResponse() RecoverResponse_Response {
 
 // Keygen's success response
 type KeygenOutput struct {
-	PubKey       []byte   `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
-	GroupInfo    []byte   `protobuf:"bytes,2,opt,name=group_info,json=groupInfo,proto3" json:"group_info,omitempty"`
-	RecoveryInfo [][]byte `protobuf:"bytes,3,rep,name=recovery_info,json=recoveryInfo,proto3" json:"recovery_info,omitempty"`
+	PubKey       []byte `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+	GroupInfo    []byte `protobuf:"bytes,2,opt,name=group_info,json=groupInfo,proto3" json:"group_info,omitempty"`
+	RecoveryInfo []byte `protobuf:"bytes,3,opt,name=recovery_info,json=recoveryInfo,proto3" json:"recovery_info,omitempty"`
 }
 
 func (m *KeygenOutput) Reset()         { *m = KeygenOutput{} }
@@ -260,7 +260,7 @@ func (m *KeygenOutput) GetGroupInfo() []byte {
 	return nil
 }
 
-func (m *KeygenOutput) GetRecoveryInfo() [][]byte {
+func (m *KeygenOutput) GetRecoveryInfo() []byte {
 	if m != nil {
 		return m.RecoveryInfo
 	}
@@ -1300,13 +1300,11 @@ func (m *KeygenOutput) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.RecoveryInfo) > 0 {
-		for iNdEx := len(m.RecoveryInfo) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.RecoveryInfo[iNdEx])
-			copy(dAtA[i:], m.RecoveryInfo[iNdEx])
-			i = encodeVarintTofnd(dAtA, i, uint64(len(m.RecoveryInfo[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
+		i -= len(m.RecoveryInfo)
+		copy(dAtA[i:], m.RecoveryInfo)
+		i = encodeVarintTofnd(dAtA, i, uint64(len(m.RecoveryInfo)))
+		i--
+		dAtA[i] = 0x1a
 	}
 	if len(m.GroupInfo) > 0 {
 		i -= len(m.GroupInfo)
@@ -2090,11 +2088,9 @@ func (m *KeygenOutput) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTofnd(uint64(l))
 	}
-	if len(m.RecoveryInfo) > 0 {
-		for _, b := range m.RecoveryInfo {
-			l = len(b)
-			n += 1 + l + sovTofnd(uint64(l))
-		}
+	l = len(m.RecoveryInfo)
+	if l > 0 {
+		n += 1 + l + sovTofnd(uint64(l))
 	}
 	return n
 }
@@ -2763,8 +2759,10 @@ func (m *KeygenOutput) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RecoveryInfo = append(m.RecoveryInfo, make([]byte, postIndex-iNdEx))
-			copy(m.RecoveryInfo[len(m.RecoveryInfo)-1], dAtA[iNdEx:postIndex])
+			m.RecoveryInfo = append(m.RecoveryInfo[:0], dAtA[iNdEx:postIndex]...)
+			if m.RecoveryInfo == nil {
+				m.RecoveryInfo = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

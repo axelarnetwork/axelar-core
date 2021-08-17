@@ -21,7 +21,7 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	result := &tofnd.MessageOut_KeygenResult{
 		KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
 			Data: &tofnd.KeygenOutput{
-				PubKey: []byte("some bytes"), GroupInfo: []byte{0}, RecoveryInfo: [][]byte{{0, 1, 2, 3}},
+				PubKey: []byte("some bytes"), GroupInfo: []byte{0}, RecoveryInfo: []byte{0, 1, 2, 3},
 			},
 		},
 	}
