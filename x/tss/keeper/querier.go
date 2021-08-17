@@ -56,7 +56,13 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 	}
 }
 
-func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string) ([]byte, error) {
+func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string, addressStr string) ([]byte, error) {
+
+	address, err := sdk.ValAddressFromBech32(addressStr)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to parse validator address")
+	}
+
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
@@ -74,7 +80,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	keygenOutput := k.GetRecoveryInfos(ctx, sdk.ValAddress(keyID), keyID)
+	keygenOutput := k.GetRecoveryInfos(ctx, address, keyID)
 
 	resp := tssTypes.QueryRecoveryResponse{
 		Threshold:        int32(snapshot.CorruptionThreshold),
