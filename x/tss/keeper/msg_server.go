@@ -220,26 +220,19 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, *res.Data)
 
-		// TODO: in the near future we need to change the voting value to include both the pubkey and
-		// and the public recovery infos of all parties. The way that is currently done, if a single
-		// party neglects to vote, it will be impossible later on to recover shares. Therefore, tofnd needs
-		// to be updated to provide only the public part of the recovery shares, and voting be done on that
-		// data + pubkey. We will also need to provide both the (public) recovery data and the pubkey that
-		// was voted on, so that tofnd can re-construct the shares.
-		//
-		// Check issue #694 on axelar-core repo for details.
-
-		// vote on pubkey bytes and common recovery info bytes
+		// get pubkey
 		pubKey := res.Data.GetPubKey()
 		if pubKey == nil {
 			return nil, fmt.Errorf("public key is nil")
 		}
 
+		// get public recovery info
 		groupInfo := res.Data.GetGroupInfo()
 		if groupInfo == nil {
 			return nil, fmt.Errorf("group info is nil")
 		}
 
+		// vote on pubkey bytes and common recovery info bytes
 		vote := VoteStruct{PubKey: pubKey, GroupInfo: groupInfo}
 		bytes, err := json.Marshal(vote)
 		if err != nil {
