@@ -294,6 +294,15 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
 
+		// get public recovery info from vote data
+		groupRecoveryInfo := voteData.GroupInfo
+		if groupRecoveryInfo == nil {
+			return nil, fmt.Errorf("public key bytes is nil")
+		}
+
+		// store group recovery data
+		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecoveryInfo)
+
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),

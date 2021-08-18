@@ -20,24 +20,26 @@ import (
 )
 
 const (
-	rotationPrefix         = "rotationCount_"
-	keygenStartHeight      = "blockHeight_"
-	pkPrefix               = "pk_"
-	recoveryPrefix         = "recovery_"
-	thresholdPrefix        = "threshold_"
-	snapshotForKeyIDPrefix = "sfkid_"
-	sigPrefix              = "sig_"
-	infoForSigPrefix       = "info_for_sig_"
-	participatePrefix      = "part_"
-	keyRequirementPrefix   = "key_requirement_"
-	keyRolePrefix          = "key_role_"
-	keyTssSuspendedUntil   = "key_tss_suspended_until_"
-	keyRotatedAtPrefix     = "key_rotated_at_"
-	availablePrefix        = "available_"
-	linkedSeqNumPrefix     = "linked_seq_number_"
-	scheduledKeygenPrefix  = "scheduled_keygen_"
-	scheduledSignPrefix    = "scheduled_sign_"
-	sigStatusPrefix        = "sig_status_"
+	rotationPrefix              = "rotationCount_"
+	keygenStartHeight           = "blockHeight_"
+	pkPrefix                    = "pk_"
+	groupRecoverPrefix          = "group_recovery_info"
+	privateRecoverPrefix        = "private_recovery_info"
+	thresholdPrefix             = "threshold_"
+	snapshotForKeyIDPrefix      = "sfkid_"
+	sigPrefix                   = "sig_"
+	infoForSigPrefix            = "info_for_sig_"
+	participatePrefix           = "part_"
+	participateShareCountPrefix = "part_share_count_"
+	keyRequirementPrefix        = "key_requirement_"
+	keyRolePrefix               = "key_role_"
+	keyTssSuspendedUntil        = "key_tss_suspended_until_"
+	keyRotatedAtPrefix          = "key_rotated_at_"
+	availablePrefix             = "available_"
+	linkedSeqNumPrefix          = "linked_seq_number_"
+	scheduledKeygenPrefix       = "scheduled_keygen_"
+	scheduledSignPrefix         = "scheduled_sign_"
+	sigStatusPrefix             = "sig_status_"
 )
 
 // Keeper allows access to the broadcast state
@@ -140,39 +142,11 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetPublicRecoveryData sets the (a) public key and (b) public recovery info the parties sucessfull voted on
-func (k Keeper) SetPublicRecoveryData(ctx sdk.Context, keyID string, recoveryInfo []byte) {
-	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-}
-
-// HasPublicRecoveryInfo returns true if the public recovery info for a given party exists
-func (k Keeper) HasPublicRecoveryInfo(ctx sdk.Context, ValAddress, keyID string) bool {
-	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return false
-	}
-
-	return true
-}
-
-// GetPublicRecoveryInfo returns a party's public recovery info of a specific key ID
-func (k Keeper) GetPublicRecoveryInfo(ctx sdk.Context, keyID string) []byte {
-	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-
-	var recoveryInfos []byte
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recoveryInfos)
-
-	return recoveryInfos
-}
-
 // SetPrivateRecoveryInfo sets the private recovery info for a given party
 func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
-	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
+
+	// marshal private recover info before storing
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
@@ -180,7 +154,7 @@ func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 
 // HasPrivateRecoveryInfo returns true if the private recovery info for a given party exists
 func (k Keeper) HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
-	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz == nil {
 		return false
@@ -191,18 +165,19 @@ func (k Keeper) HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 
 // GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
 func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
-	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
-	var recoveryInfos []byte
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recoveryInfos)
+	// private recovery infos has been marshaled in keeper
+	var privateRecoveryInfos []byte
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &privateRecoveryInfos)
 
-	return recoveryInfos
+	return privateRecoveryInfos
 }
 
 // DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID
 func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
-	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
+	prefix := fmt.Sprintf("%s%s_", privateRecoverPrefix, keyID)
 	store := ctx.KVStore(k.storeKey)
 
 	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))

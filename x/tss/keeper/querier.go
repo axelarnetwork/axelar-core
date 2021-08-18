@@ -4,6 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -80,19 +83,24 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	// TODO: get actual pubkey and groupinfo
-	pubKey := []byte{1}
-	if pubKey == nil {
+	// get voted pub key
+	pubKey, ok := k.GetKey(ctx, keyID)
+	if !ok {
 		return nil, fmt.Errorf("could not obtain pubkey for key ID %s", keyID)
 	}
 
-	groupRecoverInfo := []byte{1}
-	if pubKey == nil {
+	// convert ecdsa pub key to bytes
+	ecdsaPK := btcec.PublicKey(pubKey.Value)
+	pubKeyBytes := ecdsaPK.SerializeCompressed()
+
+	// get voted group recover info
+	groupRecoverInfo, ok := k.GetGroupRecoveryInfo(ctx, keyID)
+	if !ok {
 		return nil, fmt.Errorf("could not obtain group info for key ID %s", keyID)
 	}
 
 	privateRecoverInfo := k.GetPrivateRecoveryInfo(ctx, address, keyID)
-	if pubKey == nil {
+	if privateRecoverInfo == nil {
 		return nil, fmt.Errorf("could not obtain private info for key ID %s", keyID)
 	}
 
@@ -101,7 +109,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
 		KeygenOutput: &tssTypes.QueryRecoveryResponse_KeygenOutput{
-			PubKey:             pubKey,
+			PubKey:             pubKeyBytes,
 			GroupRecoverInfo:   groupRecoverInfo,
 			PrivateRecoverInfo: privateRecoverInfo,
 		},
