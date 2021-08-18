@@ -19,7 +19,7 @@ axelard keys delete <name>... [flags]
 ```
   -f, --force   Remove the key unconditionally without asking for the passphrase. Deprecated.
   -h, --help    help for delete
-  -y, --yes     Skip confirmation prompt when deleting offline or ledger key references
+  -y, --yes     Skip confirmation prompt when deleting offline or ledger key references (default true)
 ```
 
 ### Options inherited from parent commands

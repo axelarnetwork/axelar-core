@@ -47,7 +47,7 @@ axelard tx ibc tendermint-client create [path/to/consensus_state.json] [trusting
       --sign-mode string                  Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint               Set a block timeout height to prevent the tx from being committed past a certain height
       --trust-level string                light client trust level fraction for header updates (default "default")
-  -y, --yes                               Skip tx broadcasting prompt confirmation
+  -y, --yes                               Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands

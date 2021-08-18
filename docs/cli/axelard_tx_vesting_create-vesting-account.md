@@ -37,7 +37,7 @@ axelard tx vesting create-vesting-account [to_address] [amount] [end_time] [flag
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
-  -y, --yes                      Skip tx broadcasting prompt confirmation
+  -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands

@@ -35,7 +35,7 @@ axelard tx gov submit-proposal cancel-software-upgrade [flags]
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
       --title string             title of proposal
-  -y, --yes                      Skip tx broadcasting prompt confirmation
+  -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands

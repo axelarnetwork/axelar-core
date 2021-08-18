@@ -43,7 +43,7 @@ axelard tx ibc connection open-init [client-id] [counterparty-client-id] [path/t
       --timeout-height uint         Set a block timeout height to prevent the tx from being committed past a certain height
       --version-features string     version features list separated by commas without spaces. The features must function with the version identifier.
       --version-identifier string   version identifier to be used in the connection handshake version negotiation
-  -y, --yes                         Skip tx broadcasting prompt confirmation
+  -y, --yes                         Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands
