@@ -61,6 +61,8 @@ message SignInfo {
   string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
   bytes msg = 3;
   int64 snapshot_counter = 4;
+  string request_module = 5 [ (gogoproto.customname) = "RequestModule" ];
+  bytes metadata = 6;
 }
 
 enum SigStatus {

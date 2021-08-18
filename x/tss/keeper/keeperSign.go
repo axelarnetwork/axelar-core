@@ -28,8 +28,8 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
 
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 
@@ -51,7 +51,6 @@ func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignI
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-
 		var info exported.SignInfo
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
 		infos = append(infos, info)

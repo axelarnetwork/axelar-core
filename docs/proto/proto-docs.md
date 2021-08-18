@@ -668,6 +668,8 @@ SignInfo holds information about a sign request
 | `sig_id` | [string](#string) |  |  |
 | `msg` | [bytes](#bytes) |  |  |
 | `snapshot_counter` | [int64](#int64) |  |  |
+| `request_module` | [string](#string) |  |  |
+| `metadata` | [bytes](#bytes) |  |  |
 
 
 

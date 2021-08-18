@@ -263,6 +263,8 @@ type SignInfo struct {
 	SigID           string `protobuf:"bytes,2,opt,name=sig_id,json=sigId,proto3" json:"sig_id,omitempty"`
 	Msg             []byte `protobuf:"bytes,3,opt,name=msg,proto3" json:"msg,omitempty"`
 	SnapshotCounter int64  `protobuf:"varint,4,opt,name=snapshot_counter,json=snapshotCounter,proto3" json:"snapshot_counter,omitempty"`
+	RequestModule   string `protobuf:"bytes,5,opt,name=request_module,json=requestModule,proto3" json:"request_module,omitempty"`
+	Metadata        []byte `protobuf:"bytes,6,opt,name=metadata,proto3" json:"metadata,omitempty"`
 }
 
 func (m *SignInfo) Reset()         { *m = SignInfo{} }
@@ -324,6 +326,20 @@ func (m *SignInfo) GetSnapshotCounter() int64 {
 		return m.SnapshotCounter
 	}
 	return 0
+}
+
+func (m *SignInfo) GetRequestModule() string {
+	if m != nil {
+		return m.RequestModule
+	}
+	return ""
+}
+
+func (m *SignInfo) GetMetadata() []byte {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
 }
 
 func init() {
@@ -510,6 +526,20 @@ func (m *SignInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Metadata) > 0 {
+		i -= len(m.Metadata)
+		copy(dAtA[i:], m.Metadata)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Metadata)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.RequestModule) > 0 {
+		i -= len(m.RequestModule)
+		copy(dAtA[i:], m.RequestModule)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.RequestModule)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if m.SnapshotCounter != 0 {
 		i = encodeVarintTypes(dAtA, i, uint64(m.SnapshotCounter))
 		i--
@@ -602,6 +632,14 @@ func (m *SignInfo) Size() (n int) {
 	}
 	if m.SnapshotCounter != 0 {
 		n += 1 + sovTypes(uint64(m.SnapshotCounter))
+	}
+	l = len(m.RequestModule)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Metadata)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
 	}
 	return n
 }
@@ -1035,6 +1073,72 @@ func (m *SignInfo) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestModule", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequestModule = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metadata = append(m.Metadata[:0], dAtA[iNdEx:postIndex]...)
+			if m.Metadata == nil {
+				m.Metadata = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTypes(dAtA[iNdEx:])
