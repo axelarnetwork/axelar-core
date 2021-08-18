@@ -117,6 +117,12 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 				return
 			}
 
+			keygenOutput := recResponse.KeygenOutput
+			if keygenOutput == nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain keygenOutput", address.String()).Error())
+				return
+			}
+
 			requests[i] = tofnd.RecoverRequest{
 				KeygenInit: &tofnd.KeygenInit{
 					NewKeyUid:        keyID,
@@ -125,7 +131,11 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					PartyShareCounts: recResponse.PartyShareCounts,
 					MyPartyIndex:     int32(index),
 				},
-				KeygenOutput: (*tofnd.KeygenOutput)(recResponse.KeygenOutput),
+				KeygenOutput: &tofnd.KeygenOutput{
+					PubKey:       (keygenOutput.PubKey),
+					GroupInfo:    (keygenOutput.GroupInfo),
+					RecoveryInfo: (keygenOutput.RecoveryInfo),
+				},
 			}
 		}
 

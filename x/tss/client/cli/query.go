@@ -139,6 +139,11 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 					return sdkerrors.Wrapf(err, "recovery data does not contain address %s", address.String())
 				}
 
+				keygenOutput := recResponse.KeygenOutput
+				if keygenOutput == nil {
+					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput")
+				}
+
 				requests[i] = tofnd.RecoverRequest{
 					KeygenInit: &tofnd.KeygenInit{
 						NewKeyUid:        keyID,
@@ -147,7 +152,11 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 						PartyShareCounts: recResponse.PartyShareCounts,
 						MyPartyIndex:     int32(index),
 					},
-					KeygenOutput: (*tofnd.KeygenOutput)(recResponse.KeygenOutput),
+					KeygenOutput: &tofnd.KeygenOutput{
+						PubKey:       (keygenOutput.PubKey),
+						GroupInfo:    (keygenOutput.GroupInfo),
+						RecoveryInfo: (keygenOutput.RecoveryInfo),
+					},
 				}
 			}
 			return cliCtx.PrintObjectLegacy(requests)
