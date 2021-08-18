@@ -107,6 +107,23 @@ enum TransferKeyType {
 
 // TransferKey contains information for a transfer ownership or operatorship
 message TransferKey {
+// SigMetadata stores necessary information for external apps to map signature
+// results to evm relay transaction types
+message SigMetadata {
+  SigType type = 1;
+  string chain = 2;
+  string selector = 3;
+}
+
+enum SigType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  SIG_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  SIG_TYPE_TX = 1 [ (gogoproto.enumvalue_customname) = "SigTx" ];
+  SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
+}
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",

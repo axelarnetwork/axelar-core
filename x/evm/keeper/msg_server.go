@@ -836,6 +836,25 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
 	if err := keeper.SetCommand(ctx, command); err != nil {
+	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
+	}
+
+	sigMetadata := types.SigMetadata{
+		Type:     types.SigCommand,
+		Chain:    chain.Name,
+		Selector: types.AxelarGatewayCommandDeployToken,
+	}
+
+	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+		KeyID:           keyID,
+		SigID:           commandIDHex,
+		Msg:             signHash.Bytes(),
+		SnapshotCounter: snapshot.Counter,
+		RequestModule:   types.ModuleName,
+		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
+	}); err != nil {
 		return nil, err
 	}
 
@@ -927,11 +946,18 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
+	sigMetadata := types.SigMetadata{
+		Type:  types.SigTx,
+		Chain: chain.Name,
+	}
+
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 		KeyID:           keyID,
 		SigID:           txID,
 		Msg:             hash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
+		RequestModule:   types.ModuleName,
+		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
 	}); err != nil {
 		return nil, err
 	}
@@ -1193,12 +1219,19 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)
 	}
 
+	sigMetadata := types.SigMetadata{
+		Type:  types.SigCommand,
+		Chain: chain.Name,
+	}
+
 	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 		KeyID:           batchedCommands.KeyID,
 		SigID:           batchedCommandsIDHex,
 		Msg:             batchedCommands.SigHash.Bytes(),
 		SnapshotCounter: counter,
+		RequestModule:   types.ModuleName,
+		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
 	}); err != nil {
 		return nil, err
 	}

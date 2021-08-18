@@ -27,6 +27,7 @@ const (
 	Ganache = "ganache"
 )
 
+// AxelarGateway contract ABI and command selectors
 const (
 	// TODO: Check if there's a way to install the smart contract module with compiled ABI files
 	axelarGatewayABI = `[
@@ -44,11 +45,11 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMintToken            = "mintToken"
-	axelarGatewayCommandDeployToken          = "deployToken"
-	axelarGatewayCommandBurnToken            = "burnToken"
-	axelarGatewayCommandTransferOwnership    = "transferOwnership"
-	axelarGatewayCommandTransferOperatorship = "transferOperatorship"
+	AxelarGatewayCommandMint                 = "mintToken"
+	AxelarGatewayCommandDeployToken          = "deployToken"
+	AxelarGatewayCommandBurnToken            = "burnToken"
+	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
+	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
 	axelarGatewayFuncExecute                 = "execute"
 )
 
@@ -326,7 +327,7 @@ func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperat
 
 	return Command{
 		ID:      NewCommandID(newOperatorAddr.Bytes(), chainID),
-		Command: axelarGatewayCommandTransferOperatorship,
+		Command: AxelarGatewayCommandTransferOperatorship,
 		Params:  params,
 		KeyID:   keyID,
 	}, nil
