@@ -432,6 +432,8 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				SigID:           sigID,
 				Msg:             sigRequirement.SigHash,
 				SnapshotCounter: snapshot.Counter,
+				RequestModule:   types.ModuleName,
+				Metadata:        nil,
 			}); err != nil {
 				return nil, err
 			}
