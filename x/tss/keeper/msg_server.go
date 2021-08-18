@@ -221,13 +221,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		// get public recovery info
-		groupInfo := res.Data.GetGroupRecoverInfo()
-		if groupInfo == nil {
+		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
+		if groupRecoveryInfo == nil {
 			return nil, fmt.Errorf("group info is nil")
 		}
 
 		// vote on pubkey bytes and common recovery info bytes
-		vote := VoteStruct{PubKey: pubKey, GroupInfo: groupInfo}
+		vote := VoteStruct{PubKey: pubKey, GroupInfo: groupRecoveryInfo}
 		bytes, err := json.Marshal(vote)
 		if err != nil {
 			return nil, fmt.Errorf("cannot marshal vote [%s, %s]", vote.PubKey, vote.GroupInfo)
@@ -275,7 +275,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	result := poll.GetResult()
-	// result should be either the PubKey or Criminals
+	// result should be either KeygenResult or Criminals
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
