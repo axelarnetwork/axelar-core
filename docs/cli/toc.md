@@ -56,6 +56,7 @@
       - [deposit-address \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-address.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
       - [deposit-state \[chain\] \[txID\] \[deposit address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
+      - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [sendTx \[chain\] \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
       - [signedTx \[chain\] \[txID\]](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol

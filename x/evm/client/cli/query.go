@@ -38,6 +38,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
+		GetCmdLatestBatchedCommands(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -345,6 +346,35 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBatchedCommands, chain, idHex))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get batched commands %s", idHex)
+			}
+
+			var res types.QueryBatchedCommandsResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdLatestBatchedCommands returns the query to get the latest batched commands
+func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "latest-batched-commands [chain]",
+		Short: "Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestBatchedCommands, chain))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain)
 			}
 
 			var res types.QueryBatchedCommandsResponse

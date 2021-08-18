@@ -25,18 +25,19 @@ import (
 
 // Query labels
 const (
-	QTokenAddress         = "token-address"
-	QDepositState         = "deposit-state"
-	QAddressByKeyRole     = "address-by-key-role"
-	QAddressByKeyID       = "address-by-key-iD"
-	QNextMasterAddress    = "next-master-address"
-	QAxelarGatewayAddress = "gateway-address"
-	QDepositAddress       = "deposit-address"
-	QBytecode             = "bytecode"
-	QSignedTx             = "signed-tx"
-	QBatchedCommands      = "batched-commands"
-	CreateDeployTx        = "deploy-gateway"
-	SendTx                = "send-tx"
+	QTokenAddress          = "token-address"
+	QDepositState          = "deposit-state"
+	QAddressByKeyRole      = "address-by-key-role"
+	QAddressByKeyID        = "address-by-key-id"
+	QNextMasterAddress     = "next-master-address"
+	QAxelarGatewayAddress  = "gateway-address"
+	QDepositAddress        = "deposit-address"
+	QBytecode              = "bytecode"
+	QSignedTx              = "signed-tx"
+	QLatestBatchedCommands = "latest-batched-commands"
+	QBatchedCommands       = "batched-commands"
+	CreateDeployTx         = "deploy-gateway"
+	SendTx                 = "send-tx"
 )
 
 //Bytecode labels
@@ -70,6 +71,8 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return QueryDepositState(ctx, chainKeeper, n, path[2], path[3])
 		case QBatchedCommands:
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
+		case QLatestBatchedCommands:
+			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
@@ -84,6 +87,90 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+// QueryLatestBatchedCommands returns the latest batched commands
+func QueryLatestBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, s types.Signer) ([]byte, error) {
+	var batchedCommands types.BatchedCommands
+
+	unsignedBatchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx)
+	if ok {
+		batchedCommands = unsignedBatchedCommands
+	} else {
+		latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx)
+		if !ok {
+			return nil, fmt.Errorf("no batched commands exist for chain %s", keeper.GetName())
+		}
+
+		latestSignedBatchedCommands, ok := keeper.GetSignedBatchedCommands(ctx, latestSignedBatchedCommandsID)
+		if !ok {
+			return nil, fmt.Errorf("cannot find the latest signed batched commands for chain %s", keeper.GetName())
+		}
+
+		batchedCommands = latestSignedBatchedCommands
+	}
+
+	resp, err := batchedCommandsToQueryResp(ctx, batchedCommands, s)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+}
+
+func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.BatchedCommands, s types.Signer) (types.QueryBatchedCommandsResponse, error) {
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
+	prevBatchedCommandsIDHex := ""
+	if batchedCommands.PrevBatchedCommandsID != nil {
+		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.PrevBatchedCommandsID)
+	}
+
+	var resp types.QueryBatchedCommandsResponse
+
+	switch batchedCommands.Status {
+	case types.Signed:
+		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
+		if sigStatus != tss.SigStatus_Signed {
+			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
+		}
+
+		key, ok := s.GetKey(ctx, batchedCommands.KeyID)
+		if !ok {
+			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for batched commands with ID %s", batchedCommandsIDHex))
+		}
+
+		batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands.SigHash), key.Value)
+		if err != nil {
+			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
+		}
+
+		executeData, err := types.CreateExecuteData(batchedCommands.Data, batchedCommandsSig)
+		if err != nil {
+			return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+		}
+
+		resp = types.QueryBatchedCommandsResponse{
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.Data),
+			Status:                batchedCommands.Status,
+			KeyID:                 batchedCommands.KeyID,
+			Signature:             hex.EncodeToString(batchedCommandsSig[:]),
+			ExecuteData:           hex.EncodeToString(executeData),
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+		}
+	default:
+		resp = types.QueryBatchedCommandsResponse{
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.Data),
+			Status:                batchedCommands.Status,
+			KeyID:                 batchedCommands.KeyID,
+			Signature:             "",
+			ExecuteData:           "",
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+		}
+	}
+
+	return resp, nil
 }
 
 // QueryAddressByKeyRole returns the current address of the given key role
@@ -414,54 +501,9 @@ func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, 
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", batchedCommandsIDHex))
 	}
 
-	prevBatchedCommandsIDHex := ""
-	if batchedCommands.PrevBatchedCommandsID != nil {
-		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.PrevBatchedCommandsID)
-	}
-
-	var resp types.QueryBatchedCommandsResponse
-
-	switch batchedCommands.Status {
-	case types.Signed:
-		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
-		if sigStatus != tss.SigStatus_Signed {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
-		}
-
-		key, ok := s.GetKey(ctx, batchedCommands.KeyID)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for batched commands with ID %s", batchedCommandsIDHex))
-		}
-
-		batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands.SigHash), key.Value)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
-		}
-
-		executeData, err := types.CreateExecuteData(batchedCommands.Data, batchedCommandsSig)
-		if err != nil {
-			return nil, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
-		}
-
-		resp = types.QueryBatchedCommandsResponse{
-			ID:                    batchedCommandsIDHex,
-			Data:                  hex.EncodeToString(batchedCommands.Data),
-			Status:                batchedCommands.Status,
-			KeyID:                 batchedCommands.KeyID,
-			Signature:             hex.EncodeToString(batchedCommandsSig[:]),
-			ExecuteData:           hex.EncodeToString(executeData),
-			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
-		}
-	default:
-		resp = types.QueryBatchedCommandsResponse{
-			ID:                    batchedCommandsIDHex,
-			Data:                  hex.EncodeToString(batchedCommands.Data),
-			Status:                batchedCommands.Status,
-			KeyID:                 batchedCommands.KeyID,
-			Signature:             "",
-			ExecuteData:           "",
-			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
-		}
+	resp, err := batchedCommandsToQueryResp(ctx, batchedCommands, s)
+	if err != nil {
+		return nil, err
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)

@@ -28,6 +28,29 @@ const (
 	QueryParamKeyID       = "key_id"
 )
 
+// GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
+func GetHandlerQueryLatestBatchedCommands(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QLatestBatchedCommands, chain))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain).Error())
+			return
+		}
+
+		var res types.QueryBatchedCommandsResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
 // GetHandlerQueryBatchedCommands returns a handler to query batched commands by ID
 func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +59,7 @@ func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
+
 		chain := mux.Vars(r)[utils.PathVarChain]
 		batchedCommandsID := mux.Vars(r)[utils.PathVarBatchedCommandsID]
 
