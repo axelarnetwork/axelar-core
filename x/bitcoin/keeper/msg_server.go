@@ -264,18 +264,19 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
+	// allow each return path to append unique attributes
+	defer func() { ctx.EventManager().EmitEvent(event) }()
+
 	if !confirmed.Value {
 		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("outpoint %s was discarded ", req.OutPoint),
 		}, nil
 	}
 
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	addr, ok := s.GetAddress(ctx, pendingOutPointInfo.Address)
 	if !ok {
@@ -295,6 +296,15 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 
 		telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, "total", "deposit")
 		telemetry.IncrCounter(1, types.ModuleName, "total", "deposit", "count")
+
+		recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+		if !ok {
+			return nil, fmt.Errorf("cross-chain sender has no recipient")
+		}
+		event = event.AppendAttributes(
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+		)
 
 		return &types.VoteConfirmOutpointResponse{
 			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),

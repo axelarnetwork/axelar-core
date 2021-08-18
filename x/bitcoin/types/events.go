@@ -19,6 +19,7 @@ const (
 	AttributeKeyPoll               = "poll"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDestinationAddress = "destinationAddress"
+	AttributeKeyDestinationChain   = "destinationChain"
 )
 
 // Event attribute values
