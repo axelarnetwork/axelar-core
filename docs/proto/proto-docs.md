@@ -1498,6 +1498,7 @@ Msg defines the bitcoin Msg service.
 | `sig_hash` | [bytes](#bytes) |  |  |
 | `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -1784,6 +1785,7 @@ deposit address
 | `key_id` | [string](#string) |  |  |
 | `signature` | [string](#string) |  |  |
 | `execute_data` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [string](#string) |  |  |
 
 
 

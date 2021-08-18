@@ -23,6 +23,8 @@ message QueryBatchedCommandsResponse {
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
   string signature = 5;
   string execute_data = 6;
+  string prev_batched_commands_id = 7
+      [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
 }
 
 message QueryAddressResponse {

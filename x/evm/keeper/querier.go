@@ -414,6 +414,11 @@ func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, 
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", batchedCommandsIDHex))
 	}
 
+	prevBatchedCommandsIDHex := ""
+	if batchedCommands.PrevBatchedCommandsID != nil {
+		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.PrevBatchedCommandsID)
+	}
+
 	var resp types.QueryBatchedCommandsResponse
 
 	switch batchedCommands.Status {
@@ -439,21 +444,23 @@ func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, 
 		}
 
 		resp = types.QueryBatchedCommandsResponse{
-			ID:          batchedCommandsIDHex,
-			Data:        hex.EncodeToString(batchedCommands.Data),
-			Status:      batchedCommands.Status,
-			KeyID:       batchedCommands.KeyID,
-			Signature:   hex.EncodeToString(batchedCommandsSig[:]),
-			ExecuteData: hex.EncodeToString(executeData),
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.Data),
+			Status:                batchedCommands.Status,
+			KeyID:                 batchedCommands.KeyID,
+			Signature:             hex.EncodeToString(batchedCommandsSig[:]),
+			ExecuteData:           hex.EncodeToString(executeData),
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
 		}
 	default:
 		resp = types.QueryBatchedCommandsResponse{
-			ID:          batchedCommandsIDHex,
-			Data:        hex.EncodeToString(batchedCommands.Data),
-			Status:      batchedCommands.Status,
-			KeyID:       batchedCommands.KeyID,
-			Signature:   "",
-			ExecuteData: "",
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.Data),
+			Status:                batchedCommands.Status,
+			KeyID:                 batchedCommands.KeyID,
+			Signature:             "",
+			ExecuteData:           "",
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
 		}
 	}
 

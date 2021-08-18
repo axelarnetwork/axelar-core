@@ -1104,6 +1104,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
+	if batchedCommands.PrevBatchedCommandsID == nil {
+		if latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx); ok {
+			batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommandsID
+		}
+	}
+
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
 	if !ok {
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)

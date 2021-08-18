@@ -90,6 +90,8 @@ message BatchedCommands {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   BatchedCommandsStatus status = 5;
   string key_id = 6 [ (gogoproto.customname) = "KeyID" ];
+  bytes prev_batched_commands_id = 7
+      [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
 }
 
 enum TransferKeyType {
