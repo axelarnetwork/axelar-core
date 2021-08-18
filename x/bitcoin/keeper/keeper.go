@@ -133,6 +133,7 @@ func (k Keeper) GetMaxInputCount(ctx sdk.Context) int64 {
 	return result
 }
 
+// GetVotingThreshold returns voting threshold
 func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyVotingThreshold, &threshold)
@@ -140,6 +141,7 @@ func (k Keeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
 	return threshold
 }
 
+// GetMinVoterCount returns minimum voter count for voting
 func (k Keeper) GetMinVoterCount(ctx sdk.Context) int64 {
 	var minVoterCount int64
 	k.params.Get(ctx, types.KeyMinVoterCount, &minVoterCount)

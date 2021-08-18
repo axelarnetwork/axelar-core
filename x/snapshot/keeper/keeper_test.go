@@ -33,6 +33,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 var encCfg appParams.EncodingConfig
@@ -61,63 +62,20 @@ func init() {
 	encCfg.Amino.RegisterConcrete("", "string", nil)
 }
 
-func TestTakeSnapshot_WithSubsetSize(t *testing.T) {
-	subsetSize := int64(3)
-	validators := genValidators(t, 5, 500)
-	staker := newMockStaker(validators...)
-
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	slashingKeeper := &snapshotMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
-			newInfo := slashingtypes.NewValidatorSigningInfo(
-				address,
-				int64(0),        // height at which validator was first a candidate OR was unjailed
-				int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
-				time.Unix(0, 0), // jailed until
-				false,           // tomstoned
-				int64(0),        // missed blocks
-			)
-			retinfo := exported.ValidatorInfo{ValidatorSigningInfo: newInfo}
-			return retinfo, true
-		},
-	}
-
-	tssMock := &snapshotMock.TssMock{
-		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
-			return utils.Threshold{Numerator: 1, Denominator: 200}
-		},
-		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
-		OperatorIsAvailableForCounterFunc: func(_ sdk.Context, c int64, v sdk.ValAddress) bool {
-			if c != 0 {
-				return false
-			}
-
-			for _, validator := range validators {
-				if validator.GetOperator().String() == v.String() {
-					return true
-				}
-			}
-			return false
-		},
-	}
-
-	snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
-	snapshotKeeper.SetParams(ctx, types.DefaultParams())
-	for _, v := range validators {
-		_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
-	}
-
-	_, _, err := snapshotKeeper.TakeSnapshot(ctx, subsetSize, tss.WeightedByStake)
-	assert.NoError(t, err)
-
-	actual, ok := snapshotKeeper.GetSnapshot(ctx, 0)
-	assert.True(t, ok)
-	assert.Equal(t, int(subsetSize), len(actual.Validators))
-}
-
 // Tests the snapshot functionality
 func TestSnapshots(t *testing.T) {
+	keyRequirement := tss.KeyRequirement{
+		KeyRole:                    tss.MasterKey,
+		MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
+		SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
+		KeyShareDistributionPolicy: tss.WeightedByStake,
+		MaxTotalShareCount:         75,
+		KeygenVotingThreshold:      utils.Threshold{Numerator: 5, Denominator: 6},
+		SignVotingThreshold:        utils.Threshold{Numerator: 2, Denominator: 3},
+		KeygenTimeout:              250,
+		SignTimeout:                250,
+	}
+
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("Test-%d", i), func(t *testing.T) {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -141,11 +99,12 @@ func TestSnapshots(t *testing.T) {
 					retinfo := exported.ValidatorInfo{ValidatorSigningInfo: newInfo}
 					return retinfo, true
 				},
+				SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 			}
 
 			tssMock := &snapshotMock.TssMock{
-				GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
-					return utils.Threshold{Numerator: 1, Denominator: 200}
+				GetMaxMissedBlocksPerWindowFunc: func(sdk.Context) utils.Threshold {
+					return tsstypes.DefaultParams().MaxMissedBlocksPerWindow
 				},
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 				OperatorIsAvailableForCounterFunc: func(_ sdk.Context, c int64, v sdk.ValAddress) bool {
@@ -177,27 +136,22 @@ func TestSnapshots(t *testing.T) {
 
 			assert.False(t, ok)
 
-			_, _, err := snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+			snapshot, err := snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
 
 			assert.NoError(t, err)
-
-			snapshot, ok := snapshotKeeper.GetSnapshot(ctx, 0)
-
-			assert.True(t, ok)
 			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
-			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
-
+			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
 			assert.Error(t, err)
 
 			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
 
 			counter++
-			_, _, err = snapshotKeeper.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
 
 			assert.NoError(t, err)
 

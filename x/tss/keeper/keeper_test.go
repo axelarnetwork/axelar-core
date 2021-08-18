@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -83,6 +82,7 @@ func setup() *testSetup {
 			)
 			return snapshot.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
+		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}
 
 	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
@@ -98,10 +98,10 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 	s.Keeper.SetParams(s.Ctx, p)
 }
 
-func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
+func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole) tss.Key {
 	keyID := randDistinctStr.Next()
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, tss.MasterKey, snap)
 	assert.NoError(t, err)
 
 	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
@@ -109,10 +109,12 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context) tss.Key {
 		panic(err)
 	}
 	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
+	s.Keeper.setKeyRole(ctx, keyID, keyRole)
 
 	return tss.Key{
 		ID:    keyID,
 		Value: sk.PublicKey,
+		Role:  keyRole,
 	}
 }
 
@@ -123,17 +125,6 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
 		IsJailedFunc:          func() bool { return false },
 	}, power)
-}
-
-func TestComputeAndSetCorruptionThreshold(t *testing.T) {
-	corruptionThreshold := types.DefaultParams().CorruptionThreshold
-	assert.Equal(t, int64(5), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
-
-	corruptionThreshold = utils.Threshold{Numerator: 99, Denominator: 100}
-	assert.Equal(t, int64(8), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
-
-	corruptionThreshold = utils.Threshold{Numerator: 1, Denominator: 100}
-	assert.Equal(t, int64(-1), types.ComputeCorruptionThreshold(corruptionThreshold, sdk.NewInt(10)))
 }
 
 func TestAvailableOperator(t *testing.T) {

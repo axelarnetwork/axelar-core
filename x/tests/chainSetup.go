@@ -174,6 +174,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 			)
 			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
 		},
+		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}
 
 	stakingKeeper := &snapshotTypesMock.StakingKeeperMock{
@@ -203,8 +204,8 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 	}
 
 	tssK := &snapshotExportedMock.TssMock{
-		GetMinBondFractionPerShareFunc: func(sdk.Context) utils.Threshold {
-			return utils.Threshold{Numerator: 1, Denominator: 200}
+		GetMaxMissedBlocksPerWindowFunc: func(sdk.Context) utils.Threshold {
+			return tssTypes.DefaultParams().MaxMissedBlocksPerWindow
 		},
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 		OperatorIsAvailableForCounterFunc: func(_ sdk.Context, _ int64, v sdk.ValAddress) bool {

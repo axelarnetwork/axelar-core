@@ -195,6 +195,8 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (ex
 	return keyRequirement, true
 }
 
+// GetMaxMissedBlocksPerWindow returns the maximum percent of blocks a validator is allowed
+// to miss per signing window
 func (k Keeper) GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold {
 	var threshold utils.Threshold
 	k.params.Get(ctx, types.KeyMaxMissedBlocksPerWindow, &threshold)
@@ -202,6 +204,8 @@ func (k Keeper) GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold {
 	return threshold
 }
 
+// GetKeyUnbondingLockingKeyRotationCount returns the number of key iterations share
+// holds must stay before they can unbond
 func (k Keeper) GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64 {
 	var count int64
 	k.params.Get(ctx, types.KeyUnbondingLockingKeyRotationCount, &count)

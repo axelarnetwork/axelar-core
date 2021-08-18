@@ -26,10 +26,10 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
 		s := setup()
 
-		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 		assert.NoError(t, err)
 
-		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 		assert.Error(t, err)
 	}
 }
@@ -47,7 +47,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, snap)
+		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, exported.MasterKey, snap)
 		assert.NoError(t, err)
 
 		// time passes
@@ -78,8 +78,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 		s.Ctx = s.Ctx.WithBlockTime(time)
 		s.SetLockingPeriod(lockingPeriod)
-		expectedKey := s.SetKey(t, s.Ctx)
-		expectedKey.Role = exported.MasterKey
+		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey)
 		expectedKey.RotatedAt = &time
 
 		assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedKey.ID))
@@ -99,8 +98,8 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	time := time.Unix(time.Now().Unix(), 0)
 	s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 	s.Ctx = s.Ctx.WithBlockTime(time)
-	expectedMasterKey := s.SetKey(t, s.Ctx)
-	expectedSecondaryKey := s.SetKey(t, s.Ctx)
+	expectedMasterKey := s.SetKey(t, s.Ctx, exported.MasterKey)
+	expectedSecondaryKey := s.SetKey(t, s.Ctx, exported.SecondaryKey)
 
 	assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedMasterKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
@@ -134,7 +133,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 			snapshotHeight := ctx.BlockHeight() + rand2.I64Between(0, 100)
 			ctx = ctx.WithBlockHeight(snapshotHeight + rand2.I64Between(0, 100))
 
-			key := s.SetKey(t, ctx)
+			key := s.SetKey(t, ctx, exported.MasterKey)
 			keys[i] = key
 
 			assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, key.ID))
@@ -159,16 +158,14 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 	t.Run("testing schedule keygen", testutils.Func(func(t *testing.T) {
 		s := setup()
 		sender := rand2.AccAddr()
-		policies := []exported.KeyShareDistributionPolicy{exported.WeightedByStake, exported.OnePerValidator}
 		numReqs := int(rand2.I64Between(10, 30))
 		currentHeight := s.Ctx.BlockHeight()
 		expectedReqs := make([]types.StartKeygenRequest, numReqs)
 
 		// schedule keygens
 		for i := 0; i < numReqs; i++ {
-			index := int(rand2.I64Between(0, int64(len(policies)-1)))
 			keyID := rand2.StrBetween(5, 10)
-			req := types.NewStartKeygenRequest(sender, keyID, int64(len(snap.Validators)), policies[index])
+			req := types.NewStartKeygenRequest(sender, keyID, exported.MasterKey)
 			expectedReqs[i] = *req
 			height, err := s.Keeper.ScheduleKeygen(s.Ctx, *req)
 
@@ -176,7 +173,7 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 			assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
 
 			height, err = s.Keeper.ScheduleKeygen(s.Ctx, *req)
-			assert.EqualError(t, err, fmt.Sprintf("keygen for key ID '%s' already set", req.NewKeyID))
+			assert.EqualError(t, err, fmt.Sprintf("keygen for key ID '%s' already set", req.KeyID))
 		}
 
 		// verify keygens from above
@@ -197,7 +194,7 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 
 		// check that we can delete scheduled keygens
 		for i, req := range reqs {
-			s.Keeper.DeleteScheduledKeygen(s.Ctx, req.NewKeyID)
+			s.Keeper.DeleteScheduledKeygen(s.Ctx, req.KeyID)
 			reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 			assert.Len(t, reqs, actualNumReqs-(i+1))
 		}
@@ -209,13 +206,10 @@ func TestScheduleKeygenEvents(t *testing.T) {
 		s := setup()
 		currentHeight := s.Ctx.BlockHeight()
 		keyID := rand2.Str(20)
-		policies := []exported.KeyShareDistributionPolicy{exported.WeightedByStake, exported.OnePerValidator}
-		index := int(rand2.I64Between(0, int64(len(policies)-1)))
 		height, err := s.Keeper.ScheduleKeygen(s.Ctx, types.StartKeygenRequest{
-			Sender:                     rand2.AccAddr(),
-			NewKeyID:                   keyID,
-			SubsetSize:                 rand2.I64Between(5, 10),
-			KeyShareDistributionPolicy: policies[index],
+			Sender:  rand2.AccAddr(),
+			KeyID:   keyID,
+			KeyRole: exported.MasterKey,
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)

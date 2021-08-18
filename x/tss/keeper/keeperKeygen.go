@@ -201,7 +201,7 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	k.setKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
-	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.String(), keyID))
+	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.SimpleString(), keyID))
 
 	return nil
 }

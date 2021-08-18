@@ -181,6 +181,7 @@ func (k keeper) GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool) {
 	return result, true
 }
 
+// GetVotingThreshold returns voting threshold
 func (k keeper) GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool) {
 	var threshold utils.Threshold
 
@@ -193,6 +194,7 @@ func (k keeper) GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool) {
 	return threshold, true
 }
 
+// GetMinVoterCount returns minimum voter count for voting
 func (k keeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 	var minVoterCount int64
 

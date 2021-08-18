@@ -56,6 +56,7 @@ type Tss interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold
+	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
 }
 
 // IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false

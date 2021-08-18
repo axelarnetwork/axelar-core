@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -46,9 +47,10 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		TotalShareCount: sdk.NewInt(200),
 		Counter:         rand2.I64Between(0, 100000),
 	}
+	snap.CorruptionThreshold = types.ComputeCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
 	height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
@@ -57,6 +59,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
 	})
+	assert.NoError(t, err)
 
 	for _, val := range snap.Validators {
 		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
@@ -66,10 +69,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	s.Keeper.SelectSignParticipants(s.Ctx, sigID, snap.Validators)
 
-	threshold, ok := s.Keeper.GetCorruptionThreshold(s.Ctx, keyID)
-	assert.True(t, ok)
-
-	ok = s.Keeper.MeetsThreshold(s.Ctx, sigID, threshold)
+	ok := s.Keeper.MeetsThreshold(s.Ctx, sigID, snap.CorruptionThreshold)
 	assert.False(t, ok)
 	assert.Equal(t, int64(100), s.Keeper.GetTotalShareCount(s.Ctx, sigID))
 }
@@ -81,7 +81,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	msgToSign := []byte("message")
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
@@ -93,7 +93,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
-	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, snap)
+	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,

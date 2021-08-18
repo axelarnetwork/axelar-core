@@ -758,6 +758,9 @@ var _ snapshotexported.Tss = &TssMock{}
 //
 // 		// make and configure a mocked snapshotexported.Tss
 // 		mockedTss := &TssMock{
+// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+// 				panic("mock out the GetKeyRequirement method")
+// 			},
 // 			GetMaxMissedBlocksPerWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 // 				panic("mock out the GetMaxMissedBlocksPerWindow method")
 // 			},
@@ -777,6 +780,9 @@ var _ snapshotexported.Tss = &TssMock{}
 //
 // 	}
 type TssMock struct {
+	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
+	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool)
+
 	// GetMaxMissedBlocksPerWindowFunc mocks the GetMaxMissedBlocksPerWindow method.
 	GetMaxMissedBlocksPerWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
@@ -791,6 +797,13 @@ type TssMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
+		GetKeyRequirement []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyRole is the keyRole argument value.
+			KeyRole tssexported.KeyRole
+		}
 		// GetMaxMissedBlocksPerWindow holds details about calls to the GetMaxMissedBlocksPerWindow method.
 		GetMaxMissedBlocksPerWindow []struct {
 			// Ctx is the ctx argument value.
@@ -822,10 +835,46 @@ type TssMock struct {
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
+	lockGetKeyRequirement             sync.RWMutex
 	lockGetMaxMissedBlocksPerWindow   sync.RWMutex
 	lockGetNextKey                    sync.RWMutex
 	lockGetTssSuspendedUntil          sync.RWMutex
 	lockOperatorIsAvailableForCounter sync.RWMutex
+}
+
+// GetKeyRequirement calls GetKeyRequirementFunc.
+func (mock *TssMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+	if mock.GetKeyRequirementFunc == nil {
+		panic("TssMock.GetKeyRequirementFunc: method is nil but Tss.GetKeyRequirement was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole tssexported.KeyRole
+	}{
+		Ctx:     ctx,
+		KeyRole: keyRole,
+	}
+	mock.lockGetKeyRequirement.Lock()
+	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
+	mock.lockGetKeyRequirement.Unlock()
+	return mock.GetKeyRequirementFunc(ctx, keyRole)
+}
+
+// GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
+// Check the length with:
+//     len(mockedTss.GetKeyRequirementCalls())
+func (mock *TssMock) GetKeyRequirementCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	KeyRole tssexported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole tssexported.KeyRole
+	}
+	mock.lockGetKeyRequirement.RLock()
+	calls = mock.calls.GetKeyRequirement
+	mock.lockGetKeyRequirement.RUnlock()
+	return calls
 }
 
 // GetMaxMissedBlocksPerWindow calls GetMaxMissedBlocksPerWindowFunc.

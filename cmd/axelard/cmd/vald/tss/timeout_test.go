@@ -21,18 +21,17 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	principalAddr := rand.Str(20)
 	broadcaster := broadcastMock.BroadcasterMock{}
 	sender := rand.Bytes(sdk.AddrLen)
-	sessionTimeout := int64(100)
 	logger := log.TestingLogger()
 	cdc := app.MakeEncodingConfig().Amino
 
 	t.Run("should do nothing when the timeout queue is empty", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, sessionTimeout, logger, cdc)
+		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
 
 		mgr.ProcessNewBlockHeader(100)
 	}))
 
 	t.Run("should do nothing if first session in queue has not timed out yet", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, sessionTimeout, logger, cdc)
+		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
 
 		id := rand.Str(20)
 		timeoutAt := int64(1234)
@@ -44,7 +43,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	}))
 
 	t.Run("should signal every session in queue that has timed out", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, sessionTimeout, logger, cdc)
+		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
 
 		id1 := rand.Str(20)
 		id2 := rand.Str(20)
