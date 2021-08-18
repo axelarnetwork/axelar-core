@@ -16,7 +16,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -141,26 +140,16 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetRecoveryInfos sets the recovery infos for a given party
-func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, keygenOutput tofnd.KeygenOutput) {
+// SetRecoveryInfo sets the recovery infos for a given party
+func (k Keeper) SetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
-
-	// TODO: Should QueryRecoveryResponse include only RecoveryInfo?
-	data := types.QueryRecoveryResponse{
-		KeygenOutput: &types.QueryRecoveryResponse_KeygenOutput{
-			PubKey:       keygenOutput.PubKey,
-			GroupInfo:    keygenOutput.GroupInfo,
-			RecoveryInfo: keygenOutput.RecoveryInfo,
-		},
-	}
-
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
-// HasRecoveryInfos returns true if the recovery infos for a given party exists
-func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+// HasRecoveryInfo returns true if the recovery infos for a given party exists
+func (k Keeper) HasRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz == nil {
@@ -170,15 +159,15 @@ func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID s
 	return true
 }
 
-// GetRecoveryInfos returns a party's recovery infos of a specific key ID
-func (k Keeper) GetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) types.QueryRecoveryResponse_KeygenOutput {
+// GetRecoveryInfo returns a party's recovery infos of a specific key ID
+func (k Keeper) GetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
-	var queryResponse types.QueryRecoveryResponse
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryResponse)
+	var recoveryInfos []byte
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recoveryInfos)
 
-	return *queryResponse.KeygenOutput
+	return recoveryInfos
 }
 
 // DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID

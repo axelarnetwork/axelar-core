@@ -80,13 +80,31 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	keygenOutput := k.GetRecoveryInfos(ctx, address, keyID)
+	// TODO: get actual pubkey and groupinfo
+	pubKey := []byte{1}
+	if pubKey == nil {
+		return nil, fmt.Errorf("could not obtain pubkey for key ID %s", keyID)
+	}
+
+	groupInfo := []byte{1}
+	if pubKey == nil {
+		return nil, fmt.Errorf("could not obtain group info for key ID %s", keyID)
+	}
+
+	recoveryInfo := k.GetRecoveryInfo(ctx, address, keyID)
+	if pubKey == nil {
+		return nil, fmt.Errorf("could not obtain private info for key ID %s", keyID)
+	}
 
 	resp := tssTypes.QueryRecoveryResponse{
 		Threshold:        int32(snapshot.CorruptionThreshold),
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
-		KeygenOutput:     &keygenOutput,
+		KeygenOutput: &tssTypes.QueryRecoveryResponse_KeygenOutput{
+			PubKey:       pubKey,
+			GroupInfo:    groupInfo,
+			RecoveryInfo: recoveryInfo,
+		},
 	}
 
 	return resp.Marshal()

@@ -189,7 +189,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasRecoveryInfos(ctx, voter, req.PollKey.ID) {
+		if s.HasRecoveryInfo(ctx, voter, req.PollKey.ID) {
 			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
 		}
 
@@ -212,8 +212,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-
-		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, *res.Data)
+		s.SetRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.RecoveryInfo)
 
 		// get pubkey
 		pubKey := res.Data.GetPubKey()
