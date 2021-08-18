@@ -138,11 +138,13 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	)
 
 	defaults := map[string]string{
-		flags.FlagChainID:        app.Name,
-		flags.FlagKeyringBackend: "test",
-		flags.FlagBroadcastMode:  flags.BroadcastBlock,
+		flags.FlagKeyringBackend:   "test",
+		flags.FlagBroadcastMode:    flags.BroadcastBlock,
+		flags.FlagSkipConfirmation: "true",
 	}
 	utils.OverwriteFlagDefaults(rootCmd, defaults, true)
+	// Only set default, not actual value of chain ID, so it can be overwritten by env variable
+	utils.OverwriteFlagDefaults(rootCmd, map[string]string{flags.FlagChainID: app.Name}, false)
 
 	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
 

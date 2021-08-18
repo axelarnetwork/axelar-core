@@ -32,9 +32,9 @@ isGenesisInitialized() {
 initGenesis() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to create the genesis file"
-    source "$INIT_SCRIPT" "$(hostname)" "$CHAIN_ID"
+    source "$INIT_SCRIPT" "$(hostname)" "$AXELARD_CHAIN_ID"
   else
-    axelard init "$(hostname)" --chain-id "$CHAIN_ID"
+    axelard init "$(hostname)" --chain-id "$AXELARD_CHAIN_ID"
   fi
 }
 
