@@ -40,7 +40,7 @@ axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height
       --upgrade-height int       The height at which the upgrade must happen (not to be used together with --upgrade-time)
       --upgrade-info string      Optional info for the planned upgrade such as commit hash, etc.
       --upgrade-time string      The time at which the upgrade must happen (ex. 2006-01-02T15:04:05Z) (not to be used together with --upgrade-height)
-  -y, --yes                      Skip tx broadcasting prompt confirmation
+  -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands

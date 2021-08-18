@@ -54,7 +54,7 @@ axelard tx gov submit-proposal [flags]
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
       --title string             The proposal title
       --type string              The proposal Type
-  -y, --yes                      Skip tx broadcasting prompt confirmation
+  -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
 ### Options inherited from parent commands
