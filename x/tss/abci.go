@@ -157,11 +157,13 @@ func startSign(
 
 	key, ok := k.GetKey(ctx, info.KeyID)
 	if !ok {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf("key %s not found", info.KeyID)
 	}
 
 	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role)
 	if !ok {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf("key requirement for key role %s not found", key.Role.SimpleString())
 	}
 

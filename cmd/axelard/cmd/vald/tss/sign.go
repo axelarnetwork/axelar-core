@@ -174,11 +174,10 @@ func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (k
 			payload = []byte(attribute.Value)
 			payloadFound = true
 		case tss.AttributeKeyTimeout:
-			t, err := strconv.ParseInt(attribute.Value, 10, 64)
+			timeout, err = strconv.ParseInt(attribute.Value, 10, 64)
 			if err != nil {
 				panic(err)
 			}
-			timeout = int64(t)
 			timeoutFound = true
 		default:
 		}
