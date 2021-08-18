@@ -100,6 +100,31 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [BatchedCommands](#evm.v1beta1.BatchedCommands)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [Command](#evm.v1beta1.Command)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [TransferKey](#evm.v1beta1.TransferKey)
+  
+    - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
+    - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [TransferKeyType](#evm.v1beta1.TransferKeyType)
+  
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
+  
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
+  
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
+    - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
+    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
+  
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
@@ -109,10 +134,12 @@
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
-    - [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest)
-    - [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse)
+    - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
+    - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
     - [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest)
     - [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse)
+    - [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest)
+    - [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse)
     - [LinkRequest](#evm.v1beta1.LinkRequest)
     - [LinkResponse](#evm.v1beta1.LinkResponse)
     - [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest)
@@ -123,8 +150,6 @@
     - [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse)
     - [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest)
     - [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse)
-    - [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest)
-    - [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse)
     - [SignTxRequest](#evm.v1beta1.SignTxRequest)
     - [SignTxResponse](#evm.v1beta1.SignTxResponse)
     - [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest)
@@ -133,31 +158,8 @@
     - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
     - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
     - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
-    - [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest)
-    - [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse)
-  
-- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
-    - [BatchedCommands](#evm.v1beta1.BatchedCommands)
-    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
-    - [Command](#evm.v1beta1.Command)
-    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
-    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
-    - [TransferOwnership](#evm.v1beta1.TransferOwnership)
-  
-    - [BatchedCommands.Status](#evm.v1beta1.BatchedCommands.Status)
-    - [DepositStatus](#evm.v1beta1.DepositStatus)
-  
-- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
-    - [Params](#evm.v1beta1.Params)
-  
-- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
-    - [GenesisState](#evm.v1beta1.GenesisState)
-  
-- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
-    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
-    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
-    - [QueryMasterAddressResponse](#evm.v1beta1.QueryMasterAddressResponse)
+    - [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest)
+    - [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
@@ -1475,6 +1477,344 @@ Msg defines the bitcoin Msg service.
 
 
 
+<a name="evm/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/types.proto
+
+
+
+<a name="evm.v1beta1.BatchedCommands"></a>
+
+### BatchedCommands
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command_ids` | [bytes](#bytes) | repeated |  |
+| `data` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_address` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.Command"></a>
+
+### Command
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command` | [string](#string) |  |  |
+| `params` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20TokenDeployment"></a>
+
+### ERC20TokenDeployment
+ERC20TokenDeployment describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+| `token_address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.NetworkInfo"></a>
+
+### NetworkInfo
+NetworkInfo describes information about a network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransferKey"></a>
+
+### TransferKey
+TransferKey contains information for a transfer ownership or operatorship
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
+| `next_key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="evm.v1beta1.BatchedCommandsStatus"></a>
+
+### BatchedCommandsStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BATCHED_COMMANDS_STATUS_UNSPECIFIED | 0 |  |
+| BATCHED_COMMANDS_STATUS_SIGNING | 1 |  |
+| BATCHED_COMMANDS_STATUS_ABORTED | 2 |  |
+| BATCHED_COMMANDS_STATUS_SIGNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.DepositStatus"></a>
+
+### DepositStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
+| DEPOSIT_STATUS_PENDING | 1 |  |
+| DEPOSIT_STATUS_CONFIRMED | 2 |  |
+| DEPOSIT_STATUS_BURNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.TransferKeyType"></a>
+
+### TransferKeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_KEY_TYPE_UNSPECIFIED | 0 |  |
+| TRANSFER_KEY_TYPE_OWNERSHIP | 1 |  |
+| TRANSFER_KEY_TYPE_OPERATORSHIP | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/params.proto
+
+
+
+<a name="evm.v1beta1.Params"></a>
+
+### Params
+Params is the parameter set for this module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `network` | [string](#string) |  |  |
+| `gateway` | [bytes](#bytes) |  |  |
+| `token` | [bytes](#bytes) |  |  |
+| `burnable` | [bytes](#bytes) |  |  |
+| `revote_locking_period` | [int64](#int64) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/genesis.proto
+
+
+
+<a name="evm.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an EVM
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryAddressResponse"></a>
+
+### QueryAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryBatchedCommandsResponse"></a>
+
+### QueryBatchedCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `data` | [string](#string) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `signature` | [string](#string) |  |  |
+| `execute_data` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateResponse"></a>
+
+### QueryDepositStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="evm/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1594,9 +1934,9 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="evm.v1beta1.ConfirmTransferOwnershipRequest"></a>
+<a name="evm.v1beta1.ConfirmTransferKeyRequest"></a>
 
-### ConfirmTransferOwnershipRequest
+### ConfirmTransferKeyRequest
 
 
 
@@ -1605,6 +1945,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
+| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
 | `key_id` | [string](#string) |  |  |
 
 
@@ -1612,9 +1953,9 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="evm.v1beta1.ConfirmTransferOwnershipResponse"></a>
+<a name="evm.v1beta1.ConfirmTransferKeyResponse"></a>
 
-### ConfirmTransferOwnershipResponse
+### ConfirmTransferKeyResponse
 
 
 
@@ -1642,6 +1983,38 @@ MsgConfirmToken represents a token deploy confirmation message
 <a name="evm.v1beta1.CreateTransferOperatorshipResponse"></a>
 
 ### CreateTransferOperatorshipResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `command_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateTransferOwnershipRequest"></a>
+
+### CreateTransferOwnershipRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateTransferOwnershipResponse"></a>
+
+### CreateTransferOwnershipResponse
 
 
 
@@ -1821,39 +2194,6 @@ pending transfers
 
 
 
-<a name="evm.v1beta1.SignTransferOwnershipRequest"></a>
-
-### SignTransferOwnershipRequest
-MsgSignDeployToken represents the message to sign a deploy token command for
-AxelarGateway
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.SignTransferOwnershipResponse"></a>
-
-### SignTransferOwnershipResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `command_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.SignTxRequest"></a>
 
 ### SignTxRequest
@@ -1957,7 +2297,7 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 <a name="evm.v1beta1.VoteConfirmTokenRequest"></a>
 
 ### VoteConfirmTokenRequest
-MsgVoteConfirmToken represents a message that votes on a token deploy
+
 
 
 | Field | Type | Label | Description |
@@ -1989,10 +2329,10 @@ MsgVoteConfirmToken represents a message that votes on a token deploy
 
 
 
-<a name="evm.v1beta1.VoteConfirmTransferOwnershipRequest"></a>
+<a name="evm.v1beta1.VoteConfirmTransferKeyRequest"></a>
 
-### VoteConfirmTransferOwnershipRequest
-MsgVoteConfirmDeposit represents a message that votes on a deposit
+### VoteConfirmTransferKeyRequest
+
 
 
 | Field | Type | Label | Description |
@@ -2001,7 +2341,8 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | `chain` | [string](#string) |  |  |
 | `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `new_owner_address` | [bytes](#bytes) |  |  |
+| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
+| `new_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 
@@ -2009,319 +2350,15 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
-<a name="evm.v1beta1.VoteConfirmTransferOwnershipResponse"></a>
+<a name="evm.v1beta1.VoteConfirmTransferKeyResponse"></a>
 
-### VoteConfirmTransferOwnershipResponse
+### VoteConfirmTransferKeyResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/types.proto
-
-
-
-<a name="evm.v1beta1.BatchedCommands"></a>
-
-### BatchedCommands
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [bytes](#bytes) |  |  |
-| `command_ids` | [bytes](#bytes) | repeated |  |
-| `data` | [bytes](#bytes) |  |  |
-| `sig_hash` | [bytes](#bytes) |  |  |
-| `status` | [BatchedCommands.Status](#evm.v1beta1.BatchedCommands.Status) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.BurnerInfo"></a>
-
-### BurnerInfo
-BurnerInfo describes information required to burn token at an burner address
-that is deposited by an user
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `token_address` | [bytes](#bytes) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
-| `salt` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.Command"></a>
-
-### Command
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [bytes](#bytes) |  |  |
-| `command` | [string](#string) |  |  |
-| `params` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20Deposit"></a>
-
-### ERC20Deposit
-ERC20Deposit contains information for an ERC20 deposit
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ERC20TokenDeployment"></a>
-
-### ERC20TokenDeployment
-ERC20TokenDeployment describes information about an ERC20 token
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `asset` | [string](#string) |  |  |
-| `token_address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.NetworkInfo"></a>
-
-### NetworkInfo
-NetworkInfo describes information about a network
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-| `id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.TransferOwnership"></a>
-
-### TransferOwnership
-TransferOwnership contains information for a transfer ownership
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `next_key_id` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="evm.v1beta1.BatchedCommands.Status"></a>
-
-### BatchedCommands.Status
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| STATUS_UNSPECIFIED | 0 |  |
-| STATUS_SIGNING | 1 |  |
-| STATUS_ABORTED | 2 |  |
-| STATUS_SIGNED | 3 |  |
-
-
-
-<a name="evm.v1beta1.DepositStatus"></a>
-
-### DepositStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
-| DEPOSIT_STATUS_PENDING | 1 |  |
-| DEPOSIT_STATUS_CONFIRMED | 2 |  |
-| DEPOSIT_STATUS_BURNED | 3 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/params.proto
-
-
-
-<a name="evm.v1beta1.Params"></a>
-
-### Params
-Params is the parameter set for this module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `confirmation_height` | [uint64](#uint64) |  |  |
-| `network` | [string](#string) |  |  |
-| `gateway` | [bytes](#bytes) |  |  |
-| `token` | [bytes](#bytes) |  |  |
-| `burnable` | [bytes](#bytes) |  |  |
-| `revote_locking_period` | [int64](#int64) |  |  |
-| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/genesis.proto
-
-
-
-<a name="evm.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="evm/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## evm/v1beta1/query.proto
-
-
-
-<a name="evm.v1beta1.DepositQueryParams"></a>
-
-### DepositQueryParams
-DepositQueryParams describe the parameters used to query for an EVM
-deposit address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryDepositStateResponse"></a>
-
-### QueryDepositStateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryMasterAddressResponse"></a>
-
-### QueryMasterAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
 
 
 
@@ -2361,16 +2398,16 @@ Msg defines the evm Msg service.
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
-| `ConfirmTransferOwnership` | [ConfirmTransferOwnershipRequest](#evm.v1beta1.ConfirmTransferOwnershipRequest) | [ConfirmTransferOwnershipResponse](#evm.v1beta1.ConfirmTransferOwnershipResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
-| `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | ||
-| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | ||
-| `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | ||
-| `VoteConfirmTransferOwnership` | [VoteConfirmTransferOwnershipRequest](#evm.v1beta1.VoteConfirmTransferOwnershipRequest) | [VoteConfirmTransferOwnershipResponse](#evm.v1beta1.VoteConfirmTransferOwnershipResponse) |  | ||
+| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
+| `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote-confirm-chain|
+| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | POST|/axelar/evm/vote-confirm-deposit|
+| `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | POST|/axelar/evm/vote-confirm-token|
+| `VoteConfirmTransferKey` | [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest) | [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
 | `SignDeployToken` | [SignDeployTokenRequest](#evm.v1beta1.SignDeployTokenRequest) | [SignDeployTokenResponse](#evm.v1beta1.SignDeployTokenResponse) |  | POST|/axelar/evm/sign-deploy-token|
 | `SignBurnTokens` | [SignBurnTokensRequest](#evm.v1beta1.SignBurnTokensRequest) | [SignBurnTokensResponse](#evm.v1beta1.SignBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|
 | `SignPendingTransfers` | [SignPendingTransfersRequest](#evm.v1beta1.SignPendingTransfersRequest) | [SignPendingTransfersResponse](#evm.v1beta1.SignPendingTransfersResponse) |  | POST|/axelar/evm/sign-pending|
-| `SignTransferOwnership` | [SignTransferOwnershipRequest](#evm.v1beta1.SignTransferOwnershipRequest) | [SignTransferOwnershipResponse](#evm.v1beta1.SignTransferOwnershipResponse) |  | ||
+| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create-transfer-ownership|
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
 | `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|

@@ -21,21 +21,24 @@ import (
 
 // rest routes
 const (
-	TxConfirmChain             = "confirm-chain"
-	TxLink                     = "link"
-	TxConfirmTokenDeploy       = "confirm-erc20-deploy"
-	TxConfirmDeposit           = "confirm-erc20-deposit"
-	TxConfirmTransferOwnership = "confirm-transfer-ownership"
-	TxSignTx                   = "sign-tx"
-	TxSignPending              = "sign-pending"
-	TxSignDeployToken          = "sign-deploy-token"
-	TxSignBurnTokens           = "sign-burn"
-	TxSignTransferOwnership    = "sign-transfer-ownership"
-	TxAddChain                 = "add-chain"
+	TxConfirmChain                = "confirm-chain"
+	TxLink                        = "link"
+	TxConfirmTokenDeploy          = "confirm-erc20-deploy"
+	TxConfirmDeposit              = "confirm-erc20-deposit"
+	TxConfirmTransferOwnership    = "confirm-transfer-ownership"
+	TxConfirmTransferOperatorship = "confirm-transfer-operatorship"
+	TxSignTx                      = "sign-tx"
+	TxSignPending                 = "sign-pending"
+	TxSignDeployToken             = "sign-deploy-token"
+	TxSignBurnTokens              = "sign-burn"
+	TxCreateTransferOwnership     = "create-transfer-ownership"
+	TxCreateTransferOperatorship  = "create-transfer-operatorship"
+	TxSignCommands                = "sign-commands"
+	TxAddChain                    = "add-chain"
 
-	QueryMasterAddress        = keeper.QMasterAddress
+	QueryAddress              = "query-address"
+	QueryBatchedCommands      = "batched-commands"
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
-	QueryKeyAddress           = keeper.QKeyAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryCommandData          = keeper.QCommandData
 	QueryBytecode             = keeper.QBytecode
@@ -52,19 +55,22 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTransferOwnership(cliCtx), TxConfirmTransferOwnership, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Ownership), TxConfirmTransferOwnership, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Operatorship), TxConfirmTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignPendingTransfers(cliCtx), TxSignPending, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignDeployToken(cliCtx), TxSignDeployToken, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignBurnTokens(cliCtx), TxSignBurnTokens, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignTransferOwnership(cliCtx), TxSignTransferOwnership, clientUtils.PathVarChain)
+	registerTx(GetHandlerCreateTransferOwnership(cliCtx), TxCreateTransferOwnership, clientUtils.PathVarChain)
+	registerTx(GetHandlerCreateTransferOperatorship(cliCtx), TxCreateTransferOperatorship, clientUtils.PathVarChain)
+	registerTx(GetHandlerSignCommands(cliCtx), TxSignCommands, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(GetHandlerQueryMasterAddress(cliCtx), QueryMasterAddress, clientUtils.PathVarChain)
+	registerQuery(GetHandlerQueryBatchedCommands(cliCtx), QueryBatchedCommands, clientUtils.PathVarChain, clientUtils.PathVarBatchedCommandsID)
+	registerQuery(GetHandlerQueryAddress(cliCtx), QueryAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryKeyAddress(cliCtx), QueryKeyAddress, clientUtils.PathVarKeyID)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommandData(cliCtx), QueryCommandData, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
@@ -104,8 +110,8 @@ type ReqConfirmDeposit struct {
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
 }
 
-// ReqConfirmTransferOwnership represents a request to confirm a transfer ownership
-type ReqConfirmTransferOwnership struct {
+// ReqConfirmTransferKey represents a request to confirm a transfer ownership
+type ReqConfirmTransferKey struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
 	KeyID   string       `json:"key_id" yaml:"key_id"`
@@ -137,10 +143,21 @@ type ReqSignBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqSignTransferOwnership represents a request to sign transfer ownership command
-type ReqSignTransferOwnership struct {
+// ReqCreateTransferOwnership represents a request to create transfer ownership command
+type ReqCreateTransferOwnership struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	KeyID   string       `json:"key_id" yaml:"key_id"`
+}
+
+// ReqCreateTransferOperatorship represents a request to create transfer operatorship command
+type ReqCreateTransferOperatorship struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyID   string       `json:"key_id" yaml:"key_id"`
+}
+
+// ReqSignCommands represents a request to sign pending commands
+type ReqSignCommands struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
 // ReqAddChain represents a request to add a new evm chain command
@@ -268,10 +285,10 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerConfirmTransferOwnership returns a handler to confirm a transfer ownership
-func GetHandlerConfirmTransferOwnership(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerConfirmTransferKey returns a handler to confirm a transfer ownership
+func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.TransferKeyType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqConfirmTransferOwnership
+		var req ReqConfirmTransferKey
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -286,7 +303,7 @@ func GetHandlerConfirmTransferOwnership(cliCtx client.Context) http.HandlerFunc 
 
 		txID := common.HexToHash(req.TxID)
 
-		msg := types.NewConfirmTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, req.KeyID)
+		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, transferKeyType, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -414,10 +431,10 @@ func GetHandlerSignBurnTokens(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerSignTransferOwnership returns a handler to sign transfer ownership command
-func GetHandlerSignTransferOwnership(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerCreateTransferOwnership returns a handler to create transfer ownership command
+func GetHandlerCreateTransferOwnership(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignTransferOwnership
+		var req ReqCreateTransferOwnership
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
@@ -429,7 +446,55 @@ func GetHandlerSignTransferOwnership(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		msg := types.NewSignTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
+		msg := types.NewCreateTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerCreateTransferOperatorship returns a handler to create transfer operatoship command
+func GetHandlerCreateTransferOperatorship(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqCreateTransferOperatorship
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+		msg := types.NewCreateTransferOperatorshipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerSignCommands returns a handler to sign pending commands
+func GetHandlerSignCommands(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqSignCommands
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+		msg := types.NewSignCommandsRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

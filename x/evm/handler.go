@@ -45,8 +45,8 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID.Hex())
 			}
 			return result, err
-		case *types.ConfirmTransferOwnershipRequest:
-			res, err := server.ConfirmTransferOwnership(sdk.WrapSDKContext(ctx), msg)
+		case *types.ConfirmTransferKeyRequest:
+			res, err := server.ConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
@@ -73,8 +73,8 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = res.Log
 			}
 			return result, err
-		case *types.VoteConfirmTransferOwnershipRequest:
-			res, err := server.VoteConfirmTransferOwnership(sdk.WrapSDKContext(ctx), msg)
+		case *types.VoteConfirmTransferKeyRequest:
+			res, err := server.VoteConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = res.Log
@@ -118,11 +118,11 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				}
 			}
 			return result, err
-		case *types.SignTransferOwnershipRequest:
-			res, err := server.SignTransferOwnership(sdk.WrapSDKContext(ctx), msg)
+		case *types.CreateTransferOwnershipRequest:
+			res, err := server.CreateTransferOwnership(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully started signing protocol for transfer-ownership command %s", hex.EncodeToString(res.CommandID))
+				result.Log = fmt.Sprintf("successfully created command for transfering ownership with ID %s", hex.EncodeToString(res.CommandID))
 			}
 			return result, err
 		case *types.CreateTransferOperatorshipRequest:
@@ -130,6 +130,13 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully created command for transfering operatorship with ID %s", hex.EncodeToString(res.CommandID))
+			}
+			return result, err
+		case *types.SignCommandsRequest:
+			res, err := server.SignCommands(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully started signing batched commands with ID %s", hex.EncodeToString(res.BatchedCommandsID))
 			}
 			return result, err
 		case *types.AddChainRequest:

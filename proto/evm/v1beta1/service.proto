@@ -39,8 +39,8 @@ service MsgService {
     };
   }
 
-  rpc ConfirmTransferOwnership(ConfirmTransferOwnershipRequest)
-      returns (ConfirmTransferOwnershipResponse) {
+  rpc ConfirmTransferKey(ConfirmTransferKeyRequest)
+      returns (ConfirmTransferKeyResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm-transfer-ownership"
       body : "*"
@@ -50,24 +50,32 @@ service MsgService {
   rpc VoteConfirmChain(VoteConfirmChainRequest)
       returns (VoteConfirmChainResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-chain",
+      body : "*"
     };
   }
 
   rpc VoteConfirmDeposit(VoteConfirmDepositRequest)
       returns (VoteConfirmDepositResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-deposit",
+      body : "*"
     };
   }
 
   rpc VoteConfirmToken(VoteConfirmTokenRequest)
       returns (VoteConfirmTokenResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-token",
+      body : "*"
     };
   }
 
-  rpc VoteConfirmTransferOwnership(VoteConfirmTransferOwnershipRequest)
-      returns (VoteConfirmTransferOwnershipResponse) {
+  rpc VoteConfirmTransferKey(VoteConfirmTransferKeyRequest)
+      returns (VoteConfirmTransferKeyResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-transfer-key",
+      body : "*"
     };
   }
 
@@ -101,9 +109,11 @@ service MsgService {
     };
   }
 
-  rpc SignTransferOwnership(SignTransferOwnershipRequest)
-      returns (SignTransferOwnershipResponse) {
+  rpc CreateTransferOwnership(CreateTransferOwnershipRequest)
+      returns (CreateTransferOwnershipResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/create-transfer-ownership"
+      body : "*"
     };
   }
 

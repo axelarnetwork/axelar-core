@@ -16,9 +16,18 @@ message DepositQueryParams {
   string chain = 3;
 }
 
-message QueryMasterAddressResponse {
-  bytes address = 1;
-  string key_id = 2;
+message QueryBatchedCommandsResponse {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string data = 2;
+  BatchedCommandsStatus status = 3;
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  string signature = 5;
+  string execute_data = 6;
+}
+
+message QueryAddressResponse {
+  string address = 1;
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
 }
 
 message QueryDepositStateResponse {

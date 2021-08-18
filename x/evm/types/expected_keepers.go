@@ -68,11 +68,11 @@ type ChainKeeper interface {
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
 	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
-	GetPendingTransferOwnership(ctx sdk.Context, key vote.PollKey) (TransferOwnership, bool)
-	SetPendingTransferOwnership(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferOwnership)
-	GetArchivedTransferOwnership(ctx sdk.Context, key vote.PollKey) (TransferOwnership, bool)
-	ArchiveTransferOwnership(ctx sdk.Context, key vote.PollKey)
-	DeletePendingTransferOwnership(ctx sdk.Context, key vote.PollKey)
+	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
+	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
+	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
+	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
+	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetCommandQueue(ctx sdk.Context) utils.KVQueue
@@ -136,6 +136,7 @@ type Signer interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 }
 
