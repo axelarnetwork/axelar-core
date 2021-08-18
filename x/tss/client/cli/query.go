@@ -144,6 +144,21 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput")
 				}
 
+				pubKey := keygenOutput.PubKey
+				if pubKey == nil {
+					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PubKey")
+				}
+
+				groupRecoverInfo := keygenOutput.GroupRecoverInfo
+				if groupRecoverInfo == nil {
+					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.GroupRecoverInfo")
+				}
+
+				privateRecoverInfo := keygenOutput.PrivateRecoverInfo
+				if privateRecoverInfo == nil {
+					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PrivateRecoverInfo")
+				}
+
 				requests[i] = tofnd.RecoverRequest{
 					KeygenInit: &tofnd.KeygenInit{
 						NewKeyUid:        keyID,
@@ -153,9 +168,9 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 						MyPartyIndex:     int32(index),
 					},
 					KeygenOutput: &tofnd.KeygenOutput{
-						PubKey:       (keygenOutput.PubKey),
-						GroupInfo:    (keygenOutput.GroupInfo),
-						RecoveryInfo: (keygenOutput.RecoveryInfo),
+						PubKey:             pubKey,
+						GroupRecoverInfo:   groupRecoverInfo,
+						PrivateRecoverInfo: privateRecoverInfo,
 					},
 				}
 			}

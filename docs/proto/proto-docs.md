@@ -2881,8 +2881,8 @@ Keygen's success response
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
-| `group_info` | [bytes](#bytes) |  | recovery info of all parties' shares; common for all parties |
-| `recovery_info` | [bytes](#bytes) |  | private recovery info of this party's shares; unique for each party |
+| `group_recover_info` | [bytes](#bytes) |  | recover info of all parties' shares; common for all parties |
+| `private_recover_info` | [bytes](#bytes) |  | private recover info of this party's shares; unique for each party |
 
 
 
@@ -3288,8 +3288,8 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
-| `group_info` | [bytes](#bytes) |  | parties' common recovery info |
-| `recovery_info` | [bytes](#bytes) |  | party's private recovery info |
+| `group_recover_info` | [bytes](#bytes) |  | parties' common recovery info |
+| `private_recover_info` | [bytes](#bytes) |  | party's private recovery info |
 
 
 

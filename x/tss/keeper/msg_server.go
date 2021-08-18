@@ -193,7 +193,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
 		}
 
-		privateInfos := res.Data.GetRecoveryInfo()
+		privateInfos := res.Data.GetPrivateRecoverInfo()
 		if privateInfos == nil {
 			return nil, fmt.Errorf("could not obtain recovery info from result")
 		}
@@ -212,7 +212,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.RecoveryInfo)
+		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.PrivateRecoverInfo)
 
 		// get pubkey
 		pubKey := res.Data.GetPubKey()
@@ -221,7 +221,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		// get public recovery info
-		groupInfo := res.Data.GetGroupInfo()
+		groupInfo := res.Data.GetGroupRecoverInfo()
 		if groupInfo == nil {
 			return nil, fmt.Errorf("group info is nil")
 		}

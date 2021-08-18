@@ -140,6 +140,36 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
+// SetPublicRecoveryData sets the (a) public key and (b) public recovery info the parties sucessfull voted on
+func (k Keeper) SetPublicRecoveryData(ctx sdk.Context, keyID string, recoveryInfo []byte) {
+	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
+
+	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+}
+
+// HasPublicRecoveryInfo returns true if the public recovery info for a given party exists
+func (k Keeper) HasPublicRecoveryInfo(ctx sdk.Context, ValAddress, keyID string) bool {
+	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	if bz == nil {
+		return false
+	}
+
+	return true
+}
+
+// GetPublicRecoveryInfo returns a party's public recovery info of a specific key ID
+func (k Keeper) GetPublicRecoveryInfo(ctx sdk.Context, keyID string) []byte {
+	key := fmt.Sprintf("%s%s", recoveryPrefix, keyID)
+	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+
+	var recoveryInfos []byte
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &recoveryInfos)
+
+	return recoveryInfos
+}
+
 // SetPrivateRecoveryInfo sets the private recovery info for a given party
 func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())

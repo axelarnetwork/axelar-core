@@ -67,13 +67,13 @@ func (m *MessageOut_KeygenResult) Validate() error {
 		if pubKeyBytes == nil {
 			return fmt.Errorf("pubkey is nil")
 		}
-		groupInfo := keygenData.GetGroupInfo()
-		if groupInfo == nil {
-			return fmt.Errorf("group info is nil")
+		groupRecoverInfo := keygenData.GetGroupRecoverInfo()
+		if groupRecoverInfo == nil {
+			return fmt.Errorf("group recovery info is nil")
 		}
-		recoveryInfos := keygenData.GetRecoveryInfo()
-		if recoveryInfos == nil || len(recoveryInfos) == 0 {
-			return fmt.Errorf("recovery info is nil")
+		privateRecoverInfo := keygenData.GetPrivateRecoverInfo()
+		if privateRecoverInfo == nil {
+			return fmt.Errorf("private recovery info is nil")
 		}
 		_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 		if err != nil {
