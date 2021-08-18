@@ -205,7 +205,7 @@ var _ types.Signer = &SignerMock{}
 // 				panic("mock out the SetKey method")
 // 			},
 // 			SetKeyIDForSigFunc: func(ctx sdk.Context, sigID string, keyID string)  {
-// 				panic("mock out the SetKeyIDForSig method")
+// 				panic("mock out the SetInfoForSig method")
 // 			},
 // 			SetKeyRoleFunc: func(ctx sdk.Context, keyID string, keyRole tss.KeyRole)  {
 // 				panic("mock out the SetKeyRole method")
@@ -265,7 +265,7 @@ type SignerMock struct {
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
-	// SetKeyIDForSigFunc mocks the SetKeyIDForSig method.
+	// SetKeyIDForSigFunc mocks the SetInfoForSig method.
 	SetKeyIDForSigFunc func(ctx sdk.Context, sigID string, keyID string)
 
 	// SetKeyRoleFunc mocks the SetKeyRole method.
@@ -403,7 +403,7 @@ type SignerMock struct {
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
 		}
-		// SetKeyIDForSig holds details about calls to the SetKeyIDForSig method.
+		// SetInfoForSig holds details about calls to the SetInfoForSig method.
 		SetKeyIDForSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
@@ -1002,10 +1002,10 @@ func (mock *SignerMock) SetKeyCalls() []struct {
 	return calls
 }
 
-// SetKeyIDForSig calls SetKeyIDForSigFunc.
+// SetInfoForSig calls SetKeyIDForSigFunc.
 func (mock *SignerMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
 	if mock.SetKeyIDForSigFunc == nil {
-		panic("SignerMock.SetKeyIDForSigFunc: method is nil but Signer.SetKeyIDForSig was just called")
+		panic("SignerMock.SetKeyIDForSigFunc: method is nil but Signer.SetInfoForSig was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -1022,7 +1022,7 @@ func (mock *SignerMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID stri
 	mock.SetKeyIDForSigFunc(ctx, sigID, keyID)
 }
 
-// SetKeyIDForSigCalls gets all the calls that were made to SetKeyIDForSig.
+// SetKeyIDForSigCalls gets all the calls that were made to SetInfoForSig.
 // Check the length with:
 //     len(mockedSigner.SetKeyIDForSigCalls())
 func (mock *SignerMock) SetKeyIDForSigCalls() []struct {

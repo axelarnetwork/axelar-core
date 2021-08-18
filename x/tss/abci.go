@@ -190,7 +190,7 @@ func startSign(
 		snap.TotalShareCount.Int64(),
 	))
 
-	k.SetKeyIDForSig(ctx, info.SigID, info.KeyID)
+	k.SetInfoForSig(ctx, info.SigID, info)
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))

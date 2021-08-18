@@ -12,8 +12,11 @@ const (
 	AttributeKeyPoll = "poll"
 	AttributeChain   = "chain"
 
-	AttributeKeyKeyID                  = "keyID"
-	AttributeKeySigID                  = "sigID"
+	AttributeKeyKeyID     = "keyID"
+	AttributeKeySigID     = "sigID"
+	AttributeKeySigModule = "sigModule"
+	AttributeKeySigData   = "sigData"
+
 	AttributeKeyHeight                 = "height"
 	AttributeKeyKeyAckType             = "ackType"
 	AttributeKeySessionID              = "sessionID"

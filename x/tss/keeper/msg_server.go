@@ -359,6 +359,11 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	info, ok := s.GetInfoForSig(ctx, req.PollKey.ID)
+	if !ok {
+		return nil, fmt.Errorf("sig info does not exist")
+	}
+
 	poll := s.voter.GetPoll(ctx, req.PollKey)
 	if err := poll.Vote(voter, req.Result); err != nil {
 		return nil, err
@@ -372,15 +377,19 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
+		sdk.NewAttribute(types.AttributeKeySigID, req.PollKey.ID),
+		sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
 	)
-	defer ctx.EventManager().EmitEvent(event)
+	defer func() { ctx.EventManager().EmitEvent(event) }()
+
+	if len(info.Metadata) > 0 {
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigData, string(info.Metadata)))
+	}
 
 	if poll.Is(vote.Failed) {
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
-		)
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
-		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
+		s.DeleteInfoForSig(ctx, req.PollKey.ID)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -394,23 +403,19 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 			s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Signed)
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
-			ctx.EventManager().EmitEvent(
-				event.AppendAttributes(
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-					sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
-				),
+			event = event.AppendAttributes(
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
+		s.DeleteInfoForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
-		)
 
 		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
 		if !found {

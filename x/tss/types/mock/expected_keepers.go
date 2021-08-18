@@ -1181,7 +1181,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 				panic("mock out the DeleteAvailableOperators method")
 // 			},
 // 			DeleteKeyIDForSigFunc: func(ctx sdk.Context, sigID string)  {
-// 				panic("mock out the DeleteKeyIDForSig method")
+// 				panic("mock out the DeleteInfoForSig method")
 // 			},
 // 			DeleteKeygenStartFunc: func(ctx sdk.Context, keyID string)  {
 // 				panic("mock out the DeleteKeygenStart method")
@@ -1298,7 +1298,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 				panic("mock out the SetKey method")
 // 			},
 // 			SetKeyIDForSigFunc: func(ctx sdk.Context, sigID string, keyID string)  {
-// 				panic("mock out the SetKeyIDForSig method")
+// 				panic("mock out the SetInfoForSig method")
 // 			},
 // 			SetParamsFunc: func(ctx sdk.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
@@ -1334,7 +1334,7 @@ type TSSKeeperMock struct {
 	// DeleteAvailableOperatorsFunc mocks the DeleteAvailableOperators method.
 	DeleteAvailableOperatorsFunc func(ctx sdk.Context, ID string, ackType exported.AckType)
 
-	// DeleteKeyIDForSigFunc mocks the DeleteKeyIDForSig method.
+	// DeleteKeyIDForSigFunc mocks the DeleteInfoForSig method.
 	DeleteKeyIDForSigFunc func(ctx sdk.Context, sigID string)
 
 	// DeleteKeygenStartFunc mocks the DeleteKeygenStart method.
@@ -1451,7 +1451,7 @@ type TSSKeeperMock struct {
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
-	// SetKeyIDForSigFunc mocks the SetKeyIDForSig method.
+	// SetKeyIDForSigFunc mocks the SetInfoForSig method.
 	SetKeyIDForSigFunc func(ctx sdk.Context, sigID string, keyID string)
 
 	// SetParamsFunc mocks the SetParams method.
@@ -1511,7 +1511,7 @@ type TSSKeeperMock struct {
 			// AckType is the ackType argument value.
 			AckType exported.AckType
 		}
-		// DeleteKeyIDForSig holds details about calls to the DeleteKeyIDForSig method.
+		// DeleteInfoForSig holds details about calls to the DeleteInfoForSig method.
 		DeleteKeyIDForSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
@@ -1822,7 +1822,7 @@ type TSSKeeperMock struct {
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
 		}
-		// SetKeyIDForSig holds details about calls to the SetKeyIDForSig method.
+		// SetInfoForSig holds details about calls to the SetInfoForSig method.
 		SetKeyIDForSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
@@ -2096,10 +2096,10 @@ func (mock *TSSKeeperMock) DeleteAvailableOperatorsCalls() []struct {
 	return calls
 }
 
-// DeleteKeyIDForSig calls DeleteKeyIDForSigFunc.
+// DeleteInfoForSig calls DeleteKeyIDForSigFunc.
 func (mock *TSSKeeperMock) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
 	if mock.DeleteKeyIDForSigFunc == nil {
-		panic("TSSKeeperMock.DeleteKeyIDForSigFunc: method is nil but TSSKeeper.DeleteKeyIDForSig was just called")
+		panic("TSSKeeperMock.DeleteKeyIDForSigFunc: method is nil but TSSKeeper.DeleteInfoForSig was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -2114,7 +2114,7 @@ func (mock *TSSKeeperMock) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
 	mock.DeleteKeyIDForSigFunc(ctx, sigID)
 }
 
-// DeleteKeyIDForSigCalls gets all the calls that were made to DeleteKeyIDForSig.
+// DeleteKeyIDForSigCalls gets all the calls that were made to DeleteInfoForSig.
 // Check the length with:
 //     len(mockedTSSKeeper.DeleteKeyIDForSigCalls())
 func (mock *TSSKeeperMock) DeleteKeyIDForSigCalls() []struct {
@@ -3537,10 +3537,10 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 	return calls
 }
 
-// SetKeyIDForSig calls SetKeyIDForSigFunc.
-func (mock *TSSKeeperMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
+// SetInfoForSig calls SetKeyIDForSigFunc.
+func (mock *TSSKeeperMock) SetInfoForSig(ctx sdk.Context, sigID string, keyID string) {
 	if mock.SetKeyIDForSigFunc == nil {
-		panic("TSSKeeperMock.SetKeyIDForSigFunc: method is nil but TSSKeeper.SetKeyIDForSig was just called")
+		panic("TSSKeeperMock.SetKeyIDForSigFunc: method is nil but TSSKeeper.SetInfoForSig was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
@@ -3557,7 +3557,7 @@ func (mock *TSSKeeperMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID s
 	mock.SetKeyIDForSigFunc(ctx, sigID, keyID)
 }
 
-// SetKeyIDForSigCalls gets all the calls that were made to SetKeyIDForSig.
+// SetKeyIDForSigCalls gets all the calls that were made to SetInfoForSig.
 // Check the length with:
 //     len(mockedTSSKeeper.SetKeyIDForSigCalls())
 func (mock *TSSKeeperMock) SetKeyIDForSigCalls() []struct {
