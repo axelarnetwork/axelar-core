@@ -34,8 +34,8 @@ func (m CreateTransferOwnershipRequest) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements sdk.Msg
 func (m CreateTransferOwnershipRequest) ValidateBasic() error {
-	if m.Sender.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender")
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
 	if m.Chain == "" {

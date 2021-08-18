@@ -28,6 +28,29 @@ const (
 	QueryParamKeyID       = "key_id"
 )
 
+// GetHandlerQueryBatchedCommands returns a handler to query batched commands by ID
+func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+		chain := mux.Vars(r)[utils.PathVarChain]
+		batchedCommandsID := mux.Vars(r)[utils.PathVarBatchedCommandsID]
+
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBatchedCommands, chain, batchedCommandsID))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBatchedCommands, chain, batchedCommandsID).Error())
+			return
+		}
+
+		var res types.QueryBatchedCommandsResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
 // GetHandlerQueryAddress returns a handler to query an EVM chain address
 func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

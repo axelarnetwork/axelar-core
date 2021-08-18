@@ -12,17 +12,18 @@ import (
 
 // routes
 const (
-	PathVarChain           = "Chain"
-	PathVarContract        = "Contract"
-	PathVarCosmosAddress   = "CosmosAddress"
-	PathVarCounter         = "Counter"
-	PathVarEthereumAddress = "EthereumAddress"
-	PathVarTxID            = "TxID"
-	PathVarCommandID       = "CommandID"
-	PathVarKeyRole         = "KeyRole"
-	PathVarKeyID           = "KeyID"
-	PathVarSigID           = "SigID"
-	PathVarOutpoint        = "Outpoint"
+	PathVarChain             = "Chain"
+	PathVarContract          = "Contract"
+	PathVarCosmosAddress     = "CosmosAddress"
+	PathVarCounter           = "Counter"
+	PathVarEthereumAddress   = "EthereumAddress"
+	PathVarTxID              = "TxID"
+	PathVarCommandID         = "CommandID"
+	PathVarBatchedCommandsID = "BatchedCommandsID"
+	PathVarKeyRole           = "KeyRole"
+	PathVarKeyID             = "KeyID"
+	PathVarSigID             = "SigID"
+	PathVarOutpoint          = "Outpoint"
 )
 
 // ExtractReqSender extracts the sender address from an SDK base request

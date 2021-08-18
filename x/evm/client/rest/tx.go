@@ -37,6 +37,7 @@ const (
 	TxAddChain                    = "add-chain"
 
 	QueryAddress              = "query-address"
+	QueryBatchedCommands      = "batched-commands"
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryCommandData          = keeper.QCommandData
@@ -67,6 +68,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
+	registerQuery(GetHandlerQueryBatchedCommands(cliCtx), QueryBatchedCommands, clientUtils.PathVarChain, clientUtils.PathVarBatchedCommandsID)
 	registerQuery(GetHandlerQueryAddress(cliCtx), QueryAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
