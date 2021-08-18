@@ -65,9 +65,9 @@ type TSSKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) (params Params)
-	SetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte)
-	HasRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
-	GetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte
+	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte)
+	HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
+	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte
 	DeleteAllRecoveryInfos(ctx sdk.Context, keyID string)
 	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64

@@ -140,16 +140,16 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetRecoveryInfo sets the recovery infos for a given party
-func (k Keeper) SetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
+// SetPrivateRecoveryInfo sets the private recovery info for a given party
+func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
-// HasRecoveryInfo returns true if the recovery infos for a given party exists
-func (k Keeper) HasRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+// HasPrivateRecoveryInfo returns true if the private recovery info for a given party exists
+func (k Keeper) HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 	if bz == nil {
@@ -159,8 +159,8 @@ func (k Keeper) HasRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID st
 	return true
 }
 
-// GetRecoveryInfo returns a party's recovery infos of a specific key ID
-func (k Keeper) GetRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
+// GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
+func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
 	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
