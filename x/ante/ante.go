@@ -81,6 +81,8 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 					for i := 1; i <= int(unbondingLockingKeyRotationCount); i++ {
 						key, ok := d.tss.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount-int64(i))
 						if !ok {
+							logger(ctx).Debug(fmt.Sprintf("only %d previous %s keys exist for chain", i, keyRole.SimpleString()))
+
 							break
 						}
 

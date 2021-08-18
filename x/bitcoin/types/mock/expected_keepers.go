@@ -1854,6 +1854,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetMinOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMinOutputAmount method")
 // 			},
+// 			GetMinVoterCountFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetMinVoterCount method")
+// 			},
 // 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 // 				panic("mock out the GetNetwork method")
 // 			},
@@ -1977,6 +1980,9 @@ type BTCKeeperMock struct {
 
 	// GetMinOutputAmountFunc mocks the GetMinOutputAmount method.
 	GetMinOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
+
+	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
+	GetMinVoterCountFunc func(ctx sdk.Context) int64
 
 	// GetNetworkFunc mocks the GetNetwork method.
 	GetNetworkFunc func(ctx sdk.Context) types.Network
@@ -2142,6 +2148,11 @@ type BTCKeeperMock struct {
 		}
 		// GetMinOutputAmount holds details about calls to the GetMinOutputAmount method.
 		GetMinOutputAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
+		GetMinVoterCount []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -2323,6 +2334,7 @@ type BTCKeeperMock struct {
 	lockGetMaxInputCount                    sync.RWMutex
 	lockGetMaxSecondaryOutputAmount         sync.RWMutex
 	lockGetMinOutputAmount                  sync.RWMutex
+	lockGetMinVoterCount                    sync.RWMutex
 	lockGetNetwork                          sync.RWMutex
 	lockGetOutPointInfo                     sync.RWMutex
 	lockGetParams                           sync.RWMutex
@@ -2873,6 +2885,37 @@ func (mock *BTCKeeperMock) GetMinOutputAmountCalls() []struct {
 	mock.lockGetMinOutputAmount.RLock()
 	calls = mock.calls.GetMinOutputAmount
 	mock.lockGetMinOutputAmount.RUnlock()
+	return calls
+}
+
+// GetMinVoterCount calls GetMinVoterCountFunc.
+func (mock *BTCKeeperMock) GetMinVoterCount(ctx sdk.Context) int64 {
+	if mock.GetMinVoterCountFunc == nil {
+		panic("BTCKeeperMock.GetMinVoterCountFunc: method is nil but BTCKeeper.GetMinVoterCount was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinVoterCount.Lock()
+	mock.calls.GetMinVoterCount = append(mock.calls.GetMinVoterCount, callInfo)
+	mock.lockGetMinVoterCount.Unlock()
+	return mock.GetMinVoterCountFunc(ctx)
+}
+
+// GetMinVoterCountCalls gets all the calls that were made to GetMinVoterCount.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMinVoterCountCalls())
+func (mock *BTCKeeperMock) GetMinVoterCountCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMinVoterCount.RLock()
+	calls = mock.calls.GetMinVoterCount
+	mock.lockGetMinVoterCount.RUnlock()
 	return calls
 }
 

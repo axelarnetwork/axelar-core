@@ -2097,6 +2097,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetLatestSignedBatchedCommandsIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetLatestSignedBatchedCommandsID method")
 // 			},
+// 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+// 				panic("mock out the GetMinVoterCount method")
+// 			},
 // 			GetNameFunc: func() string {
 // 				panic("mock out the GetName method")
 // 			},
@@ -2244,6 +2247,9 @@ type ChainKeeperMock struct {
 
 	// GetLatestSignedBatchedCommandsIDFunc mocks the GetLatestSignedBatchedCommandsID method.
 	GetLatestSignedBatchedCommandsIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
+
+	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
+	GetMinVoterCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool)
 
 	// GetNameFunc mocks the GetName method.
 	GetNameFunc func() string
@@ -2457,6 +2463,11 @@ type ChainKeeperMock struct {
 		}
 		// GetLatestSignedBatchedCommandsID holds details about calls to the GetLatestSignedBatchedCommandsID method.
 		GetLatestSignedBatchedCommandsID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
+		GetMinVoterCount []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -2674,6 +2685,7 @@ type ChainKeeperMock struct {
 	lockGetGatewayByteCodes              sync.RWMutex
 	lockGetHashToSign                    sync.RWMutex
 	lockGetLatestSignedBatchedCommandsID sync.RWMutex
+	lockGetMinVoterCount                 sync.RWMutex
 	lockGetName                          sync.RWMutex
 	lockGetNetwork                       sync.RWMutex
 	lockGetNetworkByID                   sync.RWMutex
@@ -3358,6 +3370,37 @@ func (mock *ChainKeeperMock) GetLatestSignedBatchedCommandsIDCalls() []struct {
 	mock.lockGetLatestSignedBatchedCommandsID.RLock()
 	calls = mock.calls.GetLatestSignedBatchedCommandsID
 	mock.lockGetLatestSignedBatchedCommandsID.RUnlock()
+	return calls
+}
+
+// GetMinVoterCount calls GetMinVoterCountFunc.
+func (mock *ChainKeeperMock) GetMinVoterCount(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+	if mock.GetMinVoterCountFunc == nil {
+		panic("ChainKeeperMock.GetMinVoterCountFunc: method is nil but ChainKeeper.GetMinVoterCount was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinVoterCount.Lock()
+	mock.calls.GetMinVoterCount = append(mock.calls.GetMinVoterCount, callInfo)
+	mock.lockGetMinVoterCount.Unlock()
+	return mock.GetMinVoterCountFunc(ctx)
+}
+
+// GetMinVoterCountCalls gets all the calls that were made to GetMinVoterCount.
+// Check the length with:
+//     len(mockedChainKeeper.GetMinVoterCountCalls())
+func (mock *ChainKeeperMock) GetMinVoterCountCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetMinVoterCount.RLock()
+	calls = mock.calls.GetMinVoterCount
+	mock.lockGetMinVoterCount.RUnlock()
 	return calls
 }
 

@@ -183,7 +183,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		counter,
 		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
 		vote.Threshold(s.GetVotingThreshold(ctx)),
-		vote.MinVoterCount(15),
+		vote.MinVoterCount(s.GetMinVoterCount(ctx)),
 	); err != nil {
 		return nil, err
 	}

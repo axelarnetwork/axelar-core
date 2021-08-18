@@ -208,7 +208,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 	}
 
 	corruptionThreshold := tssTypes.ComputeCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount)
-	if corruptionThreshold < 1 || corruptionThreshold >= totalShareCount.Int64() {
+	if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount.Int64() {
 		return exported.Snapshot{}, fmt.Errorf("invalid corruption threshold: %d, total share count: %d", corruptionThreshold, totalShareCount.Int64())
 	}
 

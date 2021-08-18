@@ -37,6 +37,7 @@ type BTCKeeper interface {
 	GetMasterAddressLockDuration(ctx sdk.Context) time.Duration
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
+	GetMinVoterCount(ctx sdk.Context) int64
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)

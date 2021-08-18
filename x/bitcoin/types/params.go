@@ -28,6 +28,7 @@ var (
 	KeyMasterAddressLockDuration = []byte("masterAddressLockDuration")
 	KeyExternalMultisigThreshold = []byte("externalMultisigThreshold")
 	KeyVotingThreshold           = []byte("votingThreshold")
+	KeyMinVoterCount             = []byte("minVoterCount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -49,6 +50,7 @@ func DefaultParams() Params {
 		MasterAddressLockDuration: 2 * 7 * 24 * time.Hour, // 2 weeks
 		ExternalMultisigThreshold: utils.Threshold{Numerator: 3, Denominator: 6},
 		VotingThreshold:           utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:             15,
 	}
 }
 
@@ -73,6 +75,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMasterAddressLockDuration, &m.MasterAddressLockDuration, validateMasterAddressLockDuration),
 		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
+		paramtypes.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 	}
 }
 
@@ -238,6 +241,19 @@ func validateVotingThreshold(votingThreshold interface{}) error {
 	return nil
 }
 
+func validateMinVoterCount(minVoterCount interface{}) error {
+	val, ok := minVoterCount.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for MinVoterCount: %T", minVoterCount)
+	}
+
+	if val < 0 {
+		return fmt.Errorf("min voter count must be >=0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -276,6 +292,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateVotingThreshold(m.VotingThreshold); err != nil {
+		return err
+	}
+
+	if err := validateMinVoterCount(m.MinVoterCount); err != nil {
 		return err
 	}
 

@@ -193,6 +193,18 @@ func (k keeper) GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool) {
 	return threshold, true
 }
 
+func (k keeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
+	var minVoterCount int64
+
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		return minVoterCount, false
+	}
+
+	subspace.Get(ctx, types.KeyMinVoterCount, &minVoterCount)
+	return minVoterCount, true
+}
+
 // SetGatewayAddress sets the contract address for Axelar Gateway
 func (k keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
 	k.getStore(ctx, k.chain).Set([]byte(gatewayKey), addr.Bytes())

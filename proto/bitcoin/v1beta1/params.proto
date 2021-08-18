@@ -28,4 +28,5 @@ message Params {
       [ (gogoproto.nullable) = false ];
   utils.v1beta1.Threshold voting_threshold = 11
       [ (gogoproto.nullable) = false ];
+  int64 min_voter_count = 12;
 }

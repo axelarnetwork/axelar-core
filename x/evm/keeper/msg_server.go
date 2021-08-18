@@ -164,13 +164,18 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
 	}
 
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
 		seqNo,
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(15),
+		vote.MinVoterCount(minVoterCount),
 	); err != nil {
 		return nil, err
 	}
@@ -244,6 +249,11 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("voting threshold for chain %s not found", req.Name)
 	}
 
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", req.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
 	if err := s.voter.InitializePoll(
 		ctx,
@@ -251,7 +261,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		seqNo,
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(15),
+		vote.MinVoterCount(minVoterCount),
 	); err != nil {
 		return nil, err
 	}
@@ -313,6 +323,11 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
 	}
 
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
 	if err := s.voter.InitializePoll(
 		ctx,
@@ -320,7 +335,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		seqNo,
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(15),
+		vote.MinVoterCount(minVoterCount),
 	); err != nil {
 		return nil, err
 	}
@@ -407,6 +422,11 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
 	}
 
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.TransferType.SimpleString(), req.KeyID))
 	if err := s.voter.InitializePoll(
 		ctx,
@@ -414,7 +434,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		seqNo,
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(15),
+		vote.MinVoterCount(minVoterCount),
 	); err != nil {
 		return nil, err
 	}

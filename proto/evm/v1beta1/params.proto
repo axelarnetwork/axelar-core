@@ -20,4 +20,5 @@ message Params {
   repeated evm.v1beta1.NetworkInfo networks = 8
       [ (gogoproto.nullable) = false ];
   utils.v1beta1.Threshold voting_threshold = 9 [ (gogoproto.nullable) = false ];
+  int64 min_voter_count = 10;
 }

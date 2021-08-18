@@ -83,6 +83,7 @@ type ChainKeeper interface {
 	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
 	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
+	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 }
 
 // ParamsKeeper represents a global paramstore

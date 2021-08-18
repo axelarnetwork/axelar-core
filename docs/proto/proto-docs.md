@@ -975,6 +975,7 @@ of a transaction
 | `master_address_lock_duration` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
 
 
 
@@ -1692,6 +1693,7 @@ Params is the parameter set for this module
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
 
 
 

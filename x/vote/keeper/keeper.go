@@ -157,6 +157,8 @@ func (p pollStore) GetVote(hash string) (types.TalliedVote, bool) {
 
 func (p *pollStore) GetVotes() []types.TalliedVote {
 	if !p.votesCached {
+		p.votes = []types.TalliedVote{}
+
 		iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
 		defer utils.CloseLogError(iter, p.logger)
 
