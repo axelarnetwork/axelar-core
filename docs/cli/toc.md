@@ -50,7 +50,7 @@
     - [evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
       - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
-      - [batched-commands \[chain\] \[ID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [command \[chain\] \[commandID\]](axelard_query_evm_command.md)	 - Get the signed command data that can be wrapped in an EVM transaction to execute the command \[commandID\] on Axelar Gateway
       - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.

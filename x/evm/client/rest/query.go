@@ -82,7 +82,7 @@ func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
 			return
 		}
 
@@ -104,7 +104,7 @@ func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
 			return
 		}
 
@@ -129,7 +129,7 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QAxelarGatewayAddress, chain), nil)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
 			return
 		}
 

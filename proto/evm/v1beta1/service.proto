@@ -50,24 +50,32 @@ service MsgService {
   rpc VoteConfirmChain(VoteConfirmChainRequest)
       returns (VoteConfirmChainResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-chain",
+      body : "*"
     };
   }
 
   rpc VoteConfirmDeposit(VoteConfirmDepositRequest)
       returns (VoteConfirmDepositResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-deposit",
+      body : "*"
     };
   }
 
   rpc VoteConfirmToken(VoteConfirmTokenRequest)
       returns (VoteConfirmTokenResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-token",
+      body : "*"
     };
   }
 
   rpc VoteConfirmTransferKey(VoteConfirmTransferKeyRequest)
       returns (VoteConfirmTransferKeyResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-transfer-key",
+      body : "*"
     };
   }
 
@@ -104,6 +112,8 @@ service MsgService {
   rpc CreateTransferOwnership(CreateTransferOwnershipRequest)
       returns (CreateTransferOwnershipResponse) {
     option (google.api.http) = {
+      post : "/axelar/evm/create-transfer-ownership"
+      body : "*"
     };
   }
 

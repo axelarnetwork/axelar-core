@@ -50,6 +50,10 @@ func (m VoteConfirmTransferKeyRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
+	if err := m.PollKey.Validate(); err != nil {
+		return err
+	}
+
 	if err := m.TransferType.Validate(); err != nil {
 		return err
 	}

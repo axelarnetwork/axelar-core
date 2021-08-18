@@ -1066,7 +1066,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
 	}
 
-	// not allow any transfer key if the next master key is already assigned
+	// don't allow any transfer key if the next master key is already assigned
 	if keyRole != tss.MasterKey {
 		if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
 			return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey, chain.Name)

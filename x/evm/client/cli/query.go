@@ -104,7 +104,7 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 
 		bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, query, args[0], param))
 		if err != nil {
-			return sdkerrors.Wrap(err, types.ErrFAddress)
+			return sdkerrors.Wrap(err, types.ErrAddress)
 		}
 
 		var res types.QueryAddressResponse
@@ -390,7 +390,7 @@ func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
 // GetCmdQueryBatchedCommands returns the query to get the batched commands
 func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "batched-commands [chain] [ID]",
+		Use:   "batched-commands [chain] [batchedCommandsID]",
 		Short: "Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

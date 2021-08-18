@@ -43,6 +43,10 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 		return err
 	}
 
+	if m.KeyID == "" {
+		return fmt.Errorf("missing key ID")
+	}
+
 	return nil
 }
 
