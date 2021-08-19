@@ -75,7 +75,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID string, ke
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
 	// set key role
-	k.setKeyRole(ctx, keyID, keyRole)
+	k.SetKeyRole(ctx, keyID, keyRole)
 
 	keyRequirement, ok := k.GetKeyRequirement(ctx, keyRole)
 	if !ok {
@@ -152,7 +152,8 @@ func (k Keeper) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRol
 	return k.GetKey(ctx, keyID)
 }
 
-func (k Keeper) setKeyRole(ctx sdk.Context, keyID string, keyRole exported.KeyRole) {
+// SetKeyRole stores the role of the given key
+func (k Keeper) SetKeyRole(ctx sdk.Context, keyID string, keyRole exported.KeyRole) {
 	storageKey := fmt.Sprintf("%s%s", keyRolePrefix, keyID)
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(keyRole))

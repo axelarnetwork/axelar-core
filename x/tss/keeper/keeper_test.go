@@ -109,7 +109,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRo
 		panic(err)
 	}
 	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
-	s.Keeper.setKeyRole(ctx, keyID, keyRole)
+	s.Keeper.SetKeyRole(ctx, keyID, keyRole)
 
 	return tss.Key{
 		ID:    keyID,

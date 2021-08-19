@@ -224,8 +224,10 @@ func (p Poll) getVoterCount() int64 {
 }
 
 func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
+	voterCount := p.getVoterCount()
+
 	return p.VotingThreshold.IsMet(majorityShare, p.GetTotalShareCount()) &&
-		(p.GetTotalVoterCount() < p.MinVoterCount || p.getVoterCount() >= p.MinVoterCount)
+		(voterCount == p.GetTotalVoterCount() || voterCount >= p.MinVoterCount)
 }
 
 func (p *Poll) cannotWin(majorityShare sdk.Int) bool {
@@ -281,11 +283,19 @@ func (p *PollWithLogging) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) 
 
 	switch {
 	case p.Is(exported.Completed):
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d) completed", p.Key,
-			p.VotingThreshold.Numerator, p.VotingThreshold.Denominator))
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) completed",
+			p.Key,
+			p.VotingThreshold.Numerator,
+			p.VotingThreshold.Denominator,
+			p.MinVoterCount,
+		))
 	case p.Is(exported.Failed):
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d) failed, voters could not agree on single value", p.Key,
-			p.VotingThreshold.Numerator, p.VotingThreshold.Denominator))
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) failed, voters could not agree on single value",
+			p.Key,
+			p.VotingThreshold.Numerator,
+			p.VotingThreshold.Denominator,
+			p.MinVoterCount,
+		))
 	}
 	return nil
 }

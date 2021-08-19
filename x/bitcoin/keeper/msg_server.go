@@ -100,10 +100,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 		}
 
 		s.signer.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
-		// TODO: it's a bit odd that we are assigning and rotating the external key when it's always a set of them
-		// being used. This is to keep things consistent until a proper solution is figured out.
-		s.signer.AssignNextKey(ctx, exported.Bitcoin, tss.ExternalKey, externalKey.ID)
-		s.signer.RotateKey(ctx, exported.Bitcoin, tss.ExternalKey)
+		s.signer.SetKeyRole(ctx, externalKey.ID, tss.ExternalKey)
 		keyIDs[i] = externalKey.ID
 
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
@@ -176,7 +173,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", req.OutPointInfo.OutPoint, req.OutPointInfo.Address, req.OutPointInfo.Amount))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
