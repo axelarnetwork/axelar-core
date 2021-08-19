@@ -263,6 +263,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 					IsFunc: func(state vote.PollState) bool {
 						return state == vote.Completed
 					},
+					AllowOverrideFunc: func() {},
 				}
 			},
 		}
@@ -360,6 +361,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 				IsFunc: func(state vote.PollState) bool {
 					return state == vote.Completed
 				},
+				AllowOverrideFunc: func() {},
 			}
 		}
 

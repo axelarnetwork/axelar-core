@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"fmt"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -55,7 +56,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 	assert.Equal(t, vote.Data.GetCachedValue(), actual2.Data.GetCachedValue())
 }
 
-func TestPoll_CheckExpiry(t *testing.T) {
+func TestPoll_Expiry(t *testing.T) {
 	setup := func() exported.PollMetadata {
 		key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
 		return types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
@@ -69,10 +70,9 @@ func TestPoll_CheckExpiry(t *testing.T) {
 		metadata.State = initialState
 		expiry := rand.PosI64()
 		metadata.ExpiresAt = expiry
-		poll := types.NewPoll(metadata, &mock.StoreMock{})
-
 		currBlockHeight := expiry - rand.I64Between(0, expiry)
-		poll.CheckExpiry(currBlockHeight)
+
+		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
 
 		assert.True(t, poll.Is(initialState))
 	}).Repeat(repeats))
@@ -82,10 +82,9 @@ func TestPoll_CheckExpiry(t *testing.T) {
 		metadata.State = exported.Pending
 		expiry := rand.I64Between(0, 1000000)
 		metadata.ExpiresAt = expiry
-		poll := types.NewPoll(metadata, &mock.StoreMock{})
-
 		currBlockHeight := expiry + rand.I64Between(1, 1000000)
-		poll.CheckExpiry(currBlockHeight)
+
+		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
 
 		assert.True(t, poll.Is(exported.Pending))
 		assert.True(t, poll.Is(exported.Expired))
@@ -99,10 +98,8 @@ func TestPoll_CheckExpiry(t *testing.T) {
 		metadata.State = initialState
 		expiry := rand.I64Between(0, 1000000)
 		metadata.ExpiresAt = expiry
-		poll := types.NewPoll(metadata, &mock.StoreMock{})
-
 		currBlockHeight := expiry + rand.I64Between(1, 1000000)
-		poll.CheckExpiry(currBlockHeight)
+		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
 
 		assert.True(t, poll.Is(initialState))
 		assert.False(t, poll.Is(exported.Expired))
@@ -130,7 +127,7 @@ func TestPoll_Vote(t *testing.T) {
 		totalShareCount sdk.Int
 	)
 
-	setup := func(metadata exported.PollMetadata) *types.PollWithLogging {
+	setup := func(metadata exported.PollMetadata, currBlockHeight int64) *types.Poll {
 		shareCounts = randomEvenShareCounts()
 		totalShareCount = sdk.ZeroInt()
 		for _, share := range shareCounts {
@@ -159,12 +156,12 @@ func TestPoll_Vote(t *testing.T) {
 			SetMetadataFunc:        func(exported.PollMetadata) {},
 		}
 
-		return types.NewPoll(metadata, store).WithLogging(log.TestingLogger())
+		return types.NewPoll(metadata, currBlockHeight, store).WithLogger(log.TestingLogger())
 	}
 	repeats := 20
 
 	t.Run("poll nonexistent", testutils.Func(func(t *testing.T) {
-		poll := setup(exported.PollMetadata{State: exported.NonExistent})
+		poll := setup(exported.PollMetadata{State: exported.NonExistent}, rand.PosI64())
 
 		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
 		shareCounts[voter.String()] = rand.PosI64()
@@ -175,7 +172,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("poll already completed", testutils.Func(func(t *testing.T) {
 		result, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(10)})
-		poll := setup(exported.PollMetadata{State: exported.Completed, Result: result})
+		poll := setup(exported.PollMetadata{State: exported.Completed, Result: result}, rand.PosI64())
 
 		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
 		shareCounts[voter.String()] = rand.PosI64()
@@ -185,7 +182,7 @@ func TestPoll_Vote(t *testing.T) {
 	}).Repeat(repeats))
 
 	t.Run("poll already failed", testutils.Func(func(t *testing.T) {
-		poll := setup(exported.PollMetadata{State: exported.Failed})
+		poll := setup(exported.PollMetadata{State: exported.Failed}, rand.PosI64())
 
 		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
 		shareCounts[voter.String()] = rand.PosI64()
@@ -196,7 +193,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("voter unknown", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
+		poll := setup(metadata, rand.PosI64())
 
 		voterAddr := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
@@ -206,7 +203,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("correct vote no completion", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
+		poll := setup(metadata, rand.PosI64())
 
 		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
 		totalShareCount = totalShareCount.AddRaw(voterShareCount)
@@ -221,10 +218,8 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("vote after expiry", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
-		currBlockHeight := poll.PollMetadata.ExpiresAt + rand.I64Between(1, 1000000)
-
-		poll.CheckExpiry(currBlockHeight)
+		currBlockHeight := metadata.ExpiresAt + rand.I64Between(1, 1000000)
+		poll := setup(metadata, currBlockHeight)
 
 		assert.True(t, poll.Is(exported.Expired))
 		assert.True(t, poll.Is(exported.Pending))
@@ -241,7 +236,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("already voted", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
+		poll := setup(metadata, rand.PosI64())
 
 		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
 		totalShareCount = totalShareCount.AddRaw(voterShareCount)
@@ -256,7 +251,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("multiple votes until completion", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
+		poll := setup(metadata, rand.PosI64())
 
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 		for voter := range shareCounts {
@@ -270,7 +265,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("poll fails", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
-		poll := setup(metadata)
+		poll := setup(metadata, rand.PosI64())
 
 		t.Log(len(shareCounts), "votes")
 		for voter := range shareCounts {
@@ -285,13 +280,9 @@ func TestPoll_Vote(t *testing.T) {
 
 func TestPoll_Initialize(t *testing.T) {
 	var (
-		previousPollState exported.PollState
+		previousPoll exported.Poll
 	)
 
-	previousPoll := &voteMock.PollMock{
-		IsFunc:     func(state exported.PollState) bool { return state == previousPollState },
-		DeleteFunc: func() error { return nil },
-	}
 	store := &mock.StoreMock{
 		GetPollFunc:     func(exported.PollKey) exported.Poll { return previousPoll },
 		SetMetadataFunc: func(exported.PollMetadata) {},
@@ -301,22 +292,18 @@ func TestPoll_Initialize(t *testing.T) {
 	repeats := 20
 
 	testCases := []struct {
-		label             string
-		previousPollState exported.PollState
-		expectError       bool
+		label        string
+		previousPoll exported.Poll
+		expectError  bool
 	}{
-		{"no previous poll exists", exported.NonExistent, false},
-		{"pending poll exists", exported.Pending, true},
-		{"expired poll exists", exported.Expired, false},
-		{"failed poll exists", exported.Failed, false},
-		{"completed poll exists", exported.Completed, true},
+		{"poll can be overridden", &voteMock.PollMock{DeleteFunc: func() error { return nil }}, false},
+		{"poll can not be overridden", &voteMock.PollMock{DeleteFunc: func() error { return fmt.Errorf("no delete") }}, true},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
-			previousPollState = testCase.previousPollState
-			p := types.NewPoll(newRandomPollMetadata(), store)
-			poll := p.WithLogging(log.TestingLogger())
+			previousPoll = testCase.previousPoll
+			poll := types.NewPoll(newRandomPollMetadata(), rand.PosI64(), store).WithLogger(log.TestingLogger())
 
 			if testCase.expectError {
 				assert.Error(t, poll.Initialize())
@@ -327,39 +314,45 @@ func TestPoll_Initialize(t *testing.T) {
 	}
 }
 
-func TestPollWithLogging_Delete(t *testing.T) {
+func TestPoll_Delete(t *testing.T) {
 	var store *mock.StoreMock
 	setup := func(pollState exported.PollState) exported.Poll {
 		store = &mock.StoreMock{DeletePollFunc: func() {}}
 		metadata := newRandomPollMetadata()
 		metadata.State = pollState
-		return types.NewPoll(metadata, store).WithLogging(log.TestingLogger())
+		return types.NewPoll(metadata, rand.I64Between(0, metadata.ExpiresAt), store).WithLogger(log.TestingLogger())
 	}
 
+	t.Run("nonexistent", func(t *testing.T) {
+		poll := setup(exported.NonExistent)
+		assert.NoError(t, poll.Delete())
+		assert.Len(t, store.DeletePollCalls(), 0)
+	})
+
 	testCases := []struct {
-		label        string
-		pollState    exported.PollState
-		deleteCalled bool
+		label            string
+		pollState        exported.PollState
+		deleteSuccessful bool
 	}{
-		{"nonexistent", exported.NonExistent, false},
 		{"pending", exported.Pending, false},
 		{"completed", exported.Completed, false},
-		{"failed", exported.Failed, true},
-		{"expired", exported.Expired, true},
+		{"failed", exported.Failed, false},
+		{"expired", exported.Expired, false},
+		{"allow override", exported.AllowOverride, true},
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
+		t.Run(testCase.label, func(t *testing.T) {
 			poll := setup(testCase.pollState)
 
-			poll.Delete()
-
-			if testCase.deleteCalled {
+			if testCase.deleteSuccessful {
+				assert.NoError(t, poll.Delete())
 				assert.Len(t, store.DeletePollCalls(), 1)
 			} else {
+				assert.Error(t, poll.Delete())
 				assert.Len(t, store.DeletePollCalls(), 0)
 			}
-		}).Repeat(20))
+		})
 	}
 }
 
@@ -395,6 +388,6 @@ func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
 func newRandomPollMetadata() exported.PollMetadata {
 	key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
 	poll := types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
-	poll.ExpiresAt = rand.I64Between(0, 1000000)
+	poll.ExpiresAt = rand.I64Between(1, 1000000)
 	return poll
 }

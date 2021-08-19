@@ -510,6 +510,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmChainResponse{
@@ -600,6 +601,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmDepositResponse{
@@ -683,6 +685,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
@@ -768,6 +771,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
@@ -1275,14 +1279,4 @@ func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) 
 	}
 
 	return
-}
-
-func getCommandID(data []byte, chainID *big.Int) types.CommandID {
-	concat := append(data, chainID.Bytes()...)
-	hash := crypto.Keccak256(concat)[:32]
-
-	var commandID types.CommandID
-	copy(commandID[:], hash)
-
-	return commandID
 }

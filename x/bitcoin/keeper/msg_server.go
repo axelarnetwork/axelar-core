@@ -265,6 +265,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
 	if !confirmed.Value {
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
@@ -492,7 +493,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate key first", nextMasterKey.ID, tss.MasterKey.SimpleString())
 	}
 
-	inputs, totalInputs, err := prepareInputs(ctx, s.BTCKeeper, s.signer, currMasterKey.ID)
+	inputs, totalInputs, err := prepareInputs(ctx, s.BTCKeeper, currMasterKey.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -644,7 +645,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
 	anyoneCanSpendVout := uint32(len(outputs) - 1)
 
-	inputs, totalDeposits, err := prepareInputs(ctx, s, s.signer, currSecondaryKey.ID)
+	inputs, totalDeposits, err := prepareInputs(ctx, s, currSecondaryKey.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -795,7 +796,7 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 	return outputs, total
 }
 
-func prepareInputs(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, keyID string) ([]types.OutPointToSign, sdk.Int, error) {
+func prepareInputs(ctx sdk.Context, k types.BTCKeeper, keyID string) ([]types.OutPointToSign, sdk.Int, error) {
 	var inputs []types.OutPointToSign
 	total := sdk.ZeroInt()
 

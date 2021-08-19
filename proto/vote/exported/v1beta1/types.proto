@@ -44,4 +44,6 @@ enum PollState {
   POLL_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
   POLL_STATE_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
   POLL_STATE_EXPIRED = 8 [ (gogoproto.enumvalue_customname) = "Expired" ];
+  POLL_STATE_ALLOW_OVERRIDE = 16
+      [ (gogoproto.enumvalue_customname) = "AllowOverride" ];
 }
