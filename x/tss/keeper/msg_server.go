@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -169,13 +168,6 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	return &types.RotateKeyResponse{}, nil
 }
 
-// TODO: where to put this?
-// VoteStruct combines vote data
-type VoteStruct struct {
-	PubKey    []byte
-	GroupInfo []byte
-}
-
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -189,13 +181,22 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasPrivateRecoveryInfo(ctx, voter, req.PollKey.ID) {
-			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
+		// check group recovery info
+		if s.HasGroupRecoveryInfo(ctx, voter, req.PollKey.ID) {
+			return nil, fmt.Errorf("voter %s already submitted their group recovery info", voter.String())
+		}
+		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
+		if groupRecoveryInfo == nil {
+			return nil, fmt.Errorf("could not obtain group recovery info from result")
 		}
 
-		privateInfos := res.Data.GetPrivateRecoverInfo()
-		if privateInfos == nil {
-			return nil, fmt.Errorf("could not obtain recovery info from result")
+		// check private recovery info
+		if s.HasPrivateRecoveryInfo(ctx, voter, req.PollKey.ID) {
+			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
+		}
+		privateRecoveryInfo := res.Data.GetPrivateRecoverInfo()
+		if privateRecoveryInfo == nil {
+			return nil, fmt.Errorf("could not obtain group recovery info from result")
 		}
 
 		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
@@ -212,7 +213,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.PrivateRecoverInfo)
+		// TODO: set group recovery only once after voted on, like the public key
+		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
+		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
 
 		// get pubkey
 		pubKey := res.Data.GetPubKey()
@@ -220,19 +223,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		// get public recovery info
-		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
-		if groupRecoveryInfo == nil {
-			return nil, fmt.Errorf("group info is nil")
-		}
-
-		// vote on pubkey bytes and common recovery info bytes
-		vote := VoteStruct{PubKey: pubKey, GroupInfo: groupRecoveryInfo}
-		bytes, err := json.Marshal(vote)
-		if err != nil {
-			return nil, fmt.Errorf("cannot marshal vote [%s, %s]", vote.PubKey, vote.GroupInfo)
-		}
-		voteData = &gogoprototypes.BytesValue{Value: bytes}
+		voteData = &gogoprototypes.BytesValue{Value: pubKey}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
@@ -269,6 +260,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		// deletes group and private infos
 		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 
 		return &types.VotePubKeyResponse{}, nil
@@ -279,29 +271,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		var voteData VoteStruct
-		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
+		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
 		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal vote data [%s]: [%w]", keygenResult.GetValue(), err)
-		}
-
-		// try to get public ky from vote data
-		btcecPK, err := btcec.ParsePubKey(voteData.PubKey, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
+			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
 		}
 
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
-
-		// get public recovery info from vote data
-		groupRecoveryInfo := voteData.GroupInfo
-		if groupRecoveryInfo == nil {
-			return nil, fmt.Errorf("public key bytes is nil")
-		}
-
-		// store group recovery data
-		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecoveryInfo)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(

@@ -122,24 +122,7 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), btcecPK.SerializeCompressed())
 }
 
-// GetGroupRecoverInfo returns the public recover info, if exists
-func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID string) ([]byte, bool) {
-	recoveryKey := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
-	bz := ctx.KVStore(k.storeKey).Get([]byte(recoveryKey))
-	if bz == nil {
-		return nil, false
-	}
-	var groupRecoverInfo []byte
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &groupRecoverInfo)
-	return groupRecoverInfo, true
-}
 
-// SetRecoveryInfo stores the given public recovery info under the given key ID
-func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID string, groupRecoveryInfo []byte) {
-	recoveryKey := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(groupRecoveryInfo)
-	ctx.KVStore(k.storeKey).Set([]byte(recoveryKey), bz)
-}
 
 // GetCurrentKeyID returns the current key ID for given chain and role
 func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {

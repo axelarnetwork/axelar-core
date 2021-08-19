@@ -94,8 +94,8 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 	pubKeyBytes := ecdsaPK.SerializeCompressed()
 
 	// get voted group recover info
-	groupRecoverInfo, ok := k.GetGroupRecoveryInfo(ctx, keyID)
-	if !ok {
+	groupRecoverInfo := k.GetGroupRecoveryInfo(ctx, address, keyID)
+	if groupRecoverInfo == nil {
 		return nil, fmt.Errorf("could not obtain group info for key ID %s", keyID)
 	}
 

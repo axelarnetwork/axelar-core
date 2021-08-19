@@ -68,6 +68,9 @@ type TSSKeeper interface {
 	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte)
 	HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
 	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte
+	SetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte)
+	HasGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
+	GetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte
 	DeleteAllRecoveryInfos(ctx sdk.Context, keyID string)
 	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
@@ -89,8 +92,6 @@ type TSSKeeper interface {
 	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
 	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
-	GetGroupRecoveryInfo(ctx sdk.Context, keyID string) ([]byte, bool)
-	SetGroupRecoveryInfo(ctx sdk.Context, keyID string, groupRecoveryInfo []byte)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
 	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
