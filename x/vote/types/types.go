@@ -90,7 +90,7 @@ func NewPoll(meta exported.PollMetadata, currentBlock int64, store Store) *Poll 
 	poll := &Poll{
 		PollMetadata: meta,
 		Store:        store,
-		logger:       utils.NewNopLogger(),
+		logger:       utils.NewNOPLogger(),
 	}
 
 	poll.updateExpiry(currentBlock)
