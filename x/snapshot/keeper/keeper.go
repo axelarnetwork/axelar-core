@@ -11,9 +11,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
@@ -64,23 +66,23 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// TakeSnapshot attempts to create a new snapshot; if subsetSize equals 0, snapshot will be created with all validators
-func (k Keeper) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
+// TakeSnapshot attempts to create a new snapshot based on the given key requirment
+func (k Keeper) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
 	s, ok := k.GetLatestSnapshot(ctx)
 
 	if !ok {
 		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0, subsetSize, keyShareDistributionPolicy)
+		return k.executeSnapshot(ctx, 0, keyRequirement)
 	}
 
 	lockingPeriod := k.getLockingPeriod(ctx)
 	if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
-		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
+		return exported.Snapshot{}, fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
 			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
 	}
 
 	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1, subsetSize, keyShareDistributionPolicy)
+	return k.executeSnapshot(ctx, s.Counter+1, keyRequirement)
 }
 
 func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
@@ -123,11 +125,21 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	return int64(binary.LittleEndian.Uint64(bz))
 }
 
-func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error) {
+func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
 	var validators []exported.SDKValidator
 	var participants []exported.Validator
 	var nonParticipants []exported.Validator
-	snapshotConsensusPower, totalConsensusPower = sdk.ZeroInt(), sdk.ZeroInt()
+	snapshotConsensusPower, totalConsensusPower := sdk.ZeroInt(), sdk.ZeroInt()
+
+	var requiredValidatorsCount int
+	switch keyRequirement.KeyShareDistributionPolicy {
+	case tss.WeightedByStake:
+		requiredValidatorsCount = 0
+	case tss.OnePerValidator:
+		requiredValidatorsCount = int(keyRequirement.MaxTotalShareCount)
+	default:
+		return exported.Snapshot{}, fmt.Errorf("invalid key share distribution policy %d", keyRequirement.KeyShareDistributionPolicy)
+	}
 
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower())
@@ -135,7 +147,6 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 		// and it is not exposed in the ValidatorI interface
 		v, ok := validator.(stakingtypes.Validator)
-
 		if !ok {
 			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
@@ -149,16 +160,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 
 		validators = append(validators, &v)
 
-		// if subsetSize equals 0, we will iterate through all validators and potentially put them all into the snapshot
-		return len(validators) == int(subsetSize)
+		// if requiredValidatorsCount equals 0, we will iterate through all validators and potentially put them all into the snapshot
+		return len(validators) == requiredValidatorsCount
 	}
 	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
-	minBondFractionPerShare := k.tss.GetMinBondFractionPerShare(ctx)
-
+	// minBondFractionPerShare is only relavant if KeyShareDistributionPolicy is set to WeightedByStake
+	minBondFractionPerShare := utils.Threshold{Numerator: 1, Denominator: keyRequirement.MaxTotalShareCount}
 	for _, validator := range validators {
-		if !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
+		if keyRequirement.KeyShareDistributionPolicy == tss.WeightedByStake && !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
 			nonParticipants = append(nonParticipants, exported.NewValidator(validator, 0))
 			continue
 		}
@@ -167,6 +178,52 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 		participants = append(participants, exported.NewValidator(validator, 0))
 	}
 
+	if len(participants) == 0 {
+		return exported.Snapshot{}, fmt.Errorf("no validator is eligible for keygen")
+	}
+
+	if !keyRequirement.MinKeygenThreshold.IsMet(snapshotConsensusPower, totalConsensusPower) {
+		return exported.Snapshot{}, fmt.Errorf(fmt.Sprintf(
+			"Unable to meet min stake threshold required for keygen: active %s out of %s total",
+			snapshotConsensusPower.String(),
+			totalConsensusPower.String(),
+		))
+	}
+
+	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
+	// the one with least amount of bond among all participants
+	bondPerShare := participants[len(participants)-1].GetSDKValidator().GetConsensusPower()
+	totalShareCount := sdk.ZeroInt()
+	for i := range participants {
+		switch keyRequirement.KeyShareDistributionPolicy {
+		case tss.WeightedByStake:
+			participants[i].ShareCount = participants[i].GetSDKValidator().GetConsensusPower() / bondPerShare
+		case tss.OnePerValidator:
+			participants[i].ShareCount = 1
+		default:
+			return exported.Snapshot{}, fmt.Errorf("invalid key share distribution policy %d", keyRequirement.KeyShareDistributionPolicy)
+		}
+
+		totalShareCount = totalShareCount.AddRaw(participants[i].ShareCount)
+	}
+
+	corruptionThreshold := tssTypes.ComputeCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount)
+	if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount.Int64() {
+		return exported.Snapshot{}, fmt.Errorf("invalid corruption threshold: %d, total share count: %d", corruptionThreshold, totalShareCount.Int64())
+	}
+
+	snapshot := exported.Snapshot{
+		Validators:                 participants,
+		Timestamp:                  ctx.BlockTime(),
+		Height:                     ctx.BlockHeight(),
+		TotalShareCount:            totalShareCount,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: keyRequirement.KeyShareDistributionPolicy,
+		CorruptionThreshold:        corruptionThreshold,
+	}
+	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(&snapshot))
+
+	// build event-related data
 	participantsAddr := make([]string, 0, len(participants))
 	participantsStake := make([]uint32, 0, len(participants))
 	for _, participant := range participants {
@@ -192,43 +249,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, subsetSize int64
 		),
 	)
 
-	if len(participants) == 0 {
-		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("no validator is eligible for keygen")
-	}
-
-	if subsetSize > 0 && len(participants) != int(subsetSize) {
-		return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("only %d validators are eligible for keygen which is less than desired subset size %d", len(participants), subsetSize)
-	}
-
-	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
-	// the one with least amount of bond among all participants
-	bondPerShare := participants[len(participants)-1].GetSDKValidator().GetConsensusPower()
-	totalShareCount := sdk.ZeroInt()
-	for i := range participants {
-		switch keyShareDistributionPolicy {
-		case tss.WeightedByStake:
-			participants[i].ShareCount = participants[i].GetSDKValidator().GetConsensusPower() / bondPerShare
-		case tss.OnePerValidator:
-			participants[i].ShareCount = 1
-		default:
-			return sdk.ZeroInt(), sdk.ZeroInt(), fmt.Errorf("invalid key share distribution policy %d", keyShareDistributionPolicy)
-		}
-
-		totalShareCount = totalShareCount.AddRaw(participants[i].ShareCount)
-	}
-
-	snapshot := exported.Snapshot{
-		Validators:                 participants,
-		Timestamp:                  ctx.BlockTime(),
-		Height:                     ctx.BlockHeight(),
-		TotalShareCount:            totalShareCount,
-		Counter:                    counter,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
-	}
-
-	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(&snapshot))
-
-	return snapshotConsensusPower, totalConsensusPower, nil
+	return snapshot, nil
 }
 
 func (k Keeper) setLatestCounter(ctx sdk.Context, counter int64) {

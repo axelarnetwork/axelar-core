@@ -5,7 +5,7 @@ package mock
 
 import (
 	"crypto/ecdsa"
-	"github.com/axelarnetwork/axelar-core/utils"
+	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -29,8 +29,8 @@ var _ types.TSS = &TSSMock{}
 //
 // 		// make and configure a mocked types.TSS
 // 		mockedTSS := &TSSMock{
-// 			SetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement)  {
-// 				panic("mock out the SetKeyRequirement method")
+// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool) {
+// 				panic("mock out the GetKeyRequirement method")
 // 			},
 // 		}
 //
@@ -39,54 +39,54 @@ var _ types.TSS = &TSSMock{}
 //
 // 	}
 type TSSMock struct {
-	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
-	SetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement)
+	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
+	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
-		SetKeyRequirement []struct {
+		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
+		GetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement tss.KeyRequirement
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
 		}
 	}
-	lockSetKeyRequirement sync.RWMutex
+	lockGetKeyRequirement sync.RWMutex
 }
 
-// SetKeyRequirement calls SetKeyRequirementFunc.
-func (mock *TSSMock) SetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) {
-	if mock.SetKeyRequirementFunc == nil {
-		panic("TSSMock.SetKeyRequirementFunc: method is nil but TSS.SetKeyRequirement was just called")
+// GetKeyRequirement calls GetKeyRequirementFunc.
+func (mock *TSSMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool) {
+	if mock.GetKeyRequirementFunc == nil {
+		panic("TSSMock.GetKeyRequirementFunc: method is nil but TSS.GetKeyRequirement was just called")
 	}
 	callInfo := struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tss.KeyRequirement
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole tss.KeyRole
 	}{
-		Ctx:            ctx,
-		KeyRequirement: keyRequirement,
+		Ctx:     ctx,
+		KeyRole: keyRole,
 	}
-	mock.lockSetKeyRequirement.Lock()
-	mock.calls.SetKeyRequirement = append(mock.calls.SetKeyRequirement, callInfo)
-	mock.lockSetKeyRequirement.Unlock()
-	mock.SetKeyRequirementFunc(ctx, keyRequirement)
+	mock.lockGetKeyRequirement.Lock()
+	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
+	mock.lockGetKeyRequirement.Unlock()
+	return mock.GetKeyRequirementFunc(ctx, keyRole)
 }
 
-// SetKeyRequirementCalls gets all the calls that were made to SetKeyRequirement.
+// GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
 // Check the length with:
-//     len(mockedTSS.SetKeyRequirementCalls())
-func (mock *TSSMock) SetKeyRequirementCalls() []struct {
-	Ctx            github_com_cosmos_cosmos_sdk_types.Context
-	KeyRequirement tss.KeyRequirement
+//     len(mockedTSS.GetKeyRequirementCalls())
+func (mock *TSSMock) GetKeyRequirementCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	KeyRole tss.KeyRole
 } {
 	var calls []struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tss.KeyRequirement
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole tss.KeyRole
 	}
-	mock.lockSetKeyRequirement.RLock()
-	calls = mock.calls.SetKeyRequirement
-	mock.lockSetKeyRequirement.RUnlock()
+	mock.lockGetKeyRequirement.RLock()
+	calls = mock.calls.GetKeyRequirement
+	mock.lockGetKeyRequirement.RUnlock()
 	return calls
 }
 
@@ -1398,7 +1398,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -1424,7 +1424,7 @@ type SnapshotterMock struct {
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error)
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1463,10 +1463,8 @@ type SnapshotterMock struct {
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SubsetSize is the subsetSize argument value.
-			SubsetSize int64
-			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+			// KeyRequirement is the keyRequirement argument value.
+			KeyRequirement tss.KeyRequirement
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -1645,37 +1643,33 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (github_com_cosmos_cosmos_sdk_types.Int, github_com_cosmos_cosmos_sdk_types.Int, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tss.KeyRequirement
 	}{
-		Ctx:                        ctx,
-		SubsetSize:                 subsetSize,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+		Ctx:            ctx,
+		KeyRequirement: keyRequirement,
 	}
 	mock.lockTakeSnapshot.Lock()
 	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
 	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx, subsetSize, keyShareDistributionPolicy)
+	return mock.TakeSnapshotFunc(ctx, keyRequirement)
 }
 
 // TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-	SubsetSize                 int64
-	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	KeyRequirement tss.KeyRequirement
 } {
 	var calls []struct {
-		Ctx                        github_com_cosmos_cosmos_sdk_types.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyRequirement tss.KeyRequirement
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
@@ -2103,6 +2097,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetLatestSignedBatchedCommandsIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetLatestSignedBatchedCommandsID method")
 // 			},
+// 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+// 				panic("mock out the GetMinVoterCount method")
+// 			},
 // 			GetNameFunc: func() string {
 // 				panic("mock out the GetName method")
 // 			},
@@ -2144,6 +2141,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetUnsignedTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) *evmTypes.Transaction {
 // 				panic("mock out the GetUnsignedTx method")
+// 			},
+// 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
+// 				panic("mock out the GetVotingThreshold method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -2248,6 +2248,9 @@ type ChainKeeperMock struct {
 	// GetLatestSignedBatchedCommandsIDFunc mocks the GetLatestSignedBatchedCommandsID method.
 	GetLatestSignedBatchedCommandsIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
+	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
+	GetMinVoterCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool)
+
 	// GetNameFunc mocks the GetName method.
 	GetNameFunc func() string
 
@@ -2289,6 +2292,9 @@ type ChainKeeperMock struct {
 
 	// GetUnsignedTxFunc mocks the GetUnsignedTx method.
 	GetUnsignedTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) *evmTypes.Transaction
+
+	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
+	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -2460,6 +2466,11 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
+		GetMinVoterCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetName holds details about calls to the GetName method.
 		GetName []struct {
 		}
@@ -2545,6 +2556,11 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TxID is the txID argument value.
 			TxID string
+		}
+		// GetVotingThreshold holds details about calls to the GetVotingThreshold method.
+		GetVotingThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -2669,6 +2685,7 @@ type ChainKeeperMock struct {
 	lockGetGatewayByteCodes              sync.RWMutex
 	lockGetHashToSign                    sync.RWMutex
 	lockGetLatestSignedBatchedCommandsID sync.RWMutex
+	lockGetMinVoterCount                 sync.RWMutex
 	lockGetName                          sync.RWMutex
 	lockGetNetwork                       sync.RWMutex
 	lockGetNetworkByID                   sync.RWMutex
@@ -2683,6 +2700,7 @@ type ChainKeeperMock struct {
 	lockGetTokenSymbol                   sync.RWMutex
 	lockGetUnsignedBatchedCommands       sync.RWMutex
 	lockGetUnsignedTx                    sync.RWMutex
+	lockGetVotingThreshold               sync.RWMutex
 	lockLogger                           sync.RWMutex
 	lockSetBurnerInfo                    sync.RWMutex
 	lockSetCommand                       sync.RWMutex
@@ -3355,6 +3373,37 @@ func (mock *ChainKeeperMock) GetLatestSignedBatchedCommandsIDCalls() []struct {
 	return calls
 }
 
+// GetMinVoterCount calls GetMinVoterCountFunc.
+func (mock *ChainKeeperMock) GetMinVoterCount(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+	if mock.GetMinVoterCountFunc == nil {
+		panic("ChainKeeperMock.GetMinVoterCountFunc: method is nil but ChainKeeper.GetMinVoterCount was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinVoterCount.Lock()
+	mock.calls.GetMinVoterCount = append(mock.calls.GetMinVoterCount, callInfo)
+	mock.lockGetMinVoterCount.Unlock()
+	return mock.GetMinVoterCountFunc(ctx)
+}
+
+// GetMinVoterCountCalls gets all the calls that were made to GetMinVoterCount.
+// Check the length with:
+//     len(mockedChainKeeper.GetMinVoterCountCalls())
+func (mock *ChainKeeperMock) GetMinVoterCountCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetMinVoterCount.RLock()
+	calls = mock.calls.GetMinVoterCount
+	mock.lockGetMinVoterCount.RUnlock()
+	return calls
+}
+
 // GetName calls GetNameFunc.
 func (mock *ChainKeeperMock) GetName() string {
 	if mock.GetNameFunc == nil {
@@ -3817,6 +3866,37 @@ func (mock *ChainKeeperMock) GetUnsignedTxCalls() []struct {
 	mock.lockGetUnsignedTx.RLock()
 	calls = mock.calls.GetUnsignedTx
 	mock.lockGetUnsignedTx.RUnlock()
+	return calls
+}
+
+// GetVotingThreshold calls GetVotingThresholdFunc.
+func (mock *ChainKeeperMock) GetVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
+	if mock.GetVotingThresholdFunc == nil {
+		panic("ChainKeeperMock.GetVotingThresholdFunc: method is nil but ChainKeeper.GetVotingThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetVotingThreshold.Lock()
+	mock.calls.GetVotingThreshold = append(mock.calls.GetVotingThreshold, callInfo)
+	mock.lockGetVotingThreshold.Unlock()
+	return mock.GetVotingThresholdFunc(ctx)
+}
+
+// GetVotingThresholdCalls gets all the calls that were made to GetVotingThreshold.
+// Check the length with:
+//     len(mockedChainKeeper.GetVotingThresholdCalls())
+func (mock *ChainKeeperMock) GetVotingThresholdCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetVotingThreshold.RLock()
+	calls = mock.calls.GetVotingThreshold
+	mock.lockGetVotingThreshold.RUnlock()
 	return calls
 }
 

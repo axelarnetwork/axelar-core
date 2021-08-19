@@ -83,12 +83,12 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if s.HasKeygenStarted(ctx, req.NewKeyID) {
-		return nil, fmt.Errorf("key ID '%s' is already in use", req.NewKeyID)
+	if s.HasKeygenStarted(ctx, req.KeyID) {
+		return nil, fmt.Errorf("key ID '%s' is already in use", req.KeyID)
 	}
 
 	s.ScheduleKeygen(ctx, *req)
-	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.NewKeyID))
+	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.KeyID))
 
 	return &types.StartKeygenResponse{}, nil
 }

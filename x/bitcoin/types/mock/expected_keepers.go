@@ -1517,7 +1517,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+// 			TakeSnapshotFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -1543,7 +1543,7 @@ type SnapshotterMock struct {
 	GetSnapshotFunc func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
+	TakeSnapshotFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1582,10 +1582,8 @@ type SnapshotterMock struct {
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// SubsetSize is the subsetSize argument value.
-			SubsetSize int64
-			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+			// KeyRequirement is the keyRequirement argument value.
+			KeyRequirement tss.KeyRequirement
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -1764,37 +1762,33 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-		Ctx                        sdk.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		Ctx            sdk.Context
+		KeyRequirement tss.KeyRequirement
 	}{
-		Ctx:                        ctx,
-		SubsetSize:                 subsetSize,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+		Ctx:            ctx,
+		KeyRequirement: keyRequirement,
 	}
 	mock.lockTakeSnapshot.Lock()
 	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
 	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx, subsetSize, keyShareDistributionPolicy)
+	return mock.TakeSnapshotFunc(ctx, keyRequirement)
 }
 
 // TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx                        sdk.Context
-	SubsetSize                 int64
-	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+	Ctx            sdk.Context
+	KeyRequirement tss.KeyRequirement
 } {
 	var calls []struct {
-		Ctx                        sdk.Context
-		SubsetSize                 int64
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
+		Ctx            sdk.Context
+		KeyRequirement tss.KeyRequirement
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
@@ -1860,6 +1854,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetMinOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMinOutputAmount method")
 // 			},
+// 			GetMinVoterCountFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetMinVoterCount method")
+// 			},
 // 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 // 				panic("mock out the GetNetwork method")
 // 			},
@@ -1889,6 +1886,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			},
 // 			GetUnsignedTxFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
 // 				panic("mock out the GetUnsignedTx method")
+// 			},
+// 			GetVotingThresholdFunc: func(ctx sdk.Context) utils.Threshold {
+// 				panic("mock out the GetVotingThreshold method")
 // 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -1981,6 +1981,9 @@ type BTCKeeperMock struct {
 	// GetMinOutputAmountFunc mocks the GetMinOutputAmount method.
 	GetMinOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
 
+	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
+	GetMinVoterCountFunc func(ctx sdk.Context) int64
+
 	// GetNetworkFunc mocks the GetNetwork method.
 	GetNetworkFunc func(ctx sdk.Context) types.Network
 
@@ -2010,6 +2013,9 @@ type BTCKeeperMock struct {
 
 	// GetUnsignedTxFunc mocks the GetUnsignedTx method.
 	GetUnsignedTxFunc func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool)
+
+	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
+	GetVotingThresholdFunc func(ctx sdk.Context) utils.Threshold
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
@@ -2145,6 +2151,11 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
+		GetMinVoterCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetNetwork holds details about calls to the GetNetwork method.
 		GetNetwork []struct {
 			// Ctx is the ctx argument value.
@@ -2204,6 +2215,11 @@ type BTCKeeperMock struct {
 			Ctx sdk.Context
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
+		}
+		// GetVotingThreshold holds details about calls to the GetVotingThreshold method.
+		GetVotingThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -2318,6 +2334,7 @@ type BTCKeeperMock struct {
 	lockGetMaxInputCount                    sync.RWMutex
 	lockGetMaxSecondaryOutputAmount         sync.RWMutex
 	lockGetMinOutputAmount                  sync.RWMutex
+	lockGetMinVoterCount                    sync.RWMutex
 	lockGetNetwork                          sync.RWMutex
 	lockGetOutPointInfo                     sync.RWMutex
 	lockGetParams                           sync.RWMutex
@@ -2328,6 +2345,7 @@ type BTCKeeperMock struct {
 	lockGetSignedTx                         sync.RWMutex
 	lockGetUnconfirmedAmount                sync.RWMutex
 	lockGetUnsignedTx                       sync.RWMutex
+	lockGetVotingThreshold                  sync.RWMutex
 	lockLogger                              sync.RWMutex
 	lockSetAddress                          sync.RWMutex
 	lockSetConfirmedOutpointInfo            sync.RWMutex
@@ -2870,6 +2888,37 @@ func (mock *BTCKeeperMock) GetMinOutputAmountCalls() []struct {
 	return calls
 }
 
+// GetMinVoterCount calls GetMinVoterCountFunc.
+func (mock *BTCKeeperMock) GetMinVoterCount(ctx sdk.Context) int64 {
+	if mock.GetMinVoterCountFunc == nil {
+		panic("BTCKeeperMock.GetMinVoterCountFunc: method is nil but BTCKeeper.GetMinVoterCount was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinVoterCount.Lock()
+	mock.calls.GetMinVoterCount = append(mock.calls.GetMinVoterCount, callInfo)
+	mock.lockGetMinVoterCount.Unlock()
+	return mock.GetMinVoterCountFunc(ctx)
+}
+
+// GetMinVoterCountCalls gets all the calls that were made to GetMinVoterCount.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMinVoterCountCalls())
+func (mock *BTCKeeperMock) GetMinVoterCountCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMinVoterCount.RLock()
+	calls = mock.calls.GetMinVoterCount
+	mock.lockGetMinVoterCount.RUnlock()
+	return calls
+}
+
 // GetNetwork calls GetNetworkFunc.
 func (mock *BTCKeeperMock) GetNetwork(ctx sdk.Context) types.Network {
 	if mock.GetNetworkFunc == nil {
@@ -3197,6 +3246,37 @@ func (mock *BTCKeeperMock) GetUnsignedTxCalls() []struct {
 	mock.lockGetUnsignedTx.RLock()
 	calls = mock.calls.GetUnsignedTx
 	mock.lockGetUnsignedTx.RUnlock()
+	return calls
+}
+
+// GetVotingThreshold calls GetVotingThresholdFunc.
+func (mock *BTCKeeperMock) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
+	if mock.GetVotingThresholdFunc == nil {
+		panic("BTCKeeperMock.GetVotingThresholdFunc: method is nil but BTCKeeper.GetVotingThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetVotingThreshold.Lock()
+	mock.calls.GetVotingThreshold = append(mock.calls.GetVotingThreshold, callInfo)
+	mock.lockGetVotingThreshold.Unlock()
+	return mock.GetVotingThresholdFunc(ctx)
+}
+
+// GetVotingThresholdCalls gets all the calls that were made to GetVotingThreshold.
+// Check the length with:
+//     len(mockedBTCKeeper.GetVotingThresholdCalls())
+func (mock *BTCKeeperMock) GetVotingThresholdCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetVotingThreshold.RLock()
+	calls = mock.calls.GetVotingThreshold
+	mock.lockGetVotingThreshold.RUnlock()
 	return calls
 }
 

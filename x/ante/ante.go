@@ -75,6 +75,21 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, nextKeyID) {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress, chain.Name, keyRole.SimpleString())
 					}
+
+					rotationCount := d.tss.GetRotationCount(ctx, chain, keyRole)
+					unbondingLockingKeyRotationCount := d.tss.GetKeyUnbondingLockingKeyRotationCount(ctx)
+					for i := 1; i <= int(unbondingLockingKeyRotationCount); i++ {
+						key, ok := d.tss.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount-int64(i))
+						if !ok {
+							logger(ctx).Debug(fmt.Sprintf("only %d previous %s keys exist for chain", i, keyRole.SimpleString()))
+
+							break
+						}
+
+						if isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, key.ID) {
+							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's %s key %s", valAddress, chain.Name, keyRole.SimpleString(), key.ID)
+						}
+					}
 				}
 			}
 		default:

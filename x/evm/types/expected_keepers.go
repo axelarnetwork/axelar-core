@@ -82,6 +82,8 @@ type ChainKeeper interface {
 	GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
 	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
 	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
+	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
+	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 }
 
 // ParamsKeeper represents a global paramstore
@@ -92,7 +94,7 @@ type ParamsKeeper interface {
 
 // TSS exposes key functionality
 type TSS interface {
-	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
+	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
 }
 
 // Voter exposes voting functionality

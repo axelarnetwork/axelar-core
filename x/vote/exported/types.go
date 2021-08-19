@@ -79,6 +79,15 @@ func Threshold(threshold utils.Threshold) PollProperty {
 	}}
 }
 
+// MinVoterCount sets the minimum number of voters that have to vote on PollMeta
+// If not enough voters exist, then all of them have to vote
+func MinVoterCount(minVoterCount int64) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		metadata.MinVoterCount = minVoterCount
+		return metadata
+	}}
+}
+
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
 	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error

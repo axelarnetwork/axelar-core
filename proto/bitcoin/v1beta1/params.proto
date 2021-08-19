@@ -26,4 +26,7 @@ message Params {
   ];
   utils.v1beta1.Threshold external_multisig_threshold = 10
       [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold voting_threshold = 11
+      [ (gogoproto.nullable) = false ];
+  int64 min_voter_count = 12;
 }

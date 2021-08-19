@@ -10,6 +10,7 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gethParams "github.com/ethereum/go-ethereum/params"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 )
 
@@ -18,12 +19,13 @@ var (
 	KeyChain               = []byte("chain")
 	KeyConfirmationHeight  = []byte("confirmationHeight")
 	KeyNetwork             = []byte("network")
-	KeyRevoteLockingPeriod = []byte("RevoteLockingPeriod")
+	KeyRevoteLockingPeriod = []byte("revoteLockingPeriod")
 	KeyNetworks            = []byte("networks")
-
-	KeyGateway  = []byte("gateway")
-	KeyToken    = []byte("token")
-	KeyBurnable = []byte("burneable")
+	KeyVotingThreshold     = []byte("votingThreshold")
+	KeyGateway             = []byte("gateway")
+	KeyToken               = []byte("token")
+	KeyBurnable            = []byte("burneable")
+	KeyMinVoterCount       = []byte("minVoterCount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -76,6 +78,8 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
+		VotingThreshold: utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:   15,
 	}}
 }
 
@@ -97,6 +101,8 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),
+		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
+		params.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 	}
 }
 
@@ -173,6 +179,40 @@ func validateNetworks(network interface{}) error {
 	return nil
 }
 
+func validateVotingThreshold(votingThreshold interface{}) error {
+	val, ok := votingThreshold.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for VotingThreshold: %T", votingThreshold)
+	}
+
+	if val.Numerator <= 0 {
+		return fmt.Errorf("threshold numerator must be a positive integer for VotingThreshold")
+	}
+
+	if val.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer for VotingThreshold")
+	}
+
+	if val.Numerator > val.Denominator {
+		return fmt.Errorf("threshold must be <=1 for VotingThreshold")
+	}
+
+	return nil
+}
+
+func validateMinVoterCount(minVoterCount interface{}) error {
+	val, ok := minVoterCount.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for MinVoterCount: %T", minVoterCount)
+	}
+
+	if val < 0 {
+		return fmt.Errorf("min voter count must be >=0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -184,6 +224,14 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateRevoteLockingPeriod(m.RevoteLockingPeriod); err != nil {
+		return err
+	}
+
+	if err := validateVotingThreshold(m.VotingThreshold); err != nil {
+		return err
+	}
+
+	if err := validateMinVoterCount(m.MinVoterCount); err != nil {
 		return err
 	}
 

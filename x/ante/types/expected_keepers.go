@@ -5,6 +5,7 @@ import (
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -13,6 +14,9 @@ type Tss interface {
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
+	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
+	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 }
 
 // Nexus provides access to the nexus functionality

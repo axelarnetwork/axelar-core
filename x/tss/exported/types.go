@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // Signature - an ECDSA signature
@@ -101,24 +103,36 @@ func (r KeyShareDistributionPolicy) Validate() error {
 
 // Validate validates the KeyRequirement
 func (m KeyRequirement) Validate() error {
-	if m.ChainName == "" {
-		return fmt.Errorf("invalid ChainName %s", m.ChainName)
-	}
-
 	if err := m.KeyRole.Validate(); err != nil {
 		return err
 	}
 
-	if m.KeyRole == ExternalKey {
-		return nil
+	if m.MinKeygenThreshold.Validate() != nil || m.MinKeygenThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.MinKeygenThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+		return fmt.Errorf("MinKeygenThreshold must be <=1 and >0")
 	}
 
-	if m.MinValidatorSubsetSize <= 0 {
-		return fmt.Errorf("MinValidatorSubsetSize has to be greater than 0 when the key is required")
+	if m.SafetyThreshold.Validate() != nil || m.SafetyThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.SafetyThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+		return fmt.Errorf("SafetyThreshold must be <=1 and >0")
 	}
 
 	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
 		return err
+	}
+
+	if m.KeygenVotingThreshold.Validate() != nil || m.KeygenVotingThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.KeygenVotingThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+		return fmt.Errorf("KeygenVotingThreshold must be <=1 and >0")
+	}
+
+	if m.SignVotingThreshold.Validate() != nil || m.SignVotingThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.SignVotingThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+		return fmt.Errorf("SignVotingThreshold must be <=1 and >0")
+	}
+
+	if m.KeygenTimeout <= 0 {
+		return fmt.Errorf("KeygenTimeout must be >0")
+	}
+
+	if m.SignTimeout <= 0 {
+		return fmt.Errorf("SignTimeout must be >0")
 	}
 
 	return nil

@@ -140,6 +140,7 @@ func TestPoll_Vote(t *testing.T) {
 		allVotes := make(map[string]types.TalliedVote)
 		hasVoted := make(map[string]bool)
 		store := &mock.StoreMock{
+			GetTotalVoterCountFunc: func() int64 { return int64(len(shareCounts)) },
 			SetVoteFunc: func(addr sdk.ValAddress, v types.TalliedVote) {
 				hasVoted[addr.String()] = true
 				allVotes[v.Hash()] = v

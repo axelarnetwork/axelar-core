@@ -60,12 +60,12 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// start keygen
 	btcMasterKeyID := randStrings.Next()
-	btcKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), btcMasterKeyID, 0, tss.WeightedByStake))
+	btcKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), btcMasterKeyID, tss.MasterKey))
 	assert.NoError(t, btcKeygenResult.Error)
 
 	// start keygen
 	ethMasterKeyID := randStrings.Next()
-	ethKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), ethMasterKeyID, 0, tss.WeightedByStake))
+	ethKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), ethMasterKeyID, tss.MasterKey))
 	assert.NoError(t, ethKeygenResult.Error)
 
 	// wait for voting to be done
@@ -76,7 +76,7 @@ func Test_wBTC_mint(t *testing.T) {
 	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
-		masterKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), masterKeyID, 0, tss.WeightedByStake))
+		masterKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
 		assert.NoError(t, masterKeygenResult.Error)
 
 		// wait for voting to be done
@@ -88,7 +88,7 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
 		secondaryKeyID := randStrings.Next()
-		secondaryKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), secondaryKeyID, 0, tss.OnePerValidator))
+		secondaryKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), secondaryKeyID, tss.SecondaryKey))
 		assert.NoError(t, secondaryKeygenResult.Error)
 
 		// wait for voting to be done

@@ -58,6 +58,7 @@ func NewPollMetaData(key exported.PollKey, threshold utils.Threshold, snapshotSe
 		Result:          nil,
 		VotingThreshold: threshold,
 		State:           exported.Pending,
+		MinVoterCount:   0,
 	}
 }
 
@@ -80,6 +81,7 @@ type Store interface {
 	SetMetadata(metadata exported.PollMetadata)
 	GetPoll(key exported.PollKey) exported.Poll
 	DeletePoll()
+	GetTotalVoterCount() int64
 }
 
 // NewPoll creates a new poll
@@ -206,12 +208,24 @@ func (p *Poll) tally(voter sdk.ValAddress, shareCount int64, data codec.ProtoMar
 	} else {
 		talliedVote = existingVote
 		talliedVote.Tally = talliedVote.Tally.AddRaw(shareCount)
+		talliedVote.Voters = append(talliedVote.Voters, voter)
 	}
 	return talliedVote
 }
 
+func (p Poll) getVoterCount() int64 {
+	var count int64
+
+	for _, talliedVote := range p.GetVotes() {
+		count += int64(len(talliedVote.Voters))
+	}
+
+	return count
+}
+
 func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
-	return p.VotingThreshold.IsMet(majorityShare, p.GetTotalShareCount())
+	return p.VotingThreshold.IsMet(majorityShare, p.GetTotalShareCount()) &&
+		(p.GetTotalVoterCount() < p.MinVoterCount || p.getVoterCount() >= p.MinVoterCount)
 }
 
 func (p *Poll) cannotWin(majorityShare sdk.Int) bool {

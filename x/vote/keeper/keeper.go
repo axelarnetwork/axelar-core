@@ -125,6 +125,10 @@ type pollStore struct {
 	key      exported.PollKey
 }
 
+func (p *pollStore) GetTotalVoterCount() int64 {
+	return int64(len(p.snapshot.Validators))
+}
+
 func (p *pollStore) GetTotalShareCount() sdk.Int {
 	return p.snapshot.TotalShareCount
 }
@@ -153,6 +157,8 @@ func (p pollStore) GetVote(hash string) (types.TalliedVote, bool) {
 
 func (p *pollStore) GetVotes() []types.TalliedVote {
 	if !p.votesCached {
+		p.votes = []types.TalliedVote{}
+
 		iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
 		defer utils.CloseLogError(iter, p.logger)
 

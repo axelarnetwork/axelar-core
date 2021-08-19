@@ -47,7 +47,6 @@ func TestMgr_ProcessSignStart(t *testing.T) {
 			principalAddr,
 			&mock2.BroadcasterMock{},
 			rand.Bytes(sdk.AddrLen),
-			rand.PosI64(),
 			log.TestingLogger(),
 			cdc,
 		)

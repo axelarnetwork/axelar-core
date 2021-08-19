@@ -133,6 +133,8 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			SetPendingOutpointInfoFunc:        func(sdk.Context, vote.PollKey, types.OutPointInfo) {},
+			GetVotingThresholdFunc:            func(ctx sdk.Context) utils.Threshold { return types.DefaultParams().VotingThreshold },
+			GetMinVoterCountFunc:              func(ctx sdk.Context) int64 { return types.DefaultParams().MinVoterCount },
 		}
 		voter = &mock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },

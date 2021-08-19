@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/gogo/protobuf/proto"
 )
@@ -47,35 +47,40 @@ type ValidatorInfo struct {
 // Slasher provides functionality to manage slashing info for a validator
 type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorInfo, found bool)
+	SignedBlocksWindow(ctx sdk.Context) (res int64)
 }
 
 // Tss provides functionality to tss module
 type Tss interface {
-	SetKeyRequirement(ctx sdk.Context, keyRequirement tss.KeyRequirement)
-	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
+	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold
+	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
 }
 
 // IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
 func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, seqNo int64, validator SDKValidator) bool {
-	return IsValidatorActive(ctx, slasher, validator) &&
+	return IsValidatorActive(ctx, slasher, validator, tss.GetMaxMissedBlocksPerWindow(ctx)) &&
 		HasProxyRegistered(ctx, snapshotter, validator) &&
 		IsValidatorAvaiableForCounter(ctx, tss, seqNo, validator) &&
 		!IsValidatorTssSuspended(ctx, tss, validator)
 }
 
 // IsValidatorActive returns true if the validator is active; otherwise, false
-func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator) bool {
+func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator, maxMissedBlocksPerWindow utils.Threshold) bool {
 	consAddr, err := validator.GetConsAddr()
 	if err != nil {
 		return false
 	}
 
+	signedBlocksWindow := slasher.SignedBlocksWindow(ctx)
 	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAddr)
 
-	return found && !signingInfo.Tombstoned && signingInfo.MissedBlocksCounter <= 0 && !validator.IsJailed()
+	return found &&
+		!signingInfo.Tombstoned &&
+		maxMissedBlocksPerWindow.GTE(utils.Threshold{Numerator: signingInfo.MissedBlocksCounter, Denominator: signedBlocksWindow}) &&
+		!validator.IsJailed()
 }
 
 // HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
@@ -111,7 +116,7 @@ type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
-	TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (snapshotConsensusPower sdk.Int, totalConsensusPower sdk.Int, err error)
+	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }

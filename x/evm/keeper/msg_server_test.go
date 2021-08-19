@@ -24,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -31,8 +32,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -61,6 +62,8 @@ func TestLink_UnknownChain(t *testing.T) {
 		Token:               tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
+		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:       15,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
@@ -93,6 +96,8 @@ func TestLink_NoGateway(t *testing.T) {
 		Token:               tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
+		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:       15,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -359,10 +364,13 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			GetRevoteLockingPeriodFunc: func(ctx sdk.Context) (int64, bool) {
 				return rand.I64Between(50, 100), true
 			},
+			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
+				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			},
+			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
 		}
 
 		basek = &evmMock.BaseKeeperMock{
-
 			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
 					return chaink
@@ -422,8 +430,8 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				}
 				return -1
 			},
-			TakeSnapshotFunc: func(sdk.Context, int64, tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
-				return sdk.NewInt(rand.I64Between(10000, 100000)), sdk.NewInt(rand.I64Between(10000, 100000)), nil
+			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
+				return snapshot.Snapshot{}, nil
 			},
 		}
 
@@ -487,6 +495,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 		chaink = &evmMock.ChainKeeperMock{
+			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
+				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			},
+			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
@@ -631,9 +643,7 @@ func TestAddChain(t *testing.T) {
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 		}
 
-		tssMock = &evmMock.TSSMock{
-			SetKeyRequirementFunc: func(sdk.Context, tss.KeyRequirement) {},
-		}
+		tssMock = &evmMock.TSSMock{}
 
 		n = &evmMock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -646,14 +656,11 @@ func TestAddChain(t *testing.T) {
 		nativeAsset = rand.StrBetween(3, 10)
 		params := types.DefaultParams()[0]
 		params.Chain = name
-		keyReqs := tssTypes.DefaultParams().KeyRequirements[0]
-		keyReqs.ChainName = name
 		msg = &types.AddChainRequest{
-			Sender:         rand.Bytes(20),
-			Name:           name,
-			NativeAsset:    nativeAsset,
-			KeyRequirement: keyReqs,
-			Params:         params,
+			Sender:      rand.Bytes(20),
+			Name:        name,
+			NativeAsset: nativeAsset,
+			Params:      params,
 		}
 
 		server = keeper.NewMsgServerImpl(basek, tssMock, n, &evmMock.SignerMock{}, &evmMock.VoterMock{}, &mock.SnapshotterMock{})
@@ -667,12 +674,10 @@ func TestAddChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(basek.SetParamsCalls()))
-		assert.Equal(t, 1, len(tssMock.SetKeyRequirementCalls()))
 		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
 		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
 		assert.Equal(t, nativeAsset, basek.SetPendingChainCalls()[0].Chain.NativeAsset)
 		assert.Equal(t, name, basek.SetParamsCalls()[0].Params[0].Chain)
-		assert.Equal(t, name, tssMock.SetKeyRequirementCalls()[0].KeyRequirement.ChainName)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
@@ -725,6 +730,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			SetPendingDepositFunc:             func(sdk.Context, vote.PollKey, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
+			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
+				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			},
+			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
 		}
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
@@ -895,6 +904,8 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		Token:               tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
+		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:       15,
 	})
 	k.ForChain(ctx, chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
 

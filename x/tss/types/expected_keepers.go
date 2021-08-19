@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -69,9 +68,7 @@ type TSSKeeper interface {
 	HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
 	GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte
 	DeleteAllRecoveryInfos(ctx sdk.Context, keyID string)
-	SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement)
-	GetKeyRequirement(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
-	GetCorruptionThreshold(ctx sdk.Context, keyID string) (int64, bool)
+	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
@@ -83,7 +80,7 @@ type TSSKeeper interface {
 	DeleteScheduledKeygen(ctx sdk.Context, ID string)
 	DeleteScheduledSign(ctx sdk.Context, ID string)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
-	StartKeygen(ctx sdk.Context, voter Voter, keyID string, snapshot snapshot.Snapshot) error
+	StartKeygen(ctx sdk.Context, voter Voter, keyID string, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
 	GetAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
 	DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType)
@@ -99,8 +96,6 @@ type TSSKeeper interface {
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
-	GetMinKeygenThreshold(ctx sdk.Context) utils.Threshold
-	GetMinBondFractionPerShare(ctx sdk.Context) utils.Threshold
 	HasKeygenStarted(ctx sdk.Context, keyID string) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
 	DeleteKeyIDForSig(ctx sdk.Context, sigID string)

@@ -11,28 +11,17 @@ option (gogoproto.goproto_getters_all) = false;
 // Params is the parameter set for this module
 message Params {
   int64 locking_period = 1 [ deprecated = true ];
-  // MinKeygenThreshold defines the minimum % of stake that must be online
-  // to authorize generation of a new key in the system.
-  utils.v1beta1.Threshold min_keygen_threshold = 2
-      [ (gogoproto.nullable) = false ];
-  // CorruptionThreshold defines the corruption threshold with which
-  // we'll run keygen protocol.
-  utils.v1beta1.Threshold corruption_threshold = 3
-      [ (gogoproto.nullable) = false ];
-  // KeyRequirements defines the requirement of each key for each chain
-  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 4
-      [ (gogoproto.nullable) = false ];
-  // MinBondFractionPerShare defines the % of stake validators have to bond per
-  // key share
-  utils.v1beta1.Threshold min_bond_fraction_per_share = 5
+  // KeyRequirements defines the requirement for each key role
+  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 2
       [ (gogoproto.nullable) = false ];
   // SuspendDurationInBlocks defines the number of blocks a
-  // validator is disallowed to participate in any TSS ceremony after committing
-  // a malicious behaviour during signing
-  int64 suspend_duration_in_blocks = 6;
-  // TimeoutInBlocks defines the timeout in blocks for signing and keygen
-  int64 timeout_in_blocks = 7;
+  // validator is disallowed to participate in any TSS ceremony after
+  // committing a malicious behaviour during signing
+  int64 suspend_duration_in_blocks = 3;
   // AckWindowInBlocks defines the time limit in blocks for a broadcaster to
   // submit their acknowledgment of a sign/keygen start
-  int64 ack_window_in_blocks = 8;
+  int64 ack_window_in_blocks = 4;
+  utils.v1beta1.Threshold max_missed_blocks_per_window = 5
+      [ (gogoproto.nullable) = false ];
+  int64 unbonding_locking_key_rotation_count = 6;
 }

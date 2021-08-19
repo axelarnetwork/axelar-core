@@ -177,7 +177,14 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
-	if err := s.voter.InitializePoll(ctx, pollKey, counter, vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx))); err != nil {
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		counter,
+		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
+		vote.Threshold(s.GetVotingThreshold(ctx)),
+		vote.MinVoterCount(s.GetMinVoterCount(ctx)),
+	); err != nil {
 		return nil, err
 	}
 	s.SetPendingOutpointInfo(ctx, pollKey, req.OutPointInfo)

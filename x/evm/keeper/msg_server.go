@@ -159,7 +159,24 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
-	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		seqNo,
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+	); err != nil {
 		return nil, err
 	}
 
@@ -199,20 +216,26 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainRequest) (*types.ConfirmChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if _, found := s.nexus.GetChain(ctx, req.Name); found {
-		return &types.ConfirmChainResponse{}, fmt.Errorf("chain '%s' is already confirmed", req.Name)
+		return nil, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
 	if _, ok := s.GetPendingChain(ctx, req.Name); !ok {
-		return &types.ConfirmChainResponse{}, fmt.Errorf("'%s' has not been added yet", req.Name)
+		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
 	seqNo := s.snapshotter.GetLatestCounter(ctx)
 	if seqNo < 0 {
-		_, _, err := s.snapshotter.TakeSnapshot(ctx, 0, tss.WeightedByStake)
+		keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey)
+		if !ok {
+			return nil, fmt.Errorf("key requirement for key role %s not found", tss.MasterKey.SimpleString())
+		}
+
+		snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
 		if err != nil {
 			return nil, fmt.Errorf("unable to take snapshot: %v", err)
 		}
-		seqNo = s.snapshotter.GetLatestCounter(ctx)
+
+		seqNo = snapshot.Counter
 	}
 	keeper := s.ForChain(ctx, req.Name)
 
@@ -221,8 +244,25 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Name)
 	}
 
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold for chain %s not found", req.Name)
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", req.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
-	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		seqNo,
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+	); err != nil {
 		return nil, err
 	}
 
@@ -278,8 +318,25 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.BurnerAddress.Hex())
-	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		seqNo,
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+	); err != nil {
 		return nil, err
 	}
 
@@ -360,8 +417,25 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
 	}
 
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	}
+
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.TransferType.SimpleString(), req.KeyID))
-	if err := s.voter.InitializePoll(ctx, pollKey, seqNo, vote.ExpiryAt(ctx.BlockHeight()+period)); err != nil {
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		seqNo,
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+	); err != nil {
 		return nil, err
 	}
 
@@ -1179,7 +1253,6 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	}
 
 	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true})
-	s.tss.SetKeyRequirement(ctx, req.KeyRequirement)
 	s.SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(

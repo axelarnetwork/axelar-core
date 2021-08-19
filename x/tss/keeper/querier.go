@@ -62,14 +62,10 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
 	}
+
 	snapshot, ok := s.GetSnapshot(ctx, counter)
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
-	}
-
-	threshold, found := k.GetCorruptionThreshold(ctx, keyID)
-	if !found {
-		return nil, fmt.Errorf("keyID %s has no corruption threshold defined", keyID)
 	}
 
 	participants := make([]string, 0, len(snapshot.Validators))
@@ -82,7 +78,7 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 	infos := k.GetAllRecoveryInfos(ctx, keyID)
 
 	resp := tssTypes.QueryRecoveryResponse{
-		Threshold:          int32(threshold),
+		Threshold:          int32(snapshot.CorruptionThreshold),
 		PartyUids:          participants,
 		PartyShareCounts:   participantShareCounts,
 		ShareRecoveryInfos: infos,
