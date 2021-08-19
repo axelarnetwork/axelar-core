@@ -11,10 +11,16 @@ var _ log.Logger = (*NOPLogger)(nil)
 // NewNOPLogger returns a logger that doesn't do anything.
 func NewNOPLogger() log.Logger { return &NOPLogger{} }
 
-func (NOPLogger) Info(string, ...interface{})  {}
+// Info does nothing
+func (NOPLogger) Info(string, ...interface{}) {}
+
+// Debug does nothing
 func (NOPLogger) Debug(string, ...interface{}) {}
+
+// Error does nothing
 func (NOPLogger) Error(string, ...interface{}) {}
 
+// With does nothing
 func (l *NOPLogger) With(...interface{}) log.Logger {
 	return l
 }
