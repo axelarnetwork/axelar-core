@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,6 +32,11 @@ type msgServer struct {
 	staker      types.StakingKeeper
 	voter       types.Voter
 	nexus       types.Nexus
+}
+
+type VoteData struct {
+	PubKeyBytes       []byte
+	GroupRecoveryInfo []byte
 }
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
@@ -223,7 +229,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		voteData = &gogoprototypes.BytesValue{Value: pubKey}
+		voteDataStr := VoteData{PubKeyBytes: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
+		bz, err := json.Marshal(voteDataStr)
+		if err != nil {
+			return nil, fmt.Errorf("could not marshal vote data")
+		}
+
+		voteData = &gogoprototypes.BytesValue{Value: bz}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
@@ -271,9 +283,15 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
+		var voteData VoteData
+		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
 		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+			return nil, fmt.Errorf("could not unmarshal vote data: [%w]", err)
+		}
+
+		btcecPK, err := btcec.ParsePubKey(voteData.PubKeyBytes, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
 		pubKey := btcecPK.ToECDSA()
