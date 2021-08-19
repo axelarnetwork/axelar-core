@@ -102,6 +102,7 @@ type Signer interface {
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool)
+	SetKeyRole(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
