@@ -2,6 +2,7 @@ package utils
 
 import "github.com/tendermint/tendermint/libs/log"
 
+// NopLogger is a logger that doesn't do anything
 type NopLogger struct{}
 
 // Interface assertions
