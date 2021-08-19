@@ -173,7 +173,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.OutPointInfo.OutPoint)
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", req.OutPointInfo.OutPoint, req.OutPointInfo.Address, req.OutPointInfo.Amount))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
