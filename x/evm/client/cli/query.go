@@ -37,9 +37,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBytecode(queryRoute),
 		GetCmdSignedTx(queryRoute),
 		GetCmdSendTx(queryRoute),
-		GetCmdSendCommand(queryRoute),
-		GetCmdQueryCommandData(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
+		GetCmdLatestBatchedCommands(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -329,64 +328,6 @@ func GetCmdSendTx(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdSendCommand returns the query to send a signed command from an externally controlled address to the specified contract
-func GetCmdSendCommand(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "sendCommand [chain] [commandID] [fromAddress]",
-		Short: "Send a transaction signed by [fromAddress] that executes the command [commandID] to Axelar Gateway",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-			var commandID types.CommandID
-			copy(commandID[:], common.Hex2Bytes(args[1]))
-			params := types.CommandParams{
-				Chain:     args[0],
-				CommandID: commandID,
-				Sender:    args[2],
-			}
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.SendCommand), cliCtx.LegacyAmino.MustMarshalJSON(params))
-			if err != nil {
-				return sdkerrors.Wrapf(err, "could not send %s transaction executing command %s", args[0], commandID)
-			}
-
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to %s", common.BytesToHash(res).Hex(), args[0]))
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdQueryCommandData returns the query to get the signed command data
-func GetCmdQueryCommandData(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "command [chain] [commandID]",
-		Short: "Get the signed command data that can be wrapped in an EVM transaction to execute the command [commandID] on Axelar Gateway",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			commandIDHex := args[1]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QCommandData, chain, commandIDHex), nil)
-			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get command %s", commandIDHex)
-			}
-
-			fmt.Println("0x" + common.Bytes2Hex(res))
-			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
 // GetCmdQueryBatchedCommands returns the query to get the batched commands
 func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
@@ -405,6 +346,35 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBatchedCommands, chain, idHex))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get batched commands %s", idHex)
+			}
+
+			var res types.QueryBatchedCommandsResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdLatestBatchedCommands returns the query to get the latest batched commands
+func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "latest-batched-commands [chain]",
+		Short: "Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestBatchedCommands, chain))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain)
 			}
 
 			var res types.QueryBatchedCommandsResponse

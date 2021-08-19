@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -711,8 +712,14 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 
-func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployTokenRequest) (*types.SignDeployTokenResponse, error) {
+func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	keeper := s.ForChain(ctx, req.Chain)
+
+	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
@@ -728,76 +735,47 @@ func (s msgServer) SignDeployToken(c context.Context, req *types.SignDeployToken
 		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
 	}
 
-	commandID := getCommandID([]byte(req.TokenName), chainID)
-
-	data, err := types.CreateDeployTokenCommandData(chainID, commandID, req.TokenName, req.Symbol, req.Decimals, req.Capacity)
-	if err != nil {
-		return nil, err
+	if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	masterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
-
-	commandIDHex := common.Bytes2Hex(commandID[:])
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
-	signHash := types.GetSignHash(data)
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
+	command, err := types.CreateDeployTokenCommand(
+		chainID,
+		masterKeyID,
+		req.TokenName,
+		req.Symbol,
+		req.Decimals,
+		req.Capacity.BigInt(),
+	)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.TokenName, req.Symbol, chain.Name)
 	}
 
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
-	}
-
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           keyID,
-		SigID:           commandIDHex,
-		Msg:             signHash.Bytes(),
-		SnapshotCounter: snapshot.Counter,
-	}); err != nil {
+	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
+	if err := keeper.SetCommand(ctx, command); err != nil {
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for deploy-token command %s", commandIDHex))
-
-	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
-		),
-	)
-	return &types.SignDeployTokenResponse{CommandID: commandID[:]}, nil
+	return &types.CreateDeployTokenResponse{}, nil
 }
 
-func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRequest) (*types.SignBurnTokensResponse, error) {
+func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnTokensRequest) (*types.CreateBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	keeper := s.ForChain(ctx, req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
-	}
-
-	keeper := s.ForChain(ctx, chain.Name)
 	deposits := keeper.GetConfirmedDeposits(ctx)
-
 	if len(deposits) == 0 {
-		return &types.SignBurnTokensResponse{}, nil
+		return &types.CreateBurnTokensResponse{}, nil
 	}
 
 	chainID := s.getChainID(ctx, req.Chain)
@@ -805,72 +783,37 @@ func (s msgServer) SignBurnTokens(c context.Context, req *types.SignBurnTokensRe
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	var burnerInfos []types.BurnerInfo
-	seen := map[string]bool{}
-	for _, deposit := range deposits {
-		if seen[deposit.BurnerAddress.Hex()] {
-			continue
-		}
-		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
-		if burnerInfo == nil {
-			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddress.Hex())
-		}
-		burnerInfos = append(burnerInfos, *burnerInfo)
-		seen[deposit.BurnerAddress.Hex()] = true
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
-
-	data, err := types.CreateBurnCommandData(chainID, ctx.BlockHeight(), burnerInfos)
-	if err != nil {
-		return nil, err
-	}
-
-	commandID := getCommandID(data, chainID)
 
 	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
 	if !ok {
 		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	commandIDHex := hex.EncodeToString(commandID[:])
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for burn command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
-
-	s.Logger(ctx).Info(fmt.Sprintf("signing burn command [%s] for token deposits to chain %s", commandIDHex, chain.Name))
-	signHash := types.GetSignHash(data)
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, secondaryKeyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", secondaryKeyID)
-	}
-
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
-	}
-
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           secondaryKeyID,
-		SigID:           commandIDHex,
-		Msg:             signHash.Bytes(),
-		SnapshotCounter: snapshot.Counter,
-	}); err != nil {
-		return nil, err
-	}
-
+	seen := map[string]bool{}
 	for _, deposit := range deposits {
-		keeper.DeleteDeposit(ctx, deposit)
-		keeper.SetDeposit(ctx, deposit, types.BURNED)
+		if seen[deposit.BurnerAddress.Hex()] {
+			continue
+		}
+
+		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
+		if burnerInfo == nil {
+			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddress.Hex())
+		}
+
+		command, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", deposit.BurnerAddress.Hex(), chain.Name)
+		}
+
+		if err := keeper.SetCommand(ctx, command); err != nil {
+			return nil, err
+		}
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
-		),
-	)
-	return &types.SignBurnTokensResponse{CommandID: commandID[:]}, nil
+	return &types.CreateBurnTokensResponse{}, nil
 }
 
 func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {
@@ -956,22 +899,29 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	return &types.SignTxResponse{TxID: txID}, nil
 }
 
-func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendingTransfersRequest) (*types.SignPendingTransfersResponse, error) {
+func transferIDtoCommandID(transferID uint64) types.CommandID {
+	var commandID types.CommandID
+
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, transferID)
+
+	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
+
+	return commandID
+}
+
+func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	keeper := s.ForChain(ctx, req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
-	}
-
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
-
 	if len(pendingTransfers) == 0 {
-		return &types.SignPendingTransfersResponse{}, nil
+		return &types.CreatePendingTransfersResponse{}, nil
 	}
 
 	chainID := s.getChainID(ctx, req.Chain)
@@ -979,70 +929,50 @@ func (s msgServer) SignPendingTransfers(c context.Context, req *types.SignPendin
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
-
-	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
-		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
-
-	retrieveSymbol := func(denom string) (string, bool) {
-		return keeper.GetTokenSymbol(ctx, denom)
-	}
-
-	data, err := types.CreateMintCommandData(chainID, nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset), retrieveSymbol)
-	if err != nil {
-		return nil, err
-	}
-
-	commandID := getCommandID(data, chainID)
 
 	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
 	if !ok {
 		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	commandIDHex := hex.EncodeToString(commandID[:])
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", commandIDHex))
-	keeper.SetCommandData(ctx, commandID, data)
+	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
+		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	}
+	transfers := nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset)
 
-	s.Logger(ctx).Info(fmt.Sprintf("signing mint command [%s] for pending transfers to chain %s", commandIDHex, chain.Name))
-	signHash := types.GetSignHash(data)
+	for _, transfer := range transfers {
+		symbol, found := keeper.GetTokenSymbol(ctx, transfer.Asset.Denom)
+		if !found {
+			return nil, fmt.Errorf("could not find symbol for asset %s", transfer.Asset.Denom)
+		}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, secondaryKeyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", secondaryKeyID)
+		command, err := types.CreateMintTokenCommand(
+			chainID,
+			secondaryKeyID,
+			transferIDtoCommandID(transfer.ID),
+			symbol,
+			common.HexToAddress(transfer.Recipient.Address),
+			transfer.Asset.Amount.BigInt(),
+		)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
+		}
+
+		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", command.ID.Hex()))
+
+		if err := keeper.SetCommand(ctx, command); err != nil {
+			return nil, err
+		}
 	}
 
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
-	}
-
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           secondaryKeyID,
-		SigID:           commandIDHex,
-		Msg:             signHash.Bytes(),
-		SnapshotCounter: snapshot.Counter,
-	}); err != nil {
-		return nil, err
-	}
-
-	// TODO: Archive pending transfers after signing is completed
-	// TODO: do we need to undo changes done here if signing cannot start when triggered?
 	for _, pendingTransfer := range pendingTransfers {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyCommandID, commandIDHex),
-		),
-	)
-
-	return &types.SignPendingTransfersResponse{CommandID: commandID[:]}, nil
+	return &types.CreatePendingTransfersResponse{}, nil
 }
 
 func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.TransferKeyType, chainStr string, nextKeyID string) (types.Command, error) {
@@ -1066,15 +996,12 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
 	}
 
-	// don't allow any transfer key if the next master key is already assigned
-	if keyRole != tss.MasterKey {
-		if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
-			return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey, chain.Name)
-		}
+	// don't allow any transfer key if the next master/secondary key is already assigned
+	if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
+		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)
 	}
-
-	if _, nextKeyAssigned := s.signer.GetNextKey(ctx, chain, keyRole); nextKeyAssigned {
-		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", keyRole.SimpleString(), chain.Name)
+	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
 	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
@@ -1132,9 +1059,11 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 		return nil, err
 	}
 
-	keeper.SetCommand(ctx, command)
+	if err := keeper.SetCommand(ctx, command); err != nil {
+		return nil, err
+	}
 
-	return &types.CreateTransferOwnershipResponse{CommandID: command.ID[:]}, nil
+	return &types.CreateTransferOwnershipResponse{}, nil
 }
 
 func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
@@ -1150,9 +1079,11 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 		return nil, err
 	}
 
-	keeper.SetCommand(ctx, command)
+	if err := keeper.SetCommand(ctx, command); err != nil {
+		return nil, err
+	}
 
-	return &types.CreateTransferOperatorshipResponse{CommandID: command.ID[:]}, nil
+	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
 func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsRequest) (*types.SignCommandsResponse, error) {
@@ -1171,6 +1102,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	batchedCommands, err := getBatchedCommandsToSign(ctx, keeper, chainID)
 	if err != nil {
 		return nil, err
+	}
+
+	if batchedCommands.PrevBatchedCommandsID == nil {
+		if latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx); ok {
+			batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommandsID
+		}
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
@@ -1195,7 +1132,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyCommandID, batchedCommandsIDHex),
+			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 		),
 	)
 

@@ -20,9 +20,9 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
 	cdc.RegisterConcrete(&ConfirmTransferKeyRequest{}, "evm/ConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&SignTxRequest{}, "evm/SignTx", nil)
-	cdc.RegisterConcrete(&SignPendingTransfersRequest{}, "evm/SignPendingTransfers", nil)
-	cdc.RegisterConcrete(&SignDeployTokenRequest{}, "evm/SignDeployToken", nil)
-	cdc.RegisterConcrete(&SignBurnTokensRequest{}, "evm/SignBurnTokens", nil)
+	cdc.RegisterConcrete(&CreatePendingTransfersRequest{}, "evm/CreatePendingTransfers", nil)
+	cdc.RegisterConcrete(&CreateDeployTokenRequest{}, "evm/CreateDeployToken", nil)
+	cdc.RegisterConcrete(&CreateBurnTokensRequest{}, "evm/CreateBurnTokens", nil)
 	cdc.RegisterConcrete(&CreateTransferOwnershipRequest{}, "evm/CreateTransferOwnership", nil)
 	cdc.RegisterConcrete(&CreateTransferOperatorshipRequest{}, "evm/CreateTransferOperatorship", nil)
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
@@ -42,9 +42,9 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&ConfirmChainRequest{},
 		&ConfirmTransferKeyRequest{},
 		&SignTxRequest{},
-		&SignPendingTransfersRequest{},
-		&SignDeployTokenRequest{},
-		&SignBurnTokensRequest{},
+		&CreatePendingTransfersRequest{},
+		&CreateDeployTokenRequest{},
+		&CreateBurnTokensRequest{},
 		&CreateTransferOwnershipRequest{},
 		&CreateTransferOperatorshipRequest{},
 		&SignCommandsRequest{},

@@ -79,15 +79,16 @@ service MsgService {
     };
   }
 
-  rpc SignDeployToken(SignDeployTokenRequest)
-      returns (SignDeployTokenResponse) {
+  rpc CreateDeployToken(CreateDeployTokenRequest)
+      returns (CreateDeployTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-deploy-token"
+      post : "/axelar/evm/create-deploy-token"
       body : "*"
     };
   }
 
-  rpc SignBurnTokens(SignBurnTokensRequest) returns (SignBurnTokensResponse) {
+  rpc CreateBurnTokens(CreateBurnTokensRequest)
+      returns (CreateBurnTokensResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/sign-burn"
       body : "*"
@@ -101,10 +102,10 @@ service MsgService {
     };
   }
 
-  rpc SignPendingTransfers(SignPendingTransfersRequest)
-      returns (SignPendingTransfersResponse) {
+  rpc CreatePendingTransfers(CreatePendingTransfersRequest)
+      returns (CreatePendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-pending"
+      post : "/axelar/evm/create-pending-transfers"
       body : "*"
     };
   }

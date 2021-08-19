@@ -39,7 +39,6 @@ type ChainKeeper interface {
 
 	GetName() string
 	AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error)
-	GetCommandData(ctx sdk.Context, commandID CommandID) []byte
 	GetNetwork(ctx sdk.Context) (string, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
@@ -61,8 +60,7 @@ type ChainKeeper interface {
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
 	GetPendingTokenDeployment(ctx sdk.Context, key vote.PollKey) (ERC20TokenDeployment, bool)
 	DeletePendingToken(ctx sdk.Context, key vote.PollKey)
-	SetCommandData(ctx sdk.Context, commandID CommandID, commandData []byte)
-	SetTokenInfo(ctx sdk.Context, assetName string, msg *SignDeployTokenRequest)
+	SetTokenInfo(ctx sdk.Context, assetName string, msg *CreateDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
@@ -76,8 +74,7 @@ type ChainKeeper interface {
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetCommandQueue(ctx sdk.Context) utils.KVQueue
-	SetCommand(ctx sdk.Context, command Command)
-	GetCommand(ctx sdk.Context, commandID CommandID) *Command
+	SetCommand(ctx sdk.Context, command Command) error
 	SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
 	GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
 	DeleteUnsignedBatchedCommands(ctx sdk.Context)

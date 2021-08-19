@@ -1,16 +1,16 @@
-## axelard query evm sendCommand
+## axelard query evm latest-batched-commands
 
-Send a transaction signed by \[fromAddress\] that executes the command \[commandID\] to Axelar Gateway
+Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
 
 ```
-axelard query evm sendCommand [chain] [commandID] [fromAddress] [flags]
+axelard query evm latest-batched-commands [chain] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for sendCommand
+  -h, --help          help for latest-batched-commands
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

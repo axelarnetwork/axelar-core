@@ -2082,12 +2082,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 // 				panic("mock out the GetChainIDByNetwork method")
 // 			},
-// 			GetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) *types.Command {
-// 				panic("mock out the GetCommand method")
-// 			},
-// 			GetCommandDataFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) []byte {
-// 				panic("mock out the GetCommandData method")
-// 			},
 // 			GetCommandQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetCommandQueue method")
 // 			},
@@ -2157,11 +2151,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)  {
 // 				panic("mock out the SetBurnerInfo method")
 // 			},
-// 			SetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command)  {
+// 			SetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command) error {
 // 				panic("mock out the SetCommand method")
-// 			},
-// 			SetCommandDataFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID, commandData []byte)  {
-// 				panic("mock out the SetCommandData method")
 // 			},
 // 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)  {
 // 				panic("mock out the SetDeposit method")
@@ -2184,7 +2175,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetSignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
 // 				panic("mock out the SetSignedBatchedCommands method")
 // 			},
-// 			SetTokenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest)  {
+// 			SetTokenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.CreateDeployTokenRequest)  {
 // 				panic("mock out the SetTokenInfo method")
 // 			},
 // 			SetUnsignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
@@ -2235,12 +2226,6 @@ type ChainKeeperMock struct {
 
 	// GetChainIDByNetworkFunc mocks the GetChainIDByNetwork method.
 	GetChainIDByNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int
-
-	// GetCommandFunc mocks the GetCommand method.
-	GetCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) *types.Command
-
-	// GetCommandDataFunc mocks the GetCommandData method.
-	GetCommandDataFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) []byte
 
 	// GetCommandQueueFunc mocks the GetCommandQueue method.
 	GetCommandQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
@@ -2312,10 +2297,7 @@ type ChainKeeperMock struct {
 	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)
 
 	// SetCommandFunc mocks the SetCommand method.
-	SetCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command)
-
-	// SetCommandDataFunc mocks the SetCommandData method.
-	SetCommandDataFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID, commandData []byte)
+	SetCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command) error
 
 	// SetDepositFunc mocks the SetDeposit method.
 	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)
@@ -2339,7 +2321,7 @@ type ChainKeeperMock struct {
 	SetSignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
 
 	// SetTokenInfoFunc mocks the SetTokenInfo method.
-	SetTokenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest)
+	SetTokenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.CreateDeployTokenRequest)
 
 	// SetUnsignedBatchedCommandsFunc mocks the SetUnsignedBatchedCommands method.
 	SetUnsignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
@@ -2436,20 +2418,6 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Network is the network argument value.
 			Network string
-		}
-		// GetCommand holds details about calls to the GetCommand method.
-		GetCommand []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// CommandID is the commandID argument value.
-			CommandID types.CommandID
-		}
-		// GetCommandData holds details about calls to the GetCommandData method.
-		GetCommandData []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// CommandID is the commandID argument value.
-			CommandID types.CommandID
 		}
 		// GetCommandQueue holds details about calls to the GetCommandQueue method.
 		GetCommandQueue []struct {
@@ -2599,15 +2567,6 @@ type ChainKeeperMock struct {
 			// Command is the command argument value.
 			Command types.Command
 		}
-		// SetCommandData holds details about calls to the SetCommandData method.
-		SetCommandData []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// CommandID is the commandID argument value.
-			CommandID types.CommandID
-			// CommandData is the commandData argument value.
-			CommandData []byte
-		}
 		// SetDeposit holds details about calls to the SetDeposit method.
 		SetDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -2672,7 +2631,7 @@ type ChainKeeperMock struct {
 			// AssetName is the assetName argument value.
 			AssetName string
 			// Msg is the msg argument value.
-			Msg *types.SignDeployTokenRequest
+			Msg *types.CreateDeployTokenRequest
 		}
 		// SetUnsignedBatchedCommands holds details about calls to the SetUnsignedBatchedCommands method.
 		SetUnsignedBatchedCommands []struct {
@@ -2703,8 +2662,6 @@ type ChainKeeperMock struct {
 	lockGetBurnerByteCodes               sync.RWMutex
 	lockGetBurnerInfo                    sync.RWMutex
 	lockGetChainIDByNetwork              sync.RWMutex
-	lockGetCommand                       sync.RWMutex
-	lockGetCommandData                   sync.RWMutex
 	lockGetCommandQueue                  sync.RWMutex
 	lockGetConfirmedDeposits             sync.RWMutex
 	lockGetDeposit                       sync.RWMutex
@@ -2729,7 +2686,6 @@ type ChainKeeperMock struct {
 	lockLogger                           sync.RWMutex
 	lockSetBurnerInfo                    sync.RWMutex
 	lockSetCommand                       sync.RWMutex
-	lockSetCommandData                   sync.RWMutex
 	lockSetDeposit                       sync.RWMutex
 	lockSetGatewayAddress                sync.RWMutex
 	lockSetLatestSignedBatchedCommandsID sync.RWMutex
@@ -3167,76 +3123,6 @@ func (mock *ChainKeeperMock) GetChainIDByNetworkCalls() []struct {
 	mock.lockGetChainIDByNetwork.RLock()
 	calls = mock.calls.GetChainIDByNetwork
 	mock.lockGetChainIDByNetwork.RUnlock()
-	return calls
-}
-
-// GetCommand calls GetCommandFunc.
-func (mock *ChainKeeperMock) GetCommand(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) *types.Command {
-	if mock.GetCommandFunc == nil {
-		panic("ChainKeeperMock.GetCommandFunc: method is nil but ChainKeeper.GetCommand was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		CommandID types.CommandID
-	}{
-		Ctx:       ctx,
-		CommandID: commandID,
-	}
-	mock.lockGetCommand.Lock()
-	mock.calls.GetCommand = append(mock.calls.GetCommand, callInfo)
-	mock.lockGetCommand.Unlock()
-	return mock.GetCommandFunc(ctx, commandID)
-}
-
-// GetCommandCalls gets all the calls that were made to GetCommand.
-// Check the length with:
-//     len(mockedChainKeeper.GetCommandCalls())
-func (mock *ChainKeeperMock) GetCommandCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	CommandID types.CommandID
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		CommandID types.CommandID
-	}
-	mock.lockGetCommand.RLock()
-	calls = mock.calls.GetCommand
-	mock.lockGetCommand.RUnlock()
-	return calls
-}
-
-// GetCommandData calls GetCommandDataFunc.
-func (mock *ChainKeeperMock) GetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID) []byte {
-	if mock.GetCommandDataFunc == nil {
-		panic("ChainKeeperMock.GetCommandDataFunc: method is nil but ChainKeeper.GetCommandData was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		CommandID types.CommandID
-	}{
-		Ctx:       ctx,
-		CommandID: commandID,
-	}
-	mock.lockGetCommandData.Lock()
-	mock.calls.GetCommandData = append(mock.calls.GetCommandData, callInfo)
-	mock.lockGetCommandData.Unlock()
-	return mock.GetCommandDataFunc(ctx, commandID)
-}
-
-// GetCommandDataCalls gets all the calls that were made to GetCommandData.
-// Check the length with:
-//     len(mockedChainKeeper.GetCommandDataCalls())
-func (mock *ChainKeeperMock) GetCommandDataCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	CommandID types.CommandID
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		CommandID types.CommandID
-	}
-	mock.lockGetCommandData.RLock()
-	calls = mock.calls.GetCommandData
-	mock.lockGetCommandData.RUnlock()
 	return calls
 }
 
@@ -4005,7 +3891,7 @@ func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 }
 
 // SetCommand calls SetCommandFunc.
-func (mock *ChainKeeperMock) SetCommand(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command) {
+func (mock *ChainKeeperMock) SetCommand(ctx github_com_cosmos_cosmos_sdk_types.Context, command types.Command) error {
 	if mock.SetCommandFunc == nil {
 		panic("ChainKeeperMock.SetCommandFunc: method is nil but ChainKeeper.SetCommand was just called")
 	}
@@ -4019,7 +3905,7 @@ func (mock *ChainKeeperMock) SetCommand(ctx github_com_cosmos_cosmos_sdk_types.C
 	mock.lockSetCommand.Lock()
 	mock.calls.SetCommand = append(mock.calls.SetCommand, callInfo)
 	mock.lockSetCommand.Unlock()
-	mock.SetCommandFunc(ctx, command)
+	return mock.SetCommandFunc(ctx, command)
 }
 
 // SetCommandCalls gets all the calls that were made to SetCommand.
@@ -4036,45 +3922,6 @@ func (mock *ChainKeeperMock) SetCommandCalls() []struct {
 	mock.lockSetCommand.RLock()
 	calls = mock.calls.SetCommand
 	mock.lockSetCommand.RUnlock()
-	return calls
-}
-
-// SetCommandData calls SetCommandDataFunc.
-func (mock *ChainKeeperMock) SetCommandData(ctx github_com_cosmos_cosmos_sdk_types.Context, commandID types.CommandID, commandData []byte) {
-	if mock.SetCommandDataFunc == nil {
-		panic("ChainKeeperMock.SetCommandDataFunc: method is nil but ChainKeeper.SetCommandData was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		CommandID   types.CommandID
-		CommandData []byte
-	}{
-		Ctx:         ctx,
-		CommandID:   commandID,
-		CommandData: commandData,
-	}
-	mock.lockSetCommandData.Lock()
-	mock.calls.SetCommandData = append(mock.calls.SetCommandData, callInfo)
-	mock.lockSetCommandData.Unlock()
-	mock.SetCommandDataFunc(ctx, commandID, commandData)
-}
-
-// SetCommandDataCalls gets all the calls that were made to SetCommandData.
-// Check the length with:
-//     len(mockedChainKeeper.SetCommandDataCalls())
-func (mock *ChainKeeperMock) SetCommandDataCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	CommandID   types.CommandID
-	CommandData []byte
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		CommandID   types.CommandID
-		CommandData []byte
-	}
-	mock.lockSetCommandData.RLock()
-	calls = mock.calls.SetCommandData
-	mock.lockSetCommandData.RUnlock()
 	return calls
 }
 
@@ -4340,14 +4187,14 @@ func (mock *ChainKeeperMock) SetSignedBatchedCommandsCalls() []struct {
 }
 
 // SetTokenInfo calls SetTokenInfoFunc.
-func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.SignDeployTokenRequest) {
+func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, assetName string, msg *types.CreateDeployTokenRequest) {
 	if mock.SetTokenInfoFunc == nil {
 		panic("ChainKeeperMock.SetTokenInfoFunc: method is nil but ChainKeeper.SetTokenInfo was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		AssetName string
-		Msg       *types.SignDeployTokenRequest
+		Msg       *types.CreateDeployTokenRequest
 	}{
 		Ctx:       ctx,
 		AssetName: assetName,
@@ -4365,12 +4212,12 @@ func (mock *ChainKeeperMock) SetTokenInfo(ctx github_com_cosmos_cosmos_sdk_types
 func (mock *ChainKeeperMock) SetTokenInfoCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	AssetName string
-	Msg       *types.SignDeployTokenRequest
+	Msg       *types.CreateDeployTokenRequest
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		AssetName string
-		Msg       *types.SignDeployTokenRequest
+		Msg       *types.CreateDeployTokenRequest
 	}
 	mock.lockSetTokenInfo.RLock()
 	calls = mock.calls.SetTokenInfo

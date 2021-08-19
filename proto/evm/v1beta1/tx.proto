@@ -81,21 +81,19 @@ message LinkRequest {
 
 message LinkResponse { string deposit_addr = 1; }
 
-// MsgSignBurnTokens represents the message to sign commands to burn tokens with
-// AxelarGateway
-message SignBurnTokensRequest {
+// CreateBurnTokensRequest represents the message to create commands to burn
+// tokens with AxelarGateway
+message CreateBurnTokensRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
 }
 
-message SignBurnTokensResponse {
-  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-}
+message CreateBurnTokensResponse {}
 
-// MsgSignDeployToken represents the message to sign a deploy token command for
-// AxelarGateway
-message SignDeployTokenRequest {
+// CreateDeployTokenRequest represents the message to create a deploy token
+// command for AxelarGateway
+message CreateDeployTokenRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -109,21 +107,17 @@ message SignDeployTokenRequest {
   string token_name = 7;
 }
 
-message SignDeployTokenResponse {
-  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-}
+message CreateDeployTokenResponse {}
 
-// MsgSignPendingTransfers represents a message to trigger the signing of all
-// pending transfers
-message SignPendingTransfersRequest {
+// CreatePendingTransfersRequest represents a message to trigger the creation of
+// commands handling all pending transfers
+message CreatePendingTransfersRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
 }
 
-message SignPendingTransfersResponse {
-  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-}
+message CreatePendingTransfersResponse {}
 
 message SignTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -205,9 +199,7 @@ message CreateTransferOwnershipRequest {
   string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
 }
 
-message CreateTransferOwnershipResponse {
-  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-}
+message CreateTransferOwnershipResponse {}
 
 message CreateTransferOperatorshipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -216,9 +208,7 @@ message CreateTransferOperatorshipRequest {
   string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
 }
 
-message CreateTransferOperatorshipResponse {
-  bytes command_id = 1 [ (gogoproto.customname) = "CommandID" ];
-}
+message CreateTransferOperatorshipResponse {}
 
 message SignCommandsRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
