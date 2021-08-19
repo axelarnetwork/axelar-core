@@ -67,9 +67,9 @@ func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, snapshotSe
 		return fmt.Errorf("snapshot %d for poll %s must exist", metadata.SnapshotSeqNo, metadata.Key)
 	}
 
-	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key, snap))
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, snap)).WithLogger(k.Logger(ctx))
 
-	return poll.WithLogging(k.Logger(ctx)).Initialize()
+	return poll.Initialize()
 }
 
 // GetPoll returns an existing poll to record votes
@@ -84,10 +84,9 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 		// if the poll already exists the snapshot MUST be there
 		panic(fmt.Errorf("could not find snapshot %d for poll %s", metadata.SnapshotSeqNo, pollKey))
 	}
-	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key, snap))
-	poll.CheckExpiry(ctx.BlockHeight())
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, snap)).WithLogger(k.Logger(ctx))
 
-	return poll.WithLogging(k.Logger(ctx))
+	return poll
 }
 
 func (k Keeper) getPollMetadata(ctx sdk.Context, pollKey exported.PollKey) (exported.PollMetadata, bool) {

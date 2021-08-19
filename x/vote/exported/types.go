@@ -92,6 +92,7 @@ func MinVoterCount(minVoterCount int64) PollProperty {
 type Poll interface {
 	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error
 	Is(state PollState) bool
+	AllowOverride()
 	GetResult() codec.ProtoMarshaler
 	GetKey() PollKey
 	GetSnapshotSeqNo() int64
