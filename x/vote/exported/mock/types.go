@@ -20,6 +20,9 @@ var _ exported.Poll = &PollMock{}
 //
 // 		// make and configure a mocked exported.Poll
 // 		mockedPoll := &PollMock{
+// 			AllowOverrideFunc: func()  {
+// 				panic("mock out the AllowOverride method")
+// 			},
 // 			DeleteFunc: func() error {
 // 				panic("mock out the Delete method")
 // 			},
@@ -45,6 +48,9 @@ var _ exported.Poll = &PollMock{}
 //
 // 	}
 type PollMock struct {
+	// AllowOverrideFunc mocks the AllowOverride method.
+	AllowOverrideFunc func()
+
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func() error
 
@@ -65,6 +71,9 @@ type PollMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AllowOverride holds details about calls to the AllowOverride method.
+		AllowOverride []struct {
+		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
 		}
@@ -90,12 +99,39 @@ type PollMock struct {
 			Data codec.ProtoMarshaler
 		}
 	}
+	lockAllowOverride    sync.RWMutex
 	lockDelete           sync.RWMutex
 	lockGetKey           sync.RWMutex
 	lockGetResult        sync.RWMutex
 	lockGetSnapshotSeqNo sync.RWMutex
 	lockIs               sync.RWMutex
 	lockVote             sync.RWMutex
+}
+
+// AllowOverride calls AllowOverrideFunc.
+func (mock *PollMock) AllowOverride() {
+	if mock.AllowOverrideFunc == nil {
+		panic("PollMock.AllowOverrideFunc: method is nil but Poll.AllowOverride was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockAllowOverride.Lock()
+	mock.calls.AllowOverride = append(mock.calls.AllowOverride, callInfo)
+	mock.lockAllowOverride.Unlock()
+	mock.AllowOverrideFunc()
+}
+
+// AllowOverrideCalls gets all the calls that were made to AllowOverride.
+// Check the length with:
+//     len(mockedPoll.AllowOverrideCalls())
+func (mock *PollMock) AllowOverrideCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockAllowOverride.RLock()
+	calls = mock.calls.AllowOverride
+	mock.lockAllowOverride.RUnlock()
+	return calls
 }
 
 // Delete calls DeleteFunc.
