@@ -66,9 +66,6 @@ import (
 func randomSender() sdk.AccAddress {
 	return rand.AccAddr()
 }
-func randomEthSender() common.Address {
-	return common.BytesToAddress(rand.Bytes(common.AddressLength))
-}
 
 type testMocks struct {
 	ETH     *evmMock.RPCClientMock
@@ -88,7 +85,7 @@ type nodeData struct {
 	Mocks     testMocks
 }
 
-func newNode(moniker string, mocks testMocks, totalNodes int) *fake.Node {
+func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
 	encCfg := app.MakeEncodingConfig()
 
@@ -111,7 +108,6 @@ func newNode(moniker string, mocks testMocks, totalNodes int) *fake.Node {
 
 	// set the acknowledgment window just enough for all nodes to be able to submit their acks in time
 	tssParams := tssTypes.DefaultParams()
-	tssParams.AckWindowInBlocks = int64(totalNodes) * 16
 	signer.SetParams(ctx, tssParams)
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
@@ -278,7 +274,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		return validators[i].Tokens.GT(validators[j].Tokens)
 	})
 	// create a chain
-	chain := fake.NewBlockchain().WithBlockTimeOut(40 * time.Millisecond)
+	chain := fake.NewBlockchain().WithBlockSize(50 * nodeCount).WithBlockTimeOut(20 * time.Millisecond)
 
 	t := fake.NewTofnd()
 	var data []nodeData
@@ -286,7 +282,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		// create mocks
 		mocks := createMocks(validators)
 
-		node := newNode(test+strconv.Itoa(i), mocks, nodeCount)
+		node := newNode(test+strconv.Itoa(i), mocks)
 		chain.AddNodes(node)
 		n := nodeData{Node: node, Validator: validator, Mocks: mocks, Proxy: rand.AccAddr()}
 
@@ -563,7 +559,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 }
 
 func waitFor(eventDone <-chan abci.Event, repeats int) error {
-	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(repeats)*time.Minute)
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	for i := 0; i < repeats; i++ {
 		select {

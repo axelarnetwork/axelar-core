@@ -15,11 +15,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	gogoprototypes "github.com/gogo/protobuf/types"
+
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -58,26 +59,27 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 
 	switch req.AckType {
 	case exported.AckType_Keygen:
-		if s.HasKeygenStarted(ctx, req.ID) {
-			return nil, fmt.Errorf("late keygen ACK message (key ID '%s' is already in use)", req.ID)
-		}
 		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
 			req.ID, ctx.BlockHeight(), req.Sender.String()))
 
-	case exported.AckType_Sign:
-		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
-			return nil, fmt.Errorf("late sign ACK message (sig ID '%s' is already in use)", req.ID)
-
+		if s.HasKeygenStarted(ctx, req.ID) {
+			s.Logger(ctx).Info(fmt.Sprintf("late keygen ACK message (keygen with ID '%s' has already started)", req.ID))
+			return &types.AckResponse{}, nil
 		}
+
+	case exported.AckType_Sign:
 		s.Logger(ctx).Info(fmt.Sprintf("received sign acknowledgment for id [%s] at height %d from %s",
 			req.ID, ctx.BlockHeight(), req.Sender.String()))
 
+		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
+			s.Logger(ctx).Info(fmt.Sprintf("late sign ACK message (sign with ID '%s' has already started)", req.ID))
+			return &types.AckResponse{}, nil
+		}
 	default:
 		return nil, fmt.Errorf("unknown ack type")
 	}
 
-	s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
-	return &types.AckResponse{}, nil
+	return &types.AckResponse{}, s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
@@ -87,7 +89,9 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("key ID '%s' is already in use", req.KeyID)
 	}
 
-	s.ScheduleKeygen(ctx, *req)
+	if _, err := s.ScheduleKeygen(ctx, *req); err != nil {
+		return nil, err
+	}
 	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.KeyID))
 
 	return &types.StartKeygenResponse{}, nil
