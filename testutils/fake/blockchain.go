@@ -245,7 +245,7 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 		Ctx:         ctx,
 		Moniker:     moniker,
 		queriers:    queriers,
-		events:      make(chan abci.Event, 100),
+		events:      make(chan abci.Event, 10000),
 		eventListeners: []struct {
 			predicate func(event abci.Event) bool
 			emitter   chan<- abci.Event
