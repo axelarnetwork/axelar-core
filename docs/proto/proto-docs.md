@@ -1182,6 +1182,7 @@ vote can have any data type
 | POLL_STATE_COMPLETED | 2 |  |
 | POLL_STATE_FAILED | 4 |  |
 | POLL_STATE_EXPIRED | 8 |  |
+| POLL_STATE_ALLOW_OVERRIDE | 16 |  |
 
 
  <!-- end enums -->

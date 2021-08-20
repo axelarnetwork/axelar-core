@@ -68,6 +68,7 @@ var _ exported.Poll = &Poll{}
 type Poll struct {
 	exported.PollMetadata
 	Store
+	logger log.Logger
 }
 
 // Store enables a poll to communicate with the keeper
@@ -85,26 +86,21 @@ type Store interface {
 }
 
 // NewPoll creates a new poll
-func NewPoll(meta exported.PollMetadata, store Store) *Poll {
-	return &Poll{
+func NewPoll(meta exported.PollMetadata, currentBlock int64, store Store) *Poll {
+	poll := &Poll{
 		PollMetadata: meta,
 		Store:        store,
+		logger:       utils.NewNOPLogger(),
 	}
+
+	poll.updateExpiry(currentBlock)
+	return poll
 }
 
-// WithLogging adds logging capability to the poll
-func (p Poll) WithLogging(logger log.Logger) *PollWithLogging {
-	return &PollWithLogging{
-		Poll:   p,
-		logger: logger,
-	}
-}
-
-// CheckExpiry changes the state of the poll if the currentBlockHeight is equal or after the set expiry block
-func (p *Poll) CheckExpiry(currentBlockHeight int64) {
-	if p.ExpiresAt != -1 && p.ExpiresAt <= currentBlockHeight && p.Is(exported.Pending) {
-		p.State |= exported.Expired
-	}
+// WithLogger sets a logger for the poll
+func (p *Poll) WithLogger(logger log.Logger) *Poll {
+	p.logger = logger
+	return p
 }
 
 // Is checks if the poll is in the given state
@@ -114,6 +110,14 @@ func (p Poll) Is(state exported.PollState) bool {
 		return p.State == exported.NonExistent
 	}
 	return state&p.State == state
+}
+
+// AllowOverride makes it possible to delete the poll, regardless of which state it is in
+func (p Poll) AllowOverride() {
+	if !p.Is(exported.NonExistent) {
+		p.State |= exported.AllowOverride
+	}
+	p.SetMetadata(p.PollMetadata)
 }
 
 // GetResult returns the result of the poll. Returns nil if the poll is not completed.
@@ -128,15 +132,8 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 // Initialize initializes the poll
 func (p Poll) Initialize() error {
 	other := p.Store.GetPoll(p.Key)
-	switch {
-	case other.Is(exported.Failed) || other.Is(exported.Expired):
-		if err := other.Delete(); err != nil {
-			return err
-		}
-	case other.Is(exported.Pending):
-		return fmt.Errorf("poll %s already exists and has not expired yet", p.Key.String())
-	case other.Is(exported.Completed):
-		return fmt.Errorf("poll %s already exists and has a result", p.Key.String())
+	if err := other.Delete(); err != nil {
+		return err
 	}
 
 	p.SetMetadata(p.PollMetadata)
@@ -169,8 +166,20 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	if p.hasEnoughVotes(majorityVote.Tally) {
 		p.Result = majorityVote.Data
 		p.State = exported.Completed
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) completed",
+			p.Key,
+			p.VotingThreshold.Numerator,
+			p.VotingThreshold.Denominator,
+			p.MinVoterCount,
+		))
 	} else if p.cannotWin(majorityVote.Tally) {
-		p.State = exported.Failed
+		p.State = exported.Failed | exported.AllowOverride
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) failed, voters could not agree on single value",
+			p.Key,
+			p.VotingThreshold.Numerator,
+			p.VotingThreshold.Denominator,
+			p.MinVoterCount,
+		))
 	}
 
 	p.SetMetadata(p.PollMetadata)
@@ -183,11 +192,12 @@ func (p Poll) Delete() error {
 	switch {
 	case p.Is(exported.NonExistent):
 		return nil
-	case p.Is(exported.Failed), p.Is(exported.Expired):
+	case p.Is(exported.AllowOverride):
+		p.logger.Debug(fmt.Sprintf("deleting poll %s in state %s", p.Key.String(), p.State))
 		p.Store.DeletePoll()
 		return nil
 	default:
-		return fmt.Errorf("cannot delete poll %s with state %s, must be either %s or %s", p.Key, p.State, exported.Failed, exported.Expired)
+		return fmt.Errorf("cannot delete existing poll %s with state %s, must be allowed to be overridden", p.Key, p.State)
 	}
 }
 
@@ -199,6 +209,12 @@ func (p *Poll) GetKey() exported.PollKey {
 // GetSnapshotSeqNo returns the sequence number of the snapshot associated with the poll
 func (p *Poll) GetSnapshotSeqNo() int64 {
 	return p.SnapshotSeqNo
+}
+
+func (p *Poll) updateExpiry(currentBlockHeight int64) {
+	if p.ExpiresAt != -1 && p.ExpiresAt <= currentBlockHeight && p.Is(exported.Pending) {
+		p.State |= exported.Expired | exported.AllowOverride
+	}
 }
 
 func (p *Poll) tally(voter sdk.ValAddress, shareCount int64, data codec.ProtoMarshaler) TalliedVote {
@@ -267,43 +283,4 @@ func hash(data codec.ProtoMarshaler) string {
 	h := sha256.Sum256(bz)
 
 	return string(h[:])
-}
-
-// PollWithLogging wraps a poll to add logging
-type PollWithLogging struct {
-	Poll
-	logger log.Logger
-}
-
-// Vote records a vote
-func (p *PollWithLogging) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
-	if err := p.Poll.Vote(voter, data); err != nil {
-		return err
-	}
-
-	switch {
-	case p.Is(exported.Completed):
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) completed",
-			p.Key,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
-	case p.Is(exported.Failed):
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) failed, voters could not agree on single value",
-			p.Key,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
-	}
-	return nil
-}
-
-// Delete deletes the poll. Returns error if the poll is in a state that does not allow deletion
-func (p PollWithLogging) Delete() error {
-	if p.Is(exported.Failed) || p.Is(exported.Expired) {
-		p.logger.Debug(fmt.Sprintf("deleting poll %s in state %s", p.Key.String(), p.State))
-	}
-	return p.Poll.Delete()
 }
