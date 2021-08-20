@@ -37,6 +37,7 @@
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [KeygenVoteData](#tss.exported.v1beta1.KeygenVoteData)
     - [SignInfo](#tss.exported.v1beta1.SignInfo)
   
     - [AckType](#tss.exported.v1beta1.AckType)
@@ -655,6 +656,22 @@ KeyRequirement defines requirements for keys
 | `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
 | `sign_timeout` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.KeygenVoteData"></a>
+
+### KeygenVoteData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `group_recovery_info` | [bytes](#bytes) |  |  |
 
 
 

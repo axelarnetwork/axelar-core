@@ -34,11 +34,6 @@ type msgServer struct {
 	nexus       types.Nexus
 }
 
-type VoteData struct {
-	PubKeyBytes       []byte
-	GroupRecoveryInfo []byte
-}
-
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
 func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
@@ -229,7 +224,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		voteDataStr := VoteData{PubKeyBytes: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
+		voteDataStr := exported.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
 		bz, err := json.Marshal(voteDataStr)
 		if err != nil {
 			return nil, fmt.Errorf("could not marshal vote data")
@@ -283,13 +278,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		var voteData VoteData
+		var voteData exported.KeygenVoteData
 		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
 		if err != nil {
 			return nil, fmt.Errorf("could not unmarshal vote data: [%w]", err)
 		}
 
-		btcecPK, err := btcec.ParsePubKey(voteData.PubKeyBytes, btcec.S256())
+		btcecPK, err := btcec.ParsePubKey(voteData.PubKey, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
