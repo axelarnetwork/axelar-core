@@ -264,6 +264,7 @@ type BlockClient interface {
 	SubscriptionClient
 }
 
+// Notifier can notify a consumer about new blocks
 type Notifier struct {
 	logger         log.Logger
 	queryNotifier  *queryBlockNotifier
