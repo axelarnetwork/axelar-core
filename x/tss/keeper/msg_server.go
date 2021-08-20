@@ -292,6 +292,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
@@ -406,6 +407,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
