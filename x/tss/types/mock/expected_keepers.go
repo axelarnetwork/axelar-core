@@ -1276,8 +1276,8 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			OperatorIsAvailableForCounterFunc: func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
 // 				panic("mock out the OperatorIsAvailableForCounter method")
 // 			},
-// 			PenalizeSignCriminalFunc: func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)  {
-// 				panic("mock out the PenalizeSignCriminal method")
+// 			PenalizeCriminalFunc: func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)  {
+// 				panic("mock out the PenalizeCriminal method")
 // 			},
 // 			RotateKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
@@ -1288,7 +1288,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx sdk.Context, sigID string, validators []snapshot.Validator)  {
+// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -1430,8 +1430,8 @@ type TSSKeeperMock struct {
 	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
 	OperatorIsAvailableForCounterFunc func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 
-	// PenalizeSignCriminalFunc mocks the PenalizeSignCriminal method.
-	PenalizeSignCriminalFunc func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
+	// PenalizeCriminalFunc mocks the PenalizeCriminal method.
+	PenalizeCriminalFunc func(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
 
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
@@ -1443,7 +1443,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx sdk.Context, info exported.SignInfo) (int64, error)
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx sdk.Context, sigID string, validators []snapshot.Validator)
+	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
@@ -1759,8 +1759,8 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator sdk.ValAddress
 		}
-		// PenalizeSignCriminal holds details about calls to the PenalizeSignCriminal method.
-		PenalizeSignCriminal []struct {
+		// PenalizeCriminal holds details about calls to the PenalizeCriminal method.
+		PenalizeCriminal []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Criminal is the criminal argument value.
@@ -1795,6 +1795,8 @@ type TSSKeeperMock struct {
 		SelectSignParticipants []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter snapshot.Snapshotter
 			// SigID is the sigID argument value.
 			SigID string
 			// Validators is the validators argument value.
@@ -1915,7 +1917,7 @@ type TSSKeeperMock struct {
 	lockLogger                              sync.RWMutex
 	lockMeetsThreshold                      sync.RWMutex
 	lockOperatorIsAvailableForCounter       sync.RWMutex
-	lockPenalizeSignCriminal                sync.RWMutex
+	lockPenalizeCriminal                    sync.RWMutex
 	lockRotateKey                           sync.RWMutex
 	lockScheduleKeygen                      sync.RWMutex
 	lockScheduleSign                        sync.RWMutex
@@ -3262,10 +3264,10 @@ func (mock *TSSKeeperMock) OperatorIsAvailableForCounterCalls() []struct {
 	return calls
 }
 
-// PenalizeSignCriminal calls PenalizeSignCriminalFunc.
-func (mock *TSSKeeperMock) PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
-	if mock.PenalizeSignCriminalFunc == nil {
-		panic("TSSKeeperMock.PenalizeSignCriminalFunc: method is nil but TSSKeeper.PenalizeSignCriminal was just called")
+// PenalizeCriminal calls PenalizeCriminalFunc.
+func (mock *TSSKeeperMock) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
+	if mock.PenalizeCriminalFunc == nil {
+		panic("TSSKeeperMock.PenalizeCriminalFunc: method is nil but TSSKeeper.PenalizeCriminal was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
@@ -3276,16 +3278,16 @@ func (mock *TSSKeeperMock) PenalizeSignCriminal(ctx sdk.Context, criminal sdk.Va
 		Criminal:  criminal,
 		CrimeType: crimeType,
 	}
-	mock.lockPenalizeSignCriminal.Lock()
-	mock.calls.PenalizeSignCriminal = append(mock.calls.PenalizeSignCriminal, callInfo)
-	mock.lockPenalizeSignCriminal.Unlock()
-	mock.PenalizeSignCriminalFunc(ctx, criminal, crimeType)
+	mock.lockPenalizeCriminal.Lock()
+	mock.calls.PenalizeCriminal = append(mock.calls.PenalizeCriminal, callInfo)
+	mock.lockPenalizeCriminal.Unlock()
+	mock.PenalizeCriminalFunc(ctx, criminal, crimeType)
 }
 
-// PenalizeSignCriminalCalls gets all the calls that were made to PenalizeSignCriminal.
+// PenalizeCriminalCalls gets all the calls that were made to PenalizeCriminal.
 // Check the length with:
-//     len(mockedTSSKeeper.PenalizeSignCriminalCalls())
-func (mock *TSSKeeperMock) PenalizeSignCriminalCalls() []struct {
+//     len(mockedTSSKeeper.PenalizeCriminalCalls())
+func (mock *TSSKeeperMock) PenalizeCriminalCalls() []struct {
 	Ctx       sdk.Context
 	Criminal  sdk.ValAddress
 	CrimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType
@@ -3295,9 +3297,9 @@ func (mock *TSSKeeperMock) PenalizeSignCriminalCalls() []struct {
 		Criminal  sdk.ValAddress
 		CrimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType
 	}
-	mock.lockPenalizeSignCriminal.RLock()
-	calls = mock.calls.PenalizeSignCriminal
-	mock.lockPenalizeSignCriminal.RUnlock()
+	mock.lockPenalizeCriminal.RLock()
+	calls = mock.calls.PenalizeCriminal
+	mock.lockPenalizeCriminal.RUnlock()
 	return calls
 }
 
@@ -3411,37 +3413,41 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}
 	callInfo := struct {
-		Ctx        sdk.Context
-		SigID      string
-		Validators []snapshot.Validator
+		Ctx         sdk.Context
+		Snapshotter snapshot.Snapshotter
+		SigID       string
+		Validators  []snapshot.Validator
 	}{
-		Ctx:        ctx,
-		SigID:      sigID,
-		Validators: validators,
+		Ctx:         ctx,
+		Snapshotter: snapshotter,
+		SigID:       sigID,
+		Validators:  validators,
 	}
 	mock.lockSelectSignParticipants.Lock()
 	mock.calls.SelectSignParticipants = append(mock.calls.SelectSignParticipants, callInfo)
 	mock.lockSelectSignParticipants.Unlock()
-	mock.SelectSignParticipantsFunc(ctx, sigID, validators)
+	return mock.SelectSignParticipantsFunc(ctx, snapshotter, sigID, validators)
 }
 
 // SelectSignParticipantsCalls gets all the calls that were made to SelectSignParticipants.
 // Check the length with:
 //     len(mockedTSSKeeper.SelectSignParticipantsCalls())
 func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
-	Ctx        sdk.Context
-	SigID      string
-	Validators []snapshot.Validator
+	Ctx         sdk.Context
+	Snapshotter snapshot.Snapshotter
+	SigID       string
+	Validators  []snapshot.Validator
 } {
 	var calls []struct {
-		Ctx        sdk.Context
-		SigID      string
-		Validators []snapshot.Validator
+		Ctx         sdk.Context
+		Snapshotter snapshot.Snapshotter
+		SigID       string
+		Validators  []snapshot.Validator
 	}
 	mock.lockSelectSignParticipants.RLock()
 	calls = mock.calls.SelectSignParticipants
@@ -3798,6 +3804,9 @@ var _ tsstypes.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
+// 			GetValidatorInfoFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
+// 				panic("mock out the GetValidatorInfo method")
+// 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context, keyRequirement exported.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
@@ -3822,6 +3831,9 @@ type SnapshotterMock struct {
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool)
+
+	// GetValidatorInfoFunc mocks the GetValidatorInfo method.
+	GetValidatorInfoFunc func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx sdk.Context, keyRequirement exported.KeyRequirement) (snapshot.Snapshot, error)
@@ -3859,6 +3871,13 @@ type SnapshotterMock struct {
 			// SeqNo is the seqNo argument value.
 			SeqNo int64
 		}
+		// GetValidatorInfo holds details about calls to the GetValidatorInfo method.
+		GetValidatorInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Validator is the validator argument value.
+			Validator snapshot.SDKValidator
+		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -3872,6 +3891,7 @@ type SnapshotterMock struct {
 	lockGetOperator       sync.RWMutex
 	lockGetProxy          sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
+	lockGetValidatorInfo  sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
 
@@ -4039,6 +4059,41 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot
 	mock.lockGetSnapshot.RUnlock()
+	return calls
+}
+
+// GetValidatorInfo calls GetValidatorInfoFunc.
+func (mock *SnapshotterMock) GetValidatorInfo(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
+	if mock.GetValidatorInfoFunc == nil {
+		panic("SnapshotterMock.GetValidatorInfoFunc: method is nil but Snapshotter.GetValidatorInfo was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Validator snapshot.SDKValidator
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+	}
+	mock.lockGetValidatorInfo.Lock()
+	mock.calls.GetValidatorInfo = append(mock.calls.GetValidatorInfo, callInfo)
+	mock.lockGetValidatorInfo.Unlock()
+	return mock.GetValidatorInfoFunc(ctx, validator)
+}
+
+// GetValidatorInfoCalls gets all the calls that were made to GetValidatorInfo.
+// Check the length with:
+//     len(mockedSnapshotter.GetValidatorInfoCalls())
+func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
+	Ctx       sdk.Context
+	Validator snapshot.SDKValidator
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Validator snapshot.SDKValidator
+	}
+	mock.lockGetValidatorInfo.RLock()
+	calls = mock.calls.GetValidatorInfo
+	mock.lockGetValidatorInfo.RUnlock()
 	return calls
 }
 

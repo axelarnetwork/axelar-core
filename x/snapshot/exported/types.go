@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/axelarnetwork/axelar-core/utils"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/gogo/protobuf/proto"
 )
@@ -38,15 +37,99 @@ func NewValidator(validator SDKValidator, shareCount int64) Validator {
 	return Validator{SDKValidator: validatorAny, ShareCount: shareCount}
 }
 
-// ValidatorInfo adopts the methods from "github.com/cosmos/cosmos-sdk/x/slashing" that are
-// actually used by this module
-type ValidatorInfo struct {
-	slashingtypes.ValidatorSigningInfo
+func (v ValidatorIllegibility) String() string {
+	switch v {
+	case Tombstoned:
+		return "tombstoned"
+	case Jailed:
+		return "jailed"
+	case MissedTooManyBlocks:
+		return "missed-too-many-blocks"
+	case NoProxyRegistered:
+		return "no-proxy-registered"
+	case TssSuspended:
+		return "tss-suspended"
+	default:
+		return "unspecified"
+	}
+}
+
+func IllegibilitiesToString(illegibilities []ValidatorIllegibility) string {
+	var illegibilityStrs []string
+
+	for _, illegibility := range illegibilities {
+		illegibilityStrs = append(illegibilityStrs, illegibility.String())
+	}
+
+	return strings.Join(illegibilityStrs, ",")
+}
+
+func (v ValidatorInfo) GetIllegibilitiesForNewKey() []ValidatorIllegibility {
+	var illegibilities []ValidatorIllegibility
+
+	if v.Tombstoned {
+		illegibilities = append(illegibilities, Tombstoned)
+	}
+
+	if v.MissedTooManyBlocks {
+		illegibilities = append(illegibilities, MissedTooManyBlocks)
+	}
+
+	if v.Jailed {
+		illegibilities = append(illegibilities, Jailed)
+	}
+
+	if !v.HasProxyRegistered {
+		illegibilities = append(illegibilities, NoProxyRegistered)
+	}
+
+	if v.TssSuspended {
+		illegibilities = append(illegibilities, TssSuspended)
+	}
+
+	return illegibilities
+}
+
+func (v ValidatorInfo) GetIllegibilitiesForSigning() []ValidatorIllegibility {
+	var illegibilities []ValidatorIllegibility
+
+	if v.Tombstoned {
+		illegibilities = append(illegibilities, Tombstoned)
+	}
+
+	if v.MissedTooManyBlocks {
+		illegibilities = append(illegibilities, MissedTooManyBlocks)
+	}
+
+	if v.Jailed {
+		illegibilities = append(illegibilities, Jailed)
+	}
+
+	if v.TssSuspended {
+		illegibilities = append(illegibilities, TssSuspended)
+	}
+
+	return illegibilities
+}
+
+func (v ValidatorInfo) IsEligibleForNewKey() bool {
+	return !v.Tombstoned &&
+		!v.MissedTooManyBlocks &&
+		!v.Jailed &&
+		v.HasProxyRegistered &&
+		!v.TssSuspended
+}
+
+func (v ValidatorInfo) IsEligibleForSigning() bool {
+	return !v.Tombstoned &&
+		!v.MissedTooManyBlocks &&
+		!v.Jailed &&
+		!v.TssSuspended
 }
 
 // Slasher provides functionality to manage slashing info for a validator
 type Slasher interface {
-	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorInfo, found bool)
+	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info slashingtypes.ValidatorSigningInfo, found bool)
 	SignedBlocksWindow(ctx sdk.Context) (res int64)
 }
 
@@ -57,47 +140,6 @@ type Tss interface {
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold
 	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
-}
-
-// IsValidatorEligibleForNewKey returns true if given validator is eligible for handling a new key; otherwise, false
-func IsValidatorEligibleForNewKey(ctx sdk.Context, slasher Slasher, snapshotter Snapshotter, tss Tss, seqNo int64, validator SDKValidator) bool {
-	return IsValidatorActive(ctx, slasher, validator, tss.GetMaxMissedBlocksPerWindow(ctx)) &&
-		HasProxyRegistered(ctx, snapshotter, validator) &&
-		IsValidatorAvaiableForCounter(ctx, tss, seqNo, validator) &&
-		!IsValidatorTssSuspended(ctx, tss, validator)
-}
-
-// IsValidatorActive returns true if the validator is active; otherwise, false
-func IsValidatorActive(ctx sdk.Context, slasher Slasher, validator SDKValidator, maxMissedBlocksPerWindow utils.Threshold) bool {
-	consAddr, err := validator.GetConsAddr()
-	if err != nil {
-		return false
-	}
-
-	signedBlocksWindow := slasher.SignedBlocksWindow(ctx)
-	signingInfo, found := slasher.GetValidatorSigningInfo(ctx, consAddr)
-
-	return found &&
-		!signingInfo.Tombstoned &&
-		maxMissedBlocksPerWindow.GTE(utils.Threshold{Numerator: signingInfo.MissedBlocksCounter, Denominator: signedBlocksWindow}) &&
-		!validator.IsJailed()
-}
-
-// HasProxyRegistered returns true if the validator has broadcast proxy registered; otherwise, false
-func HasProxyRegistered(ctx sdk.Context, snapshotter Snapshotter, validator SDKValidator) bool {
-	_, active := snapshotter.GetProxy(ctx, validator.GetOperator())
-	return active
-}
-
-// IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
-// and was subsequently linked to a snapshot number as an available operator
-func IsValidatorAvaiableForCounter(ctx sdk.Context, tss Tss, seqNo int64, validator SDKValidator) bool {
-	return tss.OperatorIsAvailableForCounter(ctx, seqNo, validator.GetOperator())
-}
-
-// IsValidatorTssSuspended returns true if the validator is suspended from participating TSS ceremonies for committing faulty behaviour; otherwise, false
-func IsValidatorTssSuspended(ctx sdk.Context, tss Tss, validator SDKValidator) bool {
-	return tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight()
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot
@@ -119,6 +161,7 @@ type Snapshotter interface {
 	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
+	GetValidatorInfo(ctx sdk.Context, validator SDKValidator) (ValidatorInfo, error)
 }
 
 // GetSDKValidator returns the SdkValidator

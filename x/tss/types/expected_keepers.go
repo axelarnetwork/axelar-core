@@ -74,7 +74,7 @@ type TSSKeeper interface {
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
-	PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
+	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
 	DeleteScheduledKeygen(ctx sdk.Context, ID string)
@@ -104,7 +104,7 @@ type TSSKeeper interface {
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator)
+	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, sigID string, validators []snapshot.Validator) error
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool
 	GetTotalShareCount(ctx sdk.Context, sigID string) int64

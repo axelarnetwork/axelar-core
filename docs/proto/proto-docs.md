@@ -173,12 +173,19 @@
 - [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
     - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
     - [Validator](#snapshot.exported.v1beta1.Validator)
+    - [ValidatorInfo](#snapshot.exported.v1beta1.ValidatorInfo)
+  
+    - [ValidatorIllegibility](#snapshot.exported.v1beta1.ValidatorIllegibility)
   
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
+  
+- [snapshot/v1beta1/query.proto](#snapshot/v1beta1/query.proto)
+    - [QueryValidatorsResponse](#snapshot.v1beta1.QueryValidatorsResponse)
+    - [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator)
   
 - [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
     - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
@@ -2508,7 +2515,42 @@ GenesisState represents the genesis state
 
 
 
+
+<a name="snapshot.exported.v1beta1.ValidatorInfo"></a>
+
+### ValidatorInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tombstoned` | [bool](#bool) |  |  |
+| `jailed` | [bool](#bool) |  |  |
+| `missed_too_many_blocks` | [bool](#bool) |  |  |
+| `has_proxy_registered` | [bool](#bool) |  |  |
+| `tss_suspended` | [bool](#bool) |  |  |
+
+
+
+
+
  <!-- end messages -->
+
+
+<a name="snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+
+### ValidatorIllegibility
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 |  |
+| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
+| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
+| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 3 |  |
+| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 4 |  |
+| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 5 |  |
+
 
  <!-- end enums -->
 
@@ -2565,6 +2607,54 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/query.proto
+
+
+
+<a name="snapshot.v1beta1.QueryValidatorsResponse"></a>
+
+### QueryValidatorsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator) | repeated |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.QueryValidatorsResponse.Validator"></a>
+
+### QueryValidatorsResponse.Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operator_address` | [string](#string) |  |  |
+| `moniker` | [string](#string) |  |  |
+| `info` | [snapshot.exported.v1beta1.ValidatorInfo](#snapshot.exported.v1beta1.ValidatorInfo) |  |  |
 
 
 

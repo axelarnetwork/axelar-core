@@ -102,8 +102,6 @@ import (
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
-	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
@@ -360,22 +358,22 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
-	slashingKCast := &snapshotExportedMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
-			signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
+	// slashingKCast := &snapshotExportedMock.SlasherMock{
+	// 	GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
+	// 		signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
 
-			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
-		},
-		SignedBlocksWindowFunc: func(ctx sdk.Context) int64 {
-			return slashingK.SignedBlocksWindow(ctx)
-		},
-	}
+	// 		return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
+	// 	},
+	// 	SignedBlocksWindowFunc: func(ctx sdk.Context) int64 {
+	// 		return slashingK.SignedBlocksWindow(ctx)
+	// 	},
+	// }
 	tssK := tssKeeper.NewKeeper(
-		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingKCast,
+		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK,
 	)
 	snapK := snapKeeper.NewKeeper(
 		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
-		slashingKCast, tssK,
+		slashingK, tssK,
 	)
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
