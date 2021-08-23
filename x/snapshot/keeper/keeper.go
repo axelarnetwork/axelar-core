@@ -171,6 +171,10 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		}
 
 		if !k.tss.OperatorIsAvailableForCounter(ctx, counter, validator.GetOperator()) {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [not-available]",
+				validator.GetOperator().String(),
+				counter,
+			))
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}
