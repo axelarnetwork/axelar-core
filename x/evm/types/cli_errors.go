@@ -7,7 +7,7 @@ const (
 	ErrFKeyID           = "could not resolve key ID: %s\n"
 	ErrFGatewayAddress  = "could not resolve gateway address: %s\n"
 	ErrFTokenAddress    = "could not resolve token address: %s\n"
-	ErrFDeployTx        = "could not send the command transaction with txID %s"
+	ErrFDeployTx        = "could not resolve deploy transaction: %s"
 	ErrFSignedTx        = "could not get transaction with txID %s"
 	ErrFBytecode        = "could not get the bytecodes for contract %s"
 	ErrFSendTx          = "could not send the transaction with txID %s"

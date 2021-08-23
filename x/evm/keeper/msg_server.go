@@ -1203,6 +1203,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
+	batchedCommands.Status = types.Signing
 	keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
 
 	ctx.EventManager().EmitEvent(
