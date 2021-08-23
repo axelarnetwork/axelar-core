@@ -48,11 +48,12 @@ var (
 )
 
 type testSetup struct {
-	Keeper     Keeper
-	Voter      types.Voter
-	Ctx        sdk.Context
-	PrivateKey chan *ecdsa.PrivateKey
-	Signature  chan []byte
+	Keeper      Keeper
+	Voter       types.Voter
+	Snapshotter snapMock.SnapshotterMock
+	Ctx         sdk.Context
+	PrivateKey  chan *ecdsa.PrivateKey
+	Signature   chan []byte
 }
 
 func setup() *testSetup {
@@ -61,17 +62,19 @@ func setup() *testSetup {
 	voter := &tssMock.VoterMock{
 		InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 	}
+	snapshotter := snapMock.SnapshotterMock{}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
-		Voter:      voter,
-		Ctx:        ctx,
-		PrivateKey: make(chan *ecdsa.PrivateKey, 1),
-		Signature:  make(chan []byte, 1),
+		Voter:       voter,
+		Snapshotter: snapshotter,
+		Ctx:         ctx,
+		PrivateKey:  make(chan *ecdsa.PrivateKey, 1),
+		Signature:   make(chan []byte, 1),
 	}
 
 	slasher := &snapMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshot.ValidatorInfo, bool) {
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingTypes.ValidatorSigningInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -80,7 +83,8 @@ func setup() *testSetup {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			return snapshot.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+
+			return newInfo, true
 		},
 		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}

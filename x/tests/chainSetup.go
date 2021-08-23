@@ -47,7 +47,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	snapshotExported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -159,7 +158,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 func createMocks(validators []stakingtypes.Validator) testMocks {
 	slasher := &snapshotExportedMock.SlasherMock{
-		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
+		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
 			newInfo := slashingtypes.NewValidatorSigningInfo(
 				address,
 				int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -168,7 +167,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 				false,           // tomstoned
 				int64(0),        // missed blocks
 			)
-			return snapshotExported.ValidatorInfo{ValidatorSigningInfo: newInfo}, true
+			return newInfo, true
 		},
 		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}

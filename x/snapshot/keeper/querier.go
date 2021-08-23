@@ -113,6 +113,7 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 	return bz, nil
 }
 
+// QueryValidators returns validators' tss information
 func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 	var validators []*types.QueryValidatorsResponse_Validator
 

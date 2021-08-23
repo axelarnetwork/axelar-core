@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
@@ -87,7 +86,7 @@ func TestSnapshots(t *testing.T) {
 			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
 			slashingKeeper := &snapshotMock.SlasherMock{
-				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (exported.ValidatorInfo, bool) {
+				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
 					newInfo := slashingtypes.NewValidatorSigningInfo(
 						address,
 						int64(0),        // height at which validator was first a candidate OR was unjailed
@@ -96,8 +95,8 @@ func TestSnapshots(t *testing.T) {
 						false,           // tomstoned
 						int64(0),        // missed blocks
 					)
-					retinfo := exported.ValidatorInfo{ValidatorSigningInfo: newInfo}
-					return retinfo, true
+
+					return newInfo, true
 				},
 				SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 			}

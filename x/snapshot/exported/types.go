@@ -54,6 +54,7 @@ func (v ValidatorIllegibility) String() string {
 	}
 }
 
+// IllegibilitiesToString returns a comma-separated string of the list of illegibilities
 func IllegibilitiesToString(illegibilities []ValidatorIllegibility) string {
 	var illegibilityStrs []string
 
@@ -64,6 +65,7 @@ func IllegibilitiesToString(illegibilities []ValidatorIllegibility) string {
 	return strings.Join(illegibilityStrs, ",")
 }
 
+// GetIllegibilitiesForNewKey returns all the illegibilities for the given validator to control a new key
 func (v ValidatorInfo) GetIllegibilitiesForNewKey() []ValidatorIllegibility {
 	var illegibilities []ValidatorIllegibility
 
@@ -90,6 +92,7 @@ func (v ValidatorInfo) GetIllegibilitiesForNewKey() []ValidatorIllegibility {
 	return illegibilities
 }
 
+// GetIllegibilitiesForSigning returns all the illegibilities for the given validator to participate in signing
 func (v ValidatorInfo) GetIllegibilitiesForSigning() []ValidatorIllegibility {
 	var illegibilities []ValidatorIllegibility
 
@@ -110,21 +113,6 @@ func (v ValidatorInfo) GetIllegibilitiesForSigning() []ValidatorIllegibility {
 	}
 
 	return illegibilities
-}
-
-func (v ValidatorInfo) IsEligibleForNewKey() bool {
-	return !v.Tombstoned &&
-		!v.MissedTooManyBlocks &&
-		!v.Jailed &&
-		v.HasProxyRegistered &&
-		!v.TssSuspended
-}
-
-func (v ValidatorInfo) IsEligibleForSigning() bool {
-	return !v.Tombstoned &&
-		!v.MissedTooManyBlocks &&
-		!v.Jailed &&
-		!v.TssSuspended
 }
 
 // Slasher provides functionality to manage slashing info for a validator

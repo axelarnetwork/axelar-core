@@ -366,6 +366,7 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	return int(binary.LittleEndian.Uint64(bz))
 }
 
+// GetValidatorInfo retrieves the validator's tss information
 func (k Keeper) GetValidatorInfo(ctx sdk.Context, validator exported.SDKValidator) (exported.ValidatorInfo, error) {
 	consAddr, err := validator.GetConsAddr()
 	if err != nil {

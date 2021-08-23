@@ -358,16 +358,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
-	// slashingKCast := &snapshotExportedMock.SlasherMock{
-	// 	GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (snapshotExported.ValidatorInfo, bool) {
-	// 		signingInfo, found := slashingK.GetValidatorSigningInfo(ctx, address)
-
-	// 		return snapshotExported.ValidatorInfo{ValidatorSigningInfo: signingInfo}, found
-	// 	},
-	// 	SignedBlocksWindowFunc: func(ctx sdk.Context) int64 {
-	// 		return slashingK.SignedBlocksWindow(ctx)
-	// 	},
-	// }
 	tssK := tssKeeper.NewKeeper(
 		app.legacyAmino, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK,
 	)
