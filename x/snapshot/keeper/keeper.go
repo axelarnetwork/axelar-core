@@ -153,7 +153,28 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 			return false
 		}
 
-		if !exported.IsValidatorEligibleForNewKey(ctx, k.slasher, k, k.tss, counter, &v) {
+		validatorInfo, err := k.GetValidatorInfo(ctx, &v)
+		if err != nil {
+			k.Logger(ctx).Error(err.Error())
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
+			return false
+		}
+
+		if illegibilities := validatorInfo.GetIllegibilitiesForNewKey(); len(illegibilities) > 0 {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [%s]",
+				validator.GetOperator().String(),
+				counter,
+				exported.IllegibilitiesToString(illegibilities),
+			))
+			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
+			return false
+		}
+
+		if !k.tss.OperatorIsAvailableForCounter(ctx, counter, validator.GetOperator()) {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [not-available]",
+				validator.GetOperator().String(),
+				counter,
+			))
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}
@@ -347,4 +368,30 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	}
 
 	return int(binary.LittleEndian.Uint64(bz))
+}
+
+// GetValidatorInfo retrieves the validator's tss information
+func (k Keeper) GetValidatorInfo(ctx sdk.Context, validator exported.SDKValidator) (exported.ValidatorInfo, error) {
+	consAddr, err := validator.GetConsAddr()
+	if err != nil {
+		return exported.ValidatorInfo{}, err
+	}
+
+	signedBlocksWindow := k.slasher.SignedBlocksWindow(ctx)
+	signingInfo, signingInfoFound := k.slasher.GetValidatorSigningInfo(ctx, consAddr)
+	_, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
+
+	return exported.ValidatorInfo{
+		Tombstoned:          signingInfoFound && signingInfo.GetTombstoned(),
+		Jailed:              validator.IsJailed(),
+		MissedTooManyBlocks: utils.Threshold{Numerator: signingInfo.MissedBlocksCounter, Denominator: signedBlocksWindow}.GTE(k.tss.GetMaxMissedBlocksPerWindow(ctx)),
+		HasProxyRegistered:  hasProxyRegistered,
+		TssSuspended:        k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight(),
+	}, nil
+}
+
+// IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
+// and was subsequently linked to a snapshot number as an available operator
+func (k Keeper) IsValidatorAvaiableForCounter(ctx sdk.Context, seqNo int64, validator exported.SDKValidator) bool {
+	return k.tss.OperatorIsAvailableForCounter(ctx, seqNo, validator.GetOperator())
 }

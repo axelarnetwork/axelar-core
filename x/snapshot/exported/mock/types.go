@@ -10,6 +10,7 @@ import (
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"sync"
 )
 
@@ -355,6 +356,9 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
+// 			GetValidatorInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshotexported.SDKValidator) (snapshotexported.ValidatorInfo, error) {
+// 				panic("mock out the GetValidatorInfo method")
+// 			},
 // 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
@@ -379,6 +383,9 @@ type SnapshotterMock struct {
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshotexported.Snapshot, bool)
+
+	// GetValidatorInfoFunc mocks the GetValidatorInfo method.
+	GetValidatorInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshotexported.SDKValidator) (snapshotexported.ValidatorInfo, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error)
@@ -416,6 +423,13 @@ type SnapshotterMock struct {
 			// SeqNo is the seqNo argument value.
 			SeqNo int64
 		}
+		// GetValidatorInfo holds details about calls to the GetValidatorInfo method.
+		GetValidatorInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Validator is the validator argument value.
+			Validator snapshotexported.SDKValidator
+		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -429,6 +443,7 @@ type SnapshotterMock struct {
 	lockGetOperator       sync.RWMutex
 	lockGetProxy          sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
+	lockGetValidatorInfo  sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
 
@@ -599,6 +614,41 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	return calls
 }
 
+// GetValidatorInfo calls GetValidatorInfoFunc.
+func (mock *SnapshotterMock) GetValidatorInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshotexported.SDKValidator) (snapshotexported.ValidatorInfo, error) {
+	if mock.GetValidatorInfoFunc == nil {
+		panic("SnapshotterMock.GetValidatorInfoFunc: method is nil but Snapshotter.GetValidatorInfo was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshotexported.SDKValidator
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+	}
+	mock.lockGetValidatorInfo.Lock()
+	mock.calls.GetValidatorInfo = append(mock.calls.GetValidatorInfo, callInfo)
+	mock.lockGetValidatorInfo.Unlock()
+	return mock.GetValidatorInfoFunc(ctx, validator)
+}
+
+// GetValidatorInfoCalls gets all the calls that were made to GetValidatorInfo.
+// Check the length with:
+//     len(mockedSnapshotter.GetValidatorInfoCalls())
+func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator snapshotexported.SDKValidator
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshotexported.SDKValidator
+	}
+	mock.lockGetValidatorInfo.RLock()
+	calls = mock.calls.GetValidatorInfo
+	mock.lockGetValidatorInfo.RUnlock()
+	return calls
+}
+
 // TakeSnapshot calls TakeSnapshotFunc.
 func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tssexported.KeyRequirement) (snapshotexported.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
@@ -644,7 +694,7 @@ var _ snapshotexported.Slasher = &SlasherMock{}
 //
 // 		// make and configure a mocked snapshotexported.Slasher
 // 		mockedSlasher := &SlasherMock{
-// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool) {
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
 // 				panic("mock out the GetValidatorSigningInfo method")
 // 			},
 // 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
@@ -658,7 +708,7 @@ var _ snapshotexported.Slasher = &SlasherMock{}
 // 	}
 type SlasherMock struct {
 	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
-	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool)
+	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
 
 	// SignedBlocksWindowFunc mocks the SignedBlocksWindow method.
 	SignedBlocksWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
@@ -683,7 +733,7 @@ type SlasherMock struct {
 }
 
 // GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
-func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (snapshotexported.ValidatorInfo, bool) {
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
 	if mock.GetValidatorSigningInfoFunc == nil {
 		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
 	}

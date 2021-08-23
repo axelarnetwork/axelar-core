@@ -114,6 +114,7 @@
       - [info \[counter\]](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
       - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
       - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
+      - [validators](axelard_query_snapshot_validators.md)	 - Fetch the validators and their information
     - [staking](axelard_query_staking.md)	 - Querying commands for the staking module
       - [delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_delegation.md)	 - Query a delegation based on address and validator address
       - [delegations \[delegator-addr\]](axelard_query_staking_delegations.md)	 - Query all delegations made by one delegator
