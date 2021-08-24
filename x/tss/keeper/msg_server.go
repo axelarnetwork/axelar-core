@@ -214,7 +214,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		// TODO: set group recovery only once after voted on, like the public key
 		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
 		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
 

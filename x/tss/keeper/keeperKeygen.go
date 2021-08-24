@@ -122,8 +122,6 @@ func (k Keeper) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	ctx.KVStore(k.storeKey).Set([]byte(pkPrefix+keyID), btcecPK.SerializeCompressed())
 }
 
-
-
 // GetCurrentKeyID returns the current key ID for given chain and role
 func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 	return k.getKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole), keyRole)
