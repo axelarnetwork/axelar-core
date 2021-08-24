@@ -45,11 +45,11 @@ const (
 			"type": "function"
 		}
 	]`
-	AxelarGatewayCommandMint                 = "mintToken"
-	AxelarGatewayCommandDeployToken          = "deployToken"
-	AxelarGatewayCommandBurnToken            = "burnToken"
-	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
-	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
+	axelarGatewayCommandMintToken            = "mintToken"
+	axelarGatewayCommandDeployToken          = "deployToken"
+	axelarGatewayCommandBurnToken            = "burnToken"
+	axelarGatewayCommandTransferOwnership    = "transferOwnership"
+	axelarGatewayCommandTransferOperatorship = "transferOperatorship"
 	axelarGatewayFuncExecute                 = "execute"
 )
 
@@ -327,7 +327,7 @@ func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperat
 
 	return Command{
 		ID:      NewCommandID(newOperatorAddr.Bytes(), chainID),
-		Command: AxelarGatewayCommandTransferOperatorship,
+		Command: axelarGatewayCommandTransferOperatorship,
 		Params:  params,
 		KeyID:   keyID,
 	}, nil
