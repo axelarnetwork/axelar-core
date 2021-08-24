@@ -148,6 +148,18 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
 	s.SetAddress(ctx, depositAddressInfo)
 
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyMasterKeyID, masterKey.ID),
+			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, secondaryKey.ID),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddressInfo.Address),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+		),
+	)
+
 	return &types.LinkResponse{DepositAddr: depositAddressInfo.Address}, nil
 }
 

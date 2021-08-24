@@ -18,6 +18,9 @@ const (
 	AttributeKeyOutPointInfo       = "outPointInfo"
 	AttributeKeyPoll               = "poll"
 	AttributeKeyAmount             = "amount"
+	AttributeKeyMasterKeyID        = "masterKeyId"
+	AttributeKeySecondaryKeyID     = "secondaryKeyId"
+	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyDestinationChain   = "destinationChain"
 )
