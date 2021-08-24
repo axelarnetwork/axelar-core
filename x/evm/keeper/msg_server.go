@@ -947,7 +947,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		Msg:             hash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
 		RequestModule:   types.ModuleName,
-		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
+		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
 	}); err != nil {
 		return nil, err
 	}
@@ -1222,7 +1222,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Msg:             batchedCommands.SigHash.Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
-		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
+		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
 	}); err != nil {
 		return nil, err
 	}

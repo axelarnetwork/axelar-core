@@ -671,7 +671,7 @@ SignInfo holds information about a sign request
 | `msg` | [bytes](#bytes) |  |  |
 | `snapshot_counter` | [int64](#int64) |  |  |
 | `request_module` | [string](#string) |  |  |
-| `metadata` | [bytes](#bytes) |  |  |
+| `metadata` | [string](#string) |  |  |
 
 
 
@@ -1625,7 +1625,6 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
-| `selector` | [string](#string) |  |  |
 
 
 
