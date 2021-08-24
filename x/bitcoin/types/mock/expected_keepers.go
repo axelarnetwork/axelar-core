@@ -207,15 +207,9 @@ var _ types.Signer = &SignerMock{}
 // 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
-<<<<<<< HEAD
-// 			SetKeyIDForSigFunc: func(ctx sdk.Context, sigID string, keyID string)  {
-// 				panic("mock out the SetInfoForSig method")
-// 			},
 // 			SetKeyRoleFunc: func(ctx sdk.Context, keyID string, keyRole tss.KeyRole)  {
 // 				panic("mock out the SetKeyRole method")
 // 			},
-=======
->>>>>>> a964419c (chore: generate)
 // 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
@@ -274,15 +268,9 @@ type SignerMock struct {
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
 
-<<<<<<< HEAD
-	// SetKeyIDForSigFunc mocks the SetInfoForSig method.
-	SetKeyIDForSigFunc func(ctx sdk.Context, sigID string, keyID string)
-
 	// SetKeyRoleFunc mocks the SetKeyRole method.
 	SetKeyRoleFunc func(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
 
-=======
->>>>>>> a964419c (chore: generate)
 	// SetSigFunc mocks the SetSig method.
 	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
 
@@ -424,16 +412,6 @@ type SignerMock struct {
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
 		}
-<<<<<<< HEAD
-		// SetInfoForSig holds details about calls to the SetInfoForSig method.
-		SetKeyIDForSig []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-			// KeyID is the keyID argument value.
-			KeyID string
-		}
 		// SetKeyRole holds details about calls to the SetKeyRole method.
 		SetKeyRole []struct {
 			// Ctx is the ctx argument value.
@@ -443,8 +421,6 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
 		}
-=======
->>>>>>> a964419c (chore: generate)
 		// SetSig holds details about calls to the SetSig method.
 		SetSig []struct {
 			// Ctx is the ctx argument value.
@@ -479,11 +455,7 @@ type SignerMock struct {
 	lockScheduleSign               sync.RWMutex
 	lockSetInfoForSig              sync.RWMutex
 	lockSetKey                     sync.RWMutex
-<<<<<<< HEAD
-	lockSetKeyIDForSig             sync.RWMutex
 	lockSetKeyRole                 sync.RWMutex
-=======
->>>>>>> a964419c (chore: generate)
 	lockSetSig                     sync.RWMutex
 	lockSetSigStatus               sync.RWMutex
 }
@@ -1069,46 +1041,6 @@ func (mock *SignerMock) SetKeyCalls() []struct {
 	return calls
 }
 
-<<<<<<< HEAD
-// SetInfoForSig calls SetKeyIDForSigFunc.
-func (mock *SignerMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
-	if mock.SetKeyIDForSigFunc == nil {
-		panic("SignerMock.SetKeyIDForSigFunc: method is nil but Signer.SetInfoForSig was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-		KeyID: keyID,
-	}
-	mock.lockSetKeyIDForSig.Lock()
-	mock.calls.SetKeyIDForSig = append(mock.calls.SetKeyIDForSig, callInfo)
-	mock.lockSetKeyIDForSig.Unlock()
-	mock.SetKeyIDForSigFunc(ctx, sigID, keyID)
-}
-
-// SetKeyIDForSigCalls gets all the calls that were made to SetInfoForSig.
-// Check the length with:
-//     len(mockedSigner.SetKeyIDForSigCalls())
-func (mock *SignerMock) SetKeyIDForSigCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}
-	mock.lockSetKeyIDForSig.RLock()
-	calls = mock.calls.SetKeyIDForSig
-	mock.lockSetKeyIDForSig.RUnlock()
-	return calls
-}
-
 // SetKeyRole calls SetKeyRoleFunc.
 func (mock *SignerMock) SetKeyRole(ctx sdk.Context, keyID string, keyRole tss.KeyRole) {
 	if mock.SetKeyRoleFunc == nil {
@@ -1148,8 +1080,6 @@ func (mock *SignerMock) SetKeyRoleCalls() []struct {
 	return calls
 }
 
-=======
->>>>>>> a964419c (chore: generate)
 // SetSig calls SetSigFunc.
 func (mock *SignerMock) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 	if mock.SetSigFunc == nil {
@@ -1642,18 +1572,10 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-<<<<<<< HEAD
-<<<<<<< HEAD
 // 			GetValidatorInfoFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
 // 				panic("mock out the GetValidatorInfo method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
-=======
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy _.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
->>>>>>> a964419c (chore: generate)
-=======
-// 			TakeSnapshotFunc: func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
->>>>>>> bdc21096 (fix outdated moq version)
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -1682,15 +1604,7 @@ type SnapshotterMock struct {
 	GetValidatorInfoFunc func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-<<<<<<< HEAD
-<<<<<<< HEAD
 	TakeSnapshotFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
-=======
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy _.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
->>>>>>> a964419c (chore: generate)
-=======
-	TakeSnapshotFunc func(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error)
->>>>>>> bdc21096 (fix outdated moq version)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1736,19 +1650,8 @@ type SnapshotterMock struct {
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-<<<<<<< HEAD
 			// KeyRequirement is the keyRequirement argument value.
 			KeyRequirement tss.KeyRequirement
-=======
-			// SubsetSize is the subsetSize argument value.
-			SubsetSize int64
-			// KeyShareDistributionPolicy is the keyShareDistributionPolicy argument value.
-<<<<<<< HEAD
-			KeyShareDistributionPolicy _.KeyShareDistributionPolicy
->>>>>>> a964419c (chore: generate)
-=======
-			KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
->>>>>>> bdc21096 (fix outdated moq version)
 		}
 	}
 	lockGetLatestCounter  sync.RWMutex
@@ -1963,31 +1866,13 @@ func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
-=======
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy _.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
->>>>>>> a964419c (chore: generate)
-=======
-func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, keyShareDistributionPolicy tss.KeyShareDistributionPolicy) (sdk.Int, sdk.Int, error) {
->>>>>>> bdc21096 (fix outdated moq version)
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
-<<<<<<< HEAD
 		Ctx            sdk.Context
 		KeyRequirement tss.KeyRequirement
-=======
-		Ctx                        sdk.Context
-		SubsetSize                 int64
-<<<<<<< HEAD
-		KeyShareDistributionPolicy _.KeyShareDistributionPolicy
->>>>>>> a964419c (chore: generate)
-=======
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
->>>>>>> bdc21096 (fix outdated moq version)
 	}{
 		Ctx:            ctx,
 		KeyRequirement: keyRequirement,
@@ -2002,27 +1887,12 @@ func (mock *SnapshotterMock) TakeSnapshot(ctx sdk.Context, subsetSize int64, key
 // Check the length with:
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-<<<<<<< HEAD
 	Ctx            sdk.Context
 	KeyRequirement tss.KeyRequirement
 } {
 	var calls []struct {
 		Ctx            sdk.Context
 		KeyRequirement tss.KeyRequirement
-=======
-	Ctx                        sdk.Context
-	SubsetSize                 int64
-	KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
-} {
-	var calls []struct {
-		Ctx                        sdk.Context
-		SubsetSize                 int64
-<<<<<<< HEAD
-		KeyShareDistributionPolicy _.KeyShareDistributionPolicy
->>>>>>> a964419c (chore: generate)
-=======
-		KeyShareDistributionPolicy tss.KeyShareDistributionPolicy
->>>>>>> bdc21096 (fix outdated moq version)
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot

@@ -1303,14 +1303,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
-<<<<<<< HEAD
-// 			SetKeyIDForSigFunc: func(ctx sdk.Context, sigID string, keyID string)  {
-// 				panic("mock out the SetInfoForSig method")
-=======
-// 			SetKeyRequirementFunc: func(ctx sdk.Context, keyRequirement exported.KeyRequirement)  {
-// 				panic("mock out the SetKeyRequirement method")
->>>>>>> a964419c (chore: generate)
-// 			},
 // 			SetParamsFunc: func(ctx sdk.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
@@ -1467,14 +1459,6 @@ type TSSKeeperMock struct {
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
-
-<<<<<<< HEAD
-	// SetKeyIDForSigFunc mocks the SetInfoForSig method.
-	SetKeyIDForSigFunc func(ctx sdk.Context, sigID string, keyID string)
-=======
-	// SetKeyRequirementFunc mocks the SetKeyRequirement method.
-	SetKeyRequirementFunc func(ctx sdk.Context, keyRequirement exported.KeyRequirement)
->>>>>>> a964419c (chore: generate)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx sdk.Context, p tsstypes.Params)
@@ -1860,24 +1844,6 @@ type TSSKeeperMock struct {
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
 		}
-<<<<<<< HEAD
-		// SetInfoForSig holds details about calls to the SetInfoForSig method.
-		SetKeyIDForSig []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-			// KeyID is the keyID argument value.
-			KeyID string
-=======
-		// SetKeyRequirement holds details about calls to the SetKeyRequirement method.
-		SetKeyRequirement []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement exported.KeyRequirement
->>>>>>> a964419c (chore: generate)
-		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
 			// Ctx is the ctx argument value.
@@ -1973,11 +1939,6 @@ type TSSKeeperMock struct {
 	lockSetAvailableOperator                sync.RWMutex
 	lockSetInfoForSig                       sync.RWMutex
 	lockSetKey                              sync.RWMutex
-<<<<<<< HEAD
-	lockSetKeyIDForSig                      sync.RWMutex
-=======
-	lockSetKeyRequirement                   sync.RWMutex
->>>>>>> a964419c (chore: generate)
 	lockSetParams                           sync.RWMutex
 	lockSetRecoveryInfos                    sync.RWMutex
 	lockSetSig                              sync.RWMutex
@@ -3661,80 +3622,6 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
-	return calls
-}
-
-<<<<<<< HEAD
-// SetInfoForSig calls SetKeyIDForSigFunc.
-func (mock *TSSKeeperMock) SetInfoForSig(ctx sdk.Context, sigID string, keyID string) {
-	if mock.SetKeyIDForSigFunc == nil {
-		panic("TSSKeeperMock.SetKeyIDForSigFunc: method is nil but TSSKeeper.SetInfoForSig was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-		KeyID: keyID,
-	}
-	mock.lockSetKeyIDForSig.Lock()
-	mock.calls.SetKeyIDForSig = append(mock.calls.SetKeyIDForSig, callInfo)
-	mock.lockSetKeyIDForSig.Unlock()
-	mock.SetKeyIDForSigFunc(ctx, sigID, keyID)
-}
-
-// SetKeyIDForSigCalls gets all the calls that were made to SetInfoForSig.
-// Check the length with:
-//     len(mockedTSSKeeper.SetKeyIDForSigCalls())
-func (mock *TSSKeeperMock) SetKeyIDForSigCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}
-	mock.lockSetKeyIDForSig.RLock()
-	calls = mock.calls.SetKeyIDForSig
-	mock.lockSetKeyIDForSig.RUnlock()
-=======
-// SetKeyRequirement calls SetKeyRequirementFunc.
-func (mock *TSSKeeperMock) SetKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	if mock.SetKeyRequirementFunc == nil {
-		panic("TSSKeeperMock.SetKeyRequirementFunc: method is nil but TSSKeeper.SetKeyRequirement was just called")
-	}
-	callInfo := struct {
-		Ctx            sdk.Context
-		KeyRequirement exported.KeyRequirement
-	}{
-		Ctx:            ctx,
-		KeyRequirement: keyRequirement,
-	}
-	mock.lockSetKeyRequirement.Lock()
-	mock.calls.SetKeyRequirement = append(mock.calls.SetKeyRequirement, callInfo)
-	mock.lockSetKeyRequirement.Unlock()
-	mock.SetKeyRequirementFunc(ctx, keyRequirement)
-}
-
-// SetKeyRequirementCalls gets all the calls that were made to SetKeyRequirement.
-// Check the length with:
-//     len(mockedTSSKeeper.SetKeyRequirementCalls())
-func (mock *TSSKeeperMock) SetKeyRequirementCalls() []struct {
-	Ctx            sdk.Context
-	KeyRequirement exported.KeyRequirement
-} {
-	var calls []struct {
-		Ctx            sdk.Context
-		KeyRequirement exported.KeyRequirement
-	}
-	mock.lockSetKeyRequirement.RLock()
-	calls = mock.calls.SetKeyRequirement
-	mock.lockSetKeyRequirement.RUnlock()
->>>>>>> a964419c (chore: generate)
 	return calls
 }
 
