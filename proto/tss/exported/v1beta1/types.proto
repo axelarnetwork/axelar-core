@@ -78,8 +78,3 @@ enum SigStatus {
   SIG_STATUS_ABORTED = 4 [ (gogoproto.enumvalue_customname) = "Aborted" ];
   SIG_STATUS_INVALID = 5 [ (gogoproto.enumvalue_customname) = "Invalid" ];
 }
-
-message KeygenVoteData {
-  bytes pub_key = 1;
-  bytes group_recovery_info = 2;
-}

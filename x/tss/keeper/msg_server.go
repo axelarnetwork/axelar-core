@@ -223,7 +223,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		voteDataStr := exported.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
+		voteDataStr := types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
 		bz, err := json.Marshal(voteDataStr)
 		if err != nil {
 			return nil, fmt.Errorf("could not marshal vote data")
@@ -277,7 +277,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	switch keygenResult := result.(type) {
 	case *gogoprototypes.BytesValue:
 
-		var voteData exported.KeygenVoteData
+		var voteData types.KeygenVoteData
 		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
 		if err != nil {
 			return nil, fmt.Errorf("could not unmarshal vote data: [%w]", err)
