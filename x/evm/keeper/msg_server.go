@@ -836,6 +836,9 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
 	if err := keeper.SetCommand(ctx, command); err != nil {
+		return nil, err
+	}
+
 	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
 	if !ok {
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)

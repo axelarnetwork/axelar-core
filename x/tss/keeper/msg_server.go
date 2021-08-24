@@ -383,6 +383,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if len(info.Metadata) > 0 {
+		// module that requests sign is responsible for marshalling metadata to appropriate encoding (expects JSON)
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigData, string(info.Metadata)))
 	}
 
