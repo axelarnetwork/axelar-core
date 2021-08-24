@@ -462,7 +462,9 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		result := &tofnd.MessageOut_KeygenResult{
 			KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
 				Data: &tofnd.KeygenOutput{
-					PubKey: pk, GroupRecoverInfo: groupRecoverInfo, PrivateRecoverInfo: privateRecoverInfo,
+					PubKey:             pk,
+					GroupRecoverInfo:   groupRecoverInfo,
+					PrivateRecoverInfo: privateRecoverInfo,
 				},
 			},
 		}
