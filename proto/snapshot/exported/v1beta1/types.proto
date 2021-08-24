@@ -35,3 +35,29 @@ message Snapshot {
       key_share_distribution_policy = 6;
   int64 corruption_threshold = 7;
 }
+
+enum ValidatorIllegibility {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = false;
+
+  VALIDATOR_ILLEGIBILITY_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  VALIDATOR_ILLEGIBILITY_TOMBSTONED = 1
+      [ (gogoproto.enumvalue_customname) = "Tombstoned" ];
+  VALIDATOR_ILLEGIBILITY_JAILED = 2
+      [ (gogoproto.enumvalue_customname) = "Jailed" ];
+  VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS = 3
+      [ (gogoproto.enumvalue_customname) = "MissedTooManyBlocks" ];
+  VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED = 4
+      [ (gogoproto.enumvalue_customname) = "NoProxyRegistered" ];
+  VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED = 5
+      [ (gogoproto.enumvalue_customname) = "TssSuspended" ];
+}
+
+message ValidatorInfo {
+  bool tombstoned = 1;
+  bool jailed = 2;
+  bool missed_too_many_blocks = 3;
+  bool has_proxy_registered = 4;
+  bool tss_suspended = 5;
+}

@@ -27,6 +27,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetProxy(queryRoute),
 		GetCmdGetOperator(queryRoute),
 		GetCmdGetSnapshot(queryRoute),
+		GetCmdGetValidators(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -102,6 +103,33 @@ func GetCmdGetSnapshot(queryRoute string) *cobra.Command {
 
 			fmt.Println(string(res))
 			return nil
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetValidators returns the validators
+func GetCmdGetValidators(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "validators",
+		Short: "Fetch the validators and their information",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QValidators))
+			if err != nil {
+				return sdkerrors.Wrapf(err, types.ErrValidators)
+			}
+
+			var res types.QueryValidatorsResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return cliCtx.PrintProto(&res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

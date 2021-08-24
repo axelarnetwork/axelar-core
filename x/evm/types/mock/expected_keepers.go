@@ -1398,6 +1398,9 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
+// 			GetValidatorInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
+// 				panic("mock out the GetValidatorInfo method")
+// 			},
 // 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
@@ -1422,6 +1425,9 @@ type SnapshotterMock struct {
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool)
+
+	// GetValidatorInfoFunc mocks the GetValidatorInfo method.
+	GetValidatorInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
@@ -1459,6 +1465,13 @@ type SnapshotterMock struct {
 			// SeqNo is the seqNo argument value.
 			SeqNo int64
 		}
+		// GetValidatorInfo holds details about calls to the GetValidatorInfo method.
+		GetValidatorInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Validator is the validator argument value.
+			Validator snapshot.SDKValidator
+		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -1472,6 +1485,7 @@ type SnapshotterMock struct {
 	lockGetOperator       sync.RWMutex
 	lockGetProxy          sync.RWMutex
 	lockGetSnapshot       sync.RWMutex
+	lockGetValidatorInfo  sync.RWMutex
 	lockTakeSnapshot      sync.RWMutex
 }
 
@@ -1639,6 +1653,41 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot
 	mock.lockGetSnapshot.RUnlock()
+	return calls
+}
+
+// GetValidatorInfo calls GetValidatorInfoFunc.
+func (mock *SnapshotterMock) GetValidatorInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
+	if mock.GetValidatorInfoFunc == nil {
+		panic("SnapshotterMock.GetValidatorInfoFunc: method is nil but Snapshotter.GetValidatorInfo was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshot.SDKValidator
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+	}
+	mock.lockGetValidatorInfo.Lock()
+	mock.calls.GetValidatorInfo = append(mock.calls.GetValidatorInfo, callInfo)
+	mock.lockGetValidatorInfo.Unlock()
+	return mock.GetValidatorInfoFunc(ctx, validator)
+}
+
+// GetValidatorInfoCalls gets all the calls that were made to GetValidatorInfo.
+// Check the length with:
+//     len(mockedSnapshotter.GetValidatorInfoCalls())
+func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator snapshot.SDKValidator
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshot.SDKValidator
+	}
+	mock.lockGetValidatorInfo.RLock()
+	calls = mock.calls.GetValidatorInfo
+	mock.lockGetValidatorInfo.RUnlock()
 	return calls
 }
 

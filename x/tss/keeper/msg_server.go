@@ -292,6 +292,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
@@ -309,7 +310,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 				continue
 			}
 
-			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
@@ -406,6 +407,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteKeyIDForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		poll.AllowOverride()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
@@ -421,7 +423,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 					criminalAddress.String(), req.PollKey.ID))
 				continue
 			}
-			s.TSSKeeper.PenalizeSignCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
