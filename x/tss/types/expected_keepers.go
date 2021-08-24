@@ -98,7 +98,7 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
 	HasKeygenStarted(ctx sdk.Context, keyID string) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID string)
-	DeleteKeyIDForSig(ctx sdk.Context, sigID string)
+	DeleteInfoForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
@@ -108,6 +108,7 @@ type TSSKeeper interface {
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool
 	GetTotalShareCount(ctx sdk.Context, sigID string) int64
-	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
+	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
+	GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo, bool)
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error
 }

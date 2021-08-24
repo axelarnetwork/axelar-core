@@ -25,6 +25,8 @@ const (
 	AttributeKeyAsset             = "asset"
 	AttributeKeySymbol            = "symbol"
 	AttributeKeyNativeAsset       = "nativeAsset"
+	AttributeKeyDestinationChain   = "destinationChain"
+	AttributeKeyDestinationAddress = "destinationAddress"
 )
 
 // Event attribute values

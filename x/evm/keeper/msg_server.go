@@ -105,8 +105,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.String()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, req.RecipientChain),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.String()),
 		),
 	)
 
@@ -594,24 +597,30 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetResult()))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
+	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
+	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil, fmt.Errorf("cross-chain sender has no recipient")
+	}
+
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
 			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID, req.BurnAddress.Hex()),
 		}, nil
 	}
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
-	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
 	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
@@ -927,11 +936,18 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 	}
 
+	sigMetadata := types.SigMetadata{
+		Type:  types.SigTx,
+		Chain: chain.Name,
+	}
+
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 		KeyID:           keyID,
 		SigID:           txID,
 		Msg:             hash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
+		RequestModule:   types.ModuleName,
+		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
 	}); err != nil {
 		return nil, err
 	}
@@ -969,6 +985,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, txID),
 		),
@@ -1193,12 +1210,19 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)
 	}
 
+	sigMetadata := types.SigMetadata{
+		Type:  types.SigCommand,
+		Chain: chain.Name,
+	}
+
 	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 		KeyID:           batchedCommands.KeyID,
 		SigID:           batchedCommandsIDHex,
 		Msg:             batchedCommands.SigHash.Bytes(),
 		SnapshotCounter: counter,
+		RequestModule:   types.ModuleName,
+		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
 	}); err != nil {
 		return nil, err
 	}
@@ -1210,6 +1234,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 		),

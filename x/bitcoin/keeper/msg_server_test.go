@@ -270,6 +270,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 		nexusKeeper = &mock.NexusMock{
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
+			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+				return nexus.CrossChainAddress{Chain: nexus.Chain{}, Address: ""}, true
+			},
 		}
 		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
 		currentSecondaryKey = tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}

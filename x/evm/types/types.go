@@ -27,6 +27,7 @@ const (
 	Ganache = "ganache"
 )
 
+// AxelarGateway contract ABI and command selectors
 const (
 	// TODO: Check if there's a way to install the smart contract module with compiled ABI files
 	axelarGatewayABI = `[

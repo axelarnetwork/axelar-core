@@ -27,7 +27,7 @@ const (
 	thresholdPrefix             = "threshold_"
 	snapshotForKeyIDPrefix      = "sfkid_"
 	sigPrefix                   = "sig_"
-	keyIDForSigPrefix           = "kidfs_"
+	infoForSigPrefix            = "info_for_sig_"
 	participatePrefix           = "part_"
 	participateShareCountPrefix = "part_share_count_"
 	keyRequirementPrefix        = "key_requirement_"

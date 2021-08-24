@@ -89,7 +89,7 @@ type Signer interface {
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
-	SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string)
+	SetInfoForSig(ctx sdk.Context, sigID string, info tss.SignInfo)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)

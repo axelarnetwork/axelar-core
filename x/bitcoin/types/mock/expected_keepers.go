@@ -201,11 +201,11 @@ var _ types.Signer = &SignerMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info tss.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
+// 			SetInfoForSigFunc: func(ctx sdk.Context, sigID string, info tss.SignInfo)  {
+// 				panic("mock out the SetInfoForSig method")
+// 			},
 // 			SetKeyFunc: func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
-// 			},
-// 			SetKeyIDForSigFunc: func(ctx sdk.Context, sigID string, keyID string)  {
-// 				panic("mock out the SetKeyIDForSig method")
 // 			},
 // 			SetKeyRoleFunc: func(ctx sdk.Context, keyID string, keyRole tss.KeyRole)  {
 // 				panic("mock out the SetKeyRole method")
@@ -262,11 +262,11 @@ type SignerMock struct {
 	// ScheduleSignFunc mocks the ScheduleSign method.
 	ScheduleSignFunc func(ctx sdk.Context, info tss.SignInfo) (int64, error)
 
+	// SetInfoForSigFunc mocks the SetInfoForSig method.
+	SetInfoForSigFunc func(ctx sdk.Context, sigID string, info tss.SignInfo)
+
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
-
-	// SetKeyIDForSigFunc mocks the SetKeyIDForSig method.
-	SetKeyIDForSigFunc func(ctx sdk.Context, sigID string, keyID string)
 
 	// SetKeyRoleFunc mocks the SetKeyRole method.
 	SetKeyRoleFunc func(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
@@ -394,6 +394,15 @@ type SignerMock struct {
 			// Info is the info argument value.
 			Info tss.SignInfo
 		}
+		// SetInfoForSig holds details about calls to the SetInfoForSig method.
+		SetInfoForSig []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
+			// Info is the info argument value.
+			Info tss.SignInfo
+		}
 		// SetKey holds details about calls to the SetKey method.
 		SetKey []struct {
 			// Ctx is the ctx argument value.
@@ -402,15 +411,6 @@ type SignerMock struct {
 			KeyID string
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
-		}
-		// SetKeyIDForSig holds details about calls to the SetKeyIDForSig method.
-		SetKeyIDForSig []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-			// KeyID is the keyID argument value.
-			KeyID string
 		}
 		// SetKeyRole holds details about calls to the SetKeyRole method.
 		SetKeyRole []struct {
@@ -453,8 +453,8 @@ type SignerMock struct {
 	lockGetSnapshotCounterForKeyID sync.RWMutex
 	lockRotateKey                  sync.RWMutex
 	lockScheduleSign               sync.RWMutex
+	lockSetInfoForSig              sync.RWMutex
 	lockSetKey                     sync.RWMutex
-	lockSetKeyIDForSig             sync.RWMutex
 	lockSetKeyRole                 sync.RWMutex
 	lockSetSig                     sync.RWMutex
 	lockSetSigStatus               sync.RWMutex
@@ -963,6 +963,45 @@ func (mock *SignerMock) ScheduleSignCalls() []struct {
 	return calls
 }
 
+// SetInfoForSig calls SetInfoForSigFunc.
+func (mock *SignerMock) SetInfoForSig(ctx sdk.Context, sigID string, info tss.SignInfo) {
+	if mock.SetInfoForSigFunc == nil {
+		panic("SignerMock.SetInfoForSigFunc: method is nil but Signer.SetInfoForSig was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		SigID string
+		Info  tss.SignInfo
+	}{
+		Ctx:   ctx,
+		SigID: sigID,
+		Info:  info,
+	}
+	mock.lockSetInfoForSig.Lock()
+	mock.calls.SetInfoForSig = append(mock.calls.SetInfoForSig, callInfo)
+	mock.lockSetInfoForSig.Unlock()
+	mock.SetInfoForSigFunc(ctx, sigID, info)
+}
+
+// SetInfoForSigCalls gets all the calls that were made to SetInfoForSig.
+// Check the length with:
+//     len(mockedSigner.SetInfoForSigCalls())
+func (mock *SignerMock) SetInfoForSigCalls() []struct {
+	Ctx   sdk.Context
+	SigID string
+	Info  tss.SignInfo
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		SigID string
+		Info  tss.SignInfo
+	}
+	mock.lockSetInfoForSig.RLock()
+	calls = mock.calls.SetInfoForSig
+	mock.lockSetInfoForSig.RUnlock()
+	return calls
+}
+
 // SetKey calls SetKeyFunc.
 func (mock *SignerMock) SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey) {
 	if mock.SetKeyFunc == nil {
@@ -999,45 +1038,6 @@ func (mock *SignerMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
-	return calls
-}
-
-// SetKeyIDForSig calls SetKeyIDForSigFunc.
-func (mock *SignerMock) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
-	if mock.SetKeyIDForSigFunc == nil {
-		panic("SignerMock.SetKeyIDForSigFunc: method is nil but Signer.SetKeyIDForSig was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-		KeyID: keyID,
-	}
-	mock.lockSetKeyIDForSig.Lock()
-	mock.calls.SetKeyIDForSig = append(mock.calls.SetKeyIDForSig, callInfo)
-	mock.lockSetKeyIDForSig.Unlock()
-	mock.SetKeyIDForSigFunc(ctx, sigID, keyID)
-}
-
-// SetKeyIDForSigCalls gets all the calls that were made to SetKeyIDForSig.
-// Check the length with:
-//     len(mockedSigner.SetKeyIDForSigCalls())
-func (mock *SignerMock) SetKeyIDForSigCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-	KeyID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-		KeyID string
-	}
-	mock.lockSetKeyIDForSig.RLock()
-	calls = mock.calls.SetKeyIDForSig
-	mock.lockSetKeyIDForSig.RUnlock()
 	return calls
 }
 

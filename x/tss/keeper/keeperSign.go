@@ -28,8 +28,8 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
 
+	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 
@@ -51,7 +51,6 @@ func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignI
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-
 		var info exported.SignInfo
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
 		infos = append(infos, info)
@@ -95,21 +94,36 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(keyIDForSigPrefix + sigID))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(infoForSigPrefix + sigID))
 	if bz == nil {
 		return exported.Key{}, false
 	}
-	return k.GetKey(ctx, string(bz))
+	var info exported.SignInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+
+	return k.GetKey(ctx, info.KeyID)
 }
 
-// SetKeyIDForSig stores key ID for the given sig ID
-func (k Keeper) SetKeyIDForSig(ctx sdk.Context, sigID string, keyID string) {
-	ctx.KVStore(k.storeKey).Set([]byte(keyIDForSigPrefix+sigID), []byte(keyID))
+// SetInfoForSig stores key ID for the given sig ID
+func (k Keeper) SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo) {
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	ctx.KVStore(k.storeKey).Set([]byte(infoForSigPrefix+sigID), bz)
 }
 
-// DeleteKeyIDForSig deletes the key ID associated with the given signature
-func (k Keeper) DeleteKeyIDForSig(ctx sdk.Context, sigID string) {
-	ctx.KVStore(k.storeKey).Delete([]byte(keyIDForSigPrefix + sigID))
+// GetInfoForSig stores key ID for the given sig ID
+func (k Keeper) GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(infoForSigPrefix + sigID))
+	if bz == nil {
+		return exported.SignInfo{}, false
+	}
+	var info exported.SignInfo
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+	return info, true
+}
+
+// DeleteInfoForSig deletes the key ID associated with the given signature
+func (k Keeper) DeleteInfoForSig(ctx sdk.Context, sigID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(infoForSigPrefix + sigID))
 }
 
 // SetSigStatus defines the status of some sign sig ID
