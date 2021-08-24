@@ -597,10 +597,18 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetResult()))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
+	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
+	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil, fmt.Errorf("cross-chain sender has no recipient")
+	}
+
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
@@ -613,7 +621,6 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
-	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
 	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
 		return nil, err
