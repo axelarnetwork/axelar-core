@@ -2,7 +2,6 @@ package vald
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,10 +25,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+
+	tmTypes "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -46,7 +46,6 @@ import (
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	tmTypes "github.com/tendermint/tendermint/types"
 )
 
 // RW grants -rw------- file permissions
@@ -78,13 +77,6 @@ func GetValdCommand() *cobra.Command {
 				logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
 				once.Do(cleanUp)
 			}()
-
-			config := serverCtx.Config
-			genFile := config.GenesisFile()
-			appState, _, err := genutiltypes.GenesisStateFromGenFile(genFile)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
-			}
 
 			node, err := cmd.Flags().GetString(flags.FlagNode)
 			if err != nil {
@@ -140,7 +132,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, appState, hub, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cliCtx, hub, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -183,17 +175,7 @@ func newHub(node string, logger log.Logger) (*tmEvents.Hub, error) {
 	return &hub, nil
 }
 
-func listen(
-	ctx sdkClient.Context,
-	appState map[string]json.RawMessage,
-	hub *tmEvents.Hub,
-	txf tx.Factory,
-	axelarCfg app.Config,
-	valAddr string,
-	recoveryJSON []byte,
-	stateSource ReadWriter,
-	logger log.Logger,
-) {
+func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
@@ -204,7 +186,7 @@ func listen(
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	broadcaster := createBroadcaster(ctx, txf, axelarCfg, logger)
+	bc := createBroadcaster(ctx, txf, axelarCfg, logger)
 
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := stateStore.GetState()
@@ -213,27 +195,27 @@ func listen(
 		startBlock = 0
 	}
 
-	client, err := ctx.GetNode()
+	tmClient, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
 	// in order to subscribe to events, the client needs to be running
-	if !client.IsRunning() {
-		if err := client.Start(); err != nil {
+	if !tmClient.IsRunning() {
+		if err := tmClient.Start(); err != nil {
 			panic(fmt.Errorf("unable to start client: %v", err))
 		}
 	}
-	eventBus := createEventBus(client, startBlock, logger)
+	eventBus := createEventBus(tmClient, startBlock, logger)
 
-	tssMgr := createTSSMgr(broadcaster, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(bc, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
 	if recoveryJSON != nil && len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
 	}
 
-	btcMgr := createBTCMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
-	evmMgr := createEVMMgr(axelarCfg, broadcaster, ctx.FromAddress, logger, cdc)
+	btcMgr := createBTCMgr(axelarCfg, bc, ctx.FromAddress, logger, cdc)
+	evmMgr := createEVMMgr(axelarCfg, bc, ctx.FromAddress, logger, cdc)
 
 	// we have two processes listening to block headers
 	blockHeaderForTSS := tmEvents.MustSubscribeNewBlockHeader(hub)
@@ -315,7 +297,7 @@ func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 }
 
 func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *events.EventBus {
-	notifier := events.NewBlockNotifier(NewBlockClient(client), startBlock, logger)
+	notifier := events.NewBlockNotifier(NewBlockClient(client), logger).StartingAt(startBlock)
 	return events.NewEventBus(events.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 

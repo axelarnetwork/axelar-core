@@ -50,8 +50,8 @@ func (t *testEnv) Context() error {
 }
 
 func (t *testEnv) BlockNotifierStartingAtBlock(start int64) error {
-	t.notifier = events.NewBlockNotifier(t.notifierClient, start, log.TestingLogger(),
-		events.Timeout(1*time.Millisecond), events.Retries(1), events.KeepAlive(1*time.Millisecond))
+	t.notifier = events.NewBlockNotifier(t.notifierClient, log.TestingLogger(),
+		events.Timeout(1*time.Millisecond), events.Retries(1), events.KeepAlive(1*time.Millisecond)).StartingAt(start)
 	return nil
 }
 
@@ -261,6 +261,22 @@ loop:
 	return t.Error
 }
 
+func (t *testEnv) ReceiveSingleBlock(height int64) error {
+	timeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	select {
+	case <-timeout.Done():
+		assert.Fail(t, "timed out")
+	case err := <-t.notifierErrChan:
+		assert.Fail(t, "returned error", err.Error())
+	case receivedBlock := <-t.receivedBlocks:
+		assert.Equal(t, height, receivedBlock)
+	}
+
+	return t.Error
+}
+
 func (t *testEnv) TryReceiveBlockchainResults() error {
 	t.results, t.resultsErrChan = t.blockSource.BlockResults(t.context)
 	return nil
@@ -278,6 +294,7 @@ func InitializeNotifierScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a client to get block heights$`, t.NotifierClient)
 	ctx.Step(`^block (\d+) is available$`, t.BlockAvailable)
 	ctx.Step(`^I receive all blocks from (\d+) to (\d+)$`, t.ReceiveAllBlocks)
+	ctx.Step(`^I receive blocks starting with the (\d+) block$`, t.ReceiveSingleBlock)
 	ctx.Step(`^I try to receive block heights$`, t.TryReceiveBlockHeights)
 	ctx.Step(`^the block channel gets closed$`, t.BlockChannelGetsClosed)
 	ctx.Step(`^the block notifier fails$`, t.BlockNotifierFails)

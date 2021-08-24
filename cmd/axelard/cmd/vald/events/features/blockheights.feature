@@ -70,10 +70,10 @@ Feature: provide a robust source for existing blocks
       | 100000 | 100018 |
 
   Scenario Outline: negative start block
-    Given a block notifier starting at block <start>
-    And block <latest> is available
+    Given block <latest> is available
+    And a block notifier starting at block <start>
     When I try to receive block heights
-    Then I receive all blocks from 1 to <latest>
+    Then I receive blocks starting with the <latest> block
 
     Examples:
       | start  | latest |

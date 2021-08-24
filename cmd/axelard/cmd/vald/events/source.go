@@ -264,30 +264,48 @@ type BlockClient interface {
 	SubscriptionClient
 }
 
-type blockNotifier struct {
+// Notifier can notify a consumer about new blocks
+type Notifier struct {
 	logger         log.Logger
-	start          int64
 	queryNotifier  *queryBlockNotifier
 	eventsNotifier *eventblockNotifier
 	running        context.Context
 	shutdown       context.CancelFunc
+	start          int64
 }
 
 // NewBlockNotifier returns a new BlockNotifier instance
-func NewBlockNotifier(client BlockClient, startBlock int64, logger log.Logger, options ...DialOption) BlockNotifier {
-	if startBlock <= 0 {
-		startBlock = 1
+func NewBlockNotifier(client BlockClient, logger log.Logger, options ...DialOption) *Notifier {
+	var opts dialOptions
+	for _, option := range options {
+		opts = option.apply(opts)
 	}
-	return &blockNotifier{
-		start:          startBlock,
+	ctx, cancel := ctxWithTimeout(context.Background(), opts.timeout)
+	start, err := client.LatestBlockHeight(ctx)
+	cancel()
+	if err != nil {
+		start = 1
+	}
+
+	return &Notifier{
+		start:          start,
 		logger:         logger,
 		eventsNotifier: newEventBlockNotifier(client, logger, options...),
 		queryNotifier:  newQueryBlockNotifier(client, logger, options...),
 	}
 }
 
-// BlockHeights retuns a channel with the block height of newly discovered block
-func (b blockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan error) {
+// StartingAt sets the start block from which to receive notifications
+func (b Notifier) StartingAt(block int64) Notifier {
+	if block > 0 {
+		b.start = block
+	}
+	return b
+}
+
+// BlockHeights returns a channel with the block heights from the beginning of the chain to all newly discovered blocks.
+// Optionally, starts at the given start block.
+func (b Notifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan error) {
 	errChan := make(chan error, 1)
 	b.running, b.shutdown = context.WithCancel(ctx)
 
@@ -304,7 +322,7 @@ func (b blockNotifier) BlockHeights(ctx context.Context) (<-chan int64, <-chan e
 	return blocks, errChan
 }
 
-func (b blockNotifier) handleErrors(eventErrs <-chan error, queryErrs <-chan error, errChan chan error) {
+func (b Notifier) handleErrors(eventErrs <-chan error, queryErrs <-chan error, errChan chan error) {
 	defer b.shutdown()
 
 	for {
@@ -321,7 +339,7 @@ func (b blockNotifier) handleErrors(eventErrs <-chan error, queryErrs <-chan err
 	}
 }
 
-func (b blockNotifier) pipeLatestBlock(fromQuery <-chan int64, fromEvents <-chan int64, blockHeights chan int64) {
+func (b Notifier) pipeLatestBlock(fromQuery <-chan int64, fromEvents <-chan int64, blockHeights chan int64) {
 	defer close(blockHeights)
 	defer b.logger.Info("stopped block sync")
 
