@@ -107,10 +107,12 @@
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [SigMetadata](#evm.v1beta1.SigMetadata)
     - [TransferKey](#evm.v1beta1.TransferKey)
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [SigType](#evm.v1beta1.SigType)
     - [TransferKeyType](#evm.v1beta1.TransferKeyType)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
@@ -1612,6 +1614,24 @@ NetworkInfo describes information about a network
 
 
 
+<a name="evm.v1beta1.SigMetadata"></a>
+
+### SigMetadata
+SigMetadata stores necessary information for external apps to map signature
+results to evm relay transaction types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [SigType](#evm.v1beta1.SigType) |  |  |
+| `chain` | [string](#string) |  |  |
+| `selector` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.TransferKey"></a>
 
 ### TransferKey
@@ -1656,6 +1676,19 @@ TransferKey contains information for a transfer ownership or operatorship
 | DEPOSIT_STATUS_PENDING | 1 |  |
 | DEPOSIT_STATUS_CONFIRMED | 2 |  |
 | DEPOSIT_STATUS_BURNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.SigType"></a>
+
+### SigType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_TYPE_UNSPECIFIED | 0 |  |
+| SIG_TYPE_TX | 1 |  |
+| SIG_TYPE_COMMAND | 2 |  |
 
 
 

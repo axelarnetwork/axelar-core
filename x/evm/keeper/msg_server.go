@@ -105,8 +105,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.String()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, req.RecipientChain),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.String()),
 		),
 	)
 
@@ -599,17 +602,16 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
 			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID, req.BurnAddress.Hex()),
 		}, nil
 	}
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
 	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
@@ -839,28 +841,6 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
-	}
-
-	sigMetadata := types.SigMetadata{
-		Type:     types.SigCommand,
-		Chain:    chain.Name,
-		Selector: types.AxelarGatewayCommandDeployToken,
-	}
-
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           keyID,
-		SigID:           commandIDHex,
-		Msg:             signHash.Bytes(),
-		SnapshotCounter: snapshot.Counter,
-		RequestModule:   types.ModuleName,
-		Metadata:        types.ModuleCdc.MustMarshalJSON(&sigMetadata),
-	}); err != nil {
-		return nil, err
-	}
-
 	return &types.CreateDeployTokenResponse{}, nil
 }
 
@@ -998,6 +978,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, txID),
 		),
@@ -1246,6 +1227,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 		),
