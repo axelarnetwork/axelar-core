@@ -147,7 +147,11 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	k.SelectSignParticipants(ctx, info.SigID, snap.Validators)
+	err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	if err != nil {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
+		return err
+	}
 
 	if !k.MeetsThreshold(ctx, info.SigID, snap.CorruptionThreshold) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
@@ -179,8 +183,12 @@ func startSign(
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d]",
-		snap.CorruptionThreshold, snap.CorruptionThreshold+1, k.GetTotalShareCount(ctx, info.SigID)))
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d], total share count [%d]",
+		snap.CorruptionThreshold,
+		snap.CorruptionThreshold+1,
+		k.GetTotalShareCount(ctx, info.SigID),
+		snap.TotalShareCount.Int64(),
+	))
 
 	k.SetKeyIDForSig(ctx, info.SigID, info.KeyID)
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)

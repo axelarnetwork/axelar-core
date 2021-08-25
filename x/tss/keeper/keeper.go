@@ -77,8 +77,18 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 	}
 
 	for _, validator := range snap.Validators {
-		if !snapshot.IsValidatorEligibleForNewKey(ctx, k.slasher, snapshotter, k, counter, validator.GetSDKValidator()) {
-			return fmt.Errorf("validator %s in snapshot %d is not eligible for handling key %s", validator.GetSDKValidator().GetOperator().String(), counter, keyID)
+		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
+		if err != nil {
+			return err
+		}
+
+		if illegibility = illegibility.FilterIllegibilityForNewKey(); illegibility != snapshot.None {
+			return fmt.Errorf("validator %s in snapshot %d is not eligible for handling key %s due to [%s]",
+				validator.GetSDKValidator().GetOperator().String(),
+				counter,
+				keyID,
+				illegibility.String(),
+			)
 		}
 	}
 

@@ -23,22 +23,22 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type QueryDeactivatedPrincipleResponse struct {
-	PrincipalAddresses []string `protobuf:"bytes,1,rep,name=principal_addresses,json=principalAddresses,proto3" json:"principal_addresses,omitempty"`
+type QueryValidatorsResponse struct {
+	Validators []*QueryValidatorsResponse_Validator `protobuf:"bytes,1,rep,name=validators,proto3" json:"validators,omitempty"`
 }
 
-func (m *QueryDeactivatedPrincipleResponse) Reset()         { *m = QueryDeactivatedPrincipleResponse{} }
-func (m *QueryDeactivatedPrincipleResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryDeactivatedPrincipleResponse) ProtoMessage()    {}
-func (*QueryDeactivatedPrincipleResponse) Descriptor() ([]byte, []int) {
+func (m *QueryValidatorsResponse) Reset()         { *m = QueryValidatorsResponse{} }
+func (m *QueryValidatorsResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryValidatorsResponse) ProtoMessage()    {}
+func (*QueryValidatorsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_12258278c48b9b0b, []int{0}
 }
-func (m *QueryDeactivatedPrincipleResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryValidatorsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryDeactivatedPrincipleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryValidatorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryDeactivatedPrincipleResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryValidatorsResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -48,50 +48,143 @@ func (m *QueryDeactivatedPrincipleResponse) XXX_Marshal(b []byte, deterministic 
 		return b[:n], nil
 	}
 }
-func (m *QueryDeactivatedPrincipleResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryDeactivatedPrincipleResponse.Merge(m, src)
+func (m *QueryValidatorsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryValidatorsResponse.Merge(m, src)
 }
-func (m *QueryDeactivatedPrincipleResponse) XXX_Size() int {
+func (m *QueryValidatorsResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryDeactivatedPrincipleResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryDeactivatedPrincipleResponse.DiscardUnknown(m)
+func (m *QueryValidatorsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryValidatorsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryDeactivatedPrincipleResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryValidatorsResponse proto.InternalMessageInfo
 
-func (m *QueryDeactivatedPrincipleResponse) GetPrincipalAddresses() []string {
-	if m != nil {
-		return m.PrincipalAddresses
+type QueryValidatorsResponse_TssIllegibilityInfo struct {
+	Tombstoned          bool `protobuf:"varint,1,opt,name=tombstoned,proto3" json:"tombstoned,omitempty"`
+	Jailed              bool `protobuf:"varint,2,opt,name=jailed,proto3" json:"jailed,omitempty"`
+	MissedTooManyBlocks bool `protobuf:"varint,3,opt,name=missed_too_many_blocks,json=missedTooManyBlocks,proto3" json:"missed_too_many_blocks,omitempty"`
+	NoProxyRegistered   bool `protobuf:"varint,4,opt,name=no_proxy_registered,json=noProxyRegistered,proto3" json:"no_proxy_registered,omitempty"`
+	TssSuspended        bool `protobuf:"varint,5,opt,name=tss_suspended,json=tssSuspended,proto3" json:"tss_suspended,omitempty"`
+}
+
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) Reset() {
+	*m = QueryValidatorsResponse_TssIllegibilityInfo{}
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryValidatorsResponse_TssIllegibilityInfo) ProtoMessage() {}
+func (*QueryValidatorsResponse_TssIllegibilityInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_12258278c48b9b0b, []int{0, 0}
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryValidatorsResponse_TssIllegibilityInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
 	}
-	return nil
 }
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryValidatorsResponse_TssIllegibilityInfo.Merge(m, src)
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryValidatorsResponse_TssIllegibilityInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryValidatorsResponse_TssIllegibilityInfo proto.InternalMessageInfo
+
+type QueryValidatorsResponse_Validator struct {
+	OperatorAddress     string                                      `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	Moniker             string                                      `protobuf:"bytes,2,opt,name=moniker,proto3" json:"moniker,omitempty"`
+	TssIllegibilityInfo QueryValidatorsResponse_TssIllegibilityInfo `protobuf:"bytes,3,opt,name=tss_illegibility_info,json=tssIllegibilityInfo,proto3" json:"tss_illegibility_info"`
+}
+
+func (m *QueryValidatorsResponse_Validator) Reset()         { *m = QueryValidatorsResponse_Validator{} }
+func (m *QueryValidatorsResponse_Validator) String() string { return proto.CompactTextString(m) }
+func (*QueryValidatorsResponse_Validator) ProtoMessage()    {}
+func (*QueryValidatorsResponse_Validator) Descriptor() ([]byte, []int) {
+	return fileDescriptor_12258278c48b9b0b, []int{0, 1}
+}
+func (m *QueryValidatorsResponse_Validator) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryValidatorsResponse_Validator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryValidatorsResponse_Validator.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryValidatorsResponse_Validator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryValidatorsResponse_Validator.Merge(m, src)
+}
+func (m *QueryValidatorsResponse_Validator) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryValidatorsResponse_Validator) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryValidatorsResponse_Validator.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryValidatorsResponse_Validator proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*QueryDeactivatedPrincipleResponse)(nil), "snapshot.v1beta1.QueryDeactivatedPrincipleResponse")
+	proto.RegisterType((*QueryValidatorsResponse)(nil), "snapshot.v1beta1.QueryValidatorsResponse")
+	proto.RegisterType((*QueryValidatorsResponse_TssIllegibilityInfo)(nil), "snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo")
+	proto.RegisterType((*QueryValidatorsResponse_Validator)(nil), "snapshot.v1beta1.QueryValidatorsResponse.Validator")
 }
 
 func init() { proto.RegisterFile("snapshot/v1beta1/query.proto", fileDescriptor_12258278c48b9b0b) }
 
 var fileDescriptor_12258278c48b9b0b = []byte{
-	// 216 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x29, 0xce, 0x4b, 0x2c,
-	0x28, 0xce, 0xc8, 0x2f, 0xd1, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0xd4, 0x2f, 0x2c, 0x4d,
-	0x2d, 0xaa, 0xd4, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x80, 0xc9, 0xea, 0x41, 0x65, 0xa5,
-	0x44, 0xd2, 0xf3, 0xd3, 0xf3, 0xc1, 0x92, 0xfa, 0x20, 0x16, 0x44, 0x9d, 0x52, 0x08, 0x97, 0x62,
-	0x20, 0x48, 0x9b, 0x4b, 0x6a, 0x62, 0x72, 0x49, 0x66, 0x59, 0x62, 0x49, 0x6a, 0x4a, 0x40, 0x51,
-	0x66, 0x5e, 0x72, 0x66, 0x41, 0x4e, 0x6a, 0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x90,
-	0x3e, 0x97, 0x70, 0x01, 0x44, 0x30, 0x31, 0x27, 0x3e, 0x31, 0x25, 0xa5, 0x28, 0xb5, 0xb8, 0x38,
-	0xb5, 0x58, 0x82, 0x51, 0x81, 0x59, 0x83, 0x33, 0x48, 0x08, 0x2e, 0xe5, 0x08, 0x93, 0x71, 0xf2,
-	0x3f, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27, 0x3c, 0x96,
-	0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x28, 0xd3, 0xf4, 0xcc, 0x92, 0x8c,
-	0xd2, 0x24, 0xbd, 0xe4, 0xfc, 0x5c, 0xfd, 0xc4, 0x8a, 0xd4, 0x9c, 0xc4, 0xa2, 0xbc, 0xd4, 0x92,
-	0xf2, 0xfc, 0xa2, 0x6c, 0x28, 0x4f, 0x37, 0x39, 0xbf, 0x28, 0x55, 0xbf, 0x42, 0x1f, 0xee, 0xb9,
-	0x92, 0xca, 0x82, 0xd4, 0xe2, 0x24, 0x36, 0xb0, 0x6b, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff,
-	0xb7, 0x88, 0x36, 0x9d, 0xf5, 0x00, 0x00, 0x00,
+	// 433 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xc1, 0x6e, 0xd3, 0x40,
+	0x10, 0x86, 0x6d, 0x1a, 0x0a, 0xd9, 0x82, 0x28, 0x1b, 0x28, 0x56, 0x84, 0x4c, 0x05, 0x97, 0x72,
+	0xc0, 0x56, 0x1b, 0x71, 0xe4, 0x40, 0x6f, 0x3d, 0x20, 0x81, 0x53, 0x71, 0xe0, 0x62, 0xad, 0xb3,
+	0x53, 0x77, 0x89, 0xbd, 0x63, 0x76, 0x36, 0x6d, 0xfc, 0x16, 0x1c, 0x78, 0xa8, 0x70, 0xeb, 0x0d,
+	0x4e, 0x08, 0x92, 0x17, 0x41, 0xde, 0x24, 0x56, 0x84, 0x8a, 0xd4, 0xdb, 0xcc, 0xff, 0xcd, 0xcc,
+	0xea, 0x9f, 0x1d, 0xf6, 0x94, 0xb4, 0xa8, 0xe8, 0x1c, 0x6d, 0x7c, 0x71, 0x98, 0x81, 0x15, 0x87,
+	0xf1, 0x97, 0x09, 0x98, 0x3a, 0xaa, 0x0c, 0x5a, 0xe4, 0xbb, 0x6b, 0x1a, 0xad, 0x68, 0xff, 0x51,
+	0x8e, 0x39, 0x3a, 0x18, 0x37, 0xd1, 0xb2, 0xee, 0xf9, 0xb7, 0x0e, 0x7b, 0xf2, 0xa1, 0xe9, 0xfb,
+	0x28, 0x0a, 0x25, 0x85, 0x45, 0x43, 0x09, 0x50, 0x85, 0x9a, 0x80, 0x0f, 0x19, 0xbb, 0x68, 0xd5,
+	0xc0, 0xdf, 0xdf, 0x3a, 0xd8, 0x39, 0x1a, 0x44, 0xff, 0x0e, 0x8e, 0xfe, 0xd3, 0x1e, 0xb5, 0x52,
+	0xb2, 0x31, 0xa6, 0xff, 0xc3, 0x67, 0xbd, 0x53, 0xa2, 0x93, 0xa2, 0x80, 0x5c, 0x65, 0xaa, 0x50,
+	0xb6, 0x3e, 0xd1, 0x67, 0xc8, 0x43, 0xc6, 0x2c, 0x96, 0x19, 0x59, 0xd4, 0x20, 0x03, 0x7f, 0xdf,
+	0x3f, 0xb8, 0x9b, 0x6c, 0x28, 0x7c, 0x8f, 0x6d, 0x7f, 0x16, 0xaa, 0x00, 0x19, 0xdc, 0x72, 0x6c,
+	0x95, 0xf1, 0x01, 0xdb, 0x2b, 0x15, 0x11, 0xc8, 0xd4, 0x22, 0xa6, 0xa5, 0xd0, 0x75, 0x9a, 0x15,
+	0x38, 0x1a, 0x53, 0xb0, 0xe5, 0xea, 0x7a, 0x4b, 0x7a, 0x8a, 0xf8, 0x4e, 0xe8, 0xfa, 0xd8, 0x21,
+	0x1e, 0xb1, 0x9e, 0xc6, 0xb4, 0x32, 0x38, 0xad, 0x53, 0x03, 0xb9, 0x22, 0x0b, 0x06, 0x64, 0xd0,
+	0x71, 0x1d, 0x0f, 0x35, 0xbe, 0x6f, 0x48, 0xd2, 0x02, 0xfe, 0x82, 0xdd, 0xb7, 0x44, 0x29, 0x4d,
+	0xa8, 0x02, 0x2d, 0x41, 0x06, 0xb7, 0x5d, 0xe5, 0x3d, 0x4b, 0x34, 0x5c, 0x6b, 0xfd, 0xef, 0x3e,
+	0xeb, 0xb6, 0x9e, 0xf9, 0x4b, 0xb6, 0x8b, 0x15, 0x98, 0x26, 0x4e, 0x85, 0x94, 0x06, 0x88, 0x9c,
+	0xab, 0x6e, 0xf2, 0x60, 0xad, 0xbf, 0x5d, 0xca, 0x3c, 0x60, 0x77, 0x4a, 0xd4, 0x6a, 0x0c, 0xc6,
+	0x79, 0xeb, 0x26, 0xeb, 0x94, 0x5f, 0xb2, 0xc7, 0xcd, 0xbb, 0x6a, 0x63, 0x59, 0xa9, 0xd2, 0x67,
+	0xe8, 0xbc, 0xed, 0x1c, 0xbd, 0xb9, 0xf9, 0x67, 0x5c, 0xb3, 0xf2, 0xe3, 0xce, 0xec, 0xd7, 0x33,
+	0x2f, 0xe9, 0xd9, 0x6b, 0xd0, 0x70, 0xf6, 0x27, 0xf4, 0x66, 0xf3, 0xd0, 0xbf, 0x9a, 0x87, 0xfe,
+	0xef, 0x79, 0xe8, 0x7f, 0x5d, 0x84, 0xde, 0xd5, 0x22, 0xf4, 0x7e, 0x2e, 0x42, 0xef, 0xd3, 0xeb,
+	0x5c, 0xd9, 0xf3, 0x49, 0x16, 0x8d, 0xb0, 0x8c, 0xc5, 0x14, 0x0a, 0x61, 0x34, 0xd8, 0x4b, 0x34,
+	0xe3, 0x55, 0xf6, 0x6a, 0x84, 0x06, 0xe2, 0x69, 0xdc, 0x5e, 0xa8, 0xad, 0x2b, 0xa0, 0x6c, 0xdb,
+	0x9d, 0xdc, 0xe0, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x26, 0x38, 0x74, 0xfd, 0xba, 0x02, 0x00,
+	0x00,
 }
 
-func (m *QueryDeactivatedPrincipleResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryValidatorsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -101,24 +194,149 @@ func (m *QueryDeactivatedPrincipleResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryDeactivatedPrincipleResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryValidatorsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryDeactivatedPrincipleResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryValidatorsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.PrincipalAddresses) > 0 {
-		for iNdEx := len(m.PrincipalAddresses) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.PrincipalAddresses[iNdEx])
-			copy(dAtA[i:], m.PrincipalAddresses[iNdEx])
-			i = encodeVarintQuery(dAtA, i, uint64(len(m.PrincipalAddresses[iNdEx])))
+	if len(m.Validators) > 0 {
+		for iNdEx := len(m.Validators) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Validators[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0xa
 		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TssSuspended {
+		i--
+		if m.TssSuspended {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NoProxyRegistered {
+		i--
+		if m.NoProxyRegistered {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.MissedTooManyBlocks {
+		i--
+		if m.MissedTooManyBlocks {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Jailed {
+		i--
+		if m.Jailed {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Tombstoned {
+		i--
+		if m.Tombstoned {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryValidatorsResponse_Validator) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryValidatorsResponse_Validator) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryValidatorsResponse_Validator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.TssIllegibilityInfo.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Moniker) > 0 {
+		i -= len(m.Moniker)
+		copy(dAtA[i:], m.Moniker)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Moniker)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.OperatorAddress) > 0 {
+		i -= len(m.OperatorAddress)
+		copy(dAtA[i:], m.OperatorAddress)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.OperatorAddress)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -134,18 +352,61 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *QueryDeactivatedPrincipleResponse) Size() (n int) {
+func (m *QueryValidatorsResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.PrincipalAddresses) > 0 {
-		for _, s := range m.PrincipalAddresses {
-			l = len(s)
+	if len(m.Validators) > 0 {
+		for _, e := range m.Validators {
+			l = e.Size()
 			n += 1 + l + sovQuery(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Tombstoned {
+		n += 2
+	}
+	if m.Jailed {
+		n += 2
+	}
+	if m.MissedTooManyBlocks {
+		n += 2
+	}
+	if m.NoProxyRegistered {
+		n += 2
+	}
+	if m.TssSuspended {
+		n += 2
+	}
+	return n
+}
+
+func (m *QueryValidatorsResponse_Validator) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.OperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = len(m.Moniker)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = m.TssIllegibilityInfo.Size()
+	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
 
@@ -155,7 +416,7 @@ func sovQuery(x uint64) (n int) {
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *QueryDeactivatedPrincipleResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryValidatorsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -178,15 +439,249 @@ func (m *QueryDeactivatedPrincipleResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryDeactivatedPrincipleResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryValidatorsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryDeactivatedPrincipleResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryValidatorsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PrincipalAddresses", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Validators", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Validators = append(m.Validators, &QueryValidatorsResponse_Validator{})
+			if err := m.Validators[len(m.Validators)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryValidatorsResponse_TssIllegibilityInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TssIllegibilityInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TssIllegibilityInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tombstoned", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Tombstoned = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Jailed", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Jailed = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MissedTooManyBlocks", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MissedTooManyBlocks = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NoProxyRegistered", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.NoProxyRegistered = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TssSuspended", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.TssSuspended = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryValidatorsResponse_Validator) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Validator: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Validator: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -214,7 +709,72 @@ func (m *QueryDeactivatedPrincipleResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PrincipalAddresses = append(m.PrincipalAddresses, string(dAtA[iNdEx:postIndex]))
+			m.OperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Moniker", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Moniker = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TssIllegibilityInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TssIllegibilityInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

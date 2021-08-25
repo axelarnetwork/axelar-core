@@ -129,7 +129,7 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 }
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, sigID string, validators []snapshot.Validator) {
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) error {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
@@ -139,11 +139,29 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, sigID string, validators
 	}
 
 	for _, validator := range validators {
-		if snapshot.IsValidatorActive(ctx, k.slasher, validator.GetSDKValidator(), k.GetMaxMissedBlocksPerWindow(ctx)) &&
-			validatorAvailable[validator.GetSDKValidator().GetOperator().String()] &&
-			!snapshot.IsValidatorTssSuspended(ctx, k, validator.GetSDKValidator()) {
-			activeValidators = append(activeValidators, validator)
+		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
+		if err != nil {
+			return err
 		}
+
+		if illegibility = illegibility.FilterIllegibilityForSigning(); illegibility != snapshot.None {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
+				validator.GetSDKValidator().GetOperator().String(),
+				sigID,
+				illegibility.String(),
+			))
+			continue
+		}
+
+		if !validatorAvailable[validator.GetSDKValidator().GetOperator().String()] {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
+				validator.GetSDKValidator().GetOperator().String(),
+				sigID,
+			))
+			continue
+		}
+
+		activeValidators = append(activeValidators, validator)
 	}
 
 	for _, v := range activeValidators {
@@ -151,6 +169,8 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, sigID string, validators
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 	ctx.KVStore(k.storeKey).Set([]byte(participateShareCountPrefix+"sign_"+sigID), activeShareCount.BigInt().Bytes())
+
+	return nil
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
@@ -159,13 +179,7 @@ func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sd
 
 // MeetsThreshold returns true if the specified signing threshold is met for the given sign ID
 func (k Keeper) MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool {
-	count := k.GetTotalShareCount(ctx, sigID)
-
-	if count <= threshold {
-		return false
-	}
-
-	return true
+	return k.GetTotalShareCount(ctx, sigID) > threshold
 }
 
 // GetTotalShareCount returns to total share count for the given key ID
@@ -202,12 +216,12 @@ func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, va
 	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
 }
 
-// PenalizeSignCriminal penalizes the criminal caught during signing according to the given crime type
-func (k Keeper) PenalizeSignCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
+// PenalizeCriminal penalizes the criminal caught during tss protocol according to the given crime type
+func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
 	switch crimeType {
 	case tofnd.CRIME_TYPE_MALICIOUS:
 		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
 	default:
-		k.Logger(ctx).Info("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String())
+		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
 	}
 }

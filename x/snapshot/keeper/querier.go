@@ -10,14 +10,16 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 //Query labels
 const (
-	QProxy    = "proxy"
-	QOperator = "operator"
-	QInfo     = "info"
+	QProxy      = "proxy"
+	QOperator   = "operator"
+	QInfo       = "info"
+	QValidators = "validators"
 )
 
 // NewQuerier returns a new querier for the evm module
@@ -30,6 +32,8 @@ func NewQuerier(k Keeper) sdk.Querier {
 			return queryOperator(ctx, k, path[1])
 		case QInfo:
 			return querySnapshot(ctx, k, path[1])
+		case QValidators:
+			return QueryValidators(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown snapshot query endpoint: %s", path[0]))
 		}
@@ -107,4 +111,40 @@ func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
 	}
 
 	return bz, nil
+}
+
+// QueryValidators returns validators' tss information
+func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
+	var validators []*types.QueryValidatorsResponse_Validator
+
+	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
+		v, ok := validator.(stakingtypes.Validator)
+		if !ok {
+			return false
+		}
+
+		illegibility, err := k.GetValidatorIllegibility(ctx, &v)
+		if err != nil {
+			return false
+		}
+
+		validators = append(validators, &types.QueryValidatorsResponse_Validator{
+			OperatorAddress: v.OperatorAddress,
+			Moniker:         v.GetMoniker(),
+			TssIllegibilityInfo: types.QueryValidatorsResponse_TssIllegibilityInfo{
+				Tombstoned:          illegibility.Is(exported.Tombstoned),
+				Jailed:              illegibility.Is(exported.Jailed),
+				MissedTooManyBlocks: illegibility.Is(exported.MissedTooManyBlocks),
+				NoProxyRegistered:   illegibility.Is(exported.NoProxyRegistered),
+				TssSuspended:        illegibility.Is(exported.TssSuspended),
+			},
+		})
+
+		return false
+	}
+
+	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
+	resp := types.QueryValidatorsResponse{Validators: validators}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 }

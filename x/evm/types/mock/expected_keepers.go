@@ -1398,6 +1398,9 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
+// 			GetValidatorIllegibilityFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+// 				panic("mock out the GetValidatorIllegibility method")
+// 			},
 // 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
@@ -1422,6 +1425,9 @@ type SnapshotterMock struct {
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool)
+
+	// GetValidatorIllegibilityFunc mocks the GetValidatorIllegibility method.
+	GetValidatorIllegibilityFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
@@ -1459,6 +1465,13 @@ type SnapshotterMock struct {
 			// SeqNo is the seqNo argument value.
 			SeqNo int64
 		}
+		// GetValidatorIllegibility holds details about calls to the GetValidatorIllegibility method.
+		GetValidatorIllegibility []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Validator is the validator argument value.
+			Validator snapshot.SDKValidator
+		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -1467,12 +1480,13 @@ type SnapshotterMock struct {
 			KeyRequirement tss.KeyRequirement
 		}
 	}
-	lockGetLatestCounter  sync.RWMutex
-	lockGetLatestSnapshot sync.RWMutex
-	lockGetOperator       sync.RWMutex
-	lockGetProxy          sync.RWMutex
-	lockGetSnapshot       sync.RWMutex
-	lockTakeSnapshot      sync.RWMutex
+	lockGetLatestCounter         sync.RWMutex
+	lockGetLatestSnapshot        sync.RWMutex
+	lockGetOperator              sync.RWMutex
+	lockGetProxy                 sync.RWMutex
+	lockGetSnapshot              sync.RWMutex
+	lockGetValidatorIllegibility sync.RWMutex
+	lockTakeSnapshot             sync.RWMutex
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.
@@ -1639,6 +1653,41 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	mock.lockGetSnapshot.RLock()
 	calls = mock.calls.GetSnapshot
 	mock.lockGetSnapshot.RUnlock()
+	return calls
+}
+
+// GetValidatorIllegibility calls GetValidatorIllegibilityFunc.
+func (mock *SnapshotterMock) GetValidatorIllegibility(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+	if mock.GetValidatorIllegibilityFunc == nil {
+		panic("SnapshotterMock.GetValidatorIllegibilityFunc: method is nil but Snapshotter.GetValidatorIllegibility was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshot.SDKValidator
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+	}
+	mock.lockGetValidatorIllegibility.Lock()
+	mock.calls.GetValidatorIllegibility = append(mock.calls.GetValidatorIllegibility, callInfo)
+	mock.lockGetValidatorIllegibility.Unlock()
+	return mock.GetValidatorIllegibilityFunc(ctx, validator)
+}
+
+// GetValidatorIllegibilityCalls gets all the calls that were made to GetValidatorIllegibility.
+// Check the length with:
+//     len(mockedSnapshotter.GetValidatorIllegibilityCalls())
+func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator snapshot.SDKValidator
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator snapshot.SDKValidator
+	}
+	mock.lockGetValidatorIllegibility.RLock()
+	calls = mock.calls.GetValidatorIllegibility
+	mock.lockGetValidatorIllegibility.RUnlock()
 	return calls
 }
 

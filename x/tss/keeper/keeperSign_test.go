@@ -48,6 +48,13 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		Counter:         rand2.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = types.ComputeCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
+	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+		if validator.GetOperator().Equals(val1) {
+			return snapshot.Jailed, nil
+		}
+
+		return snapshot.None, nil
+	}
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
@@ -67,7 +74,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	s.Keeper.SelectSignParticipants(s.Ctx, sigID, snap.Validators)
+	s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
 
 	ok := s.Keeper.MeetsThreshold(s.Ctx, sigID, snap.CorruptionThreshold)
 	assert.False(t, ok)
