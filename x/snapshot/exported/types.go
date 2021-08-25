@@ -83,17 +83,7 @@ func (v ValidatorIllegibility) FilterIllegibilityForNewKey() ValidatorIllegibili
 
 // FilterIllegibilityForSigning filters the illegibility to only leave those ones related to handling of signing
 func (v ValidatorIllegibility) FilterIllegibilityForSigning() ValidatorIllegibility {
-	mask := None
-
-	for _, illegibility := range GetValidatorIllegibilities() {
-		if illegibility == NoProxyRegistered {
-			continue
-		}
-
-		mask |= illegibility
-	}
-
-	return v & mask
+	return v & ^NoProxyRegistered
 }
 
 // GetValidatorIllegibilities returns all validator illegibilities
