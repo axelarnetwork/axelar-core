@@ -35,6 +35,7 @@
       - [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
       - [deposit-address \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [deposit-status \[txID:voutIdx\]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
+      - [external-key-id](axelard_query_bitcoin_external-key-id.md)	 - Returns the key IDs of the current external keys
       - [latest-tx \[keyRole\]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
       - [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
       - [next-key-id \[keyRole\]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
@@ -132,7 +133,7 @@
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
-      - [deactivated-operators \[keyID\]](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
+      - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
       - [keyID \[chain\] \[role\]](axelard_query_tss_keyID.md)	 - Query the keyID using keyChain and keyRole
       - [keySharesKeyID \[key ID\]](axelard_query_tss_keySharesKeyID.md)	 - Query key shares information by key ID

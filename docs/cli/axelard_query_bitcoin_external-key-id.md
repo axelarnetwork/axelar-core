@@ -1,16 +1,16 @@
-## axelard query tss deactivated-operators
+## axelard query bitcoin external-key-id
 
-Fetch the list of deactivated operator addresses
+Returns the key IDs of the current external keys
 
 ```
-axelard query tss deactivated-operators [flags]
+axelard query bitcoin external-key-id [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deactivated-operators
+  -h, --help          help for external-key-id
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query tss deactivated-operators [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
