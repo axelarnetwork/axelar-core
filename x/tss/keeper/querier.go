@@ -154,7 +154,7 @@ func queryKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes.Nexus, keyChai
 	}
 
 	if keyRole == exported.ExternalKey {
-		return nil, fmt.Errorf("use a query from the %s module to get external keyIDs", keyChainStr)
+		return nil, fmt.Errorf("use the chain specific query for %s to get external keyIDs", keyChainStr)
 	}
 
 	keyID, found := k.GetCurrentKeyID(ctx, keyChain, keyRole)
