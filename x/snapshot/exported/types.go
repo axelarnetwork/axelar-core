@@ -37,82 +37,73 @@ func NewValidator(validator SDKValidator, shareCount int64) Validator {
 	return Validator{SDKValidator: validatorAny, ShareCount: shareCount}
 }
 
-func (v ValidatorIllegibility) String() string {
-	switch v {
-	case Tombstoned:
-		return "tombstoned"
-	case Jailed:
-		return "jailed"
-	case MissedTooManyBlocks:
-		return "missed-too-many-blocks"
-	case NoProxyRegistered:
-		return "no-proxy-registered"
-	case TssSuspended:
-		return "tss-suspended"
-	default:
-		return "unspecified"
+// Is returns true if the illegibility contains the given one; false otherwise
+func (v ValidatorIllegibility) Is(illegibility ValidatorIllegibility) bool {
+	if illegibility == None {
+		return v == None
 	}
+
+	return v&illegibility == illegibility
 }
 
-// IllegibilitiesToString returns a comma-separated string of the list of illegibilities
-func IllegibilitiesToString(illegibilities []ValidatorIllegibility) string {
+// String returns a comma-separated string representation of illegibility
+func (v ValidatorIllegibility) String() string {
 	var illegibilityStrs []string
 
-	for _, illegibility := range illegibilities {
-		illegibilityStrs = append(illegibilityStrs, illegibility.String())
+	switch {
+	case v.Is(Tombstoned):
+		illegibilityStrs = append(illegibilityStrs, "tombstoned")
+		fallthrough
+	case v.Is(Jailed):
+		illegibilityStrs = append(illegibilityStrs, "jailed")
+		fallthrough
+	case v.Is(MissedTooManyBlocks):
+		illegibilityStrs = append(illegibilityStrs, "missed-too-many-blocks")
+		fallthrough
+	case v.Is(NoProxyRegistered):
+		illegibilityStrs = append(illegibilityStrs, "no-proxy-registered")
+		fallthrough
+	case v.Is(TssSuspended):
+		illegibilityStrs = append(illegibilityStrs, "tss-suspended")
 	}
 
 	return strings.Join(illegibilityStrs, ",")
 }
 
-// GetIllegibilitiesForNewKey returns all the illegibilities for the given validator to control a new key
-func (v ValidatorInfo) GetIllegibilitiesForNewKey() []ValidatorIllegibility {
-	var illegibilities []ValidatorIllegibility
+// FilterIllegibilityForNewKey filters the illegibility to only leave those ones related to handling of new key
+func (v ValidatorIllegibility) FilterIllegibilityForNewKey() ValidatorIllegibility {
+	mask := None
 
-	if v.Tombstoned {
-		illegibilities = append(illegibilities, Tombstoned)
+	for _, illegibility := range GetValidatorIllegibilities() {
+		mask |= illegibility
 	}
 
-	if v.MissedTooManyBlocks {
-		illegibilities = append(illegibilities, MissedTooManyBlocks)
-	}
-
-	if v.Jailed {
-		illegibilities = append(illegibilities, Jailed)
-	}
-
-	if !v.HasProxyRegistered {
-		illegibilities = append(illegibilities, NoProxyRegistered)
-	}
-
-	if v.TssSuspended {
-		illegibilities = append(illegibilities, TssSuspended)
-	}
-
-	return illegibilities
+	return v & mask
 }
 
-// GetIllegibilitiesForSigning returns all the illegibilities for the given validator to participate in signing
-func (v ValidatorInfo) GetIllegibilitiesForSigning() []ValidatorIllegibility {
-	var illegibilities []ValidatorIllegibility
+// FilterIllegibilityForSigning filters the illegibility to only leave those ones related to handling of signing
+func (v ValidatorIllegibility) FilterIllegibilityForSigning() ValidatorIllegibility {
+	mask := None
 
-	if v.Tombstoned {
-		illegibilities = append(illegibilities, Tombstoned)
+	for _, illegibility := range GetValidatorIllegibilities() {
+		if illegibility == NoProxyRegistered {
+			continue
+		}
+
+		mask |= illegibility
 	}
 
-	if v.MissedTooManyBlocks {
-		illegibilities = append(illegibilities, MissedTooManyBlocks)
+	return v & mask
+}
+
+// GetValidatorIllegibilities returns all validator illegibilities
+func GetValidatorIllegibilities() []ValidatorIllegibility {
+	var values []ValidatorIllegibility
+	for i := 0; i < len(ValidatorIllegibility_name)-1; i++ {
+		values = append(values, ValidatorIllegibility(1<<i))
 	}
 
-	if v.Jailed {
-		illegibilities = append(illegibilities, Jailed)
-	}
-
-	if v.TssSuspended {
-		illegibilities = append(illegibilities, TssSuspended)
-	}
-
-	return illegibilities
+	return values
 }
 
 // Slasher provides functionality to manage slashing info for a validator
@@ -149,7 +140,7 @@ type Snapshotter interface {
 	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
-	GetValidatorInfo(ctx sdk.Context, validator SDKValidator) (ValidatorInfo, error)
+	GetValidatorIllegibility(ctx sdk.Context, validator SDKValidator) (ValidatorIllegibility, error)
 }
 
 // GetSDKValidator returns the SdkValidator

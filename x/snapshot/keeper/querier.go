@@ -123,7 +123,7 @@ func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 			return false
 		}
 
-		validatorInfo, err := k.GetValidatorInfo(ctx, &v)
+		illegibility, err := k.GetValidatorIllegibility(ctx, &v)
 		if err != nil {
 			return false
 		}
@@ -131,7 +131,13 @@ func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 		validators = append(validators, &types.QueryValidatorsResponse_Validator{
 			OperatorAddress: v.OperatorAddress,
 			Moniker:         v.GetMoniker(),
-			Info:            validatorInfo,
+			TssIllegibilityInfo: types.QueryValidatorsResponse_TssIllegibilityInfo{
+				Tombstoned:          illegibility.Is(exported.Tombstoned),
+				Jailed:              illegibility.Is(exported.Jailed),
+				MissedTooManyBlocks: illegibility.Is(exported.MissedTooManyBlocks),
+				NoProxyRegistered:   illegibility.Is(exported.NoProxyRegistered),
+				TssSuspended:        illegibility.Is(exported.TssSuspended),
+			},
 		})
 
 		return false
