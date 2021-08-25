@@ -57,7 +57,7 @@ message VotePubKeyRequest {
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3;
 }
-message VotePubKeyResponse {}
+message VotePubKeyResponse { string log = 1; }
 
 // VoteSigRequest represents a message to vote for a signature
 message VoteSigRequest {
@@ -67,7 +67,7 @@ message VoteSigRequest {
   tss.tofnd.v1beta1.MessageOut.SignResult result = 3;
 }
 
-message VoteSigResponse {}
+message VoteSigResponse { string log = 1; }
 
 message AckRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
