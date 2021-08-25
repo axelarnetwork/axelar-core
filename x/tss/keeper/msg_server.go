@@ -183,14 +183,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
 		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
-		if groupRecoveryInfo == nil {
-			return nil, fmt.Errorf("could not obtain group recovery info from result")
-		}
-
 		privateRecoveryInfo := res.Data.GetPrivateRecoverInfo()
-		if privateRecoveryInfo == nil {
-			return nil, fmt.Errorf("could not obtain group recovery info from result")
-		}
 
 		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		if !ok {
