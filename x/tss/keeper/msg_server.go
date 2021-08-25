@@ -242,7 +242,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	if poll.Is(vote.Pending) {
-		return &types.VotePubKeyResponse{}, nil
+		return &types.VotePubKeyResponse{Log: fmt.Sprintf("not enough votes to confirm public key %s yet", req.PollKey.ID)}, nil
 	}
 
 	event := sdk.NewEvent(
@@ -365,7 +365,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	}
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteSigResponse{}, nil
+		return &types.VoteSigResponse{Log: fmt.Sprintf("not enough votes to confirm signature %s yet", req.PollKey.ID)}, nil
 	}
 
 	event := sdk.NewEvent(

@@ -3357,6 +3357,11 @@ VotePubKeyRequest represents the message to vote on a public key
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
 
 
 
@@ -3382,6 +3387,11 @@ VoteSigRequest represents a message to vote for a signature
 
 ### VoteSigResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
 
 
 
