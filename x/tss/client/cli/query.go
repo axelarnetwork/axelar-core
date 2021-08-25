@@ -164,7 +164,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 // GetCmdGetKeyID returns the command for the keyID of the most recent key given the keyChain and keyRole
 func GetCmdGetKeyID(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "keyID [chain] [role]",
+		Use:   "key-id [chain] [role]",
 		Short: "Query the keyID using keyChain and keyRole",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -191,7 +191,7 @@ func GetCmdGetKeyID(queryRoute string) *cobra.Command {
 // GetCmdGetKeySharesByKeyID returns the query for a list of key shares for a given keyID
 func GetCmdGetKeySharesByKeyID(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "keySharesKeyID [key ID]",
+		Use:   "key-shares-by-key-id [key ID]",
 		Short: "Query key shares information by key ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -223,7 +223,7 @@ func GetCmdGetKeySharesByKeyID(queryRoute string) *cobra.Command {
 // GetCmdGetKeySharesByValidator returns the query for a list of key shares held by a validator address
 func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "keySharesValidator [validator address]",
+		Use:   "key-shares-by-validator [validator address]",
 		Short: "Query key shares information by validator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

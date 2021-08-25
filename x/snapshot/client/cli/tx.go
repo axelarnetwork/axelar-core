@@ -36,7 +36,7 @@ func GetTxCmd() *cobra.Command {
 // GetCmdRegisterProxy returns the command to register a proxy
 func GetCmdRegisterProxy() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "registerProxy [proxy address]",
+		Use:   "register-proxy [proxy address]",
 		Short: "Register a proxy account for a specific validator principal to broadcast transactions in its stead",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,7 +60,7 @@ func GetCmdRegisterProxy() *cobra.Command {
 // GetCmdDeregisterProxy returns the command to register a proxy
 func GetCmdDeregisterProxy() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deactivateProxy",
+		Use:   "deactivate-proxy",
 		Short: "Deactivate the proxy account of the sender",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -80,7 +80,7 @@ func GetCmdDeregisterProxy() *cobra.Command {
 // GetCmdSendTokens returns the command to send stake to a number of addresses
 func GetCmdSendTokens() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sendTokens [amount] [address 1] ... [address n]",
+		Use:   "send-tokens [amount] [address 1] ... [address n]",
 		Short: "Sends the specified amount of tokens to the designated addresses",
 		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
