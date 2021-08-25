@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -108,7 +109,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		Threshold:        int32(snapshot.CorruptionThreshold),
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
-		KeygenOutput: &tssTypes.QueryRecoveryResponse_KeygenOutput{
+		KeygenOutput: &tofnd.KeygenOutput{
 			PubKey:             pubKeyBytes,
 			GroupRecoverInfo:   groupRecoverInfo,
 			PrivateRecoverInfo: privateRecoverInfo,

@@ -232,7 +232,6 @@
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
-    - [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
   
@@ -3275,24 +3274,7 @@ Params is the parameter set for this module
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
 | `threshold` | [int32](#int32) |  |  |
-| `keygen_output` | [QueryRecoveryResponse.KeygenOutput](#tss.v1beta1.QueryRecoveryResponse.KeygenOutput) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryRecoveryResponse.KeygenOutput"></a>
-
-### QueryRecoveryResponse.KeygenOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
-| `group_recover_info` | [bytes](#bytes) |  | parties' common recovery info |
-| `private_recover_info` | [bytes](#bytes) |  | party's private recovery info |
+| `keygen_output` | [tss.tofnd.v1beta1.KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 
 
