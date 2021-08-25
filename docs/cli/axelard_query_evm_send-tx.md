@@ -1,16 +1,16 @@
-## axelard query evm signedTx
+## axelard query evm send-tx
 
-Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
+Send a transaction that spends tx \[txID\] to chain \[chain\]
 
 ```
-axelard query evm signedTx [chain] [txID] [flags]
+axelard query evm send-tx [chain] [txID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for signedTx
+  -h, --help          help for send-tx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
