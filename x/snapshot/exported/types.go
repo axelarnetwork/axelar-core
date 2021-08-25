@@ -37,7 +37,7 @@ func NewValidator(validator SDKValidator, shareCount int64) Validator {
 	return Validator{SDKValidator: validatorAny, ShareCount: shareCount}
 }
 
-// Is returns true the illegibility contains the given one; false otherwise
+// Is returns true if the illegibility contains the given one; false otherwise
 func (v ValidatorIllegibility) Is(illegibility ValidatorIllegibility) bool {
 	if illegibility == None {
 		return v == None
@@ -98,7 +98,12 @@ func (v ValidatorIllegibility) FilterIllegibilityForSigning() ValidatorIllegibil
 
 // GetValidatorIllegibilities returns all validator illegibilities
 func GetValidatorIllegibilities() []ValidatorIllegibility {
-	return []ValidatorIllegibility{Tombstoned, MissedTooManyBlocks, Jailed, NoProxyRegistered, TssSuspended}
+	var values []ValidatorIllegibility
+	for i := 0; i < len(ValidatorIllegibility_name)-1; i++ {
+		values = append(values, ValidatorIllegibility(1<<i))
+	}
+
+	return values
 }
 
 // Slasher provides functionality to manage slashing info for a validator
