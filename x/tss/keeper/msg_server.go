@@ -178,13 +178,12 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	var voteData codec.ProtoMarshaler
+	var groupRecoveryInfo []byte
+	var privateRecoveryInfo []byte
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
-		privateRecoveryInfo := res.Data.GetPrivateRecoverInfo()
-
 		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		if !ok {
 			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.PollKey.ID)
@@ -199,8 +198,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
-		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
+		groupRecoveryInfo = res.Data.GetGroupRecoverInfo()
+		privateRecoveryInfo = res.Data.GetPrivateRecoverInfo()
 
 		// get pubkey
 		pubKey := res.Data.GetPubKey()
@@ -245,8 +244,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
-		// deletes group and private infos
-		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}
@@ -269,6 +266,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
+		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(
