@@ -1,16 +1,16 @@
-## axelard query tss keySharesKeyID
+## axelard query evm signed-tx
 
-Query key shares information by key ID
+Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
 
 ```
-axelard query tss keySharesKeyID [key ID] [flags]
+axelard query evm signed-tx [chain] [txID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for keySharesKeyID
+  -h, --help          help for signed-tx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query tss keySharesKeyID [key ID] [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

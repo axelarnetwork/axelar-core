@@ -1,16 +1,16 @@
-## axelard query evm signedTx
+## axelard query bitcoin external-key-id
 
-Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
+Returns the key IDs of the current external keys
 
 ```
-axelard query evm signedTx [chain] [txID] [flags]
+axelard query bitcoin external-key-id [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for signedTx
+  -h, --help          help for external-key-id
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query evm signedTx [chain] [txID] [flags]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands

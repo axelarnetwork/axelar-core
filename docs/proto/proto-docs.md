@@ -69,6 +69,7 @@
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
     - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
+    - [QueryExternalKeyIDResponse](#bitcoin.v1beta1.QueryExternalKeyIDResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
@@ -1083,6 +1084,21 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
 | `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.QueryExternalKeyIDResponse"></a>
+
+### QueryExternalKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
 
 
 
