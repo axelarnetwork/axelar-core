@@ -33,10 +33,18 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.VotePubKeyRequest:
 			res, err := server.VotePubKey(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = res.Log
+			}
+			return result, err
 		case *types.VoteSigRequest:
 			res, err := server.VoteSig(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = res.Log
+			}
+			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
