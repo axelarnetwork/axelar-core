@@ -208,13 +208,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		voteDataStr := types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
-		bz, err := json.Marshal(voteDataStr)
-		if err != nil {
-			return nil, fmt.Errorf("could not marshal vote data")
-		}
-
-		voteData = &gogoprototypes.BytesValue{Value: bz}
+		voteData = &types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
