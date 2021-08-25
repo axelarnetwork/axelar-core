@@ -1,16 +1,16 @@
-## axelard query tss keyID
+## axelard query tss key-shares-by-key-id
 
-Query the keyID using keyChain and keyRole
+Query key shares information by key ID
 
 ```
-axelard query tss keyID [chain] [role] [flags]
+axelard query tss key-shares-by-key-id [key ID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for keyID
+  -h, --help          help for key-shares-by-key-id
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

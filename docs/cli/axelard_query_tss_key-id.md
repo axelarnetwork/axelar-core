@@ -1,16 +1,16 @@
-## axelard query tss keySharesValidator
+## axelard query tss key-id
 
-Query key shares information by validator
+Query the keyID using keyChain and keyRole
 
 ```
-axelard query tss keySharesValidator [validator address] [flags]
+axelard query tss key-id [chain] [role] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for keySharesValidator
+  -h, --help          help for key-id
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

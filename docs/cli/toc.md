@@ -135,9 +135,9 @@
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
       - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
-      - [keyID \[chain\] \[role\]](axelard_query_tss_keyID.md)	 - Query the keyID using keyChain and keyRole
-      - [keySharesKeyID \[key ID\]](axelard_query_tss_keySharesKeyID.md)	 - Query key shares information by key ID
-      - [keySharesValidator \[validator address\]](axelard_query_tss_keySharesValidator.md)	 - Query key shares information by validator
+      - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
+      - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
+      - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
       - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx \[hash\]](axelard_query_tx.md)	 - Query for a transaction by hash in a committed block
@@ -242,9 +242,9 @@
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
     - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
-      - [deactivateProxy](axelard_tx_snapshot_deactivateProxy.md)	 - Deactivate the proxy account of the sender
-      - [registerProxy \[proxy address\]](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
-      - [sendTokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_sendTokens.md)	 - Sends the specified amount of tokens to the designated addresses
+      - [deactivate-proxy](axelard_tx_snapshot_deactivate-proxy.md)	 - Deactivate the proxy account of the sender
+      - [register-proxy \[proxy address\]](axelard_tx_snapshot_register-proxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [send-tokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_send-tokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
       - [delegate \[validator-addr\] \[amount\]](axelard_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator
