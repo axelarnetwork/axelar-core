@@ -3,13 +3,13 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -151,6 +151,10 @@ func queryKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes.Nexus, keyChai
 	keyRole, err := exported.KeyRoleFromSimpleStr(keyRoleStr)
 	if err != nil {
 		return nil, err
+	}
+
+	if keyRole == exported.ExternalKey {
+		return nil, fmt.Errorf("use a query from the %s module to get external keyIDs", keyChainStr)
 	}
 
 	keyID, found := k.GetCurrentKeyID(ctx, keyChain, keyRole)

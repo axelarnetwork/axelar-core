@@ -30,6 +30,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdDepositStatus(queryRoute),
 		GetCmdConsolidationAddress(queryRoute),
 		GetCmdNextKeyID(queryRoute),
+		GetCmdExternalKeyID(queryRoute),
 		GetCmdMinOutputAmount(queryRoute),
 		GetCmdLatestTx(queryRoute),
 		GetCmdSignedTx(queryRoute),
@@ -256,6 +257,36 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryTxResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdExternalKeyID returns the keyIDs of the current set of external keys
+func GetCmdExternalKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "external-key-id",
+		Short: "Returns the key IDs of the current external keys",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QExternalKeyID)
+
+			bz, _, err := clientCtx.Query(path)
+			if err != nil {
+				return sdkerrors.Wrap(err, types.ErrExternalKeyID)
+			}
+
+			var res types.QueryExternalKeyIDResponse
 			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
