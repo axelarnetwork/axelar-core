@@ -1301,9 +1301,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			GetTotalShareCountFunc: func(ctx sdk.Context, sigID string) int64 {
-// 				panic("mock out the GetTotalShareCount method")
-// 			},
 // 			GetTssSuspendedUntilFunc: func(ctx sdk.Context, validator sdk.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
@@ -1322,9 +1319,6 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			MeetsThresholdFunc: func(ctx sdk.Context, sigID string, threshold int64) bool {
-// 				panic("mock out the MeetsThreshold method")
-// 			},
 // 			OperatorIsAvailableForCounterFunc: func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
 // 				panic("mock out the OperatorIsAvailableForCounter method")
 // 			},
@@ -1340,7 +1334,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
+// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -1458,9 +1452,6 @@ type TSSKeeperMock struct {
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
-	// GetTotalShareCountFunc mocks the GetTotalShareCount method.
-	GetTotalShareCountFunc func(ctx sdk.Context, sigID string) int64
-
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx sdk.Context, validator sdk.ValAddress) int64
 
@@ -1479,9 +1470,6 @@ type TSSKeeperMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
-	// MeetsThresholdFunc mocks the MeetsThreshold method.
-	MeetsThresholdFunc func(ctx sdk.Context, sigID string, threshold int64) bool
-
 	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
 	OperatorIsAvailableForCounterFunc func(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 
@@ -1498,7 +1486,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx sdk.Context, info exported.SignInfo) (int64, error)
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error
+	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
@@ -1746,13 +1734,6 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
-		// GetTotalShareCount holds details about calls to the GetTotalShareCount method.
-		GetTotalShareCount []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
 		GetTssSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
@@ -1802,15 +1783,6 @@ type TSSKeeperMock struct {
 		Logger []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// MeetsThreshold holds details about calls to the MeetsThreshold method.
-		MeetsThreshold []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
-			// Threshold is the threshold argument value.
-			Threshold int64
 		}
 		// OperatorIsAvailableForCounter holds details about calls to the OperatorIsAvailableForCounter method.
 		OperatorIsAvailableForCounter []struct {
@@ -1971,14 +1943,12 @@ type TSSKeeperMock struct {
 	lockGetSignParticipants                 sync.RWMutex
 	lockGetSignParticipantsAsJSON           sync.RWMutex
 	lockGetSnapshotCounterForKeyID          sync.RWMutex
-	lockGetTotalShareCount                  sync.RWMutex
 	lockGetTssSuspendedUntil                sync.RWMutex
 	lockHasKeygenStarted                    sync.RWMutex
 	lockHasRecoveryInfos                    sync.RWMutex
 	lockIsOperatorAvailable                 sync.RWMutex
 	lockLinkAvailableOperatorsToSnapshot    sync.RWMutex
 	lockLogger                              sync.RWMutex
-	lockMeetsThreshold                      sync.RWMutex
 	lockOperatorIsAvailableForCounter       sync.RWMutex
 	lockPenalizeCriminal                    sync.RWMutex
 	lockRotateKey                           sync.RWMutex
@@ -3023,41 +2993,6 @@ func (mock *TSSKeeperMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	return calls
 }
 
-// GetTotalShareCount calls GetTotalShareCountFunc.
-func (mock *TSSKeeperMock) GetTotalShareCount(ctx sdk.Context, sigID string) int64 {
-	if mock.GetTotalShareCountFunc == nil {
-		panic("TSSKeeperMock.GetTotalShareCountFunc: method is nil but TSSKeeper.GetTotalShareCount was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetTotalShareCount.Lock()
-	mock.calls.GetTotalShareCount = append(mock.calls.GetTotalShareCount, callInfo)
-	mock.lockGetTotalShareCount.Unlock()
-	return mock.GetTotalShareCountFunc(ctx, sigID)
-}
-
-// GetTotalShareCountCalls gets all the calls that were made to GetTotalShareCount.
-// Check the length with:
-//     len(mockedTSSKeeper.GetTotalShareCountCalls())
-func (mock *TSSKeeperMock) GetTotalShareCountCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-	}
-	mock.lockGetTotalShareCount.RLock()
-	calls = mock.calls.GetTotalShareCount
-	mock.lockGetTotalShareCount.RUnlock()
-	return calls
-}
-
 // GetTssSuspendedUntil calls GetTssSuspendedUntilFunc.
 func (mock *TSSKeeperMock) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
 	if mock.GetTssSuspendedUntilFunc == nil {
@@ -3284,45 +3219,6 @@ func (mock *TSSKeeperMock) LoggerCalls() []struct {
 	return calls
 }
 
-// MeetsThreshold calls MeetsThresholdFunc.
-func (mock *TSSKeeperMock) MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool {
-	if mock.MeetsThresholdFunc == nil {
-		panic("TSSKeeperMock.MeetsThresholdFunc: method is nil but TSSKeeper.MeetsThreshold was just called")
-	}
-	callInfo := struct {
-		Ctx       sdk.Context
-		SigID     string
-		Threshold int64
-	}{
-		Ctx:       ctx,
-		SigID:     sigID,
-		Threshold: threshold,
-	}
-	mock.lockMeetsThreshold.Lock()
-	mock.calls.MeetsThreshold = append(mock.calls.MeetsThreshold, callInfo)
-	mock.lockMeetsThreshold.Unlock()
-	return mock.MeetsThresholdFunc(ctx, sigID, threshold)
-}
-
-// MeetsThresholdCalls gets all the calls that were made to MeetsThreshold.
-// Check the length with:
-//     len(mockedTSSKeeper.MeetsThresholdCalls())
-func (mock *TSSKeeperMock) MeetsThresholdCalls() []struct {
-	Ctx       sdk.Context
-	SigID     string
-	Threshold int64
-} {
-	var calls []struct {
-		Ctx       sdk.Context
-		SigID     string
-		Threshold int64
-	}
-	mock.lockMeetsThreshold.RLock()
-	calls = mock.calls.MeetsThreshold
-	mock.lockMeetsThreshold.RUnlock()
-	return calls
-}
-
 // OperatorIsAvailableForCounter calls OperatorIsAvailableForCounterFunc.
 func (mock *TSSKeeperMock) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
 	if mock.OperatorIsAvailableForCounterFunc == nil {
@@ -3511,7 +3407,7 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error) {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}

@@ -14,12 +14,13 @@ message KeyRequirement {
   utils.v1beta1.Threshold safety_threshold = 3 [ (gogoproto.nullable) = false ];
   KeyShareDistributionPolicy key_share_distribution_policy = 4;
   int64 max_total_share_count = 5;
-  utils.v1beta1.Threshold keygen_voting_threshold = 6
+  int64 min_total_share_count = 6;
+  utils.v1beta1.Threshold keygen_voting_threshold = 7
       [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold sign_voting_threshold = 7
+  utils.v1beta1.Threshold sign_voting_threshold = 8
       [ (gogoproto.nullable) = false ];
-  int64 keygen_timeout = 8;
-  int64 sign_timeout = 9;
+  int64 keygen_timeout = 9;
+  int64 sign_timeout = 10;
 }
 
 enum KeyRole {

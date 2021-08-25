@@ -47,7 +47,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		TotalShareCount: sdk.NewInt(200),
 		Counter:         rand2.I64Between(0, 100000),
 	}
-	snap.CorruptionThreshold = types.ComputeCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
+	snap.CorruptionThreshold = exported.ComputeCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		if validator.GetOperator().Equals(val1) {
 			return snapshot.Jailed, nil
@@ -74,11 +74,11 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
+	activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
 
-	ok := s.Keeper.MeetsThreshold(s.Ctx, sigID, snap.CorruptionThreshold)
-	assert.False(t, ok)
-	assert.Equal(t, int64(100), s.Keeper.GetTotalShareCount(s.Ctx, sigID))
+	assert.NoError(t, err)
+	assert.False(t, activeShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
+	assert.Equal(t, int64(100), activeShareCount.Int64())
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {

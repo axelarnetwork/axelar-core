@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
@@ -107,11 +109,11 @@ func (m KeyRequirement) Validate() error {
 		return err
 	}
 
-	if m.MinKeygenThreshold.Validate() != nil || m.MinKeygenThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.MinKeygenThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+	if m.MinKeygenThreshold.Validate() != nil || m.MinKeygenThreshold.GT(utils.OneThreshold) || m.MinKeygenThreshold.LT(utils.ZeroThreshold) {
 		return fmt.Errorf("MinKeygenThreshold must be <=1 and >0")
 	}
 
-	if m.SafetyThreshold.Validate() != nil || m.SafetyThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.SafetyThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+	if m.SafetyThreshold.Validate() != nil || m.SafetyThreshold.GT(utils.OneThreshold) || m.SafetyThreshold.LT(utils.ZeroThreshold) {
 		return fmt.Errorf("SafetyThreshold must be <=1 and >0")
 	}
 
@@ -119,11 +121,11 @@ func (m KeyRequirement) Validate() error {
 		return err
 	}
 
-	if m.KeygenVotingThreshold.Validate() != nil || m.KeygenVotingThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.KeygenVotingThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+	if m.KeygenVotingThreshold.Validate() != nil || m.KeygenVotingThreshold.GT(utils.OneThreshold) || m.KeygenVotingThreshold.LT(utils.ZeroThreshold) {
 		return fmt.Errorf("KeygenVotingThreshold must be <=1 and >0")
 	}
 
-	if m.SignVotingThreshold.Validate() != nil || m.SignVotingThreshold.GT(utils.Threshold{Numerator: 1, Denominator: 1}) || m.SignVotingThreshold.LT(utils.Threshold{Numerator: 0, Denominator: 1}) {
+	if m.SignVotingThreshold.Validate() != nil || m.SignVotingThreshold.GT(utils.OneThreshold) || m.SignVotingThreshold.LT(utils.ZeroThreshold) {
 		return fmt.Errorf("SignVotingThreshold must be <=1 and >0")
 	}
 
@@ -135,5 +137,42 @@ func (m KeyRequirement) Validate() error {
 		return fmt.Errorf("SignTimeout must be >0")
 	}
 
+	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {
+		corruptionThreshold := ComputeCorruptionThreshold(m.SafetyThreshold, sdk.NewInt(totalShareCount))
+		if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount {
+			return fmt.Errorf("invald safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
+				m.SafetyThreshold.SimpleString(),
+				corruptionThreshold,
+				totalShareCount,
+			)
+		}
+
+		minSigningThreshold := utils.NewThreshold(corruptionThreshold+1, totalShareCount)
+
+		if m.KeygenVotingThreshold.LT(minSigningThreshold) {
+			return fmt.Errorf("invald keygen voting threshold [%s], safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
+				m.KeygenVotingThreshold.SimpleString(),
+				m.SafetyThreshold.SimpleString(),
+				corruptionThreshold,
+				totalShareCount,
+			)
+		}
+
+		if m.SignVotingThreshold.GT(minSigningThreshold) {
+			return fmt.Errorf("invald sign voting threshold [%s], safety threshold [%s] and corruption threshold [%d] when total share count is [%d]",
+				m.SignVotingThreshold.SimpleString(),
+				m.SafetyThreshold.SimpleString(),
+				corruptionThreshold,
+				totalShareCount,
+			)
+		}
+	}
+
 	return nil
+}
+
+// ComputeCorruptionThreshold returns corruption threshold to be used by tss.
+// (threshold + 1) shares are required to sign
+func ComputeCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
+	return totalShareCount.MulRaw(safetyThreshold.Numerator).QuoRaw(safetyThreshold.Denominator).Int64()
 }
