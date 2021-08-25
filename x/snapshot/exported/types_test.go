@@ -14,3 +14,24 @@ func TestGetValidatorIllegibilities(t *testing.T) {
 
 	assert.Equal(t, expected, actual)
 }
+
+func TestFilterIllegibilityForNewKey(t *testing.T) {
+	for _, illegibility := range exported.GetValidatorIllegibilities() {
+		actual := illegibility.FilterIllegibilityForNewKey()
+
+		assert.NotEqual(t, exported.None, actual)
+	}
+}
+
+func TestFilterIllegibilityForSigning(t *testing.T) {
+	for _, illegibility := range exported.GetValidatorIllegibilities() {
+		actual := illegibility.FilterIllegibilityForSigning()
+
+		switch illegibility {
+		case exported.NoProxyRegistered:
+			assert.Equal(t, exported.None, actual)
+		default:
+			assert.NotEqual(t, exported.None, actual)
+		}
+	}
+}
