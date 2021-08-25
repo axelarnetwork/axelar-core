@@ -152,17 +152,6 @@ func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, key
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
-// HasGroupRecoveryInfo returns true if the group recovery info for a given party exists
-func (k Keeper) HasGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
-	key := fmt.Sprintf("%s%s_%s", groupRecoverPrefix, keyID, sender.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return false
-	}
-
-	return true
-}
-
 // GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
 func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
 	key := fmt.Sprintf("%s%s_%s", groupRecoverPrefix, keyID, sender.String())
@@ -183,17 +172,6 @@ func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-}
-
-// HasPrivateRecoveryInfo returns true if the private recovery info for a given party exists
-func (k Keeper) HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
-	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return false
-	}
-
-	return true
 }
 
 // GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID

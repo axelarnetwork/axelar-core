@@ -182,19 +182,11 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		// check group recovery info
-		if s.HasGroupRecoveryInfo(ctx, voter, req.PollKey.ID) {
-			return nil, fmt.Errorf("voter %s already submitted their group recovery info", voter.String())
-		}
 		groupRecoveryInfo := res.Data.GetGroupRecoverInfo()
 		if groupRecoveryInfo == nil {
 			return nil, fmt.Errorf("could not obtain group recovery info from result")
 		}
 
-		// check private recovery info
-		if s.HasPrivateRecoveryInfo(ctx, voter, req.PollKey.ID) {
-			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
-		}
 		privateRecoveryInfo := res.Data.GetPrivateRecoverInfo()
 		if privateRecoveryInfo == nil {
 			return nil, fmt.Errorf("could not obtain group recovery info from result")
