@@ -252,19 +252,19 @@ func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetDeactivatedOperators returns the list of deactivated operator addresses by keyID
+// GetCmdGetDeactivatedOperators returns the list of deactivated operator addresses
 func GetCmdGetDeactivatedOperators(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deactivated-operators [keyID]",
+		Use:   "deactivated-operators",
 		Short: "Fetch the list of deactivated operator addresses",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryDeactivated, args[0]), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryDeactivated), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "could not get deactivated operator addresses")
 			}

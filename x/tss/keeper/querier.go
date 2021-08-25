@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 
@@ -27,7 +27,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the TSS module
-func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, n tssTypes.Nexus) sdk.Querier {
+func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, staking tssTypes.StakingKeeper, n tssTypes.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
@@ -45,7 +45,7 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, 
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
-			res, err = queryDeactivatedOperator(ctx, k, s, path[1])
+			res, err = queryDeactivatedOperator(ctx, k, s, staking)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown tss query endpoint: %s", path[0]))
 		}
@@ -249,32 +249,32 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 	return keyShareInfos.Marshal()
 }
 
-func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
-	var found bool
-	var snapshot snapshot.Snapshot
+func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, staking tssTypes.StakingKeeper) ([]byte, error) {
 
-	counter, found := k.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !found {
-		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
-	}
+	var deactivatedValidators []string
+	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
 
-	snapshot, found = s.GetSnapshot(ctx, counter)
-	if !found {
-		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
-	}
-
-	var res []string
-	for _, validator := range snapshot.Validators {
-		_, active := s.GetProxy(ctx, validator.GetSDKValidator().GetOperator())
-		if !active {
-			res = append(res, validator.GetSDKValidator().GetOperator().String())
+		// this explicit type cast is necessary, because we need to call UnpackInterfaces() on the validator
+		// and it is not exposed in the ValidatorI interface
+		v, ok := validator.(stakingtypes.Validator)
+		if !ok {
+			k.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
+			return false
 		}
+
+		_, active := s.GetProxy(ctx, v.GetOperator())
+		if !active {
+			deactivatedValidators = append(deactivatedValidators, v.GetOperator().String())
+		}
+
+		return false
 	}
+	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
+	staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
 	resp := tssTypes.QueryDeactivatedOperatorsResponse{
-		OperatorAddresses: res,
+		OperatorAddresses: deactivatedValidators,
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
-
 }
