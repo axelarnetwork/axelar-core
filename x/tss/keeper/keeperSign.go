@@ -143,7 +143,8 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 }
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) error {
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string,
+	validators []snapshot.Validator) ([]int64, []snapshot.Validator, error) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
@@ -152,10 +153,12 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		validatorAvailable[validator.String()] = true
 	}
 
+	var excludedValidators []snapshot.Validator
+
 	for _, validator := range validators {
 		validatorInfo, err := snapshotter.GetValidatorInfo(ctx, validator.GetSDKValidator())
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
 		if illegibilities := validatorInfo.GetIllegibilitiesForSigning(); len(illegibilities) > 0 {
@@ -164,6 +167,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 				sigID,
 				snapshot.IllegibilitiesToString(illegibilities),
 			))
+			excludedValidators = append(excludedValidators, validator)
 			continue
 		}
 
@@ -172,19 +176,22 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 				validator.GetSDKValidator().GetOperator().String(),
 				sigID,
 			))
+			excludedValidators = append(excludedValidators, validator)
 			continue
 		}
 
 		activeValidators = append(activeValidators, validator)
 	}
 
+	var discreteActiveShareCounts []int64
 	for _, v := range activeValidators {
 		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+		discreteActiveShareCounts = append(discreteActiveShareCounts, v.ShareCount)
 	}
 	ctx.KVStore(k.storeKey).Set([]byte(participateShareCountPrefix+"sign_"+sigID), activeShareCount.BigInt().Bytes())
 
-	return nil
+	return discreteActiveShareCounts, excludedValidators, nil
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {

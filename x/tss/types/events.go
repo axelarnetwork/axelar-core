@@ -17,14 +17,16 @@ const (
 	AttributeKeySigModule = "sigModule"
 	AttributeKeySigData   = "sigData"
 
-	AttributeKeyHeight                 = "height"
-	AttributeKeyKeyAckType             = "ackType"
-	AttributeKeySessionID              = "sessionID"
-	AttributeKeyThreshold              = "threshold"
-	AttributeKeyParticipants           = "participants"
-	AttributeKeyParticipantShareCounts = "participantShareCounts"
-	AttributeKeyPayload                = "payload"
-	AttributeKeyTimeout                = "timeout"
+	AttributeKeyHeight                    = "height"
+	AttributeKeyKeyAckType                = "ackType"
+	AttributeKeySessionID                 = "sessionID"
+	AttributeKeyThreshold                 = "threshold"
+	AttributeKeyParticipants              = "participants"
+	AttributeKeyParticipantShareCounts    = "participantShareCounts"
+	AttributeKeyNonParticipants           = "nonParticipants"
+	AttributeKeyNonParticipantShareCounts = "nonParticipantShareCounts"
+	AttributeKeyPayload                   = "payload"
+	AttributeKeyTimeout                   = "timeout"
 )
 
 // Event attribute values

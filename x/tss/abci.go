@@ -147,7 +147,7 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	participantShareCounts, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
@@ -195,6 +195,13 @@ func startSign(
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
+	nonParticipantShareCounts := make([]int64, 0, len(excluded))
+	nonParticipants := make([]string, 0, len(excluded))
+	for i, validator := range excluded {
+		nonParticipants[i] = validator.String()
+		nonParticipantShareCounts[i] = validator.ShareCount
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeSign,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -202,6 +209,9 @@ func startSign(
 			sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
 			sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
+			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+			sdk.NewAttribute(types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants))),
+			sdk.NewAttribute(types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts))),
 			sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)),
 			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
 		))
