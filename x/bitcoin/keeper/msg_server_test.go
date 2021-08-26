@@ -302,6 +302,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		assert.Equal(t, info.Address, nexusKeeper.EnqueueForTransferCalls()[0].Sender.Address)
 		assert.Equal(t, int64(info.Amount), nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
 
+		// GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
 			isValidType := event.GetType() == types.EventTypeOutpointConfirmation
 			if !isValidType {
@@ -454,6 +455,8 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
+		
+		// events should not be emitted if vote cannot proceed
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
 			isValidType := event.GetType() == types.EventTypeOutpointConfirmation
 			if !isValidType {
