@@ -74,7 +74,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
+	activeShareCount, _, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
 
 	assert.NoError(t, err)
 	assert.False(t, activeShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))

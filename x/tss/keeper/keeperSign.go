@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -142,8 +143,8 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 }
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
-// the active share count if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error) {
+// the active share count and excluded validators if no error
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, []snapshot.Validator, error) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
@@ -152,10 +153,12 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		validatorAvailable[validator.String()] = true
 	}
 
+	var excludedValidators []snapshot.Validator
+
 	for _, validator := range validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
-			return sdk.ZeroInt(), err
+			return sdk.ZeroInt(), nil, err
 		}
 
 		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
@@ -164,6 +167,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 				sigID,
 				illegibility.String(),
 			))
+			excludedValidators = append(excludedValidators, validator)
 			continue
 		}
 
@@ -172,6 +176,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 				validator.GetSDKValidator().GetOperator().String(),
 				sigID,
 			))
+			excludedValidators = append(excludedValidators, validator)
 			continue
 		}
 
@@ -179,15 +184,15 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	}
 
 	for _, v := range activeValidators {
-		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
+		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator(), v.ShareCount)
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
-	return activeShareCount, nil
+	return activeShareCount, excludedValidators, nil
 }
 
-func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
+func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress, shareCount int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), big.NewInt(shareCount).Bytes())
 }
 
 // GetSignParticipants returns the list of participants for specified sig ID
@@ -204,9 +209,28 @@ func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
 	return participants
 }
 
+// GetSignParticipantsShares returns the list of participants share counts for specified sig ID
+func (k Keeper) GetSignParticipantsShares(ctx sdk.Context, sigID string) []int64 {
+	prefix := participatePrefix + "sign_" + sigID
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	shares := make([]int64, 0)
+	for ; iter.Valid(); iter.Next() {
+		shares = append(shares, big.NewInt(0).SetBytes(iter.Value()).Int64())
+	}
+
+	return shares
+}
+
 // GetSignParticipantsAsJSON returns the list of participants for specified sig ID in JSON format
 func (k Keeper) GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte {
 	return k.cdc.MustMarshalJSON(k.GetSignParticipants(ctx, sigID))
+}
+
+// GetSignParticipantsSharesAsJSON returns the list of participant share counts for specified sig ID in JSON format
+func (k Keeper) GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte {
+	return k.cdc.MustMarshalJSON(k.GetSignParticipantsShares(ctx, sigID))
 }
 
 // DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false
