@@ -140,7 +140,7 @@ func (m KeyRequirement) Validate() error {
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {
 		corruptionThreshold := ComputeCorruptionThreshold(m.SafetyThreshold, sdk.NewInt(totalShareCount))
 		if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount {
-			return fmt.Errorf("invald safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
+			return fmt.Errorf("invalid safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
 				m.SafetyThreshold.SimpleString(),
 				corruptionThreshold,
 				totalShareCount,
@@ -150,7 +150,7 @@ func (m KeyRequirement) Validate() error {
 		minSigningThreshold := utils.NewThreshold(corruptionThreshold+1, totalShareCount)
 
 		if m.KeygenVotingThreshold.LT(minSigningThreshold) {
-			return fmt.Errorf("invald keygen voting threshold [%s], safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
+			return fmt.Errorf("invalid keygen voting threshold [%s], safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
 				m.KeygenVotingThreshold.SimpleString(),
 				m.SafetyThreshold.SimpleString(),
 				corruptionThreshold,
@@ -159,7 +159,7 @@ func (m KeyRequirement) Validate() error {
 		}
 
 		if m.SignVotingThreshold.GT(minSigningThreshold) {
-			return fmt.Errorf("invald sign voting threshold [%s], safety threshold [%s] and corruption threshold [%d] when total share count is [%d]",
+			return fmt.Errorf("invalid sign voting threshold [%s], safety threshold [%s] and corruption threshold [%d] when total share count is [%d]",
 				m.SignVotingThreshold.SimpleString(),
 				m.SafetyThreshold.SimpleString(),
 				corruptionThreshold,
