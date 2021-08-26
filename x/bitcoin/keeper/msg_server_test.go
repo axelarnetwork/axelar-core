@@ -455,8 +455,8 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
-		
-		// events should not be emitted if vote cannot proceed
+
+		// voting events should not be emitted if vote cannot proceed
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
 			isValidType := event.GetType() == types.EventTypeOutpointConfirmation
 			if !isValidType {

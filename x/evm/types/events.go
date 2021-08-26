@@ -11,23 +11,23 @@ const (
 
 // Event attribute keys
 const (
-	AttributeKeyBatchedCommandsID = "batchedCommandID"
-	AttributeKeyChain             = "chain"
-	AttributeKeyAddress           = "address"
-	AttributeKeyPoll              = "poll"
-	AttributeKeyTxID              = "txID"
-	AttributeKeyTransferKeyType   = "transferKeyType"
-	AttributeKeyAmount            = "amount"
-	AttributeKeyBurnAddress       = "burnAddress"
-	AttributeKeyTokenAddress      = "tokenAddress"
-	AttributeKeyGatewayAddress    = "gatewayAddress"
-	AttributeKeyConfHeight        = "confHeight"
-	AttributeKeyAsset             = "asset"
-	AttributeKeySymbol            = "symbol"
-	AttributeKeyNativeAsset       = "nativeAsset"
+	AttributeKeyBatchedCommandsID  = "batchedCommandID"
+	AttributeKeyChain              = "chain"
+	AttributeKeyAddress            = "address"
+	AttributeKeyPoll               = "poll"
+	AttributeKeyTxID               = "txID"
+	AttributeKeyTransferKeyType    = "transferKeyType"
+	AttributeKeyAmount             = "amount"
+	AttributeKeyBurnAddress        = "burnAddress"
+	AttributeKeyTokenAddress       = "tokenAddress"
+	AttributeKeyGatewayAddress     = "gatewayAddress"
+	AttributeKeyConfHeight         = "confHeight"
+	AttributeKeyAsset              = "asset"
+	AttributeKeySymbol             = "symbol"
+	AttributeKeyNativeAsset        = "nativeAsset"
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
-	AttributeKeyValue             = "value"
+	AttributeKeyValue              = "value"
 )
 
 // Event attribute values

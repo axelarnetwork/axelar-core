@@ -43,9 +43,9 @@ func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 }
 
 // Filter returns a collection of attributes filtered by the predicate
-func (fe Attributes) Filter(predicate func(attributes abci.EventAttribute) bool) Attributes {
+func (attributes Attributes) Filter(predicate func(abci.EventAttribute) bool) Attributes {
 	var filtered Attributes
-	for _, attribute := range fe {
+	for _, attribute := range attributes {
 		if predicate(attribute) {
 			filtered = append(filtered, attribute)
 		}

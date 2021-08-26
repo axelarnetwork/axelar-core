@@ -396,10 +396,10 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			},
 			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					VoteFunc: func(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(state vote.PollState) bool {
+					IsFunc: func(vote.PollState) bool {
 						return true
 					},
 				}
@@ -419,7 +419,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				return rand.I64Between(50, 100)
 
 			},
-			GetOperatorFunc: func(ctx2 sdk.Context, address sdk.AccAddress) sdk.ValAddress {
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			},
 		}
@@ -566,10 +566,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					VoteFunc: func(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(state vote.PollState) bool {
+					IsFunc: func(vote.PollState) bool {
 						return true
 					},
 				}
@@ -600,7 +600,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
-			GetOperatorFunc: func(ctx2 sdk.Context, address sdk.AccAddress) sdk.ValAddress {
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			}})
 	}
@@ -814,9 +814,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 		chaink = &evmMock.ChainKeeperMock{
 			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
-				return types.ERC20Deposit{
-					DestinationChain: evmChain,
-				}, 0, false
+				return types.ERC20Deposit{}, 0, false
 			},
 			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{
@@ -832,7 +830,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return utils.Threshold{Numerator: 15, Denominator: 100}, true
 			},
 			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
-			GetPendingDepositFunc: func(ctx sdk.Context, key vote.PollKey) (types.ERC20Deposit, bool) {
+			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
 				return types.ERC20Deposit{
 					DestinationChain: evmChain,
 				}, true
@@ -842,10 +840,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					VoteFunc: func(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(state vote.PollState) bool {
+					IsFunc: func(vote.PollState) bool {
 						return true
 					},
 				}
@@ -878,7 +876,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
 		server = keeper.NewMsgServerImpl(basek, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
-			GetOperatorFunc: func(ctx2 sdk.Context, address sdk.AccAddress) sdk.ValAddress {
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			},
 		})
