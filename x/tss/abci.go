@@ -228,8 +228,6 @@ func startSign(
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
-	ctx.EventManager().EmitEvent(event)
-
 	// metrics for sign participation
 	ts := time.Now().Unix()
 	for _, validator := range snap.Validators {
