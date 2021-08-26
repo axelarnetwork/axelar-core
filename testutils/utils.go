@@ -27,6 +27,8 @@ func (f Func) Repeat(n int) Func {
 
 // Events wraps sdk.Events
 type Events []abci.Event
+
+// Attributes wraps sdk.EventAttribute
 type Attributes []abci.EventAttribute
 
 // Filter returns a collection of events filtered by the predicate
