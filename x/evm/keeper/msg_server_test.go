@@ -438,7 +438,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		assert.Equal(t, 1, len(v.InitializePollCalls()))
 	}).Repeat(repeats))
 
-	t.Run("happy path vote", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), voteReq)
@@ -616,7 +616,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingTokenDeploymentCalls()[0].PollKey)
 	}).Repeat(repeats))
 
-	t.Run("happy path vote", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
@@ -895,7 +895,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingDepositCalls()[0].Key)
 	}).Repeat(repeats))
 
-	t.Run("happy path vote", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.VoteConfirmDeposit(sdk.WrapSDKContext(ctx), voteReq)
