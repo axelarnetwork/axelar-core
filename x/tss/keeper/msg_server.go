@@ -275,6 +275,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+
+		// TODO check why this call stalls. Note that the same call doesn't stall if called from line 206.
+		// TODO when the above issue is resolved,
+		// 1. retrieve groupRecoveryInfo from voteData
+		// 2. store under a global key instead of appending the address of the sender to `groupRecoveryPrefix`
+		// 3. move setter to keeper.go from keeperKeygen.go
+
 		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
 		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
 
