@@ -485,9 +485,17 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeChainConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
 
 	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
@@ -576,9 +584,17 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeDepositConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
 
 	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
@@ -666,9 +682,17 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeTokenConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
 
 	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Asset)}, nil
@@ -749,9 +773,17 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeTransferKeyConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
 
 	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("not enough votes to confirm %s in %s to %s yet", req.TransferType.SimpleString(), req.TxID, req.NewAddress.Hex())}, nil

@@ -2,6 +2,8 @@ package keeper_test
 
 import (
 	"fmt"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"math/big"
 	mathRand "math/rand"
 	"strings"
@@ -342,23 +344,25 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 
 func TestHandleMsgConfirmChain(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *evmMock.BaseKeeperMock
-		chaink *evmMock.ChainKeeperMock
-		v      *evmMock.VoterMock
-		n      *evmMock.NexusMock
-		s      *evmMock.SnapshotterMock
-		msg    *types.ConfirmChainRequest
-		server types.MsgServiceServer
+		ctx     sdk.Context
+		basek   *evmMock.BaseKeeperMock
+		chaink  *evmMock.ChainKeeperMock
+		v       *evmMock.VoterMock
+		n       *evmMock.NexusMock
+		s       *evmMock.SnapshotterMock
+		msg     *types.ConfirmChainRequest
+		voteReq *types.VoteConfirmChainRequest
+		server  types.MsgServiceServer
 	)
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-
+		chain := rand.StrBetween(5, 20)
 		msg = &types.ConfirmChainRequest{
 			Sender: rand.Bytes(20),
-			Name:   rand.StrBetween(5, 20),
+			Name:   chain,
 		}
+		voteReq = &types.VoteConfirmChainRequest{Name: chain}
 
 		chaink = &evmMock.ChainKeeperMock{
 			GetRevoteLockingPeriodFunc: func(ctx sdk.Context) (int64, bool) {
@@ -389,7 +393,18 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
 				return nil
-			}}
+			},
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
+				return &voteMock.PollMock{
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
+						return nil
+					},
+					IsFunc: func(vote.PollState) bool {
+						return true
+					},
+				}
+			},
+		}
 
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
@@ -404,13 +419,16 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				return rand.I64Between(50, 100)
 
 			},
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+				return rand.ValAddr()
+			},
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, &mock.SignerMock{}, v, s)
 	}
 
 	repeats := 20
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
@@ -418,6 +436,35 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
 		assert.Equal(t, 1, len(v.InitializePollCalls()))
+	}).Repeat(repeats))
+
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), voteReq)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
+			isValidType := event.GetType() == types.EventTypeChainConfirmation
+			if !isValidType {
+				return false
+			}
+			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
+					string(attribute.GetValue()) == types.AttributeValueVote
+			})) == 1
+			if !isVoteAction {
+				return false
+			}
+			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				if string(attribute.GetKey()) != types.AttributeKeyValue {
+					return false
+				}
+				return string(attribute.GetValue()) == "false"
+			})) == 1
+			return hasCorrectValue
+		}), 1)
+
 	}).Repeat(repeats))
 
 	t.Run("happy path with no snapshot", testutils.Func(func(t *testing.T) {
@@ -474,18 +521,20 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *evmMock.BaseKeeperMock
-		chaink *evmMock.ChainKeeperMock
-		v      *evmMock.VoterMock
-		n      *evmMock.NexusMock
-		s      *evmMock.SignerMock
-		msg    *types.ConfirmTokenRequest
-		server types.MsgServiceServer
+		ctx     sdk.Context
+		basek   *evmMock.BaseKeeperMock
+		chaink  *evmMock.ChainKeeperMock
+		v       *evmMock.VoterMock
+		n       *evmMock.NexusMock
+		s       *evmMock.SignerMock
+		msg     *types.ConfirmTokenRequest
+		server  types.MsgServiceServer
+		voteReq *types.VoteConfirmTokenRequest
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
+		voteReq = &types.VoteConfirmTokenRequest{Chain: evmChain}
 		basek = &evmMock.BaseKeeperMock{
 			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
@@ -509,9 +558,22 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetTokenSymbolFunc:                func(sdk.Context, string) (string, bool) { return rand.StrBetween(3, 5), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 			SetPendingTokenDeploymentFunc:     func(sdk.Context, vote.PollKey, types.ERC20TokenDeployment) {},
+			GetPendingTokenDeploymentFunc: func(sdk.Context, vote.PollKey) (types.ERC20TokenDeployment, bool) {
+				return types.ERC20TokenDeployment{Asset: ""}, true
+			},
 		}
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
+				return &voteMock.PollMock{
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
+						return nil
+					},
+					IsFunc: func(vote.PollState) bool {
+						return true
+					},
+				}
+			},
 		}
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &evmMock.NexusMock{
@@ -537,11 +599,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			OriginChain: btc.Bitcoin.Name,
 		}
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+				return rand.ValAddr()
+			}})
 	}
 
 	repeats := 20
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -549,6 +614,34 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
 		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingTokenDeploymentCalls()[0].PollKey)
+	}).Repeat(repeats))
+
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
+			isValidType := event.GetType() == types.EventTypeTokenConfirmation
+			if !isValidType {
+				return false
+			}
+			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
+					string(attribute.GetValue()) == types.AttributeValueVote
+			})) == 1
+			if !isVoteAction {
+				return false
+			}
+			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				if string(attribute.GetKey()) != types.AttributeKeyValue {
+					return false
+				}
+				return string(attribute.GetValue()) == "false"
+			})) == 1
+			return hasCorrectValue
+		}), 1)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -697,17 +790,20 @@ func TestAddChain(t *testing.T) {
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *evmMock.BaseKeeperMock
-		chaink *evmMock.ChainKeeperMock
-		v      *evmMock.VoterMock
-		s      *evmMock.SignerMock
-		n      *evmMock.NexusMock
-		msg    *types.ConfirmDepositRequest
-		server types.MsgServiceServer
+		ctx     sdk.Context
+		basek   *evmMock.BaseKeeperMock
+		chaink  *evmMock.ChainKeeperMock
+		v       *evmMock.VoterMock
+		s       *evmMock.SignerMock
+		n       *evmMock.NexusMock
+		msg     *types.ConfirmDepositRequest
+		server  types.MsgServiceServer
+		voteReq *types.VoteConfirmDepositRequest
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		voteReq = &types.VoteConfirmDepositRequest{Chain: evmChain}
 		basek = &evmMock.BaseKeeperMock{
 			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
@@ -734,9 +830,24 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return utils.Threshold{Numerator: 15, Denominator: 100}, true
 			},
 			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
+			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
+				return types.ERC20Deposit{
+					DestinationChain: evmChain,
+				}, true
+			},
 		}
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
+				return &voteMock.PollMock{
+					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
+						return nil
+					},
+					IsFunc: func(vote.PollState) bool {
+						return true
+					},
+				}
+			},
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
@@ -764,11 +875,15 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Amount:        sdk.NewUint(mathRand.Uint64()),
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
-		server = keeper.NewMsgServerImpl(basek, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(basek, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+				return rand.ValAddr()
+			},
+		})
 	}
 
 	repeats := 20
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -776,6 +891,35 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingDepositCalls()[0].Key)
+	}).Repeat(repeats))
+
+	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.VoteConfirmDeposit(sdk.WrapSDKContext(ctx), voteReq)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
+			isValidType := event.GetType() == types.EventTypeDepositConfirmation
+			if !isValidType {
+				return false
+			}
+			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
+					string(attribute.GetValue()) == types.AttributeValueVote
+			})) == 1
+			if !isVoteAction {
+				return false
+			}
+			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				if string(attribute.GetKey()) != types.AttributeKeyValue {
+					return false
+				}
+				return string(attribute.GetValue()) == "false"
+			})) == 1
+			return hasCorrectValue
+		}), 1)
+
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {

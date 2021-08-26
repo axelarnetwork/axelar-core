@@ -28,12 +28,26 @@ func (f Func) Repeat(n int) Func {
 // Events wraps sdk.Events
 type Events []abci.Event
 
+// Attributes wraps sdk.EventAttribute
+type Attributes []abci.EventAttribute
+
 // Filter returns a collection of events filtered by the predicate
 func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 	var filtered Events
 	for _, event := range fe {
 		if predicate(event) {
 			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}
+
+// Filter returns a collection of attributes filtered by the predicate
+func (attributes Attributes) Filter(predicate func(abci.EventAttribute) bool) Attributes {
+	var filtered Attributes
+	for _, attribute := range attributes {
+		if predicate(attribute) {
+			filtered = append(filtered, attribute)
 		}
 	}
 	return filtered
