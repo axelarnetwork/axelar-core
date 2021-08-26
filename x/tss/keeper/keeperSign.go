@@ -224,7 +224,7 @@ func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
 	return participants
 }
 
-// GetSignParticipants returns the list of participants for specified sig ID
+// GetSignParticipantsShares returns the list of participants share counts for specified sig ID
 func (k Keeper) GetSignParticipantsShares(ctx sdk.Context, sigID string) []int64 {
 	prefix := participatePrefix + "sign_" + sigID
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
@@ -243,7 +243,7 @@ func (k Keeper) GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte 
 	return k.cdc.MustMarshalJSON(k.GetSignParticipants(ctx, sigID))
 }
 
-// GetSignParticipantsAsJSON returns the list of participant shares for specified sig ID in JSON format
+// GetSignParticipantsSharesAsJSON returns the list of participant share counts for specified sig ID in JSON format
 func (k Keeper) GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte {
 	return k.cdc.MustMarshalJSON(k.GetSignParticipantsShares(ctx, sigID))
 }

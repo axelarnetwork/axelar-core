@@ -1294,7 +1294,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error) {
+// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]snapshot.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -1455,7 +1455,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx sdk.Context, info exported.SignInfo) (int64, error)
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error)
+	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]snapshot.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
@@ -3511,7 +3511,7 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error) {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]snapshot.Validator, error) {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}
