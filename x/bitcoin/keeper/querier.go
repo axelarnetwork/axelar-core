@@ -27,6 +27,7 @@ const (
 	QLatestTxByKeyRole             = "latestTxByKeyRole"
 	QSignedTx                      = "signedTx"
 	QDepositStatus                 = "depositStatus"
+	QExternalKeyID                 = "externalKeyID"
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
@@ -45,6 +46,8 @@ func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.
 			res, err = QueryConsolidationAddressByKeyID(ctx, k, s, path[1])
 		case QNextKeyID:
 			res, err = QueryNextKeyID(ctx, s, path[1])
+		case QExternalKeyID:
+			res, err = QueryExternalKeyID(ctx, k)
 		case QMinOutputAmount:
 			res = QueryMinOutputAmount(ctx, k)
 		case QLatestTxByKeyRole:
@@ -351,6 +354,21 @@ func QuerySignedTx(ctx sdk.Context, k types.BTCKeeper, txHashHex string) ([]byte
 		PrevSignedTxHash:     prevSignedTxHashHex,
 		AnyoneCanSpendVout:   signedTx.AnyoneCanSpendVout,
 		SigningInfos:         nil,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+}
+
+// QueryExternalKeyID returns the keyIDs of the current set of external keys
+func QueryExternalKeyID(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
+
+	externalKeyIDs, ok := k.GetExternalKeyIDs(ctx)
+	if !ok {
+		return nil, fmt.Errorf("external keys not found")
+	}
+
+	resp := types.QueryExternalKeyIDResponse{
+		KeyIDs:	externalKeyIDs,
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)

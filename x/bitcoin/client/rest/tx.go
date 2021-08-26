@@ -31,6 +31,7 @@ const (
 	QueryConsolidationAddress = "consolidation-address"
 	QueryMinOutputAmount      = "min-output-amount"
 	QueryNextKeyID            = "next-key-id"
+	QueryExternalKeyID        = "external-key-id"
 	QueryLatestTx             = "latest-tx"
 	QuerySignedTx             = "signed-tx"
 )
@@ -51,6 +52,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerDepositStatus(cliCtx), QueryDepositStatus, clientUtils.PathVarOutpoint)
 	registerQuery(QueryHandlerConsolidationAddress(cliCtx), QueryConsolidationAddress)
 	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarKeyRole)
+	registerQuery(QueryHandlerExternalKeyID(cliCtx), QueryExternalKeyID)
 	registerQuery(QueryHandlerMinOutputAmount(cliCtx), QueryMinOutputAmount)
 	registerQuery(QueryHandlerLatestTx(cliCtx), QueryLatestTx, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerSignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarTxID)

@@ -138,7 +138,7 @@ func (am AppModule) RegisterServices(module.Configurator) {
 
 // LegacyQuerierHandler returns this module's Querier.
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.voter, am.snapshotter, am.nexus)
+	return keeper.NewQuerier(am.keeper, am.voter, am.snapshotter, am.staker, am.nexus)
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

@@ -1,16 +1,16 @@
-## axelard query tss keySharesValidator
+## axelard query evm send-tx
 
-Query key shares information by validator
+Send a transaction that spends tx \[txID\] to chain \[chain\]
 
 ```
-axelard query tss keySharesValidator [validator address] [flags]
+axelard query evm send-tx [chain] [txID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for keySharesValidator
+  -h, --help          help for send-tx
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query tss keySharesValidator [validator address] [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module

@@ -35,6 +35,7 @@
       - [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
       - [deposit-address \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [deposit-status \[txID:voutIdx\]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
+      - [external-key-id](axelard_query_bitcoin_external-key-id.md)	 - Returns the key IDs of the current external keys
       - [latest-tx \[keyRole\]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
       - [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
       - [next-key-id \[keyRole\]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
@@ -57,8 +58,8 @@
       - [deposit-state \[chain\] \[txID\] \[deposit address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-      - [sendTx \[chain\] \[txID\]](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
-      - [signedTx \[chain\] \[txID\]](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
+      - [send-tx \[chain\] \[txID\]](axelard_query_evm_send-tx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+      - [signed-tx \[chain\] \[txID\]](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
@@ -132,11 +133,11 @@
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
-      - [deactivated-operators \[keyID\]](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
+      - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
-      - [keyID \[chain\] \[role\]](axelard_query_tss_keyID.md)	 - Query the keyID using keyChain and keyRole
-      - [keySharesKeyID \[key ID\]](axelard_query_tss_keySharesKeyID.md)	 - Query key shares information by key ID
-      - [keySharesValidator \[validator address\]](axelard_query_tss_keySharesValidator.md)	 - Query key shares information by validator
+      - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
+      - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
+      - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
       - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx \[hash\]](axelard_query_tx.md)	 - Query for a transaction by hash in a committed block
@@ -241,9 +242,9 @@
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
     - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
-      - [deactivateProxy](axelard_tx_snapshot_deactivateProxy.md)	 - Deactivate the proxy account of the sender
-      - [registerProxy \[proxy address\]](axelard_tx_snapshot_registerProxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
-      - [sendTokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_sendTokens.md)	 - Sends the specified amount of tokens to the designated addresses
+      - [deactivate-proxy](axelard_tx_snapshot_deactivate-proxy.md)	 - Deactivate the proxy account of the sender
+      - [register-proxy \[proxy address\]](axelard_tx_snapshot_register-proxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [send-tokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_send-tokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
       - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
       - [delegate \[validator-addr\] \[amount\]](axelard_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator

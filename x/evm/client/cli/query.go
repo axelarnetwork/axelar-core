@@ -282,7 +282,7 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 // GetCmdSignedTx fetches an EVM transaction that has been signed by the validators
 func GetCmdSignedTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "signedTx [chain] [txID]",
+		Use:   "signed-tx [chain] [txID]",
 		Short: "Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -307,7 +307,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 // GetCmdSendTx sends a transaction to an EVM chain
 func GetCmdSendTx(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sendTx [chain] [txID]",
+		Use:   "send-tx [chain] [txID]",
 		Short: "Send a transaction that spends tx [txID] to chain [chain]",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -213,7 +213,7 @@ func QueryHandlerKeySharesByValidator(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerDeactivatedOperator returns a list of deactivated operator addresses by keyID
+// QueryHandlerDeactivatedOperator returns a list of deactivated operator addresses
 func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -222,8 +222,7 @@ func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		vars := mux.Vars(r)
-		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryDeactivated, vars[utils.PathVarKeyID])
+		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryDeactivated)
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {

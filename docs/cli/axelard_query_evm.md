@@ -34,6 +34,6 @@ axelard query evm [flags]
 - [axelard query evm deposit-state](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
 - [axelard query evm gateway-address](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
 - [axelard query evm latest-batched-commands](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-- [axelard query evm sendTx](axelard_query_evm_sendTx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
-- [axelard query evm signedTx](axelard_query_evm_signedTx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
+- [axelard query evm send-tx](axelard_query_evm_send-tx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
+- [axelard query evm signed-tx](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
 - [axelard query evm token-address](axelard_query_evm_token-address.md)	 - Query a token address by symbol

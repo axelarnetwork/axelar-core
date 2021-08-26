@@ -1,16 +1,16 @@
-## axelard query tss deactivated-operators
+## axelard query tss key-shares-by-key-id
 
-Fetch the list of deactivated operator addresses
+Query key shares information by key ID
 
 ```
-axelard query tss deactivated-operators [flags]
+axelard query tss key-shares-by-key-id [key ID] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deactivated-operators
+  -h, --help          help for key-shares-by-key-id
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
