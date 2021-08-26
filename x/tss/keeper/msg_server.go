@@ -364,6 +364,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, fmt.Errorf("sig info does not exist")
 	}
 
+	info.SnapshotCounter
+
 	poll := s.voter.GetPoll(ctx, req.PollKey)
 	if err := poll.Vote(voter, req.Result); err != nil {
 		return nil, err
@@ -379,6 +381,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
 		sdk.NewAttribute(types.AttributeKeySigID, req.PollKey.ID),
 		sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
+		sdk.NewAttribute(types.AttributeKeyParticipants, string(s.GetSignParticipantsAsJSON(ctx, req.PollKey.ID))),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 

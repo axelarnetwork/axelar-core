@@ -185,7 +185,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 
 	var discreteActiveShareCounts []int64
 	for _, v := range activeValidators {
-		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
+		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator(), v.ShareCount)
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 		discreteActiveShareCounts = append(discreteActiveShareCounts, v.ShareCount)
 	}
@@ -194,8 +194,8 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	return discreteActiveShareCounts, excludedValidators, nil
 }
 
-func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
-	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
+func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress, shareCount int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), big.NewInt(shareCount).Bytes())
 }
 
 // MeetsThreshold returns true if the specified signing threshold is met for the given sign ID

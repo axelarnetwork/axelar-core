@@ -153,6 +153,30 @@ func startSign(
 		return err
 	}
 
+	nonParticipantShareCounts := make([]int64, 0, len(excluded))
+	nonParticipants := make([]string, 0, len(excluded))
+	for i, validator := range excluded {
+		nonParticipants[i] = validator.GetSDKValidator().String()
+		nonParticipantShareCounts[i] = validator.ShareCount
+	}
+
+	event := sdk.NewEvent(types.EventTypeSign,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+		sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
+		sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
+		sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
+		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+		sdk.NewAttribute(types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants))),
+		sdk.NewAttribute(types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts))),
+		sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)))
+
+	didStart := false
+	defer func() {
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyDidStart, strconv.FormatBool(didStart)))
+		ctx.EventManager().EmitEvent(event)
+	}()
+
 	if !k.MeetsThreshold(ctx, info.SigID, snap.CorruptionThreshold) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
@@ -170,6 +194,7 @@ func startSign(
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return fmt.Errorf("key requirement for key role %s not found", key.Role.SimpleString())
 	}
+	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)))
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
 	if err := voter.InitializePoll(
@@ -195,26 +220,7 @@ func startSign(
 
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
-	nonParticipantShareCounts := make([]int64, 0, len(excluded))
-	nonParticipants := make([]string, 0, len(excluded))
-	for i, validator := range excluded {
-		nonParticipants[i] = validator.String()
-		nonParticipantShareCounts[i] = validator.ShareCount
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
-			sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
-			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
-			sdk.NewAttribute(types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants))),
-			sdk.NewAttribute(types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts))),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)),
-			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
-		))
+	ctx.EventManager().EmitEvent(event)
 
 	// metrics for sign participation
 	ts := time.Now().Unix()
@@ -233,5 +239,6 @@ func startSign(
 			})
 	}
 
+	didStart = true
 	return nil
 }
