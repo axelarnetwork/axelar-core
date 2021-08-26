@@ -1249,6 +1249,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetSignParticipantsAsJSONFunc: func(ctx sdk.Context, sigID string) []byte {
 // 				panic("mock out the GetSignParticipantsAsJSON method")
 // 			},
+// 			GetSignParticipantsSharesAsJSONFunc: func(ctx sdk.Context, sigID string) []byte {
+// 				panic("mock out the GetSignParticipantsSharesAsJSON method")
+// 			},
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
@@ -1291,7 +1294,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
+// 			SelectSignParticipantsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
@@ -1406,6 +1409,9 @@ type TSSKeeperMock struct {
 	// GetSignParticipantsAsJSONFunc mocks the GetSignParticipantsAsJSON method.
 	GetSignParticipantsAsJSONFunc func(ctx sdk.Context, sigID string) []byte
 
+	// GetSignParticipantsSharesAsJSONFunc mocks the GetSignParticipantsSharesAsJSON method.
+	GetSignParticipantsSharesAsJSONFunc func(ctx sdk.Context, sigID string) []byte
+
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx sdk.Context, keyID string) (int64, bool)
 
@@ -1449,7 +1455,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx sdk.Context, info exported.SignInfo) (int64, error)
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error
+	SelectSignParticipantsFunc func(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
@@ -1690,6 +1696,13 @@ type TSSKeeperMock struct {
 			// SigID is the sigID argument value.
 			SigID string
 		}
+		// GetSignParticipantsSharesAsJSON holds details about calls to the GetSignParticipantsSharesAsJSON method.
+		GetSignParticipantsSharesAsJSON []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
+		}
 		// GetSnapshotCounterForKeyID holds details about calls to the GetSnapshotCounterForKeyID method.
 		GetSnapshotCounterForKeyID []struct {
 			// Ctx is the ctx argument value.
@@ -1921,6 +1934,7 @@ type TSSKeeperMock struct {
 	lockGetSig                              sync.RWMutex
 	lockGetSignParticipants                 sync.RWMutex
 	lockGetSignParticipantsAsJSON           sync.RWMutex
+	lockGetSignParticipantsSharesAsJSON     sync.RWMutex
 	lockGetSnapshotCounterForKeyID          sync.RWMutex
 	lockGetTotalShareCount                  sync.RWMutex
 	lockGetTssSuspendedUntil                sync.RWMutex
@@ -2939,6 +2953,41 @@ func (mock *TSSKeeperMock) GetSignParticipantsAsJSONCalls() []struct {
 	return calls
 }
 
+// GetSignParticipantsSharesAsJSON calls GetSignParticipantsSharesAsJSONFunc.
+func (mock *TSSKeeperMock) GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte {
+	if mock.GetSignParticipantsSharesAsJSONFunc == nil {
+		panic("TSSKeeperMock.GetSignParticipantsSharesAsJSONFunc: method is nil but TSSKeeper.GetSignParticipantsSharesAsJSON was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		SigID string
+	}{
+		Ctx:   ctx,
+		SigID: sigID,
+	}
+	mock.lockGetSignParticipantsSharesAsJSON.Lock()
+	mock.calls.GetSignParticipantsSharesAsJSON = append(mock.calls.GetSignParticipantsSharesAsJSON, callInfo)
+	mock.lockGetSignParticipantsSharesAsJSON.Unlock()
+	return mock.GetSignParticipantsSharesAsJSONFunc(ctx, sigID)
+}
+
+// GetSignParticipantsSharesAsJSONCalls gets all the calls that were made to GetSignParticipantsSharesAsJSON.
+// Check the length with:
+//     len(mockedTSSKeeper.GetSignParticipantsSharesAsJSONCalls())
+func (mock *TSSKeeperMock) GetSignParticipantsSharesAsJSONCalls() []struct {
+	Ctx   sdk.Context
+	SigID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		SigID string
+	}
+	mock.lockGetSignParticipantsSharesAsJSON.RLock()
+	calls = mock.calls.GetSignParticipantsSharesAsJSON
+	mock.lockGetSignParticipantsSharesAsJSON.RUnlock()
+	return calls
+}
+
 // GetSnapshotCounterForKeyID calls GetSnapshotCounterForKeyIDFunc.
 func (mock *TSSKeeperMock) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool) {
 	if mock.GetSnapshotCounterForKeyIDFunc == nil {
@@ -3462,7 +3511,7 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) error {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx sdk.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) ([]int64, []snapshot.Validator, error) {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}

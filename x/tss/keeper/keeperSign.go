@@ -227,9 +227,28 @@ func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
 	return participants
 }
 
+// GetSignParticipants returns the list of participants for specified sig ID
+func (k Keeper) GetSignParticipantsShares(ctx sdk.Context, sigID string) []int64 {
+	prefix := participatePrefix + "sign_" + sigID
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	shares := make([]int64, 0)
+	for ; iter.Valid(); iter.Next() {
+		shares = append(shares, big.NewInt(0).SetBytes(iter.Value()).Int64())
+	}
+
+	return shares
+}
+
 // GetSignParticipantsAsJSON returns the list of participants for specified sig ID in JSON format
 func (k Keeper) GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte {
 	return k.cdc.MustMarshalJSON(k.GetSignParticipants(ctx, sigID))
+}
+
+// GetSignParticipantsAsJSON returns the list of participant shares for specified sig ID in JSON format
+func (k Keeper) GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte {
+	return k.cdc.MustMarshalJSON(k.GetSignParticipantsShares(ctx, sigID))
 }
 
 // DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false

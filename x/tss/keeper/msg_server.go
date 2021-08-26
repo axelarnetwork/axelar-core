@@ -380,6 +380,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		sdk.NewAttribute(types.AttributeKeySigID, req.PollKey.ID),
 		sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
 		sdk.NewAttribute(types.AttributeKeyParticipants, string(s.GetSignParticipantsAsJSON(ctx, req.PollKey.ID))),
+		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(s.GetSignParticipantsSharesAsJSON(ctx, req.PollKey.ID))),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
