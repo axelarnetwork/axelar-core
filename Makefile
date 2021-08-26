@@ -42,7 +42,7 @@ build-binaries: guard-SEMVER
 
 .PHONY: build-binaries-in-docker
 build-binaries-in-docker: guard-SEMVER
-	docker build \
+	DOCKER_BUILDKIT=1 docker build \
 		--ssh default \
 		--build-arg SEMVER=${SEMVER} \
 		-t axelar/core:binaries \
@@ -61,8 +61,8 @@ docker-image:
 
 .PHONY: build-push-docker-image
 build-push-docker-images: guard-SEMVER
-	DOCKER_BUILDKIT=1 docker buildx build \
-		--platform linux/amd64 \
+	@DOCKER_BUILDKIT=1 docker buildx build \
+		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
 		--ssh default \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		-t axelarnet/axelar-core:${SEMVER} .
