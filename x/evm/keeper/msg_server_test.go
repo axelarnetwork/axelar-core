@@ -879,7 +879,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 		server = keeper.NewMsgServerImpl(basek, &evmMock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 			GetOperatorFunc: func(ctx2 sdk.Context, address sdk.AccAddress) sdk.ValAddress {
-				return sdk.ValAddress{}
+				return rand.ValAddr()
 			},
 		})
 	}
