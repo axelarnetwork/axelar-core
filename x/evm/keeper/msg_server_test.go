@@ -394,7 +394,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
 				return nil
 			},
-			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
@@ -564,7 +564,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
-			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
@@ -838,7 +838,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 		v = &evmMock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
-			GetPollFunc: func(ctx2 sdk.Context, key vote.PollKey) vote.Poll {
+			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
