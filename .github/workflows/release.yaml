@@ -131,4 +131,4 @@ jobs:
         env:
           S3_PATH: s3://axelar-releases/axelard/${{ steps.release.outputs.new_tag }}
         run: |
-          make upload-binaries-to-s3
+          aws s3 cp ./bin ${S3_PATH}/ --recursive
