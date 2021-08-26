@@ -242,7 +242,7 @@ func (p Poll) getVoterCount() int64 {
 func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
 	voterCount := p.getVoterCount()
 
-	return p.VotingThreshold.IsMet(majorityShare, p.GetTotalShareCount()) &&
+	return utils.NewThreshold(majorityShare.Int64(), p.GetTotalShareCount().Int64()).GTE(p.VotingThreshold) &&
 		(voterCount == p.GetTotalVoterCount() || voterCount >= p.MinVoterCount)
 }
 
@@ -250,7 +250,7 @@ func (p *Poll) cannotWin(majorityShare sdk.Int) bool {
 	alreadyTallied := p.getTalliedShareCount()
 	missingShares := p.GetTotalShareCount().Sub(alreadyTallied)
 
-	return !p.VotingThreshold.IsMet(majorityShare.Add(missingShares), p.GetTotalShareCount())
+	return utils.NewThreshold(majorityShare.Add(missingShares).Int64(), p.GetTotalShareCount().Int64()).LT(p.VotingThreshold)
 }
 
 func (p Poll) getMajorityVote() TalliedVote {

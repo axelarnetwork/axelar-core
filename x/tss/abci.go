@@ -147,16 +147,20 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	activeShareCount, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
 	}
 
-	if !k.MeetsThreshold(ctx, info.SigID, snap.CorruptionThreshold) {
+	if activeShareCount.LTE(sdk.NewInt(snap.CorruptionThreshold)) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
-		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: threshold [%d], online share count [%d]",
-			snap.CorruptionThreshold, k.GetTotalShareCount(ctx, info.SigID)))
+
+		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: corruption threshold [%d], online share count [%d], total share count [%d]",
+			snap.CorruptionThreshold,
+			activeShareCount.Int64(),
+			snap.TotalShareCount.Int64(),
+		))
 	}
 
 	key, ok := k.GetKey(ctx, info.KeyID)
@@ -183,10 +187,9 @@ func startSign(
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with threshold [%d] (need [%d]), online share count [%d], total share count [%d]",
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], online share count [%d], total share count [%d]",
 		snap.CorruptionThreshold,
-		snap.CorruptionThreshold+1,
-		k.GetTotalShareCount(ctx, info.SigID),
+		activeShareCount.Int64(),
 		snap.TotalShareCount.Int64(),
 	))
 

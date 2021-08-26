@@ -3,7 +3,6 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -142,8 +141,9 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 	return exported.SigStatus(binary.LittleEndian.Uint32(bz))
 }
 
-// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) error {
+// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
+// the active share count if no error
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
@@ -155,10 +155,10 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	for _, validator := range validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
-			return err
+			return sdk.ZeroInt(), err
 		}
 
-		if illegibility = illegibility.FilterIllegibilityForSigning(); illegibility != snapshot.None {
+		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
 				validator.GetSDKValidator().GetOperator().String(),
 				sigID,
@@ -182,28 +182,12 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator())
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
-	ctx.KVStore(k.storeKey).Set([]byte(participateShareCountPrefix+"sign_"+sigID), activeShareCount.BigInt().Bytes())
 
-	return nil
+	return activeShareCount, nil
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) {
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), []byte{})
-}
-
-// MeetsThreshold returns true if the specified signing threshold is met for the given sign ID
-func (k Keeper) MeetsThreshold(ctx sdk.Context, sigID string, threshold int64) bool {
-	return k.GetTotalShareCount(ctx, sigID) > threshold
-}
-
-// GetTotalShareCount returns to total share count for the given key ID
-func (k Keeper) GetTotalShareCount(ctx sdk.Context, sigID string) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(participateShareCountPrefix + "sign_" + sigID))
-	if bz == nil {
-		return -1
-	}
-	return big.NewInt(0).SetBytes(bz).Int64()
-
 }
 
 // GetSignParticipants returns the list of participants for specified sig ID

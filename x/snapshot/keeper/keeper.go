@@ -15,7 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
@@ -160,7 +159,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 			return false
 		}
 
-		if illegibility = illegibility.FilterIllegibilityForNewKey(); illegibility != exported.None {
+		if illegibility = illegibility.FilterIllegibilityForNewKey(); !illegibility.Is(exported.None) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [%s]",
 				validator.GetOperator().String(),
 				counter,
@@ -228,8 +227,16 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		totalShareCount = totalShareCount.AddRaw(participants[i].ShareCount)
 	}
 
-	corruptionThreshold := tssTypes.ComputeCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount)
-	if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount.Int64() {
+	if totalShareCount.LT(sdk.NewInt(keyRequirement.MinTotalShareCount)) {
+		return exported.Snapshot{}, fmt.Errorf("invalid total share count [%d], must be greater than or equal to [%d]",
+			totalShareCount.Int64(),
+			keyRequirement.MinTotalShareCount,
+		)
+	}
+
+	corruptionThreshold := tss.ComputeAbsCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount)
+	if corruptionThreshold < 0 ||
+		corruptionThreshold >= totalShareCount.Int64() {
 		return exported.Snapshot{}, fmt.Errorf("invalid corruption threshold: %d, total share count: %d", corruptionThreshold, totalShareCount.Int64())
 	}
 
