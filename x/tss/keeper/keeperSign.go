@@ -141,7 +141,8 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 	return exported.SigStatus(binary.LittleEndian.Uint32(bz))
 }
 
-// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID
+// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
+// the active share count if no error
 func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, error) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator

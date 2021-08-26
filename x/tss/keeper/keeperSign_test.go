@@ -47,7 +47,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		TotalShareCount: sdk.NewInt(200),
 		Counter:         rand2.I64Between(0, 100000),
 	}
-	snap.CorruptionThreshold = exported.ComputeCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
+	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		if validator.GetOperator().Equals(val1) {
 			return snapshot.Jailed, nil

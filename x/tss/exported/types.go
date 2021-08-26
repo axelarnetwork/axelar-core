@@ -138,7 +138,7 @@ func (m KeyRequirement) Validate() error {
 	}
 
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {
-		corruptionThreshold := ComputeCorruptionThreshold(m.SafetyThreshold, sdk.NewInt(totalShareCount))
+		corruptionThreshold := ComputeAbsCorruptionThreshold(m.SafetyThreshold, sdk.NewInt(totalShareCount))
 		if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount {
 			return fmt.Errorf("invalid safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
 				m.SafetyThreshold.SimpleString(),
@@ -171,8 +171,8 @@ func (m KeyRequirement) Validate() error {
 	return nil
 }
 
-// ComputeCorruptionThreshold returns corruption threshold to be used by tss.
+// ComputeAbsCorruptionThreshold returns absolute corruption threshold to be used by tss.
 // (threshold + 1) shares are required to sign
-func ComputeCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
+func ComputeAbsCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
 	return totalShareCount.MulRaw(safetyThreshold.Numerator).QuoRaw(safetyThreshold.Denominator).Int64()
 }
