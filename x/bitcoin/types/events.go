@@ -23,6 +23,7 @@ const (
 	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyDestinationChain   = "destinationChain"
+	AttributeKeyValue              = "value"
 )
 
 // Event attribute values
@@ -37,4 +38,5 @@ const (
 	AttributeValueConfirm        = "confirm"
 	AttributeValueReject         = "reject"
 	AttributeValueFailed         = "failed"
+	AttributeValueVoted          = "voted"
 )

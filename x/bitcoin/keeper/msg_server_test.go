@@ -6,6 +6,7 @@ import (
 	cryptoRand "crypto/rand"
 	"fmt"
 	mathRand "math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -300,6 +301,27 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		assert.Equal(t, depositAddressInfo.KeyID, btcKeeper.SetConfirmedOutpointInfoCalls()[0].KeyID)
 		assert.Equal(t, info.Address, nexusKeeper.EnqueueForTransferCalls()[0].Sender.Address)
 		assert.Equal(t, int64(info.Amount), nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount.Int64())
+
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
+			isValidType := event.GetType() == types.EventTypeOutpointConfirmation
+			if !isValidType {
+				return false
+			}
+			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
+					string(attribute.GetValue()) == types.AttributeValueVoted
+			})) == 1
+			if !isVoteAction {
+				return false
+			}
+			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				if string(attribute.GetKey()) != types.AttributeKeyValue {
+					return false
+				}
+				return string(attribute.GetValue()) == strconv.FormatBool(msg.Confirmed)
+			})) == 1
+			return hasCorrectValue
+		}), 1)
 	}).Repeat(repeats))
 
 	t.Run("happy path confirm deposit to consolidation address", testutils.Func(func(t *testing.T) {
@@ -432,6 +454,17 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		_, err := server.VoteConfirmOutpoint(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, btcKeeper.DeletePendingOutPointInfoCalls(), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
+			isValidType := event.GetType() == types.EventTypeOutpointConfirmation
+			if !isValidType {
+				return false
+			}
+			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
+				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
+					string(attribute.GetValue()) == types.AttributeValueVoted
+			})) == 1
+			return isVoteAction
+		}), 0)
 		assert.Len(t, btcKeeper.SetConfirmedOutpointInfoCalls(), 0)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeats))

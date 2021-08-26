@@ -27,6 +27,7 @@ func (f Func) Repeat(n int) Func {
 
 // Events wraps sdk.Events
 type Events []abci.Event
+type Attributes []abci.EventAttribute
 
 // Filter returns a collection of events filtered by the predicate
 func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
@@ -34,6 +35,17 @@ func (fe Events) Filter(predicate func(events abci.Event) bool) Events {
 	for _, event := range fe {
 		if predicate(event) {
 			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}
+
+// Filter returns a collection of attributes filtered by the predicate
+func (fe Attributes) Filter(predicate func(attributes abci.EventAttribute) bool) Attributes {
+	var filtered Attributes
+	for _, attribute := range fe {
+		if predicate(attribute) {
+			filtered = append(filtered, attribute)
 		}
 	}
 	return filtered

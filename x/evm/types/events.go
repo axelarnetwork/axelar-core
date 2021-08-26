@@ -27,6 +27,7 @@ const (
 	AttributeKeyNativeAsset       = "nativeAsset"
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
+	AttributeKeyValue             = "value"
 )
 
 // Event attribute values
@@ -35,4 +36,5 @@ const (
 	AttributeValueStart   = "start"
 	AttributeValueReject  = "reject"
 	AttributeValueConfirm = "confirm"
+	AttributeValueVote    = "vote"
 )
