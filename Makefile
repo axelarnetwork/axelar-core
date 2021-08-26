@@ -62,7 +62,7 @@ docker-image:
 .PHONY: build-push-docker-image
 build-push-docker-images: guard-SEMVER
 	DOCKER_BUILDKIT=1 docker buildx build \
-		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
+		--platform linux/amd64 \
 		--ssh default \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		-t axelarnet/axelar-core:${SEMVER} .
