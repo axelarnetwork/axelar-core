@@ -173,6 +173,14 @@ func startSign(
 
 	didStart := false
 	defer func() {
+		k.Logger(ctx).Info(fmt.Sprintf("Attempted to start signing sigID %s", info.SigID),
+			types.AttributeKeyDidStart, strconv.FormatBool(didStart),
+			types.AttributeKeySigID, info.SigID,
+			types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID)),
+			types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts)),
+			types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants)),
+			types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)))
+
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyDidStart, strconv.FormatBool(didStart)))
 		ctx.EventManager().EmitEvent(event)
 	}()
