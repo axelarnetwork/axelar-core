@@ -147,7 +147,7 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participantShareCounts, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
@@ -166,7 +166,7 @@ func startSign(
 		sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
 		sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
 		sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
-		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID))),
 		sdk.NewAttribute(types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants))),
 		sdk.NewAttribute(types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts))),
 		sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)))
@@ -177,7 +177,7 @@ func startSign(
 			types.AttributeKeyDidStart, strconv.FormatBool(didStart),
 			types.AttributeKeySigID, info.SigID,
 			types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID)),
-			types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts)),
+			types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID)),
 			types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants)),
 			types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)))
 
