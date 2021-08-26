@@ -207,7 +207,16 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		voteData = &types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
+		// TODO pass KeygenVoteData directly to poll.Vote
+		// voteData = &types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo} panics with
+		// "panic: no concrete type registered for type URL /tss.v1beta1.KeygenVoteData against interface *codec.ProtoMarshaler"
+		voteDataStr := types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
+		bz, err := json.Marshal(voteDataStr)
+		if err != nil {
+			return nil, fmt.Errorf("could not marshal vote data")
+		}
+
+		voteData = &gogoprototypes.BytesValue{Value: bz}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
