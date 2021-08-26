@@ -6,7 +6,7 @@ COMMIT := $(shell git log -1 --format='%H')
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetowrk/axelar-core.git
-
+PUSH_DOCKER_IMAGE=true
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.ServerName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
@@ -36,6 +36,19 @@ lint:
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
+.PHONY: build-binaries
+build-binaries: guard-SEMVER
+	./scripts/build-binaries.sh ${SEMVER} '$(ldflags)'
+
+.PHONY: build-binaries-in-docker
+build-binaries-in-docker: guard-SEMVER
+	docker build \
+		--ssh default \
+		--build-arg SEMVER=${SEMVER} \
+		-t axelar/core:binaries \
+		-f Dockerfile.binaries .
+	./scripts/copy-binaries-from-image.sh
+
 # Build the project with debug flags
 .PHONY: debug
 debug: go.sum
@@ -45,6 +58,14 @@ debug: go.sum
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
+
+.PHONY: build-push-docker-image
+build-push-docker-images: guard-SEMVER
+	DOCKER_BUILDKIT=1 docker buildx build \
+		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
+		--ssh default \
+		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+		-t axelarnet/axelar-core:${SEMVER} .
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
@@ -169,3 +190,6 @@ proto-update-deps:
 	@./scripts/proto-copy-cosmos-sdk.sh
 
 .PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps
+
+guard-%:
+	@ if [ -z '${${*}}' ]; then echo 'Environment variable $* not set' && exit 1; fi

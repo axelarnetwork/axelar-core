@@ -155,16 +155,16 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	var excludedValidators []snapshot.Validator
 
 	for _, validator := range validators {
-		validatorInfo, err := snapshotter.GetValidatorInfo(ctx, validator.GetSDKValidator())
+		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
 			return nil, err
 		}
 
-		if illegibilities := validatorInfo.GetIllegibilitiesForSigning(); len(illegibilities) > 0 {
+		if illegibility = illegibility.FilterIllegibilityForSigning(); illegibility != snapshot.None {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
 				validator.GetSDKValidator().GetOperator().String(),
 				sigID,
-				snapshot.IllegibilitiesToString(illegibilities),
+				illegibility.String(),
 			))
 			excludedValidators = append(excludedValidators, validator)
 			continue

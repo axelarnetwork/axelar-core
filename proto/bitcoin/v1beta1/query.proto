@@ -38,3 +38,7 @@ message QueryTxResponse {
   uint32 anyone_can_spend_vout = 5;
   repeated SigningInfo signing_infos = 6;
 }
+
+message QueryExternalKeyIDResponse {
+  repeated string key_ids = 1 [ (gogoproto.customname) = "KeyIDs" ];
+}

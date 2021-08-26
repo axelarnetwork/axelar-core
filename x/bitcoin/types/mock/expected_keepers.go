@@ -1572,8 +1572,8 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			GetValidatorInfoFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
-// 				panic("mock out the GetValidatorInfo method")
+// 			GetValidatorIllegibilityFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+// 				panic("mock out the GetValidatorIllegibility method")
 // 			},
 // 			TakeSnapshotFunc: func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
@@ -1600,8 +1600,8 @@ type SnapshotterMock struct {
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool)
 
-	// GetValidatorInfoFunc mocks the GetValidatorInfo method.
-	GetValidatorInfoFunc func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error)
+	// GetValidatorIllegibilityFunc mocks the GetValidatorIllegibility method.
+	GetValidatorIllegibilityFunc func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
 	TakeSnapshotFunc func(ctx sdk.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
@@ -1639,8 +1639,8 @@ type SnapshotterMock struct {
 			// SeqNo is the seqNo argument value.
 			SeqNo int64
 		}
-		// GetValidatorInfo holds details about calls to the GetValidatorInfo method.
-		GetValidatorInfo []struct {
+		// GetValidatorIllegibility holds details about calls to the GetValidatorIllegibility method.
+		GetValidatorIllegibility []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Validator is the validator argument value.
@@ -1654,13 +1654,13 @@ type SnapshotterMock struct {
 			KeyRequirement tss.KeyRequirement
 		}
 	}
-	lockGetLatestCounter  sync.RWMutex
-	lockGetLatestSnapshot sync.RWMutex
-	lockGetOperator       sync.RWMutex
-	lockGetProxy          sync.RWMutex
-	lockGetSnapshot       sync.RWMutex
-	lockGetValidatorInfo  sync.RWMutex
-	lockTakeSnapshot      sync.RWMutex
+	lockGetLatestCounter         sync.RWMutex
+	lockGetLatestSnapshot        sync.RWMutex
+	lockGetOperator              sync.RWMutex
+	lockGetProxy                 sync.RWMutex
+	lockGetSnapshot              sync.RWMutex
+	lockGetValidatorIllegibility sync.RWMutex
+	lockTakeSnapshot             sync.RWMutex
 }
 
 // GetLatestCounter calls GetLatestCounterFunc.
@@ -1830,10 +1830,10 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 	return calls
 }
 
-// GetValidatorInfo calls GetValidatorInfoFunc.
-func (mock *SnapshotterMock) GetValidatorInfo(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorInfo, error) {
-	if mock.GetValidatorInfoFunc == nil {
-		panic("SnapshotterMock.GetValidatorInfoFunc: method is nil but Snapshotter.GetValidatorInfo was just called")
+// GetValidatorIllegibility calls GetValidatorIllegibilityFunc.
+func (mock *SnapshotterMock) GetValidatorIllegibility(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+	if mock.GetValidatorIllegibilityFunc == nil {
+		panic("SnapshotterMock.GetValidatorIllegibilityFunc: method is nil but Snapshotter.GetValidatorIllegibility was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
@@ -1842,16 +1842,16 @@ func (mock *SnapshotterMock) GetValidatorInfo(ctx sdk.Context, validator snapsho
 		Ctx:       ctx,
 		Validator: validator,
 	}
-	mock.lockGetValidatorInfo.Lock()
-	mock.calls.GetValidatorInfo = append(mock.calls.GetValidatorInfo, callInfo)
-	mock.lockGetValidatorInfo.Unlock()
-	return mock.GetValidatorInfoFunc(ctx, validator)
+	mock.lockGetValidatorIllegibility.Lock()
+	mock.calls.GetValidatorIllegibility = append(mock.calls.GetValidatorIllegibility, callInfo)
+	mock.lockGetValidatorIllegibility.Unlock()
+	return mock.GetValidatorIllegibilityFunc(ctx, validator)
 }
 
-// GetValidatorInfoCalls gets all the calls that were made to GetValidatorInfo.
+// GetValidatorIllegibilityCalls gets all the calls that were made to GetValidatorIllegibility.
 // Check the length with:
-//     len(mockedSnapshotter.GetValidatorInfoCalls())
-func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
+//     len(mockedSnapshotter.GetValidatorIllegibilityCalls())
+func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
 	Ctx       sdk.Context
 	Validator snapshot.SDKValidator
 } {
@@ -1859,9 +1859,9 @@ func (mock *SnapshotterMock) GetValidatorInfoCalls() []struct {
 		Ctx       sdk.Context
 		Validator snapshot.SDKValidator
 	}
-	mock.lockGetValidatorInfo.RLock()
-	calls = mock.calls.GetValidatorInfo
-	mock.lockGetValidatorInfo.RUnlock()
+	mock.lockGetValidatorIllegibility.RLock()
+	calls = mock.calls.GetValidatorIllegibility
+	mock.lockGetValidatorIllegibility.RUnlock()
 	return calls
 }
 

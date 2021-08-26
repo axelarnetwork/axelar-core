@@ -57,6 +57,7 @@ type TofndSignClient interface {
 type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
 	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool)
+	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator types.ValidatorI) (stop bool))
 }
 
 // TSSKeeper provides keygen and signing functionality

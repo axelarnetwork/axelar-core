@@ -58,7 +58,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerKeyID(cliCtx), QueryKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerKeySharesByValidator(cliCtx), QueryKeySharesByValidator, clientUtils.PathVarCosmosAddress)
-	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated, clientUtils.PathVarKeyID)
+	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen

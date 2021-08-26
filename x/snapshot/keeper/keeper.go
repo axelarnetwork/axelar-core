@@ -153,18 +153,18 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 			return false
 		}
 
-		validatorInfo, err := k.GetValidatorInfo(ctx, &v)
+		illegibility, err := k.GetValidatorIllegibility(ctx, &v)
 		if err != nil {
 			k.Logger(ctx).Error(err.Error())
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
 		}
 
-		if illegibilities := validatorInfo.GetIllegibilitiesForNewKey(); len(illegibilities) > 0 {
+		if illegibility = illegibility.FilterIllegibilityForNewKey(); illegibility != exported.None {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [%s]",
 				validator.GetOperator().String(),
 				counter,
-				exported.IllegibilitiesToString(illegibilities),
+				illegibility.String(),
 			))
 			nonParticipants = append(nonParticipants, exported.NewValidator(&v, 0))
 			return false
@@ -370,24 +370,41 @@ func (k Keeper) getProxyCount(ctx sdk.Context) int {
 	return int(binary.LittleEndian.Uint64(bz))
 }
 
-// GetValidatorInfo retrieves the validator's tss information
-func (k Keeper) GetValidatorInfo(ctx sdk.Context, validator exported.SDKValidator) (exported.ValidatorInfo, error) {
+// GetValidatorIllegibility returns the illegibility of the given validator
+func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDKValidator) (exported.ValidatorIllegibility, error) {
 	consAddr, err := validator.GetConsAddr()
 	if err != nil {
-		return exported.ValidatorInfo{}, err
+		return exported.None, err
 	}
 
 	signedBlocksWindow := k.slasher.SignedBlocksWindow(ctx)
 	signingInfo, signingInfoFound := k.slasher.GetValidatorSigningInfo(ctx, consAddr)
 	_, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
 
-	return exported.ValidatorInfo{
-		Tombstoned:          signingInfoFound && signingInfo.GetTombstoned(),
-		Jailed:              validator.IsJailed(),
-		MissedTooManyBlocks: utils.Threshold{Numerator: signingInfo.MissedBlocksCounter, Denominator: signedBlocksWindow}.GTE(k.tss.GetMaxMissedBlocksPerWindow(ctx)),
-		HasProxyRegistered:  hasProxyRegistered,
-		TssSuspended:        k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight(),
-	}, nil
+	illegibility := exported.None
+
+	if signingInfoFound && signingInfo.GetTombstoned() {
+		illegibility |= exported.Tombstoned
+	}
+
+	if validator.IsJailed() {
+		illegibility |= exported.Jailed
+	}
+
+	missedBlocks := utils.Threshold{Numerator: signingInfo.MissedBlocksCounter, Denominator: signedBlocksWindow}
+	if missedBlocks.GTE(k.tss.GetMaxMissedBlocksPerWindow(ctx)) {
+		illegibility |= exported.MissedTooManyBlocks
+	}
+
+	if !hasProxyRegistered {
+		illegibility |= exported.NoProxyRegistered
+	}
+
+	if k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight() {
+		illegibility |= exported.TssSuspended
+	}
+
+	return illegibility, nil
 }
 
 // IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
