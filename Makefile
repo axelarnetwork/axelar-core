@@ -49,6 +49,10 @@ build-binaries-in-docker: guard-SEMVER
 		-f Dockerfile.binaries .
 	./scripts/copy-binaries-from-image.sh
 
+.PHONY: upload-binaries-to-s3
+upload-binaries-to-s3: guard-S3_PATH
+	aws s3 cp ./bin ${S3_PATH}/ --recursive
+
 # Build the project with debug flags
 .PHONY: debug
 debug: go.sum
