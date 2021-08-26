@@ -420,7 +420,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 			},
 			GetOperatorFunc: func(ctx2 sdk.Context, address sdk.AccAddress) sdk.ValAddress {
-				return sdk.ValAddress{}
+				return rand.ValAddr()
 			},
 		}
 
