@@ -20,25 +20,24 @@ import (
 )
 
 const (
-	rotationPrefix              = "rotationCount_"
-	keygenStartHeight           = "blockHeight_"
-	pkPrefix                    = "pk_"
-	recoveryPrefix              = "recovery_"
-	thresholdPrefix             = "threshold_"
-	snapshotForKeyIDPrefix      = "sfkid_"
-	sigPrefix                   = "sig_"
-	infoForSigPrefix            = "info_for_sig_"
-	participatePrefix           = "part_"
-	participateShareCountPrefix = "part_share_count_"
-	keyRequirementPrefix        = "key_requirement_"
-	keyRolePrefix               = "key_role_"
-	keyTssSuspendedUntil        = "key_tss_suspended_until_"
-	keyRotatedAtPrefix          = "key_rotated_at_"
-	availablePrefix             = "available_"
-	linkedSeqNumPrefix          = "linked_seq_number_"
-	scheduledKeygenPrefix       = "scheduled_keygen_"
-	scheduledSignPrefix         = "scheduled_sign_"
-	sigStatusPrefix             = "sig_status_"
+	rotationPrefix         = "rotationCount_"
+	keygenStartHeight      = "blockHeight_"
+	pkPrefix               = "pk_"
+	recoveryPrefix         = "recovery_"
+	thresholdPrefix        = "threshold_"
+	snapshotForKeyIDPrefix = "sfkid_"
+	sigPrefix              = "sig_"
+	infoForSigPrefix       = "info_for_sig_"
+	participatePrefix      = "part_"
+	keyRequirementPrefix   = "key_requirement_"
+	keyRolePrefix          = "key_role_"
+	keyTssSuspendedUntil   = "key_tss_suspended_until_"
+	keyRotatedAtPrefix     = "key_rotated_at_"
+	availablePrefix        = "available_"
+	linkedSeqNumPrefix     = "linked_seq_number_"
+	scheduledKeygenPrefix  = "scheduled_keygen_"
+	scheduledSignPrefix    = "scheduled_sign_"
+	sigStatusPrefix        = "sig_status_"
 )
 
 // Keeper allows access to the broadcast state
@@ -76,20 +75,34 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 		}
 	}
 
+	ellegibleShareCount := sdk.ZeroInt()
 	for _, validator := range snap.Validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
 			return err
 		}
 
-		if illegibility = illegibility.FilterIllegibilityForNewKey(); illegibility != snapshot.None {
-			return fmt.Errorf("validator %s in snapshot %d is not eligible for handling key %s due to [%s]",
+		if illegibility = illegibility.FilterIllegibilityForNewKey(); !illegibility.Is(snapshot.None) {
+			k.Logger(ctx).Debug(fmt.Sprintf("validator %s in snapshot %d is not eligible for handling key %s due to [%s]",
 				validator.GetSDKValidator().GetOperator().String(),
 				counter,
 				keyID,
 				illegibility.String(),
-			)
+			))
+
+			continue
 		}
+
+		ellegibleShareCount = ellegibleShareCount.AddRaw(validator.ShareCount)
+	}
+
+	// ensure that ellegibleShareCount >= snap.CorruptionThreshold + 1
+	if ellegibleShareCount.LTE(sdk.NewInt(snap.CorruptionThreshold)) {
+		return fmt.Errorf("key %s cannot be assigned due to ellegible share count %d being less than or equal to corruption threshold %d",
+			keyID,
+			ellegibleShareCount.Int64(),
+			snap.CorruptionThreshold,
+		)
 	}
 
 	return nil

@@ -39,7 +39,8 @@ func DefaultParams() Params {
 				MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
 				SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
 				KeyShareDistributionPolicy: exported.WeightedByStake,
-				MaxTotalShareCount:         75,
+				MaxTotalShareCount:         50,
+				MinTotalShareCount:         4,
 				KeygenVotingThreshold:      utils.Threshold{Numerator: 5, Denominator: 6},
 				SignVotingThreshold:        utils.Threshold{Numerator: 2, Denominator: 3},
 				KeygenTimeout:              250,
@@ -51,6 +52,7 @@ func DefaultParams() Params {
 				SafetyThreshold:            utils.Threshold{Numerator: 11, Denominator: 20},
 				KeyShareDistributionPolicy: exported.OnePerValidator,
 				MaxTotalShareCount:         20,
+				MinTotalShareCount:         4,
 				KeygenVotingThreshold:      utils.Threshold{Numerator: 15, Denominator: 20},
 				SignVotingThreshold:        utils.Threshold{Numerator: 11, Denominator: 20},
 				KeygenTimeout:              150,
@@ -59,7 +61,7 @@ func DefaultParams() Params {
 		},
 		SuspendDurationInBlocks:          2000,
 		AckWindowInBlocks:                4,
-		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 2, Denominator: 100},
+		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 7,
 	}
 }

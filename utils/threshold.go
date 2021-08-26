@@ -6,6 +6,22 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// ZeroThreshold is a threshold that equals to 0
+var ZeroThreshold Threshold = NewThreshold(0, 1)
+
+// OneThreshold is a threshold that equals to 1
+var OneThreshold Threshold = NewThreshold(1, 1)
+
+// NewThreshold is the constructor for Threshold
+func NewThreshold(numerator, denominator int64) Threshold {
+	return Threshold{Numerator: numerator, Denominator: denominator}
+}
+
+// SimpleString returns a simple string representation of the threshold
+func (m Threshold) SimpleString() string {
+	return fmt.Sprintf("%d/%d", m.Numerator, m.Denominator)
+}
+
 // IsMet returns true if share > threshold * total
 func (m Threshold) IsMet(share sdk.Int, total sdk.Int) bool {
 	return share.MulRaw(m.Denominator).GT(total.MulRaw(m.Numerator))

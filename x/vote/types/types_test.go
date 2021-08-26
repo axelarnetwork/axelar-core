@@ -129,6 +129,7 @@ func TestPoll_Vote(t *testing.T) {
 
 	setup := func(metadata exported.PollMetadata, currBlockHeight int64) *types.Poll {
 		shareCounts = randomEvenShareCounts()
+
 		totalShareCount = sdk.ZeroInt()
 		for _, share := range shareCounts {
 			totalShareCount = totalShareCount.AddRaw(share)
@@ -362,7 +363,7 @@ func randomEvenShareCounts() map[string]int64 {
 	total := sdk.ZeroInt()
 	for i := 0; i < int(rand.I64Between(1, 20)); i++ {
 		addr := sdk.ValAddress(rand.Bytes(20))
-		share := rand.PosI64()
+		share := rand.I64Between(1, 100)
 		shareCounts[addr.String()] = share
 		total = total.AddRaw(share)
 	}

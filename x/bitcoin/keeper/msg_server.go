@@ -253,9 +253,17 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &gogoprototypes.BoolValue{Value: req.Confirmed}); err != nil {
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeOutpointConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVoted),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
 
 	if poll.Is(vote.Pending) {
 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
