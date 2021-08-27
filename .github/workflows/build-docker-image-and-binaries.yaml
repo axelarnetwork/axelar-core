@@ -48,11 +48,11 @@ jobs:
         run: |
           make build-push-docker-images
         env:
-          SEMVER: $${{ github.event.inputs.tag }}
+          SEMVER: ${{ github.event.inputs.tag }}
 
       - name: Build Binaries for Linux/MacOS
         env:
-          SEMVER: $${{ github.event.inputs.tag }}
+          SEMVER: ${{ github.event.inputs.tag }}
         run: |
           make build-binaries-in-docker
 
@@ -61,7 +61,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./bin/*
-          tag: $${{ github.event.inputs.tag }}
+          tag: ${{ github.event.inputs.tag }}
           overwrite: true
           file_glob: true
 
