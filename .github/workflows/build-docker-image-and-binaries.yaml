@@ -48,11 +48,11 @@ jobs:
         run: |
           make build-push-docker-images
         env:
-          SEMVER: ${{ steps.release.outputs.new_tag }}
+          SEMVER: $${{ github.event.inputs.tag }}
 
       - name: Build Binaries for Linux/MacOS
         env:
-          SEMVER: ${{ steps.release.outputs.new_tag }}
+          SEMVER: $${{ github.event.inputs.tag }}
         run: |
           make build-binaries-in-docker
 
@@ -61,7 +61,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./bin/*
-          tag: ${{ steps.release.outputs.new_tag }}
+          tag: $${{ github.event.inputs.tag }}
           overwrite: true
           file_glob: true
 
@@ -74,6 +74,6 @@ jobs:
 
       - name: Upload binaries to S3
         env:
-          S3_PATH: s3://axelar-releases/axelard/${{ steps.release.outputs.new_tag }}
+          S3_PATH: s3://axelar-releases/axelard/${{ github.event.inputs.tag }}
         run: |
           aws s3 cp ./bin ${S3_PATH}/ --recursive
