@@ -24,4 +24,5 @@ IBC fungible token transfer query subcommands
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query ibc-transfer denom-trace](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
 - [axelard query ibc-transfer denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
+- [axelard query ibc-transfer escrow-address](axelard_query_ibc-transfer_escrow-address.md)	 - Get the escrow address for a channel
 - [axelard query ibc-transfer params](axelard_query_ibc-transfer_params.md)	 - Query the current ibc-transfer parameters
