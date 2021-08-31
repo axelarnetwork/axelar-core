@@ -36,19 +36,22 @@ func (decorator HandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 	return next(newCtx, tx, simulate)
 }
 
+// LogMsgDecorator logs all messages in blocks
 type LogMsgDecorator struct {
 	cdc codec.Marshaler
 }
 
+// NewLogMsgDecorator is the constructor for LogMsgDecorator
 func NewLogMsgDecorator(cdc codec.Marshaler) LogMsgDecorator {
 	return LogMsgDecorator{cdc: cdc}
 }
 
+// AnteHandle logs all messages in blocks
 func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
 	for _, msg := range msgs {
-		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %+v",
+		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %s",
 			msg.Type(),
 			ctx.BlockHeight(),
 			string(d.cdc.MustMarshalJSON(msg)),
