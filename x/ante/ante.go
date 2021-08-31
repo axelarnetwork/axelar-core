@@ -3,6 +3,7 @@ package ante
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -35,6 +36,28 @@ func (decorator HandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 	return next(newCtx, tx, simulate)
 }
 
+type LogMsgDecorator struct {
+	cdc codec.Marshaler
+}
+
+func NewLogMsgDecorator(cdc codec.Marshaler) LogMsgDecorator {
+	return LogMsgDecorator{cdc: cdc}
+}
+
+func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	msgs := tx.GetMsgs()
+
+	for _, msg := range msgs {
+		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %+v",
+			msg.Type(),
+			ctx.BlockHeight(),
+			string(d.cdc.MustMarshalJSON(msg)),
+		))
+	}
+
+	return next(ctx, tx, simulate)
+}
+
 // ValidateValidatorDeregisteredTssDecorator checks if the unbonding validator holds any tss share of active crypto keys
 type ValidateValidatorDeregisteredTssDecorator struct {
 	tss         types.Tss
@@ -60,7 +83,7 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 		case *stakingtypes.MsgUndelegate:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return sdk.Context{}, err
+				return ctx, err
 			}
 			chains := d.nexus.GetChains(ctx)
 
