@@ -21,23 +21,6 @@ addPeers() {
   mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
-isGenesisInitialized() {
-  if [ -f "$D_HOME_DIR/config/genesis.json" ]; then
-    return 0
-  fi
-
-  return 1
-}
-
-initGenesis() {
-  if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
-    echo "Running script at $INIT_SCRIPT to create the genesis file"
-    source "$INIT_SCRIPT" "$(hostname)" "$AXELARD_CHAIN_ID"
-  else
-    axelard init "$(hostname)" --chain-id "$AXELARD_CHAIN_ID"
-  fi
-}
-
 cont(){
   if [ "$1" = true ]; then
     "--continue"
@@ -69,14 +52,10 @@ startNodeProc() {
 
 D_HOME_DIR="$HOME_DIR/.axelar"
 
-if ! isGenesisInitialized; then
-  initGenesis
-fi
-
-if ! isGenesisInitialized; then
-  echo "Missing genesis file"
-  exit 1
-fi
+  if [ -n "$PRESTART_SCRIPT" ] && [ -f "$PRESTART_SCRIPT" ]; then
+    echo "Running pre-start script at $PRESTART_SCRIPT"
+    source "$PRESTART_SCRIPT"
+  fi
 
 if [ -n "$CONFIG_PATH" ] && [ -d "$CONFIG_PATH" ]; then
   if [ -f "$CONFIG_PATH/config.toml" ]; then
