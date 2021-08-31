@@ -52,8 +52,6 @@ initialize() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
     echo "Running script at $INIT_SCRIPT to initialize container"
     source "$INIT_SCRIPT" "$(hostname)" "$AXELARD_CHAIN_ID"
-  else
-    axelard init "$(hostname)" --chain-id "$AXELARD_CHAIN_ID"
   fi
 }
 
