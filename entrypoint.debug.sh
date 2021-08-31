@@ -21,7 +21,26 @@ addPeers() {
   mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
-isGenesisInitialized() {
+isInitialized() {
+  if [ "$1" == "startValdProc" ]; then
+    if [ -z "$BROADCASTER_ACCOUNT" ] || [ -z "$VALIDATOR_ADDR" ]; then
+      return 1
+    fi
+
+    ACCOUNTS=$(axelard keys list -n)
+    for ACCOUNT in $ACCOUNTS; do
+      if [ "$ACCOUNT" == "$BROADCASTER_ACCOUNT" ]; then
+        HAS_BROADCASTER=true
+      fi
+    done
+
+    if [ -z "$HAS_BROADCASTER" ]; then
+      return 1
+    fi
+
+    return 0
+  fi
+
   if [ -f "$D_HOME_DIR/config/genesis.json" ]; then
     return 0
   fi
@@ -29,9 +48,9 @@ isGenesisInitialized() {
   return 1
 }
 
-initGenesis() {
+initialize() {
   if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
-    echo "Running script at $INIT_SCRIPT to create the genesis file"
+    echo "Running script at $INIT_SCRIPT to initialize container"
     source "$INIT_SCRIPT" "$(hostname)" "$AXELARD_CHAIN_ID"
   else
     axelard init "$(hostname)" --chain-id "$AXELARD_CHAIN_ID"
@@ -69,12 +88,12 @@ startNodeProc() {
 
 D_HOME_DIR="$HOME_DIR/.axelar"
 
-if ! isGenesisInitialized; then
-  initGenesis
+if ! $(isInitialized $1); then
+  initialize
 fi
 
-if ! isGenesisInitialized; then
-  echo "Missing genesis file"
+if ! $(isInitialized $1); then
+  echo "Container not properly initialized"
   exit 1
 fi
 
