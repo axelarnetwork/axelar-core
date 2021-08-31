@@ -38,7 +38,9 @@ ENV AXELARD_CHAIN_ID axelar-testnet-adelaide
 ENV PEERS_FILE ""
 # Path of an existing configuration file to use (optional)
 ENV CONFIG_PATH ""
-# A initialization script to create the genesis file (optional)
-ENV INIT_SCRIPT ""
+# A script that runs before launching the container's process (optional)
+ENV PRESTART_SCRIPT ""
+# The Axelar node's moniker
+ENV NODE_MONIKER ""
 
 ENTRYPOINT ["/entrypoint.sh"]
