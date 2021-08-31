@@ -497,6 +497,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	anteHandler := sdk.ChainAnteDecorators(
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
+		ante.NewLogMsgDecorator(appCodec),
 		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
 	)
 	app.SetAnteHandler(anteHandler)
