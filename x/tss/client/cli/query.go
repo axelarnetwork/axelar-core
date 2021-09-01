@@ -53,19 +53,17 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 			}
 
 			sigID := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QuerySigStatus, sigID), nil)
+			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QuerySignature, sigID))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
 
-			var sigResponse types.QuerySigResponse
-			err = sigResponse.Unmarshal(res)
-			if err != nil {
+			var res types.QuerySignatureResponse
+			if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
 
-			hexSig := types.NewHexSignatureFromQuerySigResponse(&sigResponse)
-			return cliCtx.PrintObjectLegacy(hexSig)
+			return cliCtx.PrintProto(&res)
 		},
 	}
 
@@ -86,18 +84,17 @@ func GetCmdGetKey(queryRoute string) *cobra.Command {
 			}
 
 			keyID := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryKeyStatus, keyID), nil)
+			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryKey, keyID))
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key")
 			}
 
-			var keyResponse types.QueryKeyResponse
-			err = keyResponse.Unmarshal(res)
-			if err != nil {
+			var res types.QueryKeyResponse
+			if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key")
 			}
 
-			return cliCtx.PrintObjectLegacy(keyResponse)
+			return cliCtx.PrintProto(&res)
 		},
 	}
 
