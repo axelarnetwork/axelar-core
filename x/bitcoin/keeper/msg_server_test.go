@@ -689,6 +689,9 @@ func TestCreateMasterTx(t *testing.T) {
 			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
 				return nil
 			},
+			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+				return nil
+			},
 		}
 		snapshotter := &mock.SnapshotterMock{}
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
@@ -1019,6 +1022,9 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 				return tss.Key{}, false
 			},
 			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+				return nil
+			},
+			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 				return nil
 			},
 		}

@@ -129,19 +129,16 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	}
 
 	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
-	if !hasActiveKey {
-		if err := s.TSSKeeper.AssertMatchesRequirements(ctx, s.snapshotter, chain, req.KeyID, req.KeyRole); err != nil {
-			return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for chain %s and role %s", req.KeyID, chain.Name, req.KeyRole.SimpleString())
-		}
-
-		if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
-			return nil, err
-		}
+	if hasActiveKey {
+		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
 	}
 
-	_, hasNextKeyAssigned := s.TSSKeeper.GetNextKeyID(ctx, chain, req.KeyRole)
-	if !hasNextKeyAssigned {
-		return nil, fmt.Errorf("no key assigned for rotation yet")
+	if err := s.TSSKeeper.AssertMatchesRequirements(ctx, s.snapshotter, chain, req.KeyID, req.KeyRole); err != nil {
+		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for chain %s and role %s", req.KeyID, chain.Name, req.KeyRole.SimpleString())
+	}
+
+	if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
+		return nil, err
 	}
 
 	if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
