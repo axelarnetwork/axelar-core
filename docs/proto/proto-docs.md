@@ -232,8 +232,8 @@
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
-    - [QuerySigResponse](#tss.v1beta1.QuerySigResponse)
-    - [Signature](#tss.v1beta1.Signature)
+    - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
+    - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -3277,32 +3277,32 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.QuerySigResponse"></a>
+<a name="tss.v1beta1.QuerySignatureResponse"></a>
 
-### QuerySigResponse
+### QuerySignatureResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
-| `signature` | [Signature](#tss.v1beta1.Signature) |  |  |
+| `signature` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
 
 
 
 
 
 
-<a name="tss.v1beta1.Signature"></a>
+<a name="tss.v1beta1.QuerySignatureResponse.Signature"></a>
 
-### Signature
+### QuerySignatureResponse.Signature
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `r` | [bytes](#bytes) |  |  |
-| `s` | [bytes](#bytes) |  |  |
+| `r` | [string](#string) |  |  |
+| `s` | [string](#string) |  |  |
 
 
 
@@ -3319,8 +3319,9 @@ Params is the parameter set for this module
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | VOTE_STATUS_UNSPECIFIED | 0 |  |
-| VOTE_STATUS_PENDING | 1 |  |
-| VOTE_STATUS_DECIDED | 2 |  |
+| VOTE_STATUS_NOT_FOUND | 1 |  |
+| VOTE_STATUS_PENDING | 2 |  |
+| VOTE_STATUS_DECIDED | 3 |  |
 
 
  <!-- end enums -->
