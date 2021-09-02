@@ -1,24 +1,23 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 // Query paths
 const (
-	QuerySigStatus            = "sig-status"
-	QueryKeyStatus            = "key-status"
+	QuerySignature            = "signature"
+	QueryKey                  = "key"
 	QueryRecovery             = "recovery"
 	QueryKeyID                = "key-id"
 	QueryKeySharesByKeyID     = "key-share-id"
@@ -27,15 +26,15 @@ const (
 )
 
 // NewQuerier returns a new querier for the TSS module
-func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, staking tssTypes.StakingKeeper, n tssTypes.Nexus) sdk.Querier {
+func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking types.StakingKeeper, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
 		switch path[0] {
-		case QuerySigStatus:
-			res, err = querySigStatus(ctx, k, v, path[1])
-		case QueryKeyStatus:
-			res, err = queryKeygenStatus(ctx, k, v, path[1])
+		case QuerySignature:
+			res, err = querySignatureStatus(ctx, k, v, path[1])
+		case QueryKey:
+			res, err = queryKey(ctx, k, v, path[1])
 		case QueryRecovery:
 			res, err = queryRecovery(ctx, k, s, path[1])
 		case QueryKeyID:
@@ -51,13 +50,13 @@ func NewQuerier(k tssTypes.TSSKeeper, v tssTypes.Voter, s tssTypes.Snapshotter, 
 		}
 
 		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrBitcoin, err.Error())
+			return nil, sdkerrors.Wrap(types.ErrTss, err.Error())
 		}
 		return res, nil
 	}
 }
 
-func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string) ([]byte, error) {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
@@ -77,7 +76,7 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 
 	infos := k.GetAllRecoveryInfos(ctx, keyID)
 
-	resp := tssTypes.QueryRecoveryResponse{
+	resp := types.QueryRecoveryResponse{
 		Threshold:          int32(snapshot.CorruptionThreshold),
 		PartyUids:          participants,
 		PartyShareCounts:   participantShareCounts,
@@ -87,62 +86,57 @@ func queryRecovery(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter
 	return resp.Marshal()
 }
 
-func querySigStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, sigID string) ([]byte, error) {
-	var resp tssTypes.QuerySigResponse
+func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sigID string) ([]byte, error) {
 	if sig, status := k.GetSig(ctx, sigID); status == exported.SigStatus_Signed {
 		// poll was successful
-		resp := tssTypes.QuerySigResponse{
-			VoteStatus: tssTypes.VoteStatus_Decided,
-			Signature: &tssTypes.Signature{
-				R: sig.R.Bytes(),
-				S: sig.S.Bytes(),
+		res := types.QuerySignatureResponse{
+			VoteStatus: types.Decided,
+			Signature: &types.QuerySignatureResponse_Signature{
+				R: hex.EncodeToString(sig.R.Bytes()),
+				S: hex.EncodeToString(sig.S.Bytes()),
 			},
 		}
-		return resp.Marshal()
+
+		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
 	}
 
-	pollMeta := voting.NewPollKey(tssTypes.ModuleName, sigID)
-	poll := v.GetPoll(ctx, pollMeta)
+	var res types.QuerySignatureResponse
+	pollMeta := voting.NewPollKey(types.ModuleName, sigID)
 
-	if poll == nil {
-		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.VoteStatus_Unspecified
+	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
+		res.VoteStatus = types.NotFound
 	} else {
-		// poll still open, pending a decision
-		resp.VoteStatus = tssTypes.VoteStatus_Pending
+		res.VoteStatus = types.Pending
 	}
 
-	return resp.Marshal()
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
 }
 
-func queryKeygenStatus(ctx sdk.Context, k tssTypes.TSSKeeper, v tssTypes.Voter, keyID string) ([]byte, error) {
-	var resp tssTypes.QueryKeyResponse
-
+func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID string) ([]byte, error) {
 	if key, ok := k.GetKey(ctx, keyID); ok {
 		// poll was successful
-		resp = tssTypes.QueryKeyResponse{
-			VoteStatus: tssTypes.VoteStatus_Decided,
+		res := types.QueryKeyResponse{
+			VoteStatus: types.Decided,
 			Role:       key.Role,
 		}
 
-		return resp.Marshal()
+		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
 	}
 
-	pollMeta := voting.NewPollKey(tssTypes.ModuleName, keyID)
-	poll := v.GetPoll(ctx, pollMeta)
-	if poll == nil {
-		// poll either never existed or has been closed
-		resp.VoteStatus = tssTypes.VoteStatus_Unspecified
+	var res types.QueryKeyResponse
+	pollMeta := voting.NewPollKey(types.ModuleName, keyID)
+
+	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
+		res.VoteStatus = types.NotFound
 	} else {
-		// poll still open, pending a decision
-		resp.VoteStatus = tssTypes.VoteStatus_Pending
+		res.VoteStatus = types.Pending
 	}
 
-	return resp.Marshal()
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
 }
 
 // queryKeyID returns the keyID of the most recent key for a provided keyChain and keyRole
-func queryKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes.Nexus, keyChainStr string, keyRoleStr string) ([]byte, error) {
+func queryKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, keyChainStr string, keyRoleStr string) ([]byte, error) {
 	keyChain, ok := n.GetChain(ctx, keyChainStr)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", keyChainStr)
@@ -165,7 +159,7 @@ func queryKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes.Nexus, keyChai
 	return []byte(keyID), nil
 }
 
-func queryKeySharesByKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, keyID string) ([]byte, error) {
+func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string) ([]byte, error) {
 
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
@@ -177,10 +171,10 @@ func queryKeySharesByKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Sna
 		return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
 	}
 
-	var allShareInfos []tssTypes.QueryKeyShareResponse_ShareInfo
+	var allShareInfos []types.QueryKeyShareResponse_ShareInfo
 	for _, validator := range snapshot.Validators {
 
-		thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo{
+		thisShareInfo := types.QueryKeyShareResponse_ShareInfo{
 			KeyID:               keyID,
 			SnapshotBlockNumber: snapshot.Height,
 			ValidatorAddress:    validator.GetSDKValidator().GetOperator().String(),
@@ -191,16 +185,16 @@ func queryKeySharesByKeyID(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Sna
 		allShareInfos = append(allShareInfos, thisShareInfo)
 	}
 
-	keyShareInfos := tssTypes.QueryKeyShareResponse{
+	keyShareInfos := types.QueryKeyShareResponse{
 		ShareInfos: allShareInfos,
 	}
 
 	return keyShareInfos.Marshal()
 }
 
-func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes.Nexus, s tssTypes.Snapshotter, targetValidatorAddr string) ([]byte, error) {
+func queryKeySharesByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
 
-	var allShareInfos []tssTypes.QueryKeyShareResponse_ShareInfo
+	var allShareInfos []types.QueryKeyShareResponse_ShareInfo
 
 	for _, chain := range n.GetChains(ctx) {
 		for _, keyRole := range exported.GetKeyRoles() {
@@ -226,7 +220,7 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 				validatorAddr := validator.GetSDKValidator().GetOperator().String()
 				if validatorAddr == targetValidatorAddr {
 
-					thisShareInfo := tssTypes.QueryKeyShareResponse_ShareInfo{
+					thisShareInfo := types.QueryKeyShareResponse_ShareInfo{
 						KeyID:               keyID,
 						KeyChain:            chain.Name,
 						KeyRole:             keyRole.String(),
@@ -242,14 +236,14 @@ func queryKeySharesByValidator(ctx sdk.Context, k tssTypes.TSSKeeper, n tssTypes
 		}
 	}
 
-	keyShareInfos := tssTypes.QueryKeyShareResponse{
+	keyShareInfos := types.QueryKeyShareResponse{
 		ShareInfos: allShareInfos,
 	}
 
 	return keyShareInfos.Marshal()
 }
 
-func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.Snapshotter, staking tssTypes.StakingKeeper) ([]byte, error) {
+func queryDeactivatedOperator(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, staking types.StakingKeeper) ([]byte, error) {
 
 	var deactivatedValidators []string
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
@@ -272,7 +266,7 @@ func queryDeactivatedOperator(ctx sdk.Context, k tssTypes.TSSKeeper, s tssTypes.
 	// IterateBondedValidatorsByPower(https://github.com/cosmos/cosmos-sdk/blob/7fc7b3f6ff82eb5ede52881778114f6b38bd7dfa/x/staking/keeper/alias_functions.go#L33) iterates validators by power in descending order
 	staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 
-	resp := tssTypes.QueryDeactivatedOperatorsResponse{
+	resp := types.QueryDeactivatedOperatorsResponse{
 		OperatorAddresses: deactivatedValidators,
 	}
 
