@@ -218,7 +218,7 @@ func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		contract := mux.Vars(r)[utils.PathVarContract]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, contract), nil)
+		res, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBytecode, chain, contract))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBytecode, contract).Error())
 			return
