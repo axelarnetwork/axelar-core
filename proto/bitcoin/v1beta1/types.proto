@@ -34,9 +34,8 @@ message UnsignedTx {
           [ (gogoproto.nullable) = false ];
     }
 
-    bool assign_next_key = 1;
-    string next_key_id = 2 [ (gogoproto.customname) = "NextKeyID" ];
-    repeated InputInfo input_infos = 3 [ (gogoproto.nullable) = false ];
+    bool rotate_key = 1;
+    repeated InputInfo input_infos = 2 [ (gogoproto.nullable) = false ];
   }
 
   bytes tx = 1;

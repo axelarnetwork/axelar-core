@@ -98,25 +98,12 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 		}
 	}
 
-	// Assign the next key if necessary
-	if unsignedTx.Info.AssignNextKey {
-		nextKey, ok := signer.GetKey(ctx, unsignedTx.Info.NextKeyID)
-		if !ok {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to get the next %s key %s to assign", keyRole, unsignedTx.Info.NextKeyID)).Error())
+	// Rotate key if necessary
+	if unsignedTx.Info.RotateKey {
+		if err := signer.RotateKey(ctx, exported.Bitcoin, keyRole); err != nil {
+			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to rotate to the next %s key", keyRole.SimpleString())).Error())
 			return
 		}
-
-		if err := signer.AssignNextKey(ctx, exported.Bitcoin, keyRole, unsignedTx.Info.NextKeyID); err != nil {
-			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to assign the next %s key to %s", keyRole.SimpleString(), nextKey.ID)).Error())
-			return
-		}
-
-		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
-			sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, unsignedTx.Info.NextKeyID),
-		))
 	}
 
 	k.DeleteUnsignedTx(ctx, keyRole)

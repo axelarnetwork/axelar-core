@@ -261,10 +261,10 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QLatestTxByKeyRole, tss.SecondaryKey.SimpleString()}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
-	var res btcTypes.QueryTxResponse
-	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+	var txRes btcTypes.QueryTxResponse
+	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &txRes)
 
-	buf, err := hex.DecodeString(res.Tx)
+	buf, err := hex.DecodeString(txRes.Tx)
 	assert.NoError(t, err)
 	signedTx := btcTypes.MustDecodeTx(buf)
 
@@ -283,9 +283,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	hash := signedTx.TxHash()
 	consolidationInfo.OutPoint = wire.NewOutPoint(&hash, 0).String()
 
-	// rotate master key to new key
-	rotateResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), btc.Bitcoin.Name, tss.SecondaryKey, secondaryKeyID2))
-	assert.NoError(t, rotateResult.Error)
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QConsolidationAddressByKeyRole, tss.SecondaryKey.SimpleString()}, abci.RequestQuery{})
+	assert.NoError(t, err)
+
+	var addressRes btcTypes.QueryAddressResponse
+	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &addressRes)
+
+	assert.Equal(t, secondaryKeyID2, addressRes.KeyID)
 }
 
 func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {

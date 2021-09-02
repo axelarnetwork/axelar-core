@@ -595,8 +595,17 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			return nil, err
 		}
 
-		unsignedTx.Info.AssignNextKey = true
-		unsignedTx.Info.NextKeyID = consolidationKey.ID
+		unsignedTx.Info.RotateKey = true
+		if err := s.signer.AssignNextKey(ctx, exported.Bitcoin, consolidationKey.Role, consolidationKey.ID); err != nil {
+			return nil, err
+		}
+
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
+			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+		))
 	}
 
 	s.SetUnsignedTx(ctx, tss.MasterKey, unsignedTx)
@@ -722,8 +731,17 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			return nil, err
 		}
 
-		unsignedTx.Info.AssignNextKey = true
-		unsignedTx.Info.NextKeyID = consolidationKey.ID
+		unsignedTx.Info.RotateKey = true
+		if err := s.signer.AssignNextKey(ctx, exported.Bitcoin, consolidationKey.Role, consolidationKey.ID); err != nil {
+			return nil, err
+		}
+
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
+			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+		))
 	}
 
 	s.SetUnsignedTx(ctx, tss.SecondaryKey, unsignedTx)

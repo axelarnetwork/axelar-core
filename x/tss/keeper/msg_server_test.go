@@ -65,7 +65,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		assert.Len(t, tssKeeper.RotateKeyCalls(), 1)
 	}).Repeat(repeats))
 
-	t.Run("next key is assigned correctly", testutils.Func(func(t *testing.T) {
+	t.Run("next key is assigned", testutils.Func(func(t *testing.T) {
 		setup()
 		keyID := rand.StrBetween(5, 20)
 		tssKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, exported.KeyRole) (string, bool) { return rand.StrBetween(5, 20), true }
@@ -78,9 +78,9 @@ func TestMsgServer_RotateKey(t *testing.T) {
 			KeyID:   keyID,
 		})
 
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Len(t, tssKeeper.AssignNextKeyCalls(), 0)
-		assert.Len(t, tssKeeper.RotateKeyCalls(), 1)
+		assert.Len(t, tssKeeper.RotateKeyCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("no next key is assigned", testutils.Func(func(t *testing.T) {

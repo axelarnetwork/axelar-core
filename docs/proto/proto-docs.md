@@ -870,8 +870,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `assign_next_key` | [bool](#bool) |  |  |
-| `next_key_id` | [string](#string) |  |  |
+| `rotate_key` | [bool](#bool) |  |  |
 | `input_infos` | [UnsignedTx.Info.InputInfo](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo) | repeated |  |
 
 
