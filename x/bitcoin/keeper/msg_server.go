@@ -593,7 +593,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.SecondaryKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currMasterKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currMasterKey, consolidationKey); err != nil {
@@ -725,7 +725,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.MasterKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currSecondaryKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currSecondaryKey, consolidationKey); err != nil {
@@ -892,6 +892,25 @@ func getSigID(sigHash []byte, keyID string) string {
 }
 
 func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, snapshotter types.Snapshotter, from tss.Key, to tss.Key) error {
+	var otherKeyRole tss.KeyRole
+
+	switch from.Role {
+	case tss.MasterKey:
+		otherKeyRole = tss.SecondaryKey
+	case tss.SecondaryKey:
+		otherKeyRole = tss.MasterKey
+	default:
+		return fmt.Errorf("unknown key role %s", from.Role.SimpleString())
+	}
+
+	if unsignedTx, ok := k.GetUnsignedTx(ctx, otherKeyRole); ok && unsignedTx.InternalTransferAmount > 0 {
+		return fmt.Errorf("cannot assign the next %s key while a %s transaction is sending coin to the current %s address",
+			from.Role.SimpleString(),
+			otherKeyRole.SimpleString(),
+			from.Role.SimpleString(),
+		)
+	}
+
 	if err := signer.AssertMatchesRequirements(ctx, snapshotter, exported.Bitcoin, to.ID, from.Role); err != nil {
 		return sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", to.ID, from.Role.SimpleString())
 	}

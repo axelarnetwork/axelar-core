@@ -856,6 +856,7 @@ of a transaction
 | `confirmation_required` | [bool](#bool) |  |  |
 | `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
 | `prev_aborted_key_id` | [string](#string) |  |  |
+| `internal_transfer_amount` | [int64](#int64) |  |  |
 
 
 

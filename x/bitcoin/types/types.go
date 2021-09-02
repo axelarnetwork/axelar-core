@@ -576,12 +576,13 @@ func (m SignedTx) GetTx() *wire.MsgTx {
 }
 
 // NewUnsignedTx is the constructor for UnsignedTx
-func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, outPointsToSign []OutPointToSign) UnsignedTx {
+func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, outPointsToSign []OutPointToSign, internalTransferAmount btcutil.Amount) UnsignedTx {
 	unsignedTx := UnsignedTx{
-		Tx:                   MustEncodeTx(tx),
-		Status:               Created,
-		ConfirmationRequired: false,
-		AnyoneCanSpendVout:   anyoneCanSpendVout,
+		Tx:                     MustEncodeTx(tx),
+		Status:                 Created,
+		ConfirmationRequired:   false,
+		AnyoneCanSpendVout:     anyoneCanSpendVout,
+		InternalTransferAmount: internalTransferAmount,
 	}
 
 	for _, outPointToSign := range outPointsToSign {

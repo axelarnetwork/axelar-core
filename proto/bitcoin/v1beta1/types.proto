@@ -44,6 +44,8 @@ message UnsignedTx {
   bool confirmation_required = 4;
   uint32 anyone_can_spend_vout = 5;
   string prev_aborted_key_id = 6;
+  int64 internal_transfer_amount = 7
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
 message SignedTx {
