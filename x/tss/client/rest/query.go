@@ -35,20 +35,19 @@ func QueryHandlerSigStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		sigID := mux.Vars(r)[utils.PathVarSigID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QuerySigStatus, sigID), nil)
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QuerySignature, sigID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		var sigResponse types.QuerySigResponse
-		err = sigResponse.Unmarshal(res)
-		if err != nil {
+		var res types.QuerySignatureResponse
+		if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get sig status").Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, sigResponse)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
@@ -62,20 +61,19 @@ func QueryHandlerKeyStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		keyID := mux.Vars(r)[utils.PathVarKeyID]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryKeyStatus, keyID), nil)
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryKey, keyID))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		var keyResponse types.QueryKeyResponse
-		err = keyResponse.Unmarshal(res)
-		if err != nil {
+		var res types.QueryKeyResponse
+		if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key status").Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, keyResponse)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 

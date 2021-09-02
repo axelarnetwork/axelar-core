@@ -8,14 +8,14 @@ import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message QuerySigResponse {
+message QuerySignatureResponse {
+  message Signature {
+    string r = 1;
+    string s = 2;
+  }
+
   VoteStatus vote_status = 1;
   Signature signature = 2;
-}
-
-message Signature {
-  bytes r = 2;
-  bytes s = 3;
 }
 
 message QueryKeyResponse {
@@ -24,13 +24,14 @@ message QueryKeyResponse {
 }
 
 enum VoteStatus {
-  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
   VOTE_STATUS_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  VOTE_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
-  VOTE_STATUS_DECIDED = 2 [ (gogoproto.enumvalue_customname) = "Decided" ];
+  VOTE_STATUS_NOT_FOUND = 1 [ (gogoproto.enumvalue_customname) = "NotFound" ];
+  VOTE_STATUS_PENDING = 2 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  VOTE_STATUS_DECIDED = 3 [ (gogoproto.enumvalue_customname) = "Decided" ];
 }
 
 message QueryRecoveryResponse {
