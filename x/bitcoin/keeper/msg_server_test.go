@@ -514,15 +514,17 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 func TestCreateMasterTx(t *testing.T) {
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		voter       *mock.VoterMock
-		nexusKeeper *mock.NexusMock
-		server      types.MsgServiceServer
+		btcKeeper    *mock.BTCKeeperMock
+		voter        *mock.VoterMock
+		nexusKeeper  *mock.NexusMock
+		signerKeeper *mock.SignerMock
+		server       types.MsgServiceServer
 
 		ctx                    sdk.Context
 		masterKey              tss.Key
 		oldMasterKey           tss.Key
 		secondaryKey           tss.Key
+		nextSecondaryKey       tss.Key
 		consolidationKey       tss.Key
 		externalKeys           []tss.Key
 		masterKeyRotationCount int64
@@ -534,6 +536,7 @@ func TestCreateMasterTx(t *testing.T) {
 		masterKey = createRandomKey(tss.MasterKey, time.Now())
 		oldMasterKey = createRandomKey(tss.MasterKey)
 		secondaryKey = createRandomKey(tss.SecondaryKey)
+		nextSecondaryKey = createRandomKey(tss.SecondaryKey)
 		consolidationKey = createRandomKey(tss.MasterKey)
 
 		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
@@ -638,7 +641,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{}
-		signerKeeper := &mock.SignerMock{
+		signerKeeper = &mock.SignerMock{
 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				switch keyRole {
 				case tss.MasterKey:
@@ -697,6 +700,48 @@ func TestCreateMasterTx(t *testing.T) {
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
 	}
 
+	t.Run("shoud create master consolidation transaction without key assignment when the consolidation key is the current master key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), masterKey.ID, 0)
+		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		assertTxOutputs(t, actualUnsignedTx.GetTx(),
+			types.Output{
+				Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+			},
+			types.Output{
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+			},
+		)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, btcutil.Amount(0), actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 0)
+	}))
+
 	t.Run("should create master consolidation transaction sending no coin to the secondary key when the amount is not set", testutils.Func(func(t *testing.T) {
 		setup()
 
@@ -734,6 +779,74 @@ func TestCreateMasterTx(t *testing.T) {
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, btcutil.Amount(0), actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.MasterKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
+	}))
+
+	t.Run("should create master consolidation transaction sending coins to the next secondary key when the amount is set and the next secondary key is already assigned", testutils.Func(func(t *testing.T) {
+		setup()
+
+		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.SecondaryKey {
+				return nextSecondaryKey, true
+			}
+
+			return tss.Key{}, false
+		}
+
+		secondaryKeyAmount := btcutil.Amount(rand.I64Between(1000, 10000))
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, secondaryKeyAmount)
+		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		assertTxOutputs(t, actualUnsignedTx.GetTx(),
+			types.Output{
+				Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+				Amount:    secondaryKeyAmount,
+			},
+			types.Output{
+				Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+			},
+			types.Output{
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+			},
+		)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, secondaryKeyAmount, actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.MasterKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
 	t.Run("should create master consolidation transaction sending coins to the secondary key when the amount is set", testutils.Func(func(t *testing.T) {
@@ -780,6 +893,13 @@ func TestCreateMasterTx(t *testing.T) {
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, secondaryKeyAmount, actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.MasterKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has UTXO", testutils.Func(func(t *testing.T) {
@@ -828,17 +948,36 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
 	}))
+
+	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			if keyRole == tss.SecondaryKey {
+				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
+			}
+
+			return types.UnsignedTx{}, false
+		}
+
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot assign the next master key while a secondary transaction is sending coin to the current master address")
+	}))
 }
 
 func TestCreatePendingTransfersTx(t *testing.T) {
 	var (
-		btcKeeper   *mock.BTCKeeperMock
-		voter       *mock.VoterMock
-		nexusKeeper *mock.NexusMock
-		server      types.MsgServiceServer
+		btcKeeper    *mock.BTCKeeperMock
+		voter        *mock.VoterMock
+		nexusKeeper  *mock.NexusMock
+		signerKeeper *mock.SignerMock
+		server       types.MsgServiceServer
 
 		ctx                    sdk.Context
 		masterKey              tss.Key
+		nextMasterKey          tss.Key
 		oldMasterKey           tss.Key
 		secondaryKey           tss.Key
 		consolidationKey       tss.Key
@@ -851,6 +990,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		masterKey = createRandomKey(tss.MasterKey, time.Now())
+		nextMasterKey = createRandomKey(tss.MasterKey, time.Now())
 		oldMasterKey = createRandomKey(tss.MasterKey)
 		secondaryKey = createRandomKey(tss.SecondaryKey)
 		consolidationKey = createRandomKey(tss.SecondaryKey)
@@ -973,7 +1113,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			},
 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer) {},
 		}
-		signerKeeper := &mock.SignerMock{
+		signerKeeper = &mock.SignerMock{
 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				switch keyRole {
 				case tss.MasterKey:
@@ -1032,6 +1172,55 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
 	}
 
+	t.Run("shoud create secondary consolidation transaction without key assignment when the consolidation key is the current secondary key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), secondaryKey.ID, 0)
+		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		var expectedOutputs []types.Output
+		for _, transfer := range transfers {
+			expectedOutputs = append(expectedOutputs, types.Output{
+				Recipient: types.MustDecodeAddress(transfer.Recipient.Address, network),
+				Amount:    btcutil.Amount(transfer.Asset.Amount.Int64()),
+			})
+		}
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+		})
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+		})
+		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, btcutil.Amount(0), actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 0)
+	}))
+
 	t.Run("should create secondary consolidation transaction sending no coin to the master key when the amount is not set", testutils.Func(func(t *testing.T) {
 		setup()
 
@@ -1076,6 +1265,82 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, btcutil.Amount(0), actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.SecondaryKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
+	}))
+
+	t.Run("should create secondary consolidation transaction sending coin to the next master key when the amount is set and the next master key is already assigned", testutils.Func(func(t *testing.T) {
+		setup()
+
+		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.MasterKey {
+				return nextMasterKey, true
+			}
+
+			return tss.Key{}, false
+		}
+
+		masterKeyAmount := btcutil.Amount(transfers[len(transfers)-1].Asset.Amount.Int64())
+		transfers = transfers[:len(transfers)-1]
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, masterKeyAmount)
+		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(nextMasterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		var expectedOutputs []types.Output
+		for _, transfer := range transfers {
+			expectedOutputs = append(expectedOutputs, types.Output{
+				Recipient: types.MustDecodeAddress(transfer.Recipient.Address, network),
+				Amount:    btcutil.Amount(transfer.Asset.Amount.Int64()),
+			})
+		}
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+		})
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+			Amount:    masterKeyAmount,
+		})
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+		})
+		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, masterKeyAmount, actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.SecondaryKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
 	t.Run("should create secondary consolidation transaction sending coin to the master key when the amount is set", testutils.Func(func(t *testing.T) {
@@ -1130,6 +1395,13 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Equal(t, masterKeyAmount, actualUnsignedTx.InternalTransferAmount)
+
+		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 1)
+		actualAssignNextKeyCall := signerKeeper.AssignNextKeyCalls()[0]
+		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
+		assert.Equal(t, tss.SecondaryKey, actualAssignNextKeyCall.KeyRole)
+		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has UTXO", testutils.Func(func(t *testing.T) {
@@ -1177,6 +1449,23 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
+	}))
+
+	t.Run("should return error if consolidating to a new key while the master key is sending coin to the current secondary key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			if keyRole == tss.MasterKey {
+				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
+			}
+
+			return types.UnsignedTx{}, false
+		}
+
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot assign the next secondary key while a master transaction is sending coin to the current secondary address")
 	}))
 }
 

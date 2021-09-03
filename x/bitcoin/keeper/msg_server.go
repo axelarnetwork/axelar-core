@@ -525,11 +525,6 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
 	}
 
-	nextMasterKey, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
-	if nextMasterKeyAssigned {
-		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate key first", nextMasterKey.ID, tss.MasterKey.SimpleString())
-	}
-
 	inputs, totalInputs, err := prepareInputs(ctx, s.BTCKeeper, currMasterKey.ID)
 	if err != nil {
 		return nil, err
@@ -542,28 +537,38 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 	anyoneCanSpendVout := uint32(0)
 
 	if req.SecondaryKeyAmount > 0 {
-		currSecondaryKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
-		if !ok {
-			return nil, fmt.Errorf("current %s key is not set", tss.SecondaryKey.SimpleString())
+		var key tss.Key
+
+		nextKey, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+		currKey, currKeyFound := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
+
+		switch {
+		case nextKeyFound:
+			key = nextKey
+		case currKeyFound:
+			key = currKey
+		default:
+			return nil, fmt.Errorf("%s key not set", tss.SecondaryKey.SimpleString())
 		}
 
-		currSecondaryAddress := types.NewSecondaryConsolidationAddress(currSecondaryKey, s.GetNetwork(ctx))
-		secondaryOutput := types.Output{Amount: btcutil.Amount(req.SecondaryKeyAmount), Recipient: currSecondaryAddress.GetAddress()}
+		secondaryAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, key)
+		if err != nil {
+			return nil, err
+		}
 
+		secondaryOutput := types.Output{Amount: btcutil.Amount(req.SecondaryKeyAmount), Recipient: secondaryAddress.GetAddress()}
 		outputs = append(outputs, secondaryOutput)
 		totalOut = totalOut.AddRaw(int64(req.SecondaryKeyAmount))
 
-		s.SetAddress(ctx, currSecondaryAddress)
+		s.SetAddress(ctx, *secondaryAddress)
 	}
 
-	oldMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)
-	if !ok {
-		return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
+	consolidationAddress, err := getMasterConsolidationAddress(ctx, s.BTCKeeper, s.signer, consolidationKey)
+	if err != nil {
+		return nil, err
 	}
 
-	lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, s.GetNetwork(ctx))
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, *consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -576,7 +581,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", totalInputs.Int64(), fee.Int64())
 	}
 
-	changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
+	changeOutput, err := prepareChange(ctx, s, *consolidationAddress, change)
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +593,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.SecondaryKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currMasterKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currMasterKey, consolidationKey); err != nil {
@@ -642,11 +647,6 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, fmt.Errorf("current %s key is not set", tss.SecondaryKey.SimpleString())
 	}
 
-	nextSecondaryKey, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.SecondaryKey)
-	if nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("key %s is already assigned as the next %s key, rotate key first", nextSecondaryKey.ID, tss.SecondaryKey.SimpleString())
-	}
-
 	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
 
 	telemetry.IncrCounter(float32(totalOut.Int64()), types.ModuleName, "total", "withdrawal")
@@ -657,33 +657,30 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	}
 
 	if req.MasterKeyAmount > 0 {
-		currMasterKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
-		if !ok {
-			return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
+		var key tss.Key
+
+		nextKey, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.MasterKey)
+		currKey, currKeyFound := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+
+		switch {
+		case nextKeyFound:
+			key = nextKey
+		case currKeyFound:
+			key = currKey
+		default:
+			return nil, fmt.Errorf("%s key not set", tss.MasterKey.SimpleString())
 		}
 
-		externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
-		externalKeys, err := getExternalKeys(ctx, s.BTCKeeper, s.signer)
+		masterAddress, err := getMasterConsolidationAddress(ctx, s.BTCKeeper, s.signer, key)
 		if err != nil {
 			return nil, err
 		}
-		if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
-			return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
-		}
 
-		prevMasterKey, ok := getOldMasterKey(ctx, s.BTCKeeper, s.signer)
-		if !ok {
-			return nil, fmt.Errorf("cannot find the %s key for the period", tss.MasterKey.SimpleString())
-		}
-
-		lockTime := currMasterKey.RotatedAt.Add(s.GetMasterAddressLockDuration(ctx))
-		currMasterAddress := types.NewMasterConsolidationAddress(currMasterKey, prevMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, s.GetNetwork(ctx))
-		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: currMasterAddress.GetAddress()}
-
+		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: masterAddress.GetAddress()}
 		outputs = append(outputs, masterOutput)
 		totalOut = totalOut.AddRaw(int64(req.MasterKeyAmount))
 
-		s.SetAddress(ctx, currMasterAddress)
+		s.SetAddress(ctx, *masterAddress)
 	}
 
 	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
@@ -696,8 +693,12 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	consolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, s.GetNetwork(ctx))
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
+	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, consolidationKey)
+	if err != nil {
+		return nil, err
+	}
+
+	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, *consolidationAddress, inputs, outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -712,7 +713,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		)
 	}
 
-	changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
+	changeOutput, err := prepareChange(ctx, s, *consolidationAddress, change)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +725,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.MasterKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currSecondaryKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currSecondaryKey, consolidationKey); err != nil {
@@ -772,13 +773,6 @@ func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([
 	}
 
 	return externalKeys, nil
-}
-
-func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
-	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
-	oldMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
-
-	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
 }
 
 func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address types.AddressInfo, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
@@ -898,6 +892,25 @@ func getSigID(sigHash []byte, keyID string) string {
 }
 
 func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, snapshotter types.Snapshotter, from tss.Key, to tss.Key) error {
+	var otherKeyRole tss.KeyRole
+
+	switch from.Role {
+	case tss.MasterKey:
+		otherKeyRole = tss.SecondaryKey
+	case tss.SecondaryKey:
+		otherKeyRole = tss.MasterKey
+	default:
+		return fmt.Errorf("unknown key role %s", from.Role.SimpleString())
+	}
+
+	if unsignedTx, ok := k.GetUnsignedTx(ctx, otherKeyRole); ok && unsignedTx.InternalTransferAmount > 0 {
+		return fmt.Errorf("cannot assign the next %s key while a %s transaction is sending coin to the current %s address",
+			from.Role.SimpleString(),
+			otherKeyRole.SimpleString(),
+			from.Role.SimpleString(),
+		)
+	}
+
 	if err := signer.AssertMatchesRequirements(ctx, snapshotter, exported.Bitcoin, to.ID, from.Role); err != nil {
 		return sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", to.ID, from.Role.SimpleString())
 	}
@@ -912,4 +925,51 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 	}
 
 	return nil
+}
+
+func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, key tss.Key) (*types.AddressInfo, error) {
+	if key.Role != tss.SecondaryKey {
+		return nil, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
+	}
+
+	consolidationAddress := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
+
+	return &consolidationAddress, nil
+}
+
+func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key) (*types.AddressInfo, error) {
+	if key.Role != tss.MasterKey {
+		return nil, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.MasterKey.SimpleString())
+	}
+
+	currMasterKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
+	if !ok {
+		return nil, fmt.Errorf("%s key not set", tss.MasterKey.SimpleString())
+	}
+
+	oldMasterKey, ok := getOldMasterKey(ctx, k, s)
+	if !ok {
+		return nil, fmt.Errorf("cannot find the old %s key", tss.MasterKey.SimpleString())
+	}
+
+	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalKeys, err := getExternalKeys(ctx, k, s)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+		return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
+	}
+
+	lockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, k.GetNetwork(ctx))
+
+	return &consolidationAddress, nil
+}
+
+func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
+	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
+	oldMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
+
+	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
 }

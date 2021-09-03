@@ -162,9 +162,9 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 
 	switch key.Role {
 	case tss.MasterKey:
-		addressInfo, err = getMasterConsolidationAddress(ctx, k, s, keyID)
+		addressInfo, err = getMasterConsolidationAddress(ctx, k, s, key)
 	case tss.SecondaryKey:
-		addressInfo, err = getSecondaryConsolidationAddress(ctx, k, s, keyID)
+		addressInfo, err = getSecondaryConsolidationAddress(ctx, k, key)
 	default:
 		return nil, fmt.Errorf("no consolidation address supported for key %s of key role %s", keyID, key.Role.SimpleString())
 	}
@@ -199,55 +199,6 @@ func QueryMinOutputAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 	binary.LittleEndian.PutUint64(bz, uint64(k.GetMinOutputAmount(ctx)))
 
 	return bz
-}
-
-func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) (*types.AddressInfo, error) {
-	key, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no key with keyID %s found", keyID)
-	}
-
-	if key.Role != tss.SecondaryKey {
-		return nil, fmt.Errorf("given keyID %s is not for a %s key", keyID, tss.SecondaryKey.SimpleString())
-	}
-
-	consolidationAddress := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
-
-	return &consolidationAddress, nil
-}
-
-func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) (*types.AddressInfo, error) {
-	key, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no key with keyID %s found", keyID)
-	}
-
-	if key.Role != tss.MasterKey {
-		return nil, fmt.Errorf("given keyID %s is not for a %s key", keyID, tss.MasterKey.SimpleString())
-	}
-
-	if key.RotatedAt == nil {
-		return nil, fmt.Errorf("given keyID %s has not been rotated yet and therefore cannot get its %s consolidation address", keyID, tss.MasterKey.SimpleString())
-	}
-
-	oldMasterKey, ok := getOldMasterKey(ctx, k, s)
-	if !ok {
-		return nil, fmt.Errorf("cannot find the old %s key of the given keyID %s", tss.MasterKey.SimpleString(), keyID)
-	}
-
-	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
-	externalKeys, err := getExternalKeys(ctx, k, s)
-	if err != nil {
-		return nil, err
-	}
-	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
-		return nil, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
-	}
-
-	lockTime := key.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, k.GetNetwork(ctx))
-
-	return &consolidationAddress, nil
 }
 
 // QueryLatestTxByKeyRole returns the latest consolidation transaction of the given key role
@@ -368,7 +319,7 @@ func QueryExternalKeyID(ctx sdk.Context, k types.BTCKeeper) ([]byte, error) {
 	}
 
 	resp := types.QueryExternalKeyIDResponse{
-		KeyIDs:	externalKeyIDs,
+		KeyIDs: externalKeyIDs,
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)

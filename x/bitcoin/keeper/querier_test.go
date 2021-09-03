@@ -302,6 +302,13 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 
 			return tss.Key{}, false
 		}
+		signer.GetCurrentKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			if keyRole == tss.MasterKey {
+				return masterKey, true
+			}
+
+			return tss.Key{}, false
+		}
 		signer.GetRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 { return rotationCount }
 		signer.GetKeyByRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
 			if rotationCount == oldMasterKeyRotationCount {
