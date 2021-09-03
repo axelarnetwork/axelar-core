@@ -157,7 +157,7 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 		return nil, fmt.Errorf("no key with keyID %s found", keyID)
 	}
 
-	var addressInfo *types.AddressInfo
+	var addressInfo types.AddressInfo
 	var err error
 
 	switch key.Role {
