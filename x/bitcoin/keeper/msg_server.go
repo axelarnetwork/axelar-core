@@ -551,7 +551,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			return nil, fmt.Errorf("%s key not set", tss.SecondaryKey.SimpleString())
 		}
 
-		secondaryAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, s.signer, key)
+		secondaryAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, key)
 		if err != nil {
 			return nil, err
 		}
@@ -693,7 +693,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, s.signer, consolidationKey)
+	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, consolidationKey)
 	if err != nil {
 		return nil, err
 	}
@@ -927,7 +927,7 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 	return nil
 }
 
-func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key) (*types.AddressInfo, error) {
+func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, key tss.Key) (*types.AddressInfo, error) {
 	if key.Role != tss.SecondaryKey {
 		return nil, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
 	}

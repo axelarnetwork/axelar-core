@@ -164,7 +164,7 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 	case tss.MasterKey:
 		addressInfo, err = getMasterConsolidationAddress(ctx, k, s, key)
 	case tss.SecondaryKey:
-		addressInfo, err = getSecondaryConsolidationAddress(ctx, k, s, key)
+		addressInfo, err = getSecondaryConsolidationAddress(ctx, k, key)
 	default:
 		return nil, fmt.Errorf("no consolidation address supported for key %s of key role %s", keyID, key.Role.SimpleString())
 	}
