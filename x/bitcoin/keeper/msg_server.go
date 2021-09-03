@@ -544,7 +544,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		} else if currKey, currKeyFound := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey); currKeyFound {
 			key = currKey
 		} else {
-			return nil, fmt.Errorf("%s key not set", tss.MasterKey.SimpleString())
+			return nil, fmt.Errorf("%s key not set", tss.SecondaryKey.SimpleString())
 		}
 
 		secondaryAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, key)
