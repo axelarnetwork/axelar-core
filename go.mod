@@ -4,12 +4,12 @@ go 1.16
 
 require (
 	github.com/armon/go-metrics v0.3.8
-	github.com/axelarnetwork/tm-events v0.0.0-20210906054448-7fd010665210
-	github.com/axelarnetwork/utils v0.0.0-20210906070811-d1a232298985
+	github.com/axelarnetwork/tm-events v0.0.0-20210906074732-aa0c29873025
+	github.com/axelarnetwork/utils v0.0.0-20210906073834-04b4ae0a29ab
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.9
-	github.com/ethereum/go-ethereum v1.10.8
+	github.com/ethereum/go-ethereum v1.10.2
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
