@@ -12,12 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/pubsub/query"
+	"github.com/axelarnetwork/utils/jobs"
 
-	"github.com/axelarnetwork/tm-events/pkg/pubsub"
-	"github.com/axelarnetwork/tm-events/pkg/tendermint/client"
-	tmEvents "github.com/axelarnetwork/tm-events/pkg/tendermint/events"
-	eventTypes "github.com/axelarnetwork/tm-events/pkg/tendermint/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/tm-events/pubsub"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -29,18 +27,14 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	tmTypes "github.com/tendermint/tendermint/types"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
 	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/events"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/jobs"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	utils2 "github.com/axelarnetwork/axelar-core/utils"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -92,11 +86,6 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			hub, err := newHub(node, logger)
-			if err != nil {
-				return err
-			}
-
 			axConf := app.DefaultConfig()
 			if err := serverCtx.Viper.Unmarshal(&axConf); err != nil {
 				panic(err)
@@ -132,7 +121,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, hub, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cliCtx, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -165,17 +154,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func newHub(node string, logger log.Logger) (*tmEvents.Hub, error) {
-	c, err := client.NewClient(node, client.DefaultWSEndpoint, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	hub := tmEvents.NewHub(c, logger)
-	return &hub, nil
-}
-
-func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg app.Config, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
@@ -218,11 +197,16 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	evmMgr := createEVMMgr(axelarCfg, bc, ctx.FromAddress, logger, cdc)
 
 	// we have two processes listening to block headers
-	blockHeaderForTSS := tmEvents.MustSubscribeNewBlockHeader(hub)
-	blockHeaderForStateUpdate := tmEvents.MustSubscribeNewBlockHeader(hub)
+	blockHeaderForTSS := tmEvents.MustSubscribeBlockHeader(eventBus)
+	blockHeaderForStateUpdate := tmEvents.MustSubscribeBlockHeader(eventBus)
 
-	keygenAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
-	signAck := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
+	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
+		return tmEvents.MustSubscribeWithAttributes(eventBus,
+			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
+	}
+
+	keygenAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
+	signAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
 
 	queryKeygen := createNewBlockEventQuery(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenStart, err := tmEvents.Subscribe(eventBus, queryKeygen)
@@ -236,16 +220,16 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
 	}
 
-	keygenMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signMsg := tmEvents.MustSubscribeTx(eventBus, tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 
-	btcConf := tmEvents.MustSubscribeTx(eventBus, btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
+	btcConf := subscribe(btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
-	evmNewChain := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	evmChainConf := tmEvents.MustSubscribeTx(hub, evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmDepConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTokConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := tmEvents.MustSubscribeTx(eventBus, evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
+	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	// stop the jobs if process gets interrupted/terminated
@@ -262,20 +246,23 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 	fetchEvents := func(errChan chan<- error) { errChan <- <-eventBus.FetchEvents(eventCtx) }
 	js := []jobs.Job{
 		fetchEvents,
-		events.Consume(blockHeaderForStateUpdate, func(height int64, _ []sdk.Attribute) error { return stateStore.SetState(height) }),
-		events.Consume(blockHeaderForTSS, events.OnlyBlockHeight(tssMgr.ProcessNewBlockHeader)),
-		events.Consume(keygenAck, tssMgr.ProcessKeygenAck),
-		events.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		events.Consume(keygenMsg, events.OnlyAttributes(tssMgr.ProcessKeygenMsg)),
-		events.Consume(signAck, tssMgr.ProcessSignAck),
-		events.Consume(signStart, tssMgr.ProcessSignStart),
-		events.Consume(signMsg, events.OnlyAttributes(tssMgr.ProcessSignMsg)),
-		events.Consume(btcConf, events.OnlyAttributes(btcMgr.ProcessConfirmation)),
-		events.Consume(evmNewChain, events.OnlyAttributes(evmMgr.ProcessNewChain)),
-		events.Consume(evmChainConf, events.OnlyAttributes(evmMgr.ProcessChainConfirmation)),
-		events.Consume(evmDepConf, events.OnlyAttributes(evmMgr.ProcessDepositConfirmation)),
-		events.Consume(evmTokConf, events.OnlyAttributes(evmMgr.ProcessTokenConfirmation)),
-		events.Consume(evmTraConf, events.OnlyAttributes(evmMgr.ProcessTransferOwnershipConfirmation)),
+		tmEvents.Consume(blockHeaderForStateUpdate, tmEvents.OnlyBlockHeight(stateStore.SetState)),
+		tmEvents.Consume(blockHeaderForTSS, tmEvents.OnlyBlockHeight(func(height int64) error {
+			tssMgr.ProcessNewBlockHeader(height)
+			return nil
+		})),
+		tmEvents.Consume(keygenAck, tssMgr.ProcessKeygenAck),
+		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
+		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
+		tmEvents.Consume(signAck, tssMgr.ProcessSignAck),
+		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
+		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
+		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),
+		tmEvents.Consume(evmNewChain, evmMgr.ProcessNewChain),
+		tmEvents.Consume(evmChainConf, evmMgr.ProcessChainConfirmation),
+		tmEvents.Consume(evmDepConf, evmMgr.ProcessDepositConfirmation),
+		tmEvents.Consume(evmTokConf, evmMgr.ProcessTokenConfirmation),
+		tmEvents.Consume(evmTraConf, evmMgr.ProcessTransferOwnershipConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.
@@ -288,17 +275,16 @@ func listen(ctx sdkClient.Context, hub *tmEvents.Hub, txf tx.Factory, axelarCfg 
 
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 	return tmEvents.Query{
-		TMQuery: query.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
-			tmTypes.EventTypeKey, tmTypes.EventNewBlock, eventType, sdk.AttributeKeyModule, module)),
-		Predicate: func(e eventTypes.Event) bool {
-			return e.Type == eventType && e.Module == module && e.Action == action
+		TMQuery: tmEvents.NewBlockHeaderEventQuery(eventType).MatchModule(module).MatchAction(action).Build(),
+		Predicate: func(e tmEvents.Event) bool {
+			return e.Type == eventType && e.Attributes[sdk.AttributeKeyModule] == module && e.Attributes[sdk.AttributeKeyAction] == action
 		},
 	}
 }
 
-func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *events.EventBus {
-	notifier := events.NewBlockNotifier(NewBlockClient(client), logger).StartingAt(startBlock)
-	return events.NewEventBus(events.NewBlockSource(client, notifier), pubsub.NewBus, logger)
+func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(tmEvents.NewBlockClient(client), logger).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
@@ -384,18 +370,3 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
-
-type blockClient struct{ rpcclient.Client }
-
-func (b blockClient) LatestBlockHeight(ctx context.Context) (int64, error) {
-	status, err := b.Status(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return status.SyncInfo.LatestBlockHeight, nil
-}
-
-// NewBlockClient returns a new events.BlockClient instance
-func NewBlockClient(client rpcclient.Client) events.BlockClient {
-	return blockClient{client}
-}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -116,7 +117,7 @@ func TestDecodeTransferOwnershipEvent_CorrectData(t *testing.T) {
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
-		attributes  []sdk.Attribute
+		attributes  map[string]string
 		rpc         *mock.ClientMock
 		broadcaster *mock2.BroadcasterMock
 	)
@@ -129,14 +130,14 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
-		attributes = []sdk.Attribute{
-			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
-			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
-			sdk.NewAttribute(evmTypes.AttributeKeyAmount, strconv.FormatUint(uint64(amount), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyBurnAddress, common.Bytes2Hex(burnAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
+		attributes = map[string]string{
+			evmTypes.AttributeKeyChain:        "Ethereum",
+			evmTypes.AttributeKeyTxID:         common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyAmount:       strconv.FormatUint(uint64(amount), 10),
+			evmTypes.AttributeKeyBurnAddress:  common.Bytes2Hex(burnAddrBytes),
+			evmTypes.AttributeKeyTokenAddress: common.Bytes2Hex(tokenAddrBytes),
+			evmTypes.AttributeKeyConfHeight:   strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:         string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		rpc = &mock.ClientMock{
@@ -201,7 +202,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessDepositConfirmation(attributes)
+		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -210,13 +211,10 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
 		setup()
-		for i := 0; i < len(attributes); i++ {
-			// remove one attribute at a time
-			wrongAttributes := make([]sdk.Attribute, len(attributes))
-			copy(wrongAttributes, attributes)
-			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
+		for key := range attributes {
+			delete(attributes, key)
 
-			err := mgr.ProcessDepositConfirmation(wrongAttributes)
+			err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -226,7 +224,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessDepositConfirmation(attributes)
+		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -239,7 +237,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessDepositConfirmation(attributes)
+		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -248,15 +246,9 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 	t.Run("amount mismatch", testutils.Func(func(t *testing.T) {
 		setup()
-		for i, attribute := range attributes {
-			if attribute.Key == evmTypes.AttributeKeyAmount {
-				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
-				attributes[i].Value = strconv.FormatUint(mathRand.Uint64(), 10)
-				break
-			}
-		}
+		attributes[evmTypes.AttributeKeyAmount] = strconv.FormatUint(mathRand.Uint64(), 10)
 
-		err := mgr.ProcessDepositConfirmation(attributes)
+		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -267,7 +259,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *Mgr
-		attributes       []sdk.Attribute
+		attributes       map[string]string
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
@@ -282,15 +274,15 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 
 		symbol := rand.StrBetween(5, 20)
-		attributes = []sdk.Attribute{
-			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
-			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
-			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeyTokenAddress, common.Bytes2Hex(tokenAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeySymbol, symbol),
-			sdk.NewAttribute(evmTypes.AttributeKeyAsset, "satoshi"),
-			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
+		attributes = map[string]string{
+			evmTypes.AttributeKeyChain:          "Ethereum",
+			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
+			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
+			evmTypes.AttributeKeySymbol:         symbol,
+			evmTypes.AttributeKeyAsset:          "satoshi",
+			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		rpc = &mock.ClientMock{
@@ -322,7 +314,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTokenConfirmation(attributes)
+		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -331,13 +323,10 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
 		setup()
-		for i := 0; i < len(attributes); i++ {
-			// remove one attribute at a time
-			wrongAttributes := make([]sdk.Attribute, len(attributes))
-			copy(wrongAttributes, attributes)
-			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
+		for key := range attributes {
+			delete(attributes, key)
 
-			err := mgr.ProcessTokenConfirmation(wrongAttributes)
+			err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -347,7 +336,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTokenConfirmation(attributes)
+		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -360,7 +349,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTokenConfirmation(attributes)
+		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -381,7 +370,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		receipt.Logs = append(receipt.Logs[:correctLogIdx], receipt.Logs[correctLogIdx+1:]...)
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(attributes)
+		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -399,7 +388,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(attributes)
+		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -410,7 +399,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	var (
 		mgr                   *Mgr
-		attributes            []sdk.Attribute
+		attributes            map[string]string
 		rpc                   *mock.ClientMock
 		broadcaster           *mock2.BroadcasterMock
 		prevNewOwnerAddrBytes []byte
@@ -425,14 +414,14 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 
-		attributes = []sdk.Attribute{
-			sdk.NewAttribute(evmTypes.AttributeKeyChain, "Ethereum"),
-			sdk.NewAttribute(evmTypes.AttributeKeyTxID, common.Bytes2Hex(rand.Bytes(common.HashLength))),
-			sdk.NewAttribute(evmTypes.AttributeKeyTransferKeyType, evmTypes.Ownership.SimpleString()),
-			sdk.NewAttribute(evmTypes.AttributeKeyGatewayAddress, common.Bytes2Hex(gatewayAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeyAddress, common.Bytes2Hex(newOwnerAddrBytes)),
-			sdk.NewAttribute(evmTypes.AttributeKeyConfHeight, strconv.FormatUint(uint64(confHeight), 10)),
-			sdk.NewAttribute(evmTypes.AttributeKeyPoll, string(cdc.MustMarshalJSON(pollKey))),
+		attributes = map[string]string{
+			evmTypes.AttributeKeyChain:           "Ethereum",
+			evmTypes.AttributeKeyTxID:            common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyTransferKeyType: evmTypes.Ownership.SimpleString(),
+			evmTypes.AttributeKeyGatewayAddress:  common.Bytes2Hex(gatewayAddrBytes),
+			evmTypes.AttributeKeyAddress:         common.Bytes2Hex(newOwnerAddrBytes),
+			evmTypes.AttributeKeyConfHeight:      strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		rpc = &mock.ClientMock{
@@ -508,7 +497,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -517,13 +506,10 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
 		setup()
-		for i := 0; i < len(attributes); i++ {
-			// remove one attribute at a time
-			wrongAttributes := make([]sdk.Attribute, len(attributes))
-			copy(wrongAttributes, attributes)
-			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
+		for key := range attributes {
+			delete(attributes, key)
 
-			err := mgr.ProcessTransferOwnershipConfirmation(wrongAttributes)
+			err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -533,7 +519,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -546,7 +532,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -555,15 +541,10 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 	t.Run("new owner mismatch", testutils.Func(func(t *testing.T) {
 		setup()
-		for i, attribute := range attributes {
-			if attribute.Key == evmTypes.AttributeKeyAddress {
-				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
-				attributes[i].Value = common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()
-				break
-			}
-		}
 
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()
+
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -580,7 +561,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			}
 			return receipt, nil
 		}
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -589,15 +570,10 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
 		setup()
-		for i, attribute := range attributes {
-			if attribute.Key == evmTypes.AttributeKeyAddress {
-				// have to use index, otherwise this would only change the copy of the attribute, not the one in the slice
-				attributes[i].Value = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
-				break
-			}
-		}
 
-		err := mgr.ProcessTransferOwnershipConfirmation(attributes)
+		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
+
+		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)

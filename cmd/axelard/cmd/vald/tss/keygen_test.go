@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -26,7 +27,7 @@ import (
 func TestMgr_ProcessKeygenStart(t *testing.T) {
 	var (
 		mgr          *Mgr
-		attributes   []sdk.Attribute
+		attributes   map[string]string
 		keygenClient *mock3.TofndKeyGenClientMock
 	)
 	setup := func() {
@@ -52,11 +53,11 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 			cdc,
 		)
 
-		attributes = []sdk.Attribute{
-			{Key: tss.AttributeKeyKeyID, Value: rand.StrBetween(5, 20)},
-			{Key: tss.AttributeKeyThreshold, Value: strconv.FormatInt(rand.I64Between(1, 100), 10)},
-			{Key: tss.AttributeKeyParticipants, Value: string(cdc.MustMarshalJSON([]string{principalAddr}))},
-			{Key: tss.AttributeKeyParticipantShareCounts, Value: string(cdc.MustMarshalJSON([]uint32{uint32(rand.I64Between(1, 20))}))},
+		attributes = map[string]string{
+			tss.AttributeKeyKeyID:                  rand.StrBetween(5, 20),
+			tss.AttributeKeyThreshold:              strconv.FormatInt(rand.I64Between(1, 100), 10),
+			tss.AttributeKeyParticipants:           string(cdc.MustMarshalJSON([]string{principalAddr})),
+			tss.AttributeKeyParticipantShareCounts: string(cdc.MustMarshalJSON([]uint32{uint32(rand.I64Between(1, 20))})),
 		}
 
 	}
@@ -65,13 +66,13 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 		setup()
 		keygenClient.RecvFunc = func() (*tofnd.MessageOut, error) { return nil, io.EOF }
 
-		assert.Error(t, mgr.ProcessKeygenStart(rand.PosI64(), attributes))
+		assert.Error(t, mgr.ProcessKeygenStart(tmEvents.Event{Height: rand.PosI64(), Attributes: attributes}))
 	}).Repeat(repeats))
 
 	t.Run("server response error", testutils.Func(func(t *testing.T) {
 		setup()
 		keygenClient.RecvFunc = func() (*tofnd.MessageOut, error) { return nil, fmt.Errorf("some error") }
 
-		assert.Error(t, mgr.ProcessKeygenStart(rand.PosI64(), attributes))
+		assert.Error(t, mgr.ProcessKeygenStart(tmEvents.Event{Height: rand.PosI64(), Attributes: attributes}))
 	}).Repeat(repeats))
 }

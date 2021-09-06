@@ -4,12 +4,12 @@ go 1.16
 
 require (
 	github.com/armon/go-metrics v0.3.8
-	github.com/axelarnetwork/tm-events v0.0.0-20210714065054-b010ab2580bd
+	github.com/axelarnetwork/tm-events v0.0.0-20210906054448-7fd010665210
+	github.com/axelarnetwork/utils v0.0.0-20210906070811-d1a232298985
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.9
-	github.com/cucumber/godog v0.11.0
-	github.com/ethereum/go-ethereum v1.10.2
+	github.com/ethereum/go-ethereum v1.10.8
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
@@ -26,9 +26,10 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
 	github.com/tendermint/tm-db v0.6.4
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
 	google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb
-	google.golang.org/grpc v1.37.0
+	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 )
 

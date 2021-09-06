@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -298,20 +299,23 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 	return broadcastChan, resChan, errChan
 }
 
-func parseMsgParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (sessionID string, from string, payload *tofnd.TrafficOut) {
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeySessionID:
-			sessionID = attribute.Value
-		case sdk.AttributeKeySender:
-			from = attribute.Value
-		case tss.AttributeKeyPayload:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &payload)
-		default:
-		}
+func parseMsgParams(cdc *codec.LegacyAmino, attributes map[string]string) (sessionID string, from string, payload *tofnd.TrafficOut) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeySessionID, Map: parse.IdentityMap},
+		{Key: sdk.AttributeKeySender, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyPayload, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &payload)
+			return payload, nil
+		}},
 	}
 
-	return sessionID, from, payload
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		panic(err)
+	}
+
+	return results[0].(string), results[1].(string), results[2].(*tofnd.TrafficOut)
+
 }
 
 func prepareTrafficIn(principalAddr string, from string, sessionID string, payload *tofnd.TrafficOut, logger log.Logger) *tofnd.MessageIn {

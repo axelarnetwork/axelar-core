@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -18,7 +19,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -52,8 +53,8 @@ func NewMgr(rpcs map[string]rpc.Client, broadcaster types.Broadcaster, sender sd
 }
 
 // ProcessNewChain notifies the operator that vald needs to be restarted/udpated for a new chain
-func (mgr Mgr) ProcessNewChain(attributes []sdk.Attribute) (err error) {
-	chain, nativeAsset, err := parseNewChainParams(attributes)
+func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
+	chain, nativeAsset, err := parseNewChainParams(e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Invalid update event")
 	}
@@ -63,8 +64,8 @@ func (mgr Mgr) ProcessNewChain(attributes []sdk.Attribute) (err error) {
 }
 
 // ProcessChainConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessChainConfirmation(attributes []sdk.Attribute) (err error) {
-	chain, pollKey, err := parseChainConfirmationParams(mgr.cdc, attributes)
+func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
+	chain, pollKey, err := parseChainConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM chain confirmation failed")
 	}
@@ -77,8 +78,8 @@ func (mgr Mgr) ProcessChainConfirmation(attributes []sdk.Attribute) (err error) 
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error) {
-	chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, attributes)
+func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
+	chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -103,8 +104,8 @@ func (mgr Mgr) ProcessDepositConfirmation(attributes []sdk.Attribute) (err error
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
-func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
-	chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, attributes)
+func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
+	chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
@@ -129,8 +130,8 @@ func (mgr Mgr) ProcessTokenConfirmation(attributes []sdk.Attribute) error {
 }
 
 // ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
-func (mgr Mgr) ProcessTransferOwnershipConfirmation(attributes []sdk.Attribute) (err error) {
-	chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, err := parseTransferOwnershipConfirmationParams(mgr.cdc, attributes)
+func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error) {
+	chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, err := parseTransferOwnershipConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -154,53 +155,42 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(attributes []sdk.Attribute) 
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseNewChainParams(attributes []sdk.Attribute) (
-	chain string,
-	nativeAsset string,
-	err error,
-) {
-	var chainFound, nativeAssetFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case evmTypes.AttributeKeyChain:
-			chain = attribute.Value
-			chainFound = true
-		case evmTypes.AttributeKeyNativeAsset:
-			nativeAsset = attribute.Value
-			nativeAssetFound = true
-		default:
-		}
+func parseNewChainParams(attributes map[string]string) (chain string, nativeAsset string, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyNativeAsset, Map: parse.IdentityMap},
 	}
-	if !chainFound || !nativeAssetFound {
-		return "", "", fmt.Errorf("insufficient event attributes")
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", "", err
 	}
-	return chain, nativeAsset, nil
+
+	return results[0].(string), results[1].(string), nil
 }
 
-func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, pollKeyFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case evmTypes.AttributeKeyChain:
-			chain = attribute.Value
-			chainFound = true
-		case evmTypes.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
-			pollKeyFound = true
-		default:
-		}
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
 	}
-	if !chainFound || !pollKeyFound {
-		return "", vote.PollKey{}, fmt.Errorf("insufficient event attributes")
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", vote.PollKey{}, err
 	}
-	return chain, pollKey, nil
+
+	return results[0].(string), results[1].(vote.PollKey), nil
 }
 
-func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
 	amount sdk.Uint,
@@ -209,49 +199,41 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Att
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, txIDFound, amountFound, burnAddrFound, tokenAddrFound, confHeightFound, pollKeyFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case evmTypes.AttributeKeyChain:
-			chain = attribute.Value
-			chainFound = true
-		case evmTypes.AttributeKeyTxID:
-			txID = common.HexToHash(attribute.Value)
-			txIDFound = true
-		case evmTypes.AttributeKeyAmount:
-			amount, err = sdk.ParseUint(attribute.Value)
-			if err != nil {
-				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
-					sdkerrors.Wrap(err, "parsing transfer amount failed")
-			}
-			amountFound = true
-		case evmTypes.AttributeKeyBurnAddress:
-			burnAddr = common.HexToAddress(attribute.Value)
-			burnAddrFound = true
-		case evmTypes.AttributeKeyTokenAddress:
-			tokenAddr = common.HexToAddress(attribute.Value)
-			tokenAddrFound = true
-		case evmTypes.AttributeKeyConfHeight:
-			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
-			if err != nil {
-				return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
-					sdkerrors.Wrap(err, "parsing confirmation height failed")
-			}
-			confHeightFound = true
-		case evmTypes.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
-			pollKeyFound = true
-		default:
-		}
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyAmount, Map: func(s string) (interface{}, error) { return sdk.ParseUint(s) }},
+		{Key: evmTypes.AttributeKeyBurnAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
 	}
-	if !chainFound || !txIDFound || !amountFound || !burnAddrFound || !tokenAddrFound || !confHeightFound || !pollKeyFound {
-		return "", common.Hash{}, sdk.Uint{}, common.Address{}, common.Address{}, 0, vote.PollKey{},
-			fmt.Errorf("insufficient event attributes")
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", [32]byte{}, sdk.Uint{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
 	}
-	return chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, nil
+
+	return results[0].(string),
+		results[1].(common.Hash),
+		results[2].(sdk.Uint),
+		results[3].(common.Address),
+		results[4].(common.Address),
+		results[5].(uint64),
+		results[6].(vote.PollKey),
+		nil
 }
 
-func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
@@ -261,49 +243,43 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attri
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, txIDFound, gatewayAddrFound, tokenAddrFound, assetFound, symbolFound, confHeightFound, pollKeyFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case evmTypes.AttributeKeyChain:
-			chain = attribute.Value
-			chainFound = true
-		case evmTypes.AttributeKeyTxID:
-			txID = common.HexToHash(attribute.Value)
-			txIDFound = true
-		case evmTypes.AttributeKeyGatewayAddress:
-			gatewayAddr = common.HexToAddress(attribute.Value)
-			gatewayAddrFound = true
-		case evmTypes.AttributeKeyTokenAddress:
-			tokenAddr = common.HexToAddress(attribute.Value)
-			tokenAddrFound = true
-		case evmTypes.AttributeKeyAsset:
-			asset = attribute.Value
-			assetFound = true
-		case evmTypes.AttributeKeySymbol:
-			symbol = attribute.Value
-			symbolFound = true
-		case evmTypes.AttributeKeyConfHeight:
-			h, err := strconv.Atoi(attribute.Value)
-			if err != nil {
-				return "", common.Hash{}, common.Address{}, common.Address{}, "", "", 0, vote.PollKey{},
-					sdkerrors.Wrap(err, "parsing confirmation height failed")
-			}
-			confHeight = uint64(h)
-			confHeightFound = true
-		case btc.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
-			pollKeyFound = true
-		default:
-		}
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyAsset, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeySymbol, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
 	}
-	if !chainFound || !txIDFound || !gatewayAddrFound || !tokenAddrFound || !assetFound || !symbolFound || !confHeightFound || !pollKeyFound {
-		return "", common.Hash{}, common.Address{}, common.Address{}, "", "", 0, vote.PollKey{},
-			fmt.Errorf("insufficient event attributes")
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", "", 0, vote.PollKey{}, err
 	}
-	return chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, nil
+
+	return results[0].(string),
+		results[1].(common.Hash),
+		results[2].(common.Address),
+		results[3].(common.Address),
+		results[4].(string),
+		results[5].(string),
+		results[6].(uint64),
+		results[7].(vote.PollKey),
+		nil
 }
 
-func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (
+func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
 	transferKeyType evmTypes.TransferKeyType,
@@ -312,46 +288,40 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 	pollKey vote.PollKey,
 	err error,
 ) {
-	var chainFound, txIDFound, transferKeyTypeFound, gatewayAddrFound, newOwnerAddrFound, confHeightFound, pollKeyFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case evmTypes.AttributeKeyChain:
-			chain = attribute.Value
-			chainFound = true
-		case evmTypes.AttributeKeyTxID:
-			txID = common.HexToHash(attribute.Value)
-			txIDFound = true
-		case evmTypes.AttributeKeyTransferKeyType:
-			transferKeyType, err = evmTypes.TransferKeyTypeFromSimpleStr(attribute.Value)
-			if err != nil {
-				return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
-					sdkerrors.Wrap(err, "parsing transfer key type failed")
-			}
-			transferKeyTypeFound = true
-		case evmTypes.AttributeKeyGatewayAddress:
-			gatewayAddr = common.HexToAddress(attribute.Value)
-			gatewayAddrFound = true
-		case evmTypes.AttributeKeyAddress:
-			newOwnerAddr = common.HexToAddress(attribute.Value)
-			newOwnerAddrFound = true
-		case evmTypes.AttributeKeyConfHeight:
-			confHeight, err = strconv.ParseUint(attribute.Value, 10, 64)
-			if err != nil {
-				return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
-					sdkerrors.Wrap(err, "parsing confirmation height failed")
-			}
-			confHeightFound = true
-		case evmTypes.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
-			pollKeyFound = true
-		default:
-		}
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyTransferKeyType, Map: func(s string) (interface{}, error) {
+			return evmTypes.TransferKeyTypeFromSimpleStr(s)
+		}},
+		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
 	}
-	if !chainFound || !txIDFound || !transferKeyTypeFound || !gatewayAddrFound || !newOwnerAddrFound || !confHeightFound || !pollKeyFound {
-		return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, common.Address{}, common.Address{}, 0, vote.PollKey{},
-			fmt.Errorf("insufficient event attributes")
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", [32]byte{}, 0, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
 	}
-	return chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, nil
+
+	return results[0].(string),
+		results[1].(common.Hash),
+		results[2].(evmTypes.TransferKeyType),
+		results[3].(common.Address),
+		results[4].(common.Address),
+		results[5].(uint64),
+		results[6].(vote.PollKey),
+		nil
 }
 
 func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
