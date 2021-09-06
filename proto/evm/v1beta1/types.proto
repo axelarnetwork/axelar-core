@@ -63,6 +63,7 @@ message Command {
   string command = 2;
   bytes params = 3;
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  uint32 max_gas_cost = 5;
 }
 
 enum BatchedCommandsStatus {

@@ -143,6 +143,19 @@ func (k keeper) GetName() string {
 	return k.chain
 }
 
+// GetCommandsGasLimit returns the EVM network's gas limist for batched commands
+func (k keeper) GetCommandsGasLimit(ctx sdk.Context) (uint32, bool) {
+	var commandsGasLimit uint32
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		return 0, false
+	}
+
+	subspace.Get(ctx, types.KeyCommandsGasLimit, &commandsGasLimit)
+
+	return commandsGasLimit, true
+}
+
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to
 func (k keeper) GetNetwork(ctx sdk.Context) (string, bool) {
 	var network string
