@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"testing"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -27,7 +27,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		mgr         *Mgr
 		rpc         *mock2.ClientMock
 		broadcaster *mock3.BroadcasterMock
-		attributes  []sdk.Attribute
+		attributes  map[string]string
 		info        btc.OutPointInfo
 		confHeight  int64
 	)
@@ -42,10 +42,10 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		pollKey := exported.NewPollKey(btc.ModuleName, rand.StrBetween(1, 100))
 
 		info = randomOutpointInfo()
-		attributes = []sdk.Attribute{
-			sdk.NewAttribute(btc.AttributeKeyConfHeight, strconv.FormatInt(confHeight, 10)),
-			sdk.NewAttribute(btc.AttributeKeyOutPointInfo, string(mgr.cdc.MustMarshalJSON(info))),
-			sdk.NewAttribute(btc.AttributeKeyPoll, string(mgr.cdc.MustMarshalJSON(pollKey))),
+		attributes = map[string]string{
+			btc.AttributeKeyConfHeight:   strconv.FormatInt(confHeight, 10),
+			btc.AttributeKeyOutPointInfo: string(mgr.cdc.MustMarshalJSON(info)),
+			btc.AttributeKeyPoll:         string(mgr.cdc.MustMarshalJSON(pollKey)),
 		}
 	}
 
@@ -54,13 +54,9 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	repetitionCount := 20
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
 		setup()
-		for i := 0; i < len(attributes); i++ {
-			// remove one attribute at a time
-			wrongAttributes := make([]sdk.Attribute, len(attributes))
-			copy(wrongAttributes, attributes)
-			wrongAttributes = append(wrongAttributes[:i], wrongAttributes[(i+1):]...)
-
-			err := mgr.ProcessConfirmation(wrongAttributes)
+		for key := range attributes {
+			delete(attributes, key)
+			err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -72,7 +68,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			return nil, fmt.Errorf("some error")
 		}
 
-		err := mgr.ProcessConfirmation(attributes)
+		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -84,7 +80,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			return nil, nil
 		}
 
-		err := mgr.ProcessConfirmation(attributes)
+		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -100,7 +96,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(attributes)
+		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -117,7 +113,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(attributes)
+		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
@@ -133,7 +129,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 			}, nil
 		}
 
-		err := mgr.ProcessConfirmation(attributes)
+		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)

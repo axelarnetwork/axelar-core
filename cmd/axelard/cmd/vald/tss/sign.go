@@ -6,10 +6,11 @@ import (
 	"sort"
 	"strconv"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -18,8 +19,8 @@ import (
 )
 
 // ProcessSignAck broadcasts an acknowledgment for a signature
-func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, sigID, height, err := parseSignAckParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessSignAck(e tmEvents.Event) error {
+	keyID, sigID, height, err := parseSignAckParams(e.Attributes)
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
@@ -53,8 +54,8 @@ func (mgr *Mgr) ProcessSignAck(blockHeight int64, attributes []sdk.Attribute) er
 }
 
 // ProcessSignStart starts the communication with the sign protocol
-func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, sigID, participants, payload, timeout, err := parseSignStartParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessSignStart(e tmEvents.Event) error {
+	keyID, sigID, participants, payload, timeout, err := parseSignStartParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 	}
 
 	done := false
-	session := mgr.timeoutQueue.Enqueue(sigID, blockHeight+timeout)
+	session := mgr.timeoutQueue.Enqueue(sigID, e.Height+timeout)
 
 	stream, cancel, err := mgr.startSign(keyID, sigID, participants, payload)
 	if err != nil {
@@ -109,8 +110,8 @@ func (mgr *Mgr) ProcessSignStart(blockHeight int64, attributes []sdk.Attribute) 
 }
 
 // ProcessSignMsg forwards blockchain messages to the sign protocol
-func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
-	sigID, from, payload := parseMsgParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessSignMsg(e tmEvents.Event) error {
+	sigID, from, payload := parseMsgParams(mgr.cdc, e.Attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
 	// this message is not meant for this tofnd instance
 	if msgIn == nil {
@@ -129,65 +130,45 @@ func (mgr *Mgr) ProcessSignMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseSignAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, height int64, err error) {
-	var keyIDFound, sigIDFound, heightFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeyKeyID:
-			keyID = attribute.Value
-			keyIDFound = true
-		case tss.AttributeKeySigID:
-			sigID = attribute.Value
-			sigIDFound = true
-
-		case tss.AttributeKeyHeight:
-			height, err = strconv.ParseInt(attribute.Value, 10, 64)
-			if err != nil {
-				return "", "", -1, err
-			}
-			heightFound = true
-		default:
-		}
+func parseSignAckParams(attributes map[string]string) (keyID string, sigID string, height int64, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeySigID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyHeight, Map: func(s string) (interface{}, error) {
+			return strconv.ParseInt(s, 10, 64)
+		}},
 	}
 
-	if !keyIDFound || !sigIDFound || !heightFound {
-		return "", "", -1, fmt.Errorf("insufficient event attributes")
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", "", 0, err
 	}
 
-	return keyID, sigID, height, nil
+	return results[0].(string), results[1].(string), results[2].(int64), nil
 }
 
-func parseSignStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, sigID string, participants []string, payload []byte, timeout int64, err error) {
-	var keyIDFound, sigIDFound, participantsFound, payloadFound, timeoutFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeyKeyID:
-			keyID = attribute.Value
-			keyIDFound = true
-		case tss.AttributeKeySigID:
-			sigID = attribute.Value
-			sigIDFound = true
-		case tss.AttributeKeyParticipants:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
-			participantsFound = true
-		case tss.AttributeKeyPayload:
-			payload = []byte(attribute.Value)
-			payloadFound = true
-		case tss.AttributeKeyTimeout:
-			timeout, err = strconv.ParseInt(attribute.Value, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			timeoutFound = true
-		default:
-		}
+func parseSignStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (keyID string, sigID string, participants []string, payload []byte, timeout int64, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeySigID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &participants)
+			return participants, nil
+		}},
+		{Key: tss.AttributeKeyPayload, Map: func(s string) (interface{}, error) {
+			return []byte(s), nil
+		}},
+		{Key: tss.AttributeKeyTimeout, Map: func(s string) (interface{}, error) {
+			return strconv.ParseInt(s, 10, 64)
+		}},
 	}
 
-	if !keyIDFound || !sigIDFound || !participantsFound || !payloadFound || !timeoutFound {
-		return "", "", nil, nil, 0, fmt.Errorf("insufficient event attributes")
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", "", nil, nil, 0, err
 	}
 
-	return keyID, sigID, participants, payload, timeout, nil
+	return results[0].(string), results[1].(string), results[2].([]string), results[3].([]byte), results[4].(int64), nil
 }
 
 func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (Stream, context.CancelFunc, error) {

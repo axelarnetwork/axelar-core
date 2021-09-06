@@ -6,11 +6,12 @@ import (
 	"sort"
 	"strconv"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -19,8 +20,8 @@ import (
 )
 
 // ProcessKeygenAck broadcasts an acknowledgment for a keygen
-func (mgr *Mgr) ProcessKeygenAck(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, height, err := parseKeygenAckParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessKeygenAck(e tmEvents.Event) error {
+	keyID, height, err := parseKeygenAckParams(e.Attributes)
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
@@ -54,8 +55,8 @@ func (mgr *Mgr) ProcessKeygenAck(blockHeight int64, attributes []sdk.Attribute) 
 }
 
 // ProcessKeygenStart starts the communication with the keygen protocol
-func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute) error {
-	keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
+	keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 	}
 
 	done := false
-	session := mgr.timeoutQueue.Enqueue(keyID, blockHeight+timeout)
+	session := mgr.timeoutQueue.Enqueue(keyID, e.Height+timeout)
 
 	stream, cancel, err := mgr.startKeygen(keyID, threshold, int32(myIndex), participants, participantShareCounts)
 	if err != nil {
@@ -111,8 +112,8 @@ func (mgr *Mgr) ProcessKeygenStart(blockHeight int64, attributes []sdk.Attribute
 }
 
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
-func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
-	keyID, from, payload := parseMsgParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessKeygenMsg(e tmEvents.Event) error {
+	keyID, from, payload := parseMsgParams(mgr.cdc, e.Attributes)
 	msgIn := prepareTrafficIn(mgr.principalAddr, from, keyID, payload, mgr.Logger)
 
 	stream, ok := mgr.getKeygenStream(keyID)
@@ -127,65 +128,51 @@ func (mgr *Mgr) ProcessKeygenMsg(attributes []sdk.Attribute) error {
 	return nil
 }
 
-func parseKeygenAckParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, height int64, err error) {
-	var keyIDFound, heightFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeyKeyID:
-			keyID = attribute.Value
-			keyIDFound = true
-		case tss.AttributeKeyHeight:
-			height, err = strconv.ParseInt(attribute.Value, 10, 64)
-			if err != nil {
-				return "", -1, err
-			}
-			heightFound = true
-		default:
-		}
+func parseKeygenAckParams(attributes map[string]string) (keyID string, height int64, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyHeight, Map: func(s string) (interface{}, error) { return strconv.ParseInt(s, 10, 64) }},
 	}
 
-	if !keyIDFound || !heightFound {
-		return "", -1, fmt.Errorf("insufficient event attributes")
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", 0, err
 	}
 
-	return keyID, height, nil
+	return results[0].(string), results[1].(int64), nil
 }
 
-func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (keyID string, threshold int32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
-	var keyIDFound, thresholdFound, participantsFound, sharesFound, timeoutFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case tss.AttributeKeyKeyID:
-			keyID = attribute.Value
-			keyIDFound = true
-		case tss.AttributeKeyThreshold:
-			t, err := strconv.ParseInt(attribute.Value, 10, 32)
+func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (
+	keyID string, threshold int32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
+
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyThreshold, Map: func(s string) (interface{}, error) {
+			t, err := strconv.ParseInt(s, 10, 32)
 			if err != nil {
-				panic(err)
+				return 0, err
 			}
-			threshold = int32(t)
-			thresholdFound = true
-		case tss.AttributeKeyParticipants:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participants)
-			participantsFound = true
-		case tss.AttributeKeyParticipantShareCounts:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &participantShareCounts)
-			sharesFound = true
-		case tss.AttributeKeyTimeout:
-			t, err := strconv.ParseInt(attribute.Value, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			timeout = int64(t)
-			timeoutFound = true
-		default:
-		}
-	}
-	if !keyIDFound || !thresholdFound || !participantsFound || !sharesFound || !timeoutFound {
-		return "", 0, nil, nil, 0, fmt.Errorf("insufficient event attributes")
+			return int32(t), nil
+		}},
+		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &participants)
+			return participants, nil
+		}},
+		{Key: tss.AttributeKeyParticipantShareCounts, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &participantShareCounts)
+			return participantShareCounts, nil
+		}},
+		{Key: tss.AttributeKeyTimeout, Map: func(s string) (interface{}, error) {
+			return strconv.ParseInt(s, 10, 64)
+		}},
 	}
 
-	return keyID, threshold, participants, participantShareCounts, timeout, nil
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", 0, nil, nil, 0, err
+	}
+
+	return results[0].(string), results[1].(int32), results[2].([]string), results[3].([]uint32), results[4].(int64), nil
 }
 
 func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {

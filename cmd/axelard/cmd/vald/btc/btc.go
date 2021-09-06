@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -37,8 +39,8 @@ func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, sender sdk.AccAddres
 }
 
 // ProcessConfirmation votes on the correctness of a Bitcoin deposit
-func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
-	outPointInfo, confHeight, pollKey, err := parseConfirmationParams(mgr.cdc, attributes)
+func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
+	outPointInfo, confHeight, pollKey, err := parseConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")
 	}
@@ -53,31 +55,25 @@ func (mgr *Mgr) ProcessConfirmation(attributes []sdk.Attribute) error {
 	return mgr.broadcaster.Broadcast(msg)
 }
 
-func parseConfirmationParams(cdc *codec.LegacyAmino, attributes []sdk.Attribute) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {
-	var outPointFound, confHeightFound, pollKeyFound bool
-	for _, attribute := range attributes {
-		switch attribute.Key {
-		case btc.AttributeKeyOutPointInfo:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &outPoint)
-			outPointFound = true
-		case btc.AttributeKeyConfHeight:
-			h, err := strconv.Atoi(attribute.Value)
-			if err != nil {
-				return btc.OutPointInfo{}, 0, vote.PollKey{}, sdkerrors.Wrap(err, "could not parse confirmation height")
-			}
-			confHeight = int64(h)
-			confHeightFound = true
-		case btc.AttributeKeyPoll:
-			cdc.MustUnmarshalJSON([]byte(attribute.Value), &pollKey)
-			pollKeyFound = true
-		default:
-		}
-	}
-	if !outPointFound || !confHeightFound || !pollKeyFound {
-		return btc.OutPointInfo{}, 0, vote.PollKey{}, fmt.Errorf("insufficient event attributes")
+func parseConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: btc.AttributeKeyOutPointInfo, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &outPoint)
+			return outPoint, nil
+		}},
+		{Key: btc.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseInt(s, 10, 64) }},
+		{Key: btc.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
 	}
 
-	return outPoint, confHeight, pollKey, nil
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return btc.OutPointInfo{}, 0, vote.PollKey{}, err
+	}
+
+	return results[0].(btc.OutPointInfo), results[1].(int64), results[2].(vote.PollKey), nil
 }
 
 func confirmTx(rpc rpc3.Client, outPointInfo btc.OutPointInfo, requiredConfirmations int64) error {

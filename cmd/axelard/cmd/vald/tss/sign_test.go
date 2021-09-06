@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -25,7 +26,7 @@ import (
 func TestMgr_ProcessSignStart(t *testing.T) {
 	var (
 		mgr        *Mgr
-		attributes []sdk.Attribute
+		attributes map[string]string
 		signClient *mock3.TofndSignClientMock
 	)
 	setup := func() {
@@ -51,11 +52,11 @@ func TestMgr_ProcessSignStart(t *testing.T) {
 			cdc,
 		)
 
-		attributes = []sdk.Attribute{
-			{Key: tss.AttributeKeyKeyID, Value: rand.StrBetween(5, 20)},
-			{Key: tss.AttributeKeySigID, Value: rand.StrBetween(5, 20)},
-			{Key: tss.AttributeKeyParticipants, Value: string(cdc.MustMarshalJSON([]string{principalAddr}))},
-			{Key: tss.AttributeKeyPayload, Value: string(rand.BytesBetween(100, 300))},
+		attributes = map[string]string{
+			tss.AttributeKeyKeyID:        rand.StrBetween(5, 20),
+			tss.AttributeKeySigID:        rand.StrBetween(5, 20),
+			tss.AttributeKeyParticipants: string(cdc.MustMarshalJSON([]string{principalAddr})),
+			tss.AttributeKeyPayload:      string(rand.BytesBetween(100, 300)),
 		}
 	}
 	repeats := 20
@@ -63,13 +64,13 @@ func TestMgr_ProcessSignStart(t *testing.T) {
 		setup()
 		signClient.RecvFunc = func() (*tofnd.MessageOut, error) { return nil, io.EOF }
 
-		assert.Error(t, mgr.ProcessSignStart(rand.PosI64(), attributes))
+		assert.Error(t, mgr.ProcessSignStart(tmEvents.Event{Height: rand.PosI64(), Attributes: attributes}))
 	}).Repeat(repeats))
 
 	t.Run("server response error", testutils.Func(func(t *testing.T) {
 		setup()
 		signClient.RecvFunc = func() (*tofnd.MessageOut, error) { return nil, fmt.Errorf("some error") }
 
-		assert.Error(t, mgr.ProcessSignStart(rand.PosI64(), attributes))
+		assert.Error(t, mgr.ProcessSignStart(tmEvents.Event{Height: rand.PosI64(), Attributes: attributes}))
 	}).Repeat(repeats))
 }
