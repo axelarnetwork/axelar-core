@@ -77,7 +77,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	}
 	pubKey1 := tss.Key{ID: rand.Str(10), Value: privKey1.PublicKey, Role: tss.MasterKey}
 	pubKey2 := tss.Key{ID: rand.Str(10), Value: privKey2.PublicKey, Role: tss.MasterKey}
-	externalPubKey := tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.Unknown}
+	externalPubKey := tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey}
 	inputAmount := btcutil.Amount(100000000) // 1btc
 	outputAmount := btcutil.Amount(10000000) // 0.1btc
 	outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:0", rand.HexStr(64)))
@@ -220,6 +220,80 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig2}})
 		assert.Error(t, err)
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig3, *sig3}})
+		assert.Error(t, err)
+	}))
+
+	t.Run("should be spendable by ((pubKey1 or pubKey2) and multiple externalPubKeys) before the timelock elapses", testutils.Func(func(t *testing.T) {
+		externalKeyCount := 6
+		externalKeyThreshold := int64(3)
+
+		var externalKeys []tss.Key
+		var externalPrivKeys []*btcec.PrivateKey
+
+		for i := 0; i < externalKeyCount; i++ {
+			externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+			if err != nil {
+				panic(err)
+			}
+
+			externalPrivKeys = append(externalPrivKeys, externalPrivKey)
+			externalKeys = append(externalKeys, tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+		}
+
+		address := types.NewMasterConsolidationAddress(pubKey1, pubKey2, externalKeyThreshold, externalKeys, time.Now(), types.Testnet3)
+		inputs := []types.OutPointToSign{
+			{
+				AddressInfo: address,
+				OutPointInfo: types.NewOutPointInfo(
+					outPoint,
+					inputAmount,
+					address.Address,
+				),
+			},
+		}
+		outputs := []types.Output{
+			{
+				Amount:    outputAmount,
+				Recipient: address.GetAddress(),
+			},
+		}
+
+		tx, err := types.CreateTx(inputs, outputs)
+		assert.NoError(t, err)
+		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
+		tx = types.EnableTimelockAndRBF(tx)
+
+		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
+		assert.NoError(t, err)
+
+		sig1, err := privKey1.Sign(sigHash)
+		assert.NoError(t, err)
+		sig2, err := privKey2.Sign(sigHash)
+		assert.NoError(t, err)
+		externalSig1, err := externalPrivKeys[0].Sign(sigHash)
+		assert.NoError(t, err)
+		externalSig4, err := externalPrivKeys[3].Sign(sigHash)
+		assert.NoError(t, err)
+		externalSig6, err := externalPrivKeys[5].Sign(sigHash)
+		assert.NoError(t, err)
+
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *externalSig1, *externalSig4, *externalSig6}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *externalSig1, *externalSig4, *externalSig6}})
+		assert.NoError(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*externalSig1, *externalSig4, *externalSig6, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*externalSig1, *externalSig4, *externalSig6, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig1, *sig1}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*sig2, *sig2}})
+		assert.Error(t, err)
+		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*externalSig1, *externalSig4, *externalSig6, *externalSig1}})
 		assert.Error(t, err)
 	}))
 }

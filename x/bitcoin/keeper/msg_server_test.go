@@ -546,7 +546,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 
 		masterKeyRotationCount = rand.I64Between(100, 1000)
-		oldMasterKeyRotationCount := masterKeyRotationCount - (masterKeyRotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
+		oldMasterKeyRotationCount := masterKeyRotationCount - types.DefaultParams().MasterKeyRetentionPeriod
 
 		inputCount := int(types.DefaultParams().MaxInputCount)
 		inputs = make([]types.OutPointInfo, inputCount)
@@ -1002,7 +1002,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		}
 
 		masterKeyRotationCount = rand.I64Between(100, 1000)
-		oldMasterKeyRotationCount := masterKeyRotationCount - (masterKeyRotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
+		oldMasterKeyRotationCount := masterKeyRotationCount - types.DefaultParams().MasterKeyRetentionPeriod
 
 		inputCount := int(types.DefaultParams().MaxInputCount)
 		inputs = make([]types.OutPointInfo, inputCount)

@@ -961,7 +961,10 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
 	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
-	oldMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
+	oldMasterKeyRotationCount := currRotationCount - k.GetMasterKeyRetentionPeriod(ctx)
+	if oldMasterKeyRotationCount < 1 {
+		oldMasterKeyRotationCount = 1
+	}
 
 	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
 }
