@@ -29,6 +29,7 @@ var (
 	KeyExternalMultisigThreshold = []byte("externalMultisigThreshold")
 	KeyVotingThreshold           = []byte("votingThreshold")
 	KeyMinVoterCount             = []byte("minVoterCount")
+	KeyMaxTxSize                 = []byte("maxTxSize")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -51,6 +52,7 @@ func DefaultParams() Params {
 		ExternalMultisigThreshold: utils.Threshold{Numerator: 3, Denominator: 6},
 		VotingThreshold:           utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:             15,
+		MaxTxSize:                 1024 * 1024, // 1 MiB
 	}
 }
 
@@ -76,6 +78,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		paramtypes.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
+		paramtypes.NewParamSetPair(KeyMaxTxSize, &m.MaxTxSize, validateMaxTxSize),
 	}
 }
 
@@ -254,6 +257,19 @@ func validateMinVoterCount(minVoterCount interface{}) error {
 	return nil
 }
 
+func validateMaxTxSize(maxTxSize interface{}) error {
+	val, ok := maxTxSize.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for MaxTxSize: %T", maxTxSize)
+	}
+
+	if val <= 0 {
+		return fmt.Errorf("max tx size must be >0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -296,6 +312,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMinVoterCount(m.MinVoterCount); err != nil {
+		return err
+	}
+
+	if err := validateMaxTxSize(m.MaxTxSize); err != nil {
 		return err
 	}
 

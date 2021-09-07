@@ -627,6 +627,7 @@ func TestCreateMasterTx(t *testing.T) {
 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 				return types.DefaultParams().Network
 			},
+			GetMaxTxSizeFunc: func(ctx sdk.Context) int64 { return types.DefaultParams().MaxTxSize },
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
 					Address:      encodedAddress,
@@ -1093,6 +1094,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 				return types.DefaultParams().Network
 			},
+			GetMaxTxSizeFunc: func(ctx sdk.Context) int64 { return types.DefaultParams().MaxTxSize },
 			GetAddressFunc: func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 				return types.AddressInfo{
 					Address:      encodedAddress,

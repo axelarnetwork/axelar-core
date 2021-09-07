@@ -545,7 +545,9 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, err
 	}
 
-	types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx))
+	if err := types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx)); err != nil {
+		return nil, err
+	}
 	anyoneCanSpendVout := uint32(0)
 
 	if req.SecondaryKeyAmount > 0 {
@@ -564,7 +566,9 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			return nil, err
 		}
 
-		types.AddOutput(tx, secondaryAddress.GetAddress(), btcutil.Amount(req.SecondaryKeyAmount))
+		if err := types.AddOutput(tx, secondaryAddress.GetAddress(), btcutil.Amount(req.SecondaryKeyAmount)); err != nil {
+			return nil, err
+		}
 		s.SetAddress(ctx, secondaryAddress)
 	}
 
@@ -587,7 +591,9 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", inputsTotal.Int64(), fee.Int64())
 	}
 
-	types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64()))
+	if err := types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64())); err != nil {
+		return nil, err
+	}
 
 	s.SetAddress(ctx, consolidationAddress)
 	telemetry.SetGaugeWithLabels(
@@ -661,7 +667,9 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx))
+	if err := types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx)); err != nil {
+		return nil, err
+	}
 	anyoneCanSpendVout := uint32(0)
 
 	if req.MasterKeyAmount > 0 {
@@ -680,14 +688,18 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			return nil, err
 		}
 
-		types.AddOutput(tx, masterAddress.GetAddress(), btcutil.Amount(req.MasterKeyAmount))
+		if err := types.AddOutput(tx, masterAddress.GetAddress(), btcutil.Amount(req.MasterKeyAmount)); err != nil {
+			return nil, err
+		}
 		s.SetAddress(ctx, masterAddress)
 	}
 
-	addWithdrawalOutputs(ctx, s.BTCKeeper, s.nexus, tx)
-
 	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, consolidationKey)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := addWithdrawalOutputs(ctx, s.BTCKeeper, s.nexus, tx, consolidationAddress.GetAddress()); err != nil {
 		return nil, err
 	}
 
@@ -707,7 +719,9 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		)
 	}
 
-	types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64()))
+	if err := types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64())); err != nil {
+		return nil, err
+	}
 
 	s.SetAddress(ctx, consolidationAddress)
 	telemetry.SetGaugeWithLabels(
@@ -788,38 +802,46 @@ func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, tx wire.Ms
 		outPointsToSign = append(outPointsToSign, types.OutPointToSign{OutPointInfo: outPointInfo, AddressInfo: addressInfo})
 	}
 
-	types.AddOutput(&tx, changeAddress, btcutil.Amount(0))
+	if err := types.AddOutput(&tx, changeAddress, btcutil.Amount(0)); err != nil {
+		return 0, err
+	}
 
 	return types.EstimateTxSize(tx, outPointsToSign), nil
 }
 
-func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx *wire.MsgTx) {
+func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx *wire.MsgTx, changeAddress btcutil.Address) error {
 	total := sdk.ZeroInt()
 	outputCount := 0
 	minAmount := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
 	network := k.GetNetwork(ctx).Params()
+	maxTxSize := k.GetMaxTxSize(ctx)
 
-	// Combine output to same destination address
+	addressToTransfers := make(map[string][]nexus.CrossChainTransfer)
 	for _, transfer := range pendingTransfers {
-		if _, err := btcutil.DecodeAddress(transfer.Recipient.Address, network); err == nil {
-			n.ArchivePendingTransfer(ctx, transfer)
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
+		if err != nil {
+			continue
 		}
+
+		encodedAddress := recipient.EncodeAddress()
+		addressToTransfers[encodedAddress] = append(addressToTransfers[encodedAddress], transfer)
 	}
 
 	getRecipient := func(transfer nexus.CrossChainTransfer) string {
 		return transfer.Recipient.Address
 	}
 
-	for _, transfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
+	// Combine output to same destination address
+	for _, combinedTransfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
+		recipient, err := btcutil.DecodeAddress(combinedTransfer.Recipient.Address, network)
 		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.Address))
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", combinedTransfer.Recipient.Address))
 			continue
 		}
 
 		encodedAddress := recipient.EncodeAddress()
-		amount := transfer.Asset.Amount
+		amount := combinedTransfer.Asset.Amount
 
 		// Check if the recipient has unsent dust amount
 		unsentDust := k.GetDustAmount(ctx, encodedAddress)
@@ -841,9 +863,28 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 			continue
 		}
 
+		txCopy := tx.Copy()
+		if err := types.AddOutput(txCopy, recipient, btcutil.Amount(amount.Int64())); err != nil {
+			return err
+		}
+
+		if txSize, err := estimateTxSizeWithZeroChange(ctx, k, *txCopy, changeAddress); err != nil {
+			return err
+		} else if txSize > maxTxSize {
+			// stop if transaction size is above the limit after adding the ouput
+			break
+		}
+
+		for _, transfer := range addressToTransfers[encodedAddress] {
+			n.ArchivePendingTransfer(ctx, transfer)
+		}
+
 		total = total.Add(amount)
 		outputCount++
-		types.AddOutput(tx, recipient, btcutil.Amount(amount.Int64()))
+
+		if err := types.AddOutput(tx, recipient, btcutil.Amount(amount.Int64())); err != nil {
+			return err
+		}
 	}
 
 	telemetry.IncrCounter(float32(total.Int64()), types.ModuleName, "total", "withdrawal")
@@ -852,6 +893,8 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 	if outputCount == 0 {
 		k.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
 	}
+
+	return nil
 }
 
 func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string) (sdk.Int, error) {

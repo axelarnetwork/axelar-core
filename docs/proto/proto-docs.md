@@ -988,6 +988,7 @@ of a transaction
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
+| `max_tx_size` | [int64](#int64) |  |  |
 
 
 
