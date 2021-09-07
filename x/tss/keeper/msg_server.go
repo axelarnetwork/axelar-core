@@ -174,6 +174,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	var groupRecovery []byte
 	var voteData codec.ProtoMarshaler
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
@@ -203,8 +204,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
+		groupRecovery = res.Data.GetGroupRecoverInfo()
 		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.GetPrivateRecoverInfo())
-		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, res.Data.GetGroupRecoverInfo())
 
 		voteData = &types.KeygenVoteData{
 			PubKey:            pubKey,
@@ -219,6 +220,10 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		// the key is already set, no need for further processing of the vote
 		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
 		return &types.VotePubKeyResponse{}, nil
+	}
+
+	if groupRecovery != nil {
+		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecovery)
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
