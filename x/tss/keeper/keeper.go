@@ -142,25 +142,15 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // SetGroupRecoveryInfo sets the group recovery info for a given party
-func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
-	key := fmt.Sprintf("%s%s_%s", groupRecoverPrefix, keyID, sender.String())
-
-	// marshal group recover info before storing
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID string, recoveryInfo []byte) {
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	ctx.KVStore(k.storeKey).Set([]byte(key), recoveryInfo)
 }
 
 // GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
-func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
-	key := fmt.Sprintf("%s%s_%s", groupRecoverPrefix, keyID, sender.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-
-	// group recovery infos has been marshaled in keeper
-	var groupRecoveryInfos []byte
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &groupRecoveryInfos)
-
-	return groupRecoveryInfos
+func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID string) []byte {
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	return ctx.KVStore(k.storeKey).Get([]byte(key))
 }
 
 // SetPrivateRecoveryInfo sets the private recovery info for a given party
@@ -185,22 +175,26 @@ func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 	return privateRecoveryInfos
 }
 
+// HasPrivateRecoveryInfos returns true if the private recovery infos for a given party exists
+func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
+	return ctx.KVStore(k.storeKey).Has([]byte(key))
+}
+
 // DeleteAllRecoveryInfos removes all recovery infos (private and group) associated to the given key ID
 func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
-	prefixes := []string{groupRecoverPrefix, groupRecoverPrefix}
+	prefix := fmt.Sprintf("%s%s_", privateRecoverPrefix, keyID)
+	store := ctx.KVStore(k.storeKey)
 
-	// delete private and group recovery info
-	for i := 0; i < len(prefixes); i++ {
-		prefix := fmt.Sprintf("%s%s_", prefixes[i], keyID)
-		store := ctx.KVStore(k.storeKey)
+	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
 
-		iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
-		defer utils.CloseLogError(iter, k.Logger(ctx))
-
-		for ; iter.Valid(); iter.Next() {
-			store.Delete(iter.Key())
-		}
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
 	}
+
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	ctx.KVStore(k.storeKey).Delete([]byte(key))
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {

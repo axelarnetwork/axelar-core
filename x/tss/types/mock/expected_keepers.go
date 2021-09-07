@@ -1265,7 +1265,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
-// 			GetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) []byte {
+// 			GetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) []byte {
 // 				panic("mock out the GetGroupRecoveryInfo method")
 // 			},
 // 			GetInfoForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (exported.SignInfo, bool) {
@@ -1313,6 +1313,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			HasKeygenStartedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool {
 // 				panic("mock out the HasKeygenStarted method")
 // 			},
+// 			HasPrivateRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool {
+// 				panic("mock out the HasPrivateRecoveryInfos method")
+// 			},
 // 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the IsOperatorAvailable method")
 // 			},
@@ -1343,7 +1346,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
-// 			SetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, recoveryInfo []byte)  {
+// 			SetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string, recoveryInfo []byte)  {
 // 				panic("mock out the SetGroupRecoveryInfo method")
 // 			},
 // 			SetInfoForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, info exported.SignInfo)  {
@@ -1423,7 +1426,7 @@ type TSSKeeperMock struct {
 	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
 
 	// GetGroupRecoveryInfoFunc mocks the GetGroupRecoveryInfo method.
-	GetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) []byte
+	GetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) []byte
 
 	// GetInfoForSigFunc mocks the GetInfoForSig method.
 	GetInfoForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (exported.SignInfo, bool)
@@ -1470,6 +1473,9 @@ type TSSKeeperMock struct {
 	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
 	HasKeygenStartedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) bool
 
+	// HasPrivateRecoveryInfosFunc mocks the HasPrivateRecoveryInfos method.
+	HasPrivateRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool
+
 	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
 	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
@@ -1501,7 +1507,7 @@ type TSSKeeperMock struct {
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// SetGroupRecoveryInfoFunc mocks the SetGroupRecoveryInfo method.
-	SetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, recoveryInfo []byte)
+	SetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string, recoveryInfo []byte)
 
 	// SetInfoForSigFunc mocks the SetInfoForSig method.
 	SetInfoForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, info exported.SignInfo)
@@ -1664,8 +1670,6 @@ type TSSKeeperMock struct {
 		GetGroupRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Sender is the sender argument value.
-			Sender github_com_cosmos_cosmos_sdk_types.ValAddress
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
@@ -1778,6 +1782,15 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID string
 		}
+		// HasPrivateRecoveryInfos holds details about calls to the HasPrivateRecoveryInfos method.
+		HasPrivateRecoveryInfos []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Sender is the sender argument value.
+			Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+			// KeyID is the keyID argument value.
+			KeyID string
+		}
 		// IsOperatorAvailable holds details about calls to the IsOperatorAvailable method.
 		IsOperatorAvailable []struct {
 			// Ctx is the ctx argument value.
@@ -1872,8 +1885,6 @@ type TSSKeeperMock struct {
 		SetGroupRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Sender is the sender argument value.
-			Sender github_com_cosmos_cosmos_sdk_types.ValAddress
 			// KeyID is the keyID argument value.
 			KeyID string
 			// RecoveryInfo is the recoveryInfo argument value.
@@ -1979,6 +1990,7 @@ type TSSKeeperMock struct {
 	lockGetSnapshotCounterForKeyID          sync.RWMutex
 	lockGetTssSuspendedUntil                sync.RWMutex
 	lockHasKeygenStarted                    sync.RWMutex
+	lockHasPrivateRecoveryInfos             sync.RWMutex
 	lockIsOperatorAvailable                 sync.RWMutex
 	lockLinkAvailableOperatorsToSnapshot    sync.RWMutex
 	lockLogger                              sync.RWMutex
@@ -2604,37 +2616,33 @@ func (mock *TSSKeeperMock) GetCurrentKeyIDCalls() []struct {
 }
 
 // GetGroupRecoveryInfo calls GetGroupRecoveryInfoFunc.
-func (mock *TSSKeeperMock) GetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) []byte {
+func (mock *TSSKeeperMock) GetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string) []byte {
 	if mock.GetGroupRecoveryInfoFunc == nil {
 		panic("TSSKeeperMock.GetGroupRecoveryInfoFunc: method is nil but TSSKeeper.GetGroupRecoveryInfo was just called")
 	}
 	callInfo := struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
-		KeyID  string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
 	}{
-		Ctx:    ctx,
-		Sender: sender,
-		KeyID:  keyID,
+		Ctx:   ctx,
+		KeyID: keyID,
 	}
 	mock.lockGetGroupRecoveryInfo.Lock()
 	mock.calls.GetGroupRecoveryInfo = append(mock.calls.GetGroupRecoveryInfo, callInfo)
 	mock.lockGetGroupRecoveryInfo.Unlock()
-	return mock.GetGroupRecoveryInfoFunc(ctx, sender, keyID)
+	return mock.GetGroupRecoveryInfoFunc(ctx, keyID)
 }
 
 // GetGroupRecoveryInfoCalls gets all the calls that were made to GetGroupRecoveryInfo.
 // Check the length with:
 //     len(mockedTSSKeeper.GetGroupRecoveryInfoCalls())
 func (mock *TSSKeeperMock) GetGroupRecoveryInfoCalls() []struct {
-	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	Sender github_com_cosmos_cosmos_sdk_types.ValAddress
-	KeyID  string
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID string
 } {
 	var calls []struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
-		KeyID  string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID string
 	}
 	mock.lockGetGroupRecoveryInfo.RLock()
 	calls = mock.calls.GetGroupRecoveryInfo
@@ -3175,6 +3183,45 @@ func (mock *TSSKeeperMock) HasKeygenStartedCalls() []struct {
 	return calls
 }
 
+// HasPrivateRecoveryInfos calls HasPrivateRecoveryInfosFunc.
+func (mock *TSSKeeperMock) HasPrivateRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string) bool {
+	if mock.HasPrivateRecoveryInfosFunc == nil {
+		panic("TSSKeeperMock.HasPrivateRecoveryInfosFunc: method is nil but TSSKeeper.HasPrivateRecoveryInfos was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+	}{
+		Ctx:    ctx,
+		Sender: sender,
+		KeyID:  keyID,
+	}
+	mock.lockHasPrivateRecoveryInfos.Lock()
+	mock.calls.HasPrivateRecoveryInfos = append(mock.calls.HasPrivateRecoveryInfos, callInfo)
+	mock.lockHasPrivateRecoveryInfos.Unlock()
+	return mock.HasPrivateRecoveryInfosFunc(ctx, sender, keyID)
+}
+
+// HasPrivateRecoveryInfosCalls gets all the calls that were made to HasPrivateRecoveryInfos.
+// Check the length with:
+//     len(mockedTSSKeeper.HasPrivateRecoveryInfosCalls())
+func (mock *TSSKeeperMock) HasPrivateRecoveryInfosCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+	KeyID  string
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyID  string
+	}
+	mock.lockHasPrivateRecoveryInfos.RLock()
+	calls = mock.calls.HasPrivateRecoveryInfos
+	mock.lockHasPrivateRecoveryInfos.RUnlock()
+	return calls
+}
+
 // IsOperatorAvailable calls IsOperatorAvailableFunc.
 func (mock *TSSKeeperMock) IsOperatorAvailable(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 	if mock.IsOperatorAvailableFunc == nil {
@@ -3566,25 +3613,23 @@ func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
 }
 
 // SetGroupRecoveryInfo calls SetGroupRecoveryInfoFunc.
-func (mock *TSSKeeperMock) SetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID string, recoveryInfo []byte) {
+func (mock *TSSKeeperMock) SetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID string, recoveryInfo []byte) {
 	if mock.SetGroupRecoveryInfoFunc == nil {
 		panic("TSSKeeperMock.SetGroupRecoveryInfoFunc: method is nil but TSSKeeper.SetGroupRecoveryInfo was just called")
 	}
 	callInfo := struct {
 		Ctx          github_com_cosmos_cosmos_sdk_types.Context
-		Sender       github_com_cosmos_cosmos_sdk_types.ValAddress
 		KeyID        string
 		RecoveryInfo []byte
 	}{
 		Ctx:          ctx,
-		Sender:       sender,
 		KeyID:        keyID,
 		RecoveryInfo: recoveryInfo,
 	}
 	mock.lockSetGroupRecoveryInfo.Lock()
 	mock.calls.SetGroupRecoveryInfo = append(mock.calls.SetGroupRecoveryInfo, callInfo)
 	mock.lockSetGroupRecoveryInfo.Unlock()
-	mock.SetGroupRecoveryInfoFunc(ctx, sender, keyID, recoveryInfo)
+	mock.SetGroupRecoveryInfoFunc(ctx, keyID, recoveryInfo)
 }
 
 // SetGroupRecoveryInfoCalls gets all the calls that were made to SetGroupRecoveryInfo.
@@ -3592,13 +3637,11 @@ func (mock *TSSKeeperMock) SetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk
 //     len(mockedTSSKeeper.SetGroupRecoveryInfoCalls())
 func (mock *TSSKeeperMock) SetGroupRecoveryInfoCalls() []struct {
 	Ctx          github_com_cosmos_cosmos_sdk_types.Context
-	Sender       github_com_cosmos_cosmos_sdk_types.ValAddress
 	KeyID        string
 	RecoveryInfo []byte
 } {
 	var calls []struct {
 		Ctx          github_com_cosmos_cosmos_sdk_types.Context
-		Sender       github_com_cosmos_cosmos_sdk_types.ValAddress
 		KeyID        string
 		RecoveryInfo []byte
 	}

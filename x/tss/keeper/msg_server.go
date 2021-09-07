@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,8 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -178,12 +175,14 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	var voteData codec.ProtoMarshaler
-	var groupRecoveryInfo []byte
-	var privateRecoveryInfo []byte
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
+		if s.HasPrivateRecoveryInfos(ctx, voter, req.PollKey.ID) {
+			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
+		}
+
 		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		if !ok {
 			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.PollKey.ID)
@@ -198,25 +197,19 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		groupRecoveryInfo = res.Data.GetGroupRecoverInfo()
-		privateRecoveryInfo = res.Data.GetPrivateRecoverInfo()
-
 		// get pubkey
 		pubKey := res.Data.GetPubKey()
 		if pubKey == nil {
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		// TODO pass KeygenVoteData directly to poll.Vote
-		// voteData = &types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo} panics with
-		// "panic: no concrete type registered for type URL /tss.v1beta1.KeygenVoteData against interface *codec.ProtoMarshaler"
-		voteDataStr := types.KeygenVoteData{PubKey: pubKey, GroupRecoveryInfo: groupRecoveryInfo}
-		bz, err := json.Marshal(voteDataStr)
-		if err != nil {
-			return nil, fmt.Errorf("could not marshal vote data")
-		}
+		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.GetPrivateRecoverInfo())
+		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, res.Data.GetGroupRecoverInfo())
 
-		voteData = &gogoprototypes.BytesValue{Value: bz}
+		voteData = &types.KeygenVoteData{
+			PubKey:            pubKey,
+			GroupRecoveryInfo: res.Data.GetGroupRecoverInfo(),
+		}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
@@ -246,6 +239,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	defer ctx.EventManager().EmitEvent(event)
 
 	if poll.Is(vote.Failed) {
+		s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", req.PollKey.ID))
+
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
@@ -253,37 +248,26 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}
 
+	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", req.PollKey.ID))
+
 	result := poll.GetResult()
 	// result should be either KeygenResult or Criminals
 	switch keygenResult := result.(type) {
-	case *gogoprototypes.BytesValue:
+	case *types.KeygenVoteData:
+		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", req.PollKey.ID))
 
-		var voteData types.KeygenVoteData
-		err := json.Unmarshal(keygenResult.GetValue(), &voteData)
-		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal vote data: [%w]", err)
-		}
-
-		btcecPK, err := btcec.ParsePubKey(voteData.PubKey, btcec.S256())
+		btcecPK, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
-
-		// TODO check why this call stalls. Note that the same call doesn't stall if called from line 206.
-		// TODO when the above issue is resolved,
-		// 1. retrieve groupRecoveryInfo from voteData
-		// 2. store under a global key instead of appending the address of the sender to `groupRecoveryPrefix`
-		// 3. move setter to keeper.go from keeperKeygen.go
-
-		s.SetGroupRecoveryInfo(ctx, voter, req.PollKey.ID, groupRecoveryInfo)
-		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, privateRecoveryInfo)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(
@@ -294,11 +278,14 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		return &types.VotePubKeyResponse{}, nil
 	case *tofnd.MessageOut_CriminalList:
+		s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", req.PollKey.ID))
+
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(
