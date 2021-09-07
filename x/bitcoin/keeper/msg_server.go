@@ -577,7 +577,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, *tx, consolidationAddress.GetAddress())
+	txSizeUpperBound, err := estimateTxSizeWithOutputsTo(ctx, s, *tx, consolidationAddress.GetAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +703,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, *tx, consolidationAddress.GetAddress())
+	txSizeUpperBound, err := estimateTxSizeWithOutputsTo(ctx, s, *tx, consolidationAddress.GetAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -784,7 +784,7 @@ func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([
 	return externalKeys, nil
 }
 
-func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, tx wire.MsgTx, changeAddress btcutil.Address) (int64, error) {
+func estimateTxSizeWithOutputsTo(ctx sdk.Context, k types.BTCKeeper, tx wire.MsgTx, addresses ...btcutil.Address) (int64, error) {
 	var outPointsToSign []types.OutPointToSign
 
 	for _, txIn := range tx.TxIn {
@@ -802,8 +802,10 @@ func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, tx wire.Ms
 		outPointsToSign = append(outPointsToSign, types.OutPointToSign{OutPointInfo: outPointInfo, AddressInfo: addressInfo})
 	}
 
-	if err := types.AddOutput(&tx, changeAddress, btcutil.Amount(0)); err != nil {
-		return 0, err
+	for _, address := range addresses {
+		if err := types.AddOutput(&tx, address, btcutil.Amount(0)); err != nil {
+			return 0, err
+		}
 	}
 
 	return types.EstimateTxSize(tx, outPointsToSign), nil
@@ -863,12 +865,7 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 			continue
 		}
 
-		txCopy := tx.Copy()
-		if err := types.AddOutput(txCopy, recipient, btcutil.Amount(amount.Int64())); err != nil {
-			return err
-		}
-
-		if txSize, err := estimateTxSizeWithZeroChange(ctx, k, *txCopy, changeAddress); err != nil {
+		if txSize, err := estimateTxSizeWithOutputsTo(ctx, k, *tx, recipient, changeAddress); err != nil {
 			return err
 		} else if txSize > maxTxSize {
 			// stop if transaction size is above the limit after adding the ouput
