@@ -557,6 +557,15 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 
 		btcKeeper = &mock.BTCKeeperMock{
+			GetOutPointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+				for _, input := range inputs {
+					if input.OutPoint == outPoint.String() {
+						return input, types.OutPointState_Spent, true
+					}
+				}
+
+				return types.OutPointInfo{}, types.OutPointState_None, false
+			},
 			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
 				if keyID == masterKey.ID {
 					dequeueCount := 0
@@ -718,9 +727,8 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -760,9 +768,8 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -816,10 +823,9 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -869,10 +875,9 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -1026,6 +1031,15 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		btcKeeper = &mock.BTCKeeperMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			GetOutPointInfoFunc: func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+				for _, input := range inputs {
+					if input.OutPoint == outPoint.String() {
+						return input, types.OutPointState_Spent, true
+					}
+				}
+
+				return types.OutPointInfo{}, types.OutPointState_None, false
+			},
 			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
 				if keyID == secondaryKey.ID {
 					dequeueCount := 0
@@ -1190,10 +1204,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -1239,9 +1251,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1303,11 +1314,9 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
@@ -1364,10 +1373,9 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
-		assert.Len(t, btcKeeper.SetAddressCalls(), 3)
+		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[2].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))

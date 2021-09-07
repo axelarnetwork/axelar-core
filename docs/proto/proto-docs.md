@@ -887,7 +887,6 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `out_point_info` | [OutPointInfo](#bitcoin.v1beta1.OutPointInfo) |  |  |
 | `sig_requirements` | [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement) | repeated |  |
 
 

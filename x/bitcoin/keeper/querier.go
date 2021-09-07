@@ -219,16 +219,21 @@ func QueryLatestTxByKeyRole(ctx sdk.Context, k types.BTCKeeper, keyRoleStr strin
 
 		var signingInfos []*types.QueryTxResponse_SigningInfo
 
-		for _, input := range unsignedTx.Info.InputInfos {
-			outPoint := input.OutPointInfo
-			addressInfo, ok := k.GetAddress(ctx, outPoint.Address)
+		for _, txIn := range unsignedTx.GetTx().TxIn {
+			outPointStr := txIn.PreviousOutPoint.String()
+			outPointInfo, state, ok := k.GetOutPointInfo(ctx, txIn.PreviousOutPoint)
+			if !ok || state != types.OutPointState_Spent {
+				return nil, fmt.Errorf("out point info %s is not found or not spent", outPointStr)
+			}
+
+			addressInfo, ok := k.GetAddress(ctx, outPointInfo.Address)
 			if !ok {
-				return nil, fmt.Errorf("unknown outpoint address %s", outPoint.Address)
+				return nil, fmt.Errorf("unknown outpoint address %s", outPointInfo.Address)
 			}
 
 			signingInfos = append(signingInfos, &types.QueryTxResponse_SigningInfo{
 				RedeemScript: hex.EncodeToString(addressInfo.RedeemScript),
-				Amount:       int64(outPoint.Amount),
+				Amount:       int64(outPointInfo.Amount),
 			})
 		}
 

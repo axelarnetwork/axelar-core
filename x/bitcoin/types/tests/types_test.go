@@ -97,15 +97,12 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 				),
 			},
 		}
-		outputs := []types.Output{
-			{
-				Amount:    outputAmount,
-				Recipient: address.GetAddress(),
-			},
-		}
 
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
+		types.AddOutput(tx, address.GetAddress(), outputAmount)
 		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
 		tx = types.EnableTimelockAndRBF(tx)
 
@@ -139,15 +136,12 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 				),
 			},
 		}
-		outputs := []types.Output{
-			{
-				Amount:    outputAmount,
-				Recipient: address.GetAddress(),
-			},
-		}
 
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
+		types.AddOutput(tx, address.GetAddress(), outputAmount)
 		tx.LockTime = uint32(time.Now().AddDate(0, 0, 1).Unix())
 		tx = types.EnableTimelockAndRBF(tx)
 
@@ -181,15 +175,12 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 				),
 			},
 		}
-		outputs := []types.Output{
-			{
-				Amount:    outputAmount,
-				Recipient: address.GetAddress(),
-			},
-		}
 
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
+		types.AddOutput(tx, address.GetAddress(), outputAmount)
 		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
 		tx = types.EnableTimelockAndRBF(tx)
 
@@ -251,15 +242,12 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 				),
 			},
 		}
-		outputs := []types.Output{
-			{
-				Amount:    outputAmount,
-				Recipient: address.GetAddress(),
-			},
-		}
 
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
+		types.AddOutput(tx, address.GetAddress(), outputAmount)
 		tx.LockTime = uint32(time.Now().AddDate(0, 0, -1).Unix())
 		tx = types.EnableTimelockAndRBF(tx)
 
@@ -327,15 +315,12 @@ func TestNewDepositAddress_SpendableByTheFirstKey(t *testing.T) {
 			),
 		},
 	}
-	outputs := []types.Output{
-		{
-			Amount:    outputAmount,
-			Recipient: linkedAddressInfo.GetAddress(),
-		},
-	}
 
-	tx, err := types.CreateTx(inputs, outputs)
-	assert.NoError(t, err)
+	tx := types.CreateTx()
+	for _, input := range inputs {
+		assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+	}
+	types.AddOutput(tx, linkedAddressInfo.GetAddress(), outputAmount)
 
 	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
@@ -381,15 +366,12 @@ func TestNewDepositAddress_SpendableByTheSecondKey(t *testing.T) {
 			),
 		},
 	}
-	outputs := []types.Output{
-		{
-			Amount:    outputAmount,
-			Recipient: linkedAddressInfo.GetAddress(),
-		},
-	}
 
-	tx, err := types.CreateTx(inputs, outputs)
-	assert.NoError(t, err)
+	tx := types.CreateTx()
+	for _, input := range inputs {
+		assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+	}
+	types.AddOutput(tx, linkedAddressInfo.GetAddress(), outputAmount)
 
 	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
@@ -434,15 +416,12 @@ func TestNewDepositAddress_NotSpendableByARandomKey(t *testing.T) {
 			),
 		},
 	}
-	outputs := []types.Output{
-		{
-			Amount:    outputAmount,
-			Recipient: linkedAddressInfo.GetAddress(),
-		},
-	}
 
-	tx, err := types.CreateTx(inputs, outputs)
-	assert.NoError(t, err)
+	tx := types.CreateTx()
+	for _, input := range inputs {
+		assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+	}
+	types.AddOutput(tx, linkedAddressInfo.GetAddress(), outputAmount)
 
 	sigHash, err := txscript.CalcWitnessSigHash(linkedAddressInfo.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 	assert.NoError(t, err)
@@ -476,15 +455,12 @@ func TestNewAnyoneCanSpendAddress(t *testing.T) {
 				),
 			},
 		}
-		outputs := []types.Output{
-			{
-				Amount:    outputAmount,
-				Recipient: addressInfo.GetAddress(),
-			},
-		}
 
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
+		types.AddOutput(tx, addressInfo.GetAddress(), outputAmount)
 
 		tx.TxIn[0].Witness = wire.TxWitness{addressInfo.RedeemScript}
 
@@ -517,7 +493,6 @@ func TestEstimateTxSize(t *testing.T) {
 		inputCount := rand.I64Between(11, 20)
 		outputCount := rand.I64Between(1, 11)
 		var inputs []types.OutPointToSign
-		var outputs []types.Output
 
 		for i := 0; i < int(inputCount); i++ {
 			addressInfo := types.NewDepositAddress(pubKey1, pubKey2, types.Testnet3, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress})
@@ -537,18 +512,16 @@ func TestEstimateTxSize(t *testing.T) {
 			})
 		}
 
+		tx := types.CreateTx()
+		for _, input := range inputs {
+			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
+		}
 		for i := 0; i < int(outputCount); i++ {
 			addressInfo := types.NewSecondaryConsolidationAddress(pubKey1, types.Testnet3)
 			outputAmount := btcutil.Amount(rand.I64Between(1, 100))
 
-			outputs = append(outputs, types.Output{
-				Amount:    outputAmount,
-				Recipient: addressInfo.GetAddress(),
-			})
+			types.AddOutput(tx, addressInfo.GetAddress(), outputAmount)
 		}
-
-		tx, err := types.CreateTx(inputs, outputs)
-		assert.NoError(t, err)
 
 		var signatures [][]btcec.Signature
 
