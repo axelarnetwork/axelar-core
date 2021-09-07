@@ -2128,6 +2128,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetCommandQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetCommandQueue method")
 // 			},
+// 			GetCommandsGasLimitFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint32, bool) {
+// 				panic("mock out the GetCommandsGasLimit method")
+// 			},
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
@@ -2278,6 +2281,9 @@ type ChainKeeperMock struct {
 
 	// GetCommandQueueFunc mocks the GetCommandQueue method.
 	GetCommandQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
+
+	// GetCommandsGasLimitFunc mocks the GetCommandsGasLimit method.
+	GetCommandsGasLimitFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint32, bool)
 
 	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
@@ -2476,6 +2482,11 @@ type ChainKeeperMock struct {
 		}
 		// GetCommandQueue holds details about calls to the GetCommandQueue method.
 		GetCommandQueue []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetCommandsGasLimit holds details about calls to the GetCommandsGasLimit method.
+		GetCommandsGasLimit []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -2728,6 +2739,7 @@ type ChainKeeperMock struct {
 	lockGetBurnerInfo                    sync.RWMutex
 	lockGetChainIDByNetwork              sync.RWMutex
 	lockGetCommandQueue                  sync.RWMutex
+	lockGetCommandsGasLimit              sync.RWMutex
 	lockGetConfirmedDeposits             sync.RWMutex
 	lockGetDeposit                       sync.RWMutex
 	lockGetGatewayAddress                sync.RWMutex
@@ -3221,6 +3233,37 @@ func (mock *ChainKeeperMock) GetCommandQueueCalls() []struct {
 	mock.lockGetCommandQueue.RLock()
 	calls = mock.calls.GetCommandQueue
 	mock.lockGetCommandQueue.RUnlock()
+	return calls
+}
+
+// GetCommandsGasLimit calls GetCommandsGasLimitFunc.
+func (mock *ChainKeeperMock) GetCommandsGasLimit(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint32, bool) {
+	if mock.GetCommandsGasLimitFunc == nil {
+		panic("ChainKeeperMock.GetCommandsGasLimitFunc: method is nil but ChainKeeper.GetCommandsGasLimit was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetCommandsGasLimit.Lock()
+	mock.calls.GetCommandsGasLimit = append(mock.calls.GetCommandsGasLimit, callInfo)
+	mock.lockGetCommandsGasLimit.Unlock()
+	return mock.GetCommandsGasLimitFunc(ctx)
+}
+
+// GetCommandsGasLimitCalls gets all the calls that were made to GetCommandsGasLimit.
+// Check the length with:
+//     len(mockedChainKeeper.GetCommandsGasLimitCalls())
+func (mock *ChainKeeperMock) GetCommandsGasLimitCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetCommandsGasLimit.RLock()
+	calls = mock.calls.GetCommandsGasLimit
+	mock.lockGetCommandsGasLimit.RUnlock()
 	return calls
 }
 

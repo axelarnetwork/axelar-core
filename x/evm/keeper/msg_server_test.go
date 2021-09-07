@@ -2,12 +2,13 @@ package keeper_test
 
 import (
 	"fmt"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"math/big"
 	mathRand "math/rand"
 	"strings"
 	"testing"
+
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -66,6 +67,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
+		CommandsGasLimit:    5000000,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
@@ -100,6 +102,7 @@ func TestLink_NoGateway(t *testing.T) {
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
+		CommandsGasLimit:    5000000,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -1050,6 +1053,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
+		CommandsGasLimit:    5000000,
 	})
 	k.ForChain(ctx, chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
 

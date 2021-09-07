@@ -1574,6 +1574,7 @@ that is deposited by an user
 | `command` | [string](#string) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `max_gas_cost` | [uint32](#uint32) |  |  |
 
 
 
@@ -1753,6 +1754,7 @@ Params is the parameter set for this module
 | `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
+| `commands_gas_limit` | [uint32](#uint32) |  |  |
 
 
 
