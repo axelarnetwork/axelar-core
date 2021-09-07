@@ -13,9 +13,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths
@@ -105,7 +103,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		return nil, fmt.Errorf("could not obtain private info for key ID %s", keyID)
 	}
 
-	resp := tssTypes.QueryRecoveryResponse{
+	resp := types.QueryRecoveryResponse{
 		Threshold:        int32(snapshot.CorruptionThreshold),
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
