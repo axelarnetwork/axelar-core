@@ -1290,12 +1290,19 @@ func getBatchedCommandsToSign(ctx sdk.Context, keeper types.ChainKeeper, chainID
 	if !commandQueue.Dequeue(&command) {
 		return types.BatchedCommands{}, fmt.Errorf("no commands are found to sign for chain %s", keeper.GetName())
 	}
-	// Only batching commands to be signed by the same key
+
+	// Only batching commands to be signed by the same key and within the gas limit
+	commandsGasLimit, ok := keeper.GetCommandsGasLimit(ctx)
+	if !ok {
+		return types.BatchedCommands{}, fmt.Errorf("commands gas limit for chain %s not found", keeper.GetName())
+	}
+	gasCost := uint32(0)
 	keyID := command.KeyID
 	filter := func(value codec.ProtoMarshaler) bool {
 		cmd, ok := value.(*types.Command)
+		gasCost += cmd.MaxGasCost
 
-		return ok && cmd.KeyID == keyID
+		return ok && cmd.KeyID == keyID && gasCost <= commandsGasLimit
 	}
 
 	commands := []types.Command{command.Clone()}
