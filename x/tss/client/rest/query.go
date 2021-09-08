@@ -125,11 +125,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					PartyShareCounts: recResponse.PartyShareCounts,
 					MyPartyIndex:     int32(index),
 				},
-				KeygenOutput: &tofnd.KeygenOutput{
-					PubKey:             recResponse.KeygenOutput.PubKey,
-					GroupRecoverInfo:   recResponse.KeygenOutput.GroupRecoverInfo,
-					PrivateRecoverInfo: recResponse.KeygenOutput.PrivateRecoverInfo,
-				},
+				KeygenOutput: recResponse.KeygenOutput,
 			}
 		}
 
