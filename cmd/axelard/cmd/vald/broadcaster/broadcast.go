@@ -2,17 +2,24 @@ package broadcaster
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/utils"
+)
+
+const (
+	querySleep      = 2 * time.Second
+	queryMaxRetries = 20
 )
 
 // Broadcaster submits transactions to a tendermint node
@@ -35,7 +42,7 @@ func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeli
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
+func (b *Broadcaster) Broadcast(commit bool, msgs ...sdk.Msg) error {
 	// serialize concurrent calls to broadcast
 	return b.pipeline.Push(func() error {
 
@@ -44,7 +51,7 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 			return err
 		}
 
-		_, err = Broadcast(b.ctx, txf, msgs)
+		res, err := Broadcast(b.ctx, txf, msgs)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -53,8 +60,42 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 			return err
 		}
 
+		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
+			res.TxHash, res.Code, res.RawLog))
+
 		// broadcast has been successful, so increment sequence number
 		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+
+		// verify if the tx executed successfully, if such check is required
+		if commit {
+			b.logger.Debug(fmt.Sprintf("checking for tx [%s] commit status", res.TxHash))
+
+			var query *sdk.TxResponse
+			for i := 0; i < queryMaxRetries; i++ {
+				time.Sleep(querySleep)
+				query, err = authclient.QueryTx(b.ctx, res.TxHash)
+				if err != nil {
+					if strings.Contains(err.Error(), "not found") {
+						b.logger.Debug(fmt.Sprintf("tx not yet found, retrying"))
+						continue
+					}
+
+					return err
+				}
+				break
+			}
+
+			if err != nil {
+				return err
+			}
+
+			b.logger.Debug(fmt.Sprintf("query response [%d]: %s", query.Code, query.RawLog))
+
+			if query.Code != abci.CodeTypeOK {
+				return fmt.Errorf(query.RawLog)
+			}
+		}
+
 		return nil
 	})
 }
@@ -95,8 +136,9 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 		return nil, err
 	}
 
-	// broadcast to a Tendermint node
-	res, err := ctx.BroadcastTx(txBytes)
+	// broadcast to a Tendermint node. We need to use BroadcastTxCommit so that we
+	// can detect if the tx runs out of gas and trigger a re-estimation before re-sending
+	res, err := ctx.BroadcastTxSync(txBytes)
 	if err != nil {
 		return nil, err
 	}

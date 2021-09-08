@@ -44,7 +44,7 @@ func (mgr *Mgr) ProcessKeygenAck(e tmEvents.Event) error {
 	case tofnd.RESPONSE_ABSENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
 		tssMsg := tss.NewAckRequest(mgr.sender, keyID, exported.AckType_Keygen, height)
-		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
+		if err := mgr.broadcaster.Broadcast(false, tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
 	default:
@@ -211,7 +211,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessKeygenTrafficRequest{Sender: mgr.sender, SessionID: keyID, Payload: msg}
-		if err := mgr.broadcaster.Broadcast(tssMsg); err != nil {
+		if err := mgr.broadcaster.Broadcast(false, tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
 	}
@@ -268,7 +268,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
 	vote := &tss.VotePubKeyRequest{Sender: mgr.sender, PollKey: pollKey, Result: result}
 
-	return mgr.broadcaster.Broadcast(vote)
+	return mgr.broadcaster.Broadcast(true, vote)
 }
 
 func (mgr *Mgr) getKeygenStream(keyID string) (Stream, bool) {

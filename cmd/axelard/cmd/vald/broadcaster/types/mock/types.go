@@ -2031,7 +2031,7 @@ var _ types.Broadcaster = &BroadcasterMock{}
 //
 // 		// make and configure a mocked types.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			BroadcastFunc: func(msgs ...sdk.Msg) error {
+// 			BroadcastFunc: func(commit bool, msgs ...sdk.Msg) error {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
@@ -2042,12 +2042,14 @@ var _ types.Broadcaster = &BroadcasterMock{}
 // 	}
 type BroadcasterMock struct {
 	// BroadcastFunc mocks the Broadcast method.
-	BroadcastFunc func(msgs ...sdk.Msg) error
+	BroadcastFunc func(commit bool, msgs ...sdk.Msg) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Broadcast holds details about calls to the Broadcast method.
 		Broadcast []struct {
+			// Commit is the commit argument value.
+			Commit bool
 			// Msgs is the msgs argument value.
 			Msgs []sdk.Msg
 		}
@@ -2056,11 +2058,13 @@ type BroadcasterMock struct {
 }
 
 // Broadcast calls BroadcastFunc.
-func (mock *BroadcasterMock) Broadcast(msgs ...sdk.Msg) error {
+func (mock *BroadcasterMock) Broadcast(commit bool, msgs ...sdk.Msg) error {
 	callInfo := struct {
-		Msgs []sdk.Msg
+		Commit bool
+		Msgs   []sdk.Msg
 	}{
-		Msgs: msgs,
+		Commit: commit,
+		Msgs:   msgs,
 	}
 	mock.lockBroadcast.Lock()
 	mock.calls.Broadcast = append(mock.calls.Broadcast, callInfo)
@@ -2071,17 +2075,19 @@ func (mock *BroadcasterMock) Broadcast(msgs ...sdk.Msg) error {
 		)
 		return errOut
 	}
-	return mock.BroadcastFunc(msgs...)
+	return mock.BroadcastFunc(commit, msgs...)
 }
 
 // BroadcastCalls gets all the calls that were made to Broadcast.
 // Check the length with:
 //     len(mockedBroadcaster.BroadcastCalls())
 func (mock *BroadcasterMock) BroadcastCalls() []struct {
-	Msgs []sdk.Msg
+	Commit bool
+	Msgs   []sdk.Msg
 } {
 	var calls []struct {
-		Msgs []sdk.Msg
+		Commit bool
+		Msgs   []sdk.Msg
 	}
 	mock.lockBroadcast.RLock()
 	calls = mock.calls.Broadcast

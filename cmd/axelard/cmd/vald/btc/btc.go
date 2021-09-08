@@ -52,7 +52,7 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 	msg := btc.NewVoteConfirmOutpointRequest(mgr.sender, pollKey, outPointInfo.GetOutPoint(), err == nil)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(msg)
+	return mgr.broadcaster.Broadcast(true, msg)
 }
 
 func parseConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {

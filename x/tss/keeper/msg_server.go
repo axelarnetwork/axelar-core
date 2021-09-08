@@ -174,7 +174,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	var groupRecovery []byte
 	var voteData codec.ProtoMarshaler
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
@@ -204,7 +203,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		groupRecovery = res.Data.GetGroupRecoverInfo()
 		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.GetPrivateRecoverInfo())
 
 		voteData = &types.KeygenVoteData{
@@ -220,11 +218,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		// the key is already set, no need for further processing of the vote
 		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
 		return &types.VotePubKeyResponse{}, nil
-	}
-
-	// TODO: fix gas estimation issue, retrieve group recovery info from vote, and set it after voting is completed
-	if groupRecovery != nil {
-		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecovery)
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
@@ -274,6 +267,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		pubKey := btcecPK.ToECDSA()
 		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+
+		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, keygenResult.GroupRecoveryInfo)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(
