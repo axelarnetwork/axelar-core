@@ -222,6 +222,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
+	// TODO: fix gas estimation issue, retrieve group recovery info from vote, and set it after voting is completed
 	if groupRecovery != nil {
 		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecovery)
 	}
