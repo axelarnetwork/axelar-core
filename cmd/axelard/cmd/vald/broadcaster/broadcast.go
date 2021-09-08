@@ -136,8 +136,7 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 		return nil, err
 	}
 
-	// broadcast to a Tendermint node. We need to use BroadcastTxCommit so that we
-	// can detect if the tx runs out of gas and trigger a re-estimation before re-sending
+	// broadcast to a Tendermint node.
 	res, err := ctx.BroadcastTxSync(txBytes)
 	if err != nil {
 		return nil, err
