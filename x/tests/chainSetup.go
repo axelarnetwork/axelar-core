@@ -248,12 +248,16 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		panic(err)
 	}
 
+	// if we give different amounts of tokens to each validator, we
+	// introduce a non-deterministic test failure
+	// TODO: investigate why there is a non-deterministic test failure
+	tokens := sdk.TokensFromConsensusPower(rand.I64Between(100, 1000))
 	var validators []stakingtypes.Validator
 	for i := 0; i < nodeCount; i++ {
 		// assign validators
 		validator := stakingtypes.Validator{
 			OperatorAddress: rand.ValAddr().String(),
-			Tokens:          sdk.TokensFromConsensusPower(rand.I64Between(100, 1000)),
+			Tokens:          tokens,
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: consPK,
 		}
