@@ -248,22 +248,12 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 		panic(err)
 	}
 
-	// the recovery infos we store on chain must match the number of shares. However, currently we
-	// do not have a way to properly mock the number of recovery infos in a way that matches the
-	// number of shares that we assign during initialization. To circuvent this issue, we force
-	// validators to always have one single key share (even when distributing them by stake), and
-	// we mock a single recovery info. This way we force the amount of recovery infos to match
-	// the number of shares.
-
-	// TODO: find a way to correctly mock the amount of recovery infos from the number of shares
-	// held by any  given validators,  even if we assign an arbitrary number of tokens to each
-	tokens := sdk.TokensFromConsensusPower(rand.I64Between(100, 1000))
 	var validators []stakingtypes.Validator
 	for i := 0; i < nodeCount; i++ {
 		// assign validators
 		validator := stakingtypes.Validator{
 			OperatorAddress: rand.ValAddr().String(),
-			Tokens:          tokens,
+			Tokens:          sdk.TokensFromConsensusPower(rand.I64Between(100, 1000)),
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: consPK,
 		}
@@ -447,18 +437,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		}
 
 		pk := t.KeyGen(m[tssTypes.AttributeKeyKeyID]) // simulate correct keygen + vote
-
-		// the recovery infos we store on chain must match the number of shares. However, currently we
-		// do not have a way to properly mock the number of recovery infos in a way that matches the
-		// number of shares that we assign during initialization. To circuvent this issue, we force
-		// validators to always have one single key share (even when distributing them by stake), and
-		// we mock a single recovery info. This way we force the amount of recovery infos to match
-		// the number of shares.
-
-		// TODO: find a way to correctly mock the amount of group infos and party infos from the number of shares
-		// held by any  given validators,  even if we assign an arbitrary number of tokens to each
-		groupRecoverInfo := []byte{1}
-		privateRecoverInfo := []byte{1}
+		groupRecoverInfo := []byte(tssTypes.EventTypeKeygen + tssTypes.AttributeValueStart + m[tssTypes.AttributeKeyKeyID])
+		privateRecoverInfo := rand.BytesBetween(1, 100)
 		result := &tofnd.MessageOut_KeygenResult{
 			KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{
 				Data: &tofnd.KeygenOutput{
