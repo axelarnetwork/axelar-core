@@ -23,7 +23,8 @@ const (
 	rotationPrefix         = "rotationCount_"
 	keygenStartHeight      = "blockHeight_"
 	pkPrefix               = "pk_"
-	recoveryPrefix         = "recovery_"
+	groupRecoverPrefix     = "group_recovery_info_"
+	privateRecoverPrefix   = "private_recovery_info_"
 	thresholdPrefix        = "threshold_"
 	snapshotForKeyIDPrefix = "sfkid_"
 	sigPrefix              = "sig_"
@@ -140,52 +141,49 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetRecoveryInfos sets the recovery infos for a given party
-func (k Keeper) SetRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string, infos [][]byte) {
-	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+// SetGroupRecoveryInfo sets the group recovery info for a given party
+func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID string, recoveryInfo []byte) {
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	ctx.KVStore(k.storeKey).Set([]byte(key), recoveryInfo)
+}
 
-	data := types.QueryRecoveryResponse{
-		ShareRecoveryInfos: infos,
-	}
+// GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
+func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID string) []byte {
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	return ctx.KVStore(k.storeKey).Get([]byte(key))
+}
 
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(data)
+// SetPrivateRecoveryInfo sets the private recovery info for a given party
+func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
+
+	// marshal private recover info before storing
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
 
-// HasRecoveryInfos returns true if the recovery infos for a given party exists
-func (k Keeper) HasRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
-	key := fmt.Sprintf("%s%s_%s", recoveryPrefix, keyID, sender.String())
+// GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
+func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return false
-	}
 
-	return true
+	// private recovery infos has been marshaled in keeper
+	var privateRecoveryInfos []byte
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &privateRecoveryInfos)
+
+	return privateRecoveryInfos
 }
 
-// GetAllRecoveryInfos returns the recovery infos for all parties of a specific key ID
-func (k Keeper) GetAllRecoveryInfos(ctx sdk.Context, keyID string) [][]byte {
-	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
-	store := ctx.KVStore(k.storeKey)
-	var infos [][]byte
-
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-
-		var data types.QueryRecoveryResponse
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &data)
-		infos = append(infos, data.ShareRecoveryInfos...)
-	}
-
-	return infos
+// HasPrivateRecoveryInfos returns true if the private recovery infos for a given party exists
+func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
+	return ctx.KVStore(k.storeKey).Has([]byte(key))
 }
 
-// DeleteAllRecoveryInfos removes all recovery infos associated to the given key ID
+// DeleteAllRecoveryInfos removes all recovery infos (private and group) associated to the given key ID
 func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
-	prefix := fmt.Sprintf("%s%s_", recoveryPrefix, keyID)
+	prefix := fmt.Sprintf("%s%s_", privateRecoverPrefix, keyID)
 	store := ctx.KVStore(k.storeKey)
 
 	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
@@ -194,6 +192,9 @@ func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
 	}
+
+	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
+	ctx.KVStore(k.storeKey).Delete([]byte(key))
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {

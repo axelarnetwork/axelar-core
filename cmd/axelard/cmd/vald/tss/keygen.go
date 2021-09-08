@@ -248,8 +248,11 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 		if res.Data.GetPubKey() == nil {
 			return fmt.Errorf("public key missing from the result")
 		}
-		if res.Data.GetShareRecoveryInfos() == nil {
-			return fmt.Errorf("recovery data missing from the result")
+		if res.Data.GetGroupRecoverInfo() == nil {
+			return fmt.Errorf("group recovery data missing from the result")
+		}
+		if res.Data.GetPrivateRecoverInfo() == nil {
+			return fmt.Errorf("private recovery data missing from the result")
 		}
 
 		btcecPK, err := btcec.ParsePubKey(res.Data.GetPubKey(), btcec.S256())
