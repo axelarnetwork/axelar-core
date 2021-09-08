@@ -103,7 +103,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.String()),
