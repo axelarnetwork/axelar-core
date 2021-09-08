@@ -117,11 +117,6 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 				return
 			}
 
-			keygenOutput := recResponse.KeygenOutput
-			pubKey := keygenOutput.PubKey
-			groupRecoverInfo := keygenOutput.GroupRecoverInfo
-			privateRecoverInfo := keygenOutput.PrivateRecoverInfo
-
 			requests[i] = tofnd.RecoverRequest{
 				KeygenInit: &tofnd.KeygenInit{
 					NewKeyUid:        keyID,
@@ -131,9 +126,9 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					MyPartyIndex:     int32(index),
 				},
 				KeygenOutput: &tofnd.KeygenOutput{
-					PubKey:             pubKey,
-					GroupRecoverInfo:   groupRecoverInfo,
-					PrivateRecoverInfo: privateRecoverInfo,
+					PubKey:             recResponse.KeygenOutput.PubKey,
+					GroupRecoverInfo:   recResponse.KeygenOutput.GroupRecoverInfo,
+					PrivateRecoverInfo: recResponse.KeygenOutput.PrivateRecoverInfo,
 				},
 			}
 		}
