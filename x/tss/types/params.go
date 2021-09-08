@@ -62,7 +62,7 @@ func DefaultParams() Params {
 		SuspendDurationInBlocks:          2000,
 		AckWindowInBlocks:                4,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
-		UnbondingLockingKeyRotationCount: 7,
+		UnbondingLockingKeyRotationCount: 8,
 	}
 }
 

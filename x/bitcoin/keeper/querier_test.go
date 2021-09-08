@@ -240,7 +240,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 
 		now := time.Now()
 		rotationCount := rand.I64Between(100, 1000)
-		oldMasterKeyRotationCount := rotationCount - (rotationCount-1)%types.DefaultParams().MasterKeyRetentionPeriod
+		oldMasterKeyRotationCount := rotationCount - types.DefaultParams().MasterKeyRetentionPeriod
 		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
