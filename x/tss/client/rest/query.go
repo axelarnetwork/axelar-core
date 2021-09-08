@@ -118,28 +118,9 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 			}
 
 			keygenOutput := recResponse.KeygenOutput
-			if keygenOutput == nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain keygenOutput").Error())
-				return
-			}
-
 			pubKey := keygenOutput.PubKey
-			if pubKey == nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PubKey").Error())
-				return
-			}
-
 			groupRecoverInfo := keygenOutput.GroupRecoverInfo
-			if groupRecoverInfo == nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.GroupRecoverInfo").Error())
-				return
-			}
-
 			privateRecoverInfo := keygenOutput.PrivateRecoverInfo
-			if privateRecoverInfo == nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PrivateRecoverInfo").Error())
-				return
-			}
 
 			requests[i] = tofnd.RecoverRequest{
 				KeygenInit: &tofnd.KeygenInit{

@@ -140,25 +140,9 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 				}
 
 				keygenOutput := recResponse.KeygenOutput
-				if keygenOutput == nil {
-					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput")
-				}
-
 				pubKey := keygenOutput.PubKey
-				if pubKey == nil {
-					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PubKey")
-				}
-
 				groupRecoverInfo := keygenOutput.GroupRecoverInfo
-				if groupRecoverInfo == nil {
-					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.GroupRecoverInfo")
-				}
-
 				privateRecoverInfo := keygenOutput.PrivateRecoverInfo
-				if privateRecoverInfo == nil {
-					return sdkerrors.Wrapf(err, "recovery data does not contain KeygenOutput.PrivateRecoverInfo")
-				}
-
 				requests[i] = tofnd.RecoverRequest{
 					KeygenInit: &tofnd.KeygenInit{
 						NewKeyUid:        keyID,
