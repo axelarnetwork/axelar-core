@@ -102,22 +102,34 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// setup axelar gateway
-	bz, err := nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.CreateDeployTx},
-		abci.RequestQuery{
-			Data: cdc.MustMarshalJSON(
-				evmTypes.DeployParams{
-					Chain:    "ethereum",
-					GasPrice: sdk.NewInt(1),
-					GasLimit: 3000000,
-				})},
+	bytecode, err := nodeData[0].Node.Query(
+		[]string{evmTypes.QuerierRoute, evmKeeper.QBytecode, "ethereum", evmKeeper.BCGateway},
+		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	var result evmTypes.DeployResult
-	cdc.MustUnmarshalJSON(bz, &result)
+
+	bz, err := nodeData[0].Node.Query(
+		[]string{evmTypes.QuerierRoute, evmKeeper.QAddressByKeyRole, "ethereum", "master"},
+		abci.RequestQuery{Data: nil},
+	)
+	assert.NoError(t, err)
+
+	var queryAddressResponse evmTypes.QueryAddressResponse
+	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
+	owner := common.HexToAddress(queryAddressResponse.Address)
+
+	bz, err = nodeData[0].Node.Query(
+		[]string{evmTypes.QuerierRoute, evmKeeper.QAddressByKeyRole, "ethereum", "secondary"},
+		abci.RequestQuery{Data: nil},
+	)
+	assert.NoError(t, err)
+	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
+	operator := common.HexToAddress(queryAddressResponse.Address)
+
+	tx, err := createDeployGatewayTx(bytecode, owner, operator, nodeData[0].Mocks.ETH)
 
 	deployGatewayResult := <-chain.Submit(
-		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(result.Tx)})
+		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(tx)})
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -128,7 +140,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var signTxResponse evmTypes.SignTxResponse
 	assert.NoError(t, proto.Unmarshal(deployGatewayResult.Data, &signTxResponse))
 	_, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.SendTx, "ethereum", signTxResponse.TxID},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QSignedTx, "ethereum", signTxResponse.TxID},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)

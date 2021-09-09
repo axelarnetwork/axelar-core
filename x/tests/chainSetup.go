@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"math/big"
 	mathRand "math/rand"
 	"sort"
 	"strconv"
@@ -130,12 +131,9 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 		AddRoute(sdk.NewRoute(evmTypes.RouterKey, ethHandler)).
 		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
 
-	evmMap := make(map[string]evmTypes.RPCClient)
-	evmMap["ethereum"] = mocks.ETH
-
 	queriers := map[string]sdk.Querier{
-		btcTypes.QuerierRoute: btcKeeper.NewQuerier(mocks.BTC, bitcoinKeeper, signer, nexusK),
-		evmTypes.QuerierRoute: evmKeeper.NewQuerier(evmMap, EVMKeeper, signer, nexusK),
+		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK),
+		evmTypes.QuerierRoute: evmKeeper.NewQuerier(EVMKeeper, signer, nexusK),
 	}
 
 	node := fake.NewNode(moniker, ctx, router, queriers).
@@ -223,7 +221,14 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
 			return mathRand.Uint64(), nil
 		},
-		SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
+		//SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
+		SuggestGasPriceFunc: func(context.Context) (*big.Int, error) {
+			return big.NewInt(mathRand.Int63()), nil
+		},
+
+		EstimateGasFunc: func(context.Context, geth.CallMsg) (uint64, error) {
+			return mathRand.Uint64(), nil
+		},
 	}
 
 	btcClient := &btcMock.RPCClientMock{}
@@ -603,4 +608,34 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 	}
 
 	return logs
+}
+
+/*
+  Create a transaction for smart contract deployment. See:
+
+  https://goethereumbook.org/en/smart-contract-deploy/
+  https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
+*/
+func createDeployGatewayTx(byteCode []byte, contractOwner, contractOperator common.Address, rpc types.RPCClient) (*gethTypes.Transaction, error) {
+	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
+	if err != nil {
+		return nil, err
+	}
+
+	gasLimit, err := rpc.EstimateGas(context.Background(), geth.CallMsg{
+		To:   nil,
+		Data: deploymentBytecode,
+	})
+
+	return gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode), nil
 }

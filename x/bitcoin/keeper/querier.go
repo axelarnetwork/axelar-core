@@ -31,7 +31,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the Bitcoin module
-func NewQuerier(rpc types.RPCClient, k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error

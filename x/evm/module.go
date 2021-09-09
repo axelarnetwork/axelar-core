@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -88,7 +87,6 @@ type AppModule struct {
 	tss         types.TSS
 	voter       types.Voter
 	nexus       types.Nexus
-	rpcs        map[string]types.RPCClient
 	signer      types.Signer
 	snapshotter types.Snapshotter
 }
@@ -101,7 +99,6 @@ func NewAppModule(
 	signer types.Signer,
 	nexus types.Nexus,
 	snapshotter types.Snapshotter,
-	rpcs map[string]types.RPCClient,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -112,7 +109,6 @@ func NewAppModule(
 		signer:         signer,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
-		rpcs:           rpcs,
 	}
 }
 
@@ -126,49 +122,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	var genState types.GenesisState
 	cdc.MustUnmarshalJSON(gs, &genState)
 	InitGenesis(ctx, am.keeper, genState)
-
-	var toRemove []string
-	// TODO: this needs to be removed eventually, alongside all usage of RPCs across axelar-core
-	for chain, rpc := range am.rpcs {
-		id, err := rpc.ChainID(context.Background())
-		if err != nil {
-			panic(err)
-		}
-
-		actualNetwork, found := am.keeper.ForChain(ctx, chain).GetNetworkByID(ctx, id)
-		if !found {
-			am.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName)).Error(
-				fmt.Sprintf(
-					"unable to find network name for for chain %s with ID %s",
-					chain,
-					id.String(),
-				))
-			toRemove = append(toRemove, chain)
-			continue
-		}
-
-		network, found := am.keeper.ForChain(ctx, chain).GetNetwork(ctx)
-		if !found {
-			panic(fmt.Sprintf(
-				"unable to find chain %s",
-				chain,
-			))
-		}
-
-		if network != actualNetwork {
-			panic(fmt.Sprintf(
-				"local %s client not configured correctly: expected network %s, got %s",
-				chain,
-				network,
-				actualNetwork,
-			))
-		}
-
-	}
-
-	for _, chain := range toRemove {
-		delete(am.rpcs, chain)
-	}
 
 	return []abci.ValidatorUpdate{}
 }
@@ -191,7 +144,7 @@ func (AppModule) QuerierRoute() string {
 
 // LegacyQuerierHandler returns a new query handler for this module
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.rpcs, am.keeper, am.signer, am.nexus)
+	return keeper.NewQuerier(am.keeper, am.signer, am.nexus)
 }
 
 // RegisterServices registers a GRPC query service to respond to the

@@ -13,10 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,11 +23,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -194,45 +190,23 @@ func TestDeploy(t *testing.T) {
 	assert.NoError(t, err)
 	signer := evmTypes.NewEIP155Signer(chainID)
 	var gasLimit uint64 = 3000000
-	tssSigner := &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
-		return tss.Key{
-			ID:    rand2.StrBetween(5, 20),
-			Value: privateKey.PublicKey,
-			Role:  tss.MasterKey,
-		}, true
-	}}
-	nexusMock := &mock.NexusMock{
-		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
-			return nexus.Chain{
-				Name:                  rand2.StrBetween(5, 20),
-				NativeAsset:           rand2.StrBetween(3, 5),
-				SupportsForeignAssets: true,
-			}, true
-		},
-	}
-
-	deployParams := types.DeployParams{
-		Chain:    chain,
-		GasPrice: sdk.ZeroInt(),
-		GasLimit: gasLimit,
-	}
 
 	minConfHeight := rand2.I64Between(1, 10)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	k := newKeeper(ctx, chain, minConfHeight)
-	encCfg := app.MakeEncodingConfig()
 
-	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	evmMap := make(map[string]types.RPCClient)
-	evmMap["ethereum"] = rpc
-	query := keeper.NewQuerier(evmMap, k, tssSigner, nexusMock)
-	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
+	rpc := &mock.RPCClientMock{
+		PendingNonceAtFunc:  backend.PendingNonceAt,
+		SuggestGasPriceFunc: backend.SuggestGasPrice,
+	}
+
+	byteCode, ok := k.ForChain(ctx, chain).GetGatewayByteCodes(ctx)
+	assert.True(t, ok)
+
+	tx, err := createDeployGatewayTx(byteCode, gasLimit, rpc)
 	assert.NoError(t, err)
 
-	var result types.DeployResult
-	encCfg.Amino.MustUnmarshalJSON(res, &result)
-
-	signedTx, err := evmTypes.SignTx(result.Tx, signer, privateKey)
+	signedTx, err := evmTypes.SignTx(tx, signer, privateKey)
 	assert.NoError(t, err)
 	err = backend.SendTransaction(context.Background(), signedTx)
 	assert.NoError(t, err)
@@ -245,4 +219,32 @@ func TestDeploy(t *testing.T) {
 		t.FailNow()
 	}
 	t.Logf("Contract address: %s\n", contractAddr.Hex())
+}
+
+/*
+  Create a transaction for smart contract deployment. See:
+
+  https://goethereumbook.org/en/smart-contract-deploy/
+  https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
+*/
+func createDeployGatewayTx(byteCode []byte, gasLimit uint64, rpc types.RPCClient) (*evmTypes.Transaction, error) {
+	contractOwner := common.BytesToAddress(rand2.Bytes(common.AddressLength))
+	contractOperator := common.BytesToAddress(rand2.Bytes(common.AddressLength))
+
+	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	gasPrice, err := rpc.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
+	if err != nil {
+		return nil, err
+	}
+
+	return evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode), nil
 }
