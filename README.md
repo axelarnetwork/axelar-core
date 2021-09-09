@@ -1,8 +1,9 @@
+⚠️⚠️⚠️ **THIS IS A WORK IN PROGRESS** ⚠️⚠️⚠️
+
 # axelar-core
 
 The axelar-core app based on the Cosmos SDK is the main application of the axelar network. This repository is used to
-build the necessary binaries and docker image to run a core validator. See the axelarnetwork/axelarate repo for
-instructions to run a node.
+build the necessary binaries and docker image to run a core node.
 
 ## Prerequisites for building binaries and docker images
 
@@ -28,15 +29,15 @@ Execute `make build` to create local binaries for the validator node. They are c
 
 ## Creating docker images
 
-To create a regular docker image for the validator, execute `make docker-image`. This creates the image axelar/core:
+To create a regular docker image for the node, execute `make docker-image`. This creates the image axelar/core:
 latest.
 
 To create a docker image for debugging (with [delve](https://github.com/go-delve/delve)),
 execute `make docker-image-debug`. This creates the image axelar/core-debug:latest.
 
-## Interacting with a local validator node
+## Interacting with a local node
 
-With a local (dockerized) validator running, the `axelard` binary can be used to interact with the node.
+With a local (dockerized) node running, the `axelard` binary can be used to interact with the node.
 Run `./bin/axelard --help` after building the binaries to get information about the available commands.
 
 ## Show API documentation
@@ -59,6 +60,3 @@ For the full list of available CLI commands for `axelard` see [here](docs/toc.md
 Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download``
 or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for
 interfaces.
-
-In [testutils](https://github.com/axelarnetwork/axelar-core/tree/master/testutils) there are helpers defined to simplify
-randomized testing.
