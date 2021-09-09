@@ -29,8 +29,7 @@ message UnsignedTx {
         bytes sig_hash = 2;
       }
 
-      OutPointInfo out_point_info = 1 [ (gogoproto.nullable) = false ];
-      repeated SigRequirement sig_requirements = 2
+      repeated SigRequirement sig_requirements = 1
           [ (gogoproto.nullable) = false ];
     }
 

@@ -1,0 +1,9 @@
+syntax = "proto3";
+package tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+message KeygenVoteData {
+  bytes pub_key = 1;
+  bytes group_recovery_info = 2;
+}

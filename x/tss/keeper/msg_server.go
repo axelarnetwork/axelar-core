@@ -15,8 +15,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	gogoprototypes "github.com/gogo/protobuf/types"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -176,18 +174,14 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	var groupRecovery []byte
 	var voteData codec.ProtoMarshaler
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasRecoveryInfos(ctx, voter, req.PollKey.ID) {
-			return nil, fmt.Errorf("voter %s already submitted their recovery infos", voter.String())
-		}
-
-		infos := res.Data.GetShareRecoveryInfos()
-		if infos == nil {
-			return nil, fmt.Errorf("could not obtain recovery info from result")
+		if s.HasPrivateRecoveryInfos(ctx, voter, req.PollKey.ID) {
+			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
 		}
 
 		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
@@ -204,23 +198,19 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
 		}
 
-		// check that the number of shares is the same as the number of recovery info
-		if val.ShareCount != int64(len(infos)) {
-			return nil, fmt.Errorf("number of shares is not the same as the number of recovery infos"+
-				" for validator %s (expected %d, received %d)", voter.String(), val.ShareCount, len(infos))
+		// get pubkey
+		pubKey := res.Data.GetPubKey()
+		if pubKey == nil {
+			return nil, fmt.Errorf("public key is nil")
 		}
 
-		s.SetRecoveryInfos(ctx, voter, req.PollKey.ID, infos)
+		groupRecovery = res.Data.GetGroupRecoverInfo()
+		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.GetPrivateRecoverInfo())
 
-		// TODO: in the near future we need to change the voting value to include both the pubkey and
-		// and the public recovery infos of all parties. The way that is currently done, if a single
-		// party neglects to vote, it will be impossible later on to recover shares. Therefore, tofnd needs
-		// to be updated to provide only the public part of the recovery shares, and voting be done on that
-		// data + pubkey. We will also need to provide both the (public) recovery data and the pubkey that
-		// was voted on, so that tofnd can re-construct the shares.
-		//
-		// Check issue #694 on axelar-core repo for details.
-		voteData = &gogoprototypes.BytesValue{Value: res.Data.GetPubKey()}
+		voteData = &types.KeygenVoteData{
+			PubKey:            pubKey,
+			GroupRecoveryInfo: res.Data.GetGroupRecoverInfo(),
+		}
 
 	default:
 		return nil, fmt.Errorf("invalid data type")
@@ -230,6 +220,11 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		// the key is already set, no need for further processing of the vote
 		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
 		return &types.VotePubKeyResponse{}, nil
+	}
+
+	// TODO: fix gas estimation issue, retrieve group recovery info from vote, and set it after voting is completed
+	if groupRecovery != nil {
+		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, groupRecovery)
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
@@ -250,6 +245,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	defer ctx.EventManager().EmitEvent(event)
 
 	if poll.Is(vote.Failed) {
+		s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", req.PollKey.ID))
+
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
@@ -262,14 +259,17 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	result := poll.GetResult()
-	// result should be either the PubKey or Criminals
-	switch keygenResult := result.(type) {
-	case *gogoprototypes.BytesValue:
+	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", req.PollKey.ID))
 
-		btcecPK, err := btcec.ParsePubKey(keygenResult.GetValue(), btcec.S256())
+	result := poll.GetResult()
+	// result should be either KeygenResult or Criminals
+	switch keygenResult := result.(type) {
+	case *types.KeygenVoteData:
+		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", req.PollKey.ID))
+
+		btcecPK, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
 		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal public key bytes: [%w]", err)
+			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
 		pubKey := btcecPK.ToECDSA()
@@ -284,11 +284,14 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		return &types.VotePubKeyResponse{}, nil
 	case *tofnd.MessageOut_CriminalList:
+		s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", req.PollKey.ID))
+
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
 		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
 		s.DeleteKeygenStart(ctx, req.PollKey.ID)
 		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
+		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
 		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(

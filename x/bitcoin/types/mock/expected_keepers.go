@@ -1955,6 +1955,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetMaxSecondaryOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMaxSecondaryOutputAmount method")
 // 			},
+// 			GetMaxTxSizeFunc: func(ctx sdk.Context) int64 {
+// 				panic("mock out the GetMaxTxSize method")
+// 			},
 // 			GetMinOutputAmountFunc: func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetMinOutputAmount method")
 // 			},
@@ -2081,6 +2084,9 @@ type BTCKeeperMock struct {
 
 	// GetMaxSecondaryOutputAmountFunc mocks the GetMaxSecondaryOutputAmount method.
 	GetMaxSecondaryOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
+
+	// GetMaxTxSizeFunc mocks the GetMaxTxSize method.
+	GetMaxTxSizeFunc func(ctx sdk.Context) int64
 
 	// GetMinOutputAmountFunc mocks the GetMinOutputAmount method.
 	GetMinOutputAmountFunc func(ctx sdk.Context) github_com_btcsuite_btcutil.Amount
@@ -2247,6 +2253,11 @@ type BTCKeeperMock struct {
 		}
 		// GetMaxSecondaryOutputAmount holds details about calls to the GetMaxSecondaryOutputAmount method.
 		GetMaxSecondaryOutputAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetMaxTxSize holds details about calls to the GetMaxTxSize method.
+		GetMaxTxSize []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -2437,6 +2448,7 @@ type BTCKeeperMock struct {
 	lockGetMasterKeyRetentionPeriod         sync.RWMutex
 	lockGetMaxInputCount                    sync.RWMutex
 	lockGetMaxSecondaryOutputAmount         sync.RWMutex
+	lockGetMaxTxSize                        sync.RWMutex
 	lockGetMinOutputAmount                  sync.RWMutex
 	lockGetMinVoterCount                    sync.RWMutex
 	lockGetNetwork                          sync.RWMutex
@@ -2958,6 +2970,37 @@ func (mock *BTCKeeperMock) GetMaxSecondaryOutputAmountCalls() []struct {
 	mock.lockGetMaxSecondaryOutputAmount.RLock()
 	calls = mock.calls.GetMaxSecondaryOutputAmount
 	mock.lockGetMaxSecondaryOutputAmount.RUnlock()
+	return calls
+}
+
+// GetMaxTxSize calls GetMaxTxSizeFunc.
+func (mock *BTCKeeperMock) GetMaxTxSize(ctx sdk.Context) int64 {
+	if mock.GetMaxTxSizeFunc == nil {
+		panic("BTCKeeperMock.GetMaxTxSizeFunc: method is nil but BTCKeeper.GetMaxTxSize was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMaxTxSize.Lock()
+	mock.calls.GetMaxTxSize = append(mock.calls.GetMaxTxSize, callInfo)
+	mock.lockGetMaxTxSize.Unlock()
+	return mock.GetMaxTxSizeFunc(ctx)
+}
+
+// GetMaxTxSizeCalls gets all the calls that were made to GetMaxTxSize.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMaxTxSizeCalls())
+func (mock *BTCKeeperMock) GetMaxTxSizeCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMaxTxSize.RLock()
+	calls = mock.calls.GetMaxTxSize
+	mock.lockGetMaxTxSize.RUnlock()
 	return calls
 }
 
