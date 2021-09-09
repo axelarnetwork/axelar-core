@@ -9,7 +9,7 @@ import (
 	"time"
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
@@ -37,18 +37,17 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 			SendFunc:      func(*tofnd.MessageIn) error { return nil },
 			CloseSendFunc: func() error { return nil },
 		}
-		client := &mock.ClientMock{
+		cli := &mock.ClientMock{
 			KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 				return keygenClient, nil
 			},
 		}
-
 		mgr = NewMgr(
-			client,
+			cli,
+			client.Context{},
 			1*time.Second,
 			principalAddr,
 			&mock2.BroadcasterMock{},
-			rand.Bytes(sdk.AddrLen),
 			log.TestingLogger(),
 			cdc,
 		)

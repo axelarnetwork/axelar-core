@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -42,8 +43,8 @@ func (mgr *Mgr) ProcessSignAck(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "key ID '%s' not present at tofnd")
 	case tofnd.RESPONSE_PRESENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s' and sig ID '%s'", keyID, sigID))
-		tssMsg := tss.NewAckRequest(mgr.sender, sigID, exported.AckType_Sign, height)
-		if err := mgr.broadcaster.Broadcast(false, tssMsg); err != nil {
+		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, sigID, exported.AckType_Sign, height)
+		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
 	default:
@@ -205,8 +206,8 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			sigID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.ProcessSignTrafficRequest{Sender: mgr.sender, SessionID: sigID, Payload: msg}
-		if err := mgr.broadcaster.Broadcast(false, tssMsg); err != nil {
+		tssMsg := &tss.ProcessSignTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: sigID, Payload: msg}
+		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), tssMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 		}
 	}
@@ -235,8 +236,8 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received sign result for %s [%+v]", sigID, result))
 
 	key := voting.NewPollKey(tss.ModuleName, sigID)
-	vote := &tss.VoteSigRequest{Sender: mgr.sender, PollKey: key, Result: result}
-	return mgr.broadcaster.Broadcast(true, vote)
+	vote := &tss.VoteSigRequest{Sender: mgr.cliCtx.FromAddress, PollKey: key, Result: result}
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), vote)
 }
 
 func (mgr *Mgr) getSignStream(sigID string) (Stream, bool) {

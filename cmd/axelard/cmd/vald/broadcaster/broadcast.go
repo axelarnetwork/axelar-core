@@ -2,14 +2,12 @@ package broadcaster
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -17,24 +15,17 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-const (
-	querySleep      = 2 * time.Second
-	queryMaxRetries = 20
-)
-
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
 	logger    log.Logger
 	pipeline  types.Pipeline
-	ctx       sdkClient.Context
 	txFactory tx.Factory
 }
 
 // NewBroadcaster returns a broadcaster to submit transactions to the blockchain.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
+func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
 	return &Broadcaster{
-		ctx:       ctx,
 		logger:    logger,
 		pipeline:  pipeline,
 		txFactory: txf,
@@ -42,16 +33,16 @@ func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeli
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) Broadcast(commit bool, msgs ...sdk.Msg) error {
+func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
 	// serialize concurrent calls to broadcast
 	return b.pipeline.Push(func() error {
 
-		txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
+		txf, err := tx.PrepareFactory(ctx, b.txFactory)
 		if err != nil {
 			return err
 		}
 
-		res, err := Broadcast(b.ctx, txf, msgs)
+		res, err := Broadcast(ctx, txf, msgs)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -65,36 +56,6 @@ func (b *Broadcaster) Broadcast(commit bool, msgs ...sdk.Msg) error {
 
 		// broadcast has been successful, so increment sequence number
 		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
-
-		// verify if the tx executed successfully, if such check is required
-		if commit {
-			b.logger.Debug(fmt.Sprintf("checking for tx [%s] commit status", res.TxHash))
-
-			var query *sdk.TxResponse
-			for i := 0; i < queryMaxRetries; i++ {
-				time.Sleep(querySleep)
-				query, err = authclient.QueryTx(b.ctx, res.TxHash)
-				if err != nil {
-					if strings.Contains(err.Error(), "not found") {
-						b.logger.Debug(fmt.Sprintf("tx not yet found, retrying"))
-						continue
-					}
-
-					return err
-				}
-				break
-			}
-
-			if err != nil {
-				return err
-			}
-
-			b.logger.Debug(fmt.Sprintf("query response [%d]: %s", query.Code, query.RawLog))
-
-			if query.Code != abci.CodeTypeOK {
-				return fmt.Errorf(query.RawLog)
-			}
-		}
 
 		return nil
 	})
@@ -136,8 +97,8 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 		return nil, err
 	}
 
-	// broadcast to a Tendermint node.
-	res, err := ctx.BroadcastTxSync(txBytes)
+	// broadcast to a Tendermint node
+	res, err := ctx.BroadcastTx(txBytes)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
+
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -34,19 +37,19 @@ var (
 
 // Mgr manages all communication with Ethereum
 type Mgr struct {
+	cliCtx      sdkClient.Context
 	logger      tmLog.Logger
 	rpcs        map[string]rpc.Client
 	broadcaster types.Broadcaster
-	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
+		cliCtx:      cliCtx,
 		broadcaster: broadcaster,
-		sender:      sender,
 		logger:      logger.With("listener", "evm"),
 		cdc:         cdc,
 	}
@@ -72,9 +75,9 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 
 	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
 
-	msg := evmTypes.NewVoteConfirmChainRequest(mgr.sender, chain, pollKey, confirmed)
+	msg := evmTypes.NewVoteConfirmChainRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(true, msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
@@ -98,9 +101,9 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.sender, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
+	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(true, msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
@@ -124,9 +127,9 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.sender, chain, asset, pollKey, txID, confirmed)
+	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.cliCtx.FromAddress, chain, asset, pollKey, txID, confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(true, msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
 }
 
 // ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
@@ -150,9 +153,9 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.sender, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
+	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(true, msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
 }
 
 func parseNewChainParams(attributes map[string]string) (chain string, nativeAsset string, err error) {

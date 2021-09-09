@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -196,7 +197,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		broadcaster = &mock2.BroadcasterMock{}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
 	}
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -307,7 +308,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		broadcaster = &mock2.BroadcasterMock{}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
 	}
 
 	repeats := 20
@@ -490,7 +491,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		broadcaster = &mock2.BroadcasterMock{}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, broadcaster, rand.Bytes(sdk.AddrLen), log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
 	}
 
 	repeats := 20
