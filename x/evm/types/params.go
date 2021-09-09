@@ -26,6 +26,7 @@ var (
 	KeyToken               = []byte("token")
 	KeyBurnable            = []byte("burneable")
 	KeyMinVoterCount       = []byte("minVoterCount")
+	KeyCommandsGasLimit    = []byte("commandsGasLimit")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -78,8 +79,9 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
-		VotingThreshold: utils.Threshold{Numerator: 15, Denominator: 100},
-		MinVoterCount:   15,
+		VotingThreshold:  utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:    15,
+		CommandsGasLimit: 5000000,
 	}}
 }
 
@@ -103,6 +105,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),
 		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		params.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
+		params.NewParamSetPair(KeyCommandsGasLimit, &m.CommandsGasLimit, validateCommandsGasLimit),
 	}
 }
 
@@ -213,6 +216,19 @@ func validateMinVoterCount(minVoterCount interface{}) error {
 	return nil
 }
 
+func validateCommandsGasLimit(commandsGasLimit interface{}) error {
+	val, ok := commandsGasLimit.(uint32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for commands gas limit: %T", commandsGasLimit)
+	}
+
+	if val <= 0 {
+		return fmt.Errorf("commands gas limit must be >0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -232,6 +248,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMinVoterCount(m.MinVoterCount); err != nil {
+		return err
+	}
+
+	if err := validateCommandsGasLimit(m.CommandsGasLimit); err != nil {
 		return err
 	}
 

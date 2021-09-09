@@ -46,10 +46,15 @@ const (
 		}
 	]`
 	axelarGatewayCommandMintToken            = "mintToken"
+	mintTokenMaxGasCost                      = 200000
 	axelarGatewayCommandDeployToken          = "deployToken"
+	deployTokenMaxGasCost                    = 1500000
 	axelarGatewayCommandBurnToken            = "burnToken"
+	burnTokenMaxGasCost                      = 200000
 	axelarGatewayCommandTransferOwnership    = "transferOwnership"
+	transferOwnershipMaxGasCost              = 150000
 	axelarGatewayCommandTransferOperatorship = "transferOperatorship"
+	transferOperatorshipMaxGasCost           = 150000
 	axelarGatewayFuncExecute                 = "execute"
 )
 
@@ -244,17 +249,6 @@ func GetSignHash(commandData []byte) common.Hash {
 	return crypto.Keccak256Hash([]byte(msg))
 }
 
-func transferIDtoCommandID(transferID uint64) CommandID {
-	var commandID CommandID
-
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, transferID)
-
-	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
-
-	return commandID
-}
-
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
 func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burnerInfo BurnerInfo) (Command, error) {
 	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
@@ -266,10 +260,11 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burner
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
 	return Command{
-		ID:      NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command: axelarGatewayCommandBurnToken,
-		Params:  params,
-		KeyID:   keyID,
+		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
+		Command:    axelarGatewayCommandBurnToken,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: burnTokenMaxGasCost,
 	}, nil
 }
 
@@ -281,10 +276,11 @@ func CreateDeployTokenCommand(chainID *big.Int, keyID string, name string, symbo
 	}
 
 	return Command{
-		ID:      NewCommandID([]byte(symbol), chainID),
-		Command: axelarGatewayCommandDeployToken,
-		Params:  params,
-		KeyID:   keyID,
+		ID:         NewCommandID([]byte(symbol), chainID),
+		Command:    axelarGatewayCommandDeployToken,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: deployTokenMaxGasCost,
 	}, nil
 }
 
@@ -296,10 +292,11 @@ func CreateMintTokenCommand(chainID *big.Int, keyID string, id CommandID, symbol
 	}
 
 	return Command{
-		ID:      id,
-		Command: axelarGatewayCommandMintToken,
-		Params:  params,
-		KeyID:   keyID,
+		ID:         id,
+		Command:    axelarGatewayCommandMintToken,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: mintTokenMaxGasCost,
 	}, nil
 }
 
@@ -311,10 +308,11 @@ func CreateTransferOwnershipCommand(chainID *big.Int, keyID string, newOwnerAddr
 	}
 
 	return Command{
-		ID:      NewCommandID(newOwnerAddr.Bytes(), chainID),
-		Command: axelarGatewayCommandTransferOwnership,
-		Params:  params,
-		KeyID:   keyID,
+		ID:         NewCommandID(newOwnerAddr.Bytes(), chainID),
+		Command:    axelarGatewayCommandTransferOwnership,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: transferOwnershipMaxGasCost,
 	}, nil
 }
 
@@ -326,10 +324,11 @@ func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperat
 	}
 
 	return Command{
-		ID:      NewCommandID(newOperatorAddr.Bytes(), chainID),
-		Command: axelarGatewayCommandTransferOperatorship,
-		Params:  params,
-		KeyID:   keyID,
+		ID:         NewCommandID(newOperatorAddr.Bytes(), chainID),
+		Command:    axelarGatewayCommandTransferOperatorship,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: transferOperatorshipMaxGasCost,
 	}, nil
 }
 

@@ -122,7 +122,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 			keyIDs := args[1:]
 			requests := make([]tofnd.RecoverRequest, len(keyIDs))
 			for i, keyID := range keyIDs {
-				res, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryRecovery, keyID))
+				res, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryRecovery, keyID, address.String()))
 				if err != nil {
 					return sdkerrors.Wrapf(err, "failed to get recovery data")
 				}
@@ -147,7 +147,7 @@ func GetCmdRecovery(queryRoute string) *cobra.Command {
 						PartyShareCounts: recResponse.PartyShareCounts,
 						MyPartyIndex:     int32(index),
 					},
-					ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
+					KeygenOutput: recResponse.KeygenOutput,
 				}
 			}
 			return cliCtx.PrintObjectLegacy(requests)

@@ -12,6 +12,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -150,7 +151,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyMasterKeyID, masterKey.ID),
 			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, secondaryKey.ID),
@@ -356,14 +357,21 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	s.Logger(ctx).Debug(fmt.Sprintf("signing %s consolidation transaction", req.KeyRole.SimpleString()))
 
 	var maxLockTime *time.Time
-	var outpointsToSign []types.OutPointToSign
-	for _, inputInfo := range unsignedTx.Info.InputInfos {
-		addressInfo, ok := s.BTCKeeper.GetAddress(ctx, inputInfo.OutPointInfo.Address)
-		if !ok {
-			return nil, fmt.Errorf("address for confirmed outpoint %s must be known", inputInfo.OutPointInfo.OutPoint)
+	var outPointsToSign []types.OutPointToSign
+
+	for _, txIn := range unsignedTx.GetTx().TxIn {
+		outPointStr := txIn.PreviousOutPoint.String()
+		outPointInfo, state, ok := s.BTCKeeper.GetOutPointInfo(ctx, txIn.PreviousOutPoint)
+		if !ok || state != types.OutPointState_Spent {
+			return nil, fmt.Errorf("out point info %s is not found or not spent", outPointStr)
 		}
 
-		outpointsToSign = append(outpointsToSign, types.OutPointToSign{OutPointInfo: inputInfo.OutPointInfo, AddressInfo: addressInfo})
+		addressInfo, ok := s.BTCKeeper.GetAddress(ctx, outPointInfo.Address)
+		if !ok {
+			return nil, fmt.Errorf("address for outpoint %s must be known", outPointStr)
+		}
+
+		outPointsToSign = append(outPointsToSign, types.OutPointToSign{OutPointInfo: outPointInfo, AddressInfo: addressInfo})
 
 		if addressInfo.SpendingCondition.LockTime != nil && (maxLockTime == nil || addressInfo.SpendingCondition.LockTime.After(*maxLockTime)) {
 			maxLockTime = addressInfo.SpendingCondition.LockTime
@@ -395,28 +403,33 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	}
 
 	var sigHashes [][]byte
-	for i := range unsignedTx.Info.InputInfos {
-		sigHash, err := txscript.CalcWitnessSigHash(outpointsToSign[i].RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(outpointsToSign[i].Amount))
+	// reset InputInfos each time to re-calculate the signatures that are needed
+	unsignedTx.Info.InputInfos = []types.UnsignedTx_Info_InputInfo{}
+
+	for i, outPointToSign := range outPointsToSign {
+		sigHash, err := txscript.CalcWitnessSigHash(outPointToSign.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, i, int64(outPointToSign.Amount))
 		if err != nil {
 			return nil, err
 		}
 
 		sigHashes = append(sigHashes, sigHash)
-		internalKeyIDs := outpointsToSign[i].SpendingCondition.InternalKeyIds
+		internalKeyIDs := outPointToSign.SpendingCondition.InternalKeyIds
 		keyID := internalKeyIDs[0]
 		// if the unsigned transaction has aborted due to signing failure, try signing with a different key if necessary and possible
 		if unsignedTx.Is(types.Aborted) {
 			keyID = internalKeyIDs[(utils.IndexOf(internalKeyIDs, unsignedTx.PrevAbortedKeyId)+1)%len(internalKeyIDs)]
 		}
 
-		unsignedTx.Info.InputInfos[i].SigRequirements = []types.UnsignedTx_Info_InputInfo_SigRequirement{
-			types.NewSigRequirement(keyID, sigHash),
-		}
+		unsignedTx.Info.InputInfos = append(unsignedTx.Info.InputInfos, types.UnsignedTx_Info_InputInfo{
+			SigRequirements: []types.UnsignedTx_Info_InputInfo_SigRequirement{
+				types.NewSigRequirement(keyID, sigHash),
+			},
+		})
 	}
 
 	if externalSigsRequired {
 		// Verify that external keys have submitted all signatures
-		for i, outpointToSign := range outpointsToSign {
+		for i, outpointToSign := range outPointsToSign {
 			sigHash := sigHashes[i]
 
 			requiredExternalSigCount := outpointToSign.AddressInfo.SpendingCondition.ExternalMultisigThreshold
@@ -525,15 +538,16 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("current %s key is not set", tss.MasterKey.SimpleString())
 	}
 
-	inputs, totalInputs, err := prepareInputs(ctx, s.BTCKeeper, currMasterKey.ID)
+	tx := types.CreateTx()
+
+	inputsTotal, err := addInputs(ctx, s.BTCKeeper, tx, currMasterKey.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
-
-	outputs := []types.Output{anyoneCanSpendOutput}
-	totalOut := sdk.NewInt(int64(anyoneCanSpendOutput.Amount))
+	if err := types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx)); err != nil {
+		return nil, err
+	}
 	anyoneCanSpendVout := uint32(0)
 
 	if req.SecondaryKeyAmount > 0 {
@@ -552,10 +566,9 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			return nil, err
 		}
 
-		secondaryOutput := types.Output{Amount: btcutil.Amount(req.SecondaryKeyAmount), Recipient: secondaryAddress.GetAddress()}
-		outputs = append(outputs, secondaryOutput)
-		totalOut = totalOut.AddRaw(int64(req.SecondaryKeyAmount))
-
+		if err := types.AddOutput(tx, secondaryAddress.GetAddress(), btcutil.Amount(req.SecondaryKeyAmount)); err != nil {
+			return nil, err
+		}
 		s.SetAddress(ctx, secondaryAddress)
 	}
 
@@ -564,32 +577,36 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
+	txSizeUpperBound, err := estimateTxSizeWithOutputsTo(ctx, s, *tx, consolidationAddress.GetAddress())
 	if err != nil {
 		return nil, err
 	}
 
+	outputsTotal := types.GetOutputsTotal(*tx)
 	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
 	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
-	change := totalInputs.Sub(totalOut).Sub(fee)
+	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
 	if change.Sign() <= 0 {
-		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", totalInputs.Int64(), fee.Int64())
+		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", inputsTotal.Int64(), fee.Int64())
 	}
 
-	changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
-	if err != nil {
+	if err := types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64())); err != nil {
 		return nil, err
 	}
 
-	tx, err := types.CreateTx(inputs, append(outputs, changeOutput))
-	if err != nil {
-		return nil, err
-	}
+	s.SetAddress(ctx, consolidationAddress)
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "secondary", "address", "balance"},
+		float32(change.Int64()),
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("address", consolidationAddress.Address),
+		})
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.SecondaryKeyAmount)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, req.SecondaryKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currMasterKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currMasterKey, consolidationKey); err != nil {
@@ -643,14 +660,17 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, fmt.Errorf("current %s key is not set", tss.SecondaryKey.SimpleString())
 	}
 
-	outputs, totalOut := prepareOutputs(ctx, s, s.nexus)
+	tx := types.CreateTx()
 
-	telemetry.IncrCounter(float32(totalOut.Int64()), types.ModuleName, "total", "withdrawal")
-	telemetry.IncrCounter(float32(len(outputs)), types.ModuleName, "total", "withdrawal", "count")
-
-	if len(outputs) == 0 {
-		s.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
+	inputsTotal, err := addInputs(ctx, s.BTCKeeper, tx, currSecondaryKey.ID)
+	if err != nil {
+		return nil, err
 	}
+
+	if err := types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx)); err != nil {
+		return nil, err
+	}
+	anyoneCanSpendVout := uint32(0)
 
 	if req.MasterKeyAmount > 0 {
 		var key tss.Key
@@ -668,21 +688,10 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			return nil, err
 		}
 
-		masterOutput := types.Output{Amount: btcutil.Amount(req.MasterKeyAmount), Recipient: masterAddress.GetAddress()}
-		outputs = append(outputs, masterOutput)
-		totalOut = totalOut.AddRaw(int64(req.MasterKeyAmount))
-
+		if err := types.AddOutput(tx, masterAddress.GetAddress(), btcutil.Amount(req.MasterKeyAmount)); err != nil {
+			return nil, err
+		}
 		s.SetAddress(ctx, masterAddress)
-	}
-
-	anyoneCanSpendOutput := types.Output{Amount: s.BTCKeeper.GetMinOutputAmount(ctx), Recipient: s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress()}
-	outputs = append(outputs, anyoneCanSpendOutput)
-	totalOut = totalOut.AddRaw(int64(anyoneCanSpendOutput.Amount))
-	anyoneCanSpendVout := uint32(len(outputs) - 1)
-
-	inputs, totalDeposits, err := prepareInputs(ctx, s, currSecondaryKey.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, consolidationKey)
@@ -690,34 +699,42 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	txSizeUpperBound, err := estimateTxSizeWithZeroChange(ctx, s, consolidationAddress, inputs, outputs)
+	if err := addWithdrawalOutputs(ctx, s.BTCKeeper, s.nexus, tx, consolidationAddress.GetAddress()); err != nil {
+		return nil, err
+	}
+
+	txSizeUpperBound, err := estimateTxSizeWithOutputsTo(ctx, s, *tx, consolidationAddress.GetAddress())
 	if err != nil {
 		return nil, err
 	}
 
+	outputsTotal := types.GetOutputsTotal(*tx)
 	// consolidation transactions always pay 1 satoshi/byte, which is the default minimum relay fee rate bitcoin-core sets
 	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
-	change := totalDeposits.Sub(totalOut).Sub(fee)
+	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
 	if change.Sign() <= 0 {
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
-			totalDeposits.String(), totalOut.String(), btcutil.Amount(fee.Int64()).String(),
+			inputsTotal.String(), outputsTotal.String(), btcutil.Amount(fee.Int64()).String(),
 		)
 	}
 
-	changeOutput, err := prepareChange(ctx, s, consolidationAddress, change)
-	if err != nil {
+	if err := types.AddOutput(tx, consolidationAddress.GetAddress(), btcutil.Amount(change.Int64())); err != nil {
 		return nil, err
 	}
 
-	tx, err := types.CreateTx(inputs, append(outputs, changeOutput))
-	if err != nil {
-		return nil, err
-	}
+	s.SetAddress(ctx, consolidationAddress)
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "secondary", "address", "balance"},
+		float32(change.Int64()),
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("address", consolidationAddress.Address),
+		})
 
 	tx.LockTime = 0
 	tx = types.DisableTimelockAndRBF(tx)
-	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, inputs, req.MasterKeyAmount)
+	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, req.MasterKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currSecondaryKey.ID != consolidationKey.ID {
 		if err := validateKeyAssignment(ctx, s.BTCKeeper, s.signer, s.snapshotter, currSecondaryKey, consolidationKey); err != nil {
@@ -767,47 +784,66 @@ func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([
 	return externalKeys, nil
 }
 
-func estimateTxSizeWithZeroChange(ctx sdk.Context, k types.BTCKeeper, address types.AddressInfo, inputs []types.OutPointToSign, outputs []types.Output) (int64, error) {
-	zeroChangeOutput, err := prepareChange(ctx, k, address, sdk.ZeroInt())
-	if err != nil {
-		return 0, err
+func estimateTxSizeWithOutputsTo(ctx sdk.Context, k types.BTCKeeper, tx wire.MsgTx, addresses ...btcutil.Address) (int64, error) {
+	var outPointsToSign []types.OutPointToSign
+
+	for _, txIn := range tx.TxIn {
+		outPointStr := txIn.PreviousOutPoint.String()
+		outPointInfo, _, ok := k.GetOutPointInfo(ctx, txIn.PreviousOutPoint)
+		if !ok {
+			return 0, fmt.Errorf("out point info %s is not found", outPointStr)
+		}
+
+		addressInfo, ok := k.GetAddress(ctx, outPointInfo.Address)
+		if !ok {
+			return 0, fmt.Errorf("address for outpoint %s must be known", outPointStr)
+		}
+
+		outPointsToSign = append(outPointsToSign, types.OutPointToSign{OutPointInfo: outPointInfo, AddressInfo: addressInfo})
 	}
 
-	tx, err := types.CreateTx(inputs, append(outputs, zeroChangeOutput))
-	if err != nil {
-		return 0, err
+	for _, address := range addresses {
+		if err := types.AddOutput(&tx, address, btcutil.Amount(0)); err != nil {
+			return 0, err
+		}
 	}
 
-	return types.EstimateTxSize(*tx, inputs), nil
+	return types.EstimateTxSize(tx, outPointsToSign), nil
 }
 
-func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.Output, sdk.Int) {
+func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx *wire.MsgTx, changeAddress btcutil.Address) error {
+	total := sdk.ZeroInt()
+	outputCount := 0
 	minAmount := sdk.NewInt(int64(k.GetMinOutputAmount(ctx)))
 	pendingTransfers := n.GetTransfersForChain(ctx, exported.Bitcoin, nexus.Pending)
-	outputs := []types.Output{}
-	total := sdk.ZeroInt()
 	network := k.GetNetwork(ctx).Params()
+	maxTxSize := k.GetMaxTxSize(ctx)
 
-	// Combine output to same destination address
+	addressToTransfers := make(map[string][]nexus.CrossChainTransfer)
 	for _, transfer := range pendingTransfers {
-		if _, err := btcutil.DecodeAddress(transfer.Recipient.Address, network); err == nil {
-			n.ArchivePendingTransfer(ctx, transfer)
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
+		if err != nil {
+			continue
 		}
+
+		encodedAddress := recipient.EncodeAddress()
+		addressToTransfers[encodedAddress] = append(addressToTransfers[encodedAddress], transfer)
 	}
 
 	getRecipient := func(transfer nexus.CrossChainTransfer) string {
 		return transfer.Recipient.Address
 	}
 
-	for _, transfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
-		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
+	// Combine output to same destination address
+	for _, combinedTransfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
+		recipient, err := btcutil.DecodeAddress(combinedTransfer.Recipient.Address, network)
 		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.Address))
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", combinedTransfer.Recipient.Address))
 			continue
 		}
 
 		encodedAddress := recipient.EncodeAddress()
-		amount := transfer.Asset.Amount
+		amount := combinedTransfer.Asset.Amount
 
 		// Check if the recipient has unsent dust amount
 		unsentDust := k.GetDustAmount(ctx, encodedAddress)
@@ -829,54 +865,54 @@ func prepareOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus) ([]types.
 			continue
 		}
 
-		outputs = append(outputs,
-			types.Output{Amount: btcutil.Amount(amount.Int64()), Recipient: recipient})
+		if txSize, err := estimateTxSizeWithOutputsTo(ctx, k, *tx, recipient, changeAddress); err != nil {
+			return err
+		} else if txSize > maxTxSize {
+			// stop if transaction size is above the limit after adding the ouput
+			break
+		}
+
+		for _, transfer := range addressToTransfers[encodedAddress] {
+			n.ArchivePendingTransfer(ctx, transfer)
+		}
+
 		total = total.Add(amount)
+		outputCount++
+
+		if err := types.AddOutput(tx, recipient, btcutil.Amount(amount.Int64())); err != nil {
+			return err
+		}
 	}
 
-	return outputs, total
+	telemetry.IncrCounter(float32(total.Int64()), types.ModuleName, "total", "withdrawal")
+	telemetry.IncrCounter(float32(outputCount), types.ModuleName, "total", "withdrawal", "count")
+
+	if outputCount == 0 {
+		k.Logger(ctx).Info("creating consolidation transaction without any withdrawals")
+	}
+
+	return nil
 }
 
-func prepareInputs(ctx sdk.Context, k types.BTCKeeper, keyID string) ([]types.OutPointToSign, sdk.Int, error) {
-	var inputs []types.OutPointToSign
+func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string) (sdk.Int, error) {
 	total := sdk.ZeroInt()
-
 	// TODO: the confirmed outpoint info queue should by ordered by value desc instead of block height asc
 	confirmedOutpointInfoQueue := k.GetConfirmedOutpointInfoQueueForKey(ctx, keyID)
 	maxInputCount := k.GetMaxInputCount(ctx)
 
 	var info types.OutPointInfo
-	for len(inputs) < int(maxInputCount) && confirmedOutpointInfoQueue.Dequeue(&info) {
-		addressInfo, ok := k.GetAddress(ctx, info.Address)
-		if !ok {
-			return nil, sdk.ZeroInt(), fmt.Errorf("address for confirmed outpoint %s must be known", info.OutPoint)
+	for len(tx.TxIn) < int(maxInputCount) && confirmedOutpointInfoQueue.Dequeue(&info) {
+		if err := types.AddInput(tx, info.OutPoint); err != nil {
+			return total, err
 		}
 
-		inputs = append(inputs, types.OutPointToSign{OutPointInfo: info, AddressInfo: addressInfo})
 		total = total.AddRaw(int64(info.Amount))
+
 		k.DeleteOutpointInfo(ctx, info.GetOutPoint())
 		k.SetSpentOutpointInfo(ctx, info)
 	}
 
-	return inputs, total, nil
-}
-
-func prepareChange(ctx sdk.Context, k types.BTCKeeper, consolidationAddress types.AddressInfo, change sdk.Int) (types.Output, error) {
-	if !change.IsInt64() {
-		return types.Output{}, fmt.Errorf("the calculated change is too large for a single transaction")
-	}
-
-	k.SetAddress(ctx, consolidationAddress)
-
-	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, "secondary", "address", "balance"},
-		float32(change.Int64()),
-		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
-			telemetry.NewLabel("address", consolidationAddress.Address),
-		})
-
-	return types.Output{Amount: btcutil.Amount(change.Int64()), Recipient: consolidationAddress.GetAddress()}, nil
+	return total, nil
 }
 
 func getSigID(sigHash []byte, keyID string) string {
@@ -961,7 +997,10 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
 	currRotationCount := signer.GetRotationCount(ctx, exported.Bitcoin, tss.MasterKey)
-	oldMasterKeyRotationCount := currRotationCount - (currRotationCount-1)%k.GetMasterKeyRetentionPeriod(ctx)
+	oldMasterKeyRotationCount := currRotationCount - k.GetMasterKeyRetentionPeriod(ctx)
+	if oldMasterKeyRotationCount < 1 {
+		oldMasterKeyRotationCount = 1
+	}
 
 	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
 }

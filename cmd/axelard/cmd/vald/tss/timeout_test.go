@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -20,18 +20,17 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	rpcClient := mock.ClientMock{}
 	principalAddr := rand.Str(20)
 	broadcaster := broadcastMock.BroadcasterMock{}
-	sender := rand.Bytes(sdk.AddrLen)
 	logger := log.TestingLogger()
 	cdc := app.MakeEncodingConfig().Amino
 
 	t.Run("should do nothing when the timeout queue is empty", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
+		mgr := NewMgr(&rpcClient, client.Context{}, time.Second, principalAddr, &broadcaster, logger, cdc)
 
 		mgr.ProcessNewBlockHeader(100)
 	}))
 
 	t.Run("should do nothing if first session in queue has not timed out yet", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
+		mgr := NewMgr(&rpcClient, client.Context{}, time.Second, principalAddr, &broadcaster, logger, cdc)
 
 		id := rand.Str(20)
 		timeoutAt := int64(1234)
@@ -43,7 +42,7 @@ func TestProcessNewBlockHeader(t *testing.T) {
 	}))
 
 	t.Run("should signal every session in queue that has timed out", testutils.Func(func(t *testing.T) {
-		mgr := NewMgr(&rpcClient, time.Second, principalAddr, &broadcaster, sender, logger, cdc)
+		mgr := NewMgr(&rpcClient, client.Context{}, time.Second, principalAddr, &broadcaster, logger, cdc)
 
 		id1 := rand.Str(20)
 		id2 := rand.Str(20)

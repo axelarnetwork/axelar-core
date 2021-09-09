@@ -186,6 +186,14 @@ func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
 	return result
 }
 
+// GetMaxTxSize returns the max tx size allowed
+func (k Keeper) GetMaxTxSize(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyMaxTxSize, &result)
+
+	return result
+}
+
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
 	k.getStore(ctx).Set(addrPrefix.Append(utils.LowerCaseKey(address.Address)), &address)

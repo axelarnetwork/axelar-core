@@ -97,7 +97,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 
 		requests := make([]tofnd.RecoverRequest, len(keyIDs))
 		for i, keyID := range keyIDs {
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryRecovery, keyID, address.String()), nil)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get recovery data").Error())
 				return
@@ -125,7 +125,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					PartyShareCounts: recResponse.PartyShareCounts,
 					MyPartyIndex:     int32(index),
 				},
-				ShareRecoveryInfos: recResponse.ShareRecoveryInfos,
+				KeygenOutput: recResponse.KeygenOutput,
 			}
 		}
 

@@ -40,6 +40,7 @@ type ChainKeeper interface {
 	GetName() string
 	AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error)
 	GetNetwork(ctx sdk.Context) (string, bool)
+	GetCommandsGasLimit(ctx sdk.Context) (uint32, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
 	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)

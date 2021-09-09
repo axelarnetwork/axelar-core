@@ -19,15 +19,13 @@ import (
 type Broadcaster struct {
 	logger    log.Logger
 	pipeline  types.Pipeline
-	ctx       sdkClient.Context
 	txFactory tx.Factory
 }
 
 // NewBroadcaster returns a broadcaster to submit transactions to the blockchain.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
+func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
 	return &Broadcaster{
-		ctx:       ctx,
 		logger:    logger,
 		pipeline:  pipeline,
 		txFactory: txf,
@@ -35,16 +33,16 @@ func NewBroadcaster(ctx sdkClient.Context, txf tx.Factory, pipeline types.Pipeli
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
+func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
 	// serialize concurrent calls to broadcast
 	return b.pipeline.Push(func() error {
 
-		txf, err := tx.PrepareFactory(b.ctx, b.txFactory)
+		txf, err := tx.PrepareFactory(ctx, b.txFactory)
 		if err != nil {
 			return err
 		}
 
-		_, err = Broadcast(b.ctx, txf, msgs)
+		res, err := Broadcast(ctx, txf, msgs)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -53,8 +51,12 @@ func (b *Broadcaster) Broadcast(msgs ...sdk.Msg) error {
 			return err
 		}
 
+		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
+			res.TxHash, res.Code, res.RawLog))
+
 		// broadcast has been successful, so increment sequence number
 		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+
 		return nil
 	})
 }

@@ -4,14 +4,16 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths
@@ -36,7 +38,7 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		case QueryKey:
 			res, err = queryKey(ctx, k, v, path[1])
 		case QueryRecovery:
-			res, err = queryRecovery(ctx, k, s, path[1])
+			res, err = queryRecovery(ctx, k, s, path[1], path[2])
 		case QueryKeyID:
 			res, err = queryKeyID(ctx, k, n, path[1], path[2])
 		case QueryKeySharesByKeyID:
@@ -56,7 +58,13 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 	}
 }
 
-func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string) ([]byte, error) {
+func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string, addressStr string) ([]byte, error) {
+
+	address, err := sdk.ValAddressFromBech32(addressStr)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to parse validator address")
+	}
+
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
@@ -74,13 +82,36 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
 	}
 
-	infos := k.GetAllRecoveryInfos(ctx, keyID)
+	// get voted pub key
+	pubKey, ok := k.GetKey(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain pubkey for key ID %s", keyID)
+	}
+
+	// convert ecdsa pub key to bytes
+	ecdsaPK := btcec.PublicKey(pubKey.Value)
+	pubKeyBytes := ecdsaPK.SerializeCompressed()
+
+	// get voted group recover info
+	groupRecoverInfo := k.GetGroupRecoveryInfo(ctx, keyID)
+	if groupRecoverInfo == nil {
+		return nil, fmt.Errorf("could not obtain group info for key ID %s", keyID)
+	}
+
+	privateRecoverInfo := k.GetPrivateRecoveryInfo(ctx, address, keyID)
+	if privateRecoverInfo == nil {
+		return nil, fmt.Errorf("could not obtain private info for key ID %s", keyID)
+	}
 
 	resp := types.QueryRecoveryResponse{
-		Threshold:          int32(snapshot.CorruptionThreshold),
-		PartyUids:          participants,
-		PartyShareCounts:   participantShareCounts,
-		ShareRecoveryInfos: infos,
+		Threshold:        int32(snapshot.CorruptionThreshold),
+		PartyUids:        participants,
+		PartyShareCounts: participantShareCounts,
+		KeygenOutput: &tofnd.KeygenOutput{
+			PubKey:             pubKeyBytes,
+			GroupRecoverInfo:   groupRecoverInfo,
+			PrivateRecoverInfo: privateRecoverInfo,
+		},
 	}
 
 	return resp.Marshal()

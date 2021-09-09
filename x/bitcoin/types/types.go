@@ -120,28 +120,45 @@ func (m OutPointInfo) GetOutPoint() wire.OutPoint {
 	return *MustConvertOutPointFromStr(m.OutPoint)
 }
 
-// CreateTx returns a new unsigned Bitcoin transaction
-func CreateTx(prevOuts []OutPointToSign, outputs []Output) (*wire.MsgTx, error) {
-	tx := wire.NewMsgTx(wire.TxVersion)
-	for _, in := range prevOuts {
-		outPoint, err := OutPointFromStr(in.OutPoint)
-		if err != nil {
-			return nil, err
-		}
-		// The signature script or witness will be set later
-		txIn := wire.NewTxIn(outPoint, nil, nil)
-		tx.AddTxIn(txIn)
-	}
-	for _, out := range outputs {
-		addrScript, err := txscript.PayToAddrScript(out.Recipient)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
-		}
-		txOut := wire.NewTxOut(int64(out.Amount), addrScript)
-		tx.AddTxOut(txOut)
+// CreateTx creates a new tx
+func CreateTx() *wire.MsgTx {
+	return wire.NewMsgTx(wire.TxVersion)
+}
+
+// AddInput adds the given input to the given tx
+func AddInput(tx *wire.MsgTx, outPointStr string) error {
+	outPoint, err := OutPointFromStr(outPointStr)
+	if err != nil {
+		return err
 	}
 
-	return tx, nil
+	// The signature script or witness will be set later at signing time
+	tx.AddTxIn(wire.NewTxIn(outPoint, nil, nil))
+
+	return nil
+}
+
+// AddOutput adds the given address and amount as a new output to the given tx
+func AddOutput(tx *wire.MsgTx, address btcutil.Address, amount btcutil.Amount) error {
+	addrScript, err := txscript.PayToAddrScript(address)
+	if err != nil {
+		return sdkerrors.Wrap(err, "could not create pay-to-address script for destination address")
+	}
+
+	tx.AddTxOut(wire.NewTxOut(int64(amount), addrScript))
+
+	return nil
+}
+
+// GetOutputsTotal returns the total amount of outputs in the given tx
+func GetOutputsTotal(tx wire.MsgTx) btcutil.Amount {
+	total := btcutil.Amount(0)
+
+	for _, output := range tx.TxOut {
+		total += btcutil.Amount(output.Value)
+	}
+
+	return total
 }
 
 // OutPointFromStr returns the parsed outpoint from a string of the form "txID:voutIdx"
@@ -576,19 +593,13 @@ func (m SignedTx) GetTx() *wire.MsgTx {
 }
 
 // NewUnsignedTx is the constructor for UnsignedTx
-func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, outPointsToSign []OutPointToSign, internalTransferAmount btcutil.Amount) UnsignedTx {
+func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, internalTransferAmount btcutil.Amount) UnsignedTx {
 	unsignedTx := UnsignedTx{
 		Tx:                     MustEncodeTx(tx),
 		Status:                 Created,
 		ConfirmationRequired:   false,
 		AnyoneCanSpendVout:     anyoneCanSpendVout,
 		InternalTransferAmount: internalTransferAmount,
-	}
-
-	for _, outPointToSign := range outPointsToSign {
-		unsignedTx.Info.InputInfos = append(unsignedTx.Info.InputInfos, UnsignedTx_Info_InputInfo{
-			OutPointInfo: outPointToSign.OutPointInfo,
-		})
 	}
 
 	return unsignedTx
