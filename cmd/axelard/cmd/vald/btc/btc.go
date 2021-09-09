@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
+
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -20,20 +22,20 @@ import (
 
 // Mgr manages all communication with Bitcoin
 type Mgr struct {
+	cliCtx      sdkClient.Context
 	logger      log.Logger
 	broadcaster types.Broadcaster
 	rpc         rpc3.Client
-	sender      sdk.AccAddress
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc3.Client, broadcaster types.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpc rpc3.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
+		cliCtx:      cliCtx,
 		logger:      logger.With("listener", "btc"),
 		broadcaster: broadcaster,
-		sender:      sender,
 		cdc:         cdc,
 	}
 }
@@ -49,10 +51,10 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
-	msg := btc.NewVoteConfirmOutpointRequest(mgr.sender, pollKey, outPointInfo.GetOutPoint(), err == nil)
+	msg := btc.NewVoteConfirmOutpointRequest(mgr.cliCtx.FromAddress, pollKey, outPointInfo.GetOutPoint(), err == nil)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
 }
 
 func parseConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {

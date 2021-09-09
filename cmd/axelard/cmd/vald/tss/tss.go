@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -139,6 +140,7 @@ func (l *LockableStream) CloseSend() error {
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
 	client        rpc.Client
+	cliCtx        sdkClient.Context
 	keygen        *sync.RWMutex
 	sign          *sync.RWMutex
 	keygenStreams map[string]*LockableStream
@@ -148,7 +150,6 @@ type Mgr struct {
 	principalAddr string
 	Logger        log.Logger
 	broadcaster   broadcasterTypes.Broadcaster
-	sender        sdk.AccAddress
 	cdc           *codec.LegacyAmino
 }
 
@@ -168,9 +169,10 @@ func CreateTOFNDClient(host string, port string, timeout time.Duration, logger l
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:        client,
+		cliCtx:        cliCtx,
 		keygen:        &sync.RWMutex{},
 		sign:          &sync.RWMutex{},
 		keygenStreams: make(map[string]*LockableStream),
@@ -180,7 +182,6 @@ func NewMgr(client rpc.Client, timeout time.Duration, principalAddr string, broa
 		principalAddr: principalAddr,
 		Logger:        logger.With("listener", "tss"),
 		broadcaster:   broadcaster,
-		sender:        sender,
 		cdc:           cdc,
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -36,7 +37,9 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		cdc := app.MakeEncodingConfig().Amino
 		rpc = &mock2.ClientMock{}
 		broadcaster = &mock3.BroadcasterMock{}
-		mgr = NewMgr(rpc, broadcaster, nil, log.TestingLogger(), cdc)
+		ctx := client.Context{}
+
+		mgr = NewMgr(rpc, ctx, broadcaster, log.TestingLogger(), cdc)
 
 		confHeight = rand.PosI64()
 		pollKey := exported.NewPollKey(btc.ModuleName, rand.StrBetween(1, 100))

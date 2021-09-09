@@ -16,6 +16,7 @@ import (
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -186,15 +187,15 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, valAddr
 	}
 	eventBus := createEventBus(tmClient, startBlock, logger)
 
-	tssMgr := createTSSMgr(bc, ctx.FromAddress, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
 	if recoveryJSON != nil && len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
 	}
 
-	btcMgr := createBTCMgr(axelarCfg, bc, ctx.FromAddress, logger, cdc)
-	evmMgr := createEVMMgr(axelarCfg, bc, ctx.FromAddress, logger, cdc)
+	btcMgr := createBTCMgr(axelarCfg, ctx, bc, logger, cdc)
+	evmMgr := createEVMMgr(axelarCfg, ctx, bc, logger, cdc)
 
 	// we have two processes listening to block headers
 	blockHeaderForTSS := tmEvents.MustSubscribeBlockHeader(eventBus)
@@ -289,16 +290,16 @@ func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger
 
 func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcaster.NewBroadcaster(ctx, txf, pipeline, logger)
+	return broadcaster.NewBroadcaster(txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddress, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
 			return nil, err
 		}
-		tssMgr := tss.NewMgr(gg20client, 2*time.Hour, valAddr, broadcaster, sender, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}
@@ -310,7 +311,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, sender sdk.AccAddres
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
+func createBTCMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -321,11 +322,11 @@ func createBTCMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender s
 
 	logger.Info("Successfully connected to Bitcoin bridge ")
 
-	btcMgr := btc.NewMgr(rpc, b, sender, logger, cdc)
+	btcMgr := btc.NewMgr(rpc, cliCtx, b, logger, cdc)
 	return btcMgr
 }
 
-func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender sdk.AccAddress, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
@@ -351,7 +352,7 @@ func createEVMMgr(axelarCfg app.Config, b broadcasterTypes.Broadcaster, sender s
 		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmChainConf.Name))
 	}
 
-	evmMgr := evm.NewMgr(rpcs, b, sender, logger, cdc)
+	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc)
 	return evmMgr
 }
 
