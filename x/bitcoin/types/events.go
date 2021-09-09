@@ -6,6 +6,7 @@ const (
 	EventTypeKey                  = "key"
 	EventTypeConsolidationTx      = "consolidationTransaction"
 	EventTypeOutpointConfirmation = "outpointConfirmation"
+	EventTypeLink                 = "link"
 	EventTypeWithdrawal           = "withdrawal"
 )
 
