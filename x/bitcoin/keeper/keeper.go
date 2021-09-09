@@ -170,10 +170,18 @@ func (k Keeper) GetMasterKeyRetentionPeriod(ctx sdk.Context) int64 {
 	return result
 }
 
-// GetMasterAddressLockDuration returns the master address lock duration
-func (k Keeper) GetMasterAddressLockDuration(ctx sdk.Context) time.Duration {
+// GetMasterAddressInternalKeyLockDuration returns the master address lock duration for internal key(s) only to spend
+func (k Keeper) GetMasterAddressInternalKeyLockDuration(ctx sdk.Context) time.Duration {
 	var result time.Duration
-	k.params.Get(ctx, types.KeyMasterAddressLockDuration, &result)
+	k.params.Get(ctx, types.KeyMasterAddressInternalKeyLockDuration, &result)
+
+	return result
+}
+
+// GetMasterAddressExternalKeyLockDuration returns the master address lock duration for external key(s) only to spend
+func (k Keeper) GetMasterAddressExternalKeyLockDuration(ctx sdk.Context) time.Duration {
+	var result time.Duration
+	k.params.Get(ctx, types.KeyMasterAddressExternalKeyLockDuration, &result)
 
 	return result
 }

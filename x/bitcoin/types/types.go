@@ -254,7 +254,7 @@ func createP2pkScript(pubKey btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, externalMultiSigThreshold int64, externalKeys []btcec.PublicKey, lockTime time.Time) RedeemScript {
+func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.PublicKey, externalMultiSigThreshold int64, externalKeys []btcec.PublicKey, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time) RedeemScript {
 	if externalMultiSigThreshold <= 0 || externalMultiSigThreshold > int64(len(externalKeys)) {
 		panic(fmt.Errorf("invalid external multisig threshold %d", externalMultiSigThreshold))
 	}
@@ -289,29 +289,54 @@ func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, exte
 
 	builder = builder.
 		AddInt64(externalMultiSigThreshold + 1).
-		AddData(pubKey1.SerializeCompressed()).
-		AddData(pubKey2.SerializeCompressed())
+		AddData(internalKey1.SerializeCompressed()).
+		AddData(internalKey2.SerializeCompressed())
 	for _, externelKey := range externalKeys {
 		builder = builder.AddData(externelKey.SerializeCompressed())
 	}
 	builder = builder.
 		AddInt64(int64(len(externalKeys)) + 2).
 		AddOp(txscript.OP_CHECKMULTISIG)
-	// if one signature exists on the stack
 	builder = builder.AddOp(txscript.OP_ELSE).
 		AddOp(txscript.OP_DEPTH).
 		AddOp(txscript.OP_1).
-		AddOp(txscript.OP_EQUALVERIFY).
-		AddInt64(lockTime.Unix()).
+		AddOp(txscript.OP_EQUAL).
+		// if one signature exists on the stack
+		AddOp(txscript.OP_IF).
+		AddInt64(internalKeysOnlyLockTime.Unix()).
 		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
 		AddOp(txscript.OP_DROP).
 		AddOp(txscript.OP_0).
 		AddOp(txscript.OP_SWAP).
 		AddOp(txscript.OP_1).
-		AddData(pubKey1.SerializeCompressed()).
-		AddData(pubKey2.SerializeCompressed()).
+		AddData(internalKey1.SerializeCompressed()).
+		AddData(internalKey2.SerializeCompressed()).
 		AddOp(txscript.OP_2).
 		AddOp(txscript.OP_CHECKMULTISIG).
+		// if externalMultiSigThreshold signatures exist on the stack
+		AddOp(txscript.OP_ELSE).
+		AddOp(txscript.OP_DEPTH).
+		AddInt64(externalMultiSigThreshold).
+		AddOp(txscript.OP_EQUALVERIFY).
+		AddInt64(externalKeysOnlyLockTime.Unix()).
+		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
+
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
+		builder = builder.AddOp(txscript.OP_TOALTSTACK)
+	}
+	builder = builder.AddOp(txscript.OP_0)
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
+		builder = builder.AddOp(txscript.OP_FROMALTSTACK)
+	}
+	builder = builder.AddInt64(externalMultiSigThreshold)
+	for _, externelKey := range externalKeys {
+		builder = builder.AddData(externelKey.SerializeCompressed())
+	}
+	builder = builder.
+		AddInt64(int64(len(externalKeys))).
+		AddOp(txscript.OP_CHECKMULTISIG)
+
+	builder = builder.AddOp(txscript.OP_ENDIF).
 		AddOp(txscript.OP_ENDIF)
 	redeemScript, err := builder.Script()
 
@@ -338,12 +363,12 @@ func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWi
 // NewMasterConsolidationAddress returns a p2wsh-wrapped address that is
 // 1) spendable by the ((currMasterKey or oldMasterKey) and externalMultiSigThreshold/len(externalKeys) externalKeys) before the timelock elapses
 // 2) spendable by the (currMasterKey or oldMasterKey) after the timelock elapses
-func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, lockTime time.Time, network Network) AddressInfo {
+func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time, network Network) AddressInfo {
 	externalPubKeys := make([]btcec.PublicKey, len(externalKeys))
 	for i, externalKey := range externalKeys {
 		externalPubKeys[i] = btcec.PublicKey(externalKey.Value)
 	}
-	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, lockTime)
+	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
 	address := createP2wshAddress(script, network)
 
 	externalKeyIDs := make([]string, len(externalKeys))
@@ -361,7 +386,7 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 			InternalKeyIds:            []string{currMasterKey.ID, oldMasterKey.ID},
 			ExternalKeyIds:            externalKeyIDs,
 			ExternalMultisigThreshold: externalMultiSigThreshold,
-			LockTime:                  &lockTime,
+			LockTime:                  &internalKeysOnlyLockTime,
 		},
 	}
 }
