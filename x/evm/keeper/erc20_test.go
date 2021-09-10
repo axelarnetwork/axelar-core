@@ -1,22 +1,10 @@
 package keeper_test
 
 import (
-	"context"
 	"math/big"
 	"math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -25,8 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/tests"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -160,67 +146,4 @@ func TestSig(t *testing.T) {
 		recoveredAddr = crypto.PubkeyToAddress(*recoveredPK)
 		assert.NotEqual(t, addr, recoveredAddr)
 	}
-}
-
-// Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
-// in favor of creating a raw transaction for the same purpose.
-func TestDeploy(t *testing.T) {
-	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	path := hdwallet.MustParseDerivationPath(DerivationPath)
-	account, err := wallet.Derive(path, false)
-	if err != nil {
-		panic(err)
-	}
-	privateKey, err := wallet.PrivateKey(account)
-	if err != nil {
-		panic(err)
-	}
-
-	addr, err := wallet.Address(account)
-	if err != nil {
-		panic(err)
-	}
-
-	backend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1 * params.Ether)}}, 3000000)
-	chain := "Ethereum"
-	chainID := backend.Blockchain().Config().ChainID
-	assert.NoError(t, err)
-	signer := evmTypes.NewEIP155Signer(chainID)
-	var gasLimit uint64 = 3000000
-
-	minConfHeight := rand2.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, chain, minConfHeight)
-
-	rpc := &mock.RPCClientMock{
-		PendingNonceAtFunc:  backend.PendingNonceAt,
-		SuggestGasPriceFunc: backend.SuggestGasPrice,
-	}
-
-	bytecode, ok := k.ForChain(ctx, chain).GetGatewayByteCodes(ctx)
-	assert.True(t, ok)
-
-	owner := common.BytesToAddress(rand2.Bytes(common.AddressLength))
-	operator := common.BytesToAddress(rand2.Bytes(common.AddressLength))
-	tx, err := tests.CreateDeployGatewayTx(bytecode, owner, operator, nil, gasLimit, rpc)
-
-	assert.NoError(t, err)
-
-	signedTx, err := evmTypes.SignTx(tx, signer, privateKey)
-	assert.NoError(t, err)
-	err = backend.SendTransaction(context.Background(), signedTx)
-	assert.NoError(t, err)
-	backend.Commit()
-
-	t.Logf("Trying to fetch receipt for Tx %s", signedTx.Hash().String())
-	contractAddr, err := bind.WaitDeployed(context.Background(), backend, signedTx)
-	if err != nil {
-		t.Logf("Error getting receipt: %v\n", err)
-		t.FailNow()
-	}
-	t.Logf("Contract address: %s\n", contractAddr.Hex())
 }

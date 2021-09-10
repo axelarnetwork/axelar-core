@@ -610,10 +610,10 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 	return logs
 }
 
-// CreateDeployGatewayTx assembles a transaction for smart contract deployment. See:
+// Assembles a transaction for smart contract deployment. See:
 // https://goethereumbook.org/en/smart-contract-deploy/
 // https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
-func CreateDeployGatewayTx(
+func createDeployGatewayTx(
 	byteCode []byte,
 	contractOwner, contractOperator common.Address,
 	gasPrice *big.Int,
