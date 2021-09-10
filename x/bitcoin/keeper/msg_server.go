@@ -391,13 +391,13 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	// when no UTXO is locked
 	case maxLockTime == nil:
 		tx.LockTime = 0
-		tx = types.DisableTimelockAndRBF(tx)
+		tx = types.DisableTimelock(tx)
 
 		s.Logger(ctx).Debug(fmt.Sprintf("disabled lock time on %s consolidation transaction", req.KeyRole.SimpleString()))
 	// when all UTXOs can be spent without the external key
 	default:
 		tx.LockTime = uint32(maxLockTime.Unix())
-		tx = types.EnableTimelockAndRBF(tx)
+		tx = types.EnableTimelock(tx)
 
 		s.Logger(ctx).Debug(fmt.Sprintf("enabled lock time as %d on %s consolidation transaction", tx.LockTime, req.KeyRole.SimpleString()))
 	}
@@ -605,7 +605,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		})
 
 	tx.LockTime = 0
-	tx = types.DisableTimelockAndRBF(tx)
+	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, req.SecondaryKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currMasterKey.ID != consolidationKey.ID {
@@ -733,7 +733,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		})
 
 	tx.LockTime = 0
-	tx = types.DisableTimelockAndRBF(tx)
+	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(tx, anyoneCanSpendVout, req.MasterKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
 	if currSecondaryKey.ID != consolidationKey.ID {
