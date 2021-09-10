@@ -989,8 +989,9 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 		return types.AddressInfo{}, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
 	}
 
-	lockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, lockTime, k.GetNetwork(ctx))
+	internalKeyLockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressInternalKeyLockDuration(ctx))
+	externalKeyLockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
+	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, internalKeyLockTime, externalKeyLockTime, k.GetNetwork(ctx))
 
 	return consolidationAddress, nil
 }

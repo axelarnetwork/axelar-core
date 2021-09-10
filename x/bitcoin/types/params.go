@@ -17,19 +17,20 @@ const (
 
 // Parameter keys
 var (
-	KeyConfirmationHeight        = []byte("confirmationHeight")
-	KeyNetwork                   = []byte("network")
-	KeyRevoteLockingPeriod       = []byte("revoteLockingPeriod")
-	KeySigCheckInterval          = []byte("sigCheckInterval")
-	KeyMinOutputAmount           = []byte("minOutputAmount")
-	KeyMaxInputCount             = []byte("maxInputCount")
-	KeyMaxSecondaryOutputAmount  = []byte("maxSecondaryOutputAmount")
-	KeyMasterKeyRetentionPeriod  = []byte("masterKeyRetentionPeriod")
-	KeyMasterAddressLockDuration = []byte("masterAddressLockDuration")
-	KeyExternalMultisigThreshold = []byte("externalMultisigThreshold")
-	KeyVotingThreshold           = []byte("votingThreshold")
-	KeyMinVoterCount             = []byte("minVoterCount")
-	KeyMaxTxSize                 = []byte("maxTxSize")
+	KeyConfirmationHeight                   = []byte("confirmationHeight")
+	KeyNetwork                              = []byte("network")
+	KeyRevoteLockingPeriod                  = []byte("revoteLockingPeriod")
+	KeySigCheckInterval                     = []byte("sigCheckInterval")
+	KeyMinOutputAmount                      = []byte("minOutputAmount")
+	KeyMaxInputCount                        = []byte("maxInputCount")
+	KeyMaxSecondaryOutputAmount             = []byte("maxSecondaryOutputAmount")
+	KeyMasterKeyRetentionPeriod             = []byte("masterKeyRetentionPeriod")
+	KeyMasterAddressInternalKeyLockDuration = []byte("masterAddressInternalKeyLockDuration")
+	KeyMasterAddressExternalKeyLockDuration = []byte("masterAddressExternalKeyLockDuration")
+	KeyExternalMultisigThreshold            = []byte("externalMultisigThreshold")
+	KeyVotingThreshold                      = []byte("votingThreshold")
+	KeyMinVoterCount                        = []byte("minVoterCount")
+	KeyMaxTxSize                            = []byte("maxTxSize")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -40,19 +41,20 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		ConfirmationHeight:        1,
-		Network:                   Network{Name: Regtest.Name},
-		RevoteLockingPeriod:       50,
-		SigCheckInterval:          10,
-		MinOutputAmount:           sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
-		MaxInputCount:             50,
-		MaxSecondaryOutputAmount:  sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
-		MasterKeyRetentionPeriod:  8,
-		MasterAddressLockDuration: 2 * 7 * 24 * time.Hour, // 2 weeks
-		ExternalMultisigThreshold: utils.Threshold{Numerator: 3, Denominator: 6},
-		VotingThreshold:           utils.Threshold{Numerator: 15, Denominator: 100},
-		MinVoterCount:             15,
-		MaxTxSize:                 1024 * 1024 / 3, // 1/3 MiB
+		ConfirmationHeight:                   1,
+		Network:                              Network{Name: Regtest.Name},
+		RevoteLockingPeriod:                  50,
+		SigCheckInterval:                     10,
+		MinOutputAmount:                      sdktypes.NewDecCoin(Satoshi, sdktypes.NewInt(1000)),
+		MaxInputCount:                        50,
+		MaxSecondaryOutputAmount:             sdktypes.NewDecCoin(Bitcoin, sdktypes.NewInt(300)),
+		MasterKeyRetentionPeriod:             8,
+		MasterAddressInternalKeyLockDuration: 14 * 24 * time.Hour, // 14 days
+		MasterAddressExternalKeyLockDuration: 28 * 24 * time.Hour, // 28 days
+		ExternalMultisigThreshold:            utils.Threshold{Numerator: 3, Denominator: 6},
+		VotingThreshold:                      utils.Threshold{Numerator: 15, Denominator: 100},
+		MinVoterCount:                        15,
+		MaxTxSize:                            1024 * 1024 / 3, // 1/3 MiB
 	}
 }
 
@@ -74,7 +76,8 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMaxInputCount, &m.MaxInputCount, validateMaxInputCount),
 		paramtypes.NewParamSetPair(KeyMaxSecondaryOutputAmount, &m.MaxSecondaryOutputAmount, validateMaxSecondaryOutputAmount),
 		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
-		paramtypes.NewParamSetPair(KeyMasterAddressLockDuration, &m.MasterAddressLockDuration, validateMasterAddressLockDuration),
+		paramtypes.NewParamSetPair(KeyMasterAddressInternalKeyLockDuration, &m.MasterAddressInternalKeyLockDuration, validateMasterAddressLockDuration),
+		paramtypes.NewParamSetPair(KeyMasterAddressExternalKeyLockDuration, &m.MasterAddressExternalKeyLockDuration, validateMasterAddressLockDuration),
 		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		paramtypes.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
@@ -189,14 +192,22 @@ func validateMasterKeyRetentionPeriod(masterKeyRetentionPeriod interface{}) erro
 	return nil
 }
 
-func validateMasterAddressLockDuration(masterAddressLockDuration interface{}) error {
-	m, ok := masterAddressLockDuration.(time.Duration)
+func validateMasterAddressLockDuration(masterAddressInternalKeyLockDuration interface{}) error {
+	m, ok := masterAddressInternalKeyLockDuration.(time.Duration)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for master address lock duration: %T", masterAddressLockDuration)
+		return fmt.Errorf("invalid parameter type for master address lock duration: %T", masterAddressInternalKeyLockDuration)
 	}
 
 	if m <= 0 {
 		return fmt.Errorf("master address lock duration has to be greater than 0")
+	}
+
+	return nil
+}
+
+func validateMasterAddressLockDurations(masterAddressInternalKeyLockDuration time.Duration, masterAddressExternalKeyLockDuration time.Duration) error {
+	if masterAddressExternalKeyLockDuration <= masterAddressInternalKeyLockDuration {
+		return fmt.Errorf("master address external-key lock duration must be greater than master address internal-key lock duration")
 	}
 
 	return nil
@@ -316,6 +327,18 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMaxTxSize(m.MaxTxSize); err != nil {
+		return err
+	}
+
+	if err := validateMasterAddressLockDuration(m.MasterAddressInternalKeyLockDuration); err != nil {
+		return err
+	}
+
+	if err := validateMasterAddressLockDuration(m.MasterAddressExternalKeyLockDuration); err != nil {
+		return err
+	}
+
+	if err := validateMasterAddressLockDurations(m.MasterAddressInternalKeyLockDuration, m.MasterAddressExternalKeyLockDuration); err != nil {
 		return err
 	}
 

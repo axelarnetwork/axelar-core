@@ -20,14 +20,18 @@ message Params {
   cosmos.base.v1beta1.DecCoin max_secondary_output_amount = 7
       [ (gogoproto.nullable) = false ];
   int64 master_key_retention_period = 8;
-  int64 master_address_lock_duration = 9 [
+  int64 master_address_internal_key_lock_duration = 9 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "time.Duration"
   ];
-  utils.v1beta1.Threshold external_multisig_threshold = 10
+  int64 master_address_external_key_lock_duration = 10 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "time.Duration"
+  ];
+  utils.v1beta1.Threshold external_multisig_threshold = 11
       [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold voting_threshold = 11
+  utils.v1beta1.Threshold voting_threshold = 12
       [ (gogoproto.nullable) = false ];
-  int64 min_voter_count = 12;
-  int64 max_tx_size = 13;
+  int64 min_voter_count = 13;
+  int64 max_tx_size = 14;
 }

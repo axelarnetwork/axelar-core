@@ -34,7 +34,8 @@ type BTCKeeper interface {
 	GetMaxInputCount(ctx sdk.Context) int64
 	GetMaxSecondaryOutputAmount(ctx sdk.Context) btcutil.Amount
 	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
-	GetMasterAddressLockDuration(ctx sdk.Context) time.Duration
+	GetMasterAddressInternalKeyLockDuration(ctx sdk.Context) time.Duration
+	GetMasterAddressExternalKeyLockDuration(ctx sdk.Context) time.Duration
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
 	GetMinVoterCount(ctx sdk.Context) int64

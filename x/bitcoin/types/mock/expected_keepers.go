@@ -1943,8 +1943,11 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetLatestSignedTxHashFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool) {
 // 				panic("mock out the GetLatestSignedTxHash method")
 // 			},
-// 			GetMasterAddressLockDurationFunc: func(ctx sdk.Context) time.Duration {
-// 				panic("mock out the GetMasterAddressLockDuration method")
+// 			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+// 				panic("mock out the GetMasterAddressExternalKeyLockDuration method")
+// 			},
+// 			GetMasterAddressInternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+// 				panic("mock out the GetMasterAddressInternalKeyLockDuration method")
 // 			},
 // 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetMasterKeyRetentionPeriod method")
@@ -2073,8 +2076,11 @@ type BTCKeeperMock struct {
 	// GetLatestSignedTxHashFunc mocks the GetLatestSignedTxHash method.
 	GetLatestSignedTxHashFunc func(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool)
 
-	// GetMasterAddressLockDurationFunc mocks the GetMasterAddressLockDuration method.
-	GetMasterAddressLockDurationFunc func(ctx sdk.Context) time.Duration
+	// GetMasterAddressExternalKeyLockDurationFunc mocks the GetMasterAddressExternalKeyLockDuration method.
+	GetMasterAddressExternalKeyLockDurationFunc func(ctx sdk.Context) time.Duration
+
+	// GetMasterAddressInternalKeyLockDurationFunc mocks the GetMasterAddressInternalKeyLockDuration method.
+	GetMasterAddressInternalKeyLockDurationFunc func(ctx sdk.Context) time.Duration
 
 	// GetMasterKeyRetentionPeriodFunc mocks the GetMasterKeyRetentionPeriod method.
 	GetMasterKeyRetentionPeriodFunc func(ctx sdk.Context) int64
@@ -2236,8 +2242,13 @@ type BTCKeeperMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
 		}
-		// GetMasterAddressLockDuration holds details about calls to the GetMasterAddressLockDuration method.
-		GetMasterAddressLockDuration []struct {
+		// GetMasterAddressExternalKeyLockDuration holds details about calls to the GetMasterAddressExternalKeyLockDuration method.
+		GetMasterAddressExternalKeyLockDuration []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// GetMasterAddressInternalKeyLockDuration holds details about calls to the GetMasterAddressInternalKeyLockDuration method.
+		GetMasterAddressInternalKeyLockDuration []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
@@ -2433,47 +2444,48 @@ type BTCKeeperMock struct {
 			Tx types.UnsignedTx
 		}
 	}
-	lockDeleteDustAmount                    sync.RWMutex
-	lockDeleteOutpointInfo                  sync.RWMutex
-	lockDeletePendingOutPointInfo           sync.RWMutex
-	lockDeleteUnsignedTx                    sync.RWMutex
-	lockGetAddress                          sync.RWMutex
-	lockGetAnyoneCanSpendAddress            sync.RWMutex
-	lockGetConfirmedOutpointInfoQueueForKey sync.RWMutex
-	lockGetDustAmount                       sync.RWMutex
-	lockGetExternalKeyIDs                   sync.RWMutex
-	lockGetExternalMultisigThreshold        sync.RWMutex
-	lockGetLatestSignedTxHash               sync.RWMutex
-	lockGetMasterAddressLockDuration        sync.RWMutex
-	lockGetMasterKeyRetentionPeriod         sync.RWMutex
-	lockGetMaxInputCount                    sync.RWMutex
-	lockGetMaxSecondaryOutputAmount         sync.RWMutex
-	lockGetMaxTxSize                        sync.RWMutex
-	lockGetMinOutputAmount                  sync.RWMutex
-	lockGetMinVoterCount                    sync.RWMutex
-	lockGetNetwork                          sync.RWMutex
-	lockGetOutPointInfo                     sync.RWMutex
-	lockGetParams                           sync.RWMutex
-	lockGetPendingOutPointInfo              sync.RWMutex
-	lockGetRequiredConfirmationHeight       sync.RWMutex
-	lockGetRevoteLockingPeriod              sync.RWMutex
-	lockGetSigCheckInterval                 sync.RWMutex
-	lockGetSignedTx                         sync.RWMutex
-	lockGetUnconfirmedAmount                sync.RWMutex
-	lockGetUnsignedTx                       sync.RWMutex
-	lockGetVotingThreshold                  sync.RWMutex
-	lockLogger                              sync.RWMutex
-	lockSetAddress                          sync.RWMutex
-	lockSetConfirmedOutpointInfo            sync.RWMutex
-	lockSetDustAmount                       sync.RWMutex
-	lockSetExternalKeyIDs                   sync.RWMutex
-	lockSetLatestSignedTxHash               sync.RWMutex
-	lockSetParams                           sync.RWMutex
-	lockSetPendingOutpointInfo              sync.RWMutex
-	lockSetSignedTx                         sync.RWMutex
-	lockSetSpentOutpointInfo                sync.RWMutex
-	lockSetUnconfirmedAmount                sync.RWMutex
-	lockSetUnsignedTx                       sync.RWMutex
+	lockDeleteDustAmount                        sync.RWMutex
+	lockDeleteOutpointInfo                      sync.RWMutex
+	lockDeletePendingOutPointInfo               sync.RWMutex
+	lockDeleteUnsignedTx                        sync.RWMutex
+	lockGetAddress                              sync.RWMutex
+	lockGetAnyoneCanSpendAddress                sync.RWMutex
+	lockGetConfirmedOutpointInfoQueueForKey     sync.RWMutex
+	lockGetDustAmount                           sync.RWMutex
+	lockGetExternalKeyIDs                       sync.RWMutex
+	lockGetExternalMultisigThreshold            sync.RWMutex
+	lockGetLatestSignedTxHash                   sync.RWMutex
+	lockGetMasterAddressExternalKeyLockDuration sync.RWMutex
+	lockGetMasterAddressInternalKeyLockDuration sync.RWMutex
+	lockGetMasterKeyRetentionPeriod             sync.RWMutex
+	lockGetMaxInputCount                        sync.RWMutex
+	lockGetMaxSecondaryOutputAmount             sync.RWMutex
+	lockGetMaxTxSize                            sync.RWMutex
+	lockGetMinOutputAmount                      sync.RWMutex
+	lockGetMinVoterCount                        sync.RWMutex
+	lockGetNetwork                              sync.RWMutex
+	lockGetOutPointInfo                         sync.RWMutex
+	lockGetParams                               sync.RWMutex
+	lockGetPendingOutPointInfo                  sync.RWMutex
+	lockGetRequiredConfirmationHeight           sync.RWMutex
+	lockGetRevoteLockingPeriod                  sync.RWMutex
+	lockGetSigCheckInterval                     sync.RWMutex
+	lockGetSignedTx                             sync.RWMutex
+	lockGetUnconfirmedAmount                    sync.RWMutex
+	lockGetUnsignedTx                           sync.RWMutex
+	lockGetVotingThreshold                      sync.RWMutex
+	lockLogger                                  sync.RWMutex
+	lockSetAddress                              sync.RWMutex
+	lockSetConfirmedOutpointInfo                sync.RWMutex
+	lockSetDustAmount                           sync.RWMutex
+	lockSetExternalKeyIDs                       sync.RWMutex
+	lockSetLatestSignedTxHash                   sync.RWMutex
+	lockSetParams                               sync.RWMutex
+	lockSetPendingOutpointInfo                  sync.RWMutex
+	lockSetSignedTx                             sync.RWMutex
+	lockSetSpentOutpointInfo                    sync.RWMutex
+	lockSetUnconfirmedAmount                    sync.RWMutex
+	lockSetUnsignedTx                           sync.RWMutex
 }
 
 // DeleteDustAmount calls DeleteDustAmountFunc.
@@ -2849,34 +2861,65 @@ func (mock *BTCKeeperMock) GetLatestSignedTxHashCalls() []struct {
 	return calls
 }
 
-// GetMasterAddressLockDuration calls GetMasterAddressLockDurationFunc.
-func (mock *BTCKeeperMock) GetMasterAddressLockDuration(ctx sdk.Context) time.Duration {
-	if mock.GetMasterAddressLockDurationFunc == nil {
-		panic("BTCKeeperMock.GetMasterAddressLockDurationFunc: method is nil but BTCKeeper.GetMasterAddressLockDuration was just called")
+// GetMasterAddressExternalKeyLockDuration calls GetMasterAddressExternalKeyLockDurationFunc.
+func (mock *BTCKeeperMock) GetMasterAddressExternalKeyLockDuration(ctx sdk.Context) time.Duration {
+	if mock.GetMasterAddressExternalKeyLockDurationFunc == nil {
+		panic("BTCKeeperMock.GetMasterAddressExternalKeyLockDurationFunc: method is nil but BTCKeeper.GetMasterAddressExternalKeyLockDuration was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockGetMasterAddressLockDuration.Lock()
-	mock.calls.GetMasterAddressLockDuration = append(mock.calls.GetMasterAddressLockDuration, callInfo)
-	mock.lockGetMasterAddressLockDuration.Unlock()
-	return mock.GetMasterAddressLockDurationFunc(ctx)
+	mock.lockGetMasterAddressExternalKeyLockDuration.Lock()
+	mock.calls.GetMasterAddressExternalKeyLockDuration = append(mock.calls.GetMasterAddressExternalKeyLockDuration, callInfo)
+	mock.lockGetMasterAddressExternalKeyLockDuration.Unlock()
+	return mock.GetMasterAddressExternalKeyLockDurationFunc(ctx)
 }
 
-// GetMasterAddressLockDurationCalls gets all the calls that were made to GetMasterAddressLockDuration.
+// GetMasterAddressExternalKeyLockDurationCalls gets all the calls that were made to GetMasterAddressExternalKeyLockDuration.
 // Check the length with:
-//     len(mockedBTCKeeper.GetMasterAddressLockDurationCalls())
-func (mock *BTCKeeperMock) GetMasterAddressLockDurationCalls() []struct {
+//     len(mockedBTCKeeper.GetMasterAddressExternalKeyLockDurationCalls())
+func (mock *BTCKeeperMock) GetMasterAddressExternalKeyLockDurationCalls() []struct {
 	Ctx sdk.Context
 } {
 	var calls []struct {
 		Ctx sdk.Context
 	}
-	mock.lockGetMasterAddressLockDuration.RLock()
-	calls = mock.calls.GetMasterAddressLockDuration
-	mock.lockGetMasterAddressLockDuration.RUnlock()
+	mock.lockGetMasterAddressExternalKeyLockDuration.RLock()
+	calls = mock.calls.GetMasterAddressExternalKeyLockDuration
+	mock.lockGetMasterAddressExternalKeyLockDuration.RUnlock()
+	return calls
+}
+
+// GetMasterAddressInternalKeyLockDuration calls GetMasterAddressInternalKeyLockDurationFunc.
+func (mock *BTCKeeperMock) GetMasterAddressInternalKeyLockDuration(ctx sdk.Context) time.Duration {
+	if mock.GetMasterAddressInternalKeyLockDurationFunc == nil {
+		panic("BTCKeeperMock.GetMasterAddressInternalKeyLockDurationFunc: method is nil but BTCKeeper.GetMasterAddressInternalKeyLockDuration was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMasterAddressInternalKeyLockDuration.Lock()
+	mock.calls.GetMasterAddressInternalKeyLockDuration = append(mock.calls.GetMasterAddressInternalKeyLockDuration, callInfo)
+	mock.lockGetMasterAddressInternalKeyLockDuration.Unlock()
+	return mock.GetMasterAddressInternalKeyLockDurationFunc(ctx)
+}
+
+// GetMasterAddressInternalKeyLockDurationCalls gets all the calls that were made to GetMasterAddressInternalKeyLockDuration.
+// Check the length with:
+//     len(mockedBTCKeeper.GetMasterAddressInternalKeyLockDurationCalls())
+func (mock *BTCKeeperMock) GetMasterAddressInternalKeyLockDurationCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetMasterAddressInternalKeyLockDuration.RLock()
+	calls = mock.calls.GetMasterAddressInternalKeyLockDuration
+	mock.lockGetMasterAddressInternalKeyLockDuration.RUnlock()
 	return calls
 }
 
