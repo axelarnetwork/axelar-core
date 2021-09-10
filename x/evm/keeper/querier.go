@@ -319,7 +319,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 
-	_, ok := n.GetChain(ctx, k.GetName())
+	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
@@ -329,18 +329,13 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	case BCGateway:
 		bz, _ = k.GetGatewayByteCodes(ctx)
 	case BCGatewayDeployment:
-		keyRole, err := tss.KeyRoleFromSimpleStr(tss.SecondaryKey.SimpleString())
-		if err != nil {
-			return nil, err
-		}
-
-		address, _, err := getAddressAndKeyForRole(ctx, s, n, k.GetName(), keyRole)
-		if err != nil {
-			return nil, err
+		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 		}
 
 		bz, _ = k.GetGatewayByteCodes(ctx)
-		deploymentBytecode, err := types.GetGatewayDeploymentBytecode(bz, address)
+		deploymentBytecode, err := types.GetGatewayDeploymentBytecode(bz, crypto.PubkeyToAddress(secondaryKey.Value))
 		if err != nil {
 			return nil, err
 		}
