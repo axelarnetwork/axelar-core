@@ -281,6 +281,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 
 	builder = builder.
 		AddInt64(int64(len(externalKeys))).
+		// Verify m/n multisig from external keys
 		AddOp(txscript.OP_CHECKMULTISIGVERIFY).
 		AddOp(txscript.OP_0).
 		AddOp(txscript.OP_SWAP).
@@ -288,6 +289,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 		AddData(internalKey1.SerializeCompressed()).
 		AddData(internalKey2.SerializeCompressed()).
 		AddInt64(2).
+		// Verify 1/2 multisig from internalKey1 and internalKey2
 		AddOp(txscript.OP_CHECKMULTISIG).
 		AddOp(txscript.OP_ELSE).
 		AddOp(txscript.OP_DEPTH).
@@ -297,6 +299,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 		AddOp(txscript.OP_IF).
 		AddInt64(internalKeysOnlyLockTime.Unix()).
 		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
+		// OP_DROP due to OP_CHECKLOCKTIMEVERIFY not poping anything from the stack
 		AddOp(txscript.OP_DROP).
 		AddOp(txscript.OP_0).
 		AddOp(txscript.OP_SWAP).
@@ -304,6 +307,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 		AddData(internalKey1.SerializeCompressed()).
 		AddData(internalKey2.SerializeCompressed()).
 		AddOp(txscript.OP_2).
+		// Verify 1/2 multisig from internalKey1 and internalKey2
 		AddOp(txscript.OP_CHECKMULTISIG).
 		// if externalMultiSigThreshold signatures exist on the stack
 		AddOp(txscript.OP_ELSE).
@@ -312,6 +316,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 		AddOp(txscript.OP_EQUALVERIFY).
 		AddInt64(externalKeysOnlyLockTime.Unix()).
 		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
+		// OP_DROP due to OP_CHECKLOCKTIMEVERIFY not poping anything from the stack
 		AddOp(txscript.OP_DROP)
 
 	for i := 0; i < int(externalMultiSigThreshold); i++ {
@@ -327,6 +332,7 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 	}
 	builder = builder.
 		AddInt64(int64(len(externalKeys))).
+		// Verify m/n multisig from external keys
 		AddOp(txscript.OP_CHECKMULTISIG)
 
 	builder = builder.AddOp(txscript.OP_ENDIF).
