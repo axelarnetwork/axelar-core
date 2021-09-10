@@ -106,22 +106,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	bz, err := nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QAddressByKeyRole, "ethereum", "master"},
-		abci.RequestQuery{Data: nil},
-	)
-	assert.NoError(t, err)
-
-	var queryAddressResponse evmTypes.QueryAddressResponse
-	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
-
-	bz, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QAddressByKeyRole, "ethereum", "secondary"},
-		abci.RequestQuery{Data: nil},
-	)
-	assert.NoError(t, err)
-	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
-
 	nonce := rand2.Uint64()
 	gasLimit := rand2.Uint64()
 	gasPrice := big.NewInt(rand2.Int63())
@@ -159,13 +143,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// confirm the token deployment
-	txHash := common.BytesToHash(bz)
-
-	bz, err = nodeData[0].Node.Query(
+	bz, err := nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
+	txHash := common.BytesToHash(bz)
 
 	bz, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
