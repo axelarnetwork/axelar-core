@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -31,7 +31,7 @@ func GetTofndPingCommand() *cobra.Command {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
-			axelarCfg := app.DefaultConfig()
+			axelarCfg := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&axelarCfg); err != nil {
 				panic(err)
 			}

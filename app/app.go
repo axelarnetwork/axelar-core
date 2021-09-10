@@ -77,7 +77,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
-	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
@@ -207,11 +206,6 @@ type AxelarApp struct {
 func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
-
-	axelarCfg := DefaultConfig()
-	if err := appOpts.(*viper.Viper).Unmarshal(&axelarCfg); err != nil {
-		tmos.Exit(err.Error())
-	}
 
 	appCodec := encodingConfig.Marshaler
 	legacyAmino := encodingConfig.Amino
