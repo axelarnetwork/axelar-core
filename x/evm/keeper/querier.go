@@ -36,9 +36,10 @@ const (
 
 //Bytecode labels
 const (
-	BCGateway = "gateway"
-	BCToken   = "token"
-	BCBurner  = "burner"
+	BCGatewaySimple     = "simple-gateway"
+	BCGatewayDeployment = "deployment-gateway"
+	BCToken             = "token"
+	BCBurner            = "burner"
 )
 
 // NewQuerier returns a new querier for the evm module
@@ -70,7 +71,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
-			return queryBytecode(ctx, chainKeeper, n, path[2])
+			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QSignedTx:
 			return querySignedTx(ctx, chainKeeper, s, n, path[2])
 		default:
@@ -316,7 +317,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
 }
 
-func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract string) ([]byte, error) {
+func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
@@ -325,8 +326,26 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract
 
 	var bz []byte
 	switch strings.ToLower(contract) {
-	case BCGateway:
+	case BCGatewaySimple:
 		bz, _ = k.GetGatewayByteCodes(ctx)
+	case BCGatewayDeployment:
+		keyRole, err := tss.KeyRoleFromSimpleStr(tss.SecondaryKey.SimpleString())
+		if err != nil {
+			return nil, err
+		}
+
+		address, _, err := getAddressAndKeyForRole(ctx, s, n, k.GetName(), keyRole)
+		if err != nil {
+			return nil, err
+		}
+
+		bz, _ = k.GetGatewayByteCodes(ctx)
+		deploymentBytecode, err := types.GetGatewayDeploymentBytecode(bz, address)
+		if err != nil {
+			return nil, err
+		}
+
+		return deploymentBytecode, nil
 	case BCToken:
 		bz, _ = k.GetTokenByteCodes(ctx)
 	case BCBurner:
