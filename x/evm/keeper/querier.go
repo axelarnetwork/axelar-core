@@ -36,8 +36,8 @@ const (
 
 //Bytecode labels
 const (
-	BCGatewaySimple     = "simple-gateway"
-	BCGatewayDeployment = "deployment-gateway"
+	BCGateway           = "gateway"
+	BCGatewayDeployment = "gateway-deployment"
 	BCToken             = "token"
 	BCBurner            = "burner"
 )
@@ -326,7 +326,7 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 
 	var bz []byte
 	switch strings.ToLower(contract) {
-	case BCGatewaySimple:
+	case BCGateway:
 		bz, _ = k.GetGatewayByteCodes(ctx)
 	case BCGatewayDeployment:
 		keyRole, err := tss.KeyRoleFromSimpleStr(tss.SecondaryKey.SimpleString())
