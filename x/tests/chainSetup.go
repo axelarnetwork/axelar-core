@@ -3,8 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"math/big"
-	mathRand "math/rand"
 	"sort"
 	"strconv"
 	"time"
@@ -19,11 +17,9 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	geth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	goEthTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
@@ -43,11 +39,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	btcMock "github.com/axelarnetwork/axelar-core/x/bitcoin/types/mock"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-	evmMock "github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -68,8 +62,6 @@ func randomSender() sdk.AccAddress {
 }
 
 type testMocks struct {
-	ETH     *evmMock.RPCClientMock
-	BTC     *btcMock.RPCClientMock
 	Keygen  *tssMock.TofndKeyGenClientMock
 	Sign    *tssMock.TofndSignClientMock
 	Staker  *snapshotTypesMock.StakingKeeperMock
@@ -214,28 +206,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		},
 	}
 
-	ethClient := &evmMock.RPCClientMock{
-		SendAndSignTransactionFunc: func(context.Context, geth.CallMsg) (string, error) {
-			return "", nil
-		},
-		PendingNonceAtFunc: func(context.Context, common.Address) (uint64, error) {
-			return mathRand.Uint64(), nil
-		},
-		//SendTransactionFunc: func(context.Context, *gethTypes.Transaction) error { return nil },
-		SuggestGasPriceFunc: func(context.Context) (*big.Int, error) {
-			return big.NewInt(mathRand.Int63()), nil
-		},
-
-		EstimateGasFunc: func(context.Context, geth.CallMsg) (uint64, error) {
-			return mathRand.Uint64(), nil
-		},
-	}
-
-	btcClient := &btcMock.RPCClientMock{}
-
 	return testMocks{
-		BTC:     btcClient,
-		ETH:     ethClient,
 		Staker:  stakingKeeper,
 		Slasher: slasher,
 		Tss:     tssK,
@@ -571,10 +542,10 @@ func mapifyAttributes(event abci.Event) map[string]string {
 	return m
 }
 
-func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
+func createTokenDeployLogs(gateway, addr common.Address) []*gethTypes.Log {
 	numLogs := rand.I64Between(1, 100)
 	pos := rand.I64Between(0, numLogs)
-	var logs []*goEthTypes.Log
+	var logs []*gethTypes.Log
 
 	for i := int64(0); i < numLogs; i++ {
 		stringType, err := abi.NewType("string", "string", nil)
@@ -592,7 +563,7 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 			if err != nil {
 				panic(err)
 			}
-			logs = append(logs, &goEthTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploymentSig}})
+			logs = append(logs, &gethTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploymentSig}})
 			continue
 		}
 
@@ -604,45 +575,8 @@ func createTokenDeployLogs(gateway, addr common.Address) []*goEthTypes.Log {
 		if err != nil {
 			panic(err)
 		}
-		logs = append(logs, &goEthTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
+		logs = append(logs, &gethTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
 	}
 
 	return logs
-}
-
-// Assembles a transaction for smart contract deployment. See:
-// https://goethereumbook.org/en/smart-contract-deploy/
-// https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
-func createDeployGatewayTx(
-	byteCode []byte,
-	contractOwner, contractOperator common.Address,
-	gasPrice *big.Int,
-	gasLimit uint64,
-	rpc types.RPCClient,
-) (*gethTypes.Transaction, error) {
-	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
-	if err != nil {
-		return nil, err
-	}
-
-	if gasPrice == nil {
-		gasPrice, err = rpc.SuggestGasPrice(context.Background())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
-	if err != nil {
-		return nil, err
-	}
-
-	if gasLimit == 0 {
-		gasLimit, err = rpc.EstimateGas(context.Background(), geth.CallMsg{
-			To:   nil,
-			Data: deploymentBytecode,
-		})
-	}
-
-	return gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode), nil
 }

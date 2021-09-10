@@ -1,11 +1,9 @@
 package tests
 
 import (
-	"bytes"
-	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
+	rand2 "math/rand"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -15,7 +13,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -116,7 +114,6 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	var queryAddressResponse evmTypes.QueryAddressResponse
 	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
-	owner := common.HexToAddress(queryAddressResponse.Address)
 
 	bz, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAddressByKeyRole, "ethereum", "secondary"},
@@ -124,9 +121,16 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
-	operator := common.HexToAddress(queryAddressResponse.Address)
 
-	tx, err := createDeployGatewayTx(bytecode, owner, operator, nil, 0, nodeData[0].Mocks.ETH)
+	operator := common.HexToAddress(queryAddressResponse.Address)
+	nonce := rand2.Uint64()
+	gasLimit := rand2.Uint64()
+	gasPrice := big.NewInt(rand2.Int63())
+
+	deploymentBytecode, err := evmTypes.GetGatewayDeploymentBytecode(bytecode, operator)
+	assert.NoError(t, err)
+
+	tx := gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode)
 
 	deployGatewayResult := <-chain.Submit(
 		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(tx)})
@@ -166,29 +170,12 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	tokenAddr := common.BytesToAddress(bz)
+
 	bz, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	gatewayAddr := common.BytesToAddress(bz)
-	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
-	ethBlock := rand.I64Between(10, 100)
-
-	for _, node := range nodeData {
-
-		node.Mocks.ETH.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-			return uint64(ethBlock), nil
-		}
-		node.Mocks.ETH.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*goEthTypes.Receipt, error) {
-
-			if bytes.Equal(txHash.Bytes(), hash.Bytes()) {
-				return &goEthTypes.Receipt{TxHash: hash, BlockNumber: big.NewInt(ethBlock - 5), Logs: logs}, nil
-			}
-			return &goEthTypes.Receipt{}, fmt.Errorf("tx not found")
-		}
-	}
 
 	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
 	assert.NoError(t, confirmResult1.Error)
