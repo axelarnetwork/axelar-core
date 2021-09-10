@@ -100,7 +100,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// setup axelar gateway
 	bytecode, err := nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.QBytecode, "ethereum", evmKeeper.BCGateway},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QBytecode, "ethereum", evmKeeper.BCGatewayDeployment},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
@@ -121,15 +121,11 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, err)
 	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
 
-	operator := common.HexToAddress(queryAddressResponse.Address)
 	nonce := rand2.Uint64()
 	gasLimit := rand2.Uint64()
 	gasPrice := big.NewInt(rand2.Int63())
 
-	deploymentBytecode, err := evmTypes.GetGatewayDeploymentBytecode(bytecode, operator)
-	assert.NoError(t, err)
-
-	tx := gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode)
+	tx := gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, bytecode)
 
 	deployGatewayResult := <-chain.Submit(
 		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(tx)})
