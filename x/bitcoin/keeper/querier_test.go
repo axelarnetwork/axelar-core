@@ -276,7 +276,8 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 
 		btcKeeper.GetMasterKeyRetentionPeriodFunc = func(ctx sdk.Context) int64 { return types.DefaultParams().MasterKeyRetentionPeriod }
-		btcKeeper.GetMasterAddressLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressLockDuration }
+		btcKeeper.GetMasterAddressInternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressInternalKeyLockDuration }
+		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressExternalKeyLockDuration }
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
@@ -319,7 +320,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 
 		expected := types.QueryAddressResponse{
-			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressLockDuration), types.DefaultParams().Network).Address,
+			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network).Address,
 			KeyID:   masterKey.ID,
 		}
 

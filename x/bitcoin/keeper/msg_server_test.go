@@ -621,8 +621,11 @@ func TestCreateMasterTx(t *testing.T) {
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
 				return types.DefaultParams().MasterKeyRetentionPeriod
 			},
-			GetMasterAddressLockDurationFunc: func(ctx sdk.Context) time.Duration {
-				return types.DefaultParams().MasterAddressLockDuration
+			GetMasterAddressInternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressInternalKeyLockDuration
+			},
+			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressExternalKeyLockDuration
 			},
 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 				return types.DefaultParams().Network
@@ -719,7 +722,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -760,7 +763,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -815,7 +818,7 @@ func TestCreateMasterTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -867,7 +870,7 @@ func TestCreateMasterTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1088,8 +1091,11 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
 				return types.DefaultParams().MasterKeyRetentionPeriod
 			},
-			GetMasterAddressLockDurationFunc: func(ctx sdk.Context) time.Duration {
-				return types.DefaultParams().MasterAddressLockDuration
+			GetMasterAddressInternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressInternalKeyLockDuration
+			},
+			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressExternalKeyLockDuration
 			},
 			GetNetworkFunc: func(ctx sdk.Context) types.Network {
 				return types.DefaultParams().Network
@@ -1307,7 +1313,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(nextMasterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(nextMasterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1366,7 +1372,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
 		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressLockDuration), network).Address
+		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
