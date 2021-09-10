@@ -152,21 +152,31 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{{*internalSig2, *internalSig1}})
 		assert.Error(t, err)
 
-		for i := 0; i < externalKeyCount-externalKeyThreshold; i++ {
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{externalSigs[i:]})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig1}, externalSigs[i:]...)})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig2}, externalSigs[i:]...)})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(externalSigs[i:i+int(externalKeyThreshold)], *internalSig1)})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(externalSigs[i:i+int(externalKeyThreshold)], *internalSig2)})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig1, *internalSig2}, externalSigs[i:i+int(externalKeyThreshold)]...)})
-			assert.Error(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig2, *internalSig1}, externalSigs[i:i+int(externalKeyThreshold)]...)})
-			assert.Error(t, err)
+		for i := externalKeyThreshold + 1; i <= externalKeyCount; i++ {
+			for _, sigs := range getSigCombinations(externalSigs, i) {
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{sigs})
+				assert.Error(t, err)
+			}
+		}
+
+		for i := externalKeyThreshold + 2; i <= externalKeyCount; i++ {
+			for _, sigs := range getSigCombinations(append([]btcec.Signature{*internalSig1, *internalSig2}, externalSigs...), i) {
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{sigs})
+				assert.Error(t, err)
+			}
+		}
+
+		for i := 1; i <= externalKeyCount; i++ {
+			for _, sigs := range getSigCombinations(externalSigs, i) {
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(sigs, *internalSig1)})
+				assert.Error(t, err)
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(sigs, *internalSig2)})
+				assert.Error(t, err)
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(sigs, *internalSig1, *internalSig2)})
+				assert.Error(t, err)
+				_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append(sigs, *internalSig2, *internalSig1)})
+				assert.Error(t, err)
+			}
 		}
 	}).Repeat(repeat))
 
@@ -237,8 +247,8 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 
 		externalSigs := signWithExternalKeys(sigHash)
 
-		for i := 0; i < externalKeyCount-externalKeyThreshold+1; i++ {
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{externalSigs[i : i+int(externalKeyThreshold)]})
+		for _, sigs := range getSigCombinations(externalSigs, externalKeyThreshold) {
+			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{sigs})
 			assert.Error(t, err)
 		}
 	}).Repeat(repeat))
@@ -276,10 +286,10 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		assert.NoError(t, err)
 		externalSigs := signWithExternalKeys(sigHash)
 
-		for i := 0; i < externalKeyCount-externalKeyThreshold+1; i++ {
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig1}, externalSigs[i:i+int(externalKeyThreshold)]...)})
+		for _, sigs := range getSigCombinations(externalSigs, externalKeyThreshold) {
+			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig1}, sigs...)})
 			assert.NoError(t, err)
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig2}, externalSigs[i:i+int(externalKeyThreshold)]...)})
+			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{append([]btcec.Signature{*internalSig2}, sigs...)})
 			assert.NoError(t, err)
 		}
 	}).Repeat(repeat))
@@ -351,8 +361,8 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 
 		externalSigs := signWithExternalKeys(sigHash)
 
-		for i := 0; i < externalKeyCount-externalKeyThreshold+1; i++ {
-			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{externalSigs[i : i+int(externalKeyThreshold)]})
+		for _, sigs := range getSigCombinations(externalSigs, externalKeyThreshold) {
+			_, err = types.AssembleBtcTx(tx, inputs, [][]btcec.Signature{sigs})
 			assert.NoError(t, err)
 		}
 	}).Repeat(repeat))
@@ -658,4 +668,34 @@ func TestAddress(t *testing.T) {
 		assert.NotEqual(t, addrStr1, addrStr2)
 		assert.Equal(t, addr1, addr2)
 	}).Repeat(20))
+}
+
+func getSigCombinations(sigs []btcec.Signature, size int) [][]btcec.Signature {
+	if size > len(sigs) {
+		panic("size must be less than or equal to len(sigs)")
+	}
+
+	var results [][]btcec.Signature
+
+	if size == 0 {
+		return results
+	}
+
+	if size == 1 {
+		for _, sig := range sigs {
+			results = append(results, []btcec.Signature{sig})
+		}
+
+		return results
+	}
+
+	if size == len(sigs) {
+		return append(results, sigs)
+	}
+
+	for _, combination := range getSigCombinations(sigs[1:], size-1) {
+		results = append(results, append([]btcec.Signature{sigs[0]}, combination...))
+	}
+
+	return append(results, getSigCombinations(sigs[1:], size)...)
 }
