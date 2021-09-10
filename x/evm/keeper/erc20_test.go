@@ -26,6 +26,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/tests"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -200,10 +201,13 @@ func TestDeploy(t *testing.T) {
 		SuggestGasPriceFunc: backend.SuggestGasPrice,
 	}
 
-	byteCode, ok := k.ForChain(ctx, chain).GetGatewayByteCodes(ctx)
+	bytecode, ok := k.ForChain(ctx, chain).GetGatewayByteCodes(ctx)
 	assert.True(t, ok)
 
-	tx, err := createDeployGatewayTx(byteCode, gasLimit, rpc)
+	owner := common.BytesToAddress(rand2.Bytes(common.AddressLength))
+	operator := common.BytesToAddress(rand2.Bytes(common.AddressLength))
+	tx, err := tests.CreateDeployGatewayTx(bytecode, owner, operator, nil, gasLimit, rpc)
+
 	assert.NoError(t, err)
 
 	signedTx, err := evmTypes.SignTx(tx, signer, privateKey)
@@ -219,32 +223,4 @@ func TestDeploy(t *testing.T) {
 		t.FailNow()
 	}
 	t.Logf("Contract address: %s\n", contractAddr.Hex())
-}
-
-/*
-  Create a transaction for smart contract deployment. See:
-
-  https://goethereumbook.org/en/smart-contract-deploy/
-  https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
-*/
-func createDeployGatewayTx(byteCode []byte, gasLimit uint64, rpc types.RPCClient) (*evmTypes.Transaction, error) {
-	contractOwner := common.BytesToAddress(rand2.Bytes(common.AddressLength))
-	contractOperator := common.BytesToAddress(rand2.Bytes(common.AddressLength))
-
-	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
-	if err != nil {
-		return nil, err
-	}
-
-	gasPrice, err := rpc.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
-	if err != nil {
-		return nil, err
-	}
-
-	return evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode), nil
 }

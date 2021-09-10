@@ -126,7 +126,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	evmTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &queryAddressResponse)
 	operator := common.HexToAddress(queryAddressResponse.Address)
 
-	tx, err := createDeployGatewayTx(bytecode, owner, operator, nodeData[0].Mocks.ETH)
+	tx, err := CreateDeployGatewayTx(bytecode, owner, operator, nil, 0, nodeData[0].Mocks.ETH)
 
 	deployGatewayResult := <-chain.Submit(
 		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(tx)})
