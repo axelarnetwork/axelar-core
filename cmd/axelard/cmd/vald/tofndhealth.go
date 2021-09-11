@@ -31,8 +31,8 @@ func GetTofndPingCommand() *cobra.Command {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
-			axelarCfg := config.DefaultValdConfig()
-			if err := serverCtx.Viper.Unmarshal(&axelarCfg); err != nil {
+			valdCfg := config.DefaultValdConfig()
+			if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 				panic(err)
 			}
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -45,7 +45,7 @@ func GetTofndPingCommand() *cobra.Command {
 				return err
 			}
 
-			gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
+			gg20client, err := tss.CreateTOFNDClient(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, logger)
 			if err != nil {
 				return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 			}
