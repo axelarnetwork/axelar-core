@@ -31,10 +31,12 @@ func GetTofndPingCommand() *cobra.Command {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
+			loadValdCfg(serverCtx)
 			valdCfg := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 				panic(err)
 			}
+
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				panic(err)
