@@ -29,9 +29,12 @@ func GetTofndPingCommand() *cobra.Command {
 		Use: "tofnd-ping",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			logger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
-			loadValdCfg(serverCtx)
+			logger := serverCtx.Logger.With("module", "tofnd-ping")
+			err := loadValdCfg(serverCtx)
+			if err != nil {
+				logger.Error(fmt.Sprintf("failed to load vald configuration file: %v", err))
+			}
 			valdCfg := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 				panic(err)
@@ -47,7 +50,8 @@ func GetTofndPingCommand() *cobra.Command {
 				return err
 			}
 
-			gg20client, err := tss.CreateTOFNDClient(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, logger)
+			nopeLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
+			gg20client, err := tss.CreateTOFNDClient(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, nopeLogger)
 			if err != nil {
 				return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 			}

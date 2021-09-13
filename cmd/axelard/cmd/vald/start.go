@@ -74,8 +74,6 @@ func GetValdCommand() *cobra.Command {
 				once.Do(cleanUp)
 			}()
 
-			loadValdCfg(serverCtx)
-
 			node, err := cmd.Flags().GetString(flags.FlagNode)
 			if err != nil {
 				return err
@@ -90,6 +88,10 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
+			err = loadValdCfg(serverCtx)
+			if err != nil {
+				logger.Error(fmt.Sprintf("failed to load vald configuration file: %v", err))
+			}
 			valdConf := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdConf); err != nil {
 				panic(err)
@@ -359,12 +361,12 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 	return evmMgr
 }
 
-func loadValdCfg(serverCtx *server.Context) {
+func loadValdCfg(serverCtx *server.Context) error {
 	cfgDir := serverCtx.Viper.GetString(flags.FlagHome)
 	valdPath := filepath.Join(cfgDir, "config")
 	valdFile := filepath.Join(valdPath, "vald.toml")
 	if _, err := os.Stat(valdFile); os.IsNotExist(err) {
-		panic(fmt.Sprintf("No vald configuration file found at %s", valdFile))
+		return fmt.Errorf("no vald configuration file found at %s", valdFile)
 	}
 
 	serverCtx.Viper.SetConfigType("toml")
@@ -372,8 +374,10 @@ func loadValdCfg(serverCtx *server.Context) {
 	serverCtx.Viper.AddConfigPath(valdPath)
 
 	if err := serverCtx.Viper.MergeInConfig(); err != nil {
-		panic(fmt.Sprintf("Failed to load vald configuration: %s", err.Error()))
+		return err
 	}
+
+	return nil
 }
 
 // RWFile implements the ReadWriter interface for an underlying file
