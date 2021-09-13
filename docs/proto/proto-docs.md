@@ -539,7 +539,8 @@ address
 <a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
-RegisterAssetRequest represents a message to register an asset for a cosmos based chain
+RegisterAssetRequest represents a message to register an asset for a cosmos
+based chain
 
 
 | Field | Type | Label | Description |

@@ -65,10 +65,11 @@ message AddCosmosBasedChainRequest {
 
 message AddCosmosBasedChainResponse {}
 
-// RegisterAssetRequest represents a message to register an asset for a cosmos based chain
+// RegisterAssetRequest represents a message to register an asset for a cosmos
+// based chain
 message RegisterAssetRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
-      "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   string asset = 3;
 }

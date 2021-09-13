@@ -410,7 +410,8 @@ func (m *AddCosmosBasedChainResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AddCosmosBasedChainResponse proto.InternalMessageInfo
 
-// RegisterAssetRequest represents a message to register an asset for a cosmos based chain
+// RegisterAssetRequest represents a message to register an asset for a cosmos
+// based chain
 type RegisterAssetRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
