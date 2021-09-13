@@ -2,13 +2,11 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	stdlog "log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -79,7 +77,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
-	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
@@ -87,7 +84,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
-	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
@@ -210,11 +206,6 @@ type AxelarApp struct {
 func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
-
-	axelarCfg := DefaultConfig()
-	if err := appOpts.(*viper.Viper).Unmarshal(&axelarCfg); err != nil {
-		tmos.Exit(err.Error())
-	}
 
 	appCodec := encodingConfig.Marshaler
 	legacyAmino := encodingConfig.Amino
@@ -375,31 +366,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[axelarnetTypes.StoreKey],
 	)
 
-	rpcsEVM := make(map[string]evmTypes.RPCClient)
-	for _, evmConf := range axelarCfg.EVMConfig {
-		if _, found := rpcsEVM[strings.ToLower(evmConf.Name)]; found {
-			tmos.Exit(fmt.Sprintf("duplicate bridge configuration found for EVM chain %s", evmConf.Name))
-		}
-
-		var rpcEVM evmTypes.RPCClient
-		var err error
-		if evmConf.WithBridge {
-			rpcEVM, err = evmTypes.NewRPCClient(evmConf.RPCAddr)
-			if err != nil {
-				tmos.Exit(err.Error())
-			}
-			logger.With("module", fmt.Sprintf("x/%s", evmTypes.ModuleName)).Debug(fmt.Sprintf("Successfully connected to %s node", evmConf.Name))
-		} else {
-			rpcEVM = evmTypes.NewDummyRPC()
-		}
-		rpcsEVM[strings.ToLower(evmConf.Name)] = rpcEVM
-	}
-
-	rpcBtc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
@@ -431,8 +397,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK),
-		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, rpcsEVM, logger),
-		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK, rpcBtc),
+		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
+		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, logger),
 	)
 

@@ -1,6 +1,31 @@
 package config
 
-import "time"
+import (
+	"time"
+
+	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
+)
+
+// ValdConfig contains all necessary vald configurations
+type ValdConfig struct {
+	bitcoin.BtcConfig `mapstructure:"axelar_bridge_btc"`
+	tss.TssConfig     `mapstructure:",squash"`
+	ClientConfig      `mapstructure:",squash"`
+
+	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
+}
+
+// DefaultValdConfig returns a configurations populated with default values
+func DefaultValdConfig() ValdConfig {
+	return ValdConfig{
+		EVMConfig:    evm.DefaultConfig(),
+		BtcConfig:    bitcoin.DefaultConfig(),
+		TssConfig:    tss.DefaultConfig(),
+		ClientConfig: ClientConfig{},
+	}
+}
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {

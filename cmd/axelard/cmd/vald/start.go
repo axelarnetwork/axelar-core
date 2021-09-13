@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/utils/jobs"
 
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -87,8 +88,12 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			axConf := app.DefaultConfig()
-			if err := serverCtx.Viper.Unmarshal(&axConf); err != nil {
+			err = loadValdCfg(serverCtx)
+			if err != nil {
+				logger.Error(fmt.Sprintf("failed to load vald configuration file: %v", err))
+			}
+			valdConf := config.DefaultValdConfig()
+			if err := serverCtx.Viper.Unmarshal(&valdConf); err != nil {
 				panic(err)
 			}
 
@@ -122,7 +127,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, txf, axConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -155,7 +160,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
@@ -288,12 +293,12 @@ func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
-func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg app.Config, logger log.Logger) broadcasterTypes.Broadcaster {
+func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
 	return broadcaster.NewBroadcaster(txf, pipeline, logger)
 }
 
-func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg app.Config, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
@@ -311,7 +316,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 	return mgr
 }
 
-func createBTCMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
+func createBTCMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
 	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
 	if err != nil {
 		logger.Error(err.Error())
@@ -326,7 +331,7 @@ func createBTCMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterType
 	return btcMgr
 }
 
-func createEVMMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
@@ -354,6 +359,25 @@ func createEVMMgr(axelarCfg app.Config, cliCtx client.Context, b broadcasterType
 
 	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc)
 	return evmMgr
+}
+
+func loadValdCfg(serverCtx *server.Context) error {
+	cfgDir := serverCtx.Viper.GetString(flags.FlagHome)
+	valdPath := filepath.Join(cfgDir, "config")
+	valdFile := filepath.Join(valdPath, "vald.toml")
+	if _, err := os.Stat(valdFile); os.IsNotExist(err) {
+		return fmt.Errorf("no vald configuration file found at %s", valdFile)
+	}
+
+	serverCtx.Viper.SetConfigType("toml")
+	serverCtx.Viper.SetConfigName("vald")
+	serverCtx.Viper.AddConfigPath(valdPath)
+
+	if err := serverCtx.Viper.MergeInConfig(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // RWFile implements the ReadWriter interface for an underlying file

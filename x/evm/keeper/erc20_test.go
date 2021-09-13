@@ -1,35 +1,18 @@
 package keeper_test
 
 import (
-	"context"
 	"math/big"
 	"math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -163,86 +146,4 @@ func TestSig(t *testing.T) {
 		recoveredAddr = crypto.PubkeyToAddress(*recoveredPK)
 		assert.NotEqual(t, addr, recoveredAddr)
 	}
-}
-
-// Deploys the smart contract available for these tests. It avoids deployment via the contract ABI
-// in favor of creating a raw transaction for the same purpose.
-func TestDeploy(t *testing.T) {
-	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	path := hdwallet.MustParseDerivationPath(DerivationPath)
-	account, err := wallet.Derive(path, false)
-	if err != nil {
-		panic(err)
-	}
-	privateKey, err := wallet.PrivateKey(account)
-	if err != nil {
-		panic(err)
-	}
-
-	addr, err := wallet.Address(account)
-	if err != nil {
-		panic(err)
-	}
-
-	backend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1 * params.Ether)}}, 3000000)
-	chain := "Ethereum"
-	chainID := backend.Blockchain().Config().ChainID
-	assert.NoError(t, err)
-	signer := evmTypes.NewEIP155Signer(chainID)
-	var gasLimit uint64 = 3000000
-	tssSigner := &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
-		return tss.Key{
-			ID:    rand2.StrBetween(5, 20),
-			Value: privateKey.PublicKey,
-			Role:  tss.MasterKey,
-		}, true
-	}}
-	nexusMock := &mock.NexusMock{
-		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
-			return nexus.Chain{
-				Name:                  rand2.StrBetween(5, 20),
-				NativeAsset:           rand2.StrBetween(3, 5),
-				SupportsForeignAssets: true,
-			}, true
-		},
-	}
-
-	deployParams := types.DeployParams{
-		Chain:    chain,
-		GasPrice: sdk.ZeroInt(),
-		GasLimit: gasLimit,
-	}
-
-	minConfHeight := rand2.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	k := newKeeper(ctx, chain, minConfHeight)
-	encCfg := app.MakeEncodingConfig()
-
-	rpc := &mock.RPCClientMock{PendingNonceAtFunc: backend.PendingNonceAt, SuggestGasPriceFunc: backend.SuggestGasPrice}
-	evmMap := make(map[string]types.RPCClient)
-	evmMap["ethereum"] = rpc
-	query := keeper.NewQuerier(evmMap, k, tssSigner, nexusMock)
-	res, err := query(ctx, []string{keeper.CreateDeployTx}, abci.RequestQuery{Data: encCfg.Amino.MustMarshalJSON(deployParams)})
-	assert.NoError(t, err)
-
-	var result types.DeployResult
-	encCfg.Amino.MustUnmarshalJSON(res, &result)
-
-	signedTx, err := evmTypes.SignTx(result.Tx, signer, privateKey)
-	assert.NoError(t, err)
-	err = backend.SendTransaction(context.Background(), signedTx)
-	assert.NoError(t, err)
-	backend.Commit()
-
-	t.Logf("Trying to fetch receipt for Tx %s", signedTx.Hash().String())
-	contractAddr, err := bind.WaitDeployed(context.Background(), backend, signedTx)
-	if err != nil {
-		t.Logf("Error getting receipt: %v\n", err)
-		t.FailNow()
-	}
-	t.Logf("Contract address: %s\n", contractAddr.Hex())
 }

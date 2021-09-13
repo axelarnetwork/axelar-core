@@ -9,10 +9,8 @@ import (
 	"math/big"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -168,20 +166,6 @@ func ToSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signa
 	s[64] = 1
 
 	return s, nil
-}
-
-// DeployParams describe the parameters used to create a deploy contract transaction for an EVM chain
-type DeployParams struct {
-	Chain    string
-	GasPrice sdk.Int
-	GasLimit uint64
-}
-
-// DeployResult describes the result of the deploy contract query,
-// containing the raw unsigned transaction and the address to which the contract will be deployed
-type DeployResult struct {
-	ContractAddress string                `json:"contract_address"`
-	Tx              *evmTypes.Transaction `json:"tx"`
 }
 
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,

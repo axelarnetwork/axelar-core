@@ -2,9 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"math/big"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -33,10 +30,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
 		GetCmdDepositState(queryRoute),
-		GetCmdCreateDeployTx(queryRoute),
 		GetCmdBytecode(queryRoute),
 		GetCmdSignedTx(queryRoute),
-		GetCmdSendTx(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
 		GetCmdLatestBatchedCommands(queryRoute),
 	)
@@ -202,63 +197,14 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreateDeployTx returns the query for a raw unsigned EVM deploy transaction for the smart contract of a given path
-func GetCmdCreateDeployTx(queryRoute string) *cobra.Command {
-	var gasPriceStr string
-	var gasLimit uint64
-	cmd := &cobra.Command{
-		Use:   "deploy-gateway [chain]",
-		Short: "Obtain a raw transaction for the deployment of Axelar Gateway.",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			gasPriceBig, ok := big.NewInt(0).SetString(gasPriceStr, 10)
-			if !ok {
-				return fmt.Errorf("could not parse specified gas price")
-			}
-
-			gasPrice := sdk.NewIntFromBigInt(gasPriceBig)
-
-			params := types.DeployParams{
-				Chain:    args[0],
-				GasPrice: gasPrice,
-				GasLimit: gasLimit,
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.CreateDeployTx), cliCtx.LegacyAmino.MustMarshalJSON(params))
-			if err != nil {
-				fmt.Printf(types.ErrFDeployTx, err.Error())
-
-				return nil
-			}
-
-			var result types.DeployResult
-			cliCtx.LegacyAmino.MustUnmarshalJSON(res, &result)
-			fmt.Println(string(cliCtx.LegacyAmino.MustMarshalJSON(result.Tx)))
-			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-
-	cmd.Flags().Uint64Var(&gasLimit, "gas-limit", 3000000,
-		"EVM gas limit to use in the transaction (default value is 3000000). Set to 0 to estimate gas limit at the node.")
-	cmd.Flags().StringVar(&gasPriceStr, "gas-price", "0",
-		"EVM gas price to use in the transaction. If flag is omitted (or value set to 0), the gas price will be suggested by the node")
-	return cmd
-}
-
 // GetCmdBytecode fetches the bytecodes of an EVM contract
 func GetCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
 		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
 		Long: fmt.Sprintf("Fetch the bytecodes of an EVM contract [contract] for chain [chain]. "+
-			"The value for [contract] can be either '%s', '%s', or '%s'.",
-			keeper.BCGateway, keeper.BCToken, keeper.BCBurner),
+			"The value for [contract] can be either '%s', '%s', '%s', or '%s'.",
+			keeper.BCGateway, keeper.BCGatewayDeployment, keeper.BCToken, keeper.BCBurner),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
@@ -298,30 +244,6 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 
 			fmt.Println("0x" + common.Bytes2Hex(res))
 			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdSendTx sends a transaction to an EVM chain
-func GetCmdSendTx(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "send-tx [chain] [txID]",
-		Short: "Send a transaction that spends tx [txID] to chain [chain]",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.SendTx, args[0], args[1]), nil)
-			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFSendTx, args[1])
-			}
-
-			return cliCtx.PrintObjectLegacy(fmt.Sprintf("successfully sent transaction %s to %s", common.BytesToHash(res).Hex(), args[0]))
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

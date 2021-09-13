@@ -166,47 +166,6 @@ func GetHandlerQueryAxelarGatewayAddress(cliCtx client.Context) http.HandlerFunc
 	}
 }
 
-// GetHandlerQueryCreateDeployTx returns a handler to create an EVM chain transaction to deploy a smart contract
-func GetHandlerQueryCreateDeployTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		gasPrice, ok := parseGasPrice(w, r)
-		if !ok {
-			return
-		}
-		gasLimit, ok := parseGasLimit(w, r)
-		if !ok {
-			return
-		}
-
-		params := types.DeployParams{
-			Chain:    chain,
-			GasPrice: gasPrice,
-			GasLimit: gasLimit,
-		}
-
-		json, err := cliCtx.LegacyAmino.MarshalJSON(params)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.CreateDeployTx), json)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDeployTx).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryBytecode returns a handler to fetch the bytecodes of an EVM contract
 func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -242,27 +201,6 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, txID), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSignedTx, txID).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
-	}
-}
-
-// GetHandlerQuerySendTx returns a handler to send a transaction to an EVM chain wallet to be signed and submitted by a specified account
-func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-		chain := mux.Vars(r)[utils.PathVarChain]
-		txID := mux.Vars(r)[utils.PathVarTxID]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.SendTx, chain, txID), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSendTx, txID).Error())
 			return
 		}
 

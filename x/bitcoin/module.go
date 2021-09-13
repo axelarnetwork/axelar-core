@@ -85,11 +85,10 @@ type AppModule struct {
 	signer      types.Signer
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
-	rpc         types.RPCClient
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k types.BTCKeeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter, rpc types.RPCClient) AppModule {
+func NewAppModule(k types.BTCKeeper, voter types.Voter, signer types.Signer, nexus types.Nexus, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -97,7 +96,6 @@ func NewAppModule(k types.BTCKeeper, voter types.Voter, signer types.Signer, nex
 		signer:         signer,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
-		rpc:            rpc,
 	}
 }
 
@@ -135,7 +133,7 @@ func (AppModule) QuerierRoute() string {
 
 // LegacyQuerierHandler returns a new query handler for this module
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.rpc, am.keeper, am.signer, am.nexus)
+	return keeper.NewQuerier(am.keeper, am.signer, am.nexus)
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

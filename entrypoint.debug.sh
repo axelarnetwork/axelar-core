@@ -64,6 +64,9 @@ if [ -n "$CONFIG_PATH" ] && [ -d "$CONFIG_PATH" ]; then
   if [ -f "$CONFIG_PATH/app.toml" ]; then
     cp "$CONFIG_PATH/app.toml" "$D_HOME_DIR/config/app.toml"
   fi
+  if [ -f "$CONFIG_PATH/vald.toml" ]; then
+    cp "$CONFIG_PATH/vald.toml" "$D_HOME_DIR/config/vald.toml"
+  fi
 fi
 
 if [ -n "$PEERS_FILE" ]; then

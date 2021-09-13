@@ -1,11 +1,9 @@
 package tests
 
 import (
-	"bytes"
-	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
+	rand2 "math/rand"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -15,7 +13,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	goEthTypes "github.com/ethereum/go-ethereum/core/types"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -102,22 +100,20 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// setup axelar gateway
-	bz, err := nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.CreateDeployTx},
-		abci.RequestQuery{
-			Data: cdc.MustMarshalJSON(
-				evmTypes.DeployParams{
-					Chain:    "ethereum",
-					GasPrice: sdk.NewInt(1),
-					GasLimit: 3000000,
-				})},
+	bytecode, err := nodeData[0].Node.Query(
+		[]string{evmTypes.QuerierRoute, evmKeeper.QBytecode, "ethereum", evmKeeper.BCGatewayDeployment},
+		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	var result evmTypes.DeployResult
-	cdc.MustUnmarshalJSON(bz, &result)
+
+	nonce := rand2.Uint64()
+	gasLimit := rand2.Uint64()
+	gasPrice := big.NewInt(rand2.Int63())
+
+	tx := gethTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, bytecode)
 
 	deployGatewayResult := <-chain.Submit(
-		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(result.Tx)})
+		&evmTypes.SignTxRequest{Sender: randomSender(), Chain: "ethereum", Tx: cdc.MustMarshalJSON(tx)})
 	assert.NoError(t, deployGatewayResult.Error)
 
 	// wait for voting to be done (signing takes longer to tally up)
@@ -128,7 +124,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var signTxResponse evmTypes.SignTxResponse
 	assert.NoError(t, proto.Unmarshal(deployGatewayResult.Data, &signTxResponse))
 	_, err = nodeData[0].Node.Query(
-		[]string{evmTypes.QuerierRoute, evmKeeper.SendTx, "ethereum", signTxResponse.TxID},
+		[]string{evmTypes.QuerierRoute, evmKeeper.QSignedTx, "ethereum", signTxResponse.TxID},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
@@ -147,36 +143,18 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// confirm the token deployment
-	txHash := common.BytesToHash(bz)
-
-	bz, err = nodeData[0].Node.Query(
+	bz, err := nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QTokenAddress, "ethereum", "satoshi"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	tokenAddr := common.BytesToAddress(bz)
+	txHash := common.BytesToHash(bz)
+
 	bz, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
-	gatewayAddr := common.BytesToAddress(bz)
-	logs := createTokenDeployLogs(gatewayAddr, tokenAddr)
-	ethBlock := rand.I64Between(10, 100)
-
-	for _, node := range nodeData {
-
-		node.Mocks.ETH.BlockNumberFunc = func(ctx context.Context) (uint64, error) {
-			return uint64(ethBlock), nil
-		}
-		node.Mocks.ETH.TransactionReceiptFunc = func(ctx context.Context, hash common.Hash) (*goEthTypes.Receipt, error) {
-
-			if bytes.Equal(txHash.Bytes(), hash.Bytes()) {
-				return &goEthTypes.Receipt{TxHash: hash, BlockNumber: big.NewInt(ethBlock - 5), Logs: logs}, nil
-			}
-			return &goEthTypes.Receipt{}, fmt.Errorf("tx not found")
-		}
-	}
 
 	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
 	assert.NoError(t, confirmResult1.Error)

@@ -2,15 +2,11 @@ package keeper
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strings"
 
-	evm "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -36,19 +32,18 @@ const (
 	QSignedTx              = "signed-tx"
 	QLatestBatchedCommands = "latest-batched-commands"
 	QBatchedCommands       = "batched-commands"
-	CreateDeployTx         = "deploy-gateway"
-	SendTx                 = "send-tx"
 )
 
 //Bytecode labels
 const (
-	BCGateway = "gateway"
-	BCToken   = "token"
-	BCBurner  = "burner"
+	BCGateway           = "gateway"
+	BCGatewayDeployment = "gateway-deployment"
+	BCToken             = "token"
+	BCBurner            = "burner"
 )
 
 // NewQuerier returns a new querier for the evm module
-func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
@@ -76,13 +71,9 @@ func NewQuerier(rpcs map[string]types.RPCClient, k types.BaseKeeper, s types.Sig
 		case QDepositAddress:
 			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
-			return queryBytecode(ctx, chainKeeper, n, path[2])
+			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QSignedTx:
 			return querySignedTx(ctx, chainKeeper, s, n, path[2])
-		case CreateDeployTx:
-			return createDeployGateway(ctx, k, rpcs, s, n, req.Data)
-		case SendTx:
-			return sendSignedTx(ctx, chainKeeper, rpcs, s, n, path[2])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -326,83 +317,9 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
 }
 
-/*
-  Create a transaction for smart contract deployment. See:
+func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 
-  https://goethereumbook.org/en/smart-contract-deploy/
-  https://gist.github.com/tomconte/6ce22128b15ba36bb3d7585d5180fba0
-
-  If gasLimit is set to 0, the function will attempt to estimate the amount of gas needed
-*/
-func createDeployGateway(ctx sdk.Context, k types.BaseKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
-	var params types.DeployParams
-	err := types.ModuleCdc.LegacyAmino.UnmarshalJSON(data, &params)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	rpc, found := rpcs[strings.ToLower(params.Chain)]
-	if !found {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find RPC for chain '%s'", params.Chain))
-	}
-
-	contractOwner, _, err := getAddressAndKeyForRole(ctx, s, n, params.Chain, tss.MasterKey)
-	if err != nil {
-		return nil, err
-	}
-
-	contractOperator, _, err := getAddressAndKeyForRole(ctx, s, n, params.Chain, tss.SecondaryKey)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := rpc.PendingNonceAt(context.Background(), contractOwner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create nonce: %s", err))
-	}
-
-	gasPrice := params.GasPrice.BigInt()
-	if params.GasPrice.IsZero() {
-		gasPrice, err = rpc.SuggestGasPrice(context.Background())
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not calculate gas price: %s", err))
-		}
-	}
-
-	byteCode, ok := k.ForChain(ctx, params.Chain).GetGatewayByteCodes(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("Could not retrieve gateway bytecodes for chain %s", params.Chain))
-	}
-
-	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, contractOperator)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	gasLimit := params.GasLimit
-	if gasLimit == 0 {
-		gasLimit, err = rpc.EstimateGas(context.Background(), evm.CallMsg{
-			To:   nil,
-			Data: deploymentBytecode,
-		})
-
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not estimate gas limit: %s", err))
-		}
-	}
-
-	tx := evmTypes.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, deploymentBytecode)
-	result := types.DeployResult{
-		Tx:              tx,
-		ContractAddress: crypto.CreateAddress(contractOwner, nonce).String(),
-	}
-	k.Logger(ctx).Debug(fmt.Sprintf("Contract address: %s", result.ContractAddress))
-	return types.ModuleCdc.LegacyAmino.MustMarshalJSON(result), nil
-}
-
-func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract string) ([]byte, error) {
-
-	_, ok := n.GetChain(ctx, k.GetName())
+	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
@@ -411,6 +328,19 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, contract
 	switch strings.ToLower(contract) {
 	case BCGateway:
 		bz, _ = k.GetGatewayByteCodes(ctx)
+	case BCGatewayDeployment:
+		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
+		}
+
+		bz, _ = k.GetGatewayByteCodes(ctx)
+		deploymentBytecode, err := types.GetGatewayDeploymentBytecode(bz, crypto.PubkeyToAddress(secondaryKey.Value))
+		if err != nil {
+			return nil, err
+		}
+
+		return deploymentBytecode, nil
 	case BCToken:
 		bz, _ = k.GetTokenByteCodes(ctx)
 	case BCBurner:
@@ -447,41 +377,6 @@ func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	}
 
 	return signedTx.MarshalBinary()
-}
-
-func sendSignedTx(ctx sdk.Context, k types.ChainKeeper, rpcs map[string]types.RPCClient, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
-
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
-	rpc, found := rpcs[strings.ToLower(k.GetName())]
-	if !found {
-		return nil, fmt.Errorf("could not find RPC for chain '%s'", k.GetName())
-	}
-
-	pk, ok := s.GetKeyForSigID(ctx, txID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
-	}
-
-	sig, status := s.GetSig(ctx, txID)
-	if status != tss.SigStatus_Signed {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
-	}
-
-	signedTx, err := k.AssembleTx(ctx, txID, pk.Value, sig)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
-	}
-
-	err = rpc.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	return signedTx.Hash().Bytes(), nil
 }
 
 // QueryBatchedCommands returns the batched commands for the given ID
