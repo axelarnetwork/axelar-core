@@ -133,9 +133,9 @@ func GetCmdConfirmChain() *cobra.Command {
 // GetCmdConfirmERC20TokenDeployment returns the cli command to confirm a ERC20 token deployment
 func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-erc20-token [chain] [origin chain] [txID]",
+		Use:   "confirm-erc20-token [chain] [origin chain] [native asset] [txID]",
 		Short: "Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -144,8 +144,9 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 
 			chain := args[0]
 			originChain := args[1]
-			txID := common.HexToHash(args[2])
-			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, originChain, txID)
+			nativeAsset := args[2]
+			txID := common.HexToHash(args[3])
+			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, originChain, nativeAsset, txID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -267,9 +268,9 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 // GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
 func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-deploy-token [evm chain] [origin chain] [name] [symbol] [decimals] [capacity]",
+		Use:   "create-deploy-token [evm chain] [origin chain] [name] [symbol] [native asset] [decimals] [capacity]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
-		Args:  cobra.ExactArgs(6),
+		Args:  cobra.ExactArgs(7),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -280,16 +281,17 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			originChain := args[1]
 			name := args[2]
 			symbol := args[3]
-			decs, err := strconv.ParseUint(args[4], 10, 8)
+			nativeAsset := args[4]
+			decs, err := strconv.ParseUint(args[5], 10, 8)
 			if err != nil {
 				return fmt.Errorf("could not parse decimals")
 			}
-			capacity, ok := sdk.NewIntFromString(args[5])
+			capacity, ok := sdk.NewIntFromString(args[6])
 			if !ok {
 				return fmt.Errorf("could not parse capacity")
 			}
 
-			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, name, symbol, uint8(decs), capacity)
+			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, originChain, name, symbol, nativeAsset, uint8(decs), capacity)
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -164,6 +164,7 @@
       - [confirm-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+      - [register-asset \[chain\] \[asset\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset for a cosmos based chain
       - [register-path \[asset\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for an asset
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
@@ -190,11 +191,11 @@
       - [add-chain \[name\] \[native asset\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-      - [confirm-erc20-token \[chain\] \[origin chain\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address
+      - [confirm-erc20-token \[chain\] \[origin chain\] \[native asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address
       - [confirm-transfer-operatorship \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
       - [confirm-transfer-ownership \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
       - [create-burn-tokens \[chain\]](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain
-      - [create-deploy-token \[evm chain\] \[origin chain\] \[name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
+      - [create-deploy-token \[evm chain\] \[origin chain\] \[name\] \[symbol\] \[native asset\] \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
       - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction

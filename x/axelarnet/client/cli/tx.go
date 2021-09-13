@@ -29,6 +29,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdExecutePendingTransfersTx(),
 		GetCmdRegisterIBCPathTx(),
 		GetCmdAddCosmosBasedChain(),
+		GetCmdRegisterAsset(),
 	)
 
 	return axelarTxCmd
@@ -157,6 +158,32 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			nativeAsset := args[1]
 
 			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterAsset returns the cli command to register an asset for a cosmos based chain
+func GetCmdRegisterAsset() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-asset [chain] [asset]",
+		Short: "Register a new asset for a cosmos based chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			chain := args[0]
+			asset := args[1]
+
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, asset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

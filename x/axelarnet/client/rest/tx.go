@@ -20,6 +20,7 @@ const (
 	TxExecutePendingTransfers = "execute-pending"
 	TxRegisterIBCPath         = "register-path"
 	TxAddCosmosBasedChain     = "add-cosmos-based-chain"
+	TxRegisterAsset           = "register-asset"
 )
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
@@ -57,6 +58,13 @@ type ReqAddCosmosBasedChain struct {
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 }
 
+// ReqRegisterAsset represents a request to register an asset to a cosmos based chain
+type ReqRegisterAsset struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain   string       `json:"chain" yaml:"chain"`
+	Asset   string       `json:"asset" yaml:"asset"`
+}
+
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
@@ -65,6 +73,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerExecutePendingTransfers(cliCtx), TxExecutePendingTransfers)
 	registerTx(TxHandlerRegisterIBCPath(cliCtx), TxRegisterIBCPath)
 	registerTx(TxHandlerAddCosmosBasedChain(cliCtx), TxAddCosmosBasedChain)
+	registerTx(TxHandlerRegisterAsset(cliCtx), TxRegisterAsset)
 }
 
 // TxHandlerLink returns the handler to link an Axelar address to a cross-chain address
@@ -205,6 +214,33 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// TxHandlerRegisterAsset returns the handler to register an asset to a cosmos based chain
+func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRegisterAsset
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, req.Asset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

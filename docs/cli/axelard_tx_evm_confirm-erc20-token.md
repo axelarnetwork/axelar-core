@@ -3,7 +3,7 @@
 Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address
 
 ```
-axelard tx evm confirm-erc20-token [chain] [origin chain] [txID] [flags]
+axelard tx evm confirm-erc20-token [chain] [origin chain] [native asset] [txID] [flags]
 ```
 
 ### Options

@@ -802,6 +802,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Chain:       evmChain,
 			TxID:        types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			OriginChain: btc.Bitcoin.Name,
+			NativeAsset: btc.Bitcoin.NativeAsset,
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{

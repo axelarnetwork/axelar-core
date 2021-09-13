@@ -44,4 +44,12 @@ service MsgService {
       body : "*"
     };
   }
+  rpc RegisterAsset(RegisterAssetRequest)
+      returns (RegisterAssetResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/register-asset"
+      body : "*"
+    };
+  }
+
 }

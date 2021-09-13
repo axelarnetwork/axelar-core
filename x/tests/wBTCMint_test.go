@@ -130,7 +130,7 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// deploy token
 	createDeployTokenResult := <-chain.Submit(
-		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi", NativeAsset: "satoshi"})
 	assert.NoError(t, createDeployTokenResult.Error)
 	signDeployTokenResult := <-chain.Submit(
 		&evmTypes.SignCommandsRequest{Sender: randomSender(), Chain: "ethereum"})
@@ -155,7 +155,7 @@ func Test_wBTC_mint(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	confirmResult := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
+	confirmResult := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", "satoshi", txHash))
 	assert.NoError(t, confirmResult.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {

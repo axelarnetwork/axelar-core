@@ -124,13 +124,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	originChain, ok := s.nexus.GetChain(ctx, req.OriginChain)
+	_, ok = s.nexus.GetChain(ctx, req.OriginChain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, originChain.NativeAsset) {
-		return nil, fmt.Errorf("token %s is already registered", originChain.NativeAsset)
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.NativeAsset) {
+		return nil, fmt.Errorf("token %s is already registered", req.NativeAsset)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -140,7 +140,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, originChain.NativeAsset, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.NativeAsset, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+originChain.NativeAsset)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.NativeAsset)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -183,20 +183,18 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, originChain.NativeAsset)
+	symbol, ok := keeper.GetTokenSymbol(ctx, req.NativeAsset)
 	if !ok {
-		return nil, fmt.Errorf("could not retrieve symbol for token %s", originChain.NativeAsset)
+		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.NativeAsset)
 	}
 
 	deploy := types.ERC20TokenDeployment{
-		Asset:        originChain.NativeAsset,
+		Asset:        req.NativeAsset,
 		TokenAddress: types.Address(tokenAddr),
 	}
 	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-
-	telemetry.NewLabel("eth_token_addr", tokenAddr.String())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -207,7 +205,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
-			sdk.NewAttribute(types.AttributeKeyAsset, originChain.NativeAsset),
+			sdk.NewAttribute(types.AttributeKeyAsset, req.NativeAsset),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -854,6 +852,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
 	}
 
+	if !s.nexus.IsAssetRegistered(ctx, originChain.Name, req.NativeAsset) {
+		return nil, fmt.Errorf("token %s is not registered on the orgin chain %s", originChain.NativeAsset,  originChain.Name)
+	}
+
 	if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
 		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)
 	}
@@ -875,7 +877,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.TokenName, req.Symbol, chain.Name)
 	}
 
-	keeper.SetTokenInfo(ctx, originChain.NativeAsset, req)
+	keeper.SetTokenInfo(ctx, req.NativeAsset, req)
 	if err := keeper.SetCommand(ctx, command); err != nil {
 		return nil, err
 	}

@@ -49,6 +49,7 @@ message ConfirmTokenRequest {
     (gogoproto.customname) = "TxID"
   ];
   string origin_chain = 4;
+  string native_asset = 5;
 }
 
 message ConfirmTokenResponse {}
@@ -105,6 +106,7 @@ message CreateDeployTokenRequest {
   uint32 decimals = 5 [ (gogoproto.casttype) = "uint8" ];
   string symbol = 6;
   string token_name = 7;
+  string native_asset = 8;
 }
 
 message CreateDeployTokenResponse {}

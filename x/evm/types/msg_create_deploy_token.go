@@ -8,13 +8,14 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain, originChain, tokenName, symbol string, decimals uint8, capacity sdk.Int) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain, originChain, tokenName, symbol, nativeAsset string, decimals uint8, capacity sdk.Int) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:      sender,
 		Chain:       chain,
 		OriginChain: originChain,
 		TokenName:   tokenName,
 		Symbol:      symbol,
+		NativeAsset: nativeAsset,
 		Decimals:    decimals,
 		Capacity:    capacity,
 	}
@@ -57,6 +58,9 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	}
 	if m.Symbol == "" {
 		return fmt.Errorf("missing token symbol")
+	}
+	if m.NativeAsset == "" {
+		return fmt.Errorf("missing token native asset")
 	}
 	if !m.Capacity.IsPositive() {
 		return fmt.Errorf("token capacity must be a positive number")

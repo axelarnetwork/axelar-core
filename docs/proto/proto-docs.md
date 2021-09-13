@@ -26,6 +26,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
+    - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
   
@@ -534,6 +536,33 @@ address
 
 
 
+<a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
+
+### RegisterAssetRequest
+RegisterAssetRequest represents a message to register an asset for a cosmos based chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterAssetResponse"></a>
+
+### RegisterAssetResponse
+
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
 ### RegisterIBCPathRequest
@@ -596,6 +625,7 @@ Msg defines the axelarnet Msg service.
 | `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
+| `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 
  <!-- end services -->
 
@@ -2012,6 +2042,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `origin_chain` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
 
 
 
@@ -2100,6 +2131,7 @@ command for AxelarGateway
 | `decimals` | [uint32](#uint32) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `token_name` | [string](#string) |  |  |
+| `native_asset` | [string](#string) |  |  |
 
 
 
