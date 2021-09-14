@@ -63,7 +63,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QTokenAddress:
 			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
 		case QDepositState:
-			return QueryDepositState(ctx, chainKeeper, n, path[2], path[3])
+			return QueryDepositState(ctx, chainKeeper, n, req.Data)
 		case QBatchedCommands:
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
@@ -289,16 +289,20 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symb
 }
 
 // QueryDepositState returns the state of an ERC20 deposit confirmation
-func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, txID string, depositAddress string) ([]byte, error) {
-
+func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+		return nil, fmt.Errorf("%s is not a registered chain", k.GetName())
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, txID+"_"+depositAddress)
+	var params types.QueryDepositStateParams
+	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
+		return nil, fmt.Errorf("could not unmarshal parameters")
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
 	_, isPending := k.GetPendingDeposit(ctx, pollKey)
-	_, state, ok := k.GetDeposit(ctx, common.HexToHash(txID), common.HexToAddress(depositAddress))
+	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
 
 	var depositState types.QueryDepositStateResponse
 	switch {

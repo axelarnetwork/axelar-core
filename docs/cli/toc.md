@@ -54,7 +54,7 @@
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [deposit-address \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-address.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
-      - [deposit-state \[chain\] \[txID\] \[deposit address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
+      - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [signed-tx \[chain\] \[txID\]](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
