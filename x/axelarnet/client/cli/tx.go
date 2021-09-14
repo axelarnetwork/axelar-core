@@ -169,11 +169,11 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterAsset returns the cli command to register an asset for a cosmos based chain
+// GetCmdRegisterAsset returns the cli command to register an asset to a cosmos based chain
 func GetCmdRegisterAsset() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "register-asset [chain] [asset]",
-		Short: "Register a new asset for a cosmos based chain",
+		Short: "Register a new asset to a cosmos based chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)

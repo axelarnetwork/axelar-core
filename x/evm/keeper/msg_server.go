@@ -831,16 +831,17 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 
 func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
 	keeper := s.ForChain(ctx, req.Chain)
 
 	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
 
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {

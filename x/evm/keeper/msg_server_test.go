@@ -1206,6 +1206,152 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	}).Repeat(repeats))
 }
 
+func TestHandleMsgCreateDeployToken(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		basek  *evmMock.BaseKeeperMock
+		chaink *evmMock.ChainKeeperMock
+		v      *evmMock.VoterMock
+		s      *evmMock.SignerMock
+		n      *evmMock.NexusMock
+		msg    *types.CreateDeployTokenRequest
+		server types.MsgServiceServer
+	)
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		basek = &evmMock.BaseKeeperMock{
+			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return chaink
+				}
+				return nil
+			},
+			GetParamsFunc: func(sdk.Context) []types.Params {
+				return []types.Params{{
+					Chain:               exported.Ethereum.Name,
+					Network:             network,
+					ConfirmationHeight:  uint64(rand.I64Between(1, 10)),
+					Gateway:             bytecodes,
+					Token:               tokenBC,
+					Burnable:            burnerBC,
+					RevoteLockingPeriod: 50,
+					VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
+					MinVoterCount:       15,
+					CommandsGasLimit:    5000000,
+				}}
+			},
+		}
+		chaink = &evmMock.ChainKeeperMock{
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
+				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
+			},
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
+				return big.NewInt(rand.I64Between(1, 1000))
+			},
+			SetTokenInfoFunc: func(ctx sdk.Context, assetName string, msg *types.CreateDeployTokenRequest) {},
+			SetCommandFunc:   func(ctx sdk.Context, command types.Command) error { return nil },
+		}
+
+		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+		n = &evmMock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
+			},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+		}
+		s = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				return tss.Key{}, false
+			},
+		}
+		msg = &types.CreateDeployTokenRequest{
+			Sender:      rand.Bytes(20),
+			Chain:       evmChain,
+			OriginChain: btc.Bitcoin.Name,
+			TokenName:   "Bitcoin",
+			Symbol:      "axelarBTC",
+			NativeAsset: btc.Bitcoin.NativeAsset,
+			Decimals:    8,
+			Capacity:    sdk.NewInt(2100000000000000),
+		}
+
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+		})
+	}
+
+	repeats := 20
+	t.Run("should create deploy token when gateway address is set, chains are registered and asset is registered on the origin chain ", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(chaink.SetTokenInfoCalls()))
+		assert.Equal(t, 1, len(chaink.SetCommandCalls()))
+	}).Repeat(repeats))
+
+	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Chain = rand.StrBetween(5, 20)
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when gateway is not set", testutils.Func(func(t *testing.T) {
+		setup()
+		chaink.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when origin chain is unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.OriginChain = rand.StrBetween(5, 20)
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when asset is not registered on the origin chain", testutils.Func(func(t *testing.T) {
+		setup()
+		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when next master key is set", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			return tss.Key{}, true
+		}
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when master key is not set", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+}
+
 func createSignedDeployTx() *evmTypes.Transaction {
 	generator := rand.PInt64Gen()
 

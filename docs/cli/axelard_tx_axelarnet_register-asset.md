@@ -1,6 +1,6 @@
 ## axelard tx axelarnet register-asset
 
-Register a new asset for a cosmos based chain
+Register a new asset to a cosmos based chain
 
 ```
 axelard tx axelarnet register-asset [chain] [asset] [flags]
