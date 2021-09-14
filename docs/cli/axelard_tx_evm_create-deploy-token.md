@@ -3,7 +3,7 @@
 Create a deploy token command with the AxelarGateway contract
 
 ```
-axelard tx evm create-deploy-token [evm chain] [origin chain] [name] [symbol] [native asset] [decimals] [capacity] [flags]
+axelard tx evm create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol]  [decimals] [capacity] [flags]
 ```
 
 ### Options

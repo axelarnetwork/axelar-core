@@ -149,7 +149,8 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
 	assert.NoError(t, err)
 	keeper := k.ForChain(ctx, chain)
-	keeper.SetTokenInfo(ctx, tokenName, &types.CreateDeployTokenRequest{Sender: account, TokenName: tokenName, Symbol: tokenSymbol, Decimals: decimals, Capacity: capacity})
+	contractDetails := types.NewContractDetails(tokenName, tokenSymbol, decimals, capacity)
+	keeper.SetTokenInfo(ctx, tokenName, &types.CreateDeployTokenRequest{Sender: account, ContractDetails: contractDetails})
 
 	actual, err := keeper.GetTokenAddress(ctx, tokenName, axelarGateway)
 

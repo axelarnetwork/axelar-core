@@ -104,9 +104,11 @@
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [Asset](#evm.v1beta1.Asset)
     - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
+    - [ContractDetails](#evm.v1beta1.ContractDetails)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
@@ -1557,6 +1559,22 @@ Msg defines the bitcoin Msg service.
 
 
 
+<a name="evm.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `name` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.BatchedCommands"></a>
 
 ### BatchedCommands
@@ -1611,6 +1629,24 @@ that is deposited by an user
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ContractDetails"></a>
+
+### ContractDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_name` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `decimals` | [uint32](#uint32) |  |  |
+| `capacity` | [bytes](#bytes) |  |  |
 
 
 
@@ -2042,8 +2078,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `origin_chain` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 
 
 
@@ -2127,12 +2162,8 @@ command for AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `origin_chain` | [string](#string) |  |  |
-| `capacity` | [bytes](#bytes) |  |  |
-| `decimals` | [uint32](#uint32) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `token_name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
+| `contract_details` | [ContractDetails](#evm.v1beta1.ContractDetails) |  |  |
 
 
 

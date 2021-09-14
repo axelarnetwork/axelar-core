@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -253,14 +254,14 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burner
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID *big.Int, keyID string, name string, symbol string, decimals uint8, capacity *big.Int) (Command, error) {
-	params, err := createDeployTokenParams(name, symbol, decimals, capacity)
+func CreateDeployTokenCommand(chainID *big.Int, keyID string, contractDetails ContractDetails) (Command, error) {
+	params, err := createDeployTokenParams(contractDetails.TokenName, contractDetails.Symbol, contractDetails.Decimals, contractDetails.Capacity.BigInt())
 	if err != nil {
 		return Command{}, err
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(symbol), chainID),
+		ID:         NewCommandID([]byte(contractDetails.Symbol), chainID),
 		Command:    axelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
@@ -457,6 +458,50 @@ func (t TransferKeyType) SimpleString() string {
 	default:
 		return "unknown"
 	}
+}
+
+// NewAsset returns a new Asset instance
+func NewAsset(chain, name string) Asset {
+	return Asset{
+		Chain: chain,
+		Name:  name,
+	}
+}
+
+// Validate ensures that all fields are filled with sensible values
+func (m Asset) Validate() error {
+	if m.Chain == "" {
+		return fmt.Errorf("missing asset chain")
+	}
+	if m.Name == "" {
+		return fmt.Errorf("missing asset name")
+	}
+	return nil
+}
+
+// NewContractDetails returns a new ContractDetails instance
+func NewContractDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int) ContractDetails {
+	return ContractDetails{
+		TokenName: tokenName,
+		Symbol:    symbol,
+		Decimals:  decimals,
+		Capacity:  capacity,
+	}
+}
+
+// Validate ensures that all fields are filled with sensible values
+func (m ContractDetails) Validate() error {
+	if m.TokenName == "" {
+		return fmt.Errorf("missing token name")
+	}
+	if m.Symbol == "" {
+		return fmt.Errorf("missing token symbol")
+	}
+	if !m.Capacity.IsPositive() {
+		return fmt.Errorf("token capacity must be a positive number")
+	}
+
+	return nil
 }
 
 func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {

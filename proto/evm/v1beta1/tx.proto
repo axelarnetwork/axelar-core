@@ -48,8 +48,7 @@ message ConfirmTokenRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  string origin_chain = 4;
-  string native_asset = 5;
+  Asset asset = 4 [ (gogoproto.nullable) = false ];
 }
 
 message ConfirmTokenResponse {}
@@ -95,18 +94,12 @@ message CreateBurnTokensResponse {}
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 message CreateDeployTokenRequest {
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  string origin_chain = 3;
-  bytes capacity = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
-  uint32 decimals = 5 [ (gogoproto.casttype) = "uint8" ];
-  string symbol = 6;
-  string token_name = 7;
-  string native_asset = 8;
+  Asset asset = 3 [ (gogoproto.nullable) = false ];
+  ContractDetails contract_details = 4 [ (gogoproto.nullable) = false ];
 }
 
 message CreateDeployTokenResponse {}

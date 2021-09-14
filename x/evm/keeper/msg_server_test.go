@@ -449,7 +449,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.ContractDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -798,11 +798,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 
 		msg = &types.ConfirmTokenRequest{
-			Sender:      rand.Bytes(20),
-			Chain:       evmChain,
-			TxID:        types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			OriginChain: btc.Bitcoin.Name,
-			NativeAsset: btc.Bitcoin.NativeAsset,
+			Sender: rand.Bytes(20),
+			Chain:  evmChain,
+			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset),
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
@@ -1269,16 +1268,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return tss.Key{}, false
 			},
 		}
-		msg = &types.CreateDeployTokenRequest{
-			Sender:      rand.Bytes(20),
-			Chain:       evmChain,
-			OriginChain: btc.Bitcoin.Name,
-			TokenName:   "Bitcoin",
-			Symbol:      "axelarBTC",
-			NativeAsset: btc.Bitcoin.NativeAsset,
-			Decimals:    8,
-			Capacity:    sdk.NewInt(2100000000000000),
-		}
+		msg = createMsgSignDeploy()
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 		})
@@ -1314,7 +1304,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when origin chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		msg.OriginChain = rand.StrBetween(5, 20)
+		msg.Asset.Chain = rand.StrBetween(5, 20)
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1416,5 +1406,7 @@ func createMsgSignDeploy() *types.CreateDeployTokenRequest {
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
-	return &types.CreateDeployTokenRequest{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
+	contractDetails := types.NewContractDetails(name, symbol, decimals, capacity)
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, ContractDetails: contractDetails}
 }

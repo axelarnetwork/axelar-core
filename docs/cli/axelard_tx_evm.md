@@ -29,7 +29,7 @@ axelard tx evm [flags]
 - [axelard tx evm add-chain](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
 - [axelard tx evm confirm-chain](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
 - [axelard tx evm confirm-erc20-deposit](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
-- [axelard tx evm confirm-erc20-token](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given native asset of some origin chain and gateway address
+- [axelard tx evm confirm-erc20-token](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
 - [axelard tx evm confirm-transfer-operatorship](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
 - [axelard tx evm confirm-transfer-ownership](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
 - [axelard tx evm create-burn-tokens](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain

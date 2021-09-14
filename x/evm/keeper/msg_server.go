@@ -124,13 +124,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	_, ok = s.nexus.GetChain(ctx, req.OriginChain)
+	_, ok = s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.NativeAsset) {
-		return nil, fmt.Errorf("token %s is already registered", req.NativeAsset)
+	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset.Name) {
+		return nil, fmt.Errorf("token %s is already registered", req.Asset.Name)
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
@@ -140,7 +140,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.NativeAsset, gatewayAddr)
+	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset.Name, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.NativeAsset)
+	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Asset.Name)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -183,13 +183,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, req.NativeAsset)
+	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset.Name)
 	if !ok {
-		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.NativeAsset)
+		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.Asset.Name)
 	}
 
 	deploy := types.ERC20TokenDeployment{
-		Asset:        req.NativeAsset,
+		Asset:        req.Asset.Name,
 		TokenAddress: types.Address(tokenAddr),
 	}
 	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
@@ -205,7 +205,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
-			sdk.NewAttribute(types.AttributeKeyAsset, req.NativeAsset),
+			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -842,19 +842,18 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-
 	chainID := s.getChainID(ctx, req.Chain)
 	if chainID == nil {
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	originChain, found := s.nexus.GetChain(ctx, req.OriginChain)
+	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !found {
-		return nil, fmt.Errorf("%s is not a registered chain", req.OriginChain)
+		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	if !s.nexus.IsAssetRegistered(ctx, originChain.Name, req.NativeAsset) {
-		return nil, fmt.Errorf("token %s is not registered on the orgin chain %s", originChain.NativeAsset,  originChain.Name)
+	if !s.nexus.IsAssetRegistered(ctx, originChain.Name, req.Asset.Name) {
+		return nil, fmt.Errorf("token %s is not registered on the orgin chain %s", originChain.NativeAsset, originChain.Name)
 	}
 
 	if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
@@ -869,16 +868,13 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	command, err := types.CreateDeployTokenCommand(
 		chainID,
 		masterKeyID,
-		req.TokenName,
-		req.Symbol,
-		req.Decimals,
-		req.Capacity.BigInt(),
+		req.ContractDetails,
 	)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.TokenName, req.Symbol, chain.Name)
+		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.ContractDetails.TokenName, req.ContractDetails.Symbol, chain.Name)
 	}
 
-	keeper.SetTokenInfo(ctx, req.NativeAsset, req)
+	keeper.SetTokenInfo(ctx, req.Asset.Name, req)
 	if err := keeper.SetCommand(ctx, command); err != nil {
 		return nil, err
 	}
