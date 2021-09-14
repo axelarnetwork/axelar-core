@@ -13,7 +13,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
-	gethParams "github.com/ethereum/go-ethereum/params"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -77,7 +76,7 @@ func TestCreateBurnTokens(t *testing.T) {
 				return []types.ERC20Deposit{}
 			},
 			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
-				return sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID).BigInt()
+				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID).BigInt()
 			},
 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit) {},
 			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {},
@@ -250,7 +249,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 3)
 		assert.Len(t, evmChainKeeper.SetDepositCalls(), 3)
 		assert.Len(t, evmChainKeeper.SetCommandCalls(), 1)
-	}).Repeat(1))
+	}).Repeat(repeats))
 }
 
 func TestLink_UnknownChain(t *testing.T) {
