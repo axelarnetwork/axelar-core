@@ -179,7 +179,7 @@ func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(res))
+		rest.PostProcessResponse(w, cliCtx, "0x"+common.Bytes2Hex(res))
 	}
 }
 
@@ -200,7 +200,7 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, common.Bytes2Hex(res))
+		rest.PostProcessResponse(w, cliCtx, "0x"+common.Bytes2Hex(res))
 	}
 }
 
