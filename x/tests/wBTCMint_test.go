@@ -130,9 +130,9 @@ func Test_wBTC_mint(t *testing.T) {
 
 	// deploy token
 	asset := evmTypes.NewAsset("bitcoin", "satoshi")
-	contractDetails := evmTypes.NewContractDetails("Satoshi", "satoshi", 8, sdk.NewInt(100000))
+	tokenDetails := evmTypes.NewTokenDetails("Satoshi", "satoshi", 8, sdk.NewInt(100000))
 	createDeployTokenResult := <-chain.Submit(
-		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Asset: asset, ContractDetails: contractDetails})
+		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Asset: asset, TokenDetails: tokenDetails})
 	assert.NoError(t, createDeployTokenResult.Error)
 	signDeployTokenResult := <-chain.Submit(
 		&evmTypes.SignCommandsRequest{Sender: randomSender(), Chain: "ethereum"})

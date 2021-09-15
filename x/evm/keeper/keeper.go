@@ -264,7 +264,7 @@ func (k keeper) GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool)
 		return "", false
 	}
 
-	return tokenInfo.ContractDetails.Symbol, true
+	return tokenInfo.TokenDetails.Symbol, true
 }
 
 // GetTokenAddress calculates the token address for some asset with the provided axelar gateway address
@@ -282,7 +282,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 	}
 
 	var saltToken [32]byte
-	copy(saltToken[:], crypto.Keccak256Hash([]byte(tokenInfo.ContractDetails.Symbol)).Bytes())
+	copy(saltToken[:], crypto.Keccak256Hash([]byte(tokenInfo.TokenDetails.Symbol)).Bytes())
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
@@ -300,7 +300,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
-	packed, err := arguments.Pack(tokenInfo.ContractDetails.TokenName, tokenInfo.ContractDetails.Symbol, tokenInfo.ContractDetails.Decimals, tokenInfo.ContractDetails.Capacity.BigInt())
+	packed, err := arguments.Pack(tokenInfo.TokenDetails.TokenName, tokenInfo.TokenDetails.Symbol, tokenInfo.TokenDetails.Decimals, tokenInfo.TokenDetails.Capacity.BigInt())
 	if err != nil {
 		return common.Address{}, err
 	}

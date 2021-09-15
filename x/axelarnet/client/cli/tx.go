@@ -172,7 +172,7 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 // GetCmdRegisterAsset returns the cli command to register an asset to a cosmos based chain
 func GetCmdRegisterAsset() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-asset [chain] [asset]",
+		Use:   "register-asset [chain] [denom]",
 		Short: "Register a new asset to a cosmos based chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -181,9 +181,9 @@ func GetCmdRegisterAsset() *cobra.Command {
 				return err
 			}
 			chain := args[0]
-			asset := args[1]
+			denom := args[1]
 
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, asset)
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, denom)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

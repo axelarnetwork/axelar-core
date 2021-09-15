@@ -868,10 +868,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	command, err := types.CreateDeployTokenCommand(
 		chainID,
 		masterKeyID,
-		req.ContractDetails,
+		req.TokenDetails,
 	)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.ContractDetails.TokenName, req.ContractDetails.Symbol, chain.Name)
+		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
 	keeper.SetTokenInfo(ctx, req.Asset.Name, req)

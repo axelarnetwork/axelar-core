@@ -3,7 +3,7 @@
 Register a new asset to a cosmos based chain
 
 ```
-axelard tx axelarnet register-asset [chain] [asset] [flags]
+axelard tx axelarnet register-asset [chain] [denom] [flags]
 ```
 
 ### Options

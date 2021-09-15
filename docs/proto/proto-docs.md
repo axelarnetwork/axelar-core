@@ -108,11 +108,11 @@
     - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
-    - [ContractDetails](#evm.v1beta1.ContractDetails)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
+    - [TokenDetails](#evm.v1beta1.TokenDetails)
     - [TransferKey](#evm.v1beta1.TransferKey)
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
@@ -549,7 +549,7 @@ based chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
+| `denom` | [string](#string) |  |  |
 
 
 
@@ -1635,24 +1635,6 @@ that is deposited by an user
 
 
 
-<a name="evm.v1beta1.ContractDetails"></a>
-
-### ContractDetails
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `token_name` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `decimals` | [uint32](#uint32) |  |  |
-| `capacity` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.ERC20Deposit"></a>
 
 ### ERC20Deposit
@@ -1715,6 +1697,24 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TokenDetails"></a>
+
+### TokenDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_name` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `decimals` | [uint32](#uint32) |  |  |
+| `capacity` | [bytes](#bytes) |  |  |
 
 
 
@@ -2163,7 +2163,7 @@ command for AxelarGateway
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
-| `contract_details` | [ContractDetails](#evm.v1beta1.ContractDetails) |  |  |
+| `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 
 
 

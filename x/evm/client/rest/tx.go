@@ -394,8 +394,8 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
-		contractDetials := types.NewContractDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, contractDetials)
+		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

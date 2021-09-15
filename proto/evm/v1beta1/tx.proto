@@ -99,7 +99,7 @@ message CreateDeployTokenRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   Asset asset = 3 [ (gogoproto.nullable) = false ];
-  ContractDetails contract_details = 4 [ (gogoproto.nullable) = false ];
+  TokenDetails token_details = 4 [ (gogoproto.nullable) = false ];
 }
 
 message CreateDeployTokenResponse {}

@@ -62,7 +62,7 @@ type ReqAddCosmosBasedChain struct {
 type ReqRegisterAsset struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Chain   string       `json:"chain" yaml:"chain"`
-	Asset   string       `json:"asset" yaml:"asset"`
+	Denom   string       `json:"denom" yaml:"denom"`
 }
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -240,7 +240,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, req.Asset)
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, req.Denom)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

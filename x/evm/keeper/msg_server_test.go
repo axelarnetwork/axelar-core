@@ -449,7 +449,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.ContractDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -1208,18 +1208,18 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 func TestHandleMsgCreateDeployToken(t *testing.T) {
 	var (
 		ctx    sdk.Context
-		basek  *evmMock.BaseKeeperMock
-		chaink *evmMock.ChainKeeperMock
-		v      *evmMock.VoterMock
-		s      *evmMock.SignerMock
-		n      *evmMock.NexusMock
+		basek  *mock.BaseKeeperMock
+		chaink *mock.ChainKeeperMock
+		v      *mock.VoterMock
+		s      *mock.SignerMock
+		n      *mock.NexusMock
 		msg    *types.CreateDeployTokenRequest
 		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		basek = &evmMock.BaseKeeperMock{
+		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return chaink
@@ -1241,7 +1241,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				}}
 			},
 		}
-		chaink = &evmMock.ChainKeeperMock{
+		chaink = &mock.ChainKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
@@ -1253,7 +1253,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		}
 
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
-		n = &evmMock.NexusMock{
+		n = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -1407,6 +1407,6 @@ func createMsgSignDeploy() *types.CreateDeployTokenRequest {
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
 	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
-	contractDetails := types.NewContractDetails(name, symbol, decimals, capacity)
-	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, ContractDetails: contractDetails}
+	tokenDetails := types.NewTokenDetails(name, symbol, decimals, capacity)
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: tokenDetails}
 }

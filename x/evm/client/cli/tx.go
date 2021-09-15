@@ -293,8 +293,8 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			}
 
 			asset := types.NewAsset(originChain, originAsset)
-			contractDetails := types.NewContractDetails(tokenName, symbol, uint8(decs), capacity)
-			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, contractDetails)
+			tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
+			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails)
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}

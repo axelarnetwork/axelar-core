@@ -71,7 +71,7 @@ message RegisterAssetRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  string asset = 3;
+  string denom = 3;
 }
 
 message RegisterAssetResponse {}

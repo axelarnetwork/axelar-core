@@ -254,14 +254,14 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burner
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID *big.Int, keyID string, contractDetails ContractDetails) (Command, error) {
-	params, err := createDeployTokenParams(contractDetails.TokenName, contractDetails.Symbol, contractDetails.Decimals, contractDetails.Capacity.BigInt())
+func CreateDeployTokenCommand(chainID *big.Int, keyID string, tokenDetails TokenDetails) (Command, error) {
+	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity.BigInt())
 	if err != nil {
 		return Command{}, err
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(contractDetails.Symbol), chainID),
+		ID:         NewCommandID([]byte(tokenDetails.Symbol), chainID),
 		Command:    axelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
@@ -479,9 +479,9 @@ func (m Asset) Validate() error {
 	return nil
 }
 
-// NewContractDetails returns a new ContractDetails instance
-func NewContractDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int) ContractDetails {
-	return ContractDetails{
+// NewTokenDetails returns a new TokenDetails instance
+func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int) TokenDetails {
+	return TokenDetails{
 		TokenName: tokenName,
 		Symbol:    symbol,
 		Decimals:  decimals,
@@ -490,7 +490,7 @@ func NewContractDetails(tokenName, symbol string, decimals uint8, capacity sdk.I
 }
 
 // Validate ensures that all fields are filled with sensible values
-func (m ContractDetails) Validate() error {
+func (m TokenDetails) Validate() error {
 	if m.TokenName == "" {
 		return fmt.Errorf("missing token name")
 	}

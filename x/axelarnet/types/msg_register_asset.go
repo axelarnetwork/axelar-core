@@ -7,11 +7,11 @@ import (
 )
 
 // NewRegisterAssetRequest is the constructor for RegisterAssetRequest
-func NewRegisterAssetRequest(sender sdk.AccAddress, chain, asset string) *RegisterAssetRequest {
+func NewRegisterAssetRequest(sender sdk.AccAddress, chain, denom string) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
 		Chain:  chain,
-		Asset:  asset,
+		Denom:  denom,
 	}
 }
 
@@ -35,7 +35,7 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain name")
 	}
 
-	if m.Asset == "" {
+	if m.Denom == "" {
 		return fmt.Errorf("missing asset name")
 	}
 

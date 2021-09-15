@@ -8,12 +8,12 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, contractDetails ContractDetails) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
-		Sender:          sender,
-		Chain:           chain,
-		Asset:           asset,
-		ContractDetails: contractDetails,
+		Sender:       sender,
+		Chain:        chain,
+		Asset:        asset,
+		TokenDetails: tokenDetails,
 	}
 }
 
@@ -50,7 +50,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	if err := m.Asset.Validate(); err != nil {
 		return err
 	}
-	if err := m.ContractDetails.Validate(); err != nil {
+	if err := m.TokenDetails.Validate(); err != nil {
 		return err
 	}
 
