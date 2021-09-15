@@ -913,23 +913,30 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 	seen := map[string]bool{}
 	for _, deposit := range deposits {
-		if seen[deposit.BurnerAddress.Hex()] {
+		keeper.DeleteDeposit(ctx, deposit)
+		keeper.SetDeposit(ctx, deposit, types.BURNED)
+
+		burnerAddressHex := deposit.BurnerAddress.Hex()
+
+		if seen[burnerAddressHex] {
 			continue
 		}
 
 		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
 		if burnerInfo == nil {
-			return nil, fmt.Errorf("no burner info found for address %s", deposit.BurnerAddress.Hex())
+			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
 
 		command, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", deposit.BurnerAddress.Hex(), chain.Name)
+			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
 		if err := keeper.SetCommand(ctx, command); err != nil {
 			return nil, err
 		}
+
+		seen[burnerAddressHex] = true
 	}
 
 	return &types.CreateBurnTokensResponse{}, nil
