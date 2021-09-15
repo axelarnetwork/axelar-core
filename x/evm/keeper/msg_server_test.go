@@ -449,7 +449,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
+	assert.Equal(t, types.BurnerInfo{TokenAddress: types.Address(tokenAddr), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(ctx, chain).GetBurnerInfo(ctx, burnAddr))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -798,10 +798,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 
 		msg = &types.ConfirmTokenRequest{
-			Sender:      rand.Bytes(20),
-			Chain:       evmChain,
-			TxID:        types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			OriginChain: btc.Bitcoin.Name,
+			Sender: rand.Bytes(20),
+			Chain:  evmChain,
+			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset),
 		}
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
@@ -1205,6 +1205,143 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	}).Repeat(repeats))
 }
 
+func TestHandleMsgCreateDeployToken(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		basek  *mock.BaseKeeperMock
+		chaink *mock.ChainKeeperMock
+		v      *mock.VoterMock
+		s      *mock.SignerMock
+		n      *mock.NexusMock
+		msg    *types.CreateDeployTokenRequest
+		server types.MsgServiceServer
+	)
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+
+		basek = &mock.BaseKeeperMock{
+			ForChainFunc: func(ctx sdk.Context, chain string) types.ChainKeeper {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return chaink
+				}
+				return nil
+			},
+			GetParamsFunc: func(sdk.Context) []types.Params {
+				return []types.Params{{
+					Chain:               exported.Ethereum.Name,
+					Network:             network,
+					ConfirmationHeight:  uint64(rand.I64Between(1, 10)),
+					Gateway:             bytecodes,
+					Token:               tokenBC,
+					Burnable:            burnerBC,
+					RevoteLockingPeriod: 50,
+					VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
+					MinVoterCount:       15,
+					CommandsGasLimit:    5000000,
+				}}
+			},
+		}
+		chaink = &mock.ChainKeeperMock{
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
+				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
+			},
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
+				return big.NewInt(rand.I64Between(1, 1000))
+			},
+			SetTokenInfoFunc: func(ctx sdk.Context, assetName string, msg *types.CreateDeployTokenRequest) {},
+			SetCommandFunc:   func(ctx sdk.Context, command types.Command) error { return nil },
+		}
+
+		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+		n = &mock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				c, ok := chains[chain]
+				return c, ok
+			},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+		}
+		s = &mock.SignerMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+				return rand.StrBetween(5, 20), true
+			},
+			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				return tss.Key{}, false
+			},
+		}
+		msg = createMsgSignDeploy()
+
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+		})
+	}
+
+	repeats := 20
+	t.Run("should create deploy token when gateway address is set, chains are registered and asset is registered on the origin chain ", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(chaink.SetTokenInfoCalls()))
+		assert.Equal(t, 1, len(chaink.SetCommandCalls()))
+	}).Repeat(repeats))
+
+	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Chain = rand.StrBetween(5, 20)
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when gateway is not set", testutils.Func(func(t *testing.T) {
+		setup()
+		chaink.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when origin chain is unknown", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.Asset.Chain = rand.StrBetween(5, 20)
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when asset is not registered on the origin chain", testutils.Func(func(t *testing.T) {
+		setup()
+		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when next master key is set", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			return tss.Key{}, true
+		}
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when master key is not set", testutils.Func(func(t *testing.T) {
+		setup()
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+}
+
 func createSignedDeployTx() *evmTypes.Transaction {
 	generator := rand.PInt64Gen()
 
@@ -1269,5 +1406,7 @@ func createMsgSignDeploy() *types.CreateDeployTokenRequest {
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 
-	return &types.CreateDeployTokenRequest{Sender: account, TokenName: name, Symbol: symbol, Decimals: decimals, Capacity: capacity}
+	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
+	tokenDetails := types.NewTokenDetails(name, symbol, decimals, capacity)
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: tokenDetails}
 }

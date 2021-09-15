@@ -51,6 +51,13 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 				result.Log = fmt.Sprintf("successfully added chain %s with native asset %s", msg.Chain.Name, msg.Chain.NativeAsset)
 			}
 			return result, err
+		case *types.RegisterAssetRequest:
+			res, err := server.RegisterAsset(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully registered asset %s to chain %s", msg.Denom, msg.Chain)
+			}
+			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

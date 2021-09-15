@@ -26,6 +26,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
+    - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
   
@@ -102,6 +104,7 @@
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [Asset](#evm.v1beta1.Asset)
     - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
@@ -109,6 +112,7 @@
     - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
+    - [TokenDetails](#evm.v1beta1.TokenDetails)
     - [TransferKey](#evm.v1beta1.TransferKey)
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
@@ -534,6 +538,34 @@ address
 
 
 
+<a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
+
+### RegisterAssetRequest
+RegisterAssetRequest represents a message to register an asset to a cosmos
+based chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `denom` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterAssetResponse"></a>
+
+### RegisterAssetResponse
+
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
 ### RegisterIBCPathRequest
@@ -596,6 +628,7 @@ Msg defines the axelarnet Msg service.
 | `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
+| `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 
  <!-- end services -->
 
@@ -1526,6 +1559,22 @@ Msg defines the bitcoin Msg service.
 
 
 
+<a name="evm.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `name` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.BatchedCommands"></a>
 
 ### BatchedCommands
@@ -1648,6 +1697,24 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TokenDetails"></a>
+
+### TokenDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_name` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `decimals` | [uint32](#uint32) |  |  |
+| `capacity` | [bytes](#bytes) |  |  |
 
 
 
@@ -2011,7 +2078,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `origin_chain` | [string](#string) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 
 
 
@@ -2095,11 +2162,8 @@ command for AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `origin_chain` | [string](#string) |  |  |
-| `capacity` | [bytes](#bytes) |  |  |
-| `decimals` | [uint32](#uint32) |  |  |
-| `symbol` | [string](#string) |  |  |
-| `token_name` | [string](#string) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
+| `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 
 
 

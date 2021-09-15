@@ -130,8 +130,10 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// deploy token
+	asset := evmTypes.NewAsset("bitcoin", "satoshi")
+	tokenDetails := evmTypes.NewTokenDetails( "Satoshi", "satoshi", 8, sdk.NewInt(100000))
 	createDeployTokenResult := <-chain.Submit(
-		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", OriginChain: "bitcoin", Capacity: sdk.NewInt(100000), Decimals: 8, Symbol: "satoshi", TokenName: "Satoshi"})
+		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Asset: asset, TokenDetails: tokenDetails})
 	assert.NoError(t, createDeployTokenResult.Error)
 	signDeployTokenResult := <-chain.Submit(
 		&evmTypes.SignCommandsRequest{Sender: randomSender(), Chain: "ethereum"})
@@ -156,7 +158,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", "bitcoin", txHash))
+	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", asset, txHash))
 	assert.NoError(t, confirmResult1.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {

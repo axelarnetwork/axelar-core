@@ -8,15 +8,12 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain, originChain, tokenName, symbol string, decimals uint8, capacity sdk.Int) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
-		Sender:      sender,
-		Chain:       chain,
-		OriginChain: originChain,
-		TokenName:   tokenName,
-		Symbol:      symbol,
-		Decimals:    decimals,
-		Capacity:    capacity,
+		Sender:       sender,
+		Chain:        chain,
+		Asset:        asset,
+		TokenDetails: tokenDetails,
 	}
 }
 
@@ -49,17 +46,12 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	if m.Chain == "" {
 		return fmt.Errorf("missing chain")
 	}
-	if m.OriginChain == "" {
-		return fmt.Errorf("missing origin chain")
+
+	if err := m.Asset.Validate(); err != nil {
+		return err
 	}
-	if m.TokenName == "" {
-		return fmt.Errorf("missing token name")
-	}
-	if m.Symbol == "" {
-		return fmt.Errorf("missing token symbol")
-	}
-	if !m.Capacity.IsPositive() {
-		return fmt.Errorf("token capacity must be a positive number")
+	if err := m.TokenDetails.Validate(); err != nil {
+		return err
 	}
 
 	return nil

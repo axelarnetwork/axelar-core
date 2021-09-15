@@ -234,8 +234,22 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	s.nexus.SetChain(ctx, req.Chain)
 	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx,  req.Chain.Name, req.Chain.NativeAsset)
 
 	return &types.AddCosmosBasedChainResponse{}, nil
+}
+
+// RegisterAsset handles register an asset to a cosmos based chain
+func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequest) (*types.RegisterAssetResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if _, found := s.nexus.GetChain(ctx, req.Chain); !found {
+		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
+	}
+
+	s.nexus.RegisterAsset(ctx, req.Chain, req.Denom)
+
+	return &types.RegisterAssetResponse{}, nil
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})

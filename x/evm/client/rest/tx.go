@@ -93,6 +93,7 @@ type ReqConfirmChain struct {
 type ReqConfirmTokenDeploy struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
+	OriginAsset string       `json:"origin_asset" yaml:"origin_asset"`
 	TxID        string       `json:"tx_id" yaml:"tx_id"`
 }
 
@@ -126,8 +127,9 @@ type ReqCreatePendingTransfers struct {
 type ReqCreateDeployToken struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
+	OriginAsset string       `json:"origin_asset" yaml:"origin_asset"`
 	Symbol      string       `json:"symbol" yaml:"symbol"`
-	Name        string       `json:"name" yaml:"name"`
+	TokenName   string       `json:"token_name" yaml:"token_name"`
 	Decimals    string       `json:"decimals" yaml:"decimals"`
 	Capacity    string       `json:"capacity" yaml:"capacity"`
 }
@@ -212,7 +214,8 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID := common.HexToHash(req.TxID)
-		msg := types.NewConfirmTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, txID)
+		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
+		msg := types.NewConfirmTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, txID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -390,7 +393,9 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
 
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.OriginChain, req.Name, req.Symbol, uint8(decs), capacity)
+		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
+		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

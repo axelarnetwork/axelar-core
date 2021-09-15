@@ -144,3 +144,18 @@ enum DepositStatus {
       [ (gogoproto.enumvalue_customname) = "Confirmed" ];
   DEPOSIT_STATUS_BURNED = 3 [ (gogoproto.enumvalue_customname) = "Burned" ];
 }
+
+message Asset {
+  string chain = 1;
+  string name = 2;
+}
+
+message TokenDetails {
+  string token_name = 1;
+  string symbol = 2;
+  uint32 decimals = 3 [ (gogoproto.casttype) = "uint8" ];
+  bytes capacity = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}
