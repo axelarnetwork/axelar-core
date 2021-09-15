@@ -270,6 +270,38 @@ func GetHandlerQuerySendTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// GetHandlerQueryDepositAddress returns a handler to query the state of a deposit address
+func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		recipientChain := mux.Vars(r)[utils.PathVarRecipientChain]
+		linkedAddress := mux.Vars(r)[utils.PathVarLinkedAddress]
+		symbol := mux.Vars(r)[utils.PathvarSymbol]
+
+		params := types.DepositQueryParams{
+			Chain:   recipientChain,
+			Address: linkedAddress,
+			Symbol:  symbol,
+		}
+		data := types.ModuleCdc.MustMarshalJSON(&params)
+
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddress, chain), data)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
+			return
+		}
+
+		out := common.BytesToAddress(bz)
+		rest.PostProcessResponse(w, cliCtx, out.Hex())
+	}
+}
+
 // GetHandlerQueryDepositState returns a handler to query the state of an ERC20 deposit confirmation
 func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -280,10 +312,18 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		chain := mux.Vars(r)[utils.PathVarChain]
-		txID := mux.Vars(r)[utils.PathVarTxID]
-		depositAddress := mux.Vars(r)[utils.PathVarEthereumAddress]
+		txID := common.HexToHash(mux.Vars(r)[utils.PathVarTxID])
+		burnerAddress := common.HexToAddress(mux.Vars(r)[utils.PathVarEthereumAddress])
+		amount := sdk.NewUintFromString(mux.Vars(r)[utils.PathVarAmount])
 
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s/%s", types.QuerierRoute, keeper.QDepositState, chain, txID, depositAddress), nil)
+		params := types.QueryDepositStateParams{
+			TxID:          types.Hash(txID),
+			BurnerAddress: types.Address(burnerAddress),
+			Amount:        amount.Uint64(),
+		}
+		data := types.ModuleCdc.MustMarshalJSON(&params)
+
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositState, chain), data)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
 			return
