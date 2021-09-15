@@ -6,7 +6,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
 import "bitcoin/v1beta1/types.proto";
 import "vote/exported/v1beta1/types.proto";
 import "gogoproto/gogo.proto";
-import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -85,12 +84,20 @@ message CreateMasterTxRequest {
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
+message CreateRescueTxResponse {}
+
+message CreateRescueTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+}
+
 message CreateMasterTxResponse {}
 
 message SignTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  tss.exported.v1beta1.KeyRole key_role = 2;
+  bitcoin.v1beta1.TxType tx_type = 2;
 }
 
 message SignTxResponse {}

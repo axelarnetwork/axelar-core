@@ -24,7 +24,7 @@ const (
 	QConsolidationAddressByKeyID   = "consolidationAddrByKeyID"
 	QNextKeyID                     = "nextKeyID"
 	QMinOutputAmount               = "minOutputAmount"
-	QLatestTxByKeyRole             = "latestTxByKeyRole"
+	QLatestTxByTxType              = "latestTxByKeyRole"
 	QSignedTx                      = "signedTx"
 	QDepositStatus                 = "depositStatus"
 	QExternalKeyID                 = "externalKeyID"
@@ -50,8 +50,8 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			res, err = QueryExternalKeyID(ctx, k)
 		case QMinOutputAmount:
 			res = QueryMinOutputAmount(ctx, k)
-		case QLatestTxByKeyRole:
-			res, err = QueryLatestTxByKeyRole(ctx, k, path[1])
+		case QLatestTxByTxType:
+			res, err = QueryLatestTxByTxType(ctx, k, path[1])
 		case QSignedTx:
 			res, err = QuerySignedTx(ctx, k, path[1])
 		default:
@@ -201,18 +201,18 @@ func QueryMinOutputAmount(ctx sdk.Context, k types.BTCKeeper) []byte {
 	return bz
 }
 
-// QueryLatestTxByKeyRole returns the latest consolidation transaction of the given key role
-func QueryLatestTxByKeyRole(ctx sdk.Context, k types.BTCKeeper, keyRoleStr string) ([]byte, error) {
-	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
+// QueryLatestTxByTxType returns the latest consolidation transaction of the given tx type
+func QueryLatestTxByTxType(ctx sdk.Context, k types.BTCKeeper, txTypeStr string) ([]byte, error) {
+	txType, err := types.TxTypeFromSimpleStr(txTypeStr)
 	if err != nil {
 		return nil, err
 	}
 
-	unsignedTx, ok := k.GetUnsignedTx(ctx, keyRole)
+	unsignedTx, ok := k.GetUnsignedTx(ctx, txType)
 	if ok {
 		prevSignedTxHashHex := ""
 
-		prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
+		prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, txType)
 		if ok {
 			prevSignedTxHashHex = prevSignedTxHash.String()
 		}
@@ -249,14 +249,14 @@ func QueryLatestTxByKeyRole(ctx sdk.Context, k types.BTCKeeper, keyRoleStr strin
 		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
 	}
 
-	latestSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
+	latestSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, txType)
 	if !ok {
-		return nil, fmt.Errorf("no consolidation transaction exists for the %s key", keyRole.SimpleString())
+		return nil, fmt.Errorf("no %s transaction exists", txType.SimpleString())
 	}
 
 	signedTx, ok := k.GetSignedTx(ctx, *latestSignedTxHash)
 	if !ok {
-		return nil, fmt.Errorf("cannot find the latest signed consolidation transaction for the %s key", keyRole.SimpleString())
+		return nil, fmt.Errorf("cannot find the latest signed %s transaction", txType.SimpleString())
 	}
 
 	prevSignedTxHashHex := ""

@@ -615,7 +615,7 @@ func TestCreateMasterTx(t *testing.T) {
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
-			GetUnsignedTxFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 				return types.UnsignedTx{}, false
 			},
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
@@ -650,7 +650,7 @@ func TestCreateMasterTx(t *testing.T) {
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressFunc:           func(ctx sdk.Context, address types.AddressInfo) {},
-			SetUnsignedTxFunc:        func(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {},
+			SetUnsignedTxFunc:        func(ctx sdk.Context, tx types.UnsignedTx) {},
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{}
@@ -961,8 +961,8 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
-			if keyRole == tss.SecondaryKey {
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
+			if txType == types.SecondaryConsolidation {
 				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
 			}
 
@@ -1085,7 +1085,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
-			GetUnsignedTxFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 				return types.UnsignedTx{}, false
 			},
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
@@ -1122,7 +1122,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressFunc:           func(ctx sdk.Context, address types.AddressInfo) {},
-			SetUnsignedTxFunc:        func(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {},
+			SetUnsignedTxFunc:        func(ctx sdk.Context, tx types.UnsignedTx) {},
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{
@@ -1470,8 +1470,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 	t.Run("should return error if consolidating to a new key while the master key is sending coin to the current secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
-			if keyRole == tss.MasterKey {
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
+			if txType == types.MasterConsolidation {
 				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
 			}
 

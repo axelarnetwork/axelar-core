@@ -5,43 +5,43 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewSignTxRequest is the constructor for SignTxRequest
-func NewSignTxRequest(sender sdk.AccAddress, txType TxType) *SignTxRequest {
-	return &SignTxRequest{
+// NewCreateRescueTxRequest is the constructor for CreateRescueTxRequest
+func NewCreateRescueTxRequest(sender sdk.AccAddress, keyID string) *CreateRescueTxRequest {
+	return &CreateRescueTxRequest{
 		Sender: sender,
-		TxType: txType,
+		KeyID:  keyID,
 	}
 }
 
 // Route returns the route for this message
-func (m SignTxRequest) Route() string {
+func (m CreateRescueTxRequest) Route() string {
 	return RouterKey
 }
 
 // Type returns the type of the message
-func (m SignTxRequest) Type() string {
-	return "SignTx"
+func (m CreateRescueTxRequest) Type() string {
+	return "SignRescueTransaction"
 }
 
 // ValidateBasic executes a stateless message validation
-func (m SignTxRequest) ValidateBasic() error {
+func (m CreateRescueTxRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.TxType.Validate(); err != nil {
-		return sdkerrors.Wrap(ErrBitcoin, err.Error())
+	if m.KeyID == "" {
+		return sdkerrors.Wrap(ErrBitcoin, "key id must be set")
 	}
 
 	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed
-func (m SignTxRequest) GetSignBytes() []byte {
+func (m CreateRescueTxRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners returns the set of signers for this message
-func (m SignTxRequest) GetSigners() []sdk.AccAddress {
+func (m CreateRescueTxRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

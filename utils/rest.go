@@ -24,6 +24,7 @@ const (
 	PathVarCommandID         = "CommandID"
 	PathVarBatchedCommandsID = "BatchedCommandsID"
 	PathVarKeyRole           = "KeyRole"
+	PathVarTxType            = "txType"
 	PathVarKeyID             = "KeyID"
 	PathVarSigID             = "SigID"
 	PathVarOutpoint          = "Outpoint"

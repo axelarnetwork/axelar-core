@@ -157,7 +157,7 @@ func QueryHandlerMinOutputAmount(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerLatestTx returns a handler to query the latest consolidation transaction of the given key role
+// QueryHandlerLatestTx returns a handler to query the latest consolidation transaction of the given tx type
 func QueryHandlerLatestTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -167,7 +167,7 @@ func QueryHandlerLatestTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QLatestTxByKeyRole, vars[utils.PathVarKeyRole])
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QLatestTxByTxType, vars[utils.PathVarTxType])
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {

@@ -602,8 +602,9 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 }
 
 // NewSignedTx is the constructor for SignedTx
-func NewSignedTx(tx *wire.MsgTx, confirmationRequired bool, anyoneCanSpendVout uint32) SignedTx {
+func NewSignedTx(txType TxType, tx *wire.MsgTx, confirmationRequired bool, anyoneCanSpendVout uint32) SignedTx {
 	return SignedTx{
+		Type:                 txType,
 		Tx:                   MustEncodeTx(tx),
 		ConfirmationRequired: confirmationRequired,
 		AnyoneCanSpendVout:   anyoneCanSpendVout,
@@ -617,8 +618,9 @@ func (m SignedTx) GetTx() *wire.MsgTx {
 }
 
 // NewUnsignedTx is the constructor for UnsignedTx
-func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, internalTransferAmount btcutil.Amount) UnsignedTx {
+func NewUnsignedTx(txType TxType, tx *wire.MsgTx, anyoneCanSpendVout uint32, internalTransferAmount btcutil.Amount) UnsignedTx {
 	unsignedTx := UnsignedTx{
+		Type:                   txType,
 		Tx:                     MustEncodeTx(tx),
 		Status:                 Created,
 		ConfirmationRequired:   false,
@@ -669,4 +671,53 @@ func NewSigRequirement(keyID string, sigHash []byte) UnsignedTx_Info_InputInfo_S
 		KeyID:   keyID,
 		SigHash: sigHash,
 	}
+}
+
+// GetTxTypes returns an array of all types of key role
+func GetTxTypes() []TxType {
+	var results []TxType
+
+	for i := 1; i < len(TxType_value); i++ {
+		results = append(results, TxType(i))
+	}
+
+	return results
+}
+
+// TxTypeFromSimpleStr creates a TxType from string
+func TxTypeFromSimpleStr(str string) (TxType, error) {
+	switch strings.ToLower(str) {
+	case MasterConsolidation.SimpleString():
+		return MasterConsolidation, nil
+	case SecondaryConsolidation.SimpleString():
+		return SecondaryConsolidation, nil
+	case Rescue.SimpleString():
+		return Rescue, nil
+	default:
+		return -1, fmt.Errorf("invalid tx type %s", str)
+	}
+}
+
+// SimpleString returns a human-readable string
+func (t TxType) SimpleString() string {
+	switch t {
+	case MasterConsolidation:
+		return "master"
+	case SecondaryConsolidation:
+		return "secondary"
+	case Rescue:
+		return "rescue"
+	default:
+		return "unknown"
+	}
+}
+
+// Validate validates the TxType
+func (t TxType) Validate() error {
+	txTypeStr, ok := TxType_name[int32(t)]
+	if !ok || TxTypeUnspecified.String() == txTypeStr {
+		return fmt.Errorf("invalid tx type %d", t)
+	}
+
+	return nil
 }
