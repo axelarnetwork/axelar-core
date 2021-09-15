@@ -126,6 +126,7 @@
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
+    - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
@@ -1855,6 +1856,23 @@ deposit address
 | `signature` | [string](#string) |  |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateParams"></a>
+
+### QueryDepositStateParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+| `amount` | [uint64](#uint64) |  |  |
 
 
 
