@@ -6,10 +6,9 @@ import (
 )
 
 // NewCreateRescueTxRequest is the constructor for CreateRescueTxRequest
-func NewCreateRescueTxRequest(sender sdk.AccAddress, keyID string) *CreateRescueTxRequest {
+func NewCreateRescueTxRequest(sender sdk.AccAddress) *CreateRescueTxRequest {
 	return &CreateRescueTxRequest{
 		Sender: sender,
-		KeyID:  keyID,
 	}
 }
 
@@ -27,10 +26,6 @@ func (m CreateRescueTxRequest) Type() string {
 func (m CreateRescueTxRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-
-	if m.KeyID == "" {
-		return sdkerrors.Wrap(ErrBitcoin, "key id must be set")
 	}
 
 	return nil

@@ -39,7 +39,7 @@ const (
 	scheduledKeygenPrefix      = "scheduled_keygen_"
 	scheduledSignPrefix        = "scheduled_sign_"
 	sigStatusPrefix            = "sig_status_"
-	rotationCountOfKeyIdPrefix = "rotation_count_of_key_id_"
+	rotationCountOfKeyIDPrefix = "rotation_count_of_key_id_"
 )
 
 // Keeper allows access to the broadcast state

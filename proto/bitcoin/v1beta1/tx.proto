@@ -89,7 +89,6 @@ message CreateRescueTxResponse {}
 message CreateRescueTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
 }
 
 message CreateMasterTxResponse {}

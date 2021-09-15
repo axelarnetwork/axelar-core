@@ -88,7 +88,6 @@ type ReqCreateMasterConsolidationTx struct {
 // ReqCreateRescueTx represents a request to create a rescue transaction
 type ReqCreateRescueTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // ReqSignTx represents a request to sign a consolidation transaction
@@ -261,7 +260,7 @@ func TxHandlerCreateRescueTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewCreateRescueTxRequest(fromAddr, req.KeyID)
+		msg := types.NewCreateRescueTxRequest(fromAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

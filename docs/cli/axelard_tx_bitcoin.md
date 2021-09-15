@@ -29,7 +29,7 @@ axelard tx bitcoin [flags]
 - [axelard tx bitcoin confirm-tx-out](axelard_tx_bitcoin_confirm-tx-out.md)	 - Confirm a Bitcoin transaction
 - [axelard tx bitcoin create-master-tx](axelard_tx_bitcoin_create-master-tx.md)	 - Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by \[keyID\]
 - [axelard tx bitcoin create-pending-transfers-tx](axelard_tx_bitcoin_create-pending-transfers-tx.md)	 - Create a Bitcoin transaction for all pending transfers
-- [axelard tx bitcoin create-rescue-tx](axelard_tx_bitcoin_create-rescue-tx.md)	 - Create a Bitcoin transaction for rescuing the outpoints that were sent to an old key \[keyID\]
+- [axelard tx bitcoin create-rescue-tx](axelard_tx_bitcoin_create-rescue-tx.md)	 - Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys
 - [axelard tx bitcoin link](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
 - [axelard tx bitcoin register-external-keys](axelard_tx_bitcoin_register-external-keys.md)	 - Register the external key for bitcoin
 - [axelard tx bitcoin sign-tx](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role

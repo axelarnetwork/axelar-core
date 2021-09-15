@@ -1,9 +1,9 @@
 ## axelard tx bitcoin create-rescue-tx
 
-Create a Bitcoin transaction for rescuing the outpoints that were sent to an old key \[keyID\]
+Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys
 
 ```
-axelard tx bitcoin create-rescue-tx [keyID] [flags]
+axelard tx bitcoin create-rescue-tx [flags]
 ```
 
 ### Options

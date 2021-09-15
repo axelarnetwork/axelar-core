@@ -1376,7 +1376,6 @@ of a secondary key consolidation transaction
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
 
 
 

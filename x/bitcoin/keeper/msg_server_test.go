@@ -2,8 +2,6 @@ package keeper_test
 
 import (
 	"bytes"
-	"crypto/ecdsa"
-	cryptoRand "crypto/rand"
 	"fmt"
 	mathRand "math/rand"
 	"strconv"
@@ -34,6 +32,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 )
@@ -46,17 +45,47 @@ func TestHandleMsgLink(t *testing.T) {
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		msg         *types.LinkRequest
+
+		externalKeys []tss.Key
 	)
 	setup := func() {
-		btcKeeper = &mock.BTCKeeperMock{
-			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
-			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
+		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeys = make([]tss.Key, externalKeyCount)
+		for i := 0; i < int(externalKeyCount); i++ {
+			externalKeys[i] = createRandomKey(tss.ExternalKey)
 		}
-		signer = &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}, true
-		}}
+
+		btcKeeper = &mock.BTCKeeperMock{
+			GetNetworkFunc:                   func(ctx sdk.Context) types.Network { return types.Mainnet },
+			SetAddressFunc:                   func(sdk.Context, types.AddressInfo) {},
+			LoggerFunc:                       func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold { return types.DefaultParams().ExternalMultisigThreshold },
+			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressExternalKeyLockDuration
+			},
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
+				externalKeyIDs := make([]string, len(externalKeys))
+				for i := 0; i < len(externalKeyIDs); i++ {
+					externalKeyIDs[i] = externalKeys[i].ID
+				}
+
+				return externalKeyIDs, true
+			},
+		}
+		signer = &mock.SignerMock{
+			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				return createRandomKey(tss.SecondaryKey, time.Now()), true
+			},
+			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+				for _, externalKey := range externalKeys {
+					if keyID == externalKey.ID {
+						return externalKey, true
+					}
+				}
+
+				return tss.Key{}, false
+			},
+		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
@@ -232,6 +261,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		depositAddressInfo  types.AddressInfo
 	)
 	setup := func() {
+		rotationCount := rand.I64Between(100, 1000)
 		address := randomAddress()
 		info = randomOutpointInfo()
 		msg = randomMsgVoteConfirmOutpoint()
@@ -275,12 +305,32 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 				return nexus.CrossChainAddress{Chain: nexus.Chain{}, Address: ""}, true
 			},
 		}
-		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		currentSecondaryKey = tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}
+		currentSecondaryKey = createRandomKey(tss.SecondaryKey, time.Now())
 		signerKeeper := &mock.SignerMock{
 			GetNextKeyFunc:    func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false },
 			GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return currentSecondaryKey, true },
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
+			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+				if keyID == currentSecondaryKey.ID {
+					return currentSecondaryKey, true
+				}
+
+				switch keyID {
+				case currentSecondaryKey.ID:
+					return currentSecondaryKey, true
+				case depositAddressInfo.KeyID:
+					return createRandomKey(tss.SecondaryKey), true
+				}
+
+				return tss.Key{}, false
+			},
+			GetRotationCountOfKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+				return rotationCount - tsstypes.DefaultParams().UnbondingLockingKeyRotationCount + 1, true
+			},
+			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
+				return rotationCount
+			},
+			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 { return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		snapshotter := &mock.SnapshotterMock{GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
@@ -942,7 +992,7 @@ func TestCreateMasterTx(t *testing.T) {
 		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has outpoints to be signed and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
@@ -955,7 +1005,7 @@ func TestCreateMasterTx(t *testing.T) {
 		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", testutils.Func(func(t *testing.T) {
@@ -1189,6 +1239,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 				return nil
 			},
+			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 { return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount },
 		}
 		snapshotter := &mock.SnapshotterMock{}
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
@@ -1451,7 +1502,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has outpoints to be signed and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
@@ -1464,7 +1515,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the master key is sending coin to the current secondary key", testutils.Func(func(t *testing.T) {

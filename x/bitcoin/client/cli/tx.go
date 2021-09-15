@@ -169,9 +169,9 @@ func GetCmdCreateMasterConsolidationTx() *cobra.Command {
 // GetCmdCreateRescueTx returns the cli command to create a rescue transaction
 func GetCmdCreateRescueTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-rescue-tx [keyID]",
-		Short: "Create a Bitcoin transaction for rescuing the outpoints that were sent to an old key [keyID]",
-		Args:  cobra.ExactArgs(1),
+		Use:   "create-rescue-tx",
+		Short: "Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys",
+		Args:  cobra.ExactArgs(0),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -180,7 +180,7 @@ func GetCmdCreateRescueTx() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewCreateRescueTxRequest(clientCtx.GetFromAddress(), args[0])
+		msg := types.NewCreateRescueTxRequest(clientCtx.GetFromAddress())
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

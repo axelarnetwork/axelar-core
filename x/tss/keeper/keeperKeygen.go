@@ -322,11 +322,12 @@ func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator
 }
 
 func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID string, rotationCount int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIdPrefix, keyID)), k.cdc.MustMarshalBinaryLengthPrefixed(rotationCount))
+	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)), k.cdc.MustMarshalBinaryLengthPrefixed(rotationCount))
 }
 
+// GetRotationCountOfKeyID returns the rotation count of the given key ID
 func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIdPrefix, keyID)))
+	bz := ctx.KVStore(k.storeKey).Get([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)))
 	if bz == nil {
 		return 0, false
 	}

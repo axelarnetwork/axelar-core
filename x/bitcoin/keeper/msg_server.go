@@ -145,7 +145,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddressInfo := types.NewDepositAddress(masterKey, secondaryKey, s.GetNetwork(ctx), recipient)
+	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient)
+	if err != nil {
+		return nil, err
+	}
+
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
 	s.SetAddress(ctx, depositAddressInfo)
 
@@ -322,8 +326,14 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	}
 
 	currRotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, key.Role)
+	_, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, key.Role)
+	if nextKeyFound {
+		currRotationCount++
+	}
+
 	if currRotationCount-rotationCount > s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx) {
-		return nil, fmt.Errorf("cannot confirm outpoint of the old key %s", addr.KeyID)
+		return &types.VoteConfirmOutpointResponse{
+			Status: fmt.Sprintf("cannot confirm outpoint of the old key %s anymore", addr.KeyID)}, nil
 	}
 
 	switch addr.Role {
@@ -524,20 +534,6 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 		return nil, fmt.Errorf("rescue in progress")
 	}
 
-	key, ok := s.signer.GetKey(ctx, req.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("cannot find key %s", req.KeyID)
-	}
-
-	currKeyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, key.Role)
-	if !ok {
-		return nil, fmt.Errorf("current %s key not set", key.Role)
-	}
-
-	if key.ID == currKeyID {
-		return nil, fmt.Errorf("cannot rescue outpoints of the current %s key", key.Role)
-	}
-
 	var latestSecondaryKey tss.Key
 	if nextKey, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, tss.SecondaryKey); nextKeyFound {
 		latestSecondaryKey = nextKey
@@ -554,10 +550,28 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 	}
 
 	tx := types.CreateTx()
+	inputsTotal := sdk.ZeroInt()
 
-	inputsTotal, err := addInputs(ctx, s.BTCKeeper, tx, req.KeyID)
-	if err != nil {
-		return nil, err
+	unbondingLockingKeyRotationCount := s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx)
+	for i := int(unbondingLockingKeyRotationCount); i > 0; i-- {
+		for _, keyRole := range tss.GetKeyRoles() {
+			rotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, keyRole)
+			key, ok := s.signer.GetKeyByRotationCount(ctx, exported.Bitcoin, keyRole, rotationCount-int64(i))
+			if !ok {
+				continue
+			}
+
+			total, err := addInputs(ctx, s.BTCKeeper, tx, key.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			inputsTotal = inputsTotal.Add(total)
+		}
+	}
+
+	if len(tx.TxIn) == 0 {
+		return nil, fmt.Errorf("no rescue needed")
 	}
 
 	if err := types.AddOutput(tx, s.BTCKeeper.GetAnyoneCanSpendAddress(ctx).GetAddress(), s.BTCKeeper.GetMinOutputAmount(ctx)); err != nil {
@@ -576,7 +590,7 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
 	if change.Sign() <= 0 {
-		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for %s transaction of key %s", inputsTotal.Int64(), fee.Int64(), types.Rescue.SimpleString(), req.KeyID)
+		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for the %s transaction", inputsTotal.Int64(), fee.Int64(), types.Rescue.SimpleString())
 	}
 
 	if err := types.AddOutput(tx, secondaryAddress.GetAddress(), btcutil.Amount(change.Int64())); err != nil {
@@ -597,7 +611,7 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 		sdk.NewAttribute(types.AttributeTxType, types.Rescue.SimpleString()),
 	))
 
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully created %s transaction for key %s", types.Rescue.SimpleString(), req.KeyID))
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully created %s transaction", types.Rescue.SimpleString()))
 
 	return &types.CreateRescueTxResponse{}, nil
 }
@@ -1077,14 +1091,44 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 	return nil
 }
 
+func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key, recipient nexus.CrossChainAddress) (types.AddressInfo, error) {
+	if key.Role != tss.SecondaryKey {
+		return types.AddressInfo{}, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
+	}
+
+	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalKeys, err := getExternalKeys(ctx, k, s)
+	if err != nil {
+		return types.AddressInfo{}, err
+	}
+	if len(externalKeys) != int(externalMultisigThreshold.Denominator) {
+		return types.AddressInfo{}, fmt.Errorf("number of external keys does not match the threshold and re-register is needed")
+	}
+
+	if key.RotatedAt == nil {
+		return types.AddressInfo{}, fmt.Errorf("cannot get deposit address of key %s which is not rotated yet", key.ID)
+	}
+	externalKeyLockTime := key.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
+
+	return types.NewDepositAddress(
+		key,
+		externalMultisigThreshold.Numerator,
+		externalKeys,
+		externalKeyLockTime,
+		recipient,
+		k.GetNetwork(ctx),
+	), nil
+}
+
 func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, key tss.Key) (types.AddressInfo, error) {
 	if key.Role != tss.SecondaryKey {
 		return types.AddressInfo{}, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
 	}
 
-	consolidationAddress := types.NewSecondaryConsolidationAddress(key, k.GetNetwork(ctx))
-
-	return consolidationAddress, nil
+	return types.NewSecondaryConsolidationAddress(
+		key,
+		k.GetNetwork(ctx),
+	), nil
 }
 
 func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key) (types.AddressInfo, error) {
@@ -1113,9 +1157,16 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 
 	internalKeyLockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressInternalKeyLockDuration(ctx))
 	externalKeyLockTime := currMasterKey.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
-	consolidationAddress := types.NewMasterConsolidationAddress(key, oldMasterKey, externalMultisigThreshold.Numerator, externalKeys, internalKeyLockTime, externalKeyLockTime, k.GetNetwork(ctx))
 
-	return consolidationAddress, nil
+	return types.NewMasterConsolidationAddress(
+		key,
+		oldMasterKey,
+		externalMultisigThreshold.Numerator,
+		externalKeys,
+		internalKeyLockTime,
+		externalKeyLockTime,
+		k.GetNetwork(ctx),
+	), nil
 }
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {
