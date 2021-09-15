@@ -16,12 +16,8 @@ import (
 
 // query parameters
 const (
-	QueryParamFromAddress = "from_address"
-	QueryParamCommandID   = "command_id"
-	QueryParamGasPrice    = "gas_price"
-	QueryParamGasLimit    = "gas_limit"
-	QueryParamKeyRole     = "key_role"
-	QueryParamKeyID       = "key_id"
+	QueryParamKeyRole = "key_role"
+	QueryParamKeyID   = "key_id"
 )
 
 // GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
