@@ -2,16 +2,13 @@ package rest
 
 import (
 	"fmt"
-	"math/big"
-	"net/http"
-	"strconv"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
+	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -20,12 +17,8 @@ import (
 
 // query parameters
 const (
-	QueryParamFromAddress = "from_address"
-	QueryParamCommandID   = "command_id"
-	QueryParamGasPrice    = "gas_price"
-	QueryParamGasLimit    = "gas_limit"
-	QueryParamKeyRole     = "key_role"
-	QueryParamKeyID       = "key_id"
+	QueryParamKeyRole = "key_role"
+	QueryParamKeyID   = "key_id"
 )
 
 // GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
@@ -183,7 +176,7 @@ func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
+		rest.PostProcessResponse(w, cliCtx, "0x"+common.Bytes2Hex(res))
 	}
 }
 
@@ -204,7 +197,7 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, common.BytesToHash(res).Hex())
+		rest.PostProcessResponse(w, cliCtx, "0x"+common.Bytes2Hex(res))
 	}
 }
 
@@ -272,26 +265,4 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
-}
-
-func parseGasLimit(w http.ResponseWriter, r *http.Request) (uint64, bool) {
-	glStr := r.URL.Query().Get(QueryParamGasLimit)
-	gl, err := strconv.ParseUint(glStr, 10, 64)
-	if err != nil {
-		rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not parse gas limit").Error())
-		return 0, false
-	}
-
-	return gl, true
-}
-
-func parseGasPrice(w http.ResponseWriter, r *http.Request) (sdk.Int, bool) {
-	gpStr := r.URL.Query().Get(QueryParamGasPrice)
-	gpBig, ok := big.NewInt(0).SetString(gpStr, 10)
-	if !ok {
-		rest.WriteErrorResponse(w, http.StatusBadRequest, "could not parse gas price")
-		return sdk.Int{}, false
-	}
-
-	return sdk.NewIntFromBigInt(gpBig), true
 }
