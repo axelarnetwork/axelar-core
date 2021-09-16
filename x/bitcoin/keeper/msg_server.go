@@ -553,12 +553,17 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 	inputsTotal := sdk.ZeroInt()
 
 	unbondingLockingKeyRotationCount := s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx)
-	for i := int(unbondingLockingKeyRotationCount); i > 0; i-- {
+	for i := unbondingLockingKeyRotationCount; i > 0; i-- {
 		for _, keyRole := range tss.GetKeyRoles() {
-			rotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, keyRole)
-			key, ok := s.signer.GetKeyByRotationCount(ctx, exported.Bitcoin, keyRole, rotationCount-int64(i))
-			if !ok {
+			currRotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, keyRole)
+			rotationCount := currRotationCount - i
+			if rotationCount <= 0 {
 				continue
+			}
+
+			key, ok := s.signer.GetKeyByRotationCount(ctx, exported.Bitcoin, keyRole, rotationCount)
+			if !ok {
+				return nil, fmt.Errorf("%s key of rotation count %d not found", keyRole.SimpleString(), rotationCount)
 			}
 
 			total, err := addInputs(ctx, s.BTCKeeper, tx, key.ID)
@@ -601,7 +606,7 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 
 	tx.LockTime = 0
 	tx = types.DisableTimelock(tx)
-	unsignedTx := types.NewUnsignedTx(types.MasterConsolidation, tx, anyoneCanSpendVout, btcutil.Amount(change.Int64()))
+	unsignedTx := types.NewUnsignedTx(types.Rescue, tx, anyoneCanSpendVout, btcutil.Amount(change.Int64()))
 
 	s.SetUnsignedTx(ctx, unsignedTx)
 
