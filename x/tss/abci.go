@@ -147,17 +147,26 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	signingShareCount, activeShareCount, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
+	participants, activeShareCount, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
 	}
 
-	nonParticipantShareCounts := make([]int64, len(excluded))
-	nonParticipants := make([]string, len(excluded))
-	for i, validator := range excluded {
-		nonParticipants[i] = validator.GetSDKValidator().String()
-		nonParticipantShareCounts[i] = validator.ShareCount
+	selected := make(map[string]bool)
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		selected[p.GetSDKValidator().GetOperator().String()] = true
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	var nonParticipantShareCounts []int64
+	var nonParticipants []string
+	for _, validator := range snap.Validators {
+		if !selected[validator.GetSDKValidator().GetOperator().String()] {
+			nonParticipants = append(nonParticipants, validator.GetSDKValidator().String())
+			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
+		}
 	}
 
 	event := sdk.NewEvent(types.EventTypeSign,

@@ -92,17 +92,19 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	signingShareCount, activeShareCount, excluded, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
-	participants := s.Keeper.GetSignParticipants(s.Ctx, sigID)
+	participants, activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
 
 	assert.NoError(t, err)
 	assert.True(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
 	assert.Equal(t, int64(450), activeShareCount.Int64())
 	assert.Equal(t, int64(330), signingShareCount.Int64())
 	assert.Equal(t, 3, len(participants))
-	assert.Equal(t, 2, len(excluded))
-	assert.Equal(t, val4, excluded[0].GetSDKValidator().GetOperator())
-	assert.Equal(t, val5, excluded[1].GetSDKValidator().GetOperator())
+	assert.Equal(t, 2, len(snap.Validators)-len(participants))
 }
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -160,7 +162,12 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	signingShareCount, activeShareCount, _, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+	participants, activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
 
 	assert.NoError(t, err)
 	assert.False(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
