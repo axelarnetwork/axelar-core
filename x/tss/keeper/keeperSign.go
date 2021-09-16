@@ -186,9 +186,6 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		activeValidators = append(activeValidators, validator)
 	}
 
-	if snap.CorruptionThreshold < 0 {
-		return nil, sdk.ZeroInt(), fmt.Errorf("threshold value must be higher than 0")
-	}
 	for _, v := range activeValidators {
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
