@@ -145,8 +145,9 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
 // the active share count and excluded validators if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, snap snapshot.Snapshot) (sdk.Int, []snapshot.Validator, error) {
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, snap snapshot.Snapshot) (sdk.Int, sdk.Int, []snapshot.Validator, error) {
 	activeShareCount := sdk.ZeroInt()
+	selectedShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
 	validatorAvailable := make(map[string]bool)
@@ -160,7 +161,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	for _, validator := range validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
-			return sdk.ZeroInt(), nil, err
+			return sdk.ZeroInt(), sdk.ZeroInt(), nil, err
 		}
 
 		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
@@ -186,17 +187,21 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	}
 
 	if snap.CorruptionThreshold < 0 {
-		return sdk.ZeroInt(), nil, fmt.Errorf("threshold value must be higher than 0")
+		return sdk.ZeroInt(), sdk.ZeroInt(), nil, fmt.Errorf("threshold value must be higher than 0")
 	}
+	for _, v := range activeValidators {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
+
 	selectedSigners, excludedSigners := k.optimizedSigningSet(ctx, activeValidators, snap.CorruptionThreshold)
 	excludedParticipants := append(excludedValidators, excludedSigners...)
 
 	for _, signer := range selectedSigners {
 		k.setParticipateInSign(ctx, sigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
-		activeShareCount = activeShareCount.AddRaw(signer.ShareCount)
+		selectedShareCount = selectedShareCount.AddRaw(signer.ShareCount)
 	}
 
-	return activeShareCount, excludedParticipants, nil
+	return selectedShareCount, activeShareCount, excludedParticipants, nil
 }
 
 // selects a subset of the given participants whose total number of shares

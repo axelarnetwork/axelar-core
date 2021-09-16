@@ -107,7 +107,7 @@ type TSSKeeper interface {
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, sigID string, snap snapshot.Snapshot) (activeShareCount sdk.Int, excluded []snapshot.Validator, err error)
+	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, sigID string, snap snapshot.Snapshot) (sdk.Int, sdk.Int, []snapshot.Validator, error)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
