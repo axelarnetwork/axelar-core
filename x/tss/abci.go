@@ -220,7 +220,7 @@ func startSign(
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], online share count [%d], total share count [%d], excluded [%d] validators",
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], selected share count [%d], total share count [%d], excluded [%d] validators",
 		snap.CorruptionThreshold,
 		activeShareCount.Int64(),
 		snap.TotalShareCount.Int64(),
