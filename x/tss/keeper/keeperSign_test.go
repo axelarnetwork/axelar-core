@@ -92,11 +92,16 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	participants, activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
 	assert.NoError(t, err)
@@ -162,11 +167,15 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	participants, activeShareCount, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
 	assert.NoError(t, err)

@@ -147,7 +147,7 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participants, activeShareCount, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
@@ -158,6 +158,12 @@ func startSign(
 	for _, p := range participants {
 		selected[p.GetSDKValidator().GetOperator().String()] = true
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		selected[v.GetSDKValidator().GetOperator().String()] = true
+		signingShareCount = signingShareCount.AddRaw(v.ShareCount)
 	}
 
 	var nonParticipantShareCounts []int64
