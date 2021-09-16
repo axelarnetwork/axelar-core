@@ -94,8 +94,10 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
+	selected := make(map[string]bool)
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
+		selected[p.GetSDKValidator().GetOperator().String()] = true
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
 	}
 
@@ -104,12 +106,24 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
+	excluded := make(map[string]bool)
+	for _, validator := range snap.Validators {
+		if !selected[validator.GetSDKValidator().GetOperator().String()] {
+			excluded[validator.GetSDKValidator().GetOperator().String()] = true
+		}
+	}
+
 	assert.NoError(t, err)
 	assert.True(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
 	assert.Equal(t, int64(450), activeShareCount.Int64())
 	assert.Equal(t, int64(330), signingShareCount.Int64())
 	assert.Equal(t, 3, len(participants))
 	assert.Equal(t, 2, len(snap.Validators)-len(participants))
+	assert.True(t, selected[val1.String()])
+	assert.True(t, selected[val2.String()])
+	assert.True(t, selected[val3.String()])
+	assert.True(t, excluded[val4.String()])
+	assert.True(t, excluded[val5.String()])
 }
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -169,8 +183,10 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
+	selected := make(map[string]bool)
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
+		selected[p.GetSDKValidator().GetOperator().String()] = true
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
 	}
 	activeShareCount := sdk.ZeroInt()
@@ -178,10 +194,19 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
+	excluded := make(map[string]bool)
+	for _, validator := range snap.Validators {
+		if !selected[validator.GetSDKValidator().GetOperator().String()] {
+			excluded[validator.GetSDKValidator().GetOperator().String()] = true
+		}
+	}
+
 	assert.NoError(t, err)
 	assert.False(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
 	assert.Equal(t, int64(100), signingShareCount.Int64())
 	assert.Equal(t, int64(100), activeShareCount.Int64())
+	assert.True(t, excluded[val1.String()])
+	assert.True(t, selected[val2.String()])
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
