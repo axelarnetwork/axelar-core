@@ -147,7 +147,7 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	activeShareCount, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	activeShareCount, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
@@ -220,10 +220,11 @@ func startSign(
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], online share count [%d], total share count [%d]",
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], online share count [%d], total share count [%d], excluded [%d] validators",
 		snap.CorruptionThreshold,
 		activeShareCount.Int64(),
 		snap.TotalShareCount.Int64(),
+		len(nonParticipants),
 	))
 
 	k.SetInfoForSig(ctx, info.SigID, info)

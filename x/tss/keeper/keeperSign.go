@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -144,7 +145,7 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
 // the active share count and excluded validators if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, validators []snapshot.Validator) (sdk.Int, []snapshot.Validator, error) {
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, snap snapshot.Snapshot) (sdk.Int, []snapshot.Validator, error) {
 	activeShareCount := sdk.ZeroInt()
 	var activeValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
@@ -154,6 +155,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	}
 
 	var excludedValidators []snapshot.Validator
+	validators := snap.Validators
 
 	for _, validator := range validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
@@ -183,12 +185,44 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		activeValidators = append(activeValidators, validator)
 	}
 
-	for _, v := range activeValidators {
-		k.setParticipateInSign(ctx, sigID, v.GetSDKValidator().GetOperator(), v.ShareCount)
-		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	if snap.CorruptionThreshold < 0 {
+		return sdk.ZeroInt(), nil, fmt.Errorf("threshold value must be higher than 0")
+	}
+	selectedSigners, excludedSigners := k.optimizedSigningSet(ctx, activeValidators, snap.CorruptionThreshold)
+	excludedParticipants := append(excludedValidators, excludedSigners...)
+
+	for _, signer := range selectedSigners {
+		k.setParticipateInSign(ctx, sigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
+		activeShareCount = activeShareCount.AddRaw(signer.ShareCount)
 	}
 
-	return activeShareCount, excludedValidators, nil
+	return activeShareCount, excludedParticipants, nil
+}
+
+// selects a subset of the given participants whose total number of shares
+// represent the top of the list and amount to at least threshold+1.
+func (k Keeper) optimizedSigningSet(ctx sdk.Context, activeParticipants []snapshot.Validator, threshold int64) ([]snapshot.Validator, []snapshot.Validator) {
+	if len(activeParticipants) == 0 {
+		return []snapshot.Validator{}, []snapshot.Validator{}
+	}
+
+	originalParticipants := make([]snapshot.Validator, len(activeParticipants))
+	copy(originalParticipants, activeParticipants)
+
+	sort.SliceStable(originalParticipants, func(i, j int) bool {
+		return originalParticipants[i].ShareCount > originalParticipants[j].ShareCount
+	})
+
+	var index int
+	var totalSubsetShares int64
+	for ; index < len(originalParticipants) && totalSubsetShares < (threshold+1); index++ {
+		totalSubsetShares = totalSubsetShares + originalParticipants[index].ShareCount
+	}
+
+	selectedParticipants := originalParticipants[:index]
+	excludedParticipants := originalParticipants[index:]
+
+	return selectedParticipants, excludedParticipants
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress, shareCount int64) {

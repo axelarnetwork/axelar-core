@@ -1340,7 +1340,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info exported.SignInfo) (int64, error) {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error) {
+// 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
@@ -1501,7 +1501,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info exported.SignInfo) (int64, error)
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error)
+	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, ID string, ackType exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
@@ -1867,8 +1867,8 @@ type TSSKeeperMock struct {
 			Snapshotter snapshot.Snapshotter
 			// SigID is the sigID argument value.
 			SigID string
-			// Validators is the validators argument value.
-			Validators []snapshot.Validator
+			// Snap is the snap argument value.
+			Snap snapshot.Snapshot
 		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
@@ -3527,7 +3527,7 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, validators []snapshot.Validator) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error) {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) (github_com_cosmos_cosmos_sdk_types.Int, []snapshot.Validator, error) {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}
@@ -3535,17 +3535,17 @@ func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_s
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Snapshotter snapshot.Snapshotter
 		SigID       string
-		Validators  []snapshot.Validator
+		Snap        snapshot.Snapshot
 	}{
 		Ctx:         ctx,
 		Snapshotter: snapshotter,
 		SigID:       sigID,
-		Validators:  validators,
+		Snap:        snap,
 	}
 	mock.lockSelectSignParticipants.Lock()
 	mock.calls.SelectSignParticipants = append(mock.calls.SelectSignParticipants, callInfo)
 	mock.lockSelectSignParticipants.Unlock()
-	return mock.SelectSignParticipantsFunc(ctx, snapshotter, sigID, validators)
+	return mock.SelectSignParticipantsFunc(ctx, snapshotter, sigID, snap)
 }
 
 // SelectSignParticipantsCalls gets all the calls that were made to SelectSignParticipants.
@@ -3555,13 +3555,13 @@ func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Snapshotter snapshot.Snapshotter
 	SigID       string
-	Validators  []snapshot.Validator
+	Snap        snapshot.Snapshot
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Snapshotter snapshot.Snapshotter
 		SigID       string
-		Validators  []snapshot.Validator
+		Snap        snapshot.Snapshot
 	}
 	mock.lockSelectSignParticipants.RLock()
 	calls = mock.calls.SelectSignParticipants
