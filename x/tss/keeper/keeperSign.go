@@ -186,10 +186,8 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 
 	selectedSigners := k.optimizedSigningSet(ctx, activeValidators, snap.CorruptionThreshold)
 
-	selectedShareCount := sdk.ZeroInt()
 	for _, signer := range selectedSigners {
 		k.setParticipateInSign(ctx, sigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
-		selectedShareCount = selectedShareCount.AddRaw(signer.ShareCount)
 	}
 
 	return selectedSigners, activeValidators, nil
