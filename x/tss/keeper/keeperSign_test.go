@@ -34,42 +34,42 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Validators: []snapshot.Validator{
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val1 },
-				GetConsensusPowerFunc: func() int64 { return 150 },
+				GetConsensusPowerFunc: func() int64 { return 140 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
-			}, 150),
+			}, 140),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
-				GetConsensusPowerFunc: func() int64 { return 100 },
+				GetConsensusPowerFunc: func() int64 { return 130 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
-			}, 100),
+			}, 130),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val3 },
-				GetConsensusPowerFunc: func() int64 { return 80 },
+				GetConsensusPowerFunc: func() int64 { return 120 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val3.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
-			}, 80),
+			}, 120),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val4 },
-				GetConsensusPowerFunc: func() int64 { return 70 },
+				GetConsensusPowerFunc: func() int64 { return 110 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val4.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
-			}, 70),
+			}, 110),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val5 },
-				GetConsensusPowerFunc: func() int64 { return 50 },
+				GetConsensusPowerFunc: func() int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val5.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
-			}, 50),
+			}, 100),
 		},
 		Timestamp:       time.Now(),
 		Height:          rand2.I64Between(1, 1000000),
-		TotalShareCount: sdk.NewInt(450),
+		TotalShareCount: sdk.NewInt(600),
 		Counter:         rand2.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
-	assert.Equal(t, int64(300), snap.CorruptionThreshold)
+	assert.Equal(t, int64(400), snap.CorruptionThreshold)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		return snapshot.None, nil
 	}
@@ -94,10 +94,8 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
-	selected := make(map[string]bool)
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
-		selected[p.GetSDKValidator().GetOperator().String()] = true
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
 	}
 
@@ -106,24 +104,16 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
-	excluded := make(map[string]bool)
-	for _, validator := range snap.Validators {
-		if !selected[validator.GetSDKValidator().GetOperator().String()] {
-			excluded[validator.GetSDKValidator().GetOperator().String()] = true
-		}
-	}
-
 	assert.NoError(t, err)
 	assert.True(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
-	assert.Equal(t, int64(450), activeShareCount.Int64())
-	assert.Equal(t, int64(330), signingShareCount.Int64())
-	assert.Equal(t, 3, len(participants))
-	assert.Equal(t, 2, len(snap.Validators)-len(participants))
-	assert.True(t, selected[val1.String()])
-	assert.True(t, selected[val2.String()])
-	assert.True(t, selected[val3.String()])
-	assert.True(t, excluded[val4.String()])
-	assert.True(t, excluded[val5.String()])
+	assert.Equal(t, int64(600), activeShareCount.Int64())
+	assert.Equal(t, int64(500), signingShareCount.Int64())
+	assert.Equal(t, 4, len(participants))
+	assert.Equal(t, 1, len(snap.Validators)-len(participants))
+	assert.Equal(t, val1, participants[0].GetSDKValidator().GetOperator())
+	assert.Equal(t, val2, participants[1].GetSDKValidator().GetOperator())
+	assert.Equal(t, val3, participants[2].GetSDKValidator().GetOperator())
+	assert.Equal(t, val4, participants[3].GetSDKValidator().GetOperator())
 }
 
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
@@ -183,10 +173,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
 
-	selected := make(map[string]bool)
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
-		selected[p.GetSDKValidator().GetOperator().String()] = true
 		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
 	}
 	activeShareCount := sdk.ZeroInt()
@@ -194,19 +182,13 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
-	excluded := make(map[string]bool)
-	for _, validator := range snap.Validators {
-		if !selected[validator.GetSDKValidator().GetOperator().String()] {
-			excluded[validator.GetSDKValidator().GetOperator().String()] = true
-		}
-	}
-
 	assert.NoError(t, err)
 	assert.False(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
 	assert.Equal(t, int64(100), signingShareCount.Int64())
 	assert.Equal(t, int64(100), activeShareCount.Int64())
-	assert.True(t, excluded[val1.String()])
-	assert.True(t, selected[val2.String()])
+	assert.Equal(t, 1, len(participants))
+	assert.Equal(t, 1, len(snap.Validators)-len(participants))
+	assert.Equal(t, val2, participants[0].GetSDKValidator().GetOperator())
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
