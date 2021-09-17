@@ -197,25 +197,25 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 
 // selects a subset of the given participants whose total number of shares
 // represent the top of the list and amount to at least threshold+1.
-func (k Keeper) optimizedSigningSet(ctx sdk.Context, activeParticipants []snapshot.Validator, threshold int64) []snapshot.Validator {
-	if len(activeParticipants) == 0 {
+func (k Keeper) optimizedSigningSet(ctx sdk.Context, activeValidators []snapshot.Validator, threshold int64) []snapshot.Validator {
+	if len(activeValidators) == 0 {
 		return []snapshot.Validator{}
 	}
 
-	originalParticipants := make([]snapshot.Validator, len(activeParticipants))
-	copy(originalParticipants, activeParticipants)
+	sorted := make([]snapshot.Validator, len(activeValidators))
+	copy(sorted, activeValidators)
 
-	sort.SliceStable(originalParticipants, func(i, j int) bool {
-		return originalParticipants[i].ShareCount > originalParticipants[j].ShareCount
+	sort.SliceStable(sorted, func(i, j int) bool {
+		return sorted[i].ShareCount > sorted[j].ShareCount
 	})
 
 	var index int
 	var totalSubsetShares int64
-	for ; index < len(originalParticipants) && totalSubsetShares < (threshold+1); index++ {
-		totalSubsetShares = totalSubsetShares + originalParticipants[index].ShareCount
+	for ; index < len(sorted) && totalSubsetShares < (threshold+1); index++ {
+		totalSubsetShares = totalSubsetShares + sorted[index].ShareCount
 	}
 
-	return originalParticipants[:index]
+	return sorted[:index]
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress, shareCount int64) {
