@@ -147,17 +147,31 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	activeShareCount, excluded, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap.Validators)
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err
 	}
 
-	nonParticipantShareCounts := make([]int64, len(excluded))
-	nonParticipants := make([]string, len(excluded))
-	for i, validator := range excluded {
-		nonParticipants[i] = validator.GetSDKValidator().String()
-		nonParticipantShareCounts[i] = validator.ShareCount
+	selected := make(map[string]bool)
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		selected[p.GetSDKValidator().GetOperator().String()] = true
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
+
+	var nonParticipantShareCounts []int64
+	var nonParticipants []string
+	for _, validator := range snap.Validators {
+		if !selected[validator.GetSDKValidator().GetOperator().String()] {
+			nonParticipants = append(nonParticipants, validator.GetSDKValidator().String())
+			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
+		}
 	}
 
 	event := sdk.NewEvent(types.EventTypeSign,
@@ -185,7 +199,7 @@ func startSign(
 		ctx.EventManager().EmitEvent(event)
 	}()
 
-	if activeShareCount.LTE(sdk.NewInt(snap.CorruptionThreshold)) {
+	if signingShareCount.LTE(sdk.NewInt(snap.CorruptionThreshold)) {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 
 		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: corruption threshold [%d], online share count [%d], total share count [%d]",
@@ -220,10 +234,12 @@ func startSign(
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], online share count [%d], total share count [%d]",
+	k.Logger(ctx).Info(fmt.Sprintf("starting sign with corruption threshold [%d], signing share count [%d], online share count [%d], total share count [%d], excluded [%d] validators",
 		snap.CorruptionThreshold,
+		signingShareCount.Int64(),
 		activeShareCount.Int64(),
 		snap.TotalShareCount.Int64(),
+		len(nonParticipants),
 	))
 
 	k.SetInfoForSig(ctx, info.SigID, info)

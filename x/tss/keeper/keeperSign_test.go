@@ -19,6 +19,103 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+func TestStartSign_EnoughActiveValidators(t *testing.T) {
+	s := setup()
+	sigID := "sigID"
+	keyID := "keyID"
+	msg := []byte("message")
+	val1 := rand.ValAddr()
+	val2 := rand.ValAddr()
+	val3 := rand.ValAddr()
+	val4 := rand.ValAddr()
+	val5 := rand.ValAddr()
+
+	snap := snapshot.Snapshot{
+		Validators: []snapshot.Validator{
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return val1 },
+				GetConsensusPowerFunc: func() int64 { return 140 },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
+				IsJailedFunc:          func() bool { return true },
+			}, 140),
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
+				GetConsensusPowerFunc: func() int64 { return 130 },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
+				IsJailedFunc:          func() bool { return false },
+			}, 130),
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return val3 },
+				GetConsensusPowerFunc: func() int64 { return 120 },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val3.Bytes(), nil },
+				IsJailedFunc:          func() bool { return false },
+			}, 120),
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return val4 },
+				GetConsensusPowerFunc: func() int64 { return 110 },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val4.Bytes(), nil },
+				IsJailedFunc:          func() bool { return false },
+			}, 110),
+			snapshot.NewValidator(&snapMock.SDKValidatorMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return val5 },
+				GetConsensusPowerFunc: func() int64 { return 100 },
+				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val5.Bytes(), nil },
+				IsJailedFunc:          func() bool { return false },
+			}, 100),
+		},
+		Timestamp:       time.Now(),
+		Height:          rand2.I64Between(1, 1000000),
+		TotalShareCount: sdk.NewInt(600),
+		Counter:         rand2.I64Between(0, 100000),
+	}
+	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
+	assert.Equal(t, int64(400), snap.CorruptionThreshold)
+	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+		return snapshot.None, nil
+	}
+
+	// start keygen to record the snapshot for each key
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	assert.NoError(t, err)
+
+	height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+		KeyID:           keyID,
+		SigID:           sigID,
+		Msg:             msg,
+		SnapshotCounter: snap.Counter,
+	})
+	assert.NoError(t, err)
+
+	for _, val := range snap.Validators {
+		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
+		assert.NoError(t, err)
+	}
+
+	s.Ctx = s.Ctx.WithBlockHeight(height)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
+
+	assert.NoError(t, err)
+	assert.True(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
+	assert.Equal(t, int64(600), activeShareCount.Int64())
+	assert.Equal(t, int64(500), signingShareCount.Int64())
+	assert.Equal(t, 4, len(participants))
+	assert.Equal(t, 1, len(snap.Validators)-len(participants))
+	assert.Equal(t, val1, participants[0].GetSDKValidator().GetOperator())
+	assert.Equal(t, val2, participants[1].GetSDKValidator().GetOperator())
+	assert.Equal(t, val3, participants[2].GetSDKValidator().GetOperator())
+	assert.Equal(t, val4, participants[3].GetSDKValidator().GetOperator())
+}
+
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s := setup()
 	sigID := "sigID"
@@ -74,11 +171,24 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	activeShareCount, _, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap.Validators)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
 
 	assert.NoError(t, err)
-	assert.False(t, activeShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
+	assert.False(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
+	assert.Equal(t, int64(100), signingShareCount.Int64())
 	assert.Equal(t, int64(100), activeShareCount.Int64())
+	assert.Equal(t, 1, len(participants))
+	assert.Equal(t, 1, len(snap.Validators)-len(participants))
+	assert.Equal(t, val2, participants[0].GetSDKValidator().GetOperator())
 }
 
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
