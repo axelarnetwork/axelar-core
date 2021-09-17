@@ -162,7 +162,6 @@ func startSign(
 
 	activeShareCount := sdk.ZeroInt()
 	for _, v := range active {
-		selected[v.GetSDKValidator().GetOperator().String()] = true
 		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
 	}
 
