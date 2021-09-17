@@ -568,20 +568,25 @@ func TestCreateRescueTx(t *testing.T) {
 		signerKeeper *mock.SignerMock
 		server       types.MsgServiceServer
 
-		ctx                       sdk.Context
-		secondaryKey              tss.Key
-		nextSecondaryKey          tss.Key
-		masterKeyRotationCount    int64
-		secondaryKeyRotationCount int64
+		ctx              sdk.Context
+		secondaryKey     tss.Key
+		nextSecondaryKey tss.Key
+		oldSecondaryKey  tss.Key
+		oldMasterKey     tss.Key
 	)
 
-	repeat := 100
+	repeat := 1
+	masterKeyRotationCount := int64(2)
+	oldMasterKeyRotationCount := masterKeyRotationCount - 1
+	secondaryKeyRotationCount := int64(2)
+	oldSecondaryKeyRotationCount := secondaryKeyRotationCount - 1
+
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		secondaryKey = createRandomKey(tss.SecondaryKey)
 		nextSecondaryKey = createRandomKey(tss.SecondaryKey)
-		masterKeyRotationCount = rand.I64Between(10, 100)
-		secondaryKeyRotationCount = rand.I64Between(10, 100)
+		oldSecondaryKey = createRandomKey(tss.SecondaryKey)
+		oldMasterKey = createRandomKey(tss.MasterKey)
 
 		btcKeeper = &mock.BTCKeeperMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
@@ -619,6 +624,17 @@ func TestCreateRescueTx(t *testing.T) {
 			},
 		}
 		signerKeeper = &mock.SignerMock{
+			GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
+				if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
+					return oldMasterKey, true
+				}
+
+				if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
+					return oldSecondaryKey, true
+				}
+
+				return tss.Key{}, false
+			},
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
@@ -642,9 +658,6 @@ func TestCreateRescueTx(t *testing.T) {
 					return 0
 				}
 			},
-			GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
-				return tss.Key{}, false
-			},
 		}
 
 		voter := &mock.VoterMock{}
@@ -665,8 +678,6 @@ func TestCreateRescueTx(t *testing.T) {
 	t.Run("should rescue UTXOs of an old master key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		oldMasterKey := createRandomKey(tss.MasterKey)
-		oldMasterKeyRotationCount := masterKeyRotationCount - rand.I64Between(1, tsstypes.DefaultParams().UnbondingLockingKeyRotationCount+1)
 		var inputs []types.OutPointInfo
 		inputsTotal := sdk.ZeroInt()
 		for i := 0; i < int(types.DefaultParams().MaxInputCount); i++ {
@@ -675,13 +686,6 @@ func TestCreateRescueTx(t *testing.T) {
 			inputsTotal = inputsTotal.AddRaw(int64(input.Amount))
 		}
 
-		signerKeeper.GetKeyByRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
-			if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
-				return oldMasterKey, true
-			}
-
-			return tss.Key{}, false
-		}
 		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
 			if keyID == oldMasterKey.ID {
 				dequeueCount := 0
@@ -704,7 +708,12 @@ func TestCreateRescueTx(t *testing.T) {
 				}
 			}
 
-			return &utilsmock.KVQueueMock{}
+			return &utilsmock.KVQueueMock{
+				IsEmptyFunc: func() bool { return true },
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					return false
+				},
+			}
 		}
 		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			for _, input := range inputs {
@@ -764,8 +773,6 @@ func TestCreateRescueTx(t *testing.T) {
 	t.Run("should rescue UTXOs of an old secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		oldSecondaryKey := createRandomKey(tss.MasterKey)
-		oldSecondaryKeyRotationCount := secondaryKeyRotationCount - rand.I64Between(1, tsstypes.DefaultParams().UnbondingLockingKeyRotationCount+1)
 		var inputs []types.OutPointInfo
 		inputsTotal := sdk.ZeroInt()
 		for i := 0; i < int(types.DefaultParams().MaxInputCount); i++ {
@@ -776,13 +783,6 @@ func TestCreateRescueTx(t *testing.T) {
 
 		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 			return nextSecondaryKey, true
-		}
-		signerKeeper.GetKeyByRotationCountFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
-			if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
-				return oldSecondaryKey, true
-			}
-
-			return tss.Key{}, false
 		}
 		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
 			if keyID == oldSecondaryKey.ID {
@@ -806,7 +806,12 @@ func TestCreateRescueTx(t *testing.T) {
 				}
 			}
 
-			return &utilsmock.KVQueueMock{}
+			return &utilsmock.KVQueueMock{
+				IsEmptyFunc: func() bool { return true },
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					return false
+				},
+			}
 		}
 		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 			for _, input := range inputs {

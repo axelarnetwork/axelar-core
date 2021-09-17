@@ -571,7 +571,10 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 				return nil, err
 			}
 
-			inputsTotal = inputsTotal.Add(total)
+			if total.IsPositive() {
+				s.Logger(ctx).Debug("rescuing UTXOs of old %s key %s", keyRole.SimpleString(), key.ID)
+				inputsTotal = inputsTotal.Add(total)
+			}
 		}
 	}
 
@@ -594,7 +597,7 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
 	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
-	if change.Sign() <= 0 {
+	if !change.IsPositive() {
 		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for the %s transaction", inputsTotal.Int64(), fee.Int64(), types.Rescue.SimpleString())
 	}
 
@@ -707,7 +710,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
 	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
-	if change.Sign() <= 0 {
+	if !change.IsPositive() {
 		return nil, fmt.Errorf("not enough inputs (%d) to cover the fee (%d) for master consolidation transaction", inputsTotal.Int64(), fee.Int64())
 	}
 
@@ -833,7 +836,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 	fee := sdk.NewInt(txSizeUpperBound).MulRaw(types.MinRelayTxFeeSatoshiPerByte)
 	change := inputsTotal.SubRaw(int64(outputsTotal)).Sub(fee)
 
-	if change.Sign() <= 0 {
+	if !change.IsPositive() {
 		return nil, fmt.Errorf("not enough deposits (%s) to make all withdrawals (%s) with a transaction fee of %s",
 			inputsTotal.String(), outputsTotal.String(), btcutil.Amount(fee.Int64()).String(),
 		)
