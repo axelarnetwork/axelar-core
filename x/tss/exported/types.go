@@ -26,6 +26,36 @@ type Key struct {
 	RotatedAt *time.Time
 }
 
+// key id length range bounds dictated by tofnd
+const (
+	KeyIDLengthMin = 4
+	KeyIDLengthMax = 256
+)
+
+// KeyID ensures a correctly formatted tss key ID
+type KeyID string
+
+// Validate returns an error, if the key ID is too short or too long
+func (id KeyID) Validate() error {
+	if len(id) < KeyIDLengthMin || len(id) > KeyIDLengthMax {
+		return fmt.Errorf("key id length %d not in range [%d,%d]", len(id), KeyIDLengthMin, KeyIDLengthMax)
+	}
+
+	return nil
+}
+
+// KeyIDsToStrings converts a slice of type KeyID to a slice of strings
+func KeyIDsToStrings(keyIDs []KeyID) []string {
+	if keyIDs == nil {
+		return nil
+	}
+	strs := make([]string, 0, len(keyIDs))
+	for _, id := range keyIDs {
+		strs = append(strs, string(id))
+	}
+	return strs
+}
+
 // GetKeyRoles returns an array of all types of key role
 func GetKeyRoles() []KeyRole {
 	return []KeyRole{MasterKey, SecondaryKey, ExternalKey}
