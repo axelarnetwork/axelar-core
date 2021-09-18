@@ -6,6 +6,8 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewRegisterExternalKeysRequest is the constructor for RegisterExternalKeysRequest
@@ -36,12 +38,12 @@ func (m RegisterExternalKeysRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrBitcoin, "no external key is given")
 	}
 
-	idMap := make(map[string]bool)
+	idMap := make(map[tss.KeyID]bool)
 	pubKeyMap := make(map[string]bool)
 
 	for _, externalKey := range m.ExternalKeys {
-		if externalKey.ID == "" {
-			return sdkerrors.Wrap(ErrBitcoin, "external key id must be set")
+		if err := externalKey.ID.Validate(); err != nil {
+			return err
 		}
 
 		if _, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256()); err != nil {

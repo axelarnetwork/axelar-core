@@ -21,6 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -74,8 +75,8 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	internalPubKey1 := tss.Key{ID: rand.Str(10), Value: internalPrivKey1.PublicKey, Role: tss.MasterKey}
-	internalPubKey2 := tss.Key{ID: rand.Str(10), Value: internalPrivKey2.PublicKey, Role: tss.MasterKey}
+	internalPubKey1 := tss.Key{ID: tssTestUtils.RandKeyID(), Value: internalPrivKey1.PublicKey, Role: tss.MasterKey}
+	internalPubKey2 := tss.Key{ID: tssTestUtils.RandKeyID(), Value: internalPrivKey2.PublicKey, Role: tss.MasterKey}
 
 	externalKeyCount := 6
 	externalKeyThreshold := 3
@@ -90,7 +91,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		}
 
 		externalPrivKeys = append(externalPrivKeys, externalPrivKey)
-		externalKeys = append(externalKeys, tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
 	}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc

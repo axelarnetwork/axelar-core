@@ -5,6 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewCreateTransferOperatorshipRequest creates a message of type CreateTransferOperatorshipRequest
@@ -12,7 +14,7 @@ func NewCreateTransferOperatorshipRequest(sender sdk.AccAddress, chain string, k
 	return &CreateTransferOperatorshipRequest{
 		Sender: sender,
 		Chain:  chain,
-		KeyID:  keyID,
+		KeyID:  tss.KeyID(keyID),
 	}
 }
 
@@ -36,8 +38,8 @@ func (m CreateTransferOperatorshipRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
-	if m.KeyID == "" {
-		return fmt.Errorf("missing key ID")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	return nil

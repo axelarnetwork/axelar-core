@@ -20,7 +20,7 @@ type Signature struct {
 
 // Key contains the public key value and corresponding ID
 type Key struct {
-	ID        string
+	ID        KeyID
 	Value     ecdsa.PublicKey
 	Role      KeyRole
 	RotatedAt *time.Time

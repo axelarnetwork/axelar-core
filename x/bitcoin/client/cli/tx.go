@@ -257,7 +257,7 @@ func GetCmdRegisterExternalKeys() *cobra.Command {
 				return err
 			}
 
-			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: tss.KeyID(keyID), PubKey: pubKeyBytes}
 		}
 
 		msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), externalKeys...)

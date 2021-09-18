@@ -15,7 +15,7 @@ func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.K
 		Sender:  sender,
 		Chain:   chain,
 		KeyRole: keyRole,
-		KeyID:   keyID,
+		KeyID:   exported.KeyID(keyID),
 	}
 }
 
@@ -42,8 +42,8 @@ func (m RotateKeyRequest) ValidateBasic() error {
 		return err
 	}
 
-	if m.KeyID == "" {
-		return fmt.Errorf("missing key ID")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	return nil

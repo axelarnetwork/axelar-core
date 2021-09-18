@@ -20,7 +20,11 @@ message QueryBatchedCommandsResponse {
   string id = 1 [ (gogoproto.customname) = "ID" ];
   string data = 2;
   BatchedCommandsStatus status = 3;
-  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   string signature = 5;
   string execute_data = 6;
   string prev_batched_commands_id = 7
@@ -29,7 +33,11 @@ message QueryBatchedCommandsResponse {
 
 message QueryAddressResponse {
   string address = 1;
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message QueryDepositStateParams {

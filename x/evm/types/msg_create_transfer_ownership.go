@@ -5,11 +5,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewCreateTransferOwnershipRequest is the constructor for CreateTransferOwnershipRequest
 func NewCreateTransferOwnershipRequest(sender sdk.AccAddress, chain string, keyID string) *CreateTransferOwnershipRequest {
-	return &CreateTransferOwnershipRequest{Sender: sender, Chain: chain, KeyID: keyID}
+	return &CreateTransferOwnershipRequest{Sender: sender, Chain: chain, KeyID: tss.KeyID(keyID)}
 }
 
 // Route implements sdk.Msg
@@ -42,8 +44,8 @@ func (m CreateTransferOwnershipRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain")
 	}
 
-	if m.KeyID == "" {
-		return fmt.Errorf("missing key ID")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	return nil

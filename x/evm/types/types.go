@@ -235,7 +235,7 @@ func GetSignHash(commandData []byte) common.Hash {
 }
 
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
-func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burnerInfo BurnerInfo) (Command, error) {
+func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo) (Command, error) {
 	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 	if err != nil {
 		return Command{}, err
@@ -254,7 +254,7 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID string, height int64, burner
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID *big.Int, keyID string, tokenDetails TokenDetails) (Command, error) {
+func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails TokenDetails) (Command, error) {
 	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity.BigInt())
 	if err != nil {
 		return Command{}, err
@@ -270,7 +270,7 @@ func CreateDeployTokenCommand(chainID *big.Int, keyID string, tokenDetails Token
 }
 
 // CreateMintTokenCommand creates a command to mint token to the given address
-func CreateMintTokenCommand(chainID *big.Int, keyID string, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
+func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
 	params, err := createMintTokenParams(symbol, address, amount)
 	if err != nil {
 		return Command{}, err
@@ -286,7 +286,7 @@ func CreateMintTokenCommand(chainID *big.Int, keyID string, id CommandID, symbol
 }
 
 // CreateTransferOwnershipCommand creates a command to transfer ownership of the contract
-func CreateTransferOwnershipCommand(chainID *big.Int, keyID string, newOwnerAddr common.Address) (Command, error) {
+func CreateTransferOwnershipCommand(chainID *big.Int, keyID tss.KeyID, newOwnerAddr common.Address) (Command, error) {
 	params, err := createTransferOwnershipParams(newOwnerAddr)
 	if err != nil {
 		return Command{}, err
@@ -302,7 +302,7 @@ func CreateTransferOwnershipCommand(chainID *big.Int, keyID string, newOwnerAddr
 }
 
 // CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
-func CreateTransferOperatorshipCommand(chainID *big.Int, keyID string, newOperatorAddr common.Address) (Command, error) {
+func CreateTransferOperatorshipCommand(chainID *big.Int, keyID tss.KeyID, newOperatorAddr common.Address) (Command, error) {
 	params, err := createTransferOperatorshipParams(newOperatorAddr)
 	if err != nil {
 		return Command{}, err
@@ -347,7 +347,7 @@ func (c Command) Clone() Command {
 }
 
 // NewBatchedCommands is the constructor for BatchedCommands
-func NewBatchedCommands(chainID *big.Int, keyID string, cmds []Command) (BatchedCommands, error) {
+func NewBatchedCommands(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommands, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte

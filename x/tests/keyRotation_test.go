@@ -31,6 +31,7 @@ import (
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 // Testing the key rotation functionality.
@@ -212,7 +213,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		randomKey := tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
+		randomKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
 
 		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
 			OutPointInfo: depositInfo,
@@ -290,7 +291,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var addressRes btcTypes.QueryAddressResponse
 	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &addressRes)
 
-	assert.Equal(t, secondaryKeyID2, addressRes.KeyID)
+	assert.Equal(t, secondaryKeyID2, string(addressRes.KeyID))
 }
 
 func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {

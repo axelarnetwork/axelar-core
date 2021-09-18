@@ -31,7 +31,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		counter := snapshotter.GetLatestCounter(ctx) + 1
 
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-		keeper.LinkAvailableOperatorsToSnapshot(ctx, request.KeyID, exported.AckType_Keygen, counter)
+		keeper.LinkAvailableOperatorsToSnapshot(ctx, string(request.KeyID), exported.AckType_Keygen, counter)
 
 		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
@@ -39,7 +39,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		}
 
 		keeper.DeleteKeygenStart(ctx, request.KeyID)
-		keeper.DeleteAvailableOperators(ctx, request.KeyID, exported.AckType_Keygen)
+		keeper.DeleteAvailableOperators(ctx, string(request.KeyID), exported.AckType_Keygen)
 	}
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
@@ -94,7 +94,7 @@ func startKeygen(
 		sdk.NewEvent(types.EventTypeKeygen,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
 			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(snapshot.CorruptionThreshold, 10)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
@@ -107,7 +107,7 @@ func startKeygen(
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "corruption", "threshold"},
 		float32(snapshot.CorruptionThreshold),
-		[]metrics.Label{telemetry.NewLabel("keyID", req.KeyID)})
+		[]metrics.Label{telemetry.NewLabel("keyID", string(req.KeyID))})
 
 	minKeygenThreshold := keyRequirement.MinKeygenThreshold
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
@@ -120,7 +120,7 @@ func startKeygen(
 			float32(validator.ShareCount),
 			[]metrics.Label{
 				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("keyID", req.KeyID),
+				telemetry.NewLabel("keyID", string(req.KeyID)),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
@@ -177,7 +177,7 @@ func startSign(
 	event := sdk.NewEvent(types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyKeyID, info.KeyID),
+		sdk.NewAttribute(types.AttributeKeyKeyID, string(info.KeyID)),
 		sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
 		sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
 		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID))),

@@ -60,7 +60,11 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
 			req.ID, ctx.BlockHeight(), req.Sender.String()))
 
-		if s.HasKeygenStarted(ctx, req.ID) {
+		keyID := exported.KeyID(req.ID)
+		if err := keyID.Validate(); err != nil {
+			return nil, err
+		}
+		if s.HasKeygenStarted(ctx, keyID) {
 			s.Logger(ctx).Info(fmt.Sprintf("late keygen ACK message (keygen with ID '%s' has already started)", req.ID))
 			return &types.AckResponse{}, nil
 		}
@@ -103,7 +107,11 @@ func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKey
 		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
 	}
 
-	if !s.DoesValidatorParticipateInKeygen(ctx, req.SessionID, senderAddress) {
+	keyID := exported.KeyID(req.SessionID)
+	if err := keyID.Validate(); err != nil {
+		return nil, err
+	}
+	if !s.DoesValidatorParticipateInKeygen(ctx, keyID, senderAddress) {
 		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, req.SessionID)
 	}
 
@@ -151,7 +159,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
-			telemetry.NewLabel("keyID", req.KeyID),
+			telemetry.NewLabel("keyID", string(req.KeyID)),
 		})
 
 	ctx.EventManager().EmitEvent(
@@ -175,17 +183,18 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	var voteData codec.ProtoMarshaler
+	keyID := exported.KeyID(req.PollKey.ID)
 	switch res := req.Result.GetKeygenResultData().(type) {
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasPrivateRecoveryInfos(ctx, voter, req.PollKey.ID) {
+		if s.HasPrivateRecoveryInfos(ctx, voter, keyID) {
 			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
 		}
 
-		counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.PollKey.ID)
+		counter, ok := s.GetSnapshotCounterForKeyID(ctx, keyID)
 		if !ok {
-			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.PollKey.ID)
+			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
 		}
 		snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
 		if !ok {
@@ -203,7 +212,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			return nil, fmt.Errorf("public key is nil")
 		}
 
-		s.SetPrivateRecoveryInfo(ctx, voter, req.PollKey.ID, res.Data.GetPrivateRecoverInfo())
+		s.SetPrivateRecoveryInfo(ctx, voter, keyID, res.Data.GetPrivateRecoverInfo())
 
 		voteData = &types.KeygenVoteData{
 			PubKey:            pubKey,
@@ -214,9 +223,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, fmt.Errorf("invalid data type")
 	}
 
-	if _, ok := s.GetKey(ctx, req.PollKey.ID); ok {
+	if _, ok := s.GetKey(ctx, keyID); ok {
 		// the key is already set, no need for further processing of the vote
-		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", req.PollKey.ID))
+		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", keyID))
 		return &types.VotePubKeyResponse{}, nil
 	}
 
@@ -227,7 +236,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 
 	if poll.Is(vote.Pending) {
-		return &types.VotePubKeyResponse{Log: fmt.Sprintf("not enough votes to confirm public key %s yet", req.PollKey.ID)}, nil
+		return &types.VotePubKeyResponse{Log: fmt.Sprintf("not enough votes to confirm public key %s yet", keyID)}, nil
 	}
 
 	event := sdk.NewEvent(
@@ -238,27 +247,27 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	defer ctx.EventManager().EmitEvent(event)
 
 	if poll.Is(vote.Failed) {
-		s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", req.PollKey.ID))
+		s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", keyID))
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
-		s.DeleteKeygenStart(ctx, req.PollKey.ID)
-		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
-		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
+		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
+		s.DeleteKeygenStart(ctx, keyID)
+		s.DeleteParticipantsInKeygen(ctx, keyID)
+		s.DeleteAllRecoveryInfos(ctx, keyID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", req.PollKey.ID))
+	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", keyID))
 
 	result := poll.GetResult()
 	// result should be either KeygenResult or Criminals
 	switch keygenResult := result.(type) {
 	case *types.KeygenVoteData:
-		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", req.PollKey.ID))
+		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", keyID))
 
 		btcecPK, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
 		if err != nil {
@@ -266,9 +275,9 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		}
 
 		pubKey := btcecPK.ToECDSA()
-		s.SetKey(ctx, req.PollKey.ID, *pubKey)
+		s.SetKey(ctx, keyID, *pubKey)
 
-		s.SetGroupRecoveryInfo(ctx, req.PollKey.ID, keygenResult.GroupRecoveryInfo)
+		s.SetGroupRecoveryInfo(ctx, keyID, keygenResult.GroupRecoveryInfo)
 
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(
@@ -279,14 +288,14 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		return &types.VotePubKeyResponse{}, nil
 	case *tofnd.MessageOut_CriminalList:
-		s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", req.PollKey.ID))
+		s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", keyID))
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
-		s.DeleteSnapshotCounterForKeyID(ctx, req.PollKey.ID)
-		s.DeleteKeygenStart(ctx, req.PollKey.ID)
-		s.DeleteParticipantsInKeygen(ctx, req.PollKey.ID)
-		s.DeleteAllRecoveryInfos(ctx, req.PollKey.ID)
+		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
+		s.DeleteKeygenStart(ctx, keyID)
+		s.DeleteParticipantsInKeygen(ctx, keyID)
+		s.DeleteAllRecoveryInfos(ctx, keyID)
 		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(
@@ -301,13 +310,13 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
 			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), req.PollKey.ID))
+				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), keyID))
 				continue
 			}
 
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
-			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", keyID, criminal.GetPartyUid(), criminal.CrimeType.String()))
 		}
 
 		return &types.VotePubKeyResponse{}, nil

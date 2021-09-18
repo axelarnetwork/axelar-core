@@ -47,8 +47,8 @@ type BTCKeeper interface {
 	GetOutPointInfo(ctx sdk.Context, outPoint wire.OutPoint) (OutPointInfo, OutPointState, bool)
 	DeleteOutpointInfo(ctx sdk.Context, outPoint wire.OutPoint)
 	SetSpentOutpointInfo(ctx sdk.Context, info OutPointInfo)
-	SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info OutPointInfo)
-	GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue
+	SetConfirmedOutpointInfo(ctx sdk.Context, keyID tss.KeyID, info OutPointInfo)
+	GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue
 
 	SetUnsignedTx(ctx sdk.Context, tx UnsignedTx)
 	GetUnsignedTx(ctx sdk.Context, txType TxType) (UnsignedTx, bool)
@@ -65,11 +65,11 @@ type BTCKeeper interface {
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)
 	DeleteDustAmount(ctx sdk.Context, encodedAddress string)
 
-	SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount)
-	GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount
+	SetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID, amount btcutil.Amount)
+	GetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount
 
-	SetExternalKeyIDs(ctx sdk.Context, keyIDs []string)
-	GetExternalKeyIDs(ctx sdk.Context) ([]string, bool)
+	SetExternalKeyIDs(ctx sdk.Context, keyIDs []tss.KeyID)
+	GetExternalKeyIDs(ctx sdk.Context) ([]tss.KeyID, bool)
 }
 
 // Voter is the interface that provides voting functionality
@@ -92,20 +92,20 @@ type Signer interface {
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
 	SetInfoForSig(ctx sdk.Context, sigID string, info tss.SignInfo)
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
+	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
-	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
-	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
+	SetKey(ctx sdk.Context, keyID tss.KeyID, key ecdsa.PublicKey)
+	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
-	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
-	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool)
-	SetKeyRole(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
-	GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	SetKeyRole(ctx sdk.Context, keyID tss.KeyID, keyRole tss.KeyRole)
+	GetRotationCountOfKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
 	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
 }
