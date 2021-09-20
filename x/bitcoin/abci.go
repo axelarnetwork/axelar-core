@@ -153,7 +153,17 @@ func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsigne
 
 	signedTx, err := types.AssembleBtcTx(tx, outPointsToSign, sigs)
 	if err != nil {
-		return nil, err
+		// Allow re-signing for any reason causing the bitcoin script to fail
+		for _, inputInfo := range unsignedTx.Info.InputInfos {
+			for _, sigRequirement := range inputInfo.SigRequirements {
+				sigID := fmt.Sprintf("%s-%s", hex.EncodeToString(sigRequirement.SigHash), sigRequirement.KeyID)
+
+				signer.DeleteSig(ctx, sigID)
+				signer.DeleteInfoForSig(ctx, sigID)
+			}
+		}
+
+		return nil, &signingAbortError{err: err}
 	}
 
 	return signedTx, nil

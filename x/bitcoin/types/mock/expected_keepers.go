@@ -168,6 +168,12 @@ var _ types.Signer = &SignerMock{}
 // 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
+// 			DeleteInfoForSigFunc: func(ctx sdk.Context, sigID string)  {
+// 				panic("mock out the DeleteInfoForSig method")
+// 			},
+// 			DeleteSigFunc: func(ctx sdk.Context, sigID string)  {
+// 				panic("mock out the DeleteSig method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -228,6 +234,12 @@ type SignerMock struct {
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+
+	// DeleteInfoForSigFunc mocks the DeleteInfoForSig method.
+	DeleteInfoForSigFunc func(ctx sdk.Context, sigID string)
+
+	// DeleteSigFunc mocks the DeleteSig method.
+	DeleteSigFunc func(ctx sdk.Context, sigID string)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
@@ -302,6 +314,20 @@ type SignerMock struct {
 			KeyRole tss.KeyRole
 			// KeyID is the keyID argument value.
 			KeyID string
+		}
+		// DeleteInfoForSig holds details about calls to the DeleteInfoForSig method.
+		DeleteInfoForSig []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
+		}
+		// DeleteSig holds details about calls to the DeleteSig method.
+		DeleteSig []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// SigID is the sigID argument value.
+			SigID string
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -442,6 +468,8 @@ type SignerMock struct {
 	}
 	lockAssertMatchesRequirements  sync.RWMutex
 	lockAssignNextKey              sync.RWMutex
+	lockDeleteInfoForSig           sync.RWMutex
+	lockDeleteSig                  sync.RWMutex
 	lockGetCurrentKey              sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
@@ -547,6 +575,76 @@ func (mock *SignerMock) AssignNextKeyCalls() []struct {
 	mock.lockAssignNextKey.RLock()
 	calls = mock.calls.AssignNextKey
 	mock.lockAssignNextKey.RUnlock()
+	return calls
+}
+
+// DeleteInfoForSig calls DeleteInfoForSigFunc.
+func (mock *SignerMock) DeleteInfoForSig(ctx sdk.Context, sigID string) {
+	if mock.DeleteInfoForSigFunc == nil {
+		panic("SignerMock.DeleteInfoForSigFunc: method is nil but Signer.DeleteInfoForSig was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		SigID string
+	}{
+		Ctx:   ctx,
+		SigID: sigID,
+	}
+	mock.lockDeleteInfoForSig.Lock()
+	mock.calls.DeleteInfoForSig = append(mock.calls.DeleteInfoForSig, callInfo)
+	mock.lockDeleteInfoForSig.Unlock()
+	mock.DeleteInfoForSigFunc(ctx, sigID)
+}
+
+// DeleteInfoForSigCalls gets all the calls that were made to DeleteInfoForSig.
+// Check the length with:
+//     len(mockedSigner.DeleteInfoForSigCalls())
+func (mock *SignerMock) DeleteInfoForSigCalls() []struct {
+	Ctx   sdk.Context
+	SigID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		SigID string
+	}
+	mock.lockDeleteInfoForSig.RLock()
+	calls = mock.calls.DeleteInfoForSig
+	mock.lockDeleteInfoForSig.RUnlock()
+	return calls
+}
+
+// DeleteSig calls DeleteSigFunc.
+func (mock *SignerMock) DeleteSig(ctx sdk.Context, sigID string) {
+	if mock.DeleteSigFunc == nil {
+		panic("SignerMock.DeleteSigFunc: method is nil but Signer.DeleteSig was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		SigID string
+	}{
+		Ctx:   ctx,
+		SigID: sigID,
+	}
+	mock.lockDeleteSig.Lock()
+	mock.calls.DeleteSig = append(mock.calls.DeleteSig, callInfo)
+	mock.lockDeleteSig.Unlock()
+	mock.DeleteSigFunc(ctx, sigID)
+}
+
+// DeleteSigCalls gets all the calls that were made to DeleteSig.
+// Check the length with:
+//     len(mockedSigner.DeleteSigCalls())
+func (mock *SignerMock) DeleteSigCalls() []struct {
+	Ctx   sdk.Context
+	SigID string
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		SigID string
+	}
+	mock.lockDeleteSig.RLock()
+	calls = mock.calls.DeleteSig
+	mock.lockDeleteSig.RUnlock()
 	return calls
 }
 

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -359,6 +360,23 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, fmt.Errorf("sig info does not exist")
 	}
 
+	// If voting for a signature, it has to be a valid one
+	if signature := req.Result.GetSignature(); signature != nil {
+		sig, err := btcec.ParseDERSignature(signature, btcec.S256())
+		if err != nil {
+			return nil, err
+		}
+
+		key, ok := s.GetKey(ctx, info.KeyID)
+		if !ok {
+			return nil, fmt.Errorf("key %s not found", info.KeyID)
+		}
+
+		if !ecdsa.Verify(&key.Value, info.Msg, sig.R, sig.S) {
+			return nil, fmt.Errorf("invalid signature %s for key %s received", info.SigID, info.KeyID)
+		}
+	}
+
 	poll := s.voter.GetPoll(ctx, req.PollKey)
 	if err := poll.Vote(voter, req.Result); err != nil {
 		return nil, err
@@ -395,7 +413,6 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
-
 		if signature := signResult.GetSignature(); signature != nil {
 			s.SetSig(ctx, req.PollKey.ID, signature)
 			s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Signed)

@@ -93,6 +93,11 @@ func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
 	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), signature)
 }
 
+// DeleteSig deletes the given signature by its ID
+func (k Keeper) DeleteSig(ctx sdk.Context, sigID string) {
+	ctx.KVStore(k.storeKey).Delete([]byte(sigPrefix + sigID))
+}
+
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(infoForSigPrefix + sigID))
