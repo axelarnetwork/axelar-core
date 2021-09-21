@@ -7,6 +7,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Tss provides access to the tss functionality
