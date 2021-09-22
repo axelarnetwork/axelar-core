@@ -380,8 +380,12 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	currRotationCount := k.GetRotationCount(ctx, chain, keyRole)
 	unbondingLockingKeyRotationCount := k.GetKeyUnbondingLockingKeyRotationCount(ctx)
 
-	for i := unbondingLockingKeyRotationCount; i > 0 && currRotationCount-i > 0; i++ {
-		rotationCount := currRotationCount - i
+	rotationCount := currRotationCount - unbondingLockingKeyRotationCount
+	if rotationCount <= 0 {
+		rotationCount = 1
+	}
+
+	for ; rotationCount < currRotationCount; rotationCount++ {
 		key, ok := k.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount)
 		if !ok {
 			return nil, fmt.Errorf("%s's %s key of rotation count %d not found", chain.Name, keyRole.SimpleString(), rotationCount)
