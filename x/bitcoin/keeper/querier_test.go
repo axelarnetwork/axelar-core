@@ -32,6 +32,21 @@ func TestQueryDepositAddress(t *testing.T) {
 		address string
 	)
 
+	externalKeyThreshold := types.DefaultParams().ExternalMultisigThreshold.Numerator
+	externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+	externalKeys := make([]tss.Key, externalKeyCount)
+	for i := 0; i < int(externalKeyCount); i++ {
+		externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		externalKeys[i] = tss.Key{
+			ID:    rand.Str(10),
+			Value: externalPrivKey.PublicKey,
+			Role:  tss.ExternalKey,
+		}
+	}
+
 	setup := func() {
 		btcKeeper = &mock.BTCKeeperMock{}
 		signer = &mock.SignerMock{}
@@ -54,27 +69,6 @@ func TestQueryDepositAddress(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "recipient chain not found")
-	}))
-
-	t.Run("should return error if the master key for given chain is not available", testutils.Func(func(t *testing.T) {
-		setup()
-
-		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
-
-		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-			if chain == params.Chain {
-				return evm.Ethereum, true
-			}
-			return nexus.Chain{}, false
-		}
-		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, _ tss.KeyRole) (tss.Key, bool) {
-			return tss.Key{}, false
-		}
-
-		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "master key not set")
 	}))
 
 	t.Run("should return error if the secondary key for given chain is not available", testutils.Func(func(t *testing.T) {
@@ -104,23 +98,16 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("should return error if the deposit address is not linked yet", testutils.Func(func(t *testing.T) {
 		setup()
 
-		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
 		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
 		}
-		masterKey := tss.Key{
-			ID:    rand.Str(10),
-			Value: masterPrivKey.PublicKey,
-			Role:  tss.MasterKey,
-		}
+		now := time.Now()
 		secondaryKey := tss.Key{
-			ID:    rand.Str(10),
-			Value: secondaryPrivKey.PublicKey,
-			Role:  tss.SecondaryKey,
+			ID:        rand.Str(10),
+			Value:     secondaryPrivKey.PublicKey,
+			Role:      tss.SecondaryKey,
+			RotatedAt: &now,
 		}
 		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
@@ -131,15 +118,33 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.MasterKey {
-				return masterKey, true
-			}
 			if keyRole == tss.SecondaryKey {
 				return secondaryKey, true
 			}
 			return tss.Key{}, false
 		}
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			for _, externalKey := range externalKeys {
+				if keyID == externalKey.ID {
+					return externalKey, true
+				}
+			}
+
+			return tss.Key{}, false
+		}
+		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return types.DefaultParams().ExternalMultisigThreshold
+		}
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
+			externalKeyIDs := make([]string, len(externalKeys))
+			for i := 0; i < len(externalKeyIDs); i++ {
+				externalKeyIDs[i] = externalKeys[i].ID
+			}
+
+			return externalKeyIDs, true
+		}
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressInternalKeyLockDuration }
 		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, false
 		}
@@ -153,24 +158,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("should return the deposit address", testutils.Func(func(t *testing.T) {
 		setup()
 
-		masterPrivKey, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
-		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
-		masterKey := tss.Key{
-			ID:    rand.Str(10),
-			Value: masterPrivKey.PublicKey,
-			Role:  tss.MasterKey,
-		}
-		secondaryKey := tss.Key{
-			ID:    rand.Str(10),
-			Value: secondaryPrivKey.PublicKey,
-			Role:  tss.SecondaryKey,
-		}
+		secondaryKey := createRandomKey(tss.SecondaryKey, time.Now())
 		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
 
 		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
@@ -180,21 +168,40 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.MasterKey {
-				return masterKey, true
-			}
 			if keyRole == tss.SecondaryKey {
 				return secondaryKey, true
 			}
+
 			return tss.Key{}, false
 		}
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			for _, externalKey := range externalKeys {
+				if keyID == externalKey.ID {
+					return externalKey, true
+				}
+			}
+
+			return tss.Key{}, false
+		}
+		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressExternalKeyLockDuration }
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
+		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return types.DefaultParams().ExternalMultisigThreshold
+		}
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
+			externalKeyIDs := make([]string, len(externalKeys))
+			for i := 0; i < len(externalKeyIDs); i++ {
+				externalKeyIDs[i] = externalKeys[i].ID
+			}
+
+			return externalKeyIDs, true
+		}
 		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, true
 		}
 
 		expected := types.QueryAddressResponse{
-			Address: types.NewDepositAddress(masterKey, secondaryKey, types.DefaultParams().Network, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}).Address,
+			Address: types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}, types.DefaultParams().Network).Address,
 			KeyID:   secondaryKey.ID,
 		}
 		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))

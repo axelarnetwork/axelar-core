@@ -20,25 +20,26 @@ import (
 )
 
 const (
-	rotationPrefix         = "rotationCount_"
-	keygenStartHeight      = "blockHeight_"
-	pkPrefix               = "pk_"
-	groupRecoverPrefix     = "group_recovery_info_"
-	privateRecoverPrefix   = "private_recovery_info_"
-	thresholdPrefix        = "threshold_"
-	snapshotForKeyIDPrefix = "sfkid_"
-	sigPrefix              = "sig_"
-	infoForSigPrefix       = "info_for_sig_"
-	participatePrefix      = "part_"
-	keyRequirementPrefix   = "key_requirement_"
-	keyRolePrefix          = "key_role_"
-	keyTssSuspendedUntil   = "key_tss_suspended_until_"
-	keyRotatedAtPrefix     = "key_rotated_at_"
-	availablePrefix        = "available_"
-	linkedSeqNumPrefix     = "linked_seq_number_"
-	scheduledKeygenPrefix  = "scheduled_keygen_"
-	scheduledSignPrefix    = "scheduled_sign_"
-	sigStatusPrefix        = "sig_status_"
+	rotationPrefix             = "rotation_count_"
+	keygenStartHeight          = "block_height_"
+	pkPrefix                   = "pk_"
+	groupRecoverPrefix         = "group_recovery_info_"
+	privateRecoverPrefix       = "private_recovery_info_"
+	thresholdPrefix            = "threshold_"
+	snapshotForKeyIDPrefix     = "sfkid_"
+	sigPrefix                  = "sig_"
+	infoForSigPrefix           = "info_for_sig_"
+	participatePrefix          = "part_"
+	keyRequirementPrefix       = "key_requirement_"
+	keyRolePrefix              = "key_role_"
+	keyTssSuspendedUntil       = "key_tss_suspended_until_"
+	keyRotatedAtPrefix         = "key_rotated_at_"
+	availablePrefix            = "available_"
+	linkedSeqNumPrefix         = "linked_seq_number_"
+	scheduledKeygenPrefix      = "scheduled_keygen_"
+	scheduledSignPrefix        = "scheduled_sign_"
+	sigStatusPrefix            = "sig_status_"
+	rotationCountOfKeyIDPrefix = "rotation_count_of_key_id_"
 )
 
 // Keeper allows access to the broadcast state
@@ -370,6 +371,30 @@ func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, va
 	}
 
 	return false
+}
+
+// GetOldActiveKeys gets all the old keys of given key role that are still active for chain
+func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error) {
+	var activeKeys []exported.Key
+
+	currRotationCount := k.GetRotationCount(ctx, chain, keyRole)
+	unbondingLockingKeyRotationCount := k.GetKeyUnbondingLockingKeyRotationCount(ctx)
+
+	rotationCount := currRotationCount - unbondingLockingKeyRotationCount
+	if rotationCount <= 0 {
+		rotationCount = 1
+	}
+
+	for ; rotationCount < currRotationCount; rotationCount++ {
+		key, ok := k.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount)
+		if !ok {
+			return nil, fmt.Errorf("%s's %s key of rotation count %d not found", chain.Name, keyRole.SimpleString(), rotationCount)
+		}
+
+		activeKeys = append(activeKeys, key)
+	}
+
+	return activeKeys, nil
 }
 
 func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string, height int64) {

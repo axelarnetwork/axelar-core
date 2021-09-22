@@ -60,6 +60,7 @@
     - [AddressRole](#bitcoin.v1beta1.AddressRole)
     - [OutPointState](#bitcoin.v1beta1.OutPointState)
     - [TxStatus](#bitcoin.v1beta1.TxStatus)
+    - [TxType](#bitcoin.v1beta1.TxType)
   
 - [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
     - [Params](#bitcoin.v1beta1.Params)
@@ -88,6 +89,8 @@
     - [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse)
     - [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest)
     - [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse)
+    - [CreateRescueTxRequest](#bitcoin.v1beta1.CreateRescueTxRequest)
+    - [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse)
     - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
     - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
     - [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest)
@@ -869,6 +872,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 | `tx` | [bytes](#bytes) |  |  |
 | `prev_signed_tx_hash` | [bytes](#bytes) |  |  |
 | `confirmation_required` | [bool](#bool) |  |  |
@@ -887,6 +891,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 | `tx` | [bytes](#bytes) |  |  |
 | `info` | [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info) |  |  |
 | `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
@@ -988,6 +993,20 @@ of a transaction
 | TX_STATUS_SIGNING | 2 |  |
 | TX_STATUS_ABORTED | 3 |  |
 | TX_STATUS_SIGNED | 4 |  |
+
+
+
+<a name="bitcoin.v1beta1.TxType"></a>
+
+### TxType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TX_TYPE_UNSPECIFIED | 0 |  |
+| TX_TYPE_MASTER_CONSOLIDATION | 1 |  |
+| TX_TYPE_SECONDARY_CONSOLIDATION | 2 |  |
+| TX_TYPE_RESCUE | 3 |  |
 
 
  <!-- end enums -->
@@ -1348,6 +1367,31 @@ of a secondary key consolidation transaction
 
 
 
+<a name="bitcoin.v1beta1.CreateRescueTxRequest"></a>
+
+### CreateRescueTxRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="bitcoin.v1beta1.CreateRescueTxResponse"></a>
+
+### CreateRescueTxResponse
+
+
+
+
+
+
+
 <a name="bitcoin.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
@@ -1432,7 +1476,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `tx_type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 
 
 
@@ -1544,6 +1588,7 @@ Msg defines the bitcoin Msg service.
 | `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
 | `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create-pending-transfers-tx|
 | `CreateMasterTx` | [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create-master-tx|
+| `CreateRescueTx` | [CreateRescueTxRequest](#bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create-rescue-tx|
 | `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
 | `RegisterExternalKeys` | [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/bitcoin/register-external-key|
 | `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|

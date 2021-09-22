@@ -14,6 +14,7 @@ const (
 const (
 	AttributeKeyKeyID              = "keyID"
 	AttributeKeyRole               = "keyRole"
+	AttributeTxType                = "txType"
 	AttributeKeySigID              = "sigID"
 	AttributeKeyConfHeight         = "confHeight"
 	AttributeKeyOutPointInfo       = "outPointInfo"

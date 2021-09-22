@@ -2,8 +2,6 @@ package keeper_test
 
 import (
 	"bytes"
-	"crypto/ecdsa"
-	cryptoRand "crypto/rand"
 	"fmt"
 	mathRand "math/rand"
 	"strconv"
@@ -34,6 +32,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 )
@@ -46,17 +45,47 @@ func TestHandleMsgLink(t *testing.T) {
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		msg         *types.LinkRequest
+
+		externalKeys []tss.Key
 	)
 	setup := func() {
-		btcKeeper = &mock.BTCKeeperMock{
-			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
-			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
+		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeys = make([]tss.Key, externalKeyCount)
+		for i := 0; i < int(externalKeyCount); i++ {
+			externalKeys[i] = createRandomKey(tss.ExternalKey)
 		}
-		signer = &mock.SignerMock{GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			sk, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-			return tss.Key{Value: sk.PublicKey, ID: rand.StrBetween(5, 20), Role: keyRole}, true
-		}}
+
+		btcKeeper = &mock.BTCKeeperMock{
+			GetNetworkFunc:                   func(ctx sdk.Context) types.Network { return types.Mainnet },
+			SetAddressFunc:                   func(sdk.Context, types.AddressInfo) {},
+			LoggerFunc:                       func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold { return types.DefaultParams().ExternalMultisigThreshold },
+			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
+				return types.DefaultParams().MasterAddressExternalKeyLockDuration
+			},
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
+				externalKeyIDs := make([]string, len(externalKeys))
+				for i := 0; i < len(externalKeyIDs); i++ {
+					externalKeyIDs[i] = externalKeys[i].ID
+				}
+
+				return externalKeyIDs, true
+			},
+		}
+		signer = &mock.SignerMock{
+			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				return createRandomKey(tss.SecondaryKey, time.Now()), true
+			},
+			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+				for _, externalKey := range externalKeys {
+					if keyID == externalKey.ID {
+						return externalKey, true
+					}
+				}
+
+				return tss.Key{}, false
+			},
+		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
@@ -232,6 +261,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		depositAddressInfo  types.AddressInfo
 	)
 	setup := func() {
+		rotationCount := rand.I64Between(100, 1000)
 		address := randomAddress()
 		info = randomOutpointInfo()
 		msg = randomMsgVoteConfirmOutpoint()
@@ -275,12 +305,32 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 				return nexus.CrossChainAddress{Chain: nexus.Chain{}, Address: ""}, true
 			},
 		}
-		privateKey, _ := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-		currentSecondaryKey = tss.Key{ID: rand.StrBetween(5, 20), Value: privateKey.PublicKey, Role: tss.MasterKey}
+		currentSecondaryKey = createRandomKey(tss.SecondaryKey, time.Now())
 		signerKeeper := &mock.SignerMock{
 			GetNextKeyFunc:    func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false },
 			GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return currentSecondaryKey, true },
 			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
+			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+				if keyID == currentSecondaryKey.ID {
+					return currentSecondaryKey, true
+				}
+
+				switch keyID {
+				case currentSecondaryKey.ID:
+					return currentSecondaryKey, true
+				case depositAddressInfo.KeyID:
+					return createRandomKey(tss.SecondaryKey), true
+				}
+
+				return tss.Key{}, false
+			},
+			GetRotationCountOfKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+				return rotationCount - tsstypes.DefaultParams().UnbondingLockingKeyRotationCount + 1, true
+			},
+			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
+				return rotationCount
+			},
+			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 { return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		snapshotter := &mock.SnapshotterMock{GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
@@ -512,6 +562,319 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 	}).Repeat(repeats))
 }
 
+func TestCreateRescueTx(t *testing.T) {
+	var (
+		btcKeeper    *mock.BTCKeeperMock
+		signerKeeper *mock.SignerMock
+		server       types.MsgServiceServer
+
+		ctx              sdk.Context
+		secondaryKey     tss.Key
+		nextSecondaryKey tss.Key
+		oldSecondaryKey  tss.Key
+		oldMasterKey     tss.Key
+	)
+
+	repeat := 100
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		secondaryKey = createRandomKey(tss.SecondaryKey)
+		nextSecondaryKey = createRandomKey(tss.SecondaryKey)
+		oldSecondaryKey = createRandomKey(tss.SecondaryKey)
+		oldMasterKey = createRandomKey(tss.MasterKey)
+
+		btcKeeper = &mock.BTCKeeperMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
+				return types.UnsignedTx{}, false
+			},
+			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
+				return &utilsmock.KVQueueMock{
+					IsEmptyFunc: func() bool { return true },
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+						return false
+					},
+				}
+			},
+			GetMaxInputCountFunc: func(ctx sdk.Context) int64 {
+				return types.DefaultParams().MaxInputCount
+			},
+			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
+			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
+			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
+				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
+			},
+			SetAddressFunc:    func(ctx sdk.Context, address types.AddressInfo) {},
+			SetUnsignedTxFunc: func(ctx sdk.Context, tx types.UnsignedTx) {},
+			GetNetworkFunc: func(ctx sdk.Context) types.Network {
+				return types.DefaultParams().Network
+			},
+			GetMinOutputAmountFunc: func(ctx sdk.Context) btcutil.Amount {
+				satoshi, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+				if err != nil {
+					panic(err)
+				}
+
+				return btcutil.Amount(satoshi.Amount.Int64())
+			},
+		}
+		signerKeeper = &mock.SignerMock{
+			GetOldActiveKeysFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error) {
+				switch keyRole {
+				case tss.MasterKey:
+					return []tss.Key{oldMasterKey}, nil
+				case tss.SecondaryKey:
+					return []tss.Key{oldSecondaryKey}, nil
+				}
+
+				return []tss.Key{}, nil
+			},
+			// GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
+			// 	if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
+			// 		return oldMasterKey, true
+			// 	}
+
+			// 	if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
+			// 		return oldSecondaryKey, true
+			// 	}
+
+			// 	return tss.Key{}, false
+			// },
+			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				return tss.Key{}, false
+			},
+			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+				if chain == exported.Bitcoin && keyRole == tss.SecondaryKey {
+					return secondaryKey, true
+				}
+
+				return tss.Key{}, false
+			},
+			// GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 {
+			// 	return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount
+			// },
+			// GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
+			// 	switch keyRole {
+			// 	case tss.MasterKey:
+			// 		return masterKeyRotationCount
+			// 	case tss.SecondaryKey:
+			// 		return secondaryKeyRotationCount
+			// 	default:
+			// 		return 0
+			// 	}
+			// },
+		}
+
+		voter := &mock.VoterMock{}
+		nexusKeeper := &mock.NexusMock{}
+		snapshotter := &mock.SnapshotterMock{}
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
+	}
+
+	t.Run("shoud return error when no UTXO require", testutils.Func(func(t *testing.T) {
+		setup()
+
+		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no rescue needed")
+	}).Repeat(repeat))
+
+	t.Run("should rescue UTXOs of an old master key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var inputs []types.OutPointInfo
+		inputsTotal := sdk.ZeroInt()
+		for i := 0; i < int(types.DefaultParams().MaxInputCount); i++ {
+			input := randomOutpointInfo()
+			inputs = append(inputs, input)
+			inputsTotal = inputsTotal.AddRaw(int64(input.Amount))
+		}
+
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+			if keyID == oldMasterKey.ID {
+				dequeueCount := 0
+
+				return &utilsmock.KVQueueMock{
+					IsEmptyFunc: func() bool { return true },
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+						if dequeueCount >= len(inputs) {
+							return false
+						}
+
+						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
+							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+							value,
+						)
+
+						dequeueCount++
+						return true
+					},
+				}
+			}
+
+			return &utilsmock.KVQueueMock{
+				IsEmptyFunc: func() bool { return true },
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					return false
+				},
+			}
+		}
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			for _, input := range inputs {
+				if input.OutPoint == outPoint.String() {
+					return input, types.OutPointState_Spent, true
+				}
+			}
+
+			return types.OutPointInfo{}, types.OutPointState_None, false
+		}
+		btcKeeper.GetAddressFunc = func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
+			return types.AddressInfo{
+				Address:      encodedAddress,
+				RedeemScript: nil,
+				KeyID:        oldMasterKey.ID,
+			}, true
+		}
+
+		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.Rescue, actualUnsignedTx.Type)
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		var expectedOutputs []types.Output
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+		})
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+		})
+		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Greater(t, btcutil.Amount(inputsTotal.Int64()), actualUnsignedTx.InternalTransferAmount)
+		assert.Greater(t, actualUnsignedTx.InternalTransferAmount, btcutil.Amount(0))
+	}).Repeat(repeat))
+
+	t.Run("should rescue UTXOs of an old secondary key", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var inputs []types.OutPointInfo
+		inputsTotal := sdk.ZeroInt()
+		for i := 0; i < int(types.DefaultParams().MaxInputCount); i++ {
+			input := randomOutpointInfo()
+			inputs = append(inputs, input)
+			inputsTotal = inputsTotal.AddRaw(int64(input.Amount))
+		}
+
+		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+			return nextSecondaryKey, true
+		}
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+			if keyID == oldSecondaryKey.ID {
+				dequeueCount := 0
+
+				return &utilsmock.KVQueueMock{
+					IsEmptyFunc: func() bool { return true },
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+						if dequeueCount >= len(inputs) {
+							return false
+						}
+
+						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
+							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+							value,
+						)
+
+						dequeueCount++
+						return true
+					},
+				}
+			}
+
+			return &utilsmock.KVQueueMock{
+				IsEmptyFunc: func() bool { return true },
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					return false
+				},
+			}
+		}
+		btcKeeper.GetOutPointInfoFunc = func(ctx sdk.Context, outPoint wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
+			for _, input := range inputs {
+				if input.OutPoint == outPoint.String() {
+					return input, types.OutPointState_Spent, true
+				}
+			}
+
+			return types.OutPointInfo{}, types.OutPointState_None, false
+		}
+		btcKeeper.GetAddressFunc = func(_ sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
+			return types.AddressInfo{
+				Address:      encodedAddress,
+				RedeemScript: nil,
+				KeyID:        oldSecondaryKey.ID,
+			}, true
+		}
+
+		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+
+		network := types.DefaultParams().Network
+		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
+		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network).Address
+		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
+		if err != nil {
+			panic(err)
+		}
+
+		assert.Len(t, btcKeeper.SetUnsignedTxCalls(), 1)
+		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
+		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
+		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.Rescue, actualUnsignedTx.Type)
+		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
+		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
+			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
+			assert.Equal(t, txIn.PreviousOutPoint.String(), inputs[i].OutPoint)
+		}
+		var expectedOutputs []types.Output
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedAnyoneCanSpendAddress, network),
+			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
+		})
+		expectedOutputs = append(expectedOutputs, types.Output{
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+		})
+		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
+		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
+		assert.Greater(t, btcutil.Amount(inputsTotal.Int64()), actualUnsignedTx.InternalTransferAmount)
+		assert.Greater(t, actualUnsignedTx.InternalTransferAmount, btcutil.Amount(0))
+	}).Repeat(repeat))
+}
+
 func TestCreateMasterTx(t *testing.T) {
 	var (
 		btcKeeper    *mock.BTCKeeperMock
@@ -615,7 +978,7 @@ func TestCreateMasterTx(t *testing.T) {
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
-			GetUnsignedTxFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 				return types.UnsignedTx{}, false
 			},
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
@@ -650,7 +1013,7 @@ func TestCreateMasterTx(t *testing.T) {
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressFunc:           func(ctx sdk.Context, address types.AddressInfo) {},
-			SetUnsignedTxFunc:        func(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {},
+			SetUnsignedTxFunc:        func(ctx sdk.Context, tx types.UnsignedTx) {},
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{}
@@ -734,6 +1097,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -775,6 +1139,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -831,6 +1196,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -883,6 +1249,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -942,7 +1309,7 @@ func TestCreateMasterTx(t *testing.T) {
 		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has outpoints to be signed and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
@@ -955,14 +1322,14 @@ func TestCreateMasterTx(t *testing.T) {
 		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
-			if keyRole == tss.SecondaryKey {
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
+			if txType == types.SecondaryConsolidation {
 				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
 			}
 
@@ -1085,7 +1452,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 				return types.NewAnyoneCanSpendAddress(types.DefaultParams().Network)
 			},
-			GetUnsignedTxFunc: func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 				return types.UnsignedTx{}, false
 			},
 			GetMasterKeyRetentionPeriodFunc: func(ctx sdk.Context) int64 {
@@ -1122,7 +1489,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressFunc:           func(ctx sdk.Context, address types.AddressInfo) {},
-			SetUnsignedTxFunc:        func(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {},
+			SetUnsignedTxFunc:        func(ctx sdk.Context, tx types.UnsignedTx) {},
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{
@@ -1189,6 +1556,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
 				return nil
 			},
+			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 { return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount },
 		}
 		snapshotter := &mock.SnapshotterMock{}
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
@@ -1215,6 +1583,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -1263,6 +1632,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -1326,6 +1696,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -1386,6 +1757,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
+		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
 		for i, txIn := range actualUnsignedTx.GetTx().TxIn {
 			assert.Equal(t, txIn.Sequence, wire.MaxTxInSequenceNum)
@@ -1451,7 +1823,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has outpoints to be signed and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
@@ -1464,14 +1836,14 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "still has unconfirmed outpoints and therefore it cannot be rotated out yet")
+		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
 	}))
 
 	t.Run("should return error if consolidating to a new key while the master key is sending coin to the current secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
-			if keyRole == tss.MasterKey {
+		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
+			if txType == types.MasterConsolidation {
 				return types.UnsignedTx{InternalTransferAmount: btcutil.Amount(rand.I64Between(10, 100))}, true
 			}
 

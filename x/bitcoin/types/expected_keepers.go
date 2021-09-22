@@ -50,13 +50,13 @@ type BTCKeeper interface {
 	SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info OutPointInfo)
 	GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue
 
-	SetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx UnsignedTx)
-	GetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) (UnsignedTx, bool)
-	DeleteUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole)
-	SetSignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx SignedTx)
+	SetUnsignedTx(ctx sdk.Context, tx UnsignedTx)
+	GetUnsignedTx(ctx sdk.Context, txType TxType) (UnsignedTx, bool)
+	DeleteUnsignedTx(ctx sdk.Context, txType TxType)
+	SetSignedTx(ctx sdk.Context, tx SignedTx)
 	GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (SignedTx, bool)
-	SetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole, txHash chainhash.Hash)
-	GetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool)
+	SetLatestSignedTxHash(ctx sdk.Context, txType TxType, txHash chainhash.Hash)
+	GetLatestSignedTxHash(ctx sdk.Context, txType TxType) (*chainhash.Hash, bool)
 
 	SetAddress(ctx sdk.Context, address AddressInfo)
 	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
@@ -105,6 +105,9 @@ type Signer interface {
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool)
 	SetKeyRole(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
+	GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool)
+	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
+	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

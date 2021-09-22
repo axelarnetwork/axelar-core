@@ -201,7 +201,10 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
-	k.setKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole, keyID)
+	rotationCount := k.GetRotationCount(ctx, chain, keyRole) + 1
+	k.setKeyID(ctx, chain, rotationCount, keyRole, keyID)
+	k.setRotationCountOfKeyID(ctx, keyID, rotationCount)
+
 	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.SimpleString(), keyID))
 
 	return nil
@@ -316,6 +319,23 @@ func (k Keeper) DeleteParticipantsInKeygen(ctx sdk.Context, keyID string) {
 
 func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) {
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"key_"+keyID+validator.String()), []byte{})
+}
+
+func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID string, rotationCount int64) {
+	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)), k.cdc.MustMarshalBinaryLengthPrefixed(rotationCount))
+}
+
+// GetRotationCountOfKeyID returns the rotation count of the given key ID
+func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)))
+	if bz == nil {
+		return 0, false
+	}
+
+	var rotationCount int64
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &rotationCount)
+
+	return rotationCount, true
 }
 
 // DoesValidatorParticipateInKeygen returns true if given validator participates in key gen for the given key ID; otherwise, false

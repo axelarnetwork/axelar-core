@@ -13,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // rest routes
@@ -22,6 +21,7 @@ const (
 	TxConfirmTx                   = "confirm"
 	TxCreatePendingTransfersTx    = "create-pending-transfers-tx"
 	TxCreateMasterConsolidationTx = "create-master-consolidation-tx"
+	TxCreateRescueTx              = "create-rescue-tx"
 	TxSignTx                      = "sign-tx"
 	TxRegisterExternalKeys        = "register-external-keys"
 	TxSubmitExternalSignature     = "submit-external-signature"
@@ -43,6 +43,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerConfirmTx(cliCtx), TxConfirmTx)
 	registerTx(TxHandlerCreatePendingTransfersTx(cliCtx), TxCreatePendingTransfersTx)
 	registerTx(TxHandlerCreateMasterConsolidationTx(cliCtx), TxCreateMasterConsolidationTx)
+	registerTx(TxHandlerCreateRescueTx(cliCtx), TxCreateRescueTx)
 	registerTx(TxHandlerSignTx(cliCtx), TxSignTx)
 	registerTx(TxHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys)
 	registerTx(TxHandlerSubmitExternalSignature(cliCtx), TxSubmitExternalSignature)
@@ -54,7 +55,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerExternalKeyID(cliCtx), QueryExternalKeyID)
 	registerQuery(QueryHandlerMinOutputAmount(cliCtx), QueryMinOutputAmount)
-	registerQuery(QueryHandlerLatestTx(cliCtx), QueryLatestTx, clientUtils.PathVarKeyRole)
+	registerQuery(QueryHandlerLatestTx(cliCtx), QueryLatestTx, clientUtils.PathVarTxType)
 	registerQuery(QueryHandlerSignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarTxID)
 }
 
@@ -84,10 +85,15 @@ type ReqCreateMasterConsolidationTx struct {
 	SecondaryKeyAmount string       `json:"secondary_key_amount" yaml:"secondary_key_amount"`
 }
 
+// ReqCreateRescueTx represents a request to create a rescue transaction
+type ReqCreateRescueTx struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+}
+
 // ReqSignTx represents a request to sign a consolidation transaction
 type ReqSignTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyRole string       `json:"key_role" yaml:"key_role"`
+	TxType  string       `json:"tx_type" yaml:"tx_type"`
 }
 
 // ReqRegisterExternalKey represents a request to register an external key
@@ -236,6 +242,34 @@ func TxHandlerCreateMasterConsolidationTx(cliCtx client.Context) http.HandlerFun
 	}
 }
 
+// TxHandlerCreateRescueTx returns the handler to create a rescue transaction
+func TxHandlerCreateRescueTx(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqCreateRescueTx
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewCreateRescueTxRequest(fromAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
 // TxHandlerSignTx returns the handler to sign a consolidation transaction
 func TxHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -254,13 +288,13 @@ func TxHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyRole, err := tss.KeyRoleFromSimpleStr(req.KeyRole)
+		txType, err := types.TxTypeFromSimpleStr(req.TxType)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewSignTxRequest(fromAddr, keyRole)
+		msg := types.NewSignTxRequest(fromAddr, txType)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

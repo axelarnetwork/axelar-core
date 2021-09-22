@@ -219,7 +219,7 @@ func GetCmdLatestTx(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestTxByKeyRole, args[0])
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestTxByTxType, args[0])
 
 			bz, _, err := clientCtx.Query(path)
 			if err != nil {

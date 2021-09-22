@@ -254,7 +254,7 @@ func createP2pkScript(pubKey btcec.PublicKey) RedeemScript {
 	return redeemScript
 }
 
-func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.PublicKey, externalMultiSigThreshold int64, externalKeys []btcec.PublicKey, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time) RedeemScript {
+func createMasterAddressScript(internalKey1 btcec.PublicKey, internalKey2 btcec.PublicKey, externalMultiSigThreshold int64, externalKeys []btcec.PublicKey, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time) RedeemScript {
 	if externalMultiSigThreshold <= 0 || externalMultiSigThreshold > int64(len(externalKeys)) {
 		panic(fmt.Errorf("invalid external multisig threshold %d", externalMultiSigThreshold))
 	}
@@ -348,6 +348,53 @@ func createTimelockScript(internalKey1 btcec.PublicKey, internalKey2 btcec.Publi
 	return redeemScript
 }
 
+func createDepositAddressScript(pubKey btcec.PublicKey, externalMultiSigThreshold int64, externalKeys []btcec.PublicKey, externalKeysOnlyLockTime time.Time, nonce []byte) RedeemScript {
+	builder := txscript.NewScriptBuilder().
+		AddData(nonce).
+		AddOp(txscript.OP_DROP).
+		AddOp(txscript.OP_DEPTH).
+		AddOp(txscript.OP_1).
+		AddOp(txscript.OP_EQUAL).
+		AddOp(txscript.OP_IF).
+		AddData(pubKey.SerializeCompressed()).
+		AddOp(txscript.OP_CHECKSIG).
+		AddOp(txscript.OP_ELSE).
+		AddOp(txscript.OP_DEPTH).
+		AddInt64(externalMultiSigThreshold).
+		AddOp(txscript.OP_EQUALVERIFY).
+		AddInt64(externalKeysOnlyLockTime.Unix()).
+		AddOp(txscript.OP_CHECKLOCKTIMEVERIFY).
+		// OP_DROP due to OP_CHECKLOCKTIMEVERIFY not popping anything from the stack
+		AddOp(txscript.OP_DROP)
+
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
+		builder = builder.AddOp(txscript.OP_TOALTSTACK)
+	}
+	builder = builder.AddOp(txscript.OP_0)
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
+		builder = builder.AddOp(txscript.OP_FROMALTSTACK)
+	}
+	builder = builder.AddInt64(externalMultiSigThreshold)
+	for _, externelKey := range externalKeys {
+		builder = builder.AddData(externelKey.SerializeCompressed())
+	}
+	builder = builder.
+		AddInt64(int64(len(externalKeys))).
+		// Verify m/n multisig from external keys
+		AddOp(txscript.OP_CHECKMULTISIG)
+
+	builder = builder.AddOp(txscript.OP_ENDIF)
+
+	redeemScript, err := builder.Script()
+	// The script builder only returns an error if the script is non-canonical.
+	// Since we want to build canonical scripts and the template is predefined, an error here means the template is wrong,
+	// i.e. it's a bug.
+	if err != nil {
+		panic(err)
+	}
+	return redeemScript
+}
+
 // createP2wshAddress creates a SeqWit script address based on a redeem script
 func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWitnessScriptHash {
 	hash := sha256.Sum256(script)
@@ -367,7 +414,7 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 	for i, externalKey := range externalKeys {
 		externalPubKeys[i] = btcec.PublicKey(externalKey.Value)
 	}
-	script := createTimelockScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
+	script := createMasterAddressScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
 	address := createP2wshAddress(script, network)
 
 	externalKeyIDs := make([]string, len(externalKeys))
@@ -412,10 +459,17 @@ func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) Add
 
 // NewDepositAddress returns a p2wsh-wrapped 1-of-2 multisig address that is spendable by the secondary or master key
 // with a recipient cross chain address to provide uniqueness
-func NewDepositAddress(masterKey tss.Key, secondaryKey tss.Key, network Network, recipient nexus.CrossChainAddress) AddressInfo {
-	script := createMultisigScript(
-		btcec.PublicKey(masterKey.Value),
+func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, externalKeysOnlyLockTime time.Time, recipient nexus.CrossChainAddress, network Network) AddressInfo {
+	externalPubKeys := make([]btcec.PublicKey, len(externalKeys))
+	for i, externalKey := range externalKeys {
+		externalPubKeys[i] = btcec.PublicKey(externalKey.Value)
+	}
+
+	script := createDepositAddressScript(
 		btcec.PublicKey(secondaryKey.Value),
+		externalMultiSigThreshold,
+		externalPubKeys,
+		externalKeysOnlyLockTime,
 		btcutil.Hash160([]byte(recipient.String())),
 	)
 	address := createP2wshAddress(script, network)
@@ -427,7 +481,7 @@ func NewDepositAddress(masterKey tss.Key, secondaryKey tss.Key, network Network,
 		KeyID:        secondaryKey.ID,
 		MaxSigCount:  1,
 		SpendingCondition: &AddressInfo_SpendingCondition{
-			InternalKeyIds:            []string{secondaryKey.ID, masterKey.ID},
+			InternalKeyIds:            []string{secondaryKey.ID},
 			ExternalKeyIds:            []string{},
 			ExternalMultisigThreshold: 0,
 			LockTime:                  nil,
@@ -602,8 +656,9 @@ func ParseSatoshi(rawCoin string) (sdk.Coin, error) {
 }
 
 // NewSignedTx is the constructor for SignedTx
-func NewSignedTx(tx *wire.MsgTx, confirmationRequired bool, anyoneCanSpendVout uint32) SignedTx {
+func NewSignedTx(txType TxType, tx *wire.MsgTx, confirmationRequired bool, anyoneCanSpendVout uint32) SignedTx {
 	return SignedTx{
+		Type:                 txType,
 		Tx:                   MustEncodeTx(tx),
 		ConfirmationRequired: confirmationRequired,
 		AnyoneCanSpendVout:   anyoneCanSpendVout,
@@ -617,8 +672,9 @@ func (m SignedTx) GetTx() *wire.MsgTx {
 }
 
 // NewUnsignedTx is the constructor for UnsignedTx
-func NewUnsignedTx(tx *wire.MsgTx, anyoneCanSpendVout uint32, internalTransferAmount btcutil.Amount) UnsignedTx {
+func NewUnsignedTx(txType TxType, tx *wire.MsgTx, anyoneCanSpendVout uint32, internalTransferAmount btcutil.Amount) UnsignedTx {
 	unsignedTx := UnsignedTx{
+		Type:                   txType,
 		Tx:                     MustEncodeTx(tx),
 		Status:                 Created,
 		ConfirmationRequired:   false,
@@ -647,6 +703,8 @@ func (m UnsignedTx) Is(status TxStatus) bool {
 
 // DisableTimelock disables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
 func DisableTimelock(tx *wire.MsgTx) *wire.MsgTx {
+	tx.LockTime = 0
+
 	for i := range tx.TxIn {
 		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum
 	}
@@ -655,7 +713,9 @@ func DisableTimelock(tx *wire.MsgTx) *wire.MsgTx {
 }
 
 // EnableTimelock enables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
-func EnableTimelock(tx *wire.MsgTx) *wire.MsgTx {
+func EnableTimelock(tx *wire.MsgTx, lockTime uint32) *wire.MsgTx {
+	tx.LockTime = lockTime
+
 	for i := range tx.TxIn {
 		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum - 1
 	}
@@ -669,4 +729,53 @@ func NewSigRequirement(keyID string, sigHash []byte) UnsignedTx_Info_InputInfo_S
 		KeyID:   keyID,
 		SigHash: sigHash,
 	}
+}
+
+// GetTxTypes returns an array of all types of key role
+func GetTxTypes() []TxType {
+	var results []TxType
+
+	for i := 1; i < len(TxType_value); i++ {
+		results = append(results, TxType(i))
+	}
+
+	return results
+}
+
+// TxTypeFromSimpleStr creates a TxType from string
+func TxTypeFromSimpleStr(str string) (TxType, error) {
+	switch strings.ToLower(str) {
+	case MasterConsolidation.SimpleString():
+		return MasterConsolidation, nil
+	case SecondaryConsolidation.SimpleString():
+		return SecondaryConsolidation, nil
+	case Rescue.SimpleString():
+		return Rescue, nil
+	default:
+		return -1, fmt.Errorf("invalid tx type %s", str)
+	}
+}
+
+// SimpleString returns a human-readable string
+func (t TxType) SimpleString() string {
+	switch t {
+	case MasterConsolidation:
+		return "master"
+	case SecondaryConsolidation:
+		return "secondary"
+	case Rescue:
+		return "rescue"
+	default:
+		return "unknown"
+	}
+}
+
+// Validate validates the TxType
+func (t TxType) Validate() error {
+	txTypeStr, ok := TxType_name[int32(t)]
+	if !ok || TxTypeUnspecified.String() == txTypeStr {
+		return fmt.Errorf("invalid tx type %d", t)
+	}
+
+	return nil
 }

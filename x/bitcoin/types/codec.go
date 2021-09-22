@@ -15,6 +15,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&LinkRequest{}, "bitcoin/Link", nil)
 	cdc.RegisterConcrete(&CreatePendingTransfersTxRequest{}, "bitcoin/CreatePendingTransfersTx", nil)
 	cdc.RegisterConcrete(&CreateMasterTxRequest{}, "bitcoin/CreateMasterTx", nil)
+	cdc.RegisterConcrete(&CreateRescueTxRequest{}, "bitcoin/CreateRescueTx", nil)
 	cdc.RegisterConcrete(&SignTxRequest{}, "bitcoin/SignTx", nil)
 	cdc.RegisterConcrete(&SubmitExternalSignatureRequest{}, "bitcoin/SubmitExternalSignature", nil)
 	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "bitcoin/RegisterExternalKey", nil)
@@ -28,6 +29,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&LinkRequest{},
 		&CreatePendingTransfersTxRequest{},
 		&CreateMasterTxRequest{},
+		&CreateRescueTxRequest{},
 		&SignTxRequest{},
 		&SubmitExternalSignatureRequest{},
 		&RegisterExternalKeysRequest{},

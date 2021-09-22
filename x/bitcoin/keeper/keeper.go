@@ -16,7 +16,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -280,29 +279,29 @@ func (k Keeper) GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID strin
 	return utils.NewBlockHeightKVQueue(queueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
 }
 
-// SetUnsignedTx stores an unsigned transaction for the given key role
-func (k Keeper) SetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx types.UnsignedTx) {
-	k.getStore(ctx).Set(unsignedTxPrefix.AppendStr(keyRole.SimpleString()), &tx)
+// SetUnsignedTx stores an unsigned transaction
+func (k Keeper) SetUnsignedTx(ctx sdk.Context, tx types.UnsignedTx) {
+	k.getStore(ctx).Set(unsignedTxPrefix.AppendStr(tx.Type.SimpleString()), &tx)
 }
 
-// GetUnsignedTx returns the unsigned transaction for the given key role
-func (k Keeper) GetUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) (types.UnsignedTx, bool) {
+// GetUnsignedTx returns the unsigned transaction for the given tx type
+func (k Keeper) GetUnsignedTx(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 	var result types.UnsignedTx
-	if ok := k.getStore(ctx).Get(unsignedTxPrefix.AppendStr(keyRole.SimpleString()), &result); !ok {
+	if ok := k.getStore(ctx).Get(unsignedTxPrefix.AppendStr(txType.SimpleString()), &result); !ok {
 		return types.UnsignedTx{}, false
 	}
 
 	return result, true
 }
 
-// DeleteUnsignedTx deletes the unsigned transaction for the given key role
-func (k Keeper) DeleteUnsignedTx(ctx sdk.Context, keyRole tss.KeyRole) {
-	k.getStore(ctx).Delete(unsignedTxPrefix.AppendStr(keyRole.SimpleString()))
+// DeleteUnsignedTx deletes the unsigned transaction for the given tx type
+func (k Keeper) DeleteUnsignedTx(ctx sdk.Context, txType types.TxType) {
+	k.getStore(ctx).Delete(unsignedTxPrefix.AppendStr(txType.SimpleString()))
 }
 
 // SetSignedTx stores the signed transaction for outpoint consolidation
-func (k Keeper) SetSignedTx(ctx sdk.Context, keyRole tss.KeyRole, tx types.SignedTx) {
-	prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, keyRole)
+func (k Keeper) SetSignedTx(ctx sdk.Context, tx types.SignedTx) {
+	prevSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, tx.Type)
 	if ok {
 		tx.PrevSignedTxHash = prevSignedTxHash[:]
 	} else {
@@ -322,14 +321,14 @@ func (k Keeper) GetSignedTx(ctx sdk.Context, txHash chainhash.Hash) (types.Signe
 	return result, true
 }
 
-// SetLatestSignedTxHash stores the tx hash of the most recent transaction signed by the given key role
-func (k Keeper) SetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole, txHash chainhash.Hash) {
-	k.getStore(ctx).SetRaw(latestSignedTxHashPrefix.AppendStr(keyRole.SimpleString()), txHash[:])
+// SetLatestSignedTxHash stores the tx hash of the most recent transaction signed of the given tx type
+func (k Keeper) SetLatestSignedTxHash(ctx sdk.Context, txType types.TxType, txHash chainhash.Hash) {
+	k.getStore(ctx).SetRaw(latestSignedTxHashPrefix.AppendStr(txType.SimpleString()), txHash[:])
 }
 
-// GetLatestSignedTxHash retrieves the tx hash of the most recent transaction signed by the given key role
-func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context, keyRole tss.KeyRole) (*chainhash.Hash, bool) {
-	bz := k.getStore(ctx).GetRaw(latestSignedTxHashPrefix.AppendStr(keyRole.SimpleString()))
+// GetLatestSignedTxHash retrieves the tx hash of the most recent transaction signed of the given tx type
+func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context, txType types.TxType) (*chainhash.Hash, bool) {
+	bz := k.getStore(ctx).GetRaw(latestSignedTxHashPrefix.AppendStr(txType.SimpleString()))
 	if bz == nil {
 		return nil, false
 	}

@@ -5,6 +5,7 @@ import (
 	rand2 "math/rand"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 
@@ -96,6 +97,23 @@ func Test_wBTC_mint(t *testing.T) {
 
 		rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
+
+		if c == btc.Bitcoin.Name {
+			var externalKeys []btcTypes.RegisterExternalKeysRequest_ExternalKey
+			for i := 0; i < int(btcTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
+				privKey, err := btcec.NewPrivateKey(btcec.S256())
+				if err != nil {
+					panic(err)
+				}
+				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
+					ID:     rand.Str(10),
+					PubKey: privKey.PubKey().SerializeCompressed(),
+				})
+			}
+
+			registerExternalKeysResult := <-chain.Submit(btcTypes.NewRegisterExternalKeysRequest(randomSender(), externalKeys...))
+			assert.NoError(t, registerExternalKeysResult.Error)
+		}
 	}
 
 	// setup axelar gateway

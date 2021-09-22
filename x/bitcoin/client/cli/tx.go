@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -31,6 +30,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdCreatePendingTransfersTx(),
 		GetCmdCreateMasterConsolidationTx(),
+		GetCmdCreateRescueTx(),
 		GetCmdSignTx(),
 		GetCmdRegisterExternalKeys(),
 		GetCmdSubmitExternalSignature(),
@@ -166,6 +166,32 @@ func GetCmdCreateMasterConsolidationTx() *cobra.Command {
 	return cmd
 }
 
+// GetCmdCreateRescueTx returns the cli command to create a rescue transaction
+func GetCmdCreateRescueTx() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create-rescue-tx",
+		Short: "Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys",
+		Args:  cobra.ExactArgs(0),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewCreateRescueTxRequest(clientCtx.GetFromAddress())
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdSignTx returns the cli command to sign a consolidation transaction
 func GetCmdSignTx() *cobra.Command {
 	cmd := &cobra.Command{
@@ -178,12 +204,12 @@ func GetCmdSignTx() *cobra.Command {
 				return err
 			}
 
-			keyRole, err := tss.KeyRoleFromSimpleStr(args[0])
+			txType, err := types.TxTypeFromSimpleStr(args[0])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewSignTxRequest(clientCtx.FromAddress, keyRole)
+			msg := types.NewSignTxRequest(clientCtx.FromAddress, txType)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

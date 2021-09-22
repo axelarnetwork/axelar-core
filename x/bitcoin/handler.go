@@ -38,6 +38,9 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		case *types.CreateMasterTxRequest:
 			res, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.CreateRescueTxRequest:
+			res, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.SignTxRequest:
 			res, err := server.SignTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

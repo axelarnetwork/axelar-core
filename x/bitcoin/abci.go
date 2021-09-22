@@ -31,22 +31,22 @@ func (e *signingAbortError) Error() string {
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.BTCKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, signer types.Signer, voter types.InitPoller, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, signer types.Signer) []abci.ValidatorUpdate {
 	if req.Height%k.GetSigCheckInterval(ctx) != 0 {
 		return nil
 	}
 
-	for _, keyRole := range tss.GetKeyRoles() {
-		handleUnsignedTxForKeyRole(ctx, k, signer, keyRole)
+	for _, txType := range types.GetTxTypes() {
+		handleUnsignedTxForTxType(ctx, k, signer, txType)
 	}
 
 	return nil
 }
 
-func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, keyRole tss.KeyRole) {
-	unsignedTx, ok := k.GetUnsignedTx(ctx, keyRole)
+func handleUnsignedTxForTxType(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, txType types.TxType) {
+	unsignedTx, ok := k.GetUnsignedTx(ctx, txType)
 	if !ok || !unsignedTx.Is(types.Signing) {
-		k.Logger(ctx).Debug(fmt.Sprintf("no unsigned %s key transaction ready", keyRole.SimpleString()))
+		k.Logger(ctx).Debug(fmt.Sprintf("no unsigned %s transaction ready", txType.SimpleString()))
 		return
 	}
 
@@ -57,13 +57,13 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigningAborted),
-				sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
+				sdk.NewAttribute(types.AttributeTxType, txType.SimpleString()),
 			))
 
 			unsignedTx.ConfirmationRequired = true
 			unsignedTx.Status = types.Aborted
 			unsignedTx.PrevAbortedKeyId = e.abortedKeyID
-			k.SetUnsignedTx(ctx, keyRole, unsignedTx)
+			k.SetUnsignedTx(ctx, unsignedTx)
 		default:
 		}
 
@@ -100,21 +100,33 @@ func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types
 
 	// Rotate key if necessary
 	if unsignedTx.Info.RotateKey {
+		var keyRole tss.KeyRole
+
+		switch txType {
+		case types.MasterConsolidation:
+			keyRole = tss.MasterKey
+		case types.SecondaryConsolidation:
+			keyRole = tss.SecondaryKey
+		default:
+			k.Logger(ctx).Error(fmt.Sprintf("%s transaction should not involve key rotation", txType.SimpleString()))
+			return
+		}
+
 		if err := signer.RotateKey(ctx, exported.Bitcoin, keyRole); err != nil {
 			k.Logger(ctx).Error(sdkerrors.Wrap(err, fmt.Sprintf("failed to rotate to the next %s key", keyRole.SimpleString())).Error())
 			return
 		}
 	}
 
-	k.DeleteUnsignedTx(ctx, keyRole)
-	k.SetSignedTx(ctx, keyRole, types.NewSignedTx(signedTx, unsignedTx.ConfirmationRequired, unsignedTx.AnyoneCanSpendVout))
-	k.SetLatestSignedTxHash(ctx, keyRole, txHash)
+	k.DeleteUnsignedTx(ctx, txType)
+	k.SetSignedTx(ctx, types.NewSignedTx(txType, signedTx, unsignedTx.ConfirmationRequired, unsignedTx.AnyoneCanSpendVout))
+	k.SetLatestSignedTxHash(ctx, txType, txHash)
 
 	// Notify that consolidation tx can be queried
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigned),
-		sdk.NewAttribute(types.AttributeKeyRole, keyRole.SimpleString()),
+		sdk.NewAttribute(types.AttributeTxType, txType.SimpleString()),
 	))
 	k.Logger(ctx).Info(fmt.Sprintf("transaction %s is fully signed", txHash.String()))
 }

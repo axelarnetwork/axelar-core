@@ -5,6 +5,7 @@ import (
 	"math/big"
 	rand2 "math/rand"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -29,7 +30,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	types2 "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // Testing the key rotation functionality.
@@ -75,7 +76,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
-		masterKeygenResult := <-chain.Submit(types2.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
+		masterKeygenResult := <-chain.Submit(tssTypes.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
 		assert.NoError(t, masterKeygenResult.Error)
 
 		// wait for voting to be done
@@ -83,11 +84,11 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		rotateMasterKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
+		rotateMasterKeyResult := <-chain.Submit(tssTypes.NewRotateKeyRequest(randomSender(), c, tss.MasterKey, masterKeyID))
 		assert.NoError(t, rotateMasterKeyResult.Error)
 
 		secondaryKeyID := randStrings.Next()
-		secondaryKeygenResult := <-chain.Submit(types2.NewStartKeygenRequest(randomSender(), secondaryKeyID, tss.SecondaryKey))
+		secondaryKeygenResult := <-chain.Submit(tssTypes.NewStartKeygenRequest(randomSender(), secondaryKeyID, tss.SecondaryKey))
 		assert.NoError(t, secondaryKeygenResult.Error)
 
 		// wait for voting to be done
@@ -95,8 +96,25 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			assert.FailNow(t, "keygen", err)
 		}
 
-		rotateSecondaryKeyResult := <-chain.Submit(types2.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
+		rotateSecondaryKeyResult := <-chain.Submit(tssTypes.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
+
+		if c == btc.Bitcoin.Name {
+			var externalKeys []btcTypes.RegisterExternalKeysRequest_ExternalKey
+			for i := 0; i < int(btcTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
+				privKey, err := btcec.NewPrivateKey(btcec.S256())
+				if err != nil {
+					panic(err)
+				}
+				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
+					ID:     rand.Str(10),
+					PubKey: privKey.PubKey().SerializeCompressed(),
+				})
+			}
+
+			registerExternalKeysResult := <-chain.Submit(btcTypes.NewRegisterExternalKeysRequest(randomSender(), externalKeys...))
+			assert.NoError(t, registerExternalKeysResult.Error)
+		}
 	}
 
 	// setup axelar gateway
@@ -131,7 +149,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// deploy token
 	asset := evmTypes.NewAsset("bitcoin", "satoshi")
-	tokenDetails := evmTypes.NewTokenDetails( "Satoshi", "satoshi", 8, sdk.NewInt(100000))
+	tokenDetails := evmTypes.NewTokenDetails("Satoshi", "satoshi", 8, sdk.NewInt(100000))
 	createDeployTokenResult := <-chain.Submit(
 		&evmTypes.CreateDeployTokenRequest{Sender: randomSender(), Chain: "ethereum", Asset: asset, TokenDetails: tokenDetails})
 	assert.NoError(t, createDeployTokenResult.Error)
@@ -194,14 +212,17 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		randomKey := tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
 
 		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
 			OutPointInfo: depositInfo,
 			AddressInfo: btcTypes.NewDepositAddress(
-				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey},
-				tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.SecondaryKey},
-				btcTypes.DefaultParams().Network,
+				randomKey,
+				btcTypes.DefaultParams().ExternalMultisigThreshold.Numerator,
+				[]tss.Key{randomKey, randomKey, randomKey, randomKey, randomKey, randomKey},
+				time.Now(),
 				crossChainAddr,
+				btcTypes.DefaultParams().Network,
 			),
 		})
 	}
@@ -213,7 +234,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 
 	// start new keygen
 	secondaryKeyID2 := randStrings.Next()
-	keygenResult := <-chain.Submit(types2.NewStartKeygenRequest(randomSender(), secondaryKeyID2, tss.SecondaryKey))
+	keygenResult := <-chain.Submit(tssTypes.NewStartKeygenRequest(randomSender(), secondaryKeyID2, tss.SecondaryKey))
 	assert.NoError(t, keygenResult.Error)
 
 	// wait for voting to be done
@@ -226,7 +247,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, createResult.Error)
 
 	// sign the consolidation transaction
-	signResult := <-chain.Submit(btcTypes.NewSignTxRequest(randomSender(), tss.SecondaryKey))
+	signResult := <-chain.Submit(btcTypes.NewSignTxRequest(randomSender(), btcTypes.SecondaryConsolidation))
 	assert.NoError(t, signResult.Error)
 
 	// wait for voting to be done
@@ -238,7 +259,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
 
 	// get signed tx to Bitcoin
-	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QLatestTxByKeyRole, tss.SecondaryKey.SimpleString()}, abci.RequestQuery{})
+	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QLatestTxByTxType, btcTypes.SecondaryConsolidation.SimpleString()}, abci.RequestQuery{})
 	assert.NoError(t, err)
 
 	var txRes btcTypes.QueryTxResponse

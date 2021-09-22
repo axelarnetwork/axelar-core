@@ -48,6 +48,14 @@ service MsgService {
     };
   }
 
+  rpc CreateRescueTx(bitcoin.v1beta1.CreateRescueTxRequest)
+      returns (bitcoin.v1beta1.CreateRescueTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/create-rescue-tx"
+      body : "*"
+    };
+  }
+
   rpc SignTx(bitcoin.v1beta1.SignTxRequest)
       returns (bitcoin.v1beta1.SignTxResponse) {
     option (google.api.http) = {

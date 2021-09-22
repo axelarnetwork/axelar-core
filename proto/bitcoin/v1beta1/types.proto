@@ -14,11 +14,24 @@ enum TxStatus {
   option (gogoproto.goproto_enum_stringer) = true;
 
   TX_STATUS_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+      [ (gogoproto.enumvalue_customname) = "TxStatusUnspecified" ];
   TX_STATUS_CREATED = 1 [ (gogoproto.enumvalue_customname) = "Created" ];
   TX_STATUS_SIGNING = 2 [ (gogoproto.enumvalue_customname) = "Signing" ];
   TX_STATUS_ABORTED = 3 [ (gogoproto.enumvalue_customname) = "Aborted" ];
   TX_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
+}
+
+enum TxType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TX_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "TxTypeUnspecified" ];
+  TX_TYPE_MASTER_CONSOLIDATION = 1
+      [ (gogoproto.enumvalue_customname) = "MasterConsolidation" ];
+  TX_TYPE_SECONDARY_CONSOLIDATION = 2
+      [ (gogoproto.enumvalue_customname) = "SecondaryConsolidation" ];
+  TX_TYPE_RESCUE = 3 [ (gogoproto.enumvalue_customname) = "Rescue" ];
 }
 
 message UnsignedTx {
@@ -37,21 +50,23 @@ message UnsignedTx {
     repeated InputInfo input_infos = 2 [ (gogoproto.nullable) = false ];
   }
 
-  bytes tx = 1;
-  Info info = 2 [ (gogoproto.nullable) = false ];
-  TxStatus status = 3;
-  bool confirmation_required = 4;
-  uint32 anyone_can_spend_vout = 5;
-  string prev_aborted_key_id = 6;
-  int64 internal_transfer_amount = 7
+  TxType type = 1;
+  bytes tx = 2;
+  Info info = 3 [ (gogoproto.nullable) = false ];
+  TxStatus status = 4;
+  bool confirmation_required = 5;
+  uint32 anyone_can_spend_vout = 6;
+  string prev_aborted_key_id = 7;
+  int64 internal_transfer_amount = 8
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
 
 message SignedTx {
-  bytes tx = 1;
-  bytes prev_signed_tx_hash = 2;
-  bool confirmation_required = 3;
-  uint32 anyone_can_spend_vout = 4;
+  TxType type = 1;
+  bytes tx = 2;
+  bytes prev_signed_tx_hash = 3;
+  bool confirmation_required = 4;
+  uint32 anyone_can_spend_vout = 5;
 }
 
 // OutPointInfo describes all the necessary information to confirm the outPoint
