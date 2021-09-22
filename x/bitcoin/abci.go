@@ -37,13 +37,13 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, k types.BTCKeeper, si
 	}
 
 	for _, txType := range types.GetTxTypes() {
-		handleUnsignedTxForKeyRole(ctx, k, signer, txType)
+		handleUnsignedTxForTxType(ctx, k, signer, txType)
 	}
 
 	return nil
 }
 
-func handleUnsignedTxForKeyRole(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, txType types.TxType) {
+func handleUnsignedTxForTxType(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, txType types.TxType) {
 	unsignedTx, ok := k.GetUnsignedTx(ctx, txType)
 	if !ok || !unsignedTx.Is(types.Signing) {
 		k.Logger(ctx).Debug(fmt.Sprintf("no unsigned %s transaction ready", txType.SimpleString()))

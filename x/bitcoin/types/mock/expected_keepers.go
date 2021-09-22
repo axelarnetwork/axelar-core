@@ -189,6 +189,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
+// 			GetOldActiveKeysFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error) {
+// 				panic("mock out the GetOldActiveKeys method")
+// 			},
 // 			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
 // 				panic("mock out the GetRotationCount method")
 // 			},
@@ -255,6 +258,9 @@ type SignerMock struct {
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
+
+	// GetOldActiveKeysFunc mocks the GetOldActiveKeys method.
+	GetOldActiveKeysFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
 
 	// GetRotationCountFunc mocks the GetRotationCount method.
 	GetRotationCountFunc func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
@@ -372,6 +378,15 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole tss.KeyRole
 		}
+		// GetOldActiveKeys holds details about calls to the GetOldActiveKeys method.
+		GetOldActiveKeys []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole tss.KeyRole
+		}
 		// GetRotationCount holds details about calls to the GetRotationCount method.
 		GetRotationCount []struct {
 			// Ctx is the ctx argument value.
@@ -473,6 +488,7 @@ type SignerMock struct {
 	lockGetKeyForSigID                         sync.RWMutex
 	lockGetKeyUnbondingLockingKeyRotationCount sync.RWMutex
 	lockGetNextKey                             sync.RWMutex
+	lockGetOldActiveKeys                       sync.RWMutex
 	lockGetRotationCount                       sync.RWMutex
 	lockGetRotationCountOfKeyID                sync.RWMutex
 	lockGetSig                                 sync.RWMutex
@@ -834,6 +850,45 @@ func (mock *SignerMock) GetNextKeyCalls() []struct {
 	mock.lockGetNextKey.RLock()
 	calls = mock.calls.GetNextKey
 	mock.lockGetNextKey.RUnlock()
+	return calls
+}
+
+// GetOldActiveKeys calls GetOldActiveKeysFunc.
+func (mock *SignerMock) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error) {
+	if mock.GetOldActiveKeysFunc == nil {
+		panic("SignerMock.GetOldActiveKeysFunc: method is nil but Signer.GetOldActiveKeys was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetOldActiveKeys.Lock()
+	mock.calls.GetOldActiveKeys = append(mock.calls.GetOldActiveKeys, callInfo)
+	mock.lockGetOldActiveKeys.Unlock()
+	return mock.GetOldActiveKeysFunc(ctx, chain, keyRole)
+}
+
+// GetOldActiveKeysCalls gets all the calls that were made to GetOldActiveKeys.
+// Check the length with:
+//     len(mockedSigner.GetOldActiveKeysCalls())
+func (mock *SignerMock) GetOldActiveKeysCalls() []struct {
+	Ctx     sdk.Context
+	Chain   nexus.Chain
+	KeyRole tss.KeyRole
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Chain   nexus.Chain
+		KeyRole tss.KeyRole
+	}
+	mock.lockGetOldActiveKeys.RLock()
+	calls = mock.calls.GetOldActiveKeys
+	mock.lockGetOldActiveKeys.RUnlock()
 	return calls
 }
 

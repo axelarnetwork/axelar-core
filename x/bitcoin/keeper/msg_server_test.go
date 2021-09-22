@@ -575,11 +575,7 @@ func TestCreateRescueTx(t *testing.T) {
 		oldMasterKey     tss.Key
 	)
 
-	repeat := 1
-	masterKeyRotationCount := int64(2)
-	oldMasterKeyRotationCount := masterKeyRotationCount - 1
-	secondaryKeyRotationCount := int64(2)
-	oldSecondaryKeyRotationCount := secondaryKeyRotationCount - 1
+	repeat := 100
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
@@ -624,17 +620,27 @@ func TestCreateRescueTx(t *testing.T) {
 			},
 		}
 		signerKeeper = &mock.SignerMock{
-			GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
-				if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
-					return oldMasterKey, true
+			GetOldActiveKeysFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error) {
+				switch keyRole {
+				case tss.MasterKey:
+					return []tss.Key{oldMasterKey}, nil
+				case tss.SecondaryKey:
+					return []tss.Key{oldSecondaryKey}, nil
 				}
 
-				if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
-					return oldSecondaryKey, true
-				}
-
-				return tss.Key{}, false
+				return []tss.Key{}, nil
 			},
+			// GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
+			// 	if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
+			// 		return oldMasterKey, true
+			// 	}
+
+			// 	if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
+			// 		return oldSecondaryKey, true
+			// 	}
+
+			// 	return tss.Key{}, false
+			// },
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
@@ -645,19 +651,19 @@ func TestCreateRescueTx(t *testing.T) {
 
 				return tss.Key{}, false
 			},
-			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 {
-				return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount
-			},
-			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
-				switch keyRole {
-				case tss.MasterKey:
-					return masterKeyRotationCount
-				case tss.SecondaryKey:
-					return secondaryKeyRotationCount
-				default:
-					return 0
-				}
-			},
+			// GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 {
+			// 	return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount
+			// },
+			// GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
+			// 	switch keyRole {
+			// 	case tss.MasterKey:
+			// 		return masterKeyRotationCount
+			// 	case tss.SecondaryKey:
+			// 		return secondaryKeyRotationCount
+			// 	default:
+			// 		return 0
+			// 	}
+			// },
 		}
 
 		voter := &mock.VoterMock{}
