@@ -373,6 +373,26 @@ func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, va
 	return false
 }
 
+// GetOldActiveKeys gets all the old keys of given key role that are still active for chain
+func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error) {
+	var activeKeys []exported.Key
+
+	currRotationCount := k.GetRotationCount(ctx, chain, keyRole)
+	unbondingLockingKeyRotationCount := k.GetKeyUnbondingLockingKeyRotationCount(ctx)
+
+	for i := int64(1); i <= unbondingLockingKeyRotationCount && currRotationCount-i > 0; i++ {
+		rotationCount := currRotationCount - i
+		key, ok := k.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount)
+		if !ok {
+			return nil, fmt.Errorf("%s's %s key of rotation count %d not found", chain.Name, keyRole.SimpleString(), rotationCount)
+		}
+
+		activeKeys = append(activeKeys, key)
+	}
+
+	return activeKeys, nil
+}
+
 func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string, height int64) {
 	event := sdk.NewEvent(types.EventTypeAck,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),

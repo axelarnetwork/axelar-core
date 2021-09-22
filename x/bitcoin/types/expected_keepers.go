@@ -107,6 +107,7 @@ type Signer interface {
 	SetKeyRole(ctx sdk.Context, keyID string, keyRole tss.KeyRole)
 	GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool)
 	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
+	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

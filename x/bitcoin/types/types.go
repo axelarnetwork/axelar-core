@@ -703,6 +703,8 @@ func (m UnsignedTx) Is(status TxStatus) bool {
 
 // DisableTimelock disables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
 func DisableTimelock(tx *wire.MsgTx) *wire.MsgTx {
+	tx.LockTime = 0
+
 	for i := range tx.TxIn {
 		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum
 	}
@@ -711,7 +713,9 @@ func DisableTimelock(tx *wire.MsgTx) *wire.MsgTx {
 }
 
 // EnableTimelock enables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
-func EnableTimelock(tx *wire.MsgTx) *wire.MsgTx {
+func EnableTimelock(tx *wire.MsgTx, lockTime uint32) *wire.MsgTx {
+	tx.LockTime = lockTime
+
 	for i := range tx.TxIn {
 		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum - 1
 	}

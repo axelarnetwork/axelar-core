@@ -136,8 +136,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -202,8 +201,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(internalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(internalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -240,8 +238,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -275,8 +272,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(internalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(internalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -316,8 +312,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(internalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(internalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -354,8 +349,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -445,8 +439,7 @@ func TestNewDepositAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(-1000, 1000))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -478,8 +471,7 @@ func TestNewDepositAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, -int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)
@@ -512,8 +504,7 @@ func TestNewDepositAddress(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		types.AddOutput(tx, address.GetAddress(), outputAmount)
-		tx.LockTime = uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(externalKeyLockTime.AddDate(0, 0, int(rand.I64Between(1, 100))).Unix()))
 
 		sigHash, err := txscript.CalcWitnessSigHash(address.RedeemScript, txscript.NewTxSigHashes(tx), txscript.SigHashAll, tx, 0, int64(inputAmount))
 		assert.NoError(t, err)

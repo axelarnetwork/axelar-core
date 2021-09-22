@@ -415,14 +415,12 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		fallthrough
 	// when no UTXO is locked
 	case maxLockTime == nil:
-		tx.LockTime = 0
 		tx = types.DisableTimelock(tx)
 
 		s.Logger(ctx).Debug(fmt.Sprintf("disabled lock time on %s  transaction", req.TxType.SimpleString()))
 	// when all UTXOs can be spent without the external key
 	default:
-		tx.LockTime = uint32(maxLockTime.Unix())
-		tx = types.EnableTimelock(tx)
+		tx = types.EnableTimelock(tx, uint32(maxLockTime.Unix()))
 
 		s.Logger(ctx).Debug(fmt.Sprintf("enabled lock time as %d on %s  transaction", tx.LockTime, req.TxType.SimpleString()))
 	}
@@ -552,27 +550,20 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 	tx := types.CreateTx()
 	inputsTotal := sdk.ZeroInt()
 
-	unbondingLockingKeyRotationCount := s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx)
-	for i := unbondingLockingKeyRotationCount; i > 0; i-- {
-		for _, keyRole := range tss.GetKeyRoles() {
-			currRotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, keyRole)
-			rotationCount := currRotationCount - i
-			if rotationCount <= 0 {
-				continue
-			}
+	for _, keyRole := range tss.GetKeyRoles() {
+		oldActiveKeys, err := s.signer.GetOldActiveKeys(ctx, exported.Bitcoin, keyRole)
+		if err != nil {
+			return nil, err
+		}
 
-			key, ok := s.signer.GetKeyByRotationCount(ctx, exported.Bitcoin, keyRole, rotationCount)
-			if !ok {
-				return nil, fmt.Errorf("%s key of rotation count %d not found", keyRole.SimpleString(), rotationCount)
-			}
-
-			total, err := addInputs(ctx, s.BTCKeeper, tx, key.ID)
+		for _, oldActiveKey := range oldActiveKeys {
+			total, err := addInputs(ctx, s.BTCKeeper, tx, oldActiveKey.ID)
 			if err != nil {
 				return nil, err
 			}
 
 			if total.IsPositive() {
-				s.Logger(ctx).Debug("rescuing UTXOs of old %s key %s", keyRole.SimpleString(), key.ID)
+				s.Logger(ctx).Debug("rescuing UTXOs of old %s key %s", keyRole.SimpleString(), oldActiveKey.ID)
 				inputsTotal = inputsTotal.Add(total)
 			}
 		}
@@ -607,7 +598,6 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 
 	s.SetAddress(ctx, secondaryAddress)
 
-	tx.LockTime = 0
 	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(types.Rescue, tx, anyoneCanSpendVout, btcutil.Amount(change.Int64()))
 
@@ -727,7 +717,6 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			telemetry.NewLabel("address", consolidationAddress.Address),
 		})
 
-	tx.LockTime = 0
 	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(types.MasterConsolidation, tx, anyoneCanSpendVout, req.SecondaryKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role
@@ -855,7 +844,6 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			telemetry.NewLabel("address", consolidationAddress.Address),
 		})
 
-	tx.LockTime = 0
 	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(types.SecondaryConsolidation, tx, anyoneCanSpendVout, req.MasterKeyAmount)
 	// If consolidating to a new key, that key has to be eligible for the role

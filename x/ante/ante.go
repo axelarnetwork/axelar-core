@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -102,18 +103,14 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress, chain.Name, keyRole.SimpleString())
 					}
 
-					rotationCount := d.tss.GetRotationCount(ctx, chain, keyRole)
-					unbondingLockingKeyRotationCount := d.tss.GetKeyUnbondingLockingKeyRotationCount(ctx)
-					for i := 1; i <= int(unbondingLockingKeyRotationCount); i++ {
-						key, ok := d.tss.GetKeyByRotationCount(ctx, chain, keyRole, rotationCount-int64(i))
-						if !ok {
-							logger(ctx).Debug(fmt.Sprintf("only %d previous %s keys exist for chain", i, keyRole.SimpleString()))
+					oldActiveKeys, err := d.tss.GetOldActiveKeys(ctx, exported.Bitcoin, keyRole)
+					if err != nil {
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+					}
 
-							break
-						}
-
-						if isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, key.ID) {
-							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's %s key %s", valAddress, chain.Name, keyRole.SimpleString(), key.ID)
+					for _, oldActiveKey := range oldActiveKeys {
+						if isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, oldActiveKey.ID) {
+							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's %s key %s", valAddress, chain.Name, keyRole.SimpleString(), oldActiveKey.ID)
 						}
 					}
 				}
