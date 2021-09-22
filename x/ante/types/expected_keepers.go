@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -29,4 +30,17 @@ type Nexus interface {
 // Snapshotter provides access to the snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
+}
+
+// BankKeeper defines the contract needed for supply related APIs (noalias)
+type BankKeeper interface {
+	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error}
+
+
+// Staking adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
+// actually used by this module
+type Staking interface {
+	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 }
