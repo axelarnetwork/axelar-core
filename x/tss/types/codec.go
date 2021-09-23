@@ -35,6 +35,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&tofnd.MessageOut_SignResult{},
 		&tofnd.MessageOut_KeygenResult{},
+		&tofnd.MessageOut_CriminalList{},
 		&QueryRecoveryResponse{},
 		&gogoprototypes.BytesValue{},
 	)
