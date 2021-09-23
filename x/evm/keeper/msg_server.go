@@ -571,7 +571,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	case !pollFound:
 		return nil, fmt.Errorf("no deposit found for poll %s", req.PollKey.String())
 	case pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID:
-		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID, req.BurnAddress.Hex(), req.PollKey.String())
+		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
 	}
@@ -595,7 +595,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID, req.BurnAddress.Hex())}, nil
+		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID.Hex(), req.BurnAddress.Hex())}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -630,7 +630,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		poll.AllowOverride()
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
-			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID, req.BurnAddress.Hex()),
+			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID.Hex(), req.BurnAddress.Hex()),
 		}, nil
 	}
 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
@@ -759,7 +759,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		}
 
 		if crypto.PubkeyToAddress(nextKey.Value) != common.Address(req.NewAddress) || pendingTransfer.Type != req.TransferType || pendingTransfer.TxID != req.TxID {
-			return nil, fmt.Errorf("%s in %s to address %s does not match poll %s", pendingTransfer.Type.SimpleString(), req.TxID, req.NewAddress.Hex(), req.PollKey.String())
+			return nil, fmt.Errorf("%s in %s to address %s does not match poll %s", pendingTransfer.Type.SimpleString(), req.TxID.Hex(), req.NewAddress.Hex(), req.PollKey.String())
 		}
 	default:
 		// assert: the transfer ownership/operatorship is known and has not been confirmed before
@@ -784,7 +784,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("not enough votes to confirm %s in %s to %s yet", req.TransferType.SimpleString(), req.TxID, req.NewAddress.Hex())}, nil
+		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("not enough votes to confirm %s in %s to %s yet", req.TransferType.SimpleString(), req.TxID.Hex(), req.NewAddress.Hex())}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -815,7 +815,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
 		return &types.VoteConfirmTransferKeyResponse{
-			Log: fmt.Sprintf("transfer ownership in %s to %s was discarded", req.TxID, req.NewAddress.Hex()),
+			Log: fmt.Sprintf("transfer ownership in %s to %s was discarded", req.TxID.Hex(), req.NewAddress.Hex()),
 		}, nil
 	}
 
