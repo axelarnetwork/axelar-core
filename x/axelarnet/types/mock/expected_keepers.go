@@ -26,6 +26,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetIBCPathFunc: func(ctx sdk.Context, asset string) string {
 // 				panic("mock out the GetIBCPath method")
 // 			},
+// 			GetPotentialRefundFunc: func(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool) {
+// 				panic("mock out the GetPotentialRefund method")
+// 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -42,6 +45,9 @@ type BaseKeeperMock struct {
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx sdk.Context, asset string) string
 
+	// GetPotentialRefundFunc mocks the GetPotentialRefund method.
+	GetPotentialRefundFunc func(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool)
+
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
@@ -56,6 +62,13 @@ type BaseKeeperMock struct {
 			Ctx sdk.Context
 			// Asset is the asset argument value.
 			Asset string
+		}
+		// GetPotentialRefund holds details about calls to the GetPotentialRefund method.
+		GetPotentialRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// MsgHash is the msgHash argument value.
+			MsgHash []byte
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -72,9 +85,10 @@ type BaseKeeperMock struct {
 			Path string
 		}
 	}
-	lockGetIBCPath      sync.RWMutex
-	lockLogger          sync.RWMutex
-	lockRegisterIBCPath sync.RWMutex
+	lockGetIBCPath         sync.RWMutex
+	lockGetPotentialRefund sync.RWMutex
+	lockLogger             sync.RWMutex
+	lockRegisterIBCPath    sync.RWMutex
 }
 
 // GetIBCPath calls GetIBCPathFunc.
@@ -109,6 +123,41 @@ func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	mock.lockGetIBCPath.RLock()
 	calls = mock.calls.GetIBCPath
 	mock.lockGetIBCPath.RUnlock()
+	return calls
+}
+
+// GetPotentialRefund calls GetPotentialRefundFunc.
+func (mock *BaseKeeperMock) GetPotentialRefund(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool) {
+	if mock.GetPotentialRefundFunc == nil {
+		panic("BaseKeeperMock.GetPotentialRefundFunc: method is nil but BaseKeeper.GetPotentialRefund was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		MsgHash []byte
+	}{
+		Ctx:     ctx,
+		MsgHash: msgHash,
+	}
+	mock.lockGetPotentialRefund.Lock()
+	mock.calls.GetPotentialRefund = append(mock.calls.GetPotentialRefund, callInfo)
+	mock.lockGetPotentialRefund.Unlock()
+	return mock.GetPotentialRefundFunc(ctx, msgHash)
+}
+
+// GetPotentialRefundCalls gets all the calls that were made to GetPotentialRefund.
+// Check the length with:
+//     len(mockedBaseKeeper.GetPotentialRefundCalls())
+func (mock *BaseKeeperMock) GetPotentialRefundCalls() []struct {
+	Ctx     sdk.Context
+	MsgHash []byte
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		MsgHash []byte
+	}
+	mock.lockGetPotentialRefund.RLock()
+	calls = mock.calls.GetPotentialRefund
+	mock.lockGetPotentialRefund.RUnlock()
 	return calls
 }
 

@@ -6,6 +6,7 @@ import (
 	mathRand "math/rand"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,10 @@ func TestHandleMsgLink(t *testing.T) {
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{})
+
+		rtr := baseapp.NewRouter()
+		msgServiceRtr := baseapp.NewMsgServiceRouter()
+		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, msgServiceRtr, rtr)
 	}
 
 	repeatCount := 20
@@ -117,7 +121,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper)
+		rtr := baseapp.NewRouter()
+		msgServiceRtr := baseapp.NewMsgServiceRouter()
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper, msgServiceRtr, rtr)
 	}
 
 	repeatCount := 20
@@ -318,7 +324,9 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			SendCoinsFunc:                    func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IBCTransferKeeperMock{})
+		rtr := baseapp.NewRouter()
+		msgServiceRtr := baseapp.NewMsgServiceRouter()
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IBCTransferKeeperMock{}, msgServiceRtr, rtr)
 	}
 
 	repeatCount := 20
@@ -408,7 +416,10 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 			RegisterIBCPathFunc: func(sdk.Context, string, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{})
+		rtr := baseapp.NewRouter()
+		msgServiceRtr := baseapp.NewMsgServiceRouter()
+
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, msgServiceRtr, rtr)
 
 	}
 

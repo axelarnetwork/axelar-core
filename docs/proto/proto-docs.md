@@ -26,6 +26,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RefundMessageRequest](#axelarnet.v1beta1.RefundMessageRequest)
+    - [RefundMessageResponse](#axelarnet.v1beta1.RefundMessageResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
@@ -541,6 +543,37 @@ address
 
 
 
+<a name="axelarnet.v1beta1.RefundMessageRequest"></a>
+
+### RefundMessageRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RefundMessageResponse"></a>
+
+### RefundMessageResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
@@ -632,6 +665,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
+| `RefundMessage` | [RefundMessageRequest](#axelarnet.v1beta1.RefundMessageRequest) | [RefundMessageResponse](#axelarnet.v1beta1.RefundMessageResponse) |  | POST|/axelar/axelarnet/refund-message|
 
  <!-- end services -->
 

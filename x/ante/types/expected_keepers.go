@@ -8,7 +8,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Tss provides access to the tss functionality
@@ -43,4 +42,9 @@ type BankKeeper interface {
 // actually used by this module
 type Staking interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+}
+
+// Axelarnet provides access to the axelarnet functionality
+type Axelarnet interface {
+	SetPotentialRefund(ctx sdk.Context, sender []byte, amt sdk.Coin) error
 }

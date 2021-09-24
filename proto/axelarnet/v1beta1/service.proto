@@ -50,4 +50,10 @@ service MsgService {
       body : "*"
     };
   }
+  rpc RefundMessage(RefundMessageRequest) returns (RefundMessageResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/refund-message"
+      body : "*"
+    };
+  }
 }

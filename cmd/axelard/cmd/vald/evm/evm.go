@@ -23,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -76,8 +77,9 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
 
 	msg := evmTypes.NewVoteConfirmChainRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
+	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
@@ -102,8 +104,9 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	})
 
 	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
+	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
@@ -128,8 +131,9 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	})
 
 	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.cliCtx.FromAddress, chain, asset, pollKey, txID, confirmed)
+	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 // ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
@@ -154,8 +158,9 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error
 	})
 
 	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
+	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 func parseNewChainParams(attributes map[string]string) (chain string, nativeAsset string, err error) {

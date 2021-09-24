@@ -3,6 +3,7 @@ package types
 import (
 	"crypto/sha256"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -16,4 +17,9 @@ func NewLinkedAddress(chain, symbol, recipientAddr string) sdk.AccAddress {
 func GetEscrowAddress(denom string) sdk.AccAddress {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", denom)))
 	return hash[:20]
+}
+
+// GetMsgKey creates key byte for a message
+func GetMsgKey(msg sdk.Msg) []byte {
+	return append(msg.GetSigners()[0],[]byte(msg.Type())...)
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -45,7 +46,8 @@ func (mgr *Mgr) ProcessKeygenAck(e tmEvents.Event) error {
 	case tofnd.RESPONSE_ABSENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
 		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, keyID, exported.AckType_Keygen, height)
-		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), tssMsg); err != nil {
+		refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, tssMsg)
+		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
 	default:
@@ -212,7 +214,8 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessKeygenTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: keyID, Payload: msg}
-		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), tssMsg); err != nil {
+		refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, tssMsg)
+		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
 	}
@@ -268,8 +271,9 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
 	vote := &tss.VotePubKeyRequest{Sender: mgr.cliCtx.FromAddress, PollKey: pollKey, Result: result}
+	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, vote)
 
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), vote)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 func (mgr *Mgr) getKeygenStream(keyID string) (Stream, bool) {

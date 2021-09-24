@@ -1,32 +1,31 @@
 package ante
 
 import (
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btctypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 )
 
 // ReimburseFeeDecorator reimburse tss and vote txs
 type ReimburseFeeDecorator struct {
 	ak          antetypes.AccountKeeper
-	bankKeeper  types.BankKeeper
 	staking     types.Staking
+	axelarnet   types.Axelarnet
 	snapshotter types.Snapshotter
 }
 
 // NewReimburseFeeDecorator constructor for ReimburseFeeDecorator
-func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, bk types.BankKeeper, staking types.Staking, snapshotter types.Snapshotter) ReimburseFeeDecorator {
+func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet) ReimburseFeeDecorator {
 	return ReimburseFeeDecorator{
 		ak,
-		bk,
 		staking,
+		axelarnet,
 		snapshotter,
 	}
 }
@@ -40,74 +39,64 @@ func (d ReimburseFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 		if !ok {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 		}
-
-		feePayer := feeTx.FeePayer()
-		if addr := d.ak.GetModuleAddress(authtypes.FeeCollectorName); addr == nil {
-			panic(fmt.Sprintf("%s module account has not been set", authtypes.FeeCollectorName))
-		}
 		fee := feeTx.GetFee()
 
-		err := reimburseFees(ctx, d.bankKeeper, feePayer, fee)
+		innerMsg := msgs[0].(*axelarnetTypes.RefundMessageRequest).GetInnerMessage()
+		err := d.axelarnet.SetPotentialRefund(ctx, axelarnetTypes.GetMsgKey(innerMsg), fee[0])
 		if err != nil {
 			return ctx, err
 		}
+
 	}
 
 	return next(ctx, tx, simulate)
 }
 
 func (d ReimburseFeeDecorator) qualifyForReimburse(ctx sdk.Context, msgs []sdk.Msg) bool {
-	for _, msg := range msgs {
-		switch msg.(type) {
+	if len(msgs) != 1 {
+		return false
+	}
+
+	switch msg := msgs[0].(type) {
+	case *axelarnetTypes.RefundMessageRequest:
+		innerMsg := msg.GetInnerMessage()
+		switch innerMsg.(type) {
 		case *tsstypes.ProcessKeygenTrafficRequest, *tsstypes.AckRequest:
 			// Validator must be registered for key gen
-			validator, found := getValidator(ctx, d.snapshotter, msg)
-			if !found {
+			validator := getValidator(ctx, d.snapshotter, msgs[0])
+			if validator == nil {
 				return false
 			}
 			_, hasProxyRegistered := d.snapshotter.GetProxy(ctx, validator)
 			if !hasProxyRegistered {
 				return false
 			}
-			continue
+
 		case *tsstypes.ProcessSignTrafficRequest, *tsstypes.VotePubKeyRequest, *tsstypes.VoteSigRequest,
 			*btctypes.VoteConfirmOutpointRequest, *evmtypes.VoteConfirmChainRequest, *evmtypes.VoteConfirmDepositRequest,
 			*evmtypes.VoteConfirmTokenRequest, *evmtypes.VoteConfirmTransferKeyRequest:
 			// Validator must be bounded
-			validatorAddr, found := getValidator(ctx, d.snapshotter, msg)
-			if !found {
+			validatorAddr := getValidator(ctx, d.snapshotter, msgs[0])
+			if validatorAddr == nil {
 				return false
 			}
 			validator := d.staking.Validator(ctx, validatorAddr)
 			if !validator.IsBonded() {
 				return false
 			}
-			continue
-
 		default:
 			return false
 		}
+	default:
+		return false
 	}
 
 	return true
 }
 
 // getValidator returns the validator address associated to the proxy address
-func getValidator(ctx sdk.Context, snapshotter types.Snapshotter, msg sdk.Msg) (sdk.ValAddress, bool) {
+func getValidator(ctx sdk.Context, snapshotter types.Snapshotter, msg sdk.Msg) sdk.ValAddress {
 	sender := msg.GetSigners()[0]
 	validator := snapshotter.GetOperator(ctx, sender)
-	return validator, validator != nil
-}
-
-// reimburseFees reimburse fees to the given account.
-func reimburseFees(ctx sdk.Context, bankKeeper types.BankKeeper, acc sdk.AccAddress, fees sdk.Coins) error {
-	if !fees.IsValid() {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
-	}
-	err := bankKeeper.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, acc, fees)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
-	}
-
-	return nil
+	return validator
 }

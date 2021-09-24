@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	pathPrefix = utils.KeyFromStr("path")
+	pathPrefix          = utils.KeyFromStr("path_")
+	pendingRefundPrefix = utils.KeyFromStr("refund_")
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -39,6 +40,26 @@ func (k Keeper) RegisterIBCPath(ctx sdk.Context, asset, path string) error {
 	}
 	k.getStore(ctx).SetRaw(pathPrefix.Append(utils.LowerCaseKey(asset)), []byte(path))
 	return nil
+}
+
+// SetPotentialRefund saves potential refundable transactions
+func (k Keeper) SetPotentialRefund(ctx sdk.Context, msgHash []byte, amt sdk.Coin) error {
+	bz := k.cdc.MustMarshalBinaryBare(&amt)
+	k.getStore(ctx).SetRaw(pendingRefundPrefix.Append(utils.KeyFromBz(msgHash)), bz)
+	return nil
+}
+
+// GetPotentialRefund retrieves a potential refundable transactions
+func (k Keeper) GetPotentialRefund(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool) {
+	bz := k.getStore(ctx).GetRaw(pendingRefundPrefix.Append(utils.KeyFromBz(msgHash)))
+	if bz == nil {
+		return sdk.Coin{}, false
+	}
+
+	var fee sdk.Coin
+	k.cdc.MustUnmarshalBinaryBare(bz, &fee)
+
+	return fee, true
 }
 
 // GetIBCPath retrieves the IBC path associated to the specified asset

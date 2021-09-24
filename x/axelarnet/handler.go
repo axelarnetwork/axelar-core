@@ -3,6 +3,7 @@ package axelarnet
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,9 +12,9 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, n, b, t)
-	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, n, b, t, m, r)
+	h := func(ctx sdk.Context, msg sdk.Msg, ) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case *types.LinkRequest:
@@ -57,6 +58,10 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully registered asset %s to chain %s", msg.Denom, msg.Chain)
 			}
+			return result, err
+		case *types.RefundMessageRequest:
+			res, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
