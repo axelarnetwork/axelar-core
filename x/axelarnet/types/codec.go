@@ -15,6 +15,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterIBCPathRequest{}, "axelarnet/RegisterIBCPath", nil)
 	cdc.RegisterConcrete(&AddCosmosBasedChainRequest{}, "axelarnet/AddCosmosBasedChain", nil)
 	cdc.RegisterConcrete(&RegisterAssetRequest{}, "axelarnet/RegisterAsset", nil)
+	cdc.RegisterConcrete(&RefundMessageRequest{}, "axelarnet/RefundMessageRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -26,7 +27,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RegisterIBCPathRequest{},
 		&AddCosmosBasedChainRequest{},
 		&RegisterAssetRequest{},
+		&RefundMessageRequest{},
 	)
+	registry.RegisterInterface("axelarnet.v1beta1.Refundable",
+		(*Refundable)(nil))
 }
 
 var amino = codec.NewLegacyAmino()

@@ -2,14 +2,15 @@ package types
 
 import (
 	"fmt"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewRefundMessageRequest creates a message of type RefundMessageRequest
 func NewRefundMessageRequest(sender sdk.AccAddress, innerMessage sdk.Msg) *RefundMessageRequest {
-	messageAny, err := codectypes.NewAnyWithValue(innerMessage)
+	messageAny, err := cdctypes.NewAnyWithValue(innerMessage)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +54,7 @@ func (m RefundMessageRequest) GetSigners() []sdk.AccAddress {
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
-func (m RefundMessageRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+func (m RefundMessageRequest) UnpackInterfaces(unpacker cdctypes.AnyUnpacker) error {
 	if m.InnerMessage != nil {
 		var sdkMsg sdk.Msg
 		return unpacker.UnpackAny(m.InnerMessage, &sdkMsg)

@@ -1,14 +1,12 @@
 package ante
 
 import (
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	btctypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 )
 
@@ -18,15 +16,17 @@ type ReimburseFeeDecorator struct {
 	staking     types.Staking
 	axelarnet   types.Axelarnet
 	snapshotter types.Snapshotter
+	registry    cdctypes.InterfaceRegistry
 }
 
 // NewReimburseFeeDecorator constructor for ReimburseFeeDecorator
-func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet) ReimburseFeeDecorator {
+func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet, registry cdctypes.InterfaceRegistry, ) ReimburseFeeDecorator {
 	return ReimburseFeeDecorator{
 		ak,
 		staking,
 		axelarnet,
 		snapshotter,
+		registry,
 	}
 }
 
@@ -59,24 +59,9 @@ func (d ReimburseFeeDecorator) qualifyForReimburse(ctx sdk.Context, msgs []sdk.M
 
 	switch msg := msgs[0].(type) {
 	case *axelarnetTypes.RefundMessageRequest:
-		innerMsg := msg.GetInnerMessage()
-		switch innerMsg.(type) {
-		case *tsstypes.ProcessKeygenTrafficRequest, *tsstypes.AckRequest:
-			// Validator must be registered for key gen
-			validator := getValidator(ctx, d.snapshotter, msgs[0])
-			if validator == nil {
-				return false
-			}
-			_, hasProxyRegistered := d.snapshotter.GetProxy(ctx, validator)
-			if !hasProxyRegistered {
-				return false
-			}
-
-		case *tsstypes.ProcessSignTrafficRequest, *tsstypes.VotePubKeyRequest, *tsstypes.VoteSigRequest,
-			*btctypes.VoteConfirmOutpointRequest, *evmtypes.VoteConfirmChainRequest, *evmtypes.VoteConfirmDepositRequest,
-			*evmtypes.VoteConfirmTokenRequest, *evmtypes.VoteConfirmTransferKeyRequest:
+		if msgRegistered(d.registry, msg.InnerMessage.TypeUrl) {
 			// Validator must be bounded
-			validatorAddr := getValidator(ctx, d.snapshotter, msgs[0])
+			validatorAddr := getValidator(ctx, d.snapshotter, msg)
 			if validatorAddr == nil {
 				return false
 			}
@@ -84,8 +69,6 @@ func (d ReimburseFeeDecorator) qualifyForReimburse(ctx sdk.Context, msgs []sdk.M
 			if !validator.IsBonded() {
 				return false
 			}
-		default:
-			return false
 		}
 	default:
 		return false
@@ -99,4 +82,13 @@ func getValidator(ctx sdk.Context, snapshotter types.Snapshotter, msg sdk.Msg) s
 	sender := msg.GetSigners()[0]
 	validator := snapshotter.GetOperator(ctx, sender)
 	return validator
+}
+
+func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
+	for _, url := range r.ListImplementations("axelarnet.v1beta1.Refundable") {
+		if targetURL == url {
+			return true
+		}
+	}
+	return false
 }

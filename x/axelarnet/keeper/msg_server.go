@@ -263,42 +263,21 @@ func (s msgServer) RefundMessage(c context.Context, req *types.RefundMessageRequ
 
 	msg := req.GetInnerMessage()
 	if msg == nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized inner message")
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid inner message")
 	}
 
-	var result *sdk.Result
-	var msgFqName string
-	var err error
-	if svcMsg, ok := msg.(sdk.ServiceMsg); ok {
-		msgFqName = svcMsg.MethodName
-		handler := s.msgSvcRouter.Handler(msgFqName)
-		if handler == nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message service method: %s;", msgFqName)
-		}
-		result, err = handler(ctx, svcMsg.Request)
-
-	} else {
-		// legacy sdk.Msg routing
-		msgRoute := msg.Route()
-		msgFqName = msg.Type()
-		handler := s.router.Route(ctx, msgRoute)
-		if handler == nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s;", msgRoute)
-		}
-		result, err = handler(ctx, msg)
-	}
-
+	result, err := s.routeInnerMsg(ctx, msg)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to execute message;")
 	}
 
 	fee, found := s.BaseKeeper.GetPotentialRefund(ctx, types.GetMsgKey(msg))
-	// reimburse
 	if found {
 		if err = reimburseFees(ctx, s.bank, msg.GetSigners()[0], fee); err != nil {
 			return nil, err
 		}
 	}
+
 	ctx.EventManager().EmitEvents(result.GetEvents())
 
 	return &types.RefundMessageResponse{Log: result.Log}, nil
@@ -337,6 +316,32 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 		)
 	}
 	return denomTrace, nil
+}
+
+func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+	var result *sdk.Result
+	var msgFqName string
+	var err error
+
+	if svcMsg, ok := msg.(sdk.ServiceMsg); ok {
+		msgFqName = svcMsg.MethodName
+		handler := s.msgSvcRouter.Handler(msgFqName)
+		if handler == nil {
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message service method: %s;", msgFqName)
+		}
+		result, err = handler(ctx, svcMsg.Request)
+
+	} else {
+		// legacy sdk.Msg routing
+		msgRoute := msg.Route()
+		msgFqName = msg.Type()
+		handler := s.router.Route(ctx, msgRoute)
+		if handler == nil {
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s;", msgRoute)
+		}
+		result, err = handler(ctx, msg)
+	}
+	return result, err
 }
 
 // reimburseFees reimburse fee to the given account.

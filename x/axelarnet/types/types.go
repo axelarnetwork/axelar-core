@@ -3,7 +3,6 @@ package types
 import (
 	"crypto/sha256"
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -22,4 +21,8 @@ func GetEscrowAddress(denom string) sdk.AccAddress {
 // GetMsgKey creates key byte for a message
 func GetMsgKey(msg sdk.Msg) []byte {
 	return append(msg.GetSigners()[0],[]byte(msg.Type())...)
+}
+
+// Refundable is used to register refundable message
+type Refundable interface {
 }

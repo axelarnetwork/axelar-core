@@ -6,6 +6,8 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
+
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -52,6 +54,13 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
+	)
+
+	registry.RegisterImplementations((*axelarnet.Refundable)(nil),
+		&VoteConfirmTokenRequest{},
+		&VoteConfirmDepositRequest{},
+		&VoteConfirmChainRequest{},
+		&VoteConfirmTransferKeyRequest{},
 	)
 }
 

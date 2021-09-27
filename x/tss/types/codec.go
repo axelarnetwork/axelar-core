@@ -6,6 +6,7 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
@@ -37,6 +38,14 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&tofnd.MessageOut_CriminalList{},
 		&QueryRecoveryResponse{},
 		&KeygenVoteData{},
+	)
+
+	registry.RegisterImplementations((*axelarnet.Refundable)(nil),
+		&AckRequest{},
+		&ProcessKeygenTrafficRequest{},
+		&VotePubKeyRequest{},
+		&ProcessSignTrafficRequest{},
+		&VoteSigRequest{},
 	)
 }
 
