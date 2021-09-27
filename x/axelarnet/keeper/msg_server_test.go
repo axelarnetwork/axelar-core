@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestHandleMsgLink(t *testing.T) {
@@ -439,6 +442,112 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		_, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 		assert.Len(t, axelarnetKeeper.RegisterIBCPathCalls(), 1)
+	}).Repeat(repeatCount))
+}
+
+func TestHandleMsgRefundRequest(t *testing.T) {
+	var (
+		server          types.MsgServiceServer
+		axelarnetKeeper *mock.BaseKeeperMock
+		bankKeeper      *mock.BankKeeperMock
+		ctx             sdk.Context
+		router          sdk.Router
+		msg             *types.RefundMessageRequest
+	)
+	setup := func() {
+		axelarnetKeeper = &mock.BaseKeeperMock{
+			GetPotentialRefundFunc: func(sdk.Context, []byte) (sdk.Coin, bool) { return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true },
+		}
+		bankKeeper = &mock.BankKeeperMock{
+			SendCoinsFromModuleToAccountFunc: func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error { return nil },
+		}
+		var tssHandler = func(_ sdk.Context, _ sdk.Msg) (*sdk.Result, error) {
+			return &sdk.Result{}, nil
+		}
+
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		router = baseapp.NewRouter()
+		router.AddRoute(sdk.NewRoute("tss", tssHandler))
+
+		msgServiceRtr := baseapp.NewMsgServiceRouter()
+
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, bankKeeper, &mock.IBCTransferKeeperMock{}, msgServiceRtr, router)
+
+	}
+
+	repeatCount := 20
+
+	t.Run("should return error when unpack invalid inner message", testutils.Func(func(t *testing.T) {
+		setup()
+
+		any := cdctypes.Any{
+			TypeUrl: rand.StrBetween(5, 20),
+			Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
+		}
+		msg = &types.RefundMessageRequest{
+			Sender:       rand.Bytes(sdk.AddrLen),
+			InnerMessage: &any,
+		}
+
+		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		assert.Error(t, err)
+		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
+
+	}).Repeat(repeatCount))
+
+	t.Run("should return error when failed to route inner message", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), randomMsgLink())
+
+		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		assert.Error(t, err)
+		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
+
+	}).Repeat(repeatCount))
+
+	t.Run("should return error when failed to executed inner message", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var evmHandler = func(_ sdk.Context, _ sdk.Msg) (*sdk.Result, error) {
+			return &sdk.Result{}, fmt.Errorf("failed to execute message")
+		}
+		router.AddRoute(sdk.NewRoute("evm", evmHandler))
+		voteReq := &evmtypes.VoteConfirmChainRequest{Name: rand.StrBetween(5, 20)}
+		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), voteReq)
+
+		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		assert.Error(t, err)
+		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
+
+	}).Repeat(repeatCount))
+
+	t.Run("should not refund transaction fee when no pending refund", testutils.Func(func(t *testing.T) {
+		setup()
+		axelarnetKeeper.GetPotentialRefundFunc = func(sdk.Context, []byte) (sdk.Coin, bool) { return sdk.Coin{}, false }
+
+		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+
+		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 1)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
+
+	}).Repeat(1))
+
+	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+
+		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 1)
+		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 1)
+
 	}).Repeat(repeatCount))
 }
 
