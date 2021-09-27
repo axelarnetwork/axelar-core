@@ -14,7 +14,7 @@ import (
 // NewHandler returns the handler of the Cosmos module
 func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) sdk.Handler {
 	server := keeper.NewMsgServerImpl(k, n, b, t, m, r)
-	h := func(ctx sdk.Context, msg sdk.Msg, ) (*sdk.Result, error) {
+	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case *types.LinkRequest:

@@ -10,8 +10,8 @@ import (
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 )
 
-// ReimburseFeeDecorator reimburse tss and vote txs
-type ReimburseFeeDecorator struct {
+// CheckRefundFeeDecorator record potential refund for tss and vote txs
+type CheckRefundFeeDecorator struct {
 	ak          antetypes.AccountKeeper
 	staking     types.Staking
 	axelarnet   types.Axelarnet
@@ -19,9 +19,9 @@ type ReimburseFeeDecorator struct {
 	registry    cdctypes.InterfaceRegistry
 }
 
-// NewReimburseFeeDecorator constructor for ReimburseFeeDecorator
-func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet, registry cdctypes.InterfaceRegistry, ) ReimburseFeeDecorator {
-	return ReimburseFeeDecorator{
+// NewCheckRefundFeeDecorator constructor for CheckRefundFeeDecorator
+func NewCheckRefundFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet, registry cdctypes.InterfaceRegistry, ) CheckRefundFeeDecorator {
+	return CheckRefundFeeDecorator{
 		ak,
 		staking,
 		axelarnet,
@@ -30,11 +30,11 @@ func NewReimburseFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking,
 	}
 }
 
-// AnteHandle reimburse the tss and vote transactions from proxy accounts
-func (d ReimburseFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+// AnteHandle record qualified refund for the tss and vote transactions
+func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
-	if d.qualifyForReimburse(ctx, msgs) {
+	if d.qualifyForRefund(ctx, msgs) {
 		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
@@ -52,7 +52,7 @@ func (d ReimburseFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	return next(ctx, tx, simulate)
 }
 
-func (d ReimburseFeeDecorator) qualifyForReimburse(ctx sdk.Context, msgs []sdk.Msg) bool {
+func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Msg) bool {
 	if len(msgs) != 1 {
 		return false
 	}

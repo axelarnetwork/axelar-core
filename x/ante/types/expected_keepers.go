@@ -30,13 +30,7 @@ type Nexus interface {
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
-
-// BankKeeper defines the contract needed for supply related APIs (noalias)
-type BankKeeper interface {
-	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error}
-
 
 // Staking adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
