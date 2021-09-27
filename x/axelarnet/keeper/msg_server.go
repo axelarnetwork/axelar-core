@@ -159,6 +159,8 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 	for _, pendingTransfer := range pendingTransfers {
 		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 		if err != nil {
+			ctx.Logger().Debug(fmt.Sprintf("Discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 			continue
 		}
 
@@ -234,7 +236,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	s.nexus.SetChain(ctx, req.Chain)
 	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
-	s.nexus.RegisterAsset(ctx,  req.Chain.Name, req.Chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx, req.Chain.Name, req.Chain.NativeAsset)
 
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
