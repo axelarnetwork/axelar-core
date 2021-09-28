@@ -48,7 +48,6 @@ func TestHandleMsgLink(t *testing.T) {
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-
 		rtr := baseapp.NewRouter()
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
 		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, msgServiceRtr, rtr)
@@ -163,7 +162,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		assert.Panics(t, func() { _, _ = server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg) }, "ConfirmDeposit did not panic when burn token failed")
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when SendCoinsFromAccountToModule in bank keeper failed", testutils.Func(func(t *testing.T) {
@@ -174,7 +172,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
 	t.Run("should enqueue transfer in nexus keeper when registered ICS20 tokens are sent from burner address to escrow address", testutils.Func(func(t *testing.T) {
@@ -202,10 +199,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when ICS20 token path not registered in axelarnet keeper", testutils.Func(func(t *testing.T) {
@@ -218,10 +211,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when ICS20 token tracing path does not match registered path in axelarnet keeper", testutils.Func(func(t *testing.T) {
@@ -234,10 +223,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when SendCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
@@ -250,10 +235,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should enqueue transfer in nexus keeper when native axelar tokens are sent from burner address to escrow address", testutils.Func(func(t *testing.T) {
@@ -279,8 +260,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
-
 	}).Repeat(repeatCount))
 }
 
@@ -341,7 +320,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers))
 		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), len(transfers))
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when MintCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
@@ -352,8 +330,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
 	t.Run("should panic when SendCoinsFromModuleToAccount in bank keeper failed", testutils.Func(func(t *testing.T) {
@@ -363,7 +339,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		}
 		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
 		assert.Panics(t, func() { _, _ = server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg) }, "ExecutePendingTransfers did not panic when transfer token failed")
-		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
 	t.Run("should send ICS20 token from escrow account to recipients, and archive pending transfers \\"+
@@ -378,7 +353,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), len(transfers))
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-
 	}).Repeat(repeatCount))
 
 	t.Run("should send axelarnet native token from escrow account to recipients, and archive pending transfers \\"+
@@ -403,7 +377,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers)-nativeAssetCount)
 		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), len(transfers)-nativeAssetCount)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-
 	}).Repeat(repeatCount))
 }
 
@@ -423,7 +396,6 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
 
 		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, msgServiceRtr, rtr)
-
 	}
 
 	repeatCount := 20
@@ -441,7 +413,6 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		msg = randomMsgRegisterIBCPath()
 		_, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, axelarnetKeeper.RegisterIBCPathCalls(), 1)
 	}).Repeat(repeatCount))
 }
 
@@ -452,11 +423,12 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		bankKeeper      *mock.BankKeeperMock
 		ctx             sdk.Context
 		router          sdk.Router
-		msg             *types.RefundMessageRequest
+		msg             *types.RefundMsgRequest
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			GetPotentialRefundFunc: func(sdk.Context, []byte) (sdk.Coin, bool) { return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true },
+			GetPendingRefundFunc:    func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true },
+			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			SendCoinsFromModuleToAccountFunc: func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error { return nil },
@@ -468,11 +440,9 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		router = baseapp.NewRouter()
 		router.AddRoute(sdk.NewRoute("tss", tssHandler))
-
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
 
 		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, bankKeeper, &mock.IBCTransferKeeperMock{}, msgServiceRtr, router)
-
 	}
 
 	repeatCount := 20
@@ -484,28 +454,22 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			TypeUrl: rand.StrBetween(5, 20),
 			Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
 		}
-		msg = &types.RefundMessageRequest{
+		msg = &types.RefundMsgRequest{
 			Sender:       rand.Bytes(sdk.AddrLen),
 			InnerMessage: &any,
 		}
 
-		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when failed to route inner message", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), randomMsgLink())
+		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), randomMsgLink())
 
-		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when failed to executed inner message", testutils.Func(func(t *testing.T) {
@@ -516,38 +480,31 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
 		voteReq := &evmtypes.VoteConfirmChainRequest{Name: rand.StrBetween(5, 20)}
-		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), voteReq)
+		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), voteReq)
 
-		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
-		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
-
 	}).Repeat(repeatCount))
 
 	t.Run("should not refund transaction fee when no pending refund", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetPotentialRefundFunc = func(sdk.Context, []byte) (sdk.Coin, bool) { return sdk.Coin{}, false }
+		axelarnetKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.Coin{}, false }
 
-		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
 
-		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 1)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
-
-	}).Repeat(1))
+	}).Repeat(repeatCount))
 
 	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMessageRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
 
-		_, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Len(t, axelarnetKeeper.GetPotentialRefundCalls(), 1)
+		assert.Len(t, axelarnetKeeper.GetPendingRefundCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 1)
-
 	}).Repeat(repeatCount))
 }
 

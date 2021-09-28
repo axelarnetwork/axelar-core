@@ -240,7 +240,7 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 			*wire.NewOutPoint(txHash, mathRand.Uint32()),
 			rand.Bools(0.5).Next(),
 		)
-		msgs = append(msgs, axelarnet.NewRefundMessageRequest(signer, msg))
+		msgs = append(msgs, axelarnet.NewRefundMsgRequest(signer, msg))
 	}
 	return msgs
 }

@@ -59,8 +59,8 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 				result.Log = fmt.Sprintf("successfully registered asset %s to chain %s", msg.Denom, msg.Chain)
 			}
 			return result, err
-		case *types.RefundMessageRequest:
-			res, err := server.RefundMessage(sdk.WrapSDKContext(ctx), msg)
+		case *types.RefundMsgRequest:
+			res, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		default:

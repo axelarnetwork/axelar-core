@@ -26,8 +26,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
-    - [RefundMessageRequest](#axelarnet.v1beta1.RefundMessageRequest)
-    - [RefundMessageResponse](#axelarnet.v1beta1.RefundMessageResponse)
+    - [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest)
+    - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
@@ -543,9 +543,9 @@ address
 
 
 
-<a name="axelarnet.v1beta1.RefundMessageRequest"></a>
+<a name="axelarnet.v1beta1.RefundMsgRequest"></a>
 
-### RefundMessageRequest
+### RefundMsgRequest
 
 
 
@@ -559,9 +559,9 @@ address
 
 
 
-<a name="axelarnet.v1beta1.RefundMessageResponse"></a>
+<a name="axelarnet.v1beta1.RefundMsgResponse"></a>
 
-### RefundMessageResponse
+### RefundMsgResponse
 
 
 
@@ -665,7 +665,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
-| `RefundMessage` | [RefundMessageRequest](#axelarnet.v1beta1.RefundMessageRequest) | [RefundMessageResponse](#axelarnet.v1beta1.RefundMessageResponse) |  | POST|/axelar/axelarnet/refund-message|
+| `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 
  <!-- end services -->
 

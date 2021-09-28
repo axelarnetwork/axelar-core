@@ -77,7 +77,7 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
 
 	msg := evmTypes.NewVoteConfirmChainRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
@@ -104,7 +104,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	})
 
 	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
@@ -131,7 +131,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	})
 
 	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.cliCtx.FromAddress, chain, asset, pollKey, txID, confirmed)
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
@@ -158,7 +158,7 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error
 	})
 
 	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }

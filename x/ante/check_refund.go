@@ -4,29 +4,29 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 )
 
 // CheckRefundFeeDecorator record potential refund for tss and vote txs
 type CheckRefundFeeDecorator struct {
+	registry    cdctypes.InterfaceRegistry
 	ak          antetypes.AccountKeeper
 	staking     types.Staking
 	axelarnet   types.Axelarnet
 	snapshotter types.Snapshotter
-	registry    cdctypes.InterfaceRegistry
 }
 
 // NewCheckRefundFeeDecorator constructor for CheckRefundFeeDecorator
-func NewCheckRefundFeeDecorator(ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet, registry cdctypes.InterfaceRegistry, ) CheckRefundFeeDecorator {
+func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet) CheckRefundFeeDecorator {
 	return CheckRefundFeeDecorator{
+		registry,
 		ak,
 		staking,
 		axelarnet,
 		snapshotter,
-		registry,
 	}
 }
 
@@ -39,12 +39,14 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 		if !ok {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 		}
-		fee := feeTx.GetFee()
 
-		innerMsg := msgs[0].(*axelarnetTypes.RefundMessageRequest).GetInnerMessage()
-		err := d.axelarnet.SetPotentialRefund(ctx, axelarnetTypes.GetMsgKey(innerMsg), fee[0])
-		if err != nil {
-			return ctx, err
+		fee := feeTx.GetFee()
+		if len(fee) > 0 {
+			req := msgs[0].(*axelarnetTypes.RefundMsgRequest)
+			err := d.axelarnet.SetPendingRefund(ctx, *req, fee[0])
+			if err != nil {
+				return ctx, err
+			}
 		}
 
 	}
@@ -58,10 +60,11 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 	}
 
 	switch msg := msgs[0].(type) {
-	case *axelarnetTypes.RefundMessageRequest:
-		if msgRegistered(d.registry, msg.InnerMessage.TypeUrl) {
-			// Validator must be bounded
-			validatorAddr := getValidator(ctx, d.snapshotter, msg)
+	case *axelarnetTypes.RefundMsgRequest:
+		if msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
+			// Validator must be bonded
+			sender := msg.GetSigners()[0]
+			validatorAddr := d.snapshotter.GetOperator(ctx, sender)
 			if validatorAddr == nil {
 				return false
 			}
@@ -75,13 +78,6 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 	}
 
 	return true
-}
-
-// getValidator returns the validator address associated to the proxy address
-func getValidator(ctx sdk.Context, snapshotter types.Snapshotter, msg sdk.Msg) sdk.ValAddress {
-	sender := msg.GetSigners()[0]
-	validator := snapshotter.GetOperator(ctx, sender)
-	return validator
 }
 
 func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {

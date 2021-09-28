@@ -258,7 +258,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	return &types.RegisterAssetResponse{}, nil
 }
 
-func (s msgServer) RefundMessage(c context.Context, req *types.RefundMessageRequest) (*types.RefundMessageResponse, error) {
+func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*types.RefundMsgResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	msg := req.GetInnerMessage()
@@ -268,19 +268,23 @@ func (s msgServer) RefundMessage(c context.Context, req *types.RefundMessageRequ
 
 	result, err := s.routeInnerMsg(ctx, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to execute message;")
+		return nil, sdkerrors.Wrapf(err, "failed to execute message")
 	}
 
-	fee, found := s.BaseKeeper.GetPotentialRefund(ctx, types.GetMsgKey(msg))
+	fee, found := s.BaseKeeper.GetPendingRefund(ctx, *req)
 	if found {
-		if err = reimburseFees(ctx, s.bank, msg.GetSigners()[0], fee); err != nil {
-			return nil, err
+		// refund tx fee to the given account.
+		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.GetSigners()[0], sdk.NewCoins(fee))
+		if err != nil {
+			return nil, sdkerrors.Wrapf(err, "failed to refund tx fee")
 		}
+
+		s.BaseKeeper.DeletePendingRefund(ctx, *req)
 	}
 
 	ctx.EventManager().EmitEvents(result.GetEvents())
 
-	return &types.RefundMessageResponse{Log: result.Log}, nil
+	return &types.RefundMsgResponse{Log: result.Log}, nil
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})
@@ -342,17 +346,4 @@ func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, err
 		result, err = handler(ctx, msg)
 	}
 	return result, err
-}
-
-// reimburseFees reimburse fee to the given account.
-func reimburseFees(ctx sdk.Context, bankKeeper types.BankKeeper, acc sdk.AccAddress, fee sdk.Coin) error {
-	if !fee.IsValid() {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fee)
-	}
-	err := bankKeeper.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, acc, sdk.NewCoins(fee))
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
-	}
-
-	return nil
 }

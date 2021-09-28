@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec

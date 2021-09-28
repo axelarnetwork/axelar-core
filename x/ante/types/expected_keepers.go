@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -40,5 +41,5 @@ type Staking interface {
 
 // Axelarnet provides access to the axelarnet functionality
 type Axelarnet interface {
-	SetPotentialRefund(ctx sdk.Context, sender []byte, amt sdk.Coin) error
+	SetPendingRefund(ctx sdk.Context, req axelarnettypes.RefundMsgRequest, fee sdk.Coin) error
 }

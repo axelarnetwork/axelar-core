@@ -1,8 +1,8 @@
 package keeper
 
 import (
+	"crypto/sha256"
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -42,24 +42,26 @@ func (k Keeper) RegisterIBCPath(ctx sdk.Context, asset, path string) error {
 	return nil
 }
 
-// SetPotentialRefund saves potential refundable transactions
-func (k Keeper) SetPotentialRefund(ctx sdk.Context, msgHash []byte, amt sdk.Coin) error {
-	bz := k.cdc.MustMarshalBinaryBare(&amt)
-	k.getStore(ctx).SetRaw(pendingRefundPrefix.Append(utils.KeyFromBz(msgHash)), bz)
+// SetPendingRefund saves pending refundable message
+func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, fee sdk.Coin) error {
+	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
 	return nil
 }
 
-// GetPotentialRefund retrieves a potential refundable transactions
-func (k Keeper) GetPotentialRefund(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool) {
-	bz := k.getStore(ctx).GetRaw(pendingRefundPrefix.Append(utils.KeyFromBz(msgHash)))
-	if bz == nil {
-		return sdk.Coin{}, false
-	}
-
+// GetPendingRefund retrieves a pending refundable message
+func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (sdk.Coin, bool) {
 	var fee sdk.Coin
-	k.cdc.MustUnmarshalBinaryBare(bz, &fee)
+	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
 
-	return fee, true
+	return fee, ok
+}
+
+// DeletePendingRefund retrieves a pending refundable message
+func (k Keeper) DeletePendingRefund(ctx sdk.Context, req types.RefundMsgRequest) {
+	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	k.getStore(ctx).Delete(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])))
 }
 
 // GetIBCPath retrieves the IBC path associated to the specified asset

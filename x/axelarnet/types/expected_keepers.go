@@ -16,7 +16,8 @@ type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, asset string) string
-	GetPotentialRefund(ctx sdk.Context, msgHash []byte) (sdk.Coin, bool)
+	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (sdk.Coin, bool)
+	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

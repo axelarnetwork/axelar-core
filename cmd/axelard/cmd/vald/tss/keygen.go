@@ -46,7 +46,7 @@ func (mgr *Mgr) ProcessKeygenAck(e tmEvents.Event) error {
 	case tofnd.RESPONSE_ABSENT:
 		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
 		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, keyID, exported.AckType_Keygen, height)
-		refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, tssMsg)
+		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 		}
@@ -214,7 +214,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessKeygenTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: keyID, Payload: msg}
-		refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, tssMsg)
+		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
@@ -271,7 +271,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
 	vote := &tss.VotePubKeyRequest{Sender: mgr.cliCtx.FromAddress, PollKey: pollKey, Result: result}
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, vote)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
 
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }

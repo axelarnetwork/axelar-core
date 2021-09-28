@@ -53,7 +53,7 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
 	msg := btc.NewVoteConfirmOutpointRequest(mgr.cliCtx.FromAddress, pollKey, outPointInfo.GetOutPoint(), err == nil)
-	refundableMsg := axelarnet.NewRefundMessageRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)

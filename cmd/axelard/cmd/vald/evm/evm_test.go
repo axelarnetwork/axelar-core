@@ -641,6 +641,6 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 }
 
 func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
-	return msg.(*axelarnetTypes.RefundMessageRequest).GetInnerMessage()
+	return msg.(*axelarnetTypes.RefundMsgRequest).GetInnerMessage()
 }
 
