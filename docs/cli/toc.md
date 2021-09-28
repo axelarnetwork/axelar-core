@@ -35,7 +35,6 @@
       - [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
       - [deposit-address \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
       - [deposit-status \[txID:voutIdx\]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
-      - [external-key-id](axelard_query_bitcoin_external-key-id.md)	 - Returns the key IDs of the current external keys
       - [latest-tx \[keyRole\]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
       - [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
       - [next-key-id \[keyRole\]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
@@ -133,6 +132,7 @@
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
       - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
+      - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
       - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
       - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
@@ -175,7 +175,6 @@
       - [create-pending-transfers-tx \[keyID\]](axelard_tx_bitcoin_create-pending-transfers-tx.md)	 - Create a Bitcoin transaction for all pending transfers
       - [create-rescue-tx](axelard_tx_bitcoin_create-rescue-tx.md)	 - Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-      - [register-external-keys](axelard_tx_bitcoin_register-external-keys.md)	 - Register the external key for bitcoin
       - [sign-tx \[keyRole\]](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role
       - [submit-external-signature \[keyID\] \[signatureHex\] \[sigHashHex\]](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
@@ -253,6 +252,7 @@
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
+      - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external key for bitcoin
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - Validate transactions signatures

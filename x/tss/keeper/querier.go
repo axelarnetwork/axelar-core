@@ -26,6 +26,7 @@ const (
 	QueryKeySharesByKeyID     = "key-share-id"
 	QueryKeySharesByValidator = "key-share-validator"
 	QueryDeactivated          = "deactivated"
+	QExternalKeyID            = "externalKeyID"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -34,6 +35,8 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		var res []byte
 		var err error
 		switch path[0] {
+		case QExternalKeyID:
+			res, err = QueryExternalKeyID(ctx, k, n, path[1])
 		case QuerySignature:
 			res, err = querySignatureStatus(ctx, k, v, path[1])
 		case QueryKey:
@@ -315,6 +318,25 @@ func queryDeactivatedOperator(ctx sdk.Context, k types.TSSKeeper, s types.Snapsh
 
 	resp := types.QueryDeactivatedOperatorsResponse{
 		OperatorAddresses: deactivatedValidators,
+	}
+
+	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+}
+
+// QueryExternalKeyID returns the keyIDs of the current set of external keys for the given chain
+func QueryExternalKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainStr string) ([]byte, error) {
+	chain, ok := n.GetChain(ctx, chainStr)
+	if !ok {
+		return nil, fmt.Errorf("unknown chain %s", chainStr)
+	}
+
+	externalKeyIDs, ok := k.GetExternalKeyIDs(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("external keys not found")
+	}
+
+	resp := types.QueryExternalKeyIDResponse{
+		KeyIDs: externalKeyIDs,
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)

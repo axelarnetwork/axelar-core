@@ -101,19 +101,19 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
 
 		if c == btc.Bitcoin.Name {
-			var externalKeys []btcTypes.RegisterExternalKeysRequest_ExternalKey
-			for i := 0; i < int(btcTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
+			var externalKeys []tssTypes.RegisterExternalKeysRequest_ExternalKey
+			for i := 0; i < int(tssTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
 				privKey, err := btcec.NewPrivateKey(btcec.S256())
 				if err != nil {
 					panic(err)
 				}
-				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
+				externalKeys = append(externalKeys, tssTypes.RegisterExternalKeysRequest_ExternalKey{
 					ID:     tssTestUtils.RandKeyID(),
 					PubKey: privKey.PubKey().SerializeCompressed(),
 				})
 			}
 
-			registerExternalKeysResult := <-chain.Submit(btcTypes.NewRegisterExternalKeysRequest(randomSender(), externalKeys...))
+			registerExternalKeysResult := <-chain.Submit(tssTypes.NewRegisterExternalKeysRequest(randomSender(), btc.Bitcoin.Name, externalKeys...))
 			assert.NoError(t, registerExternalKeysResult.Error)
 		}
 	}
@@ -219,7 +219,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 			OutPointInfo: depositInfo,
 			AddressInfo: btcTypes.NewDepositAddress(
 				randomKey,
-				btcTypes.DefaultParams().ExternalMultisigThreshold.Numerator,
+				tssTypes.DefaultParams().ExternalMultisigThreshold.Numerator,
 				[]tss.Key{randomKey, randomKey, randomKey, randomKey, randomKey, randomKey},
 				time.Now(),
 				crossChainAddr,

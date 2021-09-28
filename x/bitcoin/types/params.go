@@ -27,7 +27,6 @@ var (
 	KeyMasterKeyRetentionPeriod             = []byte("masterKeyRetentionPeriod")
 	KeyMasterAddressInternalKeyLockDuration = []byte("masterAddressInternalKeyLockDuration")
 	KeyMasterAddressExternalKeyLockDuration = []byte("masterAddressExternalKeyLockDuration")
-	KeyExternalMultisigThreshold            = []byte("externalMultisigThreshold")
 	KeyVotingThreshold                      = []byte("votingThreshold")
 	KeyMinVoterCount                        = []byte("minVoterCount")
 	KeyMaxTxSize                            = []byte("maxTxSize")
@@ -51,7 +50,6 @@ func DefaultParams() Params {
 		MasterKeyRetentionPeriod:             8,
 		MasterAddressInternalKeyLockDuration: 14 * 24 * time.Hour, // 14 days
 		MasterAddressExternalKeyLockDuration: 28 * 24 * time.Hour, // 28 days
-		ExternalMultisigThreshold:            utils.Threshold{Numerator: 3, Denominator: 6},
 		VotingThreshold:                      utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:                        15,
 		MaxTxSize:                            1024 * 1024 / 3, // 1/3 MiB
@@ -78,7 +76,6 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMasterKeyRetentionPeriod, &m.MasterKeyRetentionPeriod, validateMasterKeyRetentionPeriod),
 		paramtypes.NewParamSetPair(KeyMasterAddressInternalKeyLockDuration, &m.MasterAddressInternalKeyLockDuration, validateMasterAddressLockDuration),
 		paramtypes.NewParamSetPair(KeyMasterAddressExternalKeyLockDuration, &m.MasterAddressExternalKeyLockDuration, validateMasterAddressLockDuration),
-		paramtypes.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		paramtypes.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 		paramtypes.NewParamSetPair(KeyMaxTxSize, &m.MaxTxSize, validateMaxTxSize),
@@ -213,27 +210,6 @@ func validateMasterAddressLockDurations(masterAddressInternalKeyLockDuration tim
 	return nil
 }
 
-func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) error {
-	t, ok := externalMultisigThreshold.(utils.Threshold)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for external multisig threshold: %T", externalMultisigThreshold)
-	}
-
-	if t.Numerator <= 0 {
-		return fmt.Errorf("numerator must be greater than 0 for external multisig threshold")
-	}
-
-	if t.Denominator <= 0 {
-		return fmt.Errorf("denominator must be greater than 0 for external multisig threshold")
-	}
-
-	if t.Numerator > t.Denominator {
-		return fmt.Errorf("threshold must be <=1 for external multisig threshold")
-	}
-
-	return nil
-}
-
 func validateVotingThreshold(votingThreshold interface{}) error {
 	val, ok := votingThreshold.(utils.Threshold)
 	if !ok {
@@ -311,10 +287,6 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMasterKeyRetentionPeriod(m.MasterKeyRetentionPeriod); err != nil {
-		return err
-	}
-
-	if err := validateExternalMultisigThreshold(m.ExternalMultisigThreshold); err != nil {
 		return err
 	}
 

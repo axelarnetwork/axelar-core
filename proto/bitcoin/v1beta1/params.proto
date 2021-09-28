@@ -28,10 +28,8 @@ message Params {
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "time.Duration"
   ];
-  utils.v1beta1.Threshold external_multisig_threshold = 11
+  utils.v1beta1.Threshold voting_threshold = 11
       [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold voting_threshold = 12
-      [ (gogoproto.nullable) = false ];
-  int64 min_voter_count = 13;
-  int64 max_tx_size = 14;
+  int64 min_voter_count = 12;
+  int64 max_tx_size = 13;
 }

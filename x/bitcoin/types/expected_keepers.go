@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -36,7 +37,6 @@ type BTCKeeper interface {
 	GetMasterKeyRetentionPeriod(ctx sdk.Context) int64
 	GetMasterAddressInternalKeyLockDuration(ctx sdk.Context) time.Duration
 	GetMasterAddressExternalKeyLockDuration(ctx sdk.Context) time.Duration
-	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
 	GetMinVoterCount(ctx sdk.Context) int64
 	GetMaxTxSize(ctx sdk.Context) int64
@@ -67,9 +67,6 @@ type BTCKeeper interface {
 
 	SetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID, amount btcutil.Amount)
 	GetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount
-
-	SetExternalKeyIDs(ctx sdk.Context, keyIDs []tss.KeyID)
-	GetExternalKeyIDs(ctx sdk.Context) ([]tss.KeyID, bool)
 }
 
 // Voter is the interface that provides voting functionality
@@ -108,6 +105,8 @@ type Signer interface {
 	GetRotationCountOfKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
 	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
+	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool)
+	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 }
 
 // Nexus provides functionality to manage cross-chain transfers

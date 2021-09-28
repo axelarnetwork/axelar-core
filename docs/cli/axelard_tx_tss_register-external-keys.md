@@ -1,9 +1,9 @@
-## axelard tx bitcoin register-external-keys
+## axelard tx tss register-external-keys
 
 Register the external key for bitcoin
 
 ```
-axelard tx bitcoin register-external-keys [flags]
+axelard tx tss register-external-keys [chain] [flags]
 ```
 
 ### Options
@@ -45,4 +45,4 @@ axelard tx bitcoin register-external-keys [flags]
 
 ### SEE ALSO
 
-- [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands

@@ -64,14 +64,6 @@ service MsgService {
     };
   }
 
-  rpc RegisterExternalKeys(bitcoin.v1beta1.RegisterExternalKeysRequest)
-      returns (bitcoin.v1beta1.RegisterExternalKeysResponse) {
-    option (google.api.http) = {
-      post : "/axelar/bitcoin/register-external-key"
-      body : "*"
-    };
-  }
-
   rpc SubmitExternalSignature(bitcoin.v1beta1.SubmitExternalSignatureRequest)
       returns (bitcoin.v1beta1.SubmitExternalSignatureResponse) {
     option (google.api.http) = {

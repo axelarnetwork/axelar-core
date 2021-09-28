@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -25,6 +27,7 @@ func GetTxCmd() *cobra.Command {
 	tssTxCmd.AddCommand(
 		getCmdKeygenStart(),
 		getCmdRotateKey(),
+		GetCmdRegisterExternalKeys(),
 	)
 
 	return tssTxCmd
@@ -87,6 +90,56 @@ func getCmdRotateKey() *cobra.Command {
 		}
 
 		msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyRole, args[2])
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterExternalKeys returns the cli command to register an external key
+func GetCmdRegisterExternalKeys() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-external-keys [chain]",
+		Short: "Register the external key for bitcoin",
+		Args:  cobra.ExactArgs(1),
+	}
+	keys := cmd.Flags().StringSlice("key", []string{}, "key ID and public key in the hex format, e.g. [keyID:keyHex]")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		if len(*keys) == 0 {
+			return fmt.Errorf("keys are required")
+		}
+
+		chain := args[0]
+		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(*keys))
+		for i, key := range *keys {
+			keyInfos := strings.Split(key, ":")
+			if len(keyInfos) != 2 {
+				return fmt.Errorf("key ID and public key hex have to be separated by \":\"")
+			}
+
+			keyID := keyInfos[0]
+			pubKeyHex := keyInfos[1]
+
+			pubKeyBytes, err := hex.DecodeString(pubKeyHex)
+			if err != nil {
+				return err
+			}
+
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: exported.KeyID(keyID), PubKey: pubKeyBytes}
+		}
+
+		msg := types.NewRegisterExternalKeysRequest(clientCtx.GetFromAddress(), chain, externalKeys...)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

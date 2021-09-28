@@ -5,6 +5,7 @@ const (
 	EventTypeKeygen = "keygen"
 	EventTypeSign   = "sign"
 	EventTypeAck    = "ack"
+	EventTypeKey    = "key"
 )
 
 // Event attribute keys
@@ -28,14 +29,16 @@ const (
 	AttributeKeyPayload                   = "payload"
 	AttributeKeyTimeout                   = "timeout"
 	AttributeKeyDidStart                  = "didStart"
+	AttributeKeyRole                      = "keyRole"
 )
 
 // Event attribute values
 const (
-	AttributeValueKeygen  = "keygen"
-	AttributeValueSign    = "sign"
-	AttributeValueStart   = "start"
-	AttributeValueMsg     = "message"
-	AttributeValueDecided = "decided"
-	AttributeValueReject  = "reject"
+	AttributeValueKeygen   = "keygen"
+	AttributeValueSign     = "sign"
+	AttributeValueStart    = "start"
+	AttributeValueMsg      = "message"
+	AttributeValueDecided  = "decided"
+	AttributeValueReject   = "reject"
+	AttributeValueAssigned = "assigned"
 )

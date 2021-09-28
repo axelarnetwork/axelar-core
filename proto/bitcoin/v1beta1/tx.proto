@@ -57,23 +57,6 @@ message VoteConfirmOutpointRequest {
 
 message VoteConfirmOutpointResponse { string status = 1; };
 
-message RegisterExternalKeysRequest {
-  message ExternalKey {
-    string id = 1 [
-      (gogoproto.customname) = "ID",
-      (gogoproto.casttype) =
-          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-    ];
-    bytes pub_key = 2;
-  }
-
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  repeated ExternalKey external_keys = 2 [ (gogoproto.nullable) = false ];
-}
-
-message RegisterExternalKeysResponse {};
-
 message SubmitExternalSignatureRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
