@@ -7,8 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	"github.com/cosmos/cosmos-sdk/codec"
+
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -62,14 +64,14 @@ func TestCreateBurnTokens(t *testing.T) {
 
 		ctx            sdk.Context
 		req            *types.CreateBurnTokensRequest
-		secondaryKeyID string
+		secondaryKeyID tss.KeyID
 	)
 
 	repeats := 20
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name)
-		secondaryKeyID = rand.Str(10)
+		secondaryKeyID = tssTestUtils.RandKeyID()
 
 		evmChainKeeper = &mock.ChainKeeperMock{
 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
@@ -109,7 +111,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return secondaryKeyID, true
 			},
 		}
@@ -318,10 +320,10 @@ func TestLink_NoGateway(t *testing.T) {
 		},
 	}
 	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
 		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 			return rand.PosI64(), true
 		},
 	}
@@ -351,10 +353,10 @@ func TestLink_NoRecipientChain(t *testing.T) {
 	}
 
 	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
 		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 			return rand.PosI64(), true
 		},
 	}
@@ -384,10 +386,10 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	}
 
 	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
 		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 			return rand.PosI64(), true
 		},
 	}
@@ -432,10 +434,10 @@ func TestLink_Success(t *testing.T) {
 		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
 	}
 	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-			return rand.StrBetween(5, 20), true
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
 		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 			return rand.PosI64(), true
 		},
 	}
@@ -789,10 +791,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
 		}
 		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-				return rand.StrBetween(5, 20), true
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), true
 			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 				return rand.PosI64(), true
 			},
 		}
@@ -900,7 +902,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("no key", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -909,7 +911,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, tss.KeyID) (int64, bool) { return 0, false }
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1055,10 +1057,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-				return rand.StrBetween(5, 20), true
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), true
 			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 				return rand.PosI64(), true
 			},
 		}
@@ -1188,7 +1190,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("no key", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1197,7 +1199,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, string) (int64, bool) { return 0, false }
+		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, tss.KeyID) (int64, bool) { return 0, false }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1261,8 +1263,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 		}
 		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-				return rand.StrBetween(5, 20), true
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), true
 			},
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
@@ -1270,8 +1272,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		}
 		msg = createMsgSignDeploy()
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
-		})
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
 
 	repeats := 20
@@ -1333,7 +1334,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when master key is not set", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (string, bool) { return "", false }
+		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 

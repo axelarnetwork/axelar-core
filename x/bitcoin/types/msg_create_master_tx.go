@@ -6,13 +6,15 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewCreateMasterTxRequest is the constructor for CreateMasterTxRequest
 func NewCreateMasterTxRequest(sender sdk.AccAddress, keyID string, secondaryKeyAmount btcutil.Amount) *CreateMasterTxRequest {
 	return &CreateMasterTxRequest{
 		Sender:             sender,
-		KeyID:              keyID,
+		KeyID:              tss.KeyID(keyID),
 		SecondaryKeyAmount: secondaryKeyAmount,
 	}
 }
@@ -33,8 +35,8 @@ func (m CreateMasterTxRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.KeyID == "" {
-		return sdkerrors.Wrap(ErrBitcoin, "key id must be set")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	if m.SecondaryKeyAmount < 0 {

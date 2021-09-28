@@ -129,15 +129,15 @@ type InitPoller = interface {
 type Signer interface {
 	ScheduleSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
-	GetKey(ctx sdk.Context, keyID string) (tss.Key, bool)
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool)
+	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
+	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
-	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
-	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
 }
 
 // Snapshotter provides access to the snapshot functionality

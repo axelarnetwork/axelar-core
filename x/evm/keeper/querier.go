@@ -55,7 +55,12 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QAddressByKeyRole:
 			return QueryAddressByKeyRole(ctx, s, n, path[1], path[2])
 		case QAddressByKeyID:
-			return QueryAddressByKeyID(ctx, s, n, path[1], path[2])
+			keyID := tss.KeyID(path[2])
+
+			if err := keyID.Validate(); err != nil {
+				return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+			}
+			return QueryAddressByKeyID(ctx, s, n, path[1], keyID)
 		case QNextMasterAddress:
 			return queryNextMasterAddress(ctx, s, n, path[1])
 		case QAxelarGatewayAddress:
@@ -182,7 +187,7 @@ func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chain
 }
 
 // QueryAddressByKeyID returns the address of the given key ID
-func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID string) ([]byte, error) {
+func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID tss.KeyID) ([]byte, error) {
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", chainName)

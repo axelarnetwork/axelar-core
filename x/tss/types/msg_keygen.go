@@ -1,24 +1,17 @@
 package types
 
 import (
-	"fmt"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-)
 
-// key id length range bounds dictated by tofnd
-const (
-	keyIDLengthMin = 4
-	keyIDLengthMax = 256
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewStartKeygenRequest constructor for StartKeygenRequest
 func NewStartKeygenRequest(sender sdk.AccAddress, keyID string, keyRole exported.KeyRole) *StartKeygenRequest {
 	return &StartKeygenRequest{
 		Sender:  sender,
-		KeyID:   keyID,
+		KeyID:   exported.KeyID(keyID),
 		KeyRole: keyRole,
 	}
 }
@@ -36,12 +29,8 @@ func (m StartKeygenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.KeyID == "" {
-		return sdkerrors.Wrap(ErrTss, "key id must be set")
-	}
-
-	if len(m.KeyID) < keyIDLengthMin || len(m.KeyID) > keyIDLengthMax {
-		return sdkerrors.Wrap(ErrTss, fmt.Sprintf("key id length %d not in range [%d,%d]", len(m.KeyID), keyIDLengthMin, keyIDLengthMax))
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	if err := m.KeyRole.Validate(); err != nil {

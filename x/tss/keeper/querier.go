@@ -4,14 +4,15 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -36,13 +37,28 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		case QuerySignature:
 			res, err = querySignatureStatus(ctx, k, v, path[1])
 		case QueryKey:
-			res, err = queryKey(ctx, k, v, path[1])
+			keyID := exported.KeyID(path[1])
+			err = keyID.Validate()
+			if err != nil {
+				break
+			}
+			res, err = queryKey(ctx, k, v, keyID)
 		case QueryRecovery:
-			res, err = queryRecovery(ctx, k, s, path[1], path[2])
+			keyID := exported.KeyID(path[1])
+			err = keyID.Validate()
+			if err != nil {
+				break
+			}
+			res, err = queryRecovery(ctx, k, s, keyID, path[2])
 		case QueryKeyID:
 			res, err = queryKeyID(ctx, k, n, path[1], path[2])
 		case QueryKeySharesByKeyID:
-			res, err = queryKeySharesByKeyID(ctx, k, s, path[1])
+			keyID := exported.KeyID(path[1])
+			err = keyID.Validate()
+			if err != nil {
+				break
+			}
+			res, err = queryKeySharesByKeyID(ctx, k, s, keyID)
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
@@ -58,7 +74,7 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 	}
 }
 
-func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string, addressStr string) ([]byte, error) {
+func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID exported.KeyID, addressStr string) ([]byte, error) {
 
 	address, err := sdk.ValAddressFromBech32(addressStr)
 	if err != nil {
@@ -143,7 +159,7 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
 }
 
-func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID string) ([]byte, error) {
+func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
 	if key, ok := k.GetKey(ctx, keyID); ok {
 		// poll was successful
 		res := types.QueryKeyResponse{
@@ -155,7 +171,7 @@ func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID string) (
 	}
 
 	var res types.QueryKeyResponse
-	pollMeta := voting.NewPollKey(types.ModuleName, keyID)
+	pollMeta := voting.NewPollKey(types.ModuleName, string(keyID))
 
 	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
 		res.VoteStatus = types.NotFound
@@ -190,7 +206,7 @@ func queryKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, keyChainStr s
 	return []byte(keyID), nil
 }
 
-func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID string) ([]byte, error) {
+func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID exported.KeyID) ([]byte, error) {
 
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {

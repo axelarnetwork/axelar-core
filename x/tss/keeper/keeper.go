@@ -51,7 +51,7 @@ type Keeper struct {
 }
 
 // AssertMatchesRequirements checks if the properties of the given key match the requirements for the given role
-func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error {
+func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID exported.KeyID, keyRole exported.KeyRole) error {
 	counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("could not find snapshot counter for given key ID %s", keyID)
@@ -143,19 +143,19 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // SetGroupRecoveryInfo sets the group recovery info for a given party
-func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID string, recoveryInfo []byte) {
+func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte) {
 	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
 	ctx.KVStore(k.storeKey).Set([]byte(key), recoveryInfo)
 }
 
 // GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
-func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID string) []byte {
+func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte {
 	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
 	return ctx.KVStore(k.storeKey).Get([]byte(key))
 }
 
 // SetPrivateRecoveryInfo sets the private recovery info for a given party
-func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte) {
+func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte) {
 	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 
 	// marshal private recover info before storing
@@ -165,7 +165,7 @@ func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 }
 
 // GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
-func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte {
+func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte {
 	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
 
@@ -177,13 +177,13 @@ func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 }
 
 // HasPrivateRecoveryInfos returns true if the private recovery infos for a given party exists
-func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool {
+func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool {
 	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 	return ctx.KVStore(k.storeKey).Has([]byte(key))
 }
 
 // DeleteAllRecoveryInfos removes all recovery infos (private and group) associated to the given key ID
-func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID string) {
+func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID) {
 	prefix := fmt.Sprintf("%s%s_", privateRecoverPrefix, keyID)
 	store := ctx.KVStore(k.storeKey)
 
@@ -284,20 +284,20 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported
 }
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
-func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, snapshotSeqNo int64) {
-	operators := k.GetAvailableOperators(ctx, ID, ackType, ctx.BlockHeight())
+func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, sessionID string, ackType exported.AckType, snapshotSeqNo int64) {
+	operators := k.GetAvailableOperators(ctx, sessionID, ackType, ctx.BlockHeight())
 	if len(operators) > 0 {
 		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
 	}
 }
 
-// GetAvailableOperators gets all operators that sent a acknowledgment for so given keygen/sign ID until some given height
-func (k Keeper) GetAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
-	if ID == "" {
+// GetAvailableOperators gets all operators that sent an acknowledgment for the given keygen/sign ID until some given height
+func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
+	if sessionID == "" {
 		return nil
 	}
 
-	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, ID, ackType.String())
+	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, sessionID, ackType.String())
 	store := ctx.KVStore(k.storeKey)
 	var addresses []sdk.ValAddress
 
@@ -327,8 +327,8 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, ID string, ackType export
 }
 
 // DeleteAvailableOperators removes the validator that sent an ack for some key/sign ID (if it exists)
-func (k Keeper) DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType) {
-	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, ID, ackType.String())
+func (k Keeper) DeleteAvailableOperators(ctx sdk.Context, sessionID string, ackType exported.AckType) {
+	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, sessionID, ackType.String())
 	store := ctx.KVStore(k.storeKey)
 
 	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
@@ -397,11 +397,11 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	return activeKeys, nil
 }
 
-func (k Keeper) emitAckEvent(ctx sdk.Context, action, keyID, sigID string, height int64) {
+func (k Keeper) emitAckEvent(ctx sdk.Context, action string, keyID exported.KeyID, sigID string, height int64) {
 	event := sdk.NewEvent(types.EventTypeAck,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, action),
-		sdk.NewAttribute(types.AttributeKeyKeyID, keyID),
+		sdk.NewAttribute(types.AttributeKeyKeyID, string(keyID)),
 		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(height, 10)),
 	)
 	if action == types.AttributeValueSign {

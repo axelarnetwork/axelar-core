@@ -6,6 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -15,11 +21,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/btcsuite/btcd/btcec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestQueryDepositAddress(t *testing.T) {
@@ -41,7 +43,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			panic(err)
 		}
 		externalKeys[i] = tss.Key{
-			ID:    rand.Str(10),
+			ID:    tssTestUtils.RandKeyID(),
 			Value: externalPrivKey.PublicKey,
 			Role:  tss.ExternalKey,
 		}
@@ -104,7 +106,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 		now := time.Now()
 		secondaryKey := tss.Key{
-			ID:        rand.Str(10),
+			ID:        tssTestUtils.RandKeyID(),
 			Value:     secondaryPrivKey.PublicKey,
 			Role:      tss.SecondaryKey,
 			RotatedAt: &now,
@@ -123,7 +125,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -135,8 +137,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -174,7 +176,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -188,8 +190,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -220,7 +222,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		signer    *mock.SignerMock
 		ctx       sdk.Context
 
-		keyID string
+		keyID tss.KeyID
 	)
 
 	setup := func() {
@@ -228,13 +230,13 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		signer = &mock.SignerMock{}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
-		keyID = rand.Str(10)
+		keyID = tssTestUtils.RandKeyID()
 	}
 
 	t.Run("should return error if the given key ID cannot be found", testutils.Func(func(t *testing.T) {
 		setup()
 
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) { return tss.Key{}, false }
 
 		_, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
@@ -263,7 +265,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			RotatedAt: &now,
 		}
 		oldMasterKey := tss.Key{
-			ID:    rand.Str(10),
+			ID:    tssTestUtils.RandKeyID(),
 			Value: oldMasterPrivKey.PublicKey,
 			Role:  tss.MasterKey,
 		}
@@ -276,7 +278,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 				panic(err)
 			}
 			externalKeys[i] = tss.Key{
-				ID:    rand.Str(10),
+				ID:    tssTestUtils.RandKeyID(),
 				Value: externalPrivKey.PublicKey,
 				Role:  tss.ExternalKey,
 			}
@@ -288,8 +290,8 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -297,7 +299,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			return externalKeyIDs, true
 		}
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -353,7 +355,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			if keyID == secondaryKey.ID {
 				return secondaryKey, true
 			}

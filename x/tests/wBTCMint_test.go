@@ -24,6 +24,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -106,7 +107,7 @@ func Test_wBTC_mint(t *testing.T) {
 					panic(err)
 				}
 				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
-					ID:     rand.Str(10),
+					ID:     testutils.RandKeyID(),
 					PubKey: privKey.PubKey().SerializeCompressed(),
 				})
 			}

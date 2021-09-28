@@ -32,6 +32,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
@@ -63,8 +64,8 @@ func TestHandleMsgLink(t *testing.T) {
 			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
 				return types.DefaultParams().MasterAddressExternalKeyLockDuration
 			},
-			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
-				externalKeyIDs := make([]string, len(externalKeys))
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]tss.KeyID, bool) {
+				externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 				for i := 0; i < len(externalKeyIDs); i++ {
 					externalKeyIDs[i] = externalKeys[i].ID
 				}
@@ -76,7 +77,7 @@ func TestHandleMsgLink(t *testing.T) {
 			GetCurrentKeyFunc: func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return createRandomKey(tss.SecondaryKey, time.Now()), true
 			},
-			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 				for _, externalKey := range externalKeys {
 					if keyID == externalKey.ID {
 						return externalKey, true
@@ -157,7 +158,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 					Address:      address.EncodeAddress(),
 					RedeemScript: rand.Bytes(200),
 					Role:         types.Deposit,
-					KeyID:        rand.StrBetween(5, 20),
+					KeyID:        tssTestUtils.RandKeyID(),
 				}, true
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return int64(mathRand.Uint32()) },
@@ -171,10 +172,10 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		}
 
 		signer = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (string, bool) {
-				return rand.StrBetween(5, 20), true
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), true
 			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, string) (int64, bool) {
+			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
 				return rand.PosI64(), true
 			},
 		}
@@ -270,21 +271,21 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			Address:      address.EncodeAddress(),
 			RedeemScript: rand.Bytes(200),
 			Role:         types.Deposit,
-			KeyID:        rand.StrBetween(5, 20),
+			KeyID:        tssTestUtils.RandKeyID(),
 		}
 		btcKeeper = &mock.BTCKeeperMock{
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
 			},
-			SetConfirmedOutpointInfoFunc:  func(sdk.Context, string, types.OutPointInfo) {},
+			SetConfirmedOutpointInfoFunc:  func(sdk.Context, tss.KeyID, types.OutPointInfo) {},
 			GetPendingOutPointInfoFunc:    func(sdk.Context, vote.PollKey) (types.OutPointInfo, bool) { return info, true },
 			DeletePendingOutPointInfoFunc: func(sdk.Context, vote.PollKey) {},
 			GetSignedTxFunc:               func(sdk.Context, chainhash.Hash) (types.SignedTx, bool) { return types.SignedTx{}, false },
 			GetAddressFunc: func(sdk.Context, string) (types.AddressInfo, bool) {
 				return depositAddressInfo, true
 			},
-			GetUnconfirmedAmountFunc: func(sdk.Context, string) btcutil.Amount { return 0 },
-			SetUnconfirmedAmountFunc: func(sdk.Context, string, btcutil.Amount) {},
+			GetUnconfirmedAmountFunc: func(sdk.Context, tss.KeyID) btcutil.Amount { return 0 },
+			SetUnconfirmedAmountFunc: func(sdk.Context, tss.KeyID, btcutil.Amount) {},
 		}
 		voter = &mock.VoterMock{
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
@@ -309,8 +310,8 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		signerKeeper := &mock.SignerMock{
 			GetNextKeyFunc:    func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return tss.Key{}, false },
 			GetCurrentKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.Key, bool) { return currentSecondaryKey, true },
-			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, string) error { return nil },
-			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			AssignNextKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole, tss.KeyID) error { return nil },
+			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 				if keyID == currentSecondaryKey.ID {
 					return currentSecondaryKey, true
 				}
@@ -324,7 +325,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 				return tss.Key{}, false
 			},
-			GetRotationCountOfKeyIDFunc: func(ctx sdk.Context, keyID string) (int64, bool) {
+			GetRotationCountOfKeyIDFunc: func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) {
 				return rotationCount - tsstypes.DefaultParams().UnbondingLockingKeyRotationCount + 1, true
 			},
 			GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
@@ -589,7 +590,7 @@ func TestCreateRescueTx(t *testing.T) {
 			GetUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
 				return types.UnsignedTx{}, false
 			},
-			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
+			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return true },
 					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
@@ -630,17 +631,7 @@ func TestCreateRescueTx(t *testing.T) {
 
 				return []tss.Key{}, nil
 			},
-			// GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool) {
-			// 	if keyRole == tss.MasterKey && rotationCount == oldMasterKeyRotationCount {
-			// 		return oldMasterKey, true
-			// 	}
 
-			// 	if keyRole == tss.SecondaryKey && rotationCount == oldSecondaryKeyRotationCount {
-			// 		return oldSecondaryKey, true
-			// 	}
-
-			// 	return tss.Key{}, false
-			// },
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
@@ -651,19 +642,6 @@ func TestCreateRescueTx(t *testing.T) {
 
 				return tss.Key{}, false
 			},
-			// GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 {
-			// 	return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount
-			// },
-			// GetRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64 {
-			// 	switch keyRole {
-			// 	case tss.MasterKey:
-			// 		return masterKeyRotationCount
-			// 	case tss.SecondaryKey:
-			// 		return secondaryKeyRotationCount
-			// 	default:
-			// 		return 0
-			// 	}
-			// },
 		}
 
 		voter := &mock.VoterMock{}
@@ -692,7 +670,7 @@ func TestCreateRescueTx(t *testing.T) {
 			inputsTotal = inputsTotal.AddRaw(int64(input.Amount))
 		}
 
-		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 			if keyID == oldMasterKey.ID {
 				dequeueCount := 0
 
@@ -790,7 +768,7 @@ func TestCreateRescueTx(t *testing.T) {
 		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 			return nextSecondaryKey, true
 		}
-		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 			if keyID == oldSecondaryKey.ID {
 				dequeueCount := 0
 
@@ -929,7 +907,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 				return types.OutPointInfo{}, types.OutPointState_None, false
 			},
-			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
+			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 				if keyID == masterKey.ID {
 					dequeueCount := 0
 
@@ -1001,15 +979,15 @@ func TestCreateMasterTx(t *testing.T) {
 					KeyID:        masterKey.ID,
 				}, true
 			},
-			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
-				externalKeyIDs := make([]string, len(externalKeys))
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]tss.KeyID, bool) {
+				externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 				for i := 0; i < len(externalKeyIDs); i++ {
 					externalKeyIDs[i] = externalKeys[i].ID
 				}
 
 				return externalKeyIDs, true
 			},
-			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID string) btcutil.Amount { return 0 },
+			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount { return 0 },
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressFunc:           func(ctx sdk.Context, address types.AddressInfo) {},
@@ -1028,7 +1006,7 @@ func TestCreateMasterTx(t *testing.T) {
 					return tss.Key{}, false
 				}
 			},
-			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 				switch keyID {
 				case masterKey.ID:
 					return masterKey, true
@@ -1065,10 +1043,10 @@ func TestCreateMasterTx(t *testing.T) {
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
-			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error {
 				return nil
 			},
-			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error {
 				return nil
 			},
 		}
@@ -1079,7 +1057,7 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("shoud create master consolidation transaction without key assignment when the consolidation key is the current master key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), masterKey.ID, 0)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(masterKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1121,7 +1099,7 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("should create master consolidation transaction sending no coin to the secondary key when the amount is not set", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1176,7 +1154,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 
 		secondaryKeyAmount := btcutil.Amount(rand.I64Between(1000, 10000))
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, secondaryKeyAmount)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), secondaryKeyAmount)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1225,11 +1203,11 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
-	t.Run("should create master consolidation transaction sending coins to the secondary key when the amount is set", testutils.Func(func(t *testing.T) {
+	t.Run("should create master consolidation transaction sending coins to the secondary key when the amount is set", func(t *testing.T) {
 		setup()
 
 		secondaryKeyAmount := btcutil.Amount(rand.I64Between(1000, 10000))
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, secondaryKeyAmount)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), secondaryKeyAmount)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1276,12 +1254,12 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
 		assert.Equal(t, tss.MasterKey, actualAssignNextKeyCall.KeyRole)
 		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
-	}))
+	})
 
 	t.Run("should return error if consolidating to a new key while the current key still has UTXO", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 			if keyID == masterKey.ID {
 				dequeueCount := 0
 
@@ -1306,7 +1284,7 @@ func TestCreateMasterTx(t *testing.T) {
 			return &utilsmock.KVQueueMock{}
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
@@ -1315,17 +1293,17 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnconfirmedAmountFunc = func(ctx sdk.Context, keyID string) btcutil.Amount {
+		btcKeeper.GetUnconfirmedAmountFunc = func(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount {
 			return btcutil.Amount(rand.I64Between(1, 100))
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
 	}))
 
-	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if consolidating to a new key while the secondary key is sending coin to the current master key", func(t *testing.T) {
 		setup()
 
 		btcKeeper.GetUnsignedTxFunc = func(ctx sdk.Context, txType types.TxType) (types.UnsignedTx, bool) {
@@ -1336,11 +1314,11 @@ func TestCreateMasterTx(t *testing.T) {
 			return types.UnsignedTx{}, false
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot assign the next master key while a secondary transaction is sending coin to the current master address")
-	}))
+	})
 }
 
 func TestCreatePendingTransfersTx(t *testing.T) {
@@ -1411,7 +1389,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 				return types.OutPointInfo{}, types.OutPointState_None, false
 			},
-			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID string) utils.KVQueue {
+			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 				if keyID == secondaryKey.ID {
 					dequeueCount := 0
 
@@ -1475,8 +1453,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					KeyID:        masterKey.ID,
 				}, true
 			},
-			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]string, bool) {
-				externalKeyIDs := make([]string, len(externalKeys))
+			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]tss.KeyID, bool) {
+				externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 				for i := 0; i < len(externalKeyIDs); i++ {
 					externalKeyIDs[i] = externalKeys[i].ID
 				}
@@ -1484,7 +1462,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 				return externalKeyIDs, true
 			},
 			GetDustAmountFunc:        func(ctx sdk.Context, encodedAddress string) btcutil.Amount { return 0 },
-			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID string) btcutil.Amount { return 0 },
+			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount { return 0 },
 			DeleteDustAmountFunc:     func(ctx sdk.Context, encodedAddress string) {},
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
@@ -1513,7 +1491,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					return tss.Key{}, false
 				}
 			},
-			GetKeyFunc: func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 				switch keyID {
 				case masterKey.ID:
 					return masterKey, true
@@ -1550,10 +1528,10 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
 				return tss.Key{}, false
 			},
-			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole tss.KeyRole) error {
+			AssertMatchesRequirementsFunc: func(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error {
 				return nil
 			},
-			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID string) error {
+			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error {
 				return nil
 			},
 			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 { return tsstypes.DefaultParams().UnbondingLockingKeyRotationCount },
@@ -1565,7 +1543,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 	t.Run("shoud create secondary consolidation transaction without key assignment when the consolidation key is the current secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), secondaryKey.ID, 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(secondaryKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1610,10 +1588,10 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, signerKeeper.AssignNextKeyCalls(), 0)
 	}))
 
-	t.Run("should create secondary consolidation transaction sending no coin to the master key when the amount is not set", testutils.Func(func(t *testing.T) {
+	t.Run("should create secondary consolidation transaction sending no coin to the master key when the amount is not set", func(t *testing.T) {
 		setup()
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1661,7 +1639,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Equal(t, exported.Bitcoin, actualAssignNextKeyCall.Chain)
 		assert.Equal(t, tss.SecondaryKey, actualAssignNextKeyCall.KeyRole)
 		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
-	}))
+	})
 
 	t.Run("should create secondary consolidation transaction sending coin to the next master key when the amount is set and the next master key is already assigned", testutils.Func(func(t *testing.T) {
 		setup()
@@ -1676,7 +1654,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		masterKeyAmount := btcutil.Amount(transfers[len(transfers)-1].Asset.Amount.Int64())
 		transfers = transfers[:len(transfers)-1]
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, masterKeyAmount)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), masterKeyAmount)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1736,7 +1714,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		masterKeyAmount := btcutil.Amount(transfers[len(transfers)-1].Asset.Amount.Int64())
 		transfers = transfers[:len(transfers)-1]
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, masterKeyAmount)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), masterKeyAmount)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1792,10 +1770,10 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Equal(t, consolidationKey.ID, actualAssignNextKeyCall.KeyID)
 	}))
 
-	t.Run("should return error if consolidating to a new key while the current key still has UTXO", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if consolidating to a new key while the current key still has UTXO", func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID string) utils.KVQueue {
+		btcKeeper.GetConfirmedOutpointInfoQueueForKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 			if keyID == secondaryKey.ID {
 				dequeueCount := 0
 
@@ -1820,24 +1798,24 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			return &utilsmock.KVQueueMock{}
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
-	}))
+	})
 
-	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if consolidating to a new key while the current key still has unconfirmed amount", func(t *testing.T) {
 		setup()
 
-		btcKeeper.GetUnconfirmedAmountFunc = func(ctx sdk.Context, keyID string) btcutil.Amount {
+		btcKeeper.GetUnconfirmedAmountFunc = func(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount {
 			return btcutil.Amount(rand.I64Between(1, 100))
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
-	}))
+	})
 
 	t.Run("should return error if consolidating to a new key while the master key is sending coin to the current secondary key", testutils.Func(func(t *testing.T) {
 		setup()
@@ -1850,7 +1828,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			return types.UnsignedTx{}, false
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), consolidationKey.ID, 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot assign the next secondary key while a master transaction is sending coin to the current secondary address")
@@ -1892,7 +1870,7 @@ func createRandomKey(keyRole tss.KeyRole, rotatedAt ...time.Time) tss.Key {
 	}
 
 	key := tss.Key{
-		ID:        rand.Str(10),
+		ID:        tssTestUtils.RandKeyID(),
 		Value:     privKey.PublicKey,
 		Role:      keyRole,
 		RotatedAt: nil,

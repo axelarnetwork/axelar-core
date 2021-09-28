@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 )
@@ -335,7 +336,7 @@ func TxHandlerRegisterExternalKeys(cliCtx client.Context) http.HandlerFunc {
 				return
 			}
 
-			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: keyID, PubKey: pubKeyBytes}
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: tss.KeyID(keyID), PubKey: pubKeyBytes}
 		}
 
 		msg := types.NewRegisterExternalKeysRequest(fromAddr, externalKeys...)

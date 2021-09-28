@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -266,14 +267,14 @@ func (k Keeper) SetSpentOutpointInfo(ctx sdk.Context, info types.OutPointInfo) {
 }
 
 // SetConfirmedOutpointInfo stores the given outpoint info as confirmed and push it into the queue of given keyID
-func (k Keeper) SetConfirmedOutpointInfo(ctx sdk.Context, keyID string, info types.OutPointInfo) {
+func (k Keeper) SetConfirmedOutpointInfo(ctx sdk.Context, keyID tss.KeyID, info types.OutPointInfo) {
 	key := utils.LowerCaseKey(info.OutPoint)
 
 	k.GetConfirmedOutpointInfoQueueForKey(ctx, keyID).Enqueue(confirmedOutPointPrefix.Append(key), &info)
 }
 
 // GetConfirmedOutpointInfoQueueForKey retrieves the outpoint info queue for the given keyID
-func (k Keeper) GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID string) utils.KVQueue {
+func (k Keeper) GetConfirmedOutpointInfoQueueForKey(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 	queueName := fmt.Sprintf("%s_%s", confirmedOutpointQueueName, keyID)
 
 	return utils.NewBlockHeightKVQueue(queueName, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
@@ -365,18 +366,18 @@ func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
 }
 
 // SetUnconfirmedAmount stores the unconfirmed amount for the given key ID
-func (k Keeper) SetUnconfirmedAmount(ctx sdk.Context, keyID string, amount btcutil.Amount) {
+func (k Keeper) SetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID, amount btcutil.Amount) {
 	if amount < 0 {
 		amount = 0
 	}
 
-	k.getStore(ctx).Set(unconfirmedAmountPrefix.AppendStr(keyID), &gogoprototypes.Int64Value{Value: int64(amount)})
+	k.getStore(ctx).Set(unconfirmedAmountPrefix.AppendStr(string(keyID)), &gogoprototypes.Int64Value{Value: int64(amount)})
 }
 
 // GetUnconfirmedAmount retrieves the unconfirmed amount for the given key ID
-func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amount {
+func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount {
 	var result gogoprototypes.Int64Value
-	if ok := k.getStore(ctx).Get(unconfirmedAmountPrefix.AppendStr(keyID), &result); !ok {
+	if ok := k.getStore(ctx).Get(unconfirmedAmountPrefix.AppendStr(string(keyID)), &result); !ok {
 		return 0
 	}
 
@@ -384,11 +385,11 @@ func (k Keeper) GetUnconfirmedAmount(ctx sdk.Context, keyID string) btcutil.Amou
 }
 
 // SetExternalKeyIDs stores the given list of external key IDs
-func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, keyIDs []string) {
+func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, keyIDs []tss.KeyID) {
 	values := make([]*gogoprototypes.Value, len(keyIDs))
 	for i, keyID := range keyIDs {
 		values[i] = &gogoprototypes.Value{
-			Kind: &gogoprototypes.Value_StringValue{StringValue: keyID},
+			Kind: &gogoprototypes.Value_StringValue{StringValue: string(keyID)},
 		}
 	}
 
@@ -396,15 +397,15 @@ func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, keyIDs []string) {
 }
 
 // GetExternalKeyIDs retrieves the current list of external key IDs
-func (k Keeper) GetExternalKeyIDs(ctx sdk.Context) ([]string, bool) {
+func (k Keeper) GetExternalKeyIDs(ctx sdk.Context) ([]tss.KeyID, bool) {
 	var listValue gogoprototypes.ListValue
 	if !k.getStore(ctx).Get(externalKeyIDsKey, &listValue) {
 		return nil, false
 	}
 
-	keyIDs := make([]string, len(listValue.Values))
+	keyIDs := make([]tss.KeyID, len(listValue.Values))
 	for i, value := range listValue.Values {
-		keyIDs[i] = value.GetStringValue()
+		keyIDs[i] = tss.KeyID(value.GetStringValue())
 	}
 
 	return keyIDs, true

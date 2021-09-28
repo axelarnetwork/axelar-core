@@ -21,6 +21,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoinKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestKeeper_GetAddress(t *testing.T) {
@@ -47,7 +49,7 @@ func TestKeeper_GetAddress(t *testing.T) {
 			Address:      addrStr1,
 			Role:         types.Deposit,
 			RedeemScript: rand.Bytes(200),
-			KeyID:        rand.StrBetween(5, 20),
+			KeyID:        tss.KeyID(rand.StrBetween(5, 20)),
 		}
 		keeper.SetAddress(ctx, info)
 		result, ok := keeper.GetAddress(ctx, addrStr2)
@@ -93,7 +95,7 @@ func TestKeeper_GetOutPointInfo(t *testing.T) {
 			Amount:   btcutil.Amount(rand.PosI64()),
 			Address:  rand.StrBetween(5, 100),
 		}
-		keyID := rand.StrBetween(5, 100)
+		keyID := tssTestUtils.RandKeyID()
 
 		keeper.SetConfirmedOutpointInfo(ctx, keyID, info)
 

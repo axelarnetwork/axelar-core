@@ -4,13 +4,15 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewSubmitExternalSignatureRequest is the constructor for SubmitExternalSignatureRequest
 func NewSubmitExternalSignatureRequest(sender sdk.AccAddress, keyID string, signature []byte, sigHash []byte) *SubmitExternalSignatureRequest {
 	return &SubmitExternalSignatureRequest{
 		Sender:    sender,
-		KeyID:     keyID,
+		KeyID:     tss.KeyID(keyID),
 		Signature: signature,
 		SigHash:   sigHash,
 	}
@@ -32,8 +34,8 @@ func (m SubmitExternalSignatureRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.KeyID == "" {
-		return sdkerrors.Wrap(ErrBitcoin, "key id must be set")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	_, err := btcec.ParseDERSignature(m.Signature, btcec.S256())

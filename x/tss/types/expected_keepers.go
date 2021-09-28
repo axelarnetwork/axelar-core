@@ -65,12 +65,12 @@ type TSSKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) (params Params)
-	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string, recoveryInfo []byte)
-	HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID string) bool
-	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID string) []byte
-	SetGroupRecoveryInfo(ctx sdk.Context, keyID string, recoveryInfo []byte)
-	GetGroupRecoveryInfo(ctx sdk.Context, keyID string) []byte
-	DeleteAllRecoveryInfos(ctx sdk.Context, keyID string)
+	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte)
+	HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool
+	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte
+	SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte)
+	GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte
+	DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID)
 	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
@@ -80,30 +80,28 @@ type TSSKeeper interface {
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
-	DeleteScheduledKeygen(ctx sdk.Context, ID string)
-	DeleteScheduledSign(ctx sdk.Context, ID string)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
-	StartKeygen(ctx sdk.Context, voter Voter, keyID string, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
-	SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error
-	GetAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
-	DeleteAvailableOperators(ctx sdk.Context, ID string, ackType exported.AckType)
-	IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool
-	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, ID string, ackType exported.AckType, counter int64)
-	GetKey(ctx sdk.Context, keyID string) (exported.Key, bool)
-	SetKey(ctx sdk.Context, keyID string, key ecdsa.PublicKey)
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
+	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
+	SetAvailableOperator(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) error
+	GetAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
+	DeleteAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType)
+	IsOperatorAvailable(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) bool
+	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, id string, ackType exported.AckType, counter int64)
+	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
+	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
+	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
-	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (string, bool)
+	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
-	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID string) error
+	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID exported.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID string) (int64, bool)
-	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID string, validator sdk.ValAddress) bool
-	HasKeygenStarted(ctx sdk.Context, keyID string) bool
-	DeleteKeygenStart(ctx sdk.Context, keyID string)
+	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID) (int64, bool)
+	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool
+	HasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool
+	DeleteKeygenStart(ctx sdk.Context, keyID exported.KeyID)
 	DeleteInfoForSig(ctx sdk.Context, sigID string)
-	DeleteParticipantsInKeygen(ctx sdk.Context, keyID string)
-	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID string)
+	DeleteParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID)
+	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID)
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
@@ -112,5 +110,5 @@ type TSSKeeper interface {
 	GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
 	GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo, bool)
-	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID string, keyRole exported.KeyRole) error
+	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID exported.KeyID, keyRole exported.KeyRole) error
 }

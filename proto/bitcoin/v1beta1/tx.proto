@@ -35,7 +35,11 @@ message LinkResponse { string deposit_addr = 2; };
 message CreatePendingTransfersTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   int64 master_key_amount = 3
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
@@ -55,7 +59,11 @@ message VoteConfirmOutpointResponse { string status = 1; };
 
 message RegisterExternalKeysRequest {
   message ExternalKey {
-    string id = 1 [ (gogoproto.customname) = "ID" ];
+    string id = 1 [
+      (gogoproto.customname) = "ID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
     bytes pub_key = 2;
   }
 
@@ -69,7 +77,11 @@ message RegisterExternalKeysResponse {};
 message SubmitExternalSignatureRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   bytes signature = 3;
   bytes sig_hash = 4;
 };
@@ -79,7 +91,11 @@ message SubmitExternalSignatureResponse {};
 message CreateMasterTxRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   int64 secondary_key_amount = 3
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }

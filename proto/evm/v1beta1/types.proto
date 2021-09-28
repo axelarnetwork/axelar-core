@@ -62,7 +62,11 @@ message Command {
   ];
   string command = 2;
   bytes params = 3;
-  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   uint32 max_gas_cost = 5;
 }
 
@@ -90,7 +94,11 @@ message BatchedCommands {
   bytes sig_hash = 4
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   BatchedCommandsStatus status = 5;
-  string key_id = 6 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 6 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   bytes prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
 }
@@ -131,7 +139,11 @@ message TransferKey {
     (gogoproto.customname) = "TxID"
   ];
   TransferKeyType type = 2;
-  string next_key_id = 3 [ (gogoproto.customname) = "NextKeyID" ];
+  string next_key_id = 3 [
+    (gogoproto.customname) = "NextKeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 enum DepositStatus {

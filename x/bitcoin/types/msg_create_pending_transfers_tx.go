@@ -6,13 +6,15 @@ import (
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewCreatePendingTransfersTxRequest - CreatePendingTransfersTxRequest constructor
 func NewCreatePendingTransfersTxRequest(sender sdk.AccAddress, keyID string, masterKeyAmount btcutil.Amount) *CreatePendingTransfersTxRequest {
 	return &CreatePendingTransfersTxRequest{
 		Sender:          sender,
-		KeyID:           keyID,
+		KeyID:           tss.KeyID(keyID),
 		MasterKeyAmount: masterKeyAmount,
 	}
 }
@@ -33,8 +35,8 @@ func (m CreatePendingTransfersTxRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.KeyID == "" {
-		return fmt.Errorf("missing key ID")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	if m.MasterKeyAmount < 0 {

@@ -26,10 +26,10 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	for _, keyID := range randDistinctStr.Distinct().Take(100) {
 		s := setup()
 
-		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, exported.KeyID(keyID), exported.MasterKey, snap)
 		assert.NoError(t, err)
 
-		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+		err = s.Keeper.StartKeygen(s.Ctx, s.Voter, exported.KeyID(keyID), exported.MasterKey, snap)
 		assert.Error(t, err)
 	}
 }
@@ -47,7 +47,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		s.SetLockingPeriod(lockingPeriod)
 
 		keyID := randDistinctStr.Next()
-		err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, exported.MasterKey, snap)
+		err := s.Keeper.StartKeygen(ctx, s.Voter, exported.KeyID(keyID), exported.MasterKey, snap)
 		assert.NoError(t, err)
 
 		// time passes
@@ -57,10 +57,10 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		if err != nil {
 			panic(err)
 		}
-		s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
+		s.Keeper.SetKey(ctx, exported.KeyID(keyID), sk.PublicKey)
 		chain := evm.Ethereum
 
-		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, keyID))
+		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, exported.KeyID(keyID)))
 	}
 }
 
@@ -205,7 +205,7 @@ func TestScheduleKeygenEvents(t *testing.T) {
 	t.Run("testing scheduled keygen events", testutils.Func(func(t *testing.T) {
 		s := setup()
 		currentHeight := s.Ctx.BlockHeight()
-		keyID := rand2.Str(20)
+		keyID := exported.KeyID(rand2.Str(20))
 		height, err := s.Keeper.ScheduleKeygen(s.Ctx, types.StartKeygenRequest{
 			Sender:  rand2.AccAddr(),
 			KeyID:   keyID,
@@ -225,7 +225,7 @@ func TestScheduleKeygenEvents(t *testing.T) {
 					heightFound = true
 				}
 			case types.AttributeKeyKeyID:
-				if string(attribute.Value) == keyID {
+				if string(attribute.Value) == string(keyID) {
 					keyIDFound = true
 				}
 			}

@@ -14,7 +14,11 @@ option (gogoproto.goproto_getters_all) = false;
 message StartKeygenRequest {
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   tss.exported.v1beta1.KeyRole key_role = 3;
 }
 
@@ -25,7 +29,11 @@ message RotateKeyRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   tss.exported.v1beta1.KeyRole key_role = 3;
-  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message RotateKeyResponse {}

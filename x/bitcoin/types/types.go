@@ -417,7 +417,7 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 	script := createMasterAddressScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
 	address := createP2wshAddress(script, network)
 
-	externalKeyIDs := make([]string, len(externalKeys))
+	externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 	for i, externalKey := range externalKeys {
 		externalKeyIDs[i] = externalKey.ID
 	}
@@ -429,7 +429,7 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 		KeyID:        currMasterKey.ID,
 		MaxSigCount:  uint32(externalMultiSigThreshold) + 1,
 		SpendingCondition: &AddressInfo_SpendingCondition{
-			InternalKeyIds:            []string{currMasterKey.ID, oldMasterKey.ID},
+			InternalKeyIds:            []tss.KeyID{currMasterKey.ID, oldMasterKey.ID},
 			ExternalKeyIds:            externalKeyIDs,
 			ExternalMultisigThreshold: externalMultiSigThreshold,
 			LockTime:                  &internalKeysOnlyLockTime,
@@ -449,8 +449,8 @@ func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) Add
 		KeyID:        secondaryKey.ID,
 		MaxSigCount:  1,
 		SpendingCondition: &AddressInfo_SpendingCondition{
-			InternalKeyIds:            []string{secondaryKey.ID},
-			ExternalKeyIds:            []string{},
+			InternalKeyIds:            []tss.KeyID{secondaryKey.ID},
+			ExternalKeyIds:            []tss.KeyID{},
 			ExternalMultisigThreshold: 0,
 			LockTime:                  nil,
 		},
@@ -481,8 +481,8 @@ func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, ex
 		KeyID:        secondaryKey.ID,
 		MaxSigCount:  1,
 		SpendingCondition: &AddressInfo_SpendingCondition{
-			InternalKeyIds:            []string{secondaryKey.ID},
-			ExternalKeyIds:            []string{},
+			InternalKeyIds:            []tss.KeyID{secondaryKey.ID},
+			ExternalKeyIds:            []tss.KeyID{},
 			ExternalMultisigThreshold: 0,
 			LockTime:                  nil,
 		},
@@ -724,7 +724,7 @@ func EnableTimelock(tx *wire.MsgTx, lockTime uint32) *wire.MsgTx {
 }
 
 // NewSigRequirement is the constructor for UnsignedTx_Info_InputInfo_SigRequirement
-func NewSigRequirement(keyID string, sigHash []byte) UnsignedTx_Info_InputInfo_SigRequirement {
+func NewSigRequirement(keyID tss.KeyID, sigHash []byte) UnsignedTx_Info_InputInfo_SigRequirement {
 	return UnsignedTx_Info_InputInfo_SigRequirement{
 		KeyID:   keyID,
 		SigHash: sigHash,

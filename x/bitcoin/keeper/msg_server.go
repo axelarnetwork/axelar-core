@@ -79,7 +79,7 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeExternalSignature,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSubmitted),
-		sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+		sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
 		sdk.NewAttribute(types.AttributeKeySigID, sigID),
 	))
 
@@ -94,7 +94,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 		return nil, fmt.Errorf("%d external keys are required", requiredExternalKeyCount)
 	}
 
-	keyIDs := make([]string, len(req.ExternalKeys))
+	keyIDs := make([]tss.KeyID, len(req.ExternalKeys))
 	for i, externalKey := range req.ExternalKeys {
 		if _, ok := s.signer.GetKey(ctx, externalKey.ID); ok {
 			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
@@ -113,7 +113,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
 			sdk.NewAttribute(types.AttributeKeyRole, tss.ExternalKey.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, externalKey.ID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(externalKey.ID)),
 		))
 	}
 
@@ -157,8 +157,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyMasterKeyID, masterKey.ID),
-			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, secondaryKey.ID),
+			sdk.NewAttribute(types.AttributeKeyMasterKeyID, string(masterKey.ID)),
+			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, string(secondaryKey.ID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddressInfo.Address),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
@@ -440,7 +440,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		keyID := internalKeyIDs[0]
 		// if the unsigned transaction has aborted due to signing failure, try signing with a different key if necessary and possible
 		if unsignedTx.Is(types.Aborted) {
-			keyID = internalKeyIDs[(utils.IndexOf(internalKeyIDs, unsignedTx.PrevAbortedKeyId)+1)%len(internalKeyIDs)]
+			keyID = internalKeyIDs[(utils.IndexOf(tss.KeyIDsToStrings(internalKeyIDs), string(unsignedTx.PrevAbortedKeyId))+1)%len(internalKeyIDs)]
 		}
 
 		unsignedTx.Info.InputInfos = append(unsignedTx.Info.InputInfos, types.UnsignedTx_Info_InputInfo{
@@ -734,7 +734,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
 			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(consolidationKey.ID)),
 		))
 	}
 
@@ -861,7 +861,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
 			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(consolidationKey.ID)),
 		))
 	}
 
@@ -1005,7 +1005,7 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 	return nil
 }
 
-func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string) (sdk.Int, error) {
+func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID tss.KeyID) (sdk.Int, error) {
 	total := sdk.ZeroInt()
 	// TODO: the confirmed outpoint info queue should by ordered by value desc instead of block height asc
 	confirmedOutpointInfoQueue := k.GetConfirmedOutpointInfoQueueForKey(ctx, keyID)
@@ -1026,7 +1026,7 @@ func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string)
 	return total, nil
 }
 
-func getSigID(sigHash []byte, keyID string) string {
+func getSigID(sigHash []byte, keyID tss.KeyID) string {
 	return fmt.Sprintf("%s-%s", hex.EncodeToString(sigHash), keyID)
 }
 

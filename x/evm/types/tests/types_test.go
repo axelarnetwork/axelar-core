@@ -23,11 +23,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestCreateMintTokenCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
-	keyID := rand.Str(10)
+	keyID := tssTestUtils.RandKeyID()
 	commandID := types.NewCommandID(rand.Bytes(32), chainID)
 	symbol := rand.Str(3)
 	address := common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -57,7 +58,7 @@ func TestCreateMintTokenCommand_CorrectParams(t *testing.T) {
 
 func TestCreateBurnTokenCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
-	keyID := rand.Str(10)
+	keyID := tssTestUtils.RandKeyID()
 	symbol := rand.Str(3)
 	salt := common.BytesToHash(rand.Bytes(common.HashLength))
 	height := rand.I64Between(100, 10000)
@@ -79,7 +80,7 @@ func TestCreateBurnTokenCommand_CorrectParams(t *testing.T) {
 
 func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
-	keyID := rand.Str(10)
+	keyID := tssTestUtils.RandKeyID()
 	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
@@ -95,7 +96,7 @@ func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 
 func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
-	keyID := rand.Str(10)
+	keyID := tssTestUtils.RandKeyID()
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))

@@ -30,6 +30,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -107,7 +108,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 					panic(err)
 				}
 				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
-					ID:     rand.Str(10),
+					ID:     tssTestUtils.RandKeyID(),
 					PubKey: privKey.PubKey().SerializeCompressed(),
 				})
 			}
@@ -212,7 +213,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		randomKey := tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
+		randomKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
 
 		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
 			OutPointInfo: depositInfo,
@@ -290,7 +291,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var addressRes btcTypes.QueryAddressResponse
 	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &addressRes)
 
-	assert.Equal(t, secondaryKeyID2, addressRes.KeyID)
+	assert.Equal(t, secondaryKeyID2, string(addressRes.KeyID))
 }
 
 func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {

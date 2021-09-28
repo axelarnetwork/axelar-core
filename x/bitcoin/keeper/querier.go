@@ -43,7 +43,12 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QConsolidationAddressByKeyRole:
 			res, err = QueryConsolidationAddressByKeyRole(ctx, k, s, path[1])
 		case QConsolidationAddressByKeyID:
-			res, err = QueryConsolidationAddressByKeyID(ctx, k, s, path[1])
+			keyID := tss.KeyID(path[1])
+			err = keyID.Validate()
+			if err != nil {
+				break
+			}
+			res, err = QueryConsolidationAddressByKeyID(ctx, k, s, keyID)
 		case QNextKeyID:
 			res, err = QueryNextKeyID(ctx, s, path[1])
 		case QExternalKeyID:
@@ -148,7 +153,8 @@ func QueryConsolidationAddressByKeyRole(ctx sdk.Context, k types.BTCKeeper, s ty
 }
 
 // QueryConsolidationAddressByKeyID returns the consolidation address of the given key ID
-func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID string) ([]byte, error) {
+func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s types.Signer, keyID tss.KeyID) ([]byte, error) {
+
 	key, ok := s.GetKey(ctx, keyID)
 	if !ok {
 		return nil, fmt.Errorf("no key with keyID %s found", keyID)
