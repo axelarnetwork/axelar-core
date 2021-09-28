@@ -61,8 +61,8 @@ message UnsignedTx {
   bool confirmation_required = 5;
   uint32 anyone_can_spend_vout = 6;
   string prev_aborted_key_id = 7
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
   int64 internal_transfer_amount = 8
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }

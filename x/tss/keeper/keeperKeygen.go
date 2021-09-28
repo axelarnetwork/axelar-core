@@ -321,12 +321,12 @@ func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID exported.KeyID, v
 	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"key_"+string(keyID)+validator.String()), []byte{})
 }
 
-func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID string, rotationCount int64) {
+func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID, rotationCount int64) {
 	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)), k.cdc.MustMarshalBinaryLengthPrefixed(rotationCount))
 }
 
 // GetRotationCountOfKeyID returns the rotation count of the given key ID
-func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID string) (int64, bool) {
+func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID) (int64, bool) {
 	bz := ctx.KVStore(k.storeKey).Get([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)))
 	if bz == nil {
 		return 0, false

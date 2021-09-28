@@ -30,8 +30,8 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // Testing the key rotation functionality.
@@ -108,7 +108,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 					panic(err)
 				}
 				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
-					ID:     rand.Str(10),
+					ID:     tssTestUtils.RandKeyID(),
 					PubKey: privKey.PubKey().SerializeCompressed(),
 				})
 			}

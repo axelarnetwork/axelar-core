@@ -371,7 +371,7 @@ func TestNewDepositAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	secondaryPubKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
+	secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
 
 	externalKeyCount := 6
 	externalKeyThreshold := 3
@@ -386,7 +386,7 @@ func TestNewDepositAddress(t *testing.T) {
 		}
 
 		externalPrivKeys = append(externalPrivKeys, externalPrivKey)
-		externalKeys = append(externalKeys, tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
 	}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
@@ -569,7 +569,7 @@ func TestEstimateTxSize(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		secondaryPubKey := tss.Key{ID: rand.Str(10), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
+		secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
 
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 		externalKeyCount := 6
@@ -582,7 +582,7 @@ func TestEstimateTxSize(t *testing.T) {
 				panic(err)
 			}
 
-			externalKeys = append(externalKeys, tss.Key{ID: rand.Str(10), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+			externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
 		}
 
 		inputCount := rand.I64Between(11, 20)

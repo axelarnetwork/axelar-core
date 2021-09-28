@@ -43,7 +43,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			panic(err)
 		}
 		externalKeys[i] = tss.Key{
-			ID:    rand.Str(10),
+			ID:    tssTestUtils.RandKeyID(),
 			Value: externalPrivKey.PublicKey,
 			Role:  tss.ExternalKey,
 		}
@@ -125,7 +125,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -137,8 +137,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -176,7 +176,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -190,8 +190,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
 			return types.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
