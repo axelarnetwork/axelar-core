@@ -19,14 +19,16 @@ import (
 
 // Query paths
 const (
-	QuerySignature            = "signature"
-	QueryKey                  = "key"
-	QueryRecovery             = "recovery"
-	QueryKeyID                = "key-id"
-	QueryKeySharesByKeyID     = "key-share-id"
-	QueryKeySharesByValidator = "key-share-validator"
-	QueryDeactivated          = "deactivated"
-	QExternalKeyID            = "external-key-id"
+	QuerySignature                     = "signature"
+	QueryKey                           = "key"
+	QueryRecovery                      = "recovery"
+	QueryKeyID                         = "key-id"
+	QueryKeySharesByKeyID              = "key-share-id"
+	QueryKeySharesByValidator          = "key-share-validator"
+	QueryLockedRotationKeys            = "locked-rotation-keys"
+	QueryLockedRotationKeysByValidator = "locked-rotation-keys-validator"
+	QueryDeactivated                   = "deactivated"
+	QExternalKeyID                     = "external-key-id"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -64,6 +66,10 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 			res, err = queryKeySharesByKeyID(ctx, k, s, keyID)
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
+		case QueryLockedRotationKeys:
+			res, err = queryLockedRotationKeyIDs(ctx, k, n, s, path[1], path[2])
+		case QueryLockedRotationKeysByValidator:
+			res, err = queryLockedRotationKeyIDsByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
 			res, err = queryDeactivatedOperator(ctx, k, s, staking)
 		default:
@@ -240,6 +246,55 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 	}
 
 	return keyShareInfos.Marshal()
+}
+
+func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, chainName, roleStr string) ([]byte, error) {
+	var queryResponse types.QueryLockedRotationKeyIDsResponse
+
+	chain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("could not find chain '%s'", chainName)
+	}
+
+	role, err := exported.KeyRoleFromSimpleStr(roleStr)
+	if err != nil {
+		return nil, err
+	}
+
+	queryResponse.KeyIDs = k.GetLockedRotationKeyIDs(ctx, chain, role)
+	return queryResponse.Marshal()
+}
+
+func queryLockedRotationKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
+	var allKeyIDs []exported.KeyID
+	var queryResponse types.QueryLockedRotationKeyIDsResponse
+
+	for _, chain := range n.GetChains(ctx) {
+		for _, keyRole := range exported.GetKeyRoles() {
+			allKeyIDs = append(allKeyIDs, k.GetLockedRotationKeyIDs(ctx, chain, keyRole)...)
+		}
+	}
+
+	for _, keyID := range allKeyIDs {
+		counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+		if !ok {
+			return nil, fmt.Errorf("could not get snapshot counter from keyID %s", keyID)
+		}
+
+		snapshot, ok := s.GetSnapshot(ctx, counter)
+		if !ok {
+			return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
+		}
+
+		for _, validator := range snapshot.Validators {
+			validatorAddr := validator.GetSDKValidator().GetOperator().String()
+			if validatorAddr == targetValidatorAddr {
+				queryResponse.KeyIDs = append(queryResponse.KeyIDs, keyID)
+				break
+			}
+		}
+	}
+	return queryResponse.Marshal()
 }
 
 func queryKeySharesByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {

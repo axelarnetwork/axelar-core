@@ -1281,6 +1281,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
+// 			GetLockedRotationKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+// 				panic("mock out the GetLockedRotationKeyIDs method")
+// 			},
 // 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
@@ -1446,6 +1449,9 @@ type TSSKeeperMock struct {
 
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
 	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
+
+	// GetLockedRotationKeyIDsFunc mocks the GetLockedRotationKeyIDs method.
+	GetLockedRotationKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -1709,6 +1715,15 @@ type TSSKeeperMock struct {
 		GetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
+		// GetLockedRotationKeyIDs holds details about calls to the GetLockedRotationKeyIDs method.
+		GetLockedRotationKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
@@ -2008,6 +2023,7 @@ type TSSKeeperMock struct {
 	lockGetKey                              sync.RWMutex
 	lockGetKeyForSigID                      sync.RWMutex
 	lockGetKeyRequirement                   sync.RWMutex
+	lockGetLockedRotationKeyIDs             sync.RWMutex
 	lockGetNextKey                          sync.RWMutex
 	lockGetNextKeyID                        sync.RWMutex
 	lockGetParams                           sync.RWMutex
@@ -2814,6 +2830,45 @@ func (mock *TSSKeeperMock) GetKeyRequirementCalls() []struct {
 	mock.lockGetKeyRequirement.RLock()
 	calls = mock.calls.GetKeyRequirement
 	mock.lockGetKeyRequirement.RUnlock()
+	return calls
+}
+
+// GetLockedRotationKeyIDs calls GetLockedRotationKeyIDsFunc.
+func (mock *TSSKeeperMock) GetLockedRotationKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+	if mock.GetLockedRotationKeyIDsFunc == nil {
+		panic("TSSKeeperMock.GetLockedRotationKeyIDsFunc: method is nil but TSSKeeper.GetLockedRotationKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetLockedRotationKeyIDs.Lock()
+	mock.calls.GetLockedRotationKeyIDs = append(mock.calls.GetLockedRotationKeyIDs, callInfo)
+	mock.lockGetLockedRotationKeyIDs.Unlock()
+	return mock.GetLockedRotationKeyIDsFunc(ctx, chain, keyRole)
+}
+
+// GetLockedRotationKeyIDsCalls gets all the calls that were made to GetLockedRotationKeyIDs.
+// Check the length with:
+//     len(mockedTSSKeeper.GetLockedRotationKeyIDsCalls())
+func (mock *TSSKeeperMock) GetLockedRotationKeyIDsCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockGetLockedRotationKeyIDs.RLock()
+	calls = mock.calls.GetLockedRotationKeyIDs
+	mock.lockGetLockedRotationKeyIDs.RUnlock()
 	return calls
 }
 

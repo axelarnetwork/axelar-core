@@ -236,6 +236,7 @@
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
+    - [QueryLockedRotationKeyIDsResponse](#tss.v1beta1.QueryLockedRotationKeyIDsResponse)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
@@ -3344,6 +3345,21 @@ Params is the parameter set for this module
 | `validator_address` | [string](#string) |  |  |
 | `num_validator_shares` | [int64](#int64) |  |  |
 | `num_total_shares` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryLockedRotationKeyIDsResponse"></a>
+
+### QueryLockedRotationKeyIDsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
 
 
 

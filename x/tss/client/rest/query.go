@@ -183,6 +183,63 @@ func QueryHandlerKeySharesByKeyID(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
+// QueryHandlerLockedRotationKeys returns a handler to query for a list of locked rotation key IDs held by a validator address
+func QueryHandlerLockedRotationKeys(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		role := mux.Vars(r)[utils.PathVarKeyRole]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryLockedRotationKeys, chain, role), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var keyShareResponse types.QueryLockedRotationKeyIDsResponse
+		err = keyShareResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse.KeyIDs)
+	}
+}
+
+// QueryHandlerLockedRotationKeysByValidator returns a handler to query for a list of locked rotation key IDs held by a validator address
+func QueryHandlerLockedRotationKeysByValidator(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		validatorAddress := mux.Vars(r)[utils.PathVarCosmosAddress]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryLockedRotationKeysByValidator, validatorAddress), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var keyShareResponse types.QueryLockedRotationKeyIDsResponse
+		err = keyShareResponse.Unmarshal(res)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse.KeyIDs)
+	}
+}
+
 // QueryHandlerKeySharesByValidator returns a handler to query for a list of key shares held by a validator address
 func QueryHandlerKeySharesByValidator(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -207,7 +264,7 @@ func QueryHandlerKeySharesByValidator(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, keyShareResponse)
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse.ShareInfos)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -197,6 +198,34 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 			s.Keeper.DeleteScheduledKeygen(s.Ctx, req.KeyID)
 			reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 			assert.Len(t, reqs, actualNumReqs-(i+1))
+		}
+	}).Repeat(20))
+}
+
+func TestLockedRotationKeys(t *testing.T) {
+	t.Run("testing locked rotation keys", testutils.Func(func(t *testing.T) {
+		s := setup()
+		chain := bitcoin.Bitcoin
+		rotationCount := s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx)
+		iterations := int(rand2.I64Between(2, 10) * rotationCount)
+		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))))]
+		var expectedIDs []exported.KeyID
+
+		for i := 0; i < iterations; i++ {
+			expectedMasterKey := s.SetKey(t, s.Ctx, role)
+			assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, role, expectedMasterKey.ID))
+			assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, role))
+			expectedIDs = append(expectedIDs, expectedMasterKey.ID)
+		}
+
+		sort.SliceStable(expectedIDs, func(i, j int) bool {
+			return i > j
+		})
+		keyIDs := s.Keeper.GetLockedRotationKeyIDs(s.Ctx, chain, role)
+
+		assert.Len(t, keyIDs, int(rotationCount))
+		for i := int64(0); i < rotationCount; i++ {
+			assert.Equal(t, expectedIDs[i], keyIDs[i])
 		}
 	}).Repeat(20))
 }
