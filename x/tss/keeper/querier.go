@@ -67,7 +67,7 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
 		case QueryLockedRotationKeys:
-			res, err = queryLockedRotationKeyIDs(ctx, k, n, s, path[1], path[2])
+			res, err = queryLockedRotationKeyIDs(ctx, k, n, path[1], path[2])
 		case QueryLockedRotationKeysByValidator:
 			res, err = queryLockedRotationKeyIDsByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
@@ -248,7 +248,7 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 	return keyShareInfos.Marshal()
 }
 
-func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, chainName, roleStr string) ([]byte, error) {
+func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
 	var queryResponse types.QueryLockedRotationKeyIDsResponse
 
 	chain, ok := n.GetChain(ctx, chainName)
