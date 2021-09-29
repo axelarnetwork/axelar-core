@@ -266,7 +266,8 @@ func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, va
 // PenalizeCriminal penalizes the criminal caught during tss protocol according to the given crime type
 func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType) {
 	switch crimeType {
-	case tofnd.CRIME_TYPE_MALICIOUS:
+	// currently we do not distinguish between malicious and non-malicious faults
+	case tofnd.CRIME_TYPE_MALICIOUS, tofnd.CRIME_TYPE_NON_MALICIOUS:
 		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
 	default:
 		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
