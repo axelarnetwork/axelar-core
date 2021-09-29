@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -111,4 +112,8 @@ type TSSKeeper interface {
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
 	GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo, bool)
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID exported.KeyID, keyRole exported.KeyRole) error
+	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool)
+	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
+	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
+	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 }

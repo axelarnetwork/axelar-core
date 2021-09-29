@@ -16,6 +16,9 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
+		case *types.RegisterExternalKeysRequest:
+			res, err := server.RegisterExternalKeys(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.AckRequest:
 			res, err := server.Ack(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

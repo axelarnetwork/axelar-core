@@ -1,9 +1,9 @@
-## axelard query bitcoin external-key-id
+## axelard query tss external-key-id
 
-Returns the key IDs of the current external keys
+Returns the key IDs of the current external keys for the given chain
 
 ```
-axelard query bitcoin external-key-id [flags]
+axelard query tss external-key-id [chain] [flags]
 ```
 
 ### Options
@@ -27,4 +27,4 @@ axelard query bitcoin external-key-id [flags]
 
 ### SEE ALSO
 
-- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
+- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module

@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/hex"
 	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
@@ -18,8 +19,9 @@ import (
 
 // rest routes
 const (
-	TxKeygenStart     = "start"
-	TxMasterKeyRotate = "rotate"
+	TxKeygenStart          = "start"
+	TxMasterKeyRotate      = "rotate"
+	TxRegisterExternalKeys = "register-external-keys"
 
 	QuerySignature            = keeper.QuerySignature
 	QueryKey                  = keeper.QueryKey
@@ -28,7 +30,15 @@ const (
 	QueryKeySharesByKeyID     = keeper.QueryKeySharesByKeyID
 	QueryKeySharesByValidator = keeper.QueryKeySharesByValidator
 	QueryDeactivated          = keeper.QueryDeactivated
+	QueryExternalKeyID        = "external-key-id"
 )
+
+// ReqRegisterExternalKey represents a request to register external keys for a chain
+type ReqRegisterExternalKey struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	KeyIDs  []string     `json:"key_ids" yaml:"key_ids"`
+	PubKeys []string     `json:"pub_keys" yaml:"pub_keys"`
+}
 
 // ReqKeygenStart represents a key-gen request
 type ReqKeygenStart struct {
@@ -50,6 +60,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerKeygenStart(cliCtx), TxKeygenStart)
 	registerTx(GetHandlerKeyRotate(cliCtx), TxMasterKeyRotate, clientUtils.PathVarChain)
+	registerTx(GetHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys, clientUtils.PathVarChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySignature, clientUtils.PathVarSigID)
@@ -59,6 +70,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerKeySharesByValidator(cliCtx), QueryKeySharesByValidator, clientUtils.PathVarCosmosAddress)
 	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated)
+	registerQuery(QueryHandlerExternalKeyID(cliCtx), QueryExternalKeyID, clientUtils.PathVarChain)
 }
 
 // GetHandlerKeygenStart returns the handler to start a keygen
@@ -119,6 +131,50 @@ func GetHandlerKeyRotate(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewRotateKeyRequest(sender, mux.Vars(r)[clientUtils.PathVarChain], keyRole, req.KeyID)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerRegisterExternalKeys returns the handler to register an external key
+func GetHandlerRegisterExternalKeys(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRegisterExternalKey
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		if len(req.KeyIDs) != len(req.PubKeys) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "length mismatch between key IDs and pub keys")
+			return
+		}
+
+		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(req.KeyIDs))
+		for i, keyID := range req.KeyIDs {
+			pubKeyBytes, err := hex.DecodeString(req.PubKeys[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: exported.KeyID(keyID), PubKey: pubKeyBytes}
+		}
+
+		msg := types.NewRegisterExternalKeysRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], externalKeys...)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

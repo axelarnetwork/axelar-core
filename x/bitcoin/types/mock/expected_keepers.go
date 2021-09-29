@@ -174,6 +174,12 @@ var _ types.Signer = &SignerMock{}
 // 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
+// 			GetExternalKeyIDsFunc: func(ctx sdk.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+// 				panic("mock out the GetExternalKeyIDs method")
+// 			},
+// 			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold {
+// 				panic("mock out the GetExternalMultisigThreshold method")
+// 			},
 // 			GetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
@@ -243,6 +249,12 @@ type SignerMock struct {
 
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalKeyIDsFunc mocks the GetExternalKeyIDs method.
+	GetExternalKeyIDsFunc func(ctx sdk.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
+	GetExternalMultisigThresholdFunc func(ctx sdk.Context) utils.Threshold
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -338,6 +350,18 @@ type SignerMock struct {
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
+		// GetExternalKeyIDs holds details about calls to the GetExternalKeyIDs method.
+		GetExternalKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
+		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
+		GetExternalMultisigThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
@@ -483,6 +507,8 @@ type SignerMock struct {
 	lockAssignNextKey                          sync.RWMutex
 	lockGetCurrentKey                          sync.RWMutex
 	lockGetCurrentKeyID                        sync.RWMutex
+	lockGetExternalKeyIDs                      sync.RWMutex
+	lockGetExternalMultisigThreshold           sync.RWMutex
 	lockGetKey                                 sync.RWMutex
 	lockGetKeyByRotationCount                  sync.RWMutex
 	lockGetKeyForSigID                         sync.RWMutex
@@ -667,6 +693,72 @@ func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
 	mock.lockGetCurrentKeyID.RLock()
 	calls = mock.calls.GetCurrentKeyID
 	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetExternalKeyIDs calls GetExternalKeyIDsFunc.
+func (mock *SignerMock) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+	if mock.GetExternalKeyIDsFunc == nil {
+		panic("SignerMock.GetExternalKeyIDsFunc: method is nil but Signer.GetExternalKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetExternalKeyIDs.Lock()
+	mock.calls.GetExternalKeyIDs = append(mock.calls.GetExternalKeyIDs, callInfo)
+	mock.lockGetExternalKeyIDs.Unlock()
+	return mock.GetExternalKeyIDsFunc(ctx, chain)
+}
+
+// GetExternalKeyIDsCalls gets all the calls that were made to GetExternalKeyIDs.
+// Check the length with:
+//     len(mockedSigner.GetExternalKeyIDsCalls())
+func (mock *SignerMock) GetExternalKeyIDsCalls() []struct {
+	Ctx   sdk.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}
+	mock.lockGetExternalKeyIDs.RLock()
+	calls = mock.calls.GetExternalKeyIDs
+	mock.lockGetExternalKeyIDs.RUnlock()
+	return calls
+}
+
+// GetExternalMultisigThreshold calls GetExternalMultisigThresholdFunc.
+func (mock *SignerMock) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
+	if mock.GetExternalMultisigThresholdFunc == nil {
+		panic("SignerMock.GetExternalMultisigThresholdFunc: method is nil but Signer.GetExternalMultisigThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetExternalMultisigThreshold.Lock()
+	mock.calls.GetExternalMultisigThreshold = append(mock.calls.GetExternalMultisigThreshold, callInfo)
+	mock.lockGetExternalMultisigThreshold.Unlock()
+	return mock.GetExternalMultisigThresholdFunc(ctx)
+}
+
+// GetExternalMultisigThresholdCalls gets all the calls that were made to GetExternalMultisigThreshold.
+// Check the length with:
+//     len(mockedSigner.GetExternalMultisigThresholdCalls())
+func (mock *SignerMock) GetExternalMultisigThresholdCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetExternalMultisigThreshold.RLock()
+	calls = mock.calls.GetExternalMultisigThreshold
+	mock.lockGetExternalMultisigThreshold.RUnlock()
 	return calls
 }
 
@@ -2081,12 +2173,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetDustAmountFunc: func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetDustAmount method")
 // 			},
-// 			GetExternalKeyIDsFunc: func(ctx sdk.Context) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
-// 				panic("mock out the GetExternalKeyIDs method")
-// 			},
-// 			GetExternalMultisigThresholdFunc: func(ctx sdk.Context) utils.Threshold {
-// 				panic("mock out the GetExternalMultisigThreshold method")
-// 			},
 // 			GetLatestSignedTxHashFunc: func(ctx sdk.Context, txType types.TxType) (*chainhash.Hash, bool) {
 // 				panic("mock out the GetLatestSignedTxHash method")
 // 			},
@@ -2159,9 +2245,6 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			SetDustAmountFunc: func(ctx sdk.Context, encodedAddress string, amount github_com_btcsuite_btcutil.Amount)  {
 // 				panic("mock out the SetDustAmount method")
 // 			},
-// 			SetExternalKeyIDsFunc: func(ctx sdk.Context, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
-// 				panic("mock out the SetExternalKeyIDs method")
-// 			},
 // 			SetLatestSignedTxHashFunc: func(ctx sdk.Context, txType types.TxType, txHash chainhash.Hash)  {
 // 				panic("mock out the SetLatestSignedTxHash method")
 // 			},
@@ -2213,12 +2296,6 @@ type BTCKeeperMock struct {
 
 	// GetDustAmountFunc mocks the GetDustAmount method.
 	GetDustAmountFunc func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount
-
-	// GetExternalKeyIDsFunc mocks the GetExternalKeyIDs method.
-	GetExternalKeyIDsFunc func(ctx sdk.Context) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
-
-	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
-	GetExternalMultisigThresholdFunc func(ctx sdk.Context) utils.Threshold
 
 	// GetLatestSignedTxHashFunc mocks the GetLatestSignedTxHash method.
 	GetLatestSignedTxHashFunc func(ctx sdk.Context, txType types.TxType) (*chainhash.Hash, bool)
@@ -2291,9 +2368,6 @@ type BTCKeeperMock struct {
 
 	// SetDustAmountFunc mocks the SetDustAmount method.
 	SetDustAmountFunc func(ctx sdk.Context, encodedAddress string, amount github_com_btcsuite_btcutil.Amount)
-
-	// SetExternalKeyIDsFunc mocks the SetExternalKeyIDs method.
-	SetExternalKeyIDsFunc func(ctx sdk.Context, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
 
 	// SetLatestSignedTxHashFunc mocks the SetLatestSignedTxHash method.
 	SetLatestSignedTxHashFunc func(ctx sdk.Context, txType types.TxType, txHash chainhash.Hash)
@@ -2371,16 +2445,6 @@ type BTCKeeperMock struct {
 			Ctx sdk.Context
 			// EncodedAddress is the encodedAddress argument value.
 			EncodedAddress string
-		}
-		// GetExternalKeyIDs holds details about calls to the GetExternalKeyIDs method.
-		GetExternalKeyIDs []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-		}
-		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
-		GetExternalMultisigThreshold []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
 		}
 		// GetLatestSignedTxHash holds details about calls to the GetLatestSignedTxHash method.
 		GetLatestSignedTxHash []struct {
@@ -2524,13 +2588,6 @@ type BTCKeeperMock struct {
 			// Amount is the amount argument value.
 			Amount github_com_btcsuite_btcutil.Amount
 		}
-		// SetExternalKeyIDs holds details about calls to the SetExternalKeyIDs method.
-		SetExternalKeyIDs []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyIDs is the keyIDs argument value.
-			KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// SetLatestSignedTxHash holds details about calls to the SetLatestSignedTxHash method.
 		SetLatestSignedTxHash []struct {
 			// Ctx is the ctx argument value.
@@ -2595,8 +2652,6 @@ type BTCKeeperMock struct {
 	lockGetAnyoneCanSpendAddress                sync.RWMutex
 	lockGetConfirmedOutpointInfoQueueForKey     sync.RWMutex
 	lockGetDustAmount                           sync.RWMutex
-	lockGetExternalKeyIDs                       sync.RWMutex
-	lockGetExternalMultisigThreshold            sync.RWMutex
 	lockGetLatestSignedTxHash                   sync.RWMutex
 	lockGetMasterAddressExternalKeyLockDuration sync.RWMutex
 	lockGetMasterAddressInternalKeyLockDuration sync.RWMutex
@@ -2621,7 +2676,6 @@ type BTCKeeperMock struct {
 	lockSetAddress                              sync.RWMutex
 	lockSetConfirmedOutpointInfo                sync.RWMutex
 	lockSetDustAmount                           sync.RWMutex
-	lockSetExternalKeyIDs                       sync.RWMutex
 	lockSetLatestSignedTxHash                   sync.RWMutex
 	lockSetParams                               sync.RWMutex
 	lockSetPendingOutpointInfo                  sync.RWMutex
@@ -2904,68 +2958,6 @@ func (mock *BTCKeeperMock) GetDustAmountCalls() []struct {
 	mock.lockGetDustAmount.RLock()
 	calls = mock.calls.GetDustAmount
 	mock.lockGetDustAmount.RUnlock()
-	return calls
-}
-
-// GetExternalKeyIDs calls GetExternalKeyIDsFunc.
-func (mock *BTCKeeperMock) GetExternalKeyIDs(ctx sdk.Context) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
-	if mock.GetExternalKeyIDsFunc == nil {
-		panic("BTCKeeperMock.GetExternalKeyIDsFunc: method is nil but BTCKeeper.GetExternalKeyIDs was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetExternalKeyIDs.Lock()
-	mock.calls.GetExternalKeyIDs = append(mock.calls.GetExternalKeyIDs, callInfo)
-	mock.lockGetExternalKeyIDs.Unlock()
-	return mock.GetExternalKeyIDsFunc(ctx)
-}
-
-// GetExternalKeyIDsCalls gets all the calls that were made to GetExternalKeyIDs.
-// Check the length with:
-//     len(mockedBTCKeeper.GetExternalKeyIDsCalls())
-func (mock *BTCKeeperMock) GetExternalKeyIDsCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockGetExternalKeyIDs.RLock()
-	calls = mock.calls.GetExternalKeyIDs
-	mock.lockGetExternalKeyIDs.RUnlock()
-	return calls
-}
-
-// GetExternalMultisigThreshold calls GetExternalMultisigThresholdFunc.
-func (mock *BTCKeeperMock) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
-	if mock.GetExternalMultisigThresholdFunc == nil {
-		panic("BTCKeeperMock.GetExternalMultisigThresholdFunc: method is nil but BTCKeeper.GetExternalMultisigThreshold was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetExternalMultisigThreshold.Lock()
-	mock.calls.GetExternalMultisigThreshold = append(mock.calls.GetExternalMultisigThreshold, callInfo)
-	mock.lockGetExternalMultisigThreshold.Unlock()
-	return mock.GetExternalMultisigThresholdFunc(ctx)
-}
-
-// GetExternalMultisigThresholdCalls gets all the calls that were made to GetExternalMultisigThreshold.
-// Check the length with:
-//     len(mockedBTCKeeper.GetExternalMultisigThresholdCalls())
-func (mock *BTCKeeperMock) GetExternalMultisigThresholdCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockGetExternalMultisigThreshold.RLock()
-	calls = mock.calls.GetExternalMultisigThreshold
-	mock.lockGetExternalMultisigThreshold.RUnlock()
 	return calls
 }
 
@@ -3754,41 +3746,6 @@ func (mock *BTCKeeperMock) SetDustAmountCalls() []struct {
 	mock.lockSetDustAmount.RLock()
 	calls = mock.calls.SetDustAmount
 	mock.lockSetDustAmount.RUnlock()
-	return calls
-}
-
-// SetExternalKeyIDs calls SetExternalKeyIDsFunc.
-func (mock *BTCKeeperMock) SetExternalKeyIDs(ctx sdk.Context, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
-	if mock.SetExternalKeyIDsFunc == nil {
-		panic("BTCKeeperMock.SetExternalKeyIDsFunc: method is nil but BTCKeeper.SetExternalKeyIDs was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:    ctx,
-		KeyIDs: keyIDs,
-	}
-	mock.lockSetExternalKeyIDs.Lock()
-	mock.calls.SetExternalKeyIDs = append(mock.calls.SetExternalKeyIDs, callInfo)
-	mock.lockSetExternalKeyIDs.Unlock()
-	mock.SetExternalKeyIDsFunc(ctx, keyIDs)
-}
-
-// SetExternalKeyIDsCalls gets all the calls that were made to SetExternalKeyIDs.
-// Check the length with:
-//     len(mockedBTCKeeper.SetExternalKeyIDsCalls())
-func (mock *BTCKeeperMock) SetExternalKeyIDsCalls() []struct {
-	Ctx    sdk.Context
-	KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockSetExternalKeyIDs.RLock()
-	calls = mock.calls.SetExternalKeyIDs
-	mock.lockSetExternalKeyIDs.RUnlock()
 	return calls
 }
 

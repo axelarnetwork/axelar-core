@@ -22,6 +22,7 @@ var (
 	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
+	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -63,6 +64,7 @@ func DefaultParams() Params {
 		AckWindowInBlocks:                4,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 8,
+		ExternalMultisigThreshold:        utils.Threshold{Numerator: 3, Denominator: 6},
 	}
 }
 
@@ -82,6 +84,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
 		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
 		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validateInt64("UnbondingLockingKeyRotationCount")),
+		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 	}
 }
 
@@ -119,6 +122,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateInt64("UnbondingLockingKeyRotationCount")(m.UnbondingLockingKeyRotationCount); err != nil {
+		return err
+	}
+
+	if err := validateExternalMultisigThreshold(m.ExternalMultisigThreshold); err != nil {
 		return err
 	}
 
@@ -191,6 +198,27 @@ func validateMaxMissedBlocksPerWindow(maxMissedBlocksPerWindow interface{}) erro
 
 	if val.Numerator > val.Denominator {
 		return fmt.Errorf("threshold must be <=1 for MaxMissedBlocksPerWindow")
+	}
+
+	return nil
+}
+
+func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) error {
+	t, ok := externalMultisigThreshold.(utils.Threshold)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for external multisig threshold: %T", externalMultisigThreshold)
+	}
+
+	if t.Numerator <= 0 {
+		return fmt.Errorf("numerator must be greater than 0 for external multisig threshold")
+	}
+
+	if t.Denominator <= 0 {
+		return fmt.Errorf("denominator must be greater than 0 for external multisig threshold")
+	}
+
+	if t.Numerator > t.Denominator {
+		return fmt.Errorf("threshold must be <=1 for external multisig threshold")
 	}
 
 	return nil

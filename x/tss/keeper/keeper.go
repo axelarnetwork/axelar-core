@@ -40,6 +40,7 @@ const (
 	scheduledSignPrefix        = "scheduled_sign_"
 	sigStatusPrefix            = "sig_status_"
 	rotationCountOfKeyIDPrefix = "rotation_count_of_key_id_"
+	externalKeyIDsPrefix       = "external_key_ids_"
 )
 
 // Keeper allows access to the broadcast state
@@ -140,6 +141,14 @@ func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+// GetExternalMultisigThreshold returns the external multisig threshold
+func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
+	var result utils.Threshold
+	k.params.Get(ctx, types.KeyExternalMultisigThreshold, &result)
+
+	return result
 }
 
 // SetGroupRecoveryInfo sets the group recovery info for a given party
@@ -395,6 +404,28 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	}
 
 	return activeKeys, nil
+}
+
+// SetExternalKeyIDs stores the given list of external key IDs
+func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID) {
+	storageKey := []byte(fmt.Sprintf("%s%s", externalKeyIDsPrefix, chain.Name))
+
+	ctx.KVStore(k.storeKey).Set(storageKey, k.cdc.MustMarshalBinaryLengthPrefixed(keyIDs))
+}
+
+// GetExternalKeyIDs retrieves the current list of external key IDs
+func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool) {
+	storageKey := []byte(fmt.Sprintf("%s%s", externalKeyIDsPrefix, chain.Name))
+
+	bz := ctx.KVStore(k.storeKey).Get(storageKey)
+	if bz == nil {
+		return []exported.KeyID{}, false
+	}
+
+	var keyIDs []exported.KeyID
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyIDs)
+
+	return keyIDs, true
 }
 
 func (k Keeper) emitAckEvent(ctx sdk.Context, action string, keyID exported.KeyID, sigID string, height int64) {
