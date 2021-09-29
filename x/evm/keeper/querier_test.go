@@ -243,7 +243,7 @@ func TestQueryDepositState(t *testing.T) {
 		_, err := evmKeeper.QueryDepositState(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
-		assert.EqualError(err, "could not unmarshal parameters")
+		assert.EqualError(err, "could not unmarshal parameters: bridge error")
 
 	}).Repeat(repeatCount))
 
@@ -256,7 +256,7 @@ func TestQueryDepositState(t *testing.T) {
 		_, err := evmKeeper.QueryDepositState(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
-		assert.EqualError(err, fmt.Sprintf("%s is not a registered chain", evmChain))
+		assert.EqualError(err, fmt.Sprintf("%s is not a registered chain: bridge error", evmChain))
 
 	}).Repeat(repeatCount))
 }
