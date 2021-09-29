@@ -63,3 +63,11 @@ message QueryKeyShareResponse {
 message QueryDeactivatedOperatorsResponse {
   repeated string operator_addresses = 1;
 }
+
+message QueryExternalKeyIDResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}

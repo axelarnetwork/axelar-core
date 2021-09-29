@@ -6,6 +6,7 @@ package mock
 import (
 	context "context"
 	"crypto/ecdsa"
+	utils "github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -1259,6 +1260,12 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
+// 			GetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+// 				panic("mock out the GetExternalKeyIDs method")
+// 			},
+// 			GetExternalMultisigThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+// 				panic("mock out the GetExternalMultisigThreshold method")
+// 			},
 // 			GetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 // 				panic("mock out the GetGroupRecoveryInfo method")
 // 			},
@@ -1340,6 +1347,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, ackType github_com_axelarnetwork_axelar_core_x_tss_exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
+// 			SetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
+// 				panic("mock out the SetExternalKeyIDs method")
+// 			},
 // 			SetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)  {
 // 				panic("mock out the SetGroupRecoveryInfo method")
 // 			},
@@ -1348,6 +1358,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
+// 			},
+// 			SetKeyRoleFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole)  {
+// 				panic("mock out the SetKeyRole method")
 // 			},
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
@@ -1412,6 +1425,12 @@ type TSSKeeperMock struct {
 
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalKeyIDsFunc mocks the GetExternalKeyIDs method.
+	GetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
+	GetExternalMultisigThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
 	// GetGroupRecoveryInfoFunc mocks the GetGroupRecoveryInfo method.
 	GetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte
@@ -1494,6 +1513,9 @@ type TSSKeeperMock struct {
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, ackType github_com_axelarnetwork_axelar_core_x_tss_exported.AckType, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
+	// SetExternalKeyIDsFunc mocks the SetExternalKeyIDs method.
+	SetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
+
 	// SetGroupRecoveryInfoFunc mocks the SetGroupRecoveryInfo method.
 	SetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)
 
@@ -1502,6 +1524,9 @@ type TSSKeeperMock struct {
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)
+
+	// SetKeyRoleFunc mocks the SetKeyRole method.
+	SetKeyRoleFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)
@@ -1639,6 +1664,18 @@ type TSSKeeperMock struct {
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
+		// GetExternalKeyIDs holds details about calls to the GetExternalKeyIDs method.
+		GetExternalKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
+		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
+		GetExternalMultisigThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetGroupRecoveryInfo holds details about calls to the GetGroupRecoveryInfo method.
 		GetGroupRecoveryInfo []struct {
@@ -1855,6 +1892,15 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// SetExternalKeyIDs holds details about calls to the SetExternalKeyIDs method.
+		SetExternalKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyIDs is the keyIDs argument value.
+			KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		}
 		// SetGroupRecoveryInfo holds details about calls to the SetGroupRecoveryInfo method.
 		SetGroupRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
@@ -1881,6 +1927,15 @@ type TSSKeeperMock struct {
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
+		}
+		// SetKeyRole holds details about calls to the SetKeyRole method.
+		SetKeyRole []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
@@ -1946,6 +2001,8 @@ type TSSKeeperMock struct {
 	lockGetAvailableOperators               sync.RWMutex
 	lockGetCurrentKey                       sync.RWMutex
 	lockGetCurrentKeyID                     sync.RWMutex
+	lockGetExternalKeyIDs                   sync.RWMutex
+	lockGetExternalMultisigThreshold        sync.RWMutex
 	lockGetGroupRecoveryInfo                sync.RWMutex
 	lockGetInfoForSig                       sync.RWMutex
 	lockGetKey                              sync.RWMutex
@@ -1973,9 +2030,11 @@ type TSSKeeperMock struct {
 	lockScheduleSign                        sync.RWMutex
 	lockSelectSignParticipants              sync.RWMutex
 	lockSetAvailableOperator                sync.RWMutex
+	lockSetExternalKeyIDs                   sync.RWMutex
 	lockSetGroupRecoveryInfo                sync.RWMutex
 	lockSetInfoForSig                       sync.RWMutex
 	lockSetKey                              sync.RWMutex
+	lockSetKeyRole                          sync.RWMutex
 	lockSetParams                           sync.RWMutex
 	lockSetPrivateRecoveryInfo              sync.RWMutex
 	lockSetSig                              sync.RWMutex
@@ -2514,6 +2573,72 @@ func (mock *TSSKeeperMock) GetCurrentKeyIDCalls() []struct {
 	mock.lockGetCurrentKeyID.RLock()
 	calls = mock.calls.GetCurrentKeyID
 	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetExternalKeyIDs calls GetExternalKeyIDsFunc.
+func (mock *TSSKeeperMock) GetExternalKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+	if mock.GetExternalKeyIDsFunc == nil {
+		panic("TSSKeeperMock.GetExternalKeyIDsFunc: method is nil but TSSKeeper.GetExternalKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetExternalKeyIDs.Lock()
+	mock.calls.GetExternalKeyIDs = append(mock.calls.GetExternalKeyIDs, callInfo)
+	mock.lockGetExternalKeyIDs.Unlock()
+	return mock.GetExternalKeyIDsFunc(ctx, chain)
+}
+
+// GetExternalKeyIDsCalls gets all the calls that were made to GetExternalKeyIDs.
+// Check the length with:
+//     len(mockedTSSKeeper.GetExternalKeyIDsCalls())
+func (mock *TSSKeeperMock) GetExternalKeyIDsCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockGetExternalKeyIDs.RLock()
+	calls = mock.calls.GetExternalKeyIDs
+	mock.lockGetExternalKeyIDs.RUnlock()
+	return calls
+}
+
+// GetExternalMultisigThreshold calls GetExternalMultisigThresholdFunc.
+func (mock *TSSKeeperMock) GetExternalMultisigThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+	if mock.GetExternalMultisigThresholdFunc == nil {
+		panic("TSSKeeperMock.GetExternalMultisigThresholdFunc: method is nil but TSSKeeper.GetExternalMultisigThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetExternalMultisigThreshold.Lock()
+	mock.calls.GetExternalMultisigThreshold = append(mock.calls.GetExternalMultisigThreshold, callInfo)
+	mock.lockGetExternalMultisigThreshold.Unlock()
+	return mock.GetExternalMultisigThresholdFunc(ctx)
+}
+
+// GetExternalMultisigThresholdCalls gets all the calls that were made to GetExternalMultisigThreshold.
+// Check the length with:
+//     len(mockedTSSKeeper.GetExternalMultisigThresholdCalls())
+func (mock *TSSKeeperMock) GetExternalMultisigThresholdCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetExternalMultisigThreshold.RLock()
+	calls = mock.calls.GetExternalMultisigThreshold
+	mock.lockGetExternalMultisigThreshold.RUnlock()
 	return calls
 }
 
@@ -3514,6 +3639,45 @@ func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
 	return calls
 }
 
+// SetExternalKeyIDs calls SetExternalKeyIDsFunc.
+func (mock *TSSKeeperMock) SetExternalKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
+	if mock.SetExternalKeyIDsFunc == nil {
+		panic("TSSKeeperMock.SetExternalKeyIDsFunc: method is nil but TSSKeeper.SetExternalKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Chain  nexus.Chain
+		KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}{
+		Ctx:    ctx,
+		Chain:  chain,
+		KeyIDs: keyIDs,
+	}
+	mock.lockSetExternalKeyIDs.Lock()
+	mock.calls.SetExternalKeyIDs = append(mock.calls.SetExternalKeyIDs, callInfo)
+	mock.lockSetExternalKeyIDs.Unlock()
+	mock.SetExternalKeyIDsFunc(ctx, chain, keyIDs)
+}
+
+// SetExternalKeyIDsCalls gets all the calls that were made to SetExternalKeyIDs.
+// Check the length with:
+//     len(mockedTSSKeeper.SetExternalKeyIDsCalls())
+func (mock *TSSKeeperMock) SetExternalKeyIDsCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Chain  nexus.Chain
+	KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Chain  nexus.Chain
+		KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}
+	mock.lockSetExternalKeyIDs.RLock()
+	calls = mock.calls.SetExternalKeyIDs
+	mock.lockSetExternalKeyIDs.RUnlock()
+	return calls
+}
+
 // SetGroupRecoveryInfo calls SetGroupRecoveryInfoFunc.
 func (mock *TSSKeeperMock) SetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte) {
 	if mock.SetGroupRecoveryInfoFunc == nil {
@@ -3628,6 +3792,45 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
+	return calls
+}
+
+// SetKeyRole calls SetKeyRoleFunc.
+func (mock *TSSKeeperMock) SetKeyRole(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) {
+	if mock.SetKeyRoleFunc == nil {
+		panic("TSSKeeperMock.SetKeyRoleFunc: method is nil but TSSKeeper.SetKeyRole was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		KeyID:   keyID,
+		KeyRole: keyRole,
+	}
+	mock.lockSetKeyRole.Lock()
+	mock.calls.SetKeyRole = append(mock.calls.SetKeyRole, callInfo)
+	mock.lockSetKeyRole.Unlock()
+	mock.SetKeyRoleFunc(ctx, keyID, keyRole)
+}
+
+// SetKeyRoleCalls gets all the calls that were made to SetKeyRole.
+// Check the length with:
+//     len(mockedTSSKeeper.SetKeyRoleCalls())
+func (mock *TSSKeeperMock) SetKeyRoleCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockSetKeyRole.RLock()
+	calls = mock.calls.SetKeyRole
+	mock.lockSetKeyRole.RUnlock()
 	return calls
 }
 

@@ -234,3 +234,27 @@ func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
+
+// QueryHandlerExternalKeyID returns a handler to query the keyIDs of the current set of external keys
+func QueryHandlerExternalKeyID(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QExternalKeyID, chain)
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "could not resolve the external key IDs")
+			return
+		}
+
+		var res types.QueryExternalKeyIDResponse
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}

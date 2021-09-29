@@ -186,14 +186,6 @@ func (k Keeper) GetMasterAddressExternalKeyLockDuration(ctx sdk.Context) time.Du
 	return result
 }
 
-// GetExternalMultisigThreshold returns the external multisig threshold
-func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
-	var result utils.Threshold
-	k.params.Get(ctx, types.KeyExternalMultisigThreshold, &result)
-
-	return result
-}
-
 // GetMaxTxSize returns the max tx size allowed
 func (k Keeper) GetMaxTxSize(ctx sdk.Context) int64 {
 	var result int64

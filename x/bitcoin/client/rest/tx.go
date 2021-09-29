@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 )
@@ -24,7 +23,6 @@ const (
 	TxCreateMasterConsolidationTx = "create-master-consolidation-tx"
 	TxCreateRescueTx              = "create-rescue-tx"
 	TxSignTx                      = "sign-tx"
-	TxRegisterExternalKeys        = "register-external-keys"
 	TxSubmitExternalSignature     = "submit-external-signature"
 
 	QueryDepositAddress       = "deposit-address"
@@ -32,7 +30,6 @@ const (
 	QueryConsolidationAddress = "consolidation-address"
 	QueryMinOutputAmount      = "min-output-amount"
 	QueryNextKeyID            = "next-key-id"
-	QueryExternalKeyID        = "external-key-id"
 	QueryLatestTx             = "latest-tx"
 	QuerySignedTx             = "signed-tx"
 )
@@ -46,7 +43,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerCreateMasterConsolidationTx(cliCtx), TxCreateMasterConsolidationTx)
 	registerTx(TxHandlerCreateRescueTx(cliCtx), TxCreateRescueTx)
 	registerTx(TxHandlerSignTx(cliCtx), TxSignTx)
-	registerTx(TxHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys)
 	registerTx(TxHandlerSubmitExternalSignature(cliCtx), TxSubmitExternalSignature)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
@@ -54,7 +50,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerDepositStatus(cliCtx), QueryDepositStatus, clientUtils.PathVarOutpoint)
 	registerQuery(QueryHandlerConsolidationAddress(cliCtx), QueryConsolidationAddress)
 	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarKeyRole)
-	registerQuery(QueryHandlerExternalKeyID(cliCtx), QueryExternalKeyID)
 	registerQuery(QueryHandlerMinOutputAmount(cliCtx), QueryMinOutputAmount)
 	registerQuery(QueryHandlerLatestTx(cliCtx), QueryLatestTx, clientUtils.PathVarTxType)
 	registerQuery(QueryHandlerSignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarTxID)
@@ -95,13 +90,6 @@ type ReqCreateRescueTx struct {
 type ReqSignTx struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxType  string       `json:"tx_type" yaml:"tx_type"`
-}
-
-// ReqRegisterExternalKey represents a request to register an external key
-type ReqRegisterExternalKey struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyIDs  []string     `json:"key_ids" yaml:"key_ids"`
-	PubKeys []string     `json:"pub_keys" yaml:"pub_keys"`
 }
 
 // ReqSubmitExternalSignature represents a request to submit a signature from an external key
@@ -296,50 +284,6 @@ func TxHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewSignTxRequest(fromAddr, txType)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// TxHandlerRegisterExternalKeys returns the handler to register an external key
-func TxHandlerRegisterExternalKeys(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqRegisterExternalKey
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		if len(req.KeyIDs) != len(req.PubKeys) {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "length mismatch between key IDs and pub keys")
-			return
-		}
-
-		externalKeys := make([]types.RegisterExternalKeysRequest_ExternalKey, len(req.KeyIDs))
-		for i, keyID := range req.KeyIDs {
-			pubKeyBytes, err := hex.DecodeString(req.PubKeys[i])
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-				return
-			}
-
-			externalKeys[i] = types.RegisterExternalKeysRequest_ExternalKey{ID: tss.KeyID(keyID), PubKey: pubKeyBytes}
-		}
-
-		msg := types.NewRegisterExternalKeysRequest(fromAddr, externalKeys...)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -29,7 +29,6 @@ axelard query bitcoin [flags]
 - [axelard query bitcoin consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
 - [axelard query bitcoin deposit-address](axelard_query_bitcoin_deposit-address.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
 - [axelard query bitcoin deposit-status](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
-- [axelard query bitcoin external-key-id](axelard_query_bitcoin_external-key-id.md)	 - Returns the key IDs of the current external keys
 - [axelard query bitcoin latest-tx](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
 - [axelard query bitcoin min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
 - [axelard query bitcoin next-key-id](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key

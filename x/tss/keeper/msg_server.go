@@ -43,6 +43,48 @@ func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.
 	}
 }
 
+func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterExternalKeysRequest) (*types.RegisterExternalKeysResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("unknown chain %s", req.Chain)
+	}
+
+	requiredExternalKeyCount := s.GetExternalMultisigThreshold(ctx).Denominator
+	if len(req.ExternalKeys) != int(requiredExternalKeyCount) {
+		return nil, fmt.Errorf("%d external keys are required for chain %s", requiredExternalKeyCount, chain.Name)
+	}
+
+	keyIDs := make([]exported.KeyID, len(req.ExternalKeys))
+	for i, externalKey := range req.ExternalKeys {
+		if _, ok := s.GetKey(ctx, externalKey.ID); ok {
+			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
+		}
+
+		pubKey, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("invalid external key received")
+		}
+
+		s.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
+		s.SetKeyRole(ctx, externalKey.ID, exported.ExternalKey)
+		keyIDs[i] = externalKey.ID
+
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
+			sdk.NewAttribute(types.AttributeChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyRole, exported.ExternalKey.SimpleString()),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(externalKey.ID)),
+		))
+	}
+
+	s.SetExternalKeyIDs(ctx, chain, keyIDs)
+
+	return &types.RegisterExternalKeysResponse{}, nil
+}
+
 func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
