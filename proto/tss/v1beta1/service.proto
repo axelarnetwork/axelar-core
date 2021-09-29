@@ -15,7 +15,7 @@ service MsgService {
   rpc RegisterExternalKeys(tss.v1beta1.RegisterExternalKeysRequest)
       returns (tss.v1beta1.RegisterExternalKeysResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/register-external-key"
+      post : "/axelar/tss/register-external-key"
       body : "*"
     };
   }

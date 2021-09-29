@@ -26,7 +26,7 @@ const (
 	QueryKeySharesByKeyID     = "key-share-id"
 	QueryKeySharesByValidator = "key-share-validator"
 	QueryDeactivated          = "deactivated"
-	QExternalKeyID            = "externalKeyID"
+	QExternalKeyID            = "external-key-id"
 )
 
 // NewQuerier returns a new querier for the TSS module

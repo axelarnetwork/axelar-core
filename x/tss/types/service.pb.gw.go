@@ -414,7 +414,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_RegisterExternalKeys_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "register-external-key"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RegisterExternalKeys_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "tss", "register-external-key"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_Ack_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "tss", "ack"}, "", runtime.AssumeColonVerbOpt(true)))
 

@@ -105,7 +105,7 @@ func getCmdRotateKey() *cobra.Command {
 func GetCmdRegisterExternalKeys() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "register-external-keys [chain]",
-		Short: "Register the external key for bitcoin",
+		Short: "Register the external keys for the given chain",
 		Args:  cobra.ExactArgs(1),
 	}
 	keys := cmd.Flags().StringSlice("key", []string{}, "key ID and public key in the hex format, e.g. [keyID:keyHex]")

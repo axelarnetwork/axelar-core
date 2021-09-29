@@ -18,7 +18,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RotateKeyRequest{}, "tss/RotateKey", nil)
 	cdc.RegisterConcrete(&VoteSigRequest{}, "tss/VoteSig", nil)
 	cdc.RegisterConcrete(&VotePubKeyRequest{}, "tss/VotePubKey", nil)
-	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "bitcoin/RegisterExternalKey", nil)
+	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "tss/RegisterExternalKey", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry

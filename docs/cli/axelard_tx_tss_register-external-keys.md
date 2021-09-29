@@ -1,6 +1,6 @@
 ## axelard tx tss register-external-keys
 
-Register the external key for bitcoin
+Register the external keys for the given chain
 
 ```
 axelard tx tss register-external-keys [chain] [flags]
