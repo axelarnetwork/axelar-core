@@ -201,38 +201,6 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 	}).Repeat(20))
 }
 
-func TestLockedRotationKeys(t *testing.T) {
-	t.Run("testing locked rotation keys", testutils.Func(func(t *testing.T) {
-		s := setup()
-		chain := bitcoin.Bitcoin
-		iterations := int(rand2.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
-		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))))]
-		var expectedIDs []exported.KeyID
-
-		for i := 0; i < iterations; i++ {
-			expectedMasterKey := s.SetKey(t, s.Ctx, role)
-			assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, role, expectedMasterKey.ID))
-			assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, role))
-			expectedIDs = append(expectedIDs, expectedMasterKey.ID)
-		}
-
-		keys, err := s.Keeper.GetOldActiveKeys(s.Ctx, chain, role)
-		assert.NoError(t, err)
-		assert.Len(t, keys, int(s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx)))
-
-		count := 0
-		for _, actual := range keys {
-			for _, expected := range expectedIDs {
-				if actual.ID == expected {
-					count++
-				}
-			}
-		}
-		assert.Equal(t, int(s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx)), count)
-
-	}).Repeat(20))
-}
-
 func TestScheduleKeygenEvents(t *testing.T) {
 	t.Run("testing scheduled keygen events", testutils.Func(func(t *testing.T) {
 		s := setup()

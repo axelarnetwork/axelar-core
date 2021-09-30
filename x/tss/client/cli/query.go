@@ -34,8 +34,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetKeyID(queryRoute),
 		GetCmdGetKeySharesByKeyID(queryRoute),
 		GetCmdGetKeySharesByValidator(queryRoute),
-		GetCmdGetLockedRotationKeys(queryRoute),
-		GetCmdGetLockedRotationKeysByValidator(queryRoute),
+		GetCmdGetActiveOldKeys(queryRoute),
+		GetCmdGetActiveOldKeysByValidator(queryRoute),
 		GetCmdGetDeactivatedOperators(queryRoute),
 		GetCmdExternalKeyID(queryRoute),
 	)
@@ -252,11 +252,11 @@ func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetLockedRotationKeys returns the query for a list of locked rotation key IDs held by a validator address
-func GetCmdGetLockedRotationKeys(queryRoute string) *cobra.Command {
+// GetCmdGetActiveOldKeys returns the query for a list of locked rotation key IDs held by a validator address
+func GetCmdGetActiveOldKeys(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "locked-rotation-keys [chain] [role]",
-		Short: "Query locked rotation key IDs by validator",
+		Use:   "active-old-keys [chain] [role]",
+		Short: "Query active old key IDs by validator",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
@@ -266,7 +266,7 @@ func GetCmdGetLockedRotationKeys(queryRoute string) *cobra.Command {
 
 			chain := args[0]
 			role := args[1]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryLockedRotationKeys, chain, role), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryActiveOldKeys, chain, role), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
@@ -285,11 +285,11 @@ func GetCmdGetLockedRotationKeys(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetLockedRotationKeysByValidator returns the query for a list of locked rotation key IDs held by a validator address
-func GetCmdGetLockedRotationKeysByValidator(queryRoute string) *cobra.Command {
+// GetCmdGetActiveOldKeysByValidator returns the query for a list of locked rotation key IDs held by a validator address
+func GetCmdGetActiveOldKeysByValidator(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "locked-rotation-keys-by-validator [validator address]",
-		Short: "Query locked rotation key IDs by validator",
+		Use:   "active-old-keys-by-validator [validator address]",
+		Short: "Query active old key IDs by validator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
@@ -298,7 +298,7 @@ func GetCmdGetLockedRotationKeysByValidator(queryRoute string) *cobra.Command {
 			}
 
 			validatorAddress := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryLockedRotationKeysByValidator, validatorAddress), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryActiveOldKeysByValidator, validatorAddress), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}

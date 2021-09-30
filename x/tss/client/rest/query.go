@@ -183,8 +183,8 @@ func QueryHandlerKeySharesByKeyID(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerLockedRotationKeys returns a handler to query for a list of locked rotation key IDs held by a validator address
-func QueryHandlerLockedRotationKeys(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerActiveOldKeys returns a handler to query for a list of locked rotation key IDs held by a validator address
+func QueryHandlerActiveOldKeys(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -195,7 +195,7 @@ func QueryHandlerLockedRotationKeys(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		role := mux.Vars(r)[utils.PathVarKeyRole]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryLockedRotationKeys, chain, role), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryActiveOldKeys, chain, role), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -212,8 +212,8 @@ func QueryHandlerLockedRotationKeys(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerLockedRotationKeysByValidator returns a handler to query for a list of locked rotation key IDs held by a validator address
-func QueryHandlerLockedRotationKeysByValidator(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerActiveOldKeysByValidator returns a handler to query for a list of locked rotation key IDs held by a validator address
+func QueryHandlerActiveOldKeysByValidator(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -223,7 +223,7 @@ func QueryHandlerLockedRotationKeysByValidator(cliCtx client.Context) http.Handl
 
 		validatorAddress := mux.Vars(r)[utils.PathVarCosmosAddress]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryLockedRotationKeysByValidator, validatorAddress), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryActiveOldKeysByValidator, validatorAddress), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

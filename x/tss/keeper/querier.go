@@ -19,16 +19,16 @@ import (
 
 // Query paths
 const (
-	QuerySignature                     = "signature"
-	QueryKey                           = "key"
-	QueryRecovery                      = "recovery"
-	QueryKeyID                         = "key-id"
-	QueryKeySharesByKeyID              = "key-share-id"
-	QueryKeySharesByValidator          = "key-share-validator"
-	QueryLockedRotationKeys            = "locked-rotation-keys"
-	QueryLockedRotationKeysByValidator = "locked-rotation-keys-validator"
-	QueryDeactivated                   = "deactivated"
-	QExternalKeyID                     = "external-key-id"
+	QuerySignature                = "signature"
+	QueryKey                      = "key"
+	QueryRecovery                 = "recovery"
+	QueryKeyID                    = "key-id"
+	QueryKeySharesByKeyID         = "key-share-id"
+	QueryKeySharesByValidator     = "key-share-validator"
+	QueryActiveOldKeys            = "active-old-keys"
+	QueryActiveOldKeysByValidator = "active-old-keys-validator"
+	QueryDeactivated              = "deactivated"
+	QExternalKeyID                = "external-key-id"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -66,10 +66,10 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 			res, err = queryKeySharesByKeyID(ctx, k, s, keyID)
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
-		case QueryLockedRotationKeys:
-			res, err = queryLockedRotationKeyIDs(ctx, k, n, path[1], path[2])
-		case QueryLockedRotationKeysByValidator:
-			res, err = queryLockedRotationKeyIDsByValidator(ctx, k, n, s, path[1])
+		case QueryActiveOldKeys:
+			res, err = queryActiveOldKeyIDs(ctx, k, n, path[1], path[2])
+		case QueryActiveOldKeysByValidator:
+			res, err = queryActiveOldKeyIDsByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
 			res, err = queryDeactivatedOperator(ctx, k, s, staking)
 		default:
@@ -248,7 +248,7 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 	return keyShareInfos.Marshal()
 }
 
-func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
+func queryActiveOldKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
 	var queryResponse types.QueryLockedRotationKeyIDsResponse
 
 	chain, ok := n.GetChain(ctx, chainName)
@@ -272,7 +272,7 @@ func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus
 	return queryResponse.Marshal()
 }
 
-func queryLockedRotationKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
+func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
 	var allKeyIDs []exported.KeyID
 	var queryResponse types.QueryLockedRotationKeyIDsResponse
 
