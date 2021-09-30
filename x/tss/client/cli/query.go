@@ -34,6 +34,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetKeyID(queryRoute),
 		GetCmdGetKeySharesByKeyID(queryRoute),
 		GetCmdGetKeySharesByValidator(queryRoute),
+		GetCmdGetActiveOldKeys(queryRoute),
+		GetCmdGetActiveOldKeysByValidator(queryRoute),
 		GetCmdGetDeactivatedOperators(queryRoute),
 		GetCmdExternalKeyID(queryRoute),
 	)
@@ -243,6 +245,71 @@ func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 			}
 
 			return cliCtx.PrintObjectLegacy(keyShareResponse.ShareInfos)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetActiveOldKeys returns the query for a list of active old key IDs held by a validator address
+func GetCmdGetActiveOldKeys(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "active-old-keys [chain] [role]",
+		Short: "Query active old key IDs by validator",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			role := args[1]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QueryActiveOldKeys, chain, role), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			var keyIDsResponse types.QueryActiveOldKeysResponse
+			err = keyIDsResponse.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			return cliCtx.PrintObjectLegacy(keyIDsResponse.KeyIDs)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGetActiveOldKeysByValidator returns the query for a list of active old key IDs held by a validator address
+func GetCmdGetActiveOldKeysByValidator(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "active-old-keys-by-validator [validator address]",
+		Short: "Query active old key IDs by validator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			validatorAddress := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryActiveOldKeysByValidator, validatorAddress), nil)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			var keyIDsResponse types.QueryActiveOldKeysValidatorResponse
+			err = keyIDsResponse.Unmarshal(res)
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to get key share information")
+			}
+
+			return cliCtx.PrintObjectLegacy(keyIDsResponse.KeysInfo)
 		},
 	}
 

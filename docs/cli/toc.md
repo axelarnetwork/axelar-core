@@ -131,6 +131,8 @@
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
+      - [active-old-keys \[chain\] \[role\]](axelard_query_tss_active-old-keys.md)	 - Query active old key IDs by validator
+      - [active-old-keys-by-validator \[validator address\]](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
       - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID

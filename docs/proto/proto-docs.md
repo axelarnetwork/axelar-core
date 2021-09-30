@@ -233,6 +233,9 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
+    - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
+    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
@@ -3299,6 +3302,53 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
+
+### QueryActiveOldKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
+
+### QueryActiveOldKeysValidatorResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
+
+### QueryActiveOldKeysValidatorResponse.KeyInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `role` | [int32](#int32) |  |  |
+
+
+
 
 
 
