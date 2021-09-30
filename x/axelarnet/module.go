@@ -2,8 +2,8 @@ package axelarnet
 
 import (
 	"encoding/json"
-	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -13,6 +13,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
@@ -77,11 +78,13 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger   log.Logger
-	keeper   keeper.Keeper
-	nexus    types.Nexus
-	bank     types.BankKeeper
-	transfer types.IBCTransferKeeper
+	logger       log.Logger
+	keeper       keeper.Keeper
+	nexus        types.Nexus
+	bank         types.BankKeeper
+	transfer     types.IBCTransferKeeper
+	msgSvcRouter *baseapp.MsgServiceRouter
+	router       sdk.Router
 }
 
 // NewAppModule creates a new AppModule object
@@ -90,6 +93,8 @@ func NewAppModule(
 	nexus types.Nexus,
 	bank types.BankKeeper,
 	transfer types.IBCTransferKeeper,
+	msgSvcRouter *baseapp.MsgServiceRouter,
+	router sdk.Router,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -98,6 +103,8 @@ func NewAppModule(
 		nexus:          nexus,
 		bank:           bank,
 		transfer:       transfer,
+		msgSvcRouter:   msgSvcRouter,
+		router:         router,
 	}
 }
 
@@ -124,7 +131,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.msgSvcRouter, am.router))
 }
 
 // QuerierRoute returns this module's query route

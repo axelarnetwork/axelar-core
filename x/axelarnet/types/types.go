@@ -14,6 +14,6 @@ func NewLinkedAddress(chain, symbol, recipientAddr string) sdk.AccAddress {
 
 // GetEscrowAddress creates an address for an ibc denomination
 func GetEscrowAddress(denom string) sdk.AccAddress {
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", denom)))
+	hash := sha256.Sum256([]byte(denom))
 	return hash[:20]
 }

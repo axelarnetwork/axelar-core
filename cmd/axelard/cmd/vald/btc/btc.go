@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -52,9 +53,10 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
 	msg := btc.NewVoteConfirmOutpointRequest(mgr.cliCtx.FromAddress, pollKey, outPointInfo.GetOutPoint(), err == nil)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), msg)
+	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 }
 
 func parseConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {
