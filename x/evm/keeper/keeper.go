@@ -81,7 +81,7 @@ func (k keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetChain returns the keeper associated to the given chain
+// ForChain returns the keeper associated to the given chain
 func (k keeper) ForChain(ctx sdk.Context, chain string) types.ChainKeeper {
 	k.chain = strings.ToLower(chain)
 	return k
