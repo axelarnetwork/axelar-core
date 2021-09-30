@@ -26,13 +26,13 @@ axelard query tss [flags]
 ### SEE ALSO
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query tss active-old-keys](axelard_query_tss_active-old-keys.md)	 - Query active old key IDs by validator
+- [axelard query tss active-old-keys-by-validator](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
 - [axelard query tss deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
 - [axelard query tss external-key-id](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
 - [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
 - [axelard query tss key-id](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
 - [axelard query tss key-shares-by-key-id](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
 - [axelard query tss key-shares-by-validator](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
-- [axelard query tss locked-rotation-keys](axelard_query_tss_locked-rotation-keys.md)	 - Query locked rotation key IDs by validator
-- [axelard query tss locked-rotation-keys-by-validator](axelard_query_tss_locked-rotation-keys-by-validator.md)	 - Query locked rotation key IDs by validator
 - [axelard query tss recover](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
 - [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID
