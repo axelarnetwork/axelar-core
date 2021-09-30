@@ -204,5 +204,5 @@ func (m KeyRequirement) Validate() error {
 // ComputeAbsCorruptionThreshold returns absolute corruption threshold to be used by tss.
 // (threshold + 1) shares are required to sign
 func ComputeAbsCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
-	return totalShareCount.MulRaw(safetyThreshold.Numerator).QuoRaw(safetyThreshold.Denominator).Int64()
+	return sdk.NewDec(totalShareCount.Int64()).MulInt64(safetyThreshold.Numerator).QuoInt64(safetyThreshold.Denominator).Ceil().TruncateInt().Int64() - 1
 }

@@ -5,6 +5,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -15,6 +17,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterIBCPathRequest{}, "axelarnet/RegisterIBCPath", nil)
 	cdc.RegisterConcrete(&AddCosmosBasedChainRequest{}, "axelarnet/AddCosmosBasedChain", nil)
 	cdc.RegisterConcrete(&RegisterAssetRequest{}, "axelarnet/RegisterAsset", nil)
+	cdc.RegisterConcrete(&RefundMsgRequest{}, "axelarnet/RefundMsgRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -26,7 +29,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RegisterIBCPathRequest{},
 		&AddCosmosBasedChainRequest{},
 		&RegisterAssetRequest{},
+		&RefundMsgRequest{},
 	)
+	registry.RegisterInterface("axelarnet.v1beta1.Refundable",
+		(*axelarnet.Refundable)(nil))
 }
 
 var amino = codec.NewLegacyAmino()

@@ -21,7 +21,7 @@ func (m AckRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m AckRequest) Type() string { return "KeygenTraffic" }
+func (m AckRequest) Type() string { return "Ack" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m AckRequest) ValidateBasic() error {

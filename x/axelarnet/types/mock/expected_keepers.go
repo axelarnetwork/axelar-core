@@ -23,8 +23,14 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked axelarnettypes.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
+// 			DeletePendingRefundFunc: func(ctx sdk.Context, req axelarnettypes.RefundMsgRequest)  {
+// 				panic("mock out the DeletePendingRefund method")
+// 			},
 // 			GetIBCPathFunc: func(ctx sdk.Context, asset string) string {
 // 				panic("mock out the GetIBCPath method")
+// 			},
+// 			GetPendingRefundFunc: func(ctx sdk.Context, req axelarnettypes.RefundMsgRequest) (sdk.Coin, bool) {
+// 				panic("mock out the GetPendingRefund method")
 // 			},
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -39,8 +45,14 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
+	// DeletePendingRefundFunc mocks the DeletePendingRefund method.
+	DeletePendingRefundFunc func(ctx sdk.Context, req axelarnettypes.RefundMsgRequest)
+
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx sdk.Context, asset string) string
+
+	// GetPendingRefundFunc mocks the GetPendingRefund method.
+	GetPendingRefundFunc func(ctx sdk.Context, req axelarnettypes.RefundMsgRequest) (sdk.Coin, bool)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
@@ -50,12 +62,26 @@ type BaseKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DeletePendingRefund holds details about calls to the DeletePendingRefund method.
+		DeletePendingRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Req is the req argument value.
+			Req axelarnettypes.RefundMsgRequest
+		}
 		// GetIBCPath holds details about calls to the GetIBCPath method.
 		GetIBCPath []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Asset is the asset argument value.
 			Asset string
+		}
+		// GetPendingRefund holds details about calls to the GetPendingRefund method.
+		GetPendingRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Req is the req argument value.
+			Req axelarnettypes.RefundMsgRequest
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -72,9 +98,46 @@ type BaseKeeperMock struct {
 			Path string
 		}
 	}
-	lockGetIBCPath      sync.RWMutex
-	lockLogger          sync.RWMutex
-	lockRegisterIBCPath sync.RWMutex
+	lockDeletePendingRefund sync.RWMutex
+	lockGetIBCPath          sync.RWMutex
+	lockGetPendingRefund    sync.RWMutex
+	lockLogger              sync.RWMutex
+	lockRegisterIBCPath     sync.RWMutex
+}
+
+// DeletePendingRefund calls DeletePendingRefundFunc.
+func (mock *BaseKeeperMock) DeletePendingRefund(ctx sdk.Context, req axelarnettypes.RefundMsgRequest) {
+	if mock.DeletePendingRefundFunc == nil {
+		panic("BaseKeeperMock.DeletePendingRefundFunc: method is nil but BaseKeeper.DeletePendingRefund was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		Req axelarnettypes.RefundMsgRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockDeletePendingRefund.Lock()
+	mock.calls.DeletePendingRefund = append(mock.calls.DeletePendingRefund, callInfo)
+	mock.lockDeletePendingRefund.Unlock()
+	mock.DeletePendingRefundFunc(ctx, req)
+}
+
+// DeletePendingRefundCalls gets all the calls that were made to DeletePendingRefund.
+// Check the length with:
+//     len(mockedBaseKeeper.DeletePendingRefundCalls())
+func (mock *BaseKeeperMock) DeletePendingRefundCalls() []struct {
+	Ctx sdk.Context
+	Req axelarnettypes.RefundMsgRequest
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		Req axelarnettypes.RefundMsgRequest
+	}
+	mock.lockDeletePendingRefund.RLock()
+	calls = mock.calls.DeletePendingRefund
+	mock.lockDeletePendingRefund.RUnlock()
+	return calls
 }
 
 // GetIBCPath calls GetIBCPathFunc.
@@ -109,6 +172,41 @@ func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	mock.lockGetIBCPath.RLock()
 	calls = mock.calls.GetIBCPath
 	mock.lockGetIBCPath.RUnlock()
+	return calls
+}
+
+// GetPendingRefund calls GetPendingRefundFunc.
+func (mock *BaseKeeperMock) GetPendingRefund(ctx sdk.Context, req axelarnettypes.RefundMsgRequest) (sdk.Coin, bool) {
+	if mock.GetPendingRefundFunc == nil {
+		panic("BaseKeeperMock.GetPendingRefundFunc: method is nil but BaseKeeper.GetPendingRefund was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		Req axelarnettypes.RefundMsgRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockGetPendingRefund.Lock()
+	mock.calls.GetPendingRefund = append(mock.calls.GetPendingRefund, callInfo)
+	mock.lockGetPendingRefund.Unlock()
+	return mock.GetPendingRefundFunc(ctx, req)
+}
+
+// GetPendingRefundCalls gets all the calls that were made to GetPendingRefund.
+// Check the length with:
+//     len(mockedBaseKeeper.GetPendingRefundCalls())
+func (mock *BaseKeeperMock) GetPendingRefundCalls() []struct {
+	Ctx sdk.Context
+	Req axelarnettypes.RefundMsgRequest
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		Req axelarnettypes.RefundMsgRequest
+	}
+	mock.lockGetPendingRefund.RLock()
+	calls = mock.calls.GetPendingRefund
+	mock.lockGetPendingRefund.RUnlock()
 	return calls
 }
 

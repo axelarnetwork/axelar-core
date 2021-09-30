@@ -31,6 +31,7 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -239,7 +240,7 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 			*wire.NewOutPoint(txHash, mathRand.Uint32()),
 			rand.Bools(0.5).Next(),
 		)
-		msgs = append(msgs, msg)
+		msgs = append(msgs, axelarnet.NewRefundMsgRequest(signer, msg))
 	}
 	return msgs
 }
