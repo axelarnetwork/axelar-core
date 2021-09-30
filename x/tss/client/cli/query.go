@@ -271,7 +271,7 @@ func GetCmdGetActiveOldKeys(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
 
-			var keyIDsResponse types.QueryLockedRotationKeyIDsResponse
+			var keyIDsResponse types.QueryActiveOldKeysResponse
 			err = keyIDsResponse.Unmarshal(res)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
@@ -303,13 +303,13 @@ func GetCmdGetActiveOldKeysByValidator(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
 
-			var keyIDsResponse types.QueryLockedRotationKeyIDsResponse
+			var keyIDsResponse types.QueryActiveOldKeysValidatorResponse
 			err = keyIDsResponse.Unmarshal(res)
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key share information")
 			}
 
-			return cliCtx.PrintObjectLegacy(keyIDsResponse.KeyIDs)
+			return cliCtx.PrintObjectLegacy(keyIDsResponse.KeysInfo)
 		},
 	}
 

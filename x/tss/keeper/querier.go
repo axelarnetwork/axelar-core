@@ -249,7 +249,7 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 }
 
 func queryActiveOldKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
-	var queryResponse types.QueryLockedRotationKeyIDsResponse
+	var queryResponse types.QueryActiveOldKeysResponse
 
 	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
@@ -273,8 +273,8 @@ func queryActiveOldKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, cha
 }
 
 func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
-	var allKeyIDs []exported.KeyID
-	var queryResponse types.QueryLockedRotationKeyIDsResponse
+	var allKeys []types.QueryActiveOldKeysValidatorResponse_KeyInfo
+	var queryResponse types.QueryActiveOldKeysValidatorResponse
 
 	for _, chain := range n.GetChains(ctx) {
 		for _, role := range exported.GetKeyRoles() {
@@ -284,15 +284,19 @@ func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types
 			}
 
 			for _, key := range keys {
-				allKeyIDs = append(allKeyIDs, key.ID)
+				allKeys = append(allKeys, types.QueryActiveOldKeysValidatorResponse_KeyInfo{
+					ID:    key.ID,
+					Chain: chain.Name,
+					Role:  role,
+				})
 			}
 		}
 	}
 
-	for _, keyID := range allKeyIDs {
-		counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+	for _, key := range allKeys {
+		counter, ok := k.GetSnapshotCounterForKeyID(ctx, key.ID)
 		if !ok {
-			return nil, fmt.Errorf("could not get snapshot counter from keyID %s", keyID)
+			return nil, fmt.Errorf("could not get snapshot counter from keyID %s", key.ID)
 		}
 
 		snapshot, ok := s.GetSnapshot(ctx, counter)
@@ -303,7 +307,7 @@ func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types
 		for _, validator := range snapshot.Validators {
 			validatorAddr := validator.GetSDKValidator().GetOperator().String()
 			if validatorAddr == targetValidatorAddr {
-				queryResponse.KeyIDs = append(queryResponse.KeyIDs, keyID)
+				queryResponse.KeysInfo = append(queryResponse.KeysInfo, key)
 				break
 			}
 		}

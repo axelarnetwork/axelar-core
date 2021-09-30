@@ -201,7 +201,7 @@ func QueryHandlerActiveOldKeys(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var keyShareResponse types.QueryLockedRotationKeyIDsResponse
+		var keyShareResponse types.QueryActiveOldKeysResponse
 		err = keyShareResponse.Unmarshal(res)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
@@ -229,14 +229,14 @@ func QueryHandlerActiveOldKeysByValidator(cliCtx client.Context) http.HandlerFun
 			return
 		}
 
-		var keyShareResponse types.QueryLockedRotationKeyIDsResponse
+		var keyShareResponse types.QueryActiveOldKeysValidatorResponse
 		err = keyShareResponse.Unmarshal(res)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key share information").Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, keyShareResponse.KeyIDs)
+		rest.PostProcessResponse(w, cliCtx, keyShareResponse.KeysInfo)
 	}
 }
 
