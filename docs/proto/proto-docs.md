@@ -26,6 +26,8 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest)
+    - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
@@ -231,6 +233,9 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
+    - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
+    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
@@ -541,6 +546,37 @@ address
 
 
 
+<a name="axelarnet.v1beta1.RefundMsgRequest"></a>
+
+### RefundMsgRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RefundMsgResponse"></a>
+
+### RefundMsgResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
@@ -632,6 +668,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
+| `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 
  <!-- end services -->
 
@@ -3265,6 +3302,53 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
+
+### QueryActiveOldKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
+
+### QueryActiveOldKeysValidatorResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
+
+### QueryActiveOldKeysValidatorResponse.KeyInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `role` | [int32](#int32) |  |  |
+
+
+
 
 
 

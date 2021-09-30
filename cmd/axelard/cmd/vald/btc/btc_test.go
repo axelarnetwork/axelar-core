@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -19,6 +20,7 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -74,7 +76,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
+		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("tx out not found", testutils.Func(func(t *testing.T) {
@@ -86,7 +89,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
+		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("not enough confirmations", testutils.Func(func(t *testing.T) {
@@ -102,7 +106,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
+		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
 	t.Run("wrong expected data", func(t *testing.T) {
@@ -119,7 +124,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.False(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
+		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	})
 
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -135,7 +141,8 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		assert.True(t, broadcaster.BroadcastCalls()[0].Msgs[0].(*btc.VoteConfirmOutpointRequest).Confirmed)
+		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		assert.True(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 }
 
@@ -151,4 +158,8 @@ func randomOutpointInfo() btc.OutPointInfo {
 		Amount:   btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:  rand.StrBetween(1, 100),
 	}
+}
+
+func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
+	return msg.(*axelarnet.RefundMsgRequest).GetInnerMessage()
 }

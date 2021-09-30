@@ -116,4 +116,5 @@ type TSSKeeper interface {
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
 	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
+	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 }

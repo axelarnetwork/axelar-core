@@ -1287,6 +1287,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetNextKeyID method")
 // 			},
+// 			GetOldActiveKeysFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Key, error) {
+// 				panic("mock out the GetOldActiveKeys method")
+// 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) tsstypes.Params {
 // 				panic("mock out the GetParams method")
 // 			},
@@ -1452,6 +1455,9 @@ type TSSKeeperMock struct {
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
 	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetOldActiveKeysFunc mocks the GetOldActiveKeys method.
+	GetOldActiveKeysFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Key, error)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) tsstypes.Params
@@ -1723,6 +1729,15 @@ type TSSKeeperMock struct {
 		}
 		// GetNextKeyID holds details about calls to the GetNextKeyID method.
 		GetNextKeyID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
+		// GetOldActiveKeys holds details about calls to the GetOldActiveKeys method.
+		GetOldActiveKeys []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -2010,6 +2025,7 @@ type TSSKeeperMock struct {
 	lockGetKeyRequirement                   sync.RWMutex
 	lockGetNextKey                          sync.RWMutex
 	lockGetNextKeyID                        sync.RWMutex
+	lockGetOldActiveKeys                    sync.RWMutex
 	lockGetParams                           sync.RWMutex
 	lockGetPrivateRecoveryInfo              sync.RWMutex
 	lockGetSig                              sync.RWMutex
@@ -2892,6 +2908,45 @@ func (mock *TSSKeeperMock) GetNextKeyIDCalls() []struct {
 	mock.lockGetNextKeyID.RLock()
 	calls = mock.calls.GetNextKeyID
 	mock.lockGetNextKeyID.RUnlock()
+	return calls
+}
+
+// GetOldActiveKeys calls GetOldActiveKeysFunc.
+func (mock *TSSKeeperMock) GetOldActiveKeys(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Key, error) {
+	if mock.GetOldActiveKeysFunc == nil {
+		panic("TSSKeeperMock.GetOldActiveKeysFunc: method is nil but TSSKeeper.GetOldActiveKeys was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetOldActiveKeys.Lock()
+	mock.calls.GetOldActiveKeys = append(mock.calls.GetOldActiveKeys, callInfo)
+	mock.lockGetOldActiveKeys.Unlock()
+	return mock.GetOldActiveKeysFunc(ctx, chain, keyRole)
+}
+
+// GetOldActiveKeysCalls gets all the calls that were made to GetOldActiveKeys.
+// Check the length with:
+//     len(mockedTSSKeeper.GetOldActiveKeysCalls())
+func (mock *TSSKeeperMock) GetOldActiveKeysCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockGetOldActiveKeys.RLock()
+	calls = mock.calls.GetOldActiveKeys
+	mock.lockGetOldActiveKeys.RUnlock()
 	return calls
 }
 

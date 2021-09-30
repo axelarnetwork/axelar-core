@@ -69,7 +69,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Counter:         rand2.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
-	assert.Equal(t, int64(400), snap.CorruptionThreshold)
+	assert.Equal(t, int64(399), snap.CorruptionThreshold)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		return snapshot.None, nil
 	}
