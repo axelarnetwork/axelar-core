@@ -19,6 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -167,5 +168,37 @@ func TestAvailableOperator(t *testing.T) {
 			s.Keeper.DeleteAvailableOperators(s.Ctx, id, ackType)
 			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, id, ackType, validator))
 		}
+	}).Repeat(20))
+}
+
+func TestActiveOldKeys(t *testing.T) {
+	t.Run("testing locked rotation keys", testutils.Func(func(t *testing.T) {
+		s := setup()
+		chain := bitcoin.Bitcoin
+		iterations := int(rand2.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
+		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))))]
+		var expectedKeys []exported.Key
+
+		for i := 0; i < iterations; i++ {
+			expectedMasterKey := s.SetKey(t, s.Ctx, role)
+			assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, role, expectedMasterKey.ID))
+			assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, role))
+			expectedKeys = append(expectedKeys, expectedMasterKey)
+		}
+
+		keys, err := s.Keeper.GetOldActiveKeys(s.Ctx, chain, role)
+		assert.NoError(t, err)
+		assert.Len(t, keys, int(s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx)))
+
+		count := 0
+		for _, actual := range keys {
+			for _, expected := range expectedKeys {
+				if actual.ID == expected.ID && actual.Role == expected.Role {
+					count++
+				}
+			}
+		}
+		assert.Equal(t, int(s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx)), count)
+
 	}).Repeat(20))
 }

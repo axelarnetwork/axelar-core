@@ -64,6 +64,29 @@ message QueryDeactivatedOperatorsResponse {
   repeated string operator_addresses = 1;
 }
 
+message QueryActiveOldKeysValidatorResponse {
+  message KeyInfo {
+    string id = 1 [
+      (gogoproto.customname) = "ID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+    string chain = 2;
+    int32 role = 3
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
+  }
+  repeated KeyInfo keys_info = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryActiveOldKeysResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
 message QueryExternalKeyIDResponse {
   repeated string key_ids = 1 [
     (gogoproto.customname) = "KeyIDs",
