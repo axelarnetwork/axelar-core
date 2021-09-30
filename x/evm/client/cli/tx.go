@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -14,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -173,7 +174,11 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 
 			chain := args[0]
 			txID := common.HexToHash(args[1])
-			amount := sdk.NewUintFromString(args[2])
+			amount, err := sdk.ParseUint(args[2])
+			if err != nil {
+				return fmt.Errorf("given amount must be an integer value, make sure to convert it into the appropriate denomination")
+			}
+
 			burnerAddr := common.HexToAddress(args[3])
 
 			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, amount, burnerAddr)
