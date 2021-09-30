@@ -3,9 +3,6 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -268,47 +265,6 @@ func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, key
 	storageKey := fmt.Sprintf("%s%s_%s_%d", rotationPrefix, chain.Name, keyRole.SimpleString(), rotation)
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), []byte(keyID))
-}
-
-// GetLockedRotationKeyIDs returns the IDs corresponding to the locked rotation keys for a specific chain and role
-func (k Keeper) GetLockedRotationKeyIDs(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (keyIDs []exported.KeyID) {
-	storagePrefix := fmt.Sprintf("%s%s_%s_", rotationPrefix, chain.Name, keyRole.SimpleString())
-	lockingCount := k.GetKeyUnbondingLockingKeyRotationCount(ctx)
-	var highestCounts []struct {
-		KeyID exported.KeyID
-		Count int64
-	}
-
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(storagePrefix))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		rotation, err := strconv.ParseInt(strings.TrimPrefix(string(iter.Key()), storagePrefix), 10, 64)
-		if err != nil {
-			// we should always be able to obtain the int64 value from the key
-			panic(fmt.Sprintf("unexpected error: %v", err))
-		}
-
-		param := struct {
-			KeyID exported.KeyID
-			Count int64
-		}{
-			KeyID: exported.KeyID(iter.Value()),
-			Count: rotation,
-		}
-
-		highestCounts = append(highestCounts, param)
-	}
-
-	sort.SliceStable(highestCounts, func(i, j int) bool {
-		return highestCounts[i].Count > highestCounts[j].Count
-	})
-
-	for i := 0; i < len(highestCounts) && int64(i) < lockingCount; i++ {
-		keyIDs = append(keyIDs, highestCounts[i].KeyID)
-	}
-
-	return
 }
 
 // GetRotationCount returns the current rotation count for the given chain and key role

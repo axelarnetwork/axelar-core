@@ -261,7 +261,14 @@ func queryLockedRotationKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus
 		return nil, err
 	}
 
-	queryResponse.KeyIDs = k.GetLockedRotationKeyIDs(ctx, chain, role)
+	keys, err := k.GetOldActiveKeys(ctx, chain, role)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range keys {
+		queryResponse.KeyIDs = append(queryResponse.KeyIDs, key.ID)
+	}
 	return queryResponse.Marshal()
 }
 
@@ -270,8 +277,15 @@ func queryLockedRotationKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n 
 	var queryResponse types.QueryLockedRotationKeyIDsResponse
 
 	for _, chain := range n.GetChains(ctx) {
-		for _, keyRole := range exported.GetKeyRoles() {
-			allKeyIDs = append(allKeyIDs, k.GetLockedRotationKeyIDs(ctx, chain, keyRole)...)
+		for _, role := range exported.GetKeyRoles() {
+			keys, err := k.GetOldActiveKeys(ctx, chain, role)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, key := range keys {
+				allKeyIDs = append(allKeyIDs, key.ID)
+			}
 		}
 	}
 
