@@ -252,7 +252,7 @@ func GetCmdGetKeySharesByValidator(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetActiveOldKeys returns the query for a list of locked rotation key IDs held by a validator address
+// GetCmdGetActiveOldKeys returns the query for a list of active old key IDs held by a validator address
 func GetCmdGetActiveOldKeys(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "active-old-keys [chain] [role]",
@@ -285,7 +285,7 @@ func GetCmdGetActiveOldKeys(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGetActiveOldKeysByValidator returns the query for a list of locked rotation key IDs held by a validator address
+// GetCmdGetActiveOldKeysByValidator returns the query for a list of active old key IDs held by a validator address
 func GetCmdGetActiveOldKeysByValidator(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "active-old-keys-by-validator [validator address]",

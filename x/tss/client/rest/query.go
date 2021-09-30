@@ -183,7 +183,7 @@ func QueryHandlerKeySharesByKeyID(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerActiveOldKeys returns a handler to query for a list of locked rotation key IDs held by a validator address
+// QueryHandlerActiveOldKeys returns a handler to query for a list of active old key IDs held by a validator address
 func QueryHandlerActiveOldKeys(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -212,7 +212,7 @@ func QueryHandlerActiveOldKeys(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// QueryHandlerActiveOldKeysByValidator returns a handler to query for a list of locked rotation key IDs held by a validator address
+// QueryHandlerActiveOldKeysByValidator returns a handler to query for a list of active old key IDs held by a validator address
 func QueryHandlerActiveOldKeysByValidator(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
