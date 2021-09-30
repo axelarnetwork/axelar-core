@@ -30,6 +30,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -100,19 +101,19 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
 
 		if c == btc.Bitcoin.Name {
-			var externalKeys []btcTypes.RegisterExternalKeysRequest_ExternalKey
-			for i := 0; i < int(btcTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
+			var externalKeys []tssTypes.RegisterExternalKeysRequest_ExternalKey
+			for i := 0; i < int(tssTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
 				privKey, err := btcec.NewPrivateKey(btcec.S256())
 				if err != nil {
 					panic(err)
 				}
-				externalKeys = append(externalKeys, btcTypes.RegisterExternalKeysRequest_ExternalKey{
-					ID:     rand.Str(10),
+				externalKeys = append(externalKeys, tssTypes.RegisterExternalKeysRequest_ExternalKey{
+					ID:     tssTestUtils.RandKeyID(),
 					PubKey: privKey.PubKey().SerializeCompressed(),
 				})
 			}
 
-			registerExternalKeysResult := <-chain.Submit(btcTypes.NewRegisterExternalKeysRequest(randomSender(), externalKeys...))
+			registerExternalKeysResult := <-chain.Submit(tssTypes.NewRegisterExternalKeysRequest(randomSender(), btc.Bitcoin.Name, externalKeys...))
 			assert.NoError(t, registerExternalKeysResult.Error)
 		}
 	}
@@ -212,13 +213,13 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		randomKey := tss.Key{ID: rand.Str(10), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
+		randomKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: randomPrivateKey.PublicKey, Role: tss.MasterKey}
 
 		outpointsToSign = append(outpointsToSign, btcTypes.OutPointToSign{
 			OutPointInfo: depositInfo,
 			AddressInfo: btcTypes.NewDepositAddress(
 				randomKey,
-				btcTypes.DefaultParams().ExternalMultisigThreshold.Numerator,
+				tssTypes.DefaultParams().ExternalMultisigThreshold.Numerator,
 				[]tss.Key{randomKey, randomKey, randomKey, randomKey, randomKey, randomKey},
 				time.Now(),
 				crossChainAddr,
@@ -290,7 +291,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	var addressRes btcTypes.QueryAddressResponse
 	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &addressRes)
 
-	assert.Equal(t, secondaryKeyID2, addressRes.KeyID)
+	assert.Equal(t, secondaryKeyID2, string(addressRes.KeyID))
 }
 
 func getAddress(txOut *wire.TxOut, chainParams *chaincfg.Params) btcutil.Address {

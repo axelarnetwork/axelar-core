@@ -35,6 +35,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetKeySharesByKeyID(queryRoute),
 		GetCmdGetKeySharesByValidator(queryRoute),
 		GetCmdGetDeactivatedOperators(queryRoute),
+		GetCmdExternalKeyID(queryRoute),
 	)
 
 	return tssQueryCmd
@@ -271,6 +272,37 @@ func GetCmdGetDeactivatedOperators(queryRoute string) *cobra.Command {
 			return cliCtx.PrintProto(&res)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdExternalKeyID returns the keyIDs of the current set of external keys for the given chain
+func GetCmdExternalKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "external-key-id [chain]",
+		Short: "Returns the key IDs of the current external keys for the given chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QExternalKeyID, chain)
+
+			bz, _, err := clientCtx.Query(path)
+			if err != nil {
+				return sdkerrors.Wrap(err, "could not resolve the external key IDs")
+			}
+
+			var res types.QueryExternalKeyIDResponse
+			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

@@ -50,7 +50,7 @@ var (
 type testSetup struct {
 	Keeper      Keeper
 	Voter       types.Voter
-	Snapshotter snapMock.SnapshotterMock
+	Snapshotter *snapMock.SnapshotterMock
 	Ctx         sdk.Context
 	PrivateKey  chan *ecdsa.PrivateKey
 	Signature   chan []byte
@@ -62,7 +62,7 @@ func setup() *testSetup {
 	voter := &tssMock.VoterMock{
 		InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 	}
-	snapshotter := snapMock.SnapshotterMock{}
+	snapshotter := &snapMock.SnapshotterMock{}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
@@ -103,7 +103,7 @@ func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
 }
 
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole) tss.Key {
-	keyID := randDistinctStr.Next()
+	keyID := exported.KeyID(randDistinctStr.Next())
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
 	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, tss.MasterKey, snap)
 	assert.NoError(t, err)

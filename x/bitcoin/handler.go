@@ -44,9 +44,6 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 		case *types.SignTxRequest:
 			res, err := server.SignTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.RegisterExternalKeysRequest:
-			res, err := server.RegisterExternalKeys(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.SubmitExternalSignatureRequest:
 			res, err := server.SubmitExternalSignature(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

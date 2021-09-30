@@ -6,6 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewConfirmTransferKeyRequest creates a message of type ConfirmTransferKeyRequest
@@ -15,7 +17,7 @@ func NewConfirmTransferKeyRequest(sender sdk.AccAddress, chain string, txID comm
 		Chain:        chain,
 		TxID:         Hash(txID),
 		TransferType: transferType,
-		KeyID:        keyID,
+		KeyID:        tss.KeyID(keyID),
 	}
 }
 
@@ -43,8 +45,8 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 		return err
 	}
 
-	if m.KeyID == "" {
-		return fmt.Errorf("missing key ID")
+	if err := m.KeyID.Validate(); err != nil {
+		return err
 	}
 
 	return nil

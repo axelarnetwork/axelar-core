@@ -24,4 +24,6 @@ message Params {
   utils.v1beta1.Threshold max_missed_blocks_per_window = 5
       [ (gogoproto.nullable) = false ];
   int64 unbonding_locking_key_rotation_count = 6;
+  utils.v1beta1.Threshold external_multisig_threshold = 7
+      [ (gogoproto.nullable) = false ];
 }

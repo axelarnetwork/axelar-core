@@ -63,7 +63,11 @@ message ConfirmTransferKeyRequest {
     (gogoproto.customname) = "TxID"
   ];
   evm.v1beta1.TransferKeyType transfer_type = 4;
-  string key_id = 5 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 5 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message ConfirmTransferKeyResponse {}
@@ -191,7 +195,11 @@ message CreateTransferOwnershipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message CreateTransferOwnershipResponse {}
@@ -200,7 +208,11 @@ message CreateTransferOperatorshipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  string key_id = 3 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message CreateTransferOperatorshipResponse {}

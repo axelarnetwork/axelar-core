@@ -19,7 +19,7 @@ import (
 
 type signingAbortError struct {
 	err          error
-	abortedKeyID string
+	abortedKeyID tss.KeyID
 }
 
 func (e *signingAbortError) Error() string {

@@ -123,7 +123,7 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 	return next(ctx, tx, simulate)
 }
 
-func isValidatorHoldingTssShareOf(ctx sdk.Context, tss types.Tss, snapshotter types.Snapshotter, valAddress sdk.ValAddress, keyID string) bool {
+func isValidatorHoldingTssShareOf(ctx sdk.Context, tss types.Tss, snapshotter types.Snapshotter, valAddress sdk.ValAddress, keyID tss.KeyID) bool {
 	counter, ok := tss.GetSnapshotCounterForKeyID(ctx, keyID)
 	if !ok {
 		logger(ctx).Error(fmt.Sprintf("no snapshot counter for key ID %s registered", keyID))

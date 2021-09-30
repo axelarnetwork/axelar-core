@@ -74,7 +74,6 @@
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
     - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
-    - [QueryExternalKeyIDResponse](#bitcoin.v1beta1.QueryExternalKeyIDResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
@@ -95,9 +94,6 @@
     - [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse)
     - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
     - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
-    - [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest)
-    - [RegisterExternalKeysRequest.ExternalKey](#bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey)
-    - [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse)
     - [SignTxRequest](#bitcoin.v1beta1.SignTxRequest)
     - [SignTxResponse](#bitcoin.v1beta1.SignTxResponse)
     - [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest)
@@ -238,6 +234,7 @@
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
+    - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
@@ -254,6 +251,9 @@
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
     - [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse)
+    - [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest)
+    - [RegisterExternalKeysRequest.ExternalKey](#tss.v1beta1.RegisterExternalKeysRequest.ExternalKey)
+    - [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse)
     - [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest)
     - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
     - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
@@ -1076,7 +1076,6 @@ of a transaction
 | `master_key_retention_period` | [int64](#int64) |  |  |
 | `master_address_internal_key_lock_duration` | [int64](#int64) |  |  |
 | `master_address_external_key_lock_duration` | [int64](#int64) |  |  |
-| `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `max_tx_size` | [int64](#int64) |  |  |
@@ -1176,21 +1175,6 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
 | `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.QueryExternalKeyIDResponse"></a>
-
-### QueryExternalKeyIDResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_ids` | [string](#string) | repeated |  |
 
 
 
@@ -1459,48 +1443,6 @@ address
 
 
 
-<a name="bitcoin.v1beta1.RegisterExternalKeysRequest"></a>
-
-### RegisterExternalKeysRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `external_keys` | [RegisterExternalKeysRequest.ExternalKey](#bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey) | repeated |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.RegisterExternalKeysRequest.ExternalKey"></a>
-
-### RegisterExternalKeysRequest.ExternalKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `pub_key` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.RegisterExternalKeysResponse"></a>
-
-### RegisterExternalKeysResponse
-
-
-
-
-
-
-
 <a name="bitcoin.v1beta1.SignTxRequest"></a>
 
 ### SignTxRequest
@@ -1624,7 +1566,6 @@ Msg defines the bitcoin Msg service.
 | `CreateMasterTx` | [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create-master-tx|
 | `CreateRescueTx` | [CreateRescueTxRequest](#bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create-rescue-tx|
 | `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
-| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#bitcoin.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#bitcoin.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/bitcoin/register-external-key|
 | `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|
 
  <!-- end services -->
@@ -3307,6 +3248,7 @@ Params is the parameter set for this module
 | `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
+| `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -3369,6 +3311,21 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `operator_addresses` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryExternalKeyIDResponse"></a>
+
+### QueryExternalKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
 
 
 
@@ -3589,6 +3546,49 @@ ProcessSignTrafficRequest protocol message
 
 
 
+<a name="tss.v1beta1.RegisterExternalKeysRequest"></a>
+
+### RegisterExternalKeysRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `external_keys` | [RegisterExternalKeysRequest.ExternalKey](#tss.v1beta1.RegisterExternalKeysRequest.ExternalKey) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.RegisterExternalKeysRequest.ExternalKey"></a>
+
+### RegisterExternalKeysRequest.ExternalKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.RegisterExternalKeysResponse"></a>
+
+### RegisterExternalKeysResponse
+
+
+
+
+
+
+
 <a name="tss.v1beta1.RotateKeyRequest"></a>
 
 ### RotateKeyRequest
@@ -3737,6 +3737,7 @@ Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register-external-key|
 | `Ack` | [AckRequest](#tss.v1beta1.AckRequest) | [AckResponse](#tss.v1beta1.AckResponse) |  | POST|/axelar/tss/ack|
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||

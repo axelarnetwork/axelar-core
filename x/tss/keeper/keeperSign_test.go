@@ -22,7 +22,7 @@ import (
 func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	s := setup()
 	sigID := "sigID"
-	keyID := "keyID"
+	keyID := exported.KeyID("keyID")
 	msg := []byte("message")
 	val1 := rand.ValAddr()
 	val2 := rand.ValAddr()
@@ -69,7 +69,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Counter:         rand2.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
-	assert.Equal(t, int64(400), snap.CorruptionThreshold)
+	assert.Equal(t, int64(399), snap.CorruptionThreshold)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		return snapshot.None, nil
 	}
@@ -92,7 +92,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -119,7 +119,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s := setup()
 	sigID := "sigID"
-	keyID := "keyID"
+	keyID := exported.KeyID("keyID")
 	msg := []byte("message")
 	val1 := rand.ValAddr()
 	val2 := rand.ValAddr()
@@ -171,7 +171,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	s.Ctx = s.Ctx.WithBlockHeight(height)
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, &s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -194,7 +194,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	s := setup()
 	sigID := "sigID"
-	keyID := "keyID1"
+	keyID := exported.KeyID("keyID1")
 	msgToSign := []byte("message")
 
 	// start keygen to record the snapshot for each key
@@ -232,7 +232,7 @@ func TestScheduleSignAtHeight(t *testing.T) {
 		// schedule signs
 		for i := 0; i < numSigns; i++ {
 			info := exported.SignInfo{
-				KeyID:           rand2.StrBetween(5, 10),
+				KeyID:           exported.KeyID(rand2.StrBetween(5, 10)),
 				SigID:           rand2.StrBetween(10, 20),
 				Msg:             []byte(rand2.StrBetween(20, 50)),
 				SnapshotCounter: snapshotSeq + int64(i),
@@ -278,7 +278,7 @@ func TestScheduleSignEvents(t *testing.T) {
 	t.Run("testing scheduled sign events", testutils.Func(func(t *testing.T) {
 		s := setup()
 		currentHeight := s.Ctx.BlockHeight()
-		keyID := rand2.Str(20)
+		keyID := exported.KeyID(rand2.Str(20))
 		sigID := rand2.Str(20)
 		height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
 			KeyID:           keyID,
@@ -300,7 +300,7 @@ func TestScheduleSignEvents(t *testing.T) {
 					heightFound = true
 				}
 			case types.AttributeKeyKeyID:
-				if string(attribute.Value) == keyID {
+				if string(attribute.Value) == string(keyID) {
 					keyIDFound = true
 				}
 			case types.AttributeKeySigID:

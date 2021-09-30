@@ -38,7 +38,11 @@ message UnsignedTx {
   message Info {
     message InputInfo {
       message SigRequirement {
-        string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+        string key_id = 1 [
+          (gogoproto.customname) = "KeyID",
+          (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        ];
         bytes sig_hash = 2;
       }
 
@@ -56,7 +60,9 @@ message UnsignedTx {
   TxStatus status = 4;
   bool confirmation_required = 5;
   uint32 anyone_can_spend_vout = 6;
-  string prev_aborted_key_id = 7;
+  string prev_aborted_key_id = 7
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
   int64 internal_transfer_amount = 8
       [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
 }
@@ -107,11 +113,15 @@ message AddressInfo {
   message SpendingCondition {
     // internal_key_ids lists the internal key IDs that one of which has to sign
     // regardless of locktime
-    repeated string internal_key_ids = 1;
+    repeated string internal_key_ids = 1
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
     // external_key_ids lists the external key IDs that
     // external_multisig_threshold of which have to sign to spend before
     // locktime if set
-    repeated string external_key_ids = 2;
+    repeated string external_key_ids = 2
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
     int64 external_multisig_threshold = 3;
     google.protobuf.Timestamp lock_time = 4 [ (gogoproto.stdtime) = true ];
   }
@@ -119,7 +129,11 @@ message AddressInfo {
   string address = 1;
   AddressRole role = 2;
   bytes redeem_script = 3;
-  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
   uint32 max_sig_count = 5;
   SpendingCondition spending_condition = 6;
 }

@@ -79,47 +79,11 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeExternalSignature,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSubmitted),
-		sdk.NewAttribute(types.AttributeKeyKeyID, req.KeyID),
+		sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
 		sdk.NewAttribute(types.AttributeKeySigID, sigID),
 	))
 
 	return &types.SubmitExternalSignatureResponse{}, nil
-}
-
-func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterExternalKeysRequest) (*types.RegisterExternalKeysResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	requiredExternalKeyCount := s.GetExternalMultisigThreshold(ctx).Denominator
-	if len(req.ExternalKeys) != int(requiredExternalKeyCount) {
-		return nil, fmt.Errorf("%d external keys are required", requiredExternalKeyCount)
-	}
-
-	keyIDs := make([]string, len(req.ExternalKeys))
-	for i, externalKey := range req.ExternalKeys {
-		if _, ok := s.signer.GetKey(ctx, externalKey.ID); ok {
-			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
-		}
-
-		pubKey, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("invalid external key received")
-		}
-
-		s.signer.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
-		s.signer.SetKeyRole(ctx, externalKey.ID, tss.ExternalKey)
-		keyIDs[i] = externalKey.ID
-
-		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
-			sdk.NewAttribute(types.AttributeKeyRole, tss.ExternalKey.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, externalKey.ID),
-		))
-	}
-
-	s.SetExternalKeyIDs(ctx, keyIDs)
-
-	return &types.RegisterExternalKeysResponse{}, nil
 }
 
 // Link handles address linking
@@ -157,8 +121,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyMasterKeyID, masterKey.ID),
-			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, secondaryKey.ID),
+			sdk.NewAttribute(types.AttributeKeyMasterKeyID, string(masterKey.ID)),
+			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, string(secondaryKey.ID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddressInfo.Address),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
@@ -440,7 +404,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		keyID := internalKeyIDs[0]
 		// if the unsigned transaction has aborted due to signing failure, try signing with a different key if necessary and possible
 		if unsignedTx.Is(types.Aborted) {
-			keyID = internalKeyIDs[(utils.IndexOf(internalKeyIDs, unsignedTx.PrevAbortedKeyId)+1)%len(internalKeyIDs)]
+			keyID = internalKeyIDs[(utils.IndexOf(tss.KeyIDsToStrings(internalKeyIDs), string(unsignedTx.PrevAbortedKeyId))+1)%len(internalKeyIDs)]
 		}
 
 		unsignedTx.Info.InputInfos = append(unsignedTx.Info.InputInfos, types.UnsignedTx_Info_InputInfo{
@@ -632,7 +596,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, fmt.Errorf("consolidation in progress")
 	}
 
-	externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
+	externalMultisigThreshold := s.signer.GetExternalMultisigThreshold(ctx)
 	externalKeys, err := getExternalKeys(ctx, s.BTCKeeper, s.signer)
 	if err != nil {
 		return nil, err
@@ -734,7 +698,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
 			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(consolidationKey.ID)),
 		))
 	}
 
@@ -861,7 +825,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
 			sdk.NewAttribute(types.AttributeKeyRole, consolidationKey.Role.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, consolidationKey.ID),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(consolidationKey.ID)),
 		))
 	}
 
@@ -877,7 +841,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 }
 
 func getExternalKeys(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) ([]tss.Key, error) {
-	externalKeyIDs, ok := k.GetExternalKeyIDs(ctx)
+	externalKeyIDs, ok := signer.GetExternalKeyIDs(ctx, exported.Bitcoin)
 	if !ok {
 		return nil, fmt.Errorf("external keys not registered yet")
 	}
@@ -1005,7 +969,7 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 	return nil
 }
 
-func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string) (sdk.Int, error) {
+func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID tss.KeyID) (sdk.Int, error) {
 	total := sdk.ZeroInt()
 	// TODO: the confirmed outpoint info queue should by ordered by value desc instead of block height asc
 	confirmedOutpointInfoQueue := k.GetConfirmedOutpointInfoQueueForKey(ctx, keyID)
@@ -1026,7 +990,7 @@ func addInputs(ctx sdk.Context, k types.BTCKeeper, tx *wire.MsgTx, keyID string)
 	return total, nil
 }
 
-func getSigID(sigHash []byte, keyID string) string {
+func getSigID(sigHash []byte, keyID tss.KeyID) string {
 	return fmt.Sprintf("%s-%s", hex.EncodeToString(sigHash), keyID)
 }
 
@@ -1092,7 +1056,7 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 		return types.AddressInfo{}, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
 	}
 
-	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
 	externalKeys, err := getExternalKeys(ctx, k, s)
 	if err != nil {
 		return types.AddressInfo{}, err
@@ -1142,7 +1106,7 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 		return types.AddressInfo{}, fmt.Errorf("cannot find the old %s key", tss.MasterKey.SimpleString())
 	}
 
-	externalMultisigThreshold := k.GetExternalMultisigThreshold(ctx)
+	externalMultisigThreshold := s.GetExternalMultisigThreshold(ctx)
 	externalKeys, err := getExternalKeys(ctx, k, s)
 	if err != nil {
 		return types.AddressInfo{}, err

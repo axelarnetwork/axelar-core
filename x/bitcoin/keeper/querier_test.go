@@ -6,6 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -15,11 +21,8 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/btcsuite/btcd/btcec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestQueryDepositAddress(t *testing.T) {
@@ -32,8 +35,8 @@ func TestQueryDepositAddress(t *testing.T) {
 		address string
 	)
 
-	externalKeyThreshold := types.DefaultParams().ExternalMultisigThreshold.Numerator
-	externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+	externalKeyThreshold := tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator
+	externalKeyCount := tsstypes.DefaultParams().ExternalMultisigThreshold.Denominator
 	externalKeys := make([]tss.Key, externalKeyCount)
 	for i := 0; i < int(externalKeyCount); i++ {
 		externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
@@ -41,7 +44,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			panic(err)
 		}
 		externalKeys[i] = tss.Key{
-			ID:    rand.Str(10),
+			ID:    tssTestUtils.RandKeyID(),
 			Value: externalPrivKey.PublicKey,
 			Role:  tss.ExternalKey,
 		}
@@ -104,7 +107,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 		now := time.Now()
 		secondaryKey := tss.Key{
-			ID:        rand.Str(10),
+			ID:        tssTestUtils.RandKeyID(),
 			Value:     secondaryPrivKey.PublicKey,
 			Role:      tss.SecondaryKey,
 			RotatedAt: &now,
@@ -123,7 +126,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -132,11 +135,11 @@ func TestQueryDepositAddress(t *testing.T) {
 
 			return tss.Key{}, false
 		}
-		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
-			return types.DefaultParams().ExternalMultisigThreshold
+		signer.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return tsstypes.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		signer.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -174,7 +177,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 			return tss.Key{}, false
 		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -185,11 +188,11 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressExternalKeyLockDuration }
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
-			return types.DefaultParams().ExternalMultisigThreshold
+		signer.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return tsstypes.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		signer.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -220,7 +223,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		signer    *mock.SignerMock
 		ctx       sdk.Context
 
-		keyID string
+		keyID tss.KeyID
 	)
 
 	setup := func() {
@@ -228,13 +231,13 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		signer = &mock.SignerMock{}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
-		keyID = rand.Str(10)
+		keyID = tssTestUtils.RandKeyID()
 	}
 
 	t.Run("should return error if the given key ID cannot be found", testutils.Func(func(t *testing.T) {
 		setup()
 
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) { return tss.Key{}, false }
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) { return tss.Key{}, false }
 
 		_, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
@@ -263,12 +266,12 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			RotatedAt: &now,
 		}
 		oldMasterKey := tss.Key{
-			ID:    rand.Str(10),
+			ID:    tssTestUtils.RandKeyID(),
 			Value: oldMasterPrivKey.PublicKey,
 			Role:  tss.MasterKey,
 		}
 
-		externalKeyCount := types.DefaultParams().ExternalMultisigThreshold.Denominator
+		externalKeyCount := tsstypes.DefaultParams().ExternalMultisigThreshold.Denominator
 		externalKeys := make([]tss.Key, externalKeyCount)
 		for i := 0; i < int(externalKeyCount); i++ {
 			externalPrivKey, err := btcec.NewPrivateKey(btcec.S256())
@@ -276,7 +279,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 				panic(err)
 			}
 			externalKeys[i] = tss.Key{
-				ID:    rand.Str(10),
+				ID:    tssTestUtils.RandKeyID(),
 				Value: externalPrivKey.PublicKey,
 				Role:  tss.ExternalKey,
 			}
@@ -285,11 +288,11 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		btcKeeper.GetMasterKeyRetentionPeriodFunc = func(ctx sdk.Context) int64 { return types.DefaultParams().MasterKeyRetentionPeriod }
 		btcKeeper.GetMasterAddressInternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressInternalKeyLockDuration }
 		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressExternalKeyLockDuration }
-		btcKeeper.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
-			return types.DefaultParams().ExternalMultisigThreshold
+		signer.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
+			return tsstypes.DefaultParams().ExternalMultisigThreshold
 		}
-		btcKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context) ([]string, bool) {
-			externalKeyIDs := make([]string, len(externalKeys))
+		signer.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
+			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
 			for i := 0; i < len(externalKeyIDs); i++ {
 				externalKeyIDs[i] = externalKeys[i].ID
 			}
@@ -297,7 +300,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			return externalKeyIDs, true
 		}
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			for _, externalKey := range externalKeys {
 				if keyID == externalKey.ID {
 					return externalKey, true
@@ -327,7 +330,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 
 		expected := types.QueryAddressResponse{
-			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, types.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network).Address,
+			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network).Address,
 			KeyID:   masterKey.ID,
 		}
 
@@ -353,7 +356,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID string) (tss.Key, bool) {
+		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			if keyID == secondaryKey.ID {
 				return secondaryKey, true
 			}

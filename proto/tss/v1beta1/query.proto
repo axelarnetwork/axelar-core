@@ -44,7 +44,11 @@ message QueryRecoveryResponse {
 
 message QueryKeyShareResponse {
   message ShareInfo {
-    string key_id = 1 [ (gogoproto.customname) = "KeyID" ];
+    string key_id = 1 [
+      (gogoproto.customname) = "KeyID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
     string key_chain = 2;
     string key_role = 3;
     int64 snapshot_block_number = 4;
@@ -58,4 +62,12 @@ message QueryKeyShareResponse {
 
 message QueryDeactivatedOperatorsResponse {
   repeated string operator_addresses = 1;
+}
+
+message QueryExternalKeyIDResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }

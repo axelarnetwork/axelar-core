@@ -1108,7 +1108,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.TransferKeyType, chainStr string, nextKeyID string) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)

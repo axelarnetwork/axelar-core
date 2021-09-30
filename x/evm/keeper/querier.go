@@ -55,7 +55,12 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QAddressByKeyRole:
 			return QueryAddressByKeyRole(ctx, s, n, path[1], path[2])
 		case QAddressByKeyID:
-			return QueryAddressByKeyID(ctx, s, n, path[1], path[2])
+			keyID := tss.KeyID(path[2])
+
+			if err := keyID.Validate(); err != nil {
+				return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+			}
+			return QueryAddressByKeyID(ctx, s, n, path[1], keyID)
 		case QNextMasterAddress:
 			return queryNextMasterAddress(ctx, s, n, path[1])
 		case QAxelarGatewayAddress:
@@ -90,12 +95,12 @@ func QueryLatestBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, s typ
 	} else {
 		latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx)
 		if !ok {
-			return nil, fmt.Errorf("no batched commands exist for chain %s", keeper.GetName())
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no batched commands exist for chain %s", keeper.GetName()))
 		}
 
 		latestSignedBatchedCommands, ok := keeper.GetSignedBatchedCommands(ctx, latestSignedBatchedCommandsID)
 		if !ok {
-			return nil, fmt.Errorf("cannot find the latest signed batched commands for chain %s", keeper.GetName())
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("cannot find the latest signed batched commands for chain %s", keeper.GetName()))
 		}
 
 		batchedCommands = latestSignedBatchedCommands
@@ -168,12 +173,12 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.BatchedCo
 func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRoleStr string) ([]byte, error) {
 	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	address, key, err := getAddressAndKeyForRole(ctx, s, n, chainName, keyRole)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
@@ -182,15 +187,15 @@ func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chain
 }
 
 // QueryAddressByKeyID returns the address of the given key ID
-func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID string) ([]byte, error) {
+func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID tss.KeyID) ([]byte, error) {
 	_, ok := n.GetChain(ctx, chainName)
 	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", chainName)
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
 	}
 
 	key, ok := s.GetKey(ctx, keyID)
 	if !ok {
-		return nil, fmt.Errorf("key %s not found", keyID)
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("key %s not found", keyID))
 	}
 
 	address := crypto.PubkeyToAddress(key.Value)
@@ -207,12 +212,12 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 	}
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, fmt.Errorf("could not parse the recipient")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse the recipient"))
 	}
 
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway address not set"))
 	}
 
 	tokenAddr, err := k.GetTokenAddress(ctx, params.Symbol, gatewayAddr)
@@ -227,7 +232,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 
 	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
 	if !ok {
-		return nil, fmt.Errorf("deposit address is not linked with recipient address")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit address is not linked with recipient address"))
 	}
 
 	return depositAddr.Bytes(), nil
@@ -292,12 +297,12 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symb
 func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", k.GetName())
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	var params types.QueryDepositStateParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, fmt.Errorf("could not unmarshal parameters")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not unmarshal parameters"))
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
@@ -315,7 +320,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	case state == types.BURNED:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
 	default:
-		return nil, fmt.Errorf("deposit is in an unexpected state")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
 	}
 
 	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
@@ -335,7 +340,7 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	case BCGatewayDeployment:
 		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
 		if !ok {
-			return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
 		}
 
 		bz, _ = k.GetGatewayByteCodes(ctx)
