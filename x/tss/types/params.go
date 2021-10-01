@@ -16,7 +16,6 @@ const (
 
 // Parameter keys
 var (
-	KeyLockingPeriod                    = []byte("lockingPeriod")
 	KeyKeyRequirements                  = []byte("keyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
 	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
@@ -33,7 +32,6 @@ func KeyTable() params.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod: 0,
 		KeyRequirements: []exported.KeyRequirement{
 			{
 				KeyRole:                    exported.MasterKey,
@@ -78,7 +76,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
 		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
@@ -88,23 +85,8 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	}
 }
 
-func validateLockingPeriod(period interface{}) error {
-	val, ok := period.(int64)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for locking period: %T", period)
-	}
-	if val < 0 {
-		return fmt.Errorf("locking period must be a positive integer")
-	}
-	return nil
-}
-
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
-	if err := validateLockingPeriod(m.LockingPeriod); err != nil {
-		return err
-	}
-
 	if err := validateKeyRequirements(m.KeyRequirements); err != nil {
 		return err
 	}

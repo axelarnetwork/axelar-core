@@ -97,12 +97,6 @@ func setup() *testSetup {
 	return setup
 }
 
-func (s *testSetup) SetLockingPeriod(lockingPeriod int64) {
-	p := types.DefaultParams()
-	p.LockingPeriod = lockingPeriod
-	s.Keeper.SetParams(s.Ctx, p)
-}
-
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole) tss.Key {
 	keyID := exported.KeyID(randDistinctStr.Next())
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
