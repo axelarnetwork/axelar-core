@@ -34,31 +34,31 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Validators: []snapshot.Validator{
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val1 },
-				GetConsensusPowerFunc: func() int64 { return 140 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 140 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
 			}, 140),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
-				GetConsensusPowerFunc: func() int64 { return 130 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 130 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			}, 130),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val3 },
-				GetConsensusPowerFunc: func() int64 { return 120 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 120 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val3.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			}, 120),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val4 },
-				GetConsensusPowerFunc: func() int64 { return 110 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 110 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val4.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			}, 110),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val5 },
-				GetConsensusPowerFunc: func() int64 { return 100 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val5.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			}, 100),
@@ -128,13 +128,13 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		Validators: []snapshot.Validator{
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val1 },
-				GetConsensusPowerFunc: func() int64 { return 100 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
 			}, 100),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
-				GetConsensusPowerFunc: func() int64 { return 100 },
+				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
 			}, 100),

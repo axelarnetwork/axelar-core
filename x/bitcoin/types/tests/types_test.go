@@ -14,7 +14,6 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
@@ -647,7 +646,7 @@ func TestConfirmOutpointRequest_GetOutPoint(t *testing.T) {
 		hash, _ := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		outpoint := wire.NewOutPoint(hash, mathRand.Uint32())
 		info := types.NewOutPointInfo(outpoint, btcutil.Amount(rand.PosI64()), rand.StrBetween(5, 100))
-		req1 := types.NewConfirmOutpointRequest(rand.Bytes(sdk.AddrLen), info)
+		req1 := types.NewConfirmOutpointRequest(rand.AccAddr(), info)
 		req2 := types.NewConfirmOutpointRequest(req1.Sender, info)
 
 		var runes []rune

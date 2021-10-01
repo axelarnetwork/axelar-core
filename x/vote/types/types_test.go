@@ -23,7 +23,7 @@ import (
 func TestNewTalliedVote(t *testing.T) {
 	t.Run("panic on nil data", func(t *testing.T) {
 		assert.Panics(t, func() {
-			types.NewTalliedVote(rand.Bytes(sdk.AddrLen), rand.PosI64(), nil)
+			types.NewTalliedVote(rand.ValAddr(), rand.PosI64(), nil)
 		})
 	})
 
@@ -40,11 +40,11 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 
 	output := tofnd.KeygenOutput{PubKey: []byte("a public key"), GroupRecoverInfo: []byte{0}, PrivateRecoverInfo: []byte{0, 1, 2, 3}}
 	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{Data: &output}}
-	vote := types.NewTalliedVote(rand.Bytes(sdk.AddrLen), 23, &data)
+	vote := types.NewTalliedVote(rand.ValAddr(), 23, &data)
 
-	bz := cdc.MustMarshalBinaryLengthPrefixed(&vote)
+	bz := cdc.MustMarshalLengthPrefixed(&vote)
 	var actual types.TalliedVote
-	cdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+	cdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 	assert.Equal(t, vote, actual)
 
@@ -164,7 +164,7 @@ func TestPoll_Vote(t *testing.T) {
 	t.Run("poll nonexistent", testutils.Func(func(t *testing.T) {
 		poll := setup(exported.PollMetadata{State: exported.NonExistent}, rand.PosI64())
 
-		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voter := rand.ValAddr()
 		shareCounts[voter.String()] = rand.PosI64()
 		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
 
@@ -175,7 +175,7 @@ func TestPoll_Vote(t *testing.T) {
 		result, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(10)})
 		poll := setup(exported.PollMetadata{State: exported.Completed, Result: result}, rand.PosI64())
 
-		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voter := rand.ValAddr()
 		shareCounts[voter.String()] = rand.PosI64()
 		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
 
@@ -185,7 +185,7 @@ func TestPoll_Vote(t *testing.T) {
 	t.Run("poll already failed", testutils.Func(func(t *testing.T) {
 		poll := setup(exported.PollMetadata{State: exported.Failed}, rand.PosI64())
 
-		voter := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voter := rand.ValAddr()
 		shareCounts[voter.String()] = rand.PosI64()
 		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
 
@@ -196,7 +196,7 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		voterAddr := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voterAddr := rand.ValAddr()
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
 		assert.Error(t, poll.Vote(voterAddr, voteValue))
@@ -209,7 +209,7 @@ func TestPoll_Vote(t *testing.T) {
 		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
 		totalShareCount = totalShareCount.AddRaw(voterShareCount)
 
-		voterAddr := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voterAddr := rand.ValAddr()
 		shareCounts[voterAddr.String()] = voterShareCount
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
@@ -228,7 +228,7 @@ func TestPoll_Vote(t *testing.T) {
 		voterShareCount := rand.PosI64()
 		totalShareCount = totalShareCount.AddRaw(voterShareCount)
 
-		voterAddr := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voterAddr := rand.ValAddr()
 		shareCounts[voterAddr.String()] = voterShareCount
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
@@ -242,7 +242,7 @@ func TestPoll_Vote(t *testing.T) {
 		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
 		totalShareCount = totalShareCount.AddRaw(voterShareCount)
 
-		voterAddr := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		voterAddr := rand.ValAddr()
 		shareCounts[voterAddr.String()] = voterShareCount
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 

@@ -78,7 +78,7 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 			return nil, err
 		}
 
-		txf = txf.WithGas(adjusted).WithGasPrices("0.01uaxl")
+		txf = txf.WithGas(adjusted)
 	}
 
 	txBuilder, err := txf.BuildUnsignedTx(msgs...)

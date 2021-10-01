@@ -125,7 +125,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRo
 func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 	return snapshot.NewValidator(&snapMock.SDKValidatorMock{
 		GetOperatorFunc:       func() sdk.ValAddress { return address },
-		GetConsensusPowerFunc: func() int64 { return power },
+		GetConsensusPowerFunc: func(sdk.Int) int64 { return power },
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
 		IsJailedFunc:          func() bool { return false },
 	}, power)

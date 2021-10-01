@@ -264,7 +264,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	var txRes btcTypes.QueryTxResponse
-	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &txRes)
+	btcTypes.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &txRes)
 
 	buf, err := hex.DecodeString(txRes.Tx)
 	assert.NoError(t, err)
@@ -289,7 +289,7 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 
 	var addressRes btcTypes.QueryAddressResponse
-	btcTypes.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &addressRes)
+	btcTypes.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &addressRes)
 
 	assert.Equal(t, secondaryKeyID2, string(addressRes.KeyID))
 }

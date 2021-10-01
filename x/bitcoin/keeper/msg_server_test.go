@@ -335,7 +335,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		snapshotter := &mock.SnapshotterMock{GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-			return rand.Bytes(sdk.AddrLen)
+			return rand.ValAddr()
 		}}
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
 	}
@@ -653,7 +653,7 @@ func TestCreateRescueTx(t *testing.T) {
 	t.Run("shoud return error when no UTXO require", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		req := types.NewCreateRescueTxRequest(rand.AccAddr())
 		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "no rescue needed")
@@ -681,8 +681,8 @@ func TestCreateRescueTx(t *testing.T) {
 							return false
 						}
 
-						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+						types.ModuleCdc.MustUnmarshalLengthPrefixed(
+							types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 							value,
 						)
 
@@ -716,7 +716,7 @@ func TestCreateRescueTx(t *testing.T) {
 			}, true
 		}
 
-		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		req := types.NewCreateRescueTxRequest(rand.AccAddr())
 		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -779,8 +779,8 @@ func TestCreateRescueTx(t *testing.T) {
 							return false
 						}
 
-						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+						types.ModuleCdc.MustUnmarshalLengthPrefixed(
+							types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 							value,
 						)
 
@@ -814,7 +814,7 @@ func TestCreateRescueTx(t *testing.T) {
 			}, true
 		}
 
-		req := types.NewCreateRescueTxRequest(rand.Bytes(sdk.AddrLen))
+		req := types.NewCreateRescueTxRequest(rand.AccAddr())
 		_, err := server.CreateRescueTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -918,8 +918,8 @@ func TestCreateMasterTx(t *testing.T) {
 								return false
 							}
 
-							types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-								types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+							types.ModuleCdc.MustUnmarshalLengthPrefixed(
+								types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 								value,
 							)
 
@@ -1057,7 +1057,7 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("shoud create master consolidation transaction without key assignment when the consolidation key is the current master key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(masterKey.ID), 0)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(masterKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1099,7 +1099,7 @@ func TestCreateMasterTx(t *testing.T) {
 	t.Run("should create master consolidation transaction sending no coin to the secondary key when the amount is not set", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1154,7 +1154,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 
 		secondaryKeyAmount := btcutil.Amount(rand.I64Between(1000, 10000))
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), secondaryKeyAmount)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), secondaryKeyAmount)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1207,7 +1207,7 @@ func TestCreateMasterTx(t *testing.T) {
 		setup()
 
 		secondaryKeyAmount := btcutil.Amount(rand.I64Between(1000, 10000))
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), secondaryKeyAmount)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), secondaryKeyAmount)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1270,8 +1270,8 @@ func TestCreateMasterTx(t *testing.T) {
 							return false
 						}
 
-						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+						types.ModuleCdc.MustUnmarshalLengthPrefixed(
+							types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 							value,
 						)
 
@@ -1284,7 +1284,7 @@ func TestCreateMasterTx(t *testing.T) {
 			return &utilsmock.KVQueueMock{}
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
@@ -1297,7 +1297,7 @@ func TestCreateMasterTx(t *testing.T) {
 			return btcutil.Amount(rand.I64Between(1, 100))
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
@@ -1314,7 +1314,7 @@ func TestCreateMasterTx(t *testing.T) {
 			return types.UnsignedTx{}, false
 		}
 
-		req := types.NewCreateMasterTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreateMasterTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreateMasterTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot assign the next master key while a secondary transaction is sending coin to the current master address")
@@ -1400,8 +1400,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 								return false
 							}
 
-							types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-								types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+							types.ModuleCdc.MustUnmarshalLengthPrefixed(
+								types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 								value,
 							)
 
@@ -1543,7 +1543,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 	t.Run("shoud create secondary consolidation transaction without key assignment when the consolidation key is the current secondary key", testutils.Func(func(t *testing.T) {
 		setup()
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(secondaryKey.ID), 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(secondaryKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1591,7 +1591,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 	t.Run("should create secondary consolidation transaction sending no coin to the master key when the amount is not set", func(t *testing.T) {
 		setup()
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1654,7 +1654,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		masterKeyAmount := btcutil.Amount(transfers[len(transfers)-1].Asset.Amount.Int64())
 		transfers = transfers[:len(transfers)-1]
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), masterKeyAmount)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), masterKeyAmount)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1714,7 +1714,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		masterKeyAmount := btcutil.Amount(transfers[len(transfers)-1].Asset.Amount.Int64())
 		transfers = transfers[:len(transfers)-1]
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), masterKeyAmount)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), masterKeyAmount)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.NoError(t, err)
 
@@ -1784,8 +1784,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 							return false
 						}
 
-						types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(
-							types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&inputs[dequeueCount]),
+						types.ModuleCdc.MustUnmarshalLengthPrefixed(
+							types.ModuleCdc.MustMarshalLengthPrefixed(&inputs[dequeueCount]),
 							value,
 						)
 
@@ -1798,7 +1798,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			return &utilsmock.KVQueueMock{}
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has confirmed outpoints to spend, and spend is required before key rotation is allowed")
@@ -1811,7 +1811,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			return btcutil.Amount(rand.I64Between(1, 100))
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "still has unconfirmed outpoints to confirm, and confirm and spend is required before key rotation is allowed")
@@ -1828,7 +1828,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			return types.UnsignedTx{}, false
 		}
 
-		req := types.NewCreatePendingTransfersTxRequest(rand.Bytes(sdk.AddrLen), string(consolidationKey.ID), 0)
+		req := types.NewCreatePendingTransfersTxRequest(rand.AccAddr(), string(consolidationKey.ID), 0)
 		_, err := server.CreatePendingTransfersTx(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot assign the next secondary key while a master transaction is sending coin to the current secondary address")
@@ -1885,18 +1885,18 @@ func createRandomKey(keyRole tss.KeyRole, rotatedAt ...time.Time) tss.Key {
 
 func randomMsgLink() *types.LinkRequest {
 	return types.NewLinkRequest(
-		rand.Bytes(sdk.AddrLen),
+		rand.AccAddr(),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
 }
 
 func randomMsgConfirmOutpoint() *types.ConfirmOutpointRequest {
-	return types.NewConfirmOutpointRequest(rand.Bytes(sdk.AddrLen), randomOutpointInfo())
+	return types.NewConfirmOutpointRequest(rand.AccAddr(), randomOutpointInfo())
 }
 
 func randomMsgVoteConfirmOutpoint() *types.VoteConfirmOutpointRequest {
 	return types.NewVoteConfirmOutpointRequest(
-		rand.Bytes(sdk.AddrLen),
+		rand.AccAddr(),
 		vote.PollKey{
 			Module: types.ModuleName,
 			ID:     rand.StrBetween(5, 20),

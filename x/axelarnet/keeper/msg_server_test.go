@@ -314,7 +314,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	repeatCount := 20
 	t.Run("should mint and send token to recipients, and archive pending transfers when get pending transfers from nexus keeper ", testutils.Func(func(t *testing.T) {
 		setup()
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers))
@@ -327,7 +327,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		bankKeeper.MintCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -337,7 +337,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		bankKeeper.SendCoinsFromModuleToAccountFunc = func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		assert.Panics(t, func() { _, _ = server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg) }, "ExecutePendingTransfers did not panic when transfer token failed")
 	}).Repeat(repeatCount))
 
@@ -348,7 +348,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			return randomIBCPath()
 		}
 
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), len(transfers))
@@ -370,7 +370,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		nexusKeeper.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 			return transfers
 		}
-		msg = types.NewExecutePendingTransfersRequest(rand.Bytes(sdk.AddrLen))
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), nativeAssetCount)
@@ -455,7 +455,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
 		}
 		msg = &types.RefundMsgRequest{
-			Sender:       rand.Bytes(sdk.AddrLen),
+			Sender:       rand.AccAddr(),
 			InnerMessage: &any,
 		}
 
@@ -466,7 +466,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	t.Run("should return error when failed to route inner message", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), randomMsgLink())
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), randomMsgLink())
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -480,7 +480,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
 		voteReq := &evmtypes.VoteConfirmChainRequest{Name: rand.StrBetween(5, 20)}
-		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), voteReq)
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -490,7 +490,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		setup()
 		axelarnetKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.Coin{}, false }
 
-		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.AckRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -499,7 +499,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMsgRequest(rand.Bytes(sdk.AddrLen), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.AckRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -510,7 +510,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 
 func randomMsgLink() *types.LinkRequest {
 	return types.NewLinkRequest(
-		rand.Bytes(sdk.AddrLen),
+		rand.AccAddr(),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
@@ -519,14 +519,14 @@ func randomMsgLink() *types.LinkRequest {
 
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 	return types.NewConfirmDepositRequest(
-		rand.Bytes(sdk.AddrLen),
+		rand.AccAddr(),
 		rand.BytesBetween(5, 100),
 		sdk.NewCoin(randomDenom(), sdk.NewInt(rand.I64Between(1, 10000000000))),
-		rand.Bytes(sdk.AddrLen))
+		rand.AccAddr())
 }
 func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
 	return types.NewRegisterIBCPathRequest(
-		rand.Bytes(sdk.AddrLen),
+		rand.AccAddr(),
 		randomDenom(),
 		randomIBCPath(),
 	)
