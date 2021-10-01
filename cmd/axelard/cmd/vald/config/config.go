@@ -29,10 +29,10 @@ func DefaultValdConfig() ValdConfig {
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {
-	From              string        `mapstructure:"broadcaster-account"`
-	KeyringPassphrase string        `mapstructure:"keyring-passphrase"`
-	MaxRetries        int           `mapstructure:"max-retries"`
-	MinTimeout        time.Duration `mapstructure:"min-timeout"`
+	From       string        `mapstructure:"broadcaster-account"`
+	KeyringDir string        `mapstructure:"keyring_dir"`
+	MaxRetries int           `mapstructure:"max-retries"`
+	MinTimeout time.Duration `mapstructure:"min-timeout"`
 }
 
 // ClientConfig is the configuration for all client processes
