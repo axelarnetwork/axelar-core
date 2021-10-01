@@ -27,7 +27,6 @@ const (
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		period    int64
 		ackWindow int64
 	)
 
@@ -52,10 +51,6 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 			}
 			genesisTSS := tssTypes.GetGenesisStateFromAppState(cdc, appState)
 
-			if period > 0 {
-				genesisTSS.Params.LockingPeriod = period
-			}
-
 			if ackWindow > 0 {
 				genesisTSS.Params.AckWindowInBlocks = ackWindow
 			}
@@ -76,9 +71,8 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
-	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
-	cmd.Flags().Int64Var(&period, flagLockingPeriod, 0, "A positive integer representing the locking period for validators in terms of number of blocks")
+	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().Int64Var(&ackWindow, flagAck, 0, "A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks")
 
 	return cmd

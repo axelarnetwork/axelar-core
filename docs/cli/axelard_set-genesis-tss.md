@@ -9,9 +9,8 @@ axelard set-genesis-tss [flags]
 ### Options
 
 ```
-      --ack-window int       A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks
-  -h, --help                 help for set-genesis-tss
-      --locking-period int   A positive integer representing the locking period for validators in terms of number of blocks
+      --ack-window int   A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks
+  -h, --help             help for set-genesis-tss
 ```
 
 ### Options inherited from parent commands

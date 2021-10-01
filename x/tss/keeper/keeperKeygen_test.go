@@ -44,8 +44,6 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		snapshotHeight := rand2.I64Between(0, currHeight-lockingPeriod+1)
 		assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
 
-		s.SetLockingPeriod(lockingPeriod)
-
 		keyID := randDistinctStr.Next()
 		err := s.Keeper.StartKeygen(ctx, s.Voter, exported.KeyID(keyID), exported.MasterKey, snap)
 		assert.NoError(t, err)
@@ -77,7 +75,6 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		time := time.Unix(time.Now().Unix(), 0)
 		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 		s.Ctx = s.Ctx.WithBlockTime(time)
-		s.SetLockingPeriod(lockingPeriod)
 		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey)
 		expectedKey.RotatedAt = &time
 
@@ -125,7 +122,6 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
 		s := setup()
-		s.SetLockingPeriod(0)
 		ctx := s.Ctx
 		keys := make([]exported.Key, 10)
 

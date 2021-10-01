@@ -3245,7 +3245,6 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `locking_period` | [int64](#int64) |  | **Deprecated.**  |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
