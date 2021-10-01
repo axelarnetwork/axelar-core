@@ -1,15 +1,25 @@
-## axelard tx ibc solo
+## axelard tx ibc client misbehaviour
 
-Solo Machine transaction subcommands
+submit a client misbehaviour
+
+### Synopsis
+
+submit a client misbehaviour to prevent future updates
 
 ```
-axelard tx ibc solo machine [flags]
+axelard tx ibc client misbehaviour [path/to/misbehaviour.json] [flags]
+```
+
+### Examples
+
+```
+<appd> tx ibc client misbehaviour [path/to/misbehaviour.json] --from node0 --home ../node0/<app>cli --chain-id $CID
 ```
 
 ### Options
 
 ```
-  -h, --help   help for solo
+  -h, --help   help for misbehaviour
 ```
 
 ### Options inherited from parent commands
@@ -25,7 +35,4 @@ axelard tx ibc solo machine [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
-- [axelard tx ibc solo create](axelard_tx_ibc_solo_create.md)	 - create new solo machine client
-- [axelard tx ibc solo misbehaviour](axelard_tx_ibc_solo_misbehaviour.md)	 - submit a client misbehaviour
-- [axelard tx ibc solo update](axelard_tx_ibc_solo_update.md)	 - update existing client with a header
+- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands

@@ -29,7 +29,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 
 // GetGenesisStateFromAppState returns x/vote GenesisState given raw application
 // genesis state.
-func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) types.GenesisState {
+func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.RawMessage) types.GenesisState {
 	var genesisState types.GenesisState
 	if appState[types.ModuleName] != nil {
 		cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisState)

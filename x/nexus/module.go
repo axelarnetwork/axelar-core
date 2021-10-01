@@ -40,12 +40,12 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func (a AppModuleBasic) RegisterInterfaces(cdctypes.InterfaceRegistry) {}
 
 // DefaultGenesis returns the default genesis state
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
 // ValidateGenesis checks the given genesis state for validity
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, _ client.TxEncodingConfig, bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
@@ -89,7 +89,7 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) RegisterServices(module.Configurator) {}
 
 // InitGenesis initializes the module's keeper from the given genesis state
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
 	var genState types.GenesisState
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
@@ -100,7 +100,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 }
 
 // ExportGenesis exports a genesis state from the module's keeper
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState := ExportGenesis(ctx, am.keeper)
 	return cdc.MustMarshalJSON(&genState)
 }
@@ -126,3 +126,6 @@ func (AppModule) QuerierRoute() string { return "" }
 // LegacyQuerierHandler returns a new query handler for this module
 // Deprecated
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier { return nil }
+
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }

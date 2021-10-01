@@ -24,6 +24,7 @@ axelard query staking redelegations [delegator-addr] [flags]
       --offset uint       pagination offset of delegator redelegations to query for
       --page uint         pagination page of delegator redelegations to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of delegator redelegations to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

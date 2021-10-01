@@ -14,6 +14,7 @@ axelard tx staking edit-validator [flags]
       --commission-rate string       The new commission rate percentage
       --details string               The validator's (optional) details (default "[do-not-modify]")
       --dry-run                      ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string           Fee account pays fees for the transaction instead of deducting from the signer
       --fees string                  Fees to pay along with transaction; eg: 10uatom
       --from string                  Name or address of private key with which to sign
       --gas string                   gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
@@ -25,10 +26,10 @@ axelard tx staking edit-validator [flags]
       --keyring-backend string       Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string           The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                       Use a connected Ledger device
-      --memo string                  Memo to send along with transaction
       --min-self-delegation string   The minimum self delegation required on the validator
       --moniker string               The validator's name (default "node")
       --node string                  <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string                  Note to add a description to the transaction (previously --memo)
       --offline                      Offline mode (does not allow any online functionality
       --security-contact string      The validator's (optional) security contact email (default "[do-not-modify]")
   -s, --sequence uint                The sequence number of the signing account (offline mode only)

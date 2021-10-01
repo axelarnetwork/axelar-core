@@ -103,7 +103,7 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return clientCtx.PrintProto(&res)
 	}
@@ -172,7 +172,7 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryDepositStateResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return cliCtx.PrintProto(&res)
 		},
@@ -284,7 +284,7 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -313,7 +313,7 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},

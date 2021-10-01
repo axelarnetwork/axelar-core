@@ -31,11 +31,11 @@ type StringKey interface {
 // KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
 type KVStore struct {
 	sdk.KVStore
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 }
 
 // NewNormalizedStore returns a new KVStore
-func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryMarshaler) KVStore {
+func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 	return KVStore{
 		KVStore: store,
 		cdc:     cdc,
@@ -44,7 +44,7 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryMarshaler) KVStore {
 
 // Set marshals the value and stores it under the given key
 func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
-	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalBinaryLengthPrefixed(value))
+	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalLengthPrefixed(value))
 }
 
 // SetRaw stores the value under the given key
@@ -58,7 +58,7 @@ func (store KVStore) Get(key Key, value codec.ProtoMarshaler) bool {
 	if bz == nil {
 		return false
 	}
-	store.cdc.MustUnmarshalBinaryLengthPrefixed(bz, value)
+	store.cdc.MustUnmarshalLengthPrefixed(bz, value)
 	return true
 }
 
@@ -92,12 +92,12 @@ type Iterator interface {
 
 type iterator struct {
 	sdk.Iterator
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 }
 
 // UnmarshalValue returns the value marshalled into the given type
 func (i iterator) UnmarshalValue(value codec.ProtoMarshaler) {
-	i.cdc.MustUnmarshalBinaryLengthPrefixed(i.Value(), value)
+	i.cdc.MustUnmarshalLengthPrefixed(i.Value(), value)
 }
 
 // GetKey returns the key of the current iterator value

@@ -1,27 +1,25 @@
-## axelard query ibc client node-state
+## axelard query ibc client status
 
-Query a node consensus state
+Query client status
 
 ### Synopsis
 
-Query a node consensus state. This result is feed to the client creation transaction.
+Query client activity status. Any client without an 'Active' status is considered inactive
 
 ```
-axelard query ibc client node-state [flags]
+axelard query ibc client status [client-id] [flags]
 ```
 
 ### Examples
 
 ```
-<appd> query ibc client node-state
+<appd> query ibc client status [client-id]
 ```
 
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for node-state
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -h, --help   help for status
 ```
 
 ### Options inherited from parent commands

@@ -30,6 +30,7 @@ axelard tx sign-batch [file] [flags]
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
       --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
@@ -40,9 +41,9 @@ axelard tx sign-batch [file] [flags]
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
-      --memo string              Memo to send along with transaction
-      --multisig string          Address of the multisig account on behalf of which the transaction shall be signed
+      --multisig string          Address or key name of the multisig account on behalf of which the transaction shall be signed
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
       --output-document string   The document will be written to the given file instead of STDOUT
   -s, --sequence uint            The sequence number of the signing account (offline mode only)

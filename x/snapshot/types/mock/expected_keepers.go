@@ -26,6 +26,9 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 			IterateBondedValidatorsByPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
 // 				panic("mock out the IterateBondedValidatorsByPower method")
 // 			},
+// 			PowerReductionFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+// 				panic("mock out the PowerReduction method")
+// 			},
 // 			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
 // 				panic("mock out the Validator method")
 // 			},
@@ -41,6 +44,9 @@ type StakingKeeperMock struct {
 
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
 	IterateBondedValidatorsByPowerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+
+	// PowerReductionFunc mocks the PowerReduction method.
+	PowerReductionFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
 
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI
@@ -59,6 +65,11 @@ type StakingKeeperMock struct {
 			// Fn is the fn argument value.
 			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
+		// PowerReduction holds details about calls to the PowerReduction method.
+		PowerReduction []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
@@ -69,6 +80,7 @@ type StakingKeeperMock struct {
 	}
 	lockGetLastTotalPower              sync.RWMutex
 	lockIterateBondedValidatorsByPower sync.RWMutex
+	lockPowerReduction                 sync.RWMutex
 	lockValidator                      sync.RWMutex
 }
 
@@ -135,6 +147,37 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
 	mock.lockIterateBondedValidatorsByPower.RLock()
 	calls = mock.calls.IterateBondedValidatorsByPower
 	mock.lockIterateBondedValidatorsByPower.RUnlock()
+	return calls
+}
+
+// PowerReduction calls PowerReductionFunc.
+func (mock *StakingKeeperMock) PowerReduction(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+	if mock.PowerReductionFunc == nil {
+		panic("StakingKeeperMock.PowerReductionFunc: method is nil but StakingKeeper.PowerReduction was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockPowerReduction.Lock()
+	mock.calls.PowerReduction = append(mock.calls.PowerReduction, callInfo)
+	mock.lockPowerReduction.Unlock()
+	return mock.PowerReductionFunc(ctx)
+}
+
+// PowerReductionCalls gets all the calls that were made to PowerReduction.
+// Check the length with:
+//     len(mockedStakingKeeper.PowerReductionCalls())
+func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockPowerReduction.RLock()
+	calls = mock.calls.PowerReduction
+	mock.lockPowerReduction.RUnlock()
 	return calls
 }
 

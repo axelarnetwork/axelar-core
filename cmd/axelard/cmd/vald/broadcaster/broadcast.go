@@ -36,8 +36,7 @@ func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) 
 func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
 	// serialize concurrent calls to broadcast
 	return b.pipeline.Push(func() error {
-
-		txf, err := tx.PrepareFactory(ctx, b.txFactory)
+		txf, err := b.txFactory.Prepare(ctx)
 		if err != nil {
 			return err
 		}
@@ -74,15 +73,15 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 	}
 
 	if txf.SimulateAndExecute() || ctx.Simulate {
-		_, adjusted, err := tx.CalculateGas(ctx.QueryWithData, txf, msgs...)
+		_, adjusted, err := tx.CalculateGas(ctx, txf, msgs...)
 		if err != nil {
 			return nil, err
 		}
 
-		txf = txf.WithGas(adjusted)
+		txf = txf.WithGas(adjusted).WithGasPrices("0.01uaxl")
 	}
 
-	txBuilder, err := tx.BuildUnsignedTx(txf, msgs...)
+	txBuilder, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
 		return nil, err
 	}

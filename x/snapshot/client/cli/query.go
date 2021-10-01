@@ -127,7 +127,7 @@ func GetCmdGetValidators(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryValidatorsResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return cliCtx.PrintProto(&res)
 		},

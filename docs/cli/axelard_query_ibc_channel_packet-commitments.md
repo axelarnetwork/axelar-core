@@ -27,6 +27,7 @@ axelard query ibc channel packet-commitments [port-id] [channel-id] [flags]
       --offset uint       pagination offset of packet commitments associated with a channel to query for
       --page uint         pagination page of packet commitments associated with a channel to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of packet commitments associated with a channel to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

@@ -28,12 +28,12 @@ var (
 // Keeper represents a nexus keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	params   params.Subspace
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
@@ -84,7 +84,7 @@ func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
 
 	for ; iter.Valid(); iter.Next() {
 		var chain exported.Chain
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &chain)
+		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &chain)
 		results = append(results, chain)
 	}
 
@@ -162,7 +162,7 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 
 	// Update the total nexus for the chain if it is a foreign asset
 	var t exported.CrossChainTransfer
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &t)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &t)
 	info, _ := k.GetChain(ctx, t.Recipient.Chain.Name)
 	if info.NativeAsset != t.Asset.Denom {
 		k.AddToChainTotal(ctx, t.Recipient.Chain, t.Asset)
@@ -178,6 +178,7 @@ func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom strin
 
 	return total
 }
+
 // AddToChainTotal add balance for an asset for a chain
 func (k Keeper) AddToChainTotal(ctx sdk.Context, chain exported.Chain, amount sdk.Coin) {
 	total := k.getChainTotal(ctx, chain, amount.Denom)
@@ -224,7 +225,7 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 		var transfer exported.CrossChainTransfer
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transfer)
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &transfer)
 		transfers = append(transfers, transfer)
 	}
 

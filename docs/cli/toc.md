@@ -6,13 +6,13 @@
   - [collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
   - [debug](axelard_debug.md)	 - Tool for helping with debugging your application
     - [addr \[address\]](axelard_debug_addr.md)	 - Convert an address between hex and bech32
-    - [pubkey \[pubkey\]](axelard_debug_pubkey.md)	 - Decode a ED25519 pubkey from hex, base64, or bech32
+    - [pubkey \[pubkey\]](axelard_debug_pubkey.md)	 - Decode a pubkey from proto JSON
     - [raw-bytes \[raw-bytes\]](axelard_debug_raw-bytes.md)	 - Convert raw bytes output (eg. \[10 21 13 255\]) to hex
   - [export](axelard_export.md)	 - Export state to JSON
   - [gentx \[key_name\] \[amount\]](axelard_gentx.md)	 - Generate a genesis tx carrying a self delegation
   - [init \[moniker\]](axelard_init.md)	 - Initialize private validator, p2p, genesis, and application configuration files
   - [keys](axelard_keys.md)	 - Manage your application's keys
-    - [add \<name>](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to disk
+    - [add \<name>](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file
     - [delete \<name>...](axelard_keys_delete.md)	 - Delete the given keys
     - [export \<name>](axelard_keys_export.md)	 - Export private keys
     - [import \<name> \<keyfile>](axelard_keys_import.md)	 - Import private keys into the local keybase
@@ -26,6 +26,7 @@
     - [account \[address\]](axelard_query_account.md)	 - Query for account by address
     - [auth](axelard_query_auth.md)	 - Querying commands for the auth module
       - [account \[address\]](axelard_query_auth_account.md)	 - Query for account by address
+      - [accounts](axelard_query_auth_accounts.md)	 - Query all the accounts
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
     - [bank](axelard_query_bank.md)	 - Querying commands for the bank module
       - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
@@ -58,6 +59,9 @@
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [signed-tx \[chain\] \[txID\]](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\] \[symbol\]](axelard_query_evm_token-address.md)	 - Query a token address by symbol
+    - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
+      - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
+      - [grants \[grantee\]](axelard_query_feegrant_grants.md)	 - Query all grants of a grantee
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
       - [deposits \[proposal-id\]](axelard_query_gov_deposits.md)	 - Query deposits on a proposal
@@ -86,10 +90,11 @@
         - [consensus-state \[client-id\] \[height\]](axelard_query_ibc_client_consensus-state.md)	 - Query the consensus state of a client at a given height
         - [consensus-states \[client-id\]](axelard_query_ibc_client_consensus-states.md)	 - Query all the consensus states of a client.
         - [header](axelard_query_ibc_client_header.md)	 - Query the latest header of the running chain
-        - [node-state](axelard_query_ibc_client_node-state.md)	 - Query a node consensus state
         - [params](axelard_query_ibc_client_params.md)	 - Query the current ibc client parameters
+        - [self-consensus-state](axelard_query_ibc_client_self-consensus-state.md)	 - Query the self consensus state for this chain
         - [state \[client-id\]](axelard_query_ibc_client_state.md)	 - Query a client state
         - [states](axelard_query_ibc_client_states.md)	 - Query all available light clients
+        - [status \[client-id\]](axelard_query_ibc_client_status.md)	 - Query client status
       - [connection](axelard_query_ibc_connection.md)	 - IBC connection query subcommands
         - [connections](axelard_query_ibc_connection_connections.md)	 - Query all connections
         - [end \[connection-id\]](axelard_query_ibc_connection_end.md)	 - Query stored connection end
@@ -139,10 +144,11 @@
       - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
       - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
-    - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, addr++seq combination or signature in a committed block
+    - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
+      - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
   - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
@@ -179,7 +185,7 @@
       - [submit-external-signature \[keyID\] \[signatureHex\] \[sigHashHex\]](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
-    - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode an binary encoded transaction string.
+    - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode a binary encoded transaction string
     - [distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
       - [fund-community-pool \[amount\]](axelard_tx_distribution_fund-community-pool.md)	 - Funds the community pool with the specified amount
       - [set-withdraw-addr \[withdraw-addr\]](axelard_tx_distribution_set-withdraw-addr.md)	 - change the default withdraw address for rewards associated with an address
@@ -202,38 +208,25 @@
       - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
       - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
       - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract
+    - [feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions subcommands
+      - [grant \[granter_key_or_address\] \[grantee\]](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
+      - [revoke \[granter\] \[grantee\]](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant
     - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
         - [cancel-software-upgrade \[flags\]](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
         - [community-pool-spend \[proposal-file\]](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
         - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
-        - [software-upgrade \[name\] (--upgrade-height \[height\] | --upgrade-time \[time\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
+        - [software-upgrade \[name\] (--upgrade-height \[height\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
       - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+      - [weighted-vote \[proposal-id\] \[weighted-options\]](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
       - [channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-        - [close-confirm \[port-id\] \[channel-id\] \[/path/to/proof_init.json\] \[proof-height\]](axelard_tx_ibc_channel_close-confirm.md)	 - Creates and sends a ChannelCloseConfirm message
-        - [close-init \[port-id\] \[channel-id\]](axelard_tx_ibc_channel_close-init.md)	 - Creates and sends a ChannelCloseInit message
-        - [open-ack \[port-id\] \[channel-id\] \[counterparty-channel-id\] \[/path/to/proof_try.json\] \[proof-height\]](axelard_tx_ibc_channel_open-ack.md)	 - Creates and sends a ChannelOpenAck message
-        - [open-confirm \[port-id\] \[channel-id\] \[/path/to/proof_ack.json\] \[proof-height\]](axelard_tx_ibc_channel_open-confirm.md)	 - Creates and sends a ChannelOpenConfirm message
-        - [open-init \[port-id\] \[counterparty-port-id\] \[connection-hops\]](axelard_tx_ibc_channel_open-init.md)	 - Creates and sends a ChannelOpenInit message
-        - [open-try \[port-id\] \[channel-id\] \[counterparty-port-id\] \[counterparty-channel-id\] \[connection-hops\] \[/path/to/proof_init.json\] \[proof-height\]](axelard_tx_ibc_channel_open-try.md)	 - Creates and sends a ChannelOpenTry message
-      - [connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
-        - [open-ack \[connection-id\] \[counterparty-connection-id\] \[path/to/client_state.json\] \[consensus-height\] \[proof-height\]
-          \[path/to/proof_try.json\] \[path/to/proof_client.json\] \[path/to/proof_consensus.json\] \[version\]](axelard_tx_ibc_connection_open-ack.md)	 - relay the acceptance of a connection open attempt
-        - [open-confirm \[connection-id\] \[proof-height\] \[path/to/proof_ack.json\]](axelard_tx_ibc_connection_open-confirm.md)	 - confirm to chain B that connection is open on chain A
-        - [open-init \[client-id\] \[counterparty-client-id\] \[path/to/counterparty_prefix.json\]](axelard_tx_ibc_connection_open-init.md)	 - Initialize connection on chain A
-        - [open-try \[connection-id\] \[client-id\]
-          \[counterparty-connection-id\] \[counterparty-client-id\] \[path/to/counterparty_prefix.json\] \[path/to/client_state.json\]
-          \[path/to/counterparty_version1.json,path/to/counterparty_version2.json...\] \[consensus-height\] \[proof-height\] \[path/to/proof_init.json\] \[path/to/proof_client.json\] \[path/to/proof_consensus.json\]](axelard_tx_ibc_connection_open-try.md)	 - initiate connection handshake between two chains
-      - [solo machine](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
-        - [create \[sequence\] \[path/to/consensus_state.json\]](axelard_tx_ibc_solo_create.md)	 - create new solo machine client
-        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_solo_misbehaviour.md)	 - submit a client misbehaviour
-        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_solo_update.md)	 - update existing client with a header
-      - [tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
-        - [create \[path/to/consensus_state.json\] \[trusting_period\] \[unbonding_period\] \[max_clock_drift\]](axelard_tx_ibc_tendermint-client_create.md)	 - create new tendermint client
-        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_tendermint-client_misbehaviour.md)	 - submit a client misbehaviour
-        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_tendermint-client_update.md)	 - update existing client with a header
+      - [client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+        - [create \[path/to/client_state.json\] \[path/to/consensus_state.json\]](axelard_tx_ibc_client_create.md)	 - create new IBC client
+        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_client_misbehaviour.md)	 - submit a client misbehaviour
+        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_client_update.md)	 - update existing client with a header
+        - [upgrade \[client-identifier\] \[path/to/client_state.json\] \[path/to/consensus_state.json\] \[upgrade-client-proof\] \[upgrade-consensus-state-proof\]](axelard_tx_ibc_client_upgrade.md)	 - upgrade an IBC client
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
@@ -255,7 +248,7 @@
       - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
-    - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - Validate transactions signatures
+    - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands

@@ -39,7 +39,7 @@ func GetHandlerQueryLatestBatchedCommands(cliCtx client.Context) http.HandlerFun
 		}
 
 		var res types.QueryBatchedCommandsResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -63,7 +63,7 @@ func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryBatchedCommandsResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -104,7 +104,7 @@ func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -261,7 +261,7 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

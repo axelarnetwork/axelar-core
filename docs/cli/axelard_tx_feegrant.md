@@ -1,25 +1,19 @@
-## axelard tx ibc solo misbehaviour
+## axelard tx feegrant
 
-submit a client misbehaviour
+Feegrant transactions subcommands
 
 ### Synopsis
 
-submit a client misbehaviour to prevent future updates
+Grant and revoke fee allowance for a grantee by a granter
 
 ```
-axelard tx ibc solo misbehaviour [path/to/misbehaviour.json] [flags]
-```
-
-### Examples
-
-```
-<appd> tx ibc solo machine misbehaviour [path/to/misbehaviour.json] --from node0 --home ../node0/<app>cli --chain-id $CID
+axelard tx feegrant [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for misbehaviour
+  -h, --help   help for feegrant
 ```
 
 ### Options inherited from parent commands
@@ -35,4 +29,6 @@ axelard tx ibc solo misbehaviour [path/to/misbehaviour.json] [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx feegrant grant](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
+- [axelard tx feegrant revoke](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant

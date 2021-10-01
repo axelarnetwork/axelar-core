@@ -28,6 +28,7 @@ axelard query gov proposals [flags]
       --offset uint        pagination offset of proposals to query for
       --page uint          pagination page of proposals to query for. This sets offset to a multiple of limit (default 1)
       --page-key string    pagination page-key of proposals to query for
+      --reverse            results are sorted in descending order
       --status string      (optional) filter proposals by proposal status, status: deposit_period/voting_period/passed/rejected
       --voter string       (optional) filter by proposals voted on by voted
 ```

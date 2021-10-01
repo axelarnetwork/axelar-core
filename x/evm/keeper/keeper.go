@@ -60,13 +60,13 @@ var _ types.ChainKeeper = keeper{}
 type keeper struct {
 	chain        string
 	storeKey     sdk.StoreKey
-	cdc          codec.BinaryMarshaler
+	cdc          codec.BinaryCodec
 	paramsKeeper types.ParamsKeeper
 	subspaces    map[string]params.Subspace
 }
 
 // NewKeeper returns a new EVM base keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) types.BaseKeeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) types.BaseKeeper {
 	return keeper{
 		chain:        "",
 		cdc:          cdc,
@@ -89,7 +89,7 @@ func (k keeper) ForChain(ctx sdk.Context, chain string) types.ChainKeeper {
 
 // SetPendingChain stores the chain pending for confirmation
 func (k keeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain) {
-	k.getStore(ctx, chain.Name).Set([]byte(pendingChainKey), k.cdc.MustMarshalBinaryLengthPrefixed(&chain))
+	k.getStore(ctx, chain.Name).Set([]byte(pendingChainKey), k.cdc.MustMarshalLengthPrefixed(&chain))
 }
 
 // GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
@@ -99,7 +99,7 @@ func (k keeper) GetPendingChain(ctx sdk.Context, chainName string) (nexus.Chain,
 		return nexus.Chain{}, false
 	}
 	var chain nexus.Chain
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &chain)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &chain)
 	return chain, true
 }
 
@@ -237,7 +237,7 @@ func (k keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 // SetBurnerInfo saves the burner info for a given address
 func (k keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
 	key := append([]byte(burnerAddrPrefix), burnerAddr.Bytes()...)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(burnerInfo)
+	bz := k.cdc.MustMarshalLengthPrefixed(burnerInfo)
 
 	k.getStore(ctx, k.chain).Set(key, bz)
 }
@@ -252,7 +252,7 @@ func (k keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	}
 
 	var result types.BurnerInfo
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &result)
 
 	return &result
 }
@@ -385,13 +385,13 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 
 // SetPendingTokenDeployment stores a pending ERC20 token deployment
 func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey, token types.ERC20TokenDeployment) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&token)
+	bz := k.cdc.MustMarshalLengthPrefixed(&token)
 	k.getStore(ctx, k.chain).Set([]byte(pendingTokenPrefix+key.String()), bz)
 }
 
 // SetTokenInfo stores the token info
 func (k keeper) SetTokenInfo(ctx sdk.Context, assetName string, msg *types.CreateDeployTokenRequest) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(msg)
+	bz := k.cdc.MustMarshalLengthPrefixed(msg)
 	k.getStore(ctx, k.chain).Set([]byte(assetPrefix+strings.ToLower(assetName)), bz)
 }
 
@@ -402,7 +402,7 @@ func (k keeper) getTokenInfo(ctx sdk.Context, assetName string) *types.CreateDep
 		return nil
 	}
 	var msg types.CreateDeployTokenRequest
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &msg)
 
 	return &msg
 }
@@ -426,7 +426,7 @@ func (k keeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Co
 	}
 
 	var command types.Command
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &command)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &command)
 
 	return &command
 }
@@ -458,7 +458,7 @@ func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transac
 
 // SetPendingDeposit stores a pending deposit
 func (k keeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, deposit *types.ERC20Deposit) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(deposit)
+	bz := k.cdc.MustMarshalLengthPrefixed(deposit)
 	k.getStore(ctx, k.chain).Set([]byte(pendingDepositPrefix+key.String()), bz)
 }
 
@@ -468,13 +468,13 @@ func (k keeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Ad
 
 	bz := k.getStore(ctx, k.chain).Get([]byte(confirmedDepositPrefix + txID.Hex() + "_" + burnAddr.Hex()))
 	if bz != nil {
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
 		return deposit, types.CONFIRMED, true
 	}
 
 	bz = k.getStore(ctx, k.chain).Get([]byte(burnedDepositPrefix + txID.Hex() + "_" + burnAddr.Hex()))
 	if bz != nil {
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
 		return deposit, types.BURNED, true
 	}
 
@@ -491,7 +491,7 @@ func (k keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 		bz := iter.Value()
 
 		var deposit types.ERC20Deposit
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
 		deposits = append(deposits, deposit)
 	}
 
@@ -544,7 +544,7 @@ func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey)
 		return types.ERC20TokenDeployment{}, false
 	}
 	var tokenDeployment types.ERC20TokenDeployment
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &tokenDeployment)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &tokenDeployment)
 
 	return tokenDeployment, true
 }
@@ -561,14 +561,14 @@ func (k keeper) GetPendingDeposit(ctx sdk.Context, key exported.PollKey) (types.
 		return types.ERC20Deposit{}, false
 	}
 	var deposit types.ERC20Deposit
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &deposit)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
 
 	return deposit, true
 }
 
 // SetDeposit stores confirmed or burned deposits
 func (k keeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&deposit)
+	bz := k.cdc.MustMarshalLengthPrefixed(&deposit)
 
 	switch state {
 	case types.CONFIRMED:
@@ -588,7 +588,7 @@ func (k keeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 
 // SetPendingTransferKey stores a pending transfer ownership/operatorship
 func (k keeper) SetPendingTransferKey(ctx sdk.Context, key exported.PollKey, transferKey *types.TransferKey) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(transferKey)
+	bz := k.cdc.MustMarshalLengthPrefixed(transferKey)
 	k.getStore(ctx, k.chain).Set([]byte(pendingTransferKeyPrefix+key.String()), bz)
 }
 
@@ -614,7 +614,7 @@ func (k keeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (t
 		return types.TransferKey{}, false
 	}
 	var transferKey types.TransferKey
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferKey)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &transferKey)
 
 	return transferKey, true
 }
@@ -626,7 +626,7 @@ func (k keeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (ty
 		return types.TransferKey{}, false
 	}
 	var transferKey types.TransferKey
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &transferKey)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &transferKey)
 
 	return transferKey, true
 }
@@ -680,7 +680,7 @@ func (k keeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
 
 // SetUnsignedBatchedCommands stores the given unsigned batched commands
 func (k keeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
+	bz := k.cdc.MustMarshalLengthPrefixed(&batchedCommands)
 	k.getStore(ctx, k.chain).Set([]byte(unsignedBatchedCommandsKey), bz)
 }
 
@@ -692,7 +692,7 @@ func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedComman
 	}
 
 	var batchedCommands types.BatchedCommands
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &batchedCommands)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &batchedCommands)
 
 	return batchedCommands, true
 }
@@ -705,7 +705,7 @@ func (k keeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
 // SetSignedBatchedCommands stores the signed batched commands
 func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
 	batchedCommands.Status = types.Signed
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&batchedCommands)
+	bz := k.cdc.MustMarshalLengthPrefixed(&batchedCommands)
 	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(batchedCommands.ID))
 
 	k.getStore(ctx, k.chain).Set([]byte(key), bz)
@@ -720,7 +720,7 @@ func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.Batc
 	}
 
 	var batchedCommands types.BatchedCommands
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &batchedCommands)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &batchedCommands)
 
 	return batchedCommands, true
 }

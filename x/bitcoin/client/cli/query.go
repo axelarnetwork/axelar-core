@@ -53,13 +53,13 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddress)
 			params := types.DepositQueryParams{Chain: args[0], Address: args[1]}
 
-			bz, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+			bz, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrDepositAddr)
 			}
 
 			var res types.QueryAddressResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -92,7 +92,7 @@ func GetCmdDepositStatus(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryDepositStatusResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -139,7 +139,7 @@ func GetCmdConsolidationAddress(queryRoute string) *cobra.Command {
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return clientCtx.PrintProto(&res)
 	}
@@ -226,7 +226,7 @@ func GetCmdLatestTx(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryTxResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -256,7 +256,7 @@ func GetCmdSignedTx(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryTxResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},

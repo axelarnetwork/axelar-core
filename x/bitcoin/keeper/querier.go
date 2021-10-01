@@ -95,13 +95,13 @@ func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) 
 		return nil, fmt.Errorf("deposit is in an unexpected state")
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns deposit address
 func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
-	if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(data, &params); err != nil {
+	if err := types.ModuleCdc.UnmarshalLengthPrefixed(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
@@ -131,7 +131,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		KeyID:   depositAddr.KeyID,
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryConsolidationAddressByKeyRole returns the current consolidation address of the given key role
@@ -175,7 +175,7 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 
 	resp := types.QueryAddressResponse{Address: addressInfo.Address, KeyID: addressInfo.KeyID}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryNextKeyID returns the next key ID of the given key role
@@ -246,7 +246,7 @@ func QueryLatestTxByTxType(ctx sdk.Context, k types.BTCKeeper, txTypeStr string)
 			SigningInfos:         signingInfos,
 		}
 
-		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+		return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 	}
 
 	latestSignedTxHash, ok := k.GetLatestSignedTxHash(ctx, txType)
@@ -278,7 +278,7 @@ func QueryLatestTxByTxType(ctx sdk.Context, k types.BTCKeeper, txTypeStr string)
 		SigningInfos:         nil,
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QuerySignedTx returns the signed consolidation transaction of the given transaction hash
@@ -312,5 +312,5 @@ func QuerySignedTx(ctx sdk.Context, k types.BTCKeeper, txHashHex string) ([]byte
 		SigningInfos:         nil,
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

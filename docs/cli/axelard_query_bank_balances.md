@@ -26,6 +26,7 @@ axelard query bank balances [address] [flags]
       --offset uint       pagination offset of all balances to query for
       --page uint         pagination page of all balances to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of all balances to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

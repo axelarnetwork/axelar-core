@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"

@@ -26,12 +26,12 @@ var (
 // Keeper - the vote module's keeper
 type Keeper struct {
 	storeKey    sdk.StoreKey
-	cdc         codec.BinaryMarshaler
+	cdc         codec.BinaryCodec
 	snapshotter types.Snapshotter
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, snapshotter types.Snapshotter) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,

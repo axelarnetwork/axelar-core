@@ -5,11 +5,11 @@ Submit a software upgrade proposal
 ### Synopsis
 
 Submit a software upgrade along with an initial deposit.
-Please specify a unique name and height OR time for the upgrade to take effect.
+Please specify a unique name and height for the upgrade to take effect.
 You may include info to reference a binary download link, in a format compatible with: https://github.com/cosmos/cosmos-sdk/tree/master/cosmovisor
 
 ```
-axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height] | --upgrade-time [time]) (--upgrade-info [info]) [flags]
+axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]
 ```
 
 ### Options
@@ -20,6 +20,7 @@ axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height
       --deposit string           deposit of proposal
       --description string       description of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
       --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
@@ -30,16 +31,15 @@ axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
-      --memo string              Memo to send along with transaction
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
       --title string             title of proposal
-      --upgrade-height int       The height at which the upgrade must happen (not to be used together with --upgrade-time)
+      --upgrade-height int       The height at which the upgrade must happen
       --upgrade-info string      Optional info for the planned upgrade such as commit hash, etc.
-      --upgrade-time string      The time at which the upgrade must happen (ex. 2006-01-02T15:04:05Z) (not to be used together with --upgrade-height)
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 

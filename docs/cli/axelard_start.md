@@ -43,6 +43,8 @@ axelard start [flags]
       --db_dir string                                   database directory (default "data")
       --fast_sync                                       fast blockchain syncing (default true)
       --genesis_hash bytesHex                           optional SHA-256 hash of the genesis file
+      --grpc-web.address string                         The gRPC-Web server address to listen on (default "0.0.0.0:9091")
+      --grpc-web.enable                                 Define if the gRPC-Web server should be enabled. (Note: gRPC must also be enabled.) (default true)
       --grpc.address string                             the gRPC server address to listen on (default "0.0.0.0:9090")
       --grpc.enable                                     Define if the gRPC server should be enabled (default true)
       --halt-height uint                                Block height at which to gracefully halt the chain and shutdown the node

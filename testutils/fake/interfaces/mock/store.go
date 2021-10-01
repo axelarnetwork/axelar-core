@@ -21,6 +21,9 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 //
 // 		// make and configure a mocked interfaces.MultiStore
 // 		mockedMultiStore := &MultiStoreMock{
+// 			AddListenersFunc: func(key types.StoreKey, listeners []types.WriteListener)  {
+// 				panic("mock out the AddListeners method")
+// 			},
 // 			CacheMultiStoreFunc: func() types.CacheMultiStore {
 // 				panic("mock out the CacheMultiStore method")
 // 			},
@@ -29,6 +32,9 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 // 			},
 // 			CacheWrapFunc: func() types.CacheWrap {
 // 				panic("mock out the CacheWrap method")
+// 			},
+// 			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+// 				panic("mock out the CacheWrapWithListeners method")
 // 			},
 // 			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
 // 				panic("mock out the CacheWrapWithTrace method")
@@ -41,6 +47,9 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 // 			},
 // 			GetStoreTypeFunc: func() types.StoreType {
 // 				panic("mock out the GetStoreType method")
+// 			},
+// 			ListeningEnabledFunc: func(key types.StoreKey) bool {
+// 				panic("mock out the ListeningEnabled method")
 // 			},
 // 			SetTracerFunc: func(w io.Writer) types.MultiStore {
 // 				panic("mock out the SetTracer method")
@@ -58,6 +67,9 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 //
 // 	}
 type MultiStoreMock struct {
+	// AddListenersFunc mocks the AddListeners method.
+	AddListenersFunc func(key types.StoreKey, listeners []types.WriteListener)
+
 	// CacheMultiStoreFunc mocks the CacheMultiStore method.
 	CacheMultiStoreFunc func() types.CacheMultiStore
 
@@ -66,6 +78,9 @@ type MultiStoreMock struct {
 
 	// CacheWrapFunc mocks the CacheWrap method.
 	CacheWrapFunc func() types.CacheWrap
+
+	// CacheWrapWithListenersFunc mocks the CacheWrapWithListeners method.
+	CacheWrapWithListenersFunc func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap
 
 	// CacheWrapWithTraceFunc mocks the CacheWrapWithTrace method.
 	CacheWrapWithTraceFunc func(w io.Writer, tc types.TraceContext) types.CacheWrap
@@ -79,6 +94,9 @@ type MultiStoreMock struct {
 	// GetStoreTypeFunc mocks the GetStoreType method.
 	GetStoreTypeFunc func() types.StoreType
 
+	// ListeningEnabledFunc mocks the ListeningEnabled method.
+	ListeningEnabledFunc func(key types.StoreKey) bool
+
 	// SetTracerFunc mocks the SetTracer method.
 	SetTracerFunc func(w io.Writer) types.MultiStore
 
@@ -90,6 +108,13 @@ type MultiStoreMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddListeners holds details about calls to the AddListeners method.
+		AddListeners []struct {
+			// Key is the key argument value.
+			Key types.StoreKey
+			// Listeners is the listeners argument value.
+			Listeners []types.WriteListener
+		}
 		// CacheMultiStore holds details about calls to the CacheMultiStore method.
 		CacheMultiStore []struct {
 		}
@@ -100,6 +125,13 @@ type MultiStoreMock struct {
 		}
 		// CacheWrap holds details about calls to the CacheWrap method.
 		CacheWrap []struct {
+		}
+		// CacheWrapWithListeners holds details about calls to the CacheWrapWithListeners method.
+		CacheWrapWithListeners []struct {
+			// StoreKey is the storeKey argument value.
+			StoreKey types.StoreKey
+			// Listeners is the listeners argument value.
+			Listeners []types.WriteListener
 		}
 		// CacheWrapWithTrace holds details about calls to the CacheWrapWithTrace method.
 		CacheWrapWithTrace []struct {
@@ -121,6 +153,11 @@ type MultiStoreMock struct {
 		// GetStoreType holds details about calls to the GetStoreType method.
 		GetStoreType []struct {
 		}
+		// ListeningEnabled holds details about calls to the ListeningEnabled method.
+		ListeningEnabled []struct {
+			// Key is the key argument value.
+			Key types.StoreKey
+		}
 		// SetTracer holds details about calls to the SetTracer method.
 		SetTracer []struct {
 			// W is the w argument value.
@@ -135,16 +172,54 @@ type MultiStoreMock struct {
 		TracingEnabled []struct {
 		}
 	}
+	lockAddListeners               sync.RWMutex
 	lockCacheMultiStore            sync.RWMutex
 	lockCacheMultiStoreWithVersion sync.RWMutex
 	lockCacheWrap                  sync.RWMutex
+	lockCacheWrapWithListeners     sync.RWMutex
 	lockCacheWrapWithTrace         sync.RWMutex
 	lockGetKVStore                 sync.RWMutex
 	lockGetStore                   sync.RWMutex
 	lockGetStoreType               sync.RWMutex
+	lockListeningEnabled           sync.RWMutex
 	lockSetTracer                  sync.RWMutex
 	lockSetTracingContext          sync.RWMutex
 	lockTracingEnabled             sync.RWMutex
+}
+
+// AddListeners calls AddListenersFunc.
+func (mock *MultiStoreMock) AddListeners(key types.StoreKey, listeners []types.WriteListener) {
+	if mock.AddListenersFunc == nil {
+		panic("MultiStoreMock.AddListenersFunc: method is nil but MultiStore.AddListeners was just called")
+	}
+	callInfo := struct {
+		Key       types.StoreKey
+		Listeners []types.WriteListener
+	}{
+		Key:       key,
+		Listeners: listeners,
+	}
+	mock.lockAddListeners.Lock()
+	mock.calls.AddListeners = append(mock.calls.AddListeners, callInfo)
+	mock.lockAddListeners.Unlock()
+	mock.AddListenersFunc(key, listeners)
+}
+
+// AddListenersCalls gets all the calls that were made to AddListeners.
+// Check the length with:
+//     len(mockedMultiStore.AddListenersCalls())
+func (mock *MultiStoreMock) AddListenersCalls() []struct {
+	Key       types.StoreKey
+	Listeners []types.WriteListener
+} {
+	var calls []struct {
+		Key       types.StoreKey
+		Listeners []types.WriteListener
+	}
+	mock.lockAddListeners.RLock()
+	calls = mock.calls.AddListeners
+	mock.lockAddListeners.RUnlock()
+	return calls
 }
 
 // CacheMultiStore calls CacheMultiStoreFunc.
@@ -227,6 +302,41 @@ func (mock *MultiStoreMock) CacheWrapCalls() []struct {
 	mock.lockCacheWrap.RLock()
 	calls = mock.calls.CacheWrap
 	mock.lockCacheWrap.RUnlock()
+	return calls
+}
+
+// CacheWrapWithListeners calls CacheWrapWithListenersFunc.
+func (mock *MultiStoreMock) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+	if mock.CacheWrapWithListenersFunc == nil {
+		panic("MultiStoreMock.CacheWrapWithListenersFunc: method is nil but MultiStore.CacheWrapWithListeners was just called")
+	}
+	callInfo := struct {
+		StoreKey  types.StoreKey
+		Listeners []types.WriteListener
+	}{
+		StoreKey:  storeKey,
+		Listeners: listeners,
+	}
+	mock.lockCacheWrapWithListeners.Lock()
+	mock.calls.CacheWrapWithListeners = append(mock.calls.CacheWrapWithListeners, callInfo)
+	mock.lockCacheWrapWithListeners.Unlock()
+	return mock.CacheWrapWithListenersFunc(storeKey, listeners)
+}
+
+// CacheWrapWithListenersCalls gets all the calls that were made to CacheWrapWithListeners.
+// Check the length with:
+//     len(mockedMultiStore.CacheWrapWithListenersCalls())
+func (mock *MultiStoreMock) CacheWrapWithListenersCalls() []struct {
+	StoreKey  types.StoreKey
+	Listeners []types.WriteListener
+} {
+	var calls []struct {
+		StoreKey  types.StoreKey
+		Listeners []types.WriteListener
+	}
+	mock.lockCacheWrapWithListeners.RLock()
+	calls = mock.calls.CacheWrapWithListeners
+	mock.lockCacheWrapWithListeners.RUnlock()
 	return calls
 }
 
@@ -353,6 +463,37 @@ func (mock *MultiStoreMock) GetStoreTypeCalls() []struct {
 	return calls
 }
 
+// ListeningEnabled calls ListeningEnabledFunc.
+func (mock *MultiStoreMock) ListeningEnabled(key types.StoreKey) bool {
+	if mock.ListeningEnabledFunc == nil {
+		panic("MultiStoreMock.ListeningEnabledFunc: method is nil but MultiStore.ListeningEnabled was just called")
+	}
+	callInfo := struct {
+		Key types.StoreKey
+	}{
+		Key: key,
+	}
+	mock.lockListeningEnabled.Lock()
+	mock.calls.ListeningEnabled = append(mock.calls.ListeningEnabled, callInfo)
+	mock.lockListeningEnabled.Unlock()
+	return mock.ListeningEnabledFunc(key)
+}
+
+// ListeningEnabledCalls gets all the calls that were made to ListeningEnabled.
+// Check the length with:
+//     len(mockedMultiStore.ListeningEnabledCalls())
+func (mock *MultiStoreMock) ListeningEnabledCalls() []struct {
+	Key types.StoreKey
+} {
+	var calls []struct {
+		Key types.StoreKey
+	}
+	mock.lockListeningEnabled.RLock()
+	calls = mock.calls.ListeningEnabled
+	mock.lockListeningEnabled.RUnlock()
+	return calls
+}
+
 // SetTracer calls SetTracerFunc.
 func (mock *MultiStoreMock) SetTracer(w io.Writer) types.MultiStore {
 	if mock.SetTracerFunc == nil {
@@ -454,6 +595,9 @@ var _ interfaces.KVStore = &KVStoreMock{}
 // 			CacheWrapFunc: func() types.CacheWrap {
 // 				panic("mock out the CacheWrap method")
 // 			},
+// 			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+// 				panic("mock out the CacheWrapWithListeners method")
+// 			},
 // 			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
 // 				panic("mock out the CacheWrapWithTrace method")
 // 			},
@@ -488,6 +632,9 @@ type KVStoreMock struct {
 	// CacheWrapFunc mocks the CacheWrap method.
 	CacheWrapFunc func() types.CacheWrap
 
+	// CacheWrapWithListenersFunc mocks the CacheWrapWithListeners method.
+	CacheWrapWithListenersFunc func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap
+
 	// CacheWrapWithTraceFunc mocks the CacheWrapWithTrace method.
 	CacheWrapWithTraceFunc func(w io.Writer, tc types.TraceContext) types.CacheWrap
 
@@ -516,6 +663,13 @@ type KVStoreMock struct {
 	calls struct {
 		// CacheWrap holds details about calls to the CacheWrap method.
 		CacheWrap []struct {
+		}
+		// CacheWrapWithListeners holds details about calls to the CacheWrapWithListeners method.
+		CacheWrapWithListeners []struct {
+			// StoreKey is the storeKey argument value.
+			StoreKey types.StoreKey
+			// Listeners is the listeners argument value.
+			Listeners []types.WriteListener
 		}
 		// CacheWrapWithTrace holds details about calls to the CacheWrapWithTrace method.
 		CacheWrapWithTrace []struct {
@@ -564,15 +718,16 @@ type KVStoreMock struct {
 			Value []byte
 		}
 	}
-	lockCacheWrap          sync.RWMutex
-	lockCacheWrapWithTrace sync.RWMutex
-	lockDelete             sync.RWMutex
-	lockGet                sync.RWMutex
-	lockGetStoreType       sync.RWMutex
-	lockHas                sync.RWMutex
-	lockIterator           sync.RWMutex
-	lockReverseIterator    sync.RWMutex
-	lockSet                sync.RWMutex
+	lockCacheWrap              sync.RWMutex
+	lockCacheWrapWithListeners sync.RWMutex
+	lockCacheWrapWithTrace     sync.RWMutex
+	lockDelete                 sync.RWMutex
+	lockGet                    sync.RWMutex
+	lockGetStoreType           sync.RWMutex
+	lockHas                    sync.RWMutex
+	lockIterator               sync.RWMutex
+	lockReverseIterator        sync.RWMutex
+	lockSet                    sync.RWMutex
 }
 
 // CacheWrap calls CacheWrapFunc.
@@ -598,6 +753,41 @@ func (mock *KVStoreMock) CacheWrapCalls() []struct {
 	mock.lockCacheWrap.RLock()
 	calls = mock.calls.CacheWrap
 	mock.lockCacheWrap.RUnlock()
+	return calls
+}
+
+// CacheWrapWithListeners calls CacheWrapWithListenersFunc.
+func (mock *KVStoreMock) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+	if mock.CacheWrapWithListenersFunc == nil {
+		panic("KVStoreMock.CacheWrapWithListenersFunc: method is nil but KVStore.CacheWrapWithListeners was just called")
+	}
+	callInfo := struct {
+		StoreKey  types.StoreKey
+		Listeners []types.WriteListener
+	}{
+		StoreKey:  storeKey,
+		Listeners: listeners,
+	}
+	mock.lockCacheWrapWithListeners.Lock()
+	mock.calls.CacheWrapWithListeners = append(mock.calls.CacheWrapWithListeners, callInfo)
+	mock.lockCacheWrapWithListeners.Unlock()
+	return mock.CacheWrapWithListenersFunc(storeKey, listeners)
+}
+
+// CacheWrapWithListenersCalls gets all the calls that were made to CacheWrapWithListeners.
+// Check the length with:
+//     len(mockedKVStore.CacheWrapWithListenersCalls())
+func (mock *KVStoreMock) CacheWrapWithListenersCalls() []struct {
+	StoreKey  types.StoreKey
+	Listeners []types.WriteListener
+} {
+	var calls []struct {
+		StoreKey  types.StoreKey
+		Listeners []types.WriteListener
+	}
+	mock.lockCacheWrapWithListeners.RLock()
+	calls = mock.calls.CacheWrapWithListeners
+	mock.lockCacheWrapWithListeners.RUnlock()
 	return calls
 }
 

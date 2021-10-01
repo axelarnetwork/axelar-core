@@ -25,7 +25,7 @@ func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (i
 	if ctx.KVStore(k.storeKey).Has([]byte(key)) {
 		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.KeyID)
 	}
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(req)
+	bz := k.cdc.MustMarshalLengthPrefixed(req)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.KeyID, "", height)
@@ -46,7 +46,7 @@ func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.Sta
 	for ; iter.Valid(); iter.Next() {
 
 		var request types.StartKeygenRequest
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &request)
+		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &request)
 		requests = append(requests, request)
 	}
 
@@ -156,7 +156,7 @@ func (k Keeper) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRol
 func (k Keeper) SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole) {
 	storageKey := fmt.Sprintf("%s%s", keyRolePrefix, keyID)
 
-	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(keyRole))
+	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalLengthPrefixed(keyRole))
 }
 
 func (k Keeper) getKeyRole(ctx sdk.Context, keyID exported.KeyID) exported.KeyRole {
@@ -168,14 +168,14 @@ func (k Keeper) getKeyRole(ctx sdk.Context, keyID exported.KeyID) exported.KeyRo
 	}
 
 	var keyRole exported.KeyRole
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRole)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &keyRole)
 
 	return keyRole
 }
 
 func (k Keeper) setRotatedAt(ctx sdk.Context, keyID exported.KeyID) {
 	storageKey := fmt.Sprintf("%s%s", keyRotatedAtPrefix, keyID)
-	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockTime().Unix()))
+	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalLengthPrefixed(ctx.BlockTime().Unix()))
 }
 
 func (k Keeper) getRotatedAt(ctx sdk.Context, keyID exported.KeyID) *time.Time {
@@ -187,7 +187,7 @@ func (k Keeper) getRotatedAt(ctx sdk.Context, keyID exported.KeyID) *time.Time {
 	}
 
 	var seconds int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &seconds)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &seconds)
 
 	timestamp := time.Unix(seconds, 0)
 	return &timestamp
@@ -235,7 +235,7 @@ func (k Keeper) DeleteKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
 }
 
 func (k Keeper) setKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
-	ctx.KVStore(k.storeKey).Set([]byte(keygenStartHeight+keyID), k.cdc.MustMarshalBinaryLengthPrefixed(ctx.BlockHeight()))
+	ctx.KVStore(k.storeKey).Set([]byte(keygenStartHeight+keyID), k.cdc.MustMarshalLengthPrefixed(ctx.BlockHeight()))
 }
 
 func (k Keeper) getKeygenStart(ctx sdk.Context, keyID exported.KeyID) (int64, bool) {
@@ -245,7 +245,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID exported.KeyID) (int64, bo
 	}
 
 	var blockHeight int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &blockHeight)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &blockHeight)
 
 	return blockHeight, true
 }
@@ -276,14 +276,14 @@ func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 		return 0
 	}
 	var rotation int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &rotation)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &rotation)
 	return rotation
 }
 
 func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotation int64) {
 	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
 
-	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalBinaryLengthPrefixed(rotation))
+	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalLengthPrefixed(rotation))
 }
 
 // DeleteSnapshotCounterForKeyID deletes the snapshot counter for the given key
@@ -292,7 +292,7 @@ func (k Keeper) DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.Ke
 }
 
 func (k Keeper) setSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID, counter int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalBinaryBare(counter))
+	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.Amino.MustMarshalBinaryBare(counter))
 }
 
 // GetSnapshotCounterForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
@@ -302,7 +302,7 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID
 		return 0, false
 	}
 	var counter int64
-	k.cdc.MustUnmarshalBinaryBare(bz, &counter)
+	k.cdc.Amino.MustUnmarshalBinaryBare(bz, &counter)
 	return counter, true
 }
 
@@ -322,7 +322,7 @@ func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID exported.KeyID, v
 }
 
 func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID, rotationCount int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)), k.cdc.MustMarshalBinaryLengthPrefixed(rotationCount))
+	ctx.KVStore(k.storeKey).Set([]byte(fmt.Sprintf("%s%s", rotationCountOfKeyIDPrefix, keyID)), k.cdc.MustMarshalLengthPrefixed(rotationCount))
 }
 
 // GetRotationCountOfKeyID returns the rotation count of the given key ID
@@ -333,7 +333,7 @@ func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID) (
 	}
 
 	var rotationCount int64
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &rotationCount)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &rotationCount)
 
 	return rotationCount, true
 }
