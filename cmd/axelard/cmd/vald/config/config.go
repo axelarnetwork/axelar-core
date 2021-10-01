@@ -12,7 +12,7 @@ import (
 type ValdConfig struct {
 	bitcoin.BtcConfig `mapstructure:"axelar_bridge_btc"`
 	tss.TssConfig     `mapstructure:",squash"`
-	ClientConfig      `mapstructure:",squash"`
+	BroadcastConfig   `mapstructure:",squash"`
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -20,25 +20,23 @@ type ValdConfig struct {
 // DefaultValdConfig returns a configurations populated with default values
 func DefaultValdConfig() ValdConfig {
 	return ValdConfig{
-		EVMConfig:    evm.DefaultConfig(),
-		BtcConfig:    bitcoin.DefaultConfig(),
-		TssConfig:    tss.DefaultConfig(),
-		ClientConfig: ClientConfig{},
+		EVMConfig:       evm.DefaultConfig(),
+		BtcConfig:       bitcoin.DefaultConfig(),
+		TssConfig:       tss.DefaultConfig(),
+		BroadcastConfig: DefaultBroadcastConfig(),
 	}
 }
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {
-	From       string        `mapstructure:"broadcaster-account"`
-	KeyringDir string        `mapstructure:"keyring_dir"`
 	MaxRetries int           `mapstructure:"max-retries"`
 	MinTimeout time.Duration `mapstructure:"min-timeout"`
 }
 
-// ClientConfig is the configuration for all client processes
-type ClientConfig struct {
-	KeyringBackend    string `mapstructure:"keyring-backend"`
-	TendermintNodeURI string `mapstructure:"node"`
-	ChainID           string `mapstructure:"chain-id"`
-	BroadcastConfig   `mapstructure:"broadcast"`
+// DefaultBroadcastConfig returns a configurations populated with default values
+func DefaultBroadcastConfig() BroadcastConfig {
+	return BroadcastConfig{
+		MaxRetries: 10,
+		MinTimeout: 5 * time.Second,
+	}
 }
