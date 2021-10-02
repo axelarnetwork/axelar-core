@@ -44,7 +44,7 @@ func TestBroadcast(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			msgs := createMsgsWithRandomSigner()
 
-			err := b.Broadcast(ctx, msgs...)
+			_, err := b.Broadcast(ctx, msgs...)
 			assert.NoError(t, err)
 		}
 
@@ -61,7 +61,7 @@ func TestBroadcast(t *testing.T) {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
 				msgs := createMsgsWithRandomSigner()
-				err := broadcaster.Broadcast(ctx, msgs...)
+				_, err := broadcaster.Broadcast(ctx, msgs...)
 				assert.NoError(t, err)
 			}(b)
 		}
@@ -100,7 +100,7 @@ func TestBroadcast(t *testing.T) {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
 				msgs := createMsgsWithRandomSigner()
-				err := broadcaster.Broadcast(ctx, msgs...)
+				_, err := broadcaster.Broadcast(ctx, msgs...)
 				assert.NoError(t, err)
 			}(b)
 		}
