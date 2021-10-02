@@ -12,11 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/axelarnetwork/utils/jobs"
-
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/utils/jobs"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -28,6 +26,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -57,6 +57,15 @@ var cleanupCommands []func()
 func GetValdCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "vald-start",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			if !cmd.Flags().Changed(flags.FlagFrom) {
+				if err := cmd.Flags().Set(flags.FlagFrom, serverCtx.Viper.GetString("broadcast.broadcaster-account")); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := serverCtx.Logger.With("module", "vald")
@@ -74,24 +83,14 @@ func GetValdCommand() *cobra.Command {
 				once.Do(cleanUp)
 			}()
 
-			node, err := cmd.Flags().GetString(flags.FlagNode)
-			if err != nil {
-				return err
-			}
-
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
-			cliCtx.WithNodeURI(node)
 
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			err = loadValdCfg(serverCtx)
-			if err != nil {
-				logger.Error(fmt.Sprintf("failed to load vald configuration file: %v", err))
-			}
 			valdConf := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdConf); err != nil {
 				panic(err)
@@ -134,7 +133,6 @@ func GetValdCommand() *cobra.Command {
 	}
 	setPersistentFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
-
 	values := map[string]string{
 		flags.FlagKeyringBackend: "test",
 		flags.FlagGasAdjustment:  "2",
@@ -163,7 +161,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
-	sender, err := ctx.Keyring.Key(axelarCfg.BroadcastConfig.From)
+	sender, err := ctx.Keyring.Key(ctx.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
 	}
@@ -171,7 +169,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	bc := createBroadcaster(ctx, txf, axelarCfg, logger)
+	bc := createBroadcaster(txf, axelarCfg, logger)
 
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := stateStore.GetState()
@@ -293,7 +291,7 @@ func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
-func createBroadcaster(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
+func createBroadcaster(txf tx.Factory, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
 	return broadcaster.NewBroadcaster(txf, pipeline, logger)
 }
@@ -359,25 +357,6 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 
 	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc)
 	return evmMgr
-}
-
-func loadValdCfg(serverCtx *server.Context) error {
-	cfgDir := serverCtx.Viper.GetString(flags.FlagHome)
-	valdPath := filepath.Join(cfgDir, "config")
-	valdFile := filepath.Join(valdPath, "vald.toml")
-	if _, err := os.Stat(valdFile); os.IsNotExist(err) {
-		return fmt.Errorf("no vald configuration file found at %s", valdFile)
-	}
-
-	serverCtx.Viper.SetConfigType("toml")
-	serverCtx.Viper.SetConfigName("vald")
-	serverCtx.Viper.AddConfigPath(valdPath)
-
-	if err := serverCtx.Viper.MergeInConfig(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // RWFile implements the ReadWriter interface for an underlying file
