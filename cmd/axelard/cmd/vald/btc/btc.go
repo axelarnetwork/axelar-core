@@ -56,7 +56,8 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	return mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	return err
 }
 
 func parseConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (outPoint btc.OutPointInfo, confHeight int64, pollKey vote.PollKey, err error) {
