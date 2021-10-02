@@ -6,12 +6,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -30,11 +31,6 @@ func GetTofndPingCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			logger := serverCtx.Logger.With("module", "tofnd-ping")
-			err := loadValdCfg(serverCtx)
-			if err != nil {
-				logger.Error(fmt.Sprintf("failed to load vald configuration file: %v", err))
-			}
 			valdCfg := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 				panic(err)
