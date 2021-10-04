@@ -114,8 +114,8 @@ message KeygenInit {
   string new_key_uid = 1;
   repeated string party_uids = 2;
   repeated uint32 party_share_counts = 5;
-  int32 my_party_index = 3; // parties[my_party_index] belongs to the server
-  int32 threshold = 4;
+  uint32 my_party_index = 3; // parties[my_party_index] belongs to the server
+  uint32 threshold = 4;
 }
 
 // Sign-specific message types

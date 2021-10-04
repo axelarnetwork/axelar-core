@@ -129,7 +129,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 	}
 
 	resp := types.QueryRecoveryResponse{
-		Threshold:        int32(snapshot.CorruptionThreshold),
+		Threshold:        uint32(snapshot.CorruptionThreshold),
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
 		KeygenOutput: &tofnd.KeygenOutput{
