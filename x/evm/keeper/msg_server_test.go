@@ -1468,18 +1468,20 @@ func (t *mockERC20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.Poll
 	return vote.PollKey{}, nil, fmt.Errorf("token not initialized")
 }
 
-func (t *mockERC20Token) DeployCommand(key tss.KeyID) types.Command {
-	if !t.Is(types.Initialized) {
-		return types.Command{}
+func (t *mockERC20Token) DeployCommand(key tss.KeyID) (types.Command, error) {
+	if t.Is(types.NonExistent) {
+		return types.Command{}, fmt.Errorf("not initialized")
 	}
-
+	if t.Is(types.Confirmed) {
+		return types.Command{}, fmt.Errorf("already confirmed")
+	}
 	return types.Command{
 		ID:         types.NewCommandID(rand.Bytes(32), big.NewInt(rand.I64Between(1, 10))),
 		Command:    rand.HexStr(100),
 		KeyID:      key,
 		Params:     rand.Bytes(100),
 		MaxGasCost: uint32(rand.I64Between(100, 10000)),
-	}
+	}, nil
 }
 
 func getPollKey(asset string, txID types.Hash) vote.PollKey {

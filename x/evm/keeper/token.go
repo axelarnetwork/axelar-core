@@ -91,14 +91,27 @@ func (t *erc20Token) Is(status types.Status) bool {
 	return status&t.Status == status
 }
 
-func (t *erc20Token) DeployCommand(key tss.KeyID) types.Command {
-	// should not return any error
-	command, _ := types.CreateDeployTokenCommand(
+func (t *erc20Token) DeployCommand(key tss.KeyID) (types.Command, error) {
+	if t.Is(types.NonExistent) {
+		return types.Command{}, fmt.Errorf("token is non-existent")
+	}
+	if t.Is(types.Confirmed) {
+		return types.Command{}, fmt.Errorf("token is already confirmed")
+	}
+	if err := key.Validate(); err != nil {
+		return types.Command{}, err
+	}
+
+	command, err := types.CreateDeployTokenCommand(
 		t.ERC20TokenMetadata.ChainID.BigInt(),
 		key,
 		t.Details,
 	)
-	return command
+	if err != nil {
+		return types.Command{}, err
+	}
+
+	return command, nil
 }
 
 func (t *erc20Token) TokenAddress() types.Address {
