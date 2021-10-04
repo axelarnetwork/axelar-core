@@ -1681,7 +1681,7 @@ ERC20Deposit contains information for an ERC20 deposit
 <a name="evm.v1beta1.ERC20TokenMetadata"></a>
 
 ### ERC20TokenMetadata
-ERC20Token describes information about an ERC20 token
+ERC20TokenMetadata describes information about an ERC20 token
 
 
 | Field | Type | Label | Description |

@@ -302,7 +302,7 @@ func (m *ERC20Deposit) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ERC20Deposit proto.InternalMessageInfo
 
-// ERC20Token describes information about an ERC20 token
+// ERC20TokenMetadata describes information about an ERC20 token
 type ERC20TokenMetadata struct {
 	Asset        string                                 `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	ChainID      github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"chain_id"`
