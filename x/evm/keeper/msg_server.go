@@ -807,7 +807,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	}
 
 	if !s.nexus.IsAssetRegistered(ctx, originChain.Name, req.Asset.Name) {
-		return nil, fmt.Errorf("token %s is not registered on the orgin chain %s", originChain.NativeAsset, originChain.Name)
+		return nil, fmt.Errorf("asset %s is not registered on the orgin chain %s", originChain.NativeAsset, originChain.Name)
 	}
 
 	if _, nextMasterKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
