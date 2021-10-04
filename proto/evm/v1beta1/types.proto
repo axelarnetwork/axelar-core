@@ -47,7 +47,7 @@ message ERC20Deposit {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
-// ERC20Token describes information about an ERC20 token
+// ERC20TokenMetadata describes information about an ERC20 token
 message ERC20TokenMetadata {
   string asset = 1;
   bytes chain_id = 2 [

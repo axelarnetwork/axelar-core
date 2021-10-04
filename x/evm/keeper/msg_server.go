@@ -686,11 +686,11 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		}, nil
 	}
 
-	token.ConfirmationSuccessful()
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.RegisterAsset(ctx, chain.Name, req.Asset)
+	token.ConfirmationSuccessful()
 
 	return &types.VoteConfirmTokenResponse{
 		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil
