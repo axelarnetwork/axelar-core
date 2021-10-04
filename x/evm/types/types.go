@@ -64,7 +64,7 @@ type ERC20Token interface {
 	TokenAddress() Address
 	Is(state Status) bool
 	DeployCommand(key tss.KeyID) Command
-	StartVoting(tx Hash) (vote.PollKey, error)
+	StartVoting(tx Hash) (vote.PollKey, []vote.PollProperty, error)
 	ValidatePollKey(key vote.PollKey) error
 	ConfirmationFailed()
 	ConfirmationSuccessful()

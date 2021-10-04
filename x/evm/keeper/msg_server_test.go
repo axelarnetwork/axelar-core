@@ -757,14 +757,9 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
-			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
-				return utils.Threshold{Numerator: 15, Denominator: 100}, true
-			},
-			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
-			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 			GetERC20TokenFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
 				if asset == msg.Asset.Name {
@@ -1459,13 +1454,18 @@ func (t *mockERC20Token) Is(status types.Status) bool {
 	return status&t.status == status
 }
 
-func (t *mockERC20Token) StartVoting(txID types.Hash) (vote.PollKey, error) {
+func (t *mockERC20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProperty, error) {
 	if t.status == types.Initialized {
 		t.hash = txID
 		t.status |= types.Voting
-		return getPollKey(t.asset, txID), nil
+		properties := []vote.PollProperty{
+			vote.ExpiryAt(rand.I64Between(10, 100)),
+			vote.Threshold(utils.NewThreshold(rand.I64Between(1, 10), rand.I64Between(10, 100))),
+			vote.MinVoterCount(rand.I64Between(10, 100)),
+		}
+		return getPollKey(t.asset, txID), properties, nil
 	}
-	return vote.PollKey{}, fmt.Errorf("token not initialized")
+	return vote.PollKey{}, nil, fmt.Errorf("token not initialized")
 }
 
 func (t *mockERC20Token) DeployCommand(key tss.KeyID) types.Command {

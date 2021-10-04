@@ -127,7 +127,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
-	pollKey, err := token.StartVoting(req.TxID)
+	pollKey, properties, err := token.StartVoting(req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,28 +146,11 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
-	}
-
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
 		seqNo,
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
+		properties...,
 	); err != nil {
 		return nil, err
 	}
