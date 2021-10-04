@@ -47,21 +47,15 @@ type ChainKeeper interface {
 	GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
-	GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool)
-	GetTokenAddress(ctx sdk.Context, symbol string, gatewayAddr common.Address) (common.Address, error)
-	SetPendingTokenDeployment(ctx sdk.Context, pollKey vote.PollKey, tokenDeploy ERC20TokenDeployment)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
-	GetPendingTokenDeployment(ctx sdk.Context, key vote.PollKey) (ERC20TokenDeployment, bool)
-	DeletePendingToken(ctx sdk.Context, key vote.PollKey)
-	SetTokenInfo(ctx sdk.Context, assetName string, msg *CreateDeployTokenRequest)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
@@ -85,6 +79,8 @@ type ChainKeeper interface {
 	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
+	InitERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
+	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
 }
 
 // ParamsKeeper represents a global paramstore

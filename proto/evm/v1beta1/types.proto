@@ -47,11 +47,32 @@ message ERC20Deposit {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
-// ERC20TokenDeployment describes information about an ERC20 token
-message ERC20TokenDeployment {
+// ERC20Token describes information about an ERC20 token
+message ERC20TokenMetadata {
   string asset = 1;
-  string token_address = 2
+  bytes chain_id = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customname) = "ChainID",
+    (gogoproto.nullable) = false
+  ];
+  TokenDetails details = 3 [ (gogoproto.nullable) = false ];
+  string token_address = 4
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string tx_hash = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  Status status = 6;
+}
+
+enum Status {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  // these enum values are used for bitwise operations, therefore they need to
+  // be powers of 2
+  STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
+  STATUS_INITIALIZED = 1 [ (gogoproto.enumvalue_customname) = "Initialized" ];
+  STATUS_VOTING = 2 [ (gogoproto.enumvalue_customname) = "Voting" ];
+  STATUS_CONFIRMED = 4 [ (gogoproto.enumvalue_customname) = "Confirmed" ];
 }
 
 message Command {

@@ -110,7 +110,7 @@
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenDeployment](#evm.v1beta1.ERC20TokenDeployment)
+    - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
     - [TokenDetails](#evm.v1beta1.TokenDetails)
@@ -119,6 +119,7 @@
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#evm.v1beta1.DepositStatus)
     - [SigType](#evm.v1beta1.SigType)
+    - [Status](#evm.v1beta1.Status)
     - [TransferKeyType](#evm.v1beta1.TransferKeyType)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
@@ -1677,16 +1678,20 @@ ERC20Deposit contains information for an ERC20 deposit
 
 
 
-<a name="evm.v1beta1.ERC20TokenDeployment"></a>
+<a name="evm.v1beta1.ERC20TokenMetadata"></a>
 
-### ERC20TokenDeployment
-ERC20TokenDeployment describes information about an ERC20 token
+### ERC20TokenMetadata
+ERC20Token describes information about an ERC20 token
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `asset` | [string](#string) |  |  |
+| `chain_id` | [bytes](#bytes) |  |  |
+| `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
+| `tx_hash` | [string](#string) |  |  |
+| `status` | [Status](#evm.v1beta1.Status) |  |  |
 
 
 
@@ -1804,6 +1809,20 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
+<a name="evm.v1beta1.Status"></a>
+
+### Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| STATUS_INITIALIZED | 1 |  |
+| STATUS_VOTING | 2 |  |
+| STATUS_CONFIRMED | 4 |  |
+
+
+
 <a name="evm.v1beta1.TransferKeyType"></a>
 
 ### TransferKeyType
@@ -1913,7 +1932,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
 
 

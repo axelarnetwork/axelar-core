@@ -68,25 +68,20 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
+	token := keeper.GetERC20Token(ctx, req.Asset)
 	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
-	if !found {
+	if !found || !token.Is(types.Confirmed) {
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset, gatewayAddr)
-	if err != nil {
-		return nil, err
-	}
+	tokenAddr := token.TokenAddress()
 
 	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.Asset)
-	}
+	symbol := token.TokenDetails().Symbol
 
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
@@ -109,7 +104,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.String()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, req.RecipientChain),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.String()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 		),
 	)
 
@@ -129,21 +124,17 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	if s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset.Name) {
-		return nil, fmt.Errorf("token %s is already registered", req.Asset.Name)
-	}
-
 	keeper := s.ForChain(ctx, chain.Name)
+	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
-	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	tokenAddr, err := keeper.GetTokenAddress(ctx, req.Asset.Name, gatewayAddr)
+	pollKey, err := token.StartVoting(req.TxID)
 	if err != nil {
 		return nil, err
 	}
+
+	// if token was initialized, the token and gateway addresses are available
+	tokenAddr := token.TokenAddress()
+	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
@@ -154,8 +145,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	if !ok {
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, req.TxID.Hex()+"_"+req.Asset.Name)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -183,17 +172,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	symbol, ok := keeper.GetTokenSymbol(ctx, req.Asset.Name)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve symbol for token %s", req.Asset.Name)
-	}
-
-	deploy := types.ERC20TokenDeployment{
-		Asset:        req.Asset.Name,
-		TokenAddress: types.Address(tokenAddr),
-	}
-	keeper.SetPendingTokenDeployment(ctx, pollKey, deploy)
-
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
 	ctx.EventManager().EmitEvent(
@@ -204,7 +182,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, symbol),
+			sdk.NewAttribute(types.AttributeKeySymbol, token.TokenDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
@@ -653,25 +631,9 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	keeper := s.ForChain(ctx, chain.Name)
-
-	// is there an ongoing poll?
-	token, pollFound := keeper.GetPendingTokenDeployment(ctx, req.PollKey)
-	registered := s.nexus.IsAssetRegistered(ctx, chain.Name, req.Asset)
-	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed token,
-	// so we need to check that it matches the poll before deleting
-	case registered && pollFound && token.Asset == req.Asset:
-		keeper.DeletePendingToken(ctx, req.PollKey)
-		fallthrough
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case registered:
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token %s already confirmed", req.Asset)}, nil
-	case !pollFound:
-		return nil, fmt.Errorf("no token found for poll %s", req.PollKey.String())
-	case token.Asset != req.Asset:
-		return nil, fmt.Errorf("token %s does not match poll %s", req.Asset, req.PollKey.String())
-	default:
-		// assert: the token is known and has not been confirmed before
+	token := keeper.GetERC20Token(ctx, req.Asset)
+	if err := token.ValidatePollKey(req.PollKey); err != nil {
+		return nil, err
 	}
 
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
@@ -697,7 +659,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Failed) {
-		keeper.DeletePendingToken(ctx, req.PollKey)
+		token.ConfirmationFailed()
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -707,7 +669,6 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
-	keeper.DeletePendingToken(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -717,19 +678,22 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	if !confirmed.Value {
 		poll.AllowOverride()
+		token.ConfirmationFailed()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
 			Log: fmt.Sprintf("token %s was discarded", req.Asset),
 		}, nil
 	}
+
+	token.ConfirmationSuccessful()
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain.Name, token.Asset)
+	s.nexus.RegisterAsset(ctx, chain.Name, req.Asset)
 
 	return &types.VoteConfirmTokenResponse{
-		Log: fmt.Sprintf("token %s deployment confirmed", token.Asset)}, nil
+		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil
 }
 
 // VoteConfirmTransferKey handles votes for transfer ownership/operatorship confirmations
@@ -837,16 +801,6 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	}
 
 	keeper := s.ForChain(ctx, req.Chain)
-
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	chainID := s.getChainID(ctx, req.Chain)
-	if chainID == nil {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
-	}
-
 	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !found {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
@@ -865,16 +819,12 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	command, err := types.CreateDeployTokenCommand(
-		chainID,
-		masterKeyID,
-		req.TokenDetails,
-	)
+	token, err := keeper.InitERC20Token(ctx, req.Asset.Name, req.TokenDetails)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed create deploy-token command token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
+		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	keeper.SetTokenInfo(ctx, req.Asset.Name, req)
+	command := token.DeployCommand(masterKeyID)
 	if err := keeper.SetCommand(ctx, command); err != nil {
 		return nil, err
 	}
@@ -1077,16 +1027,16 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	transfers := nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset)
 
 	for _, transfer := range transfers {
-		symbol, found := keeper.GetTokenSymbol(ctx, transfer.Asset.Denom)
-		if !found {
-			return nil, fmt.Errorf("could not find symbol for asset %s", transfer.Asset.Denom)
+		token := keeper.GetERC20Token(ctx, transfer.Asset.Denom)
+		if !token.Is(types.Confirmed) {
+			return nil, fmt.Errorf("asset %s not confirmed", transfer.Asset.Denom)
 		}
 
 		command, err := types.CreateMintTokenCommand(
 			chainID,
 			secondaryKeyID,
 			transferIDtoCommandID(transfer.ID),
-			symbol,
+			token.TokenDetails().Symbol,
 			common.HexToAddress(transfer.Recipient.Address),
 			transfer.Asset.Amount.BigInt(),
 		)

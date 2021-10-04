@@ -12,7 +12,7 @@ option (gogoproto.goproto_getters_all) = false;
 // deposit address
 message DepositQueryParams {
   string address = 1;
-  string symbol = 2;
+  string asset = 2;
   string chain = 3;
 }
 

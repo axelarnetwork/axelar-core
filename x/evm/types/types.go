@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Ethereum network labels
@@ -56,6 +57,18 @@ const (
 	transferOperatorshipMaxGasCost           = 150000
 	axelarGatewayFuncExecute                 = "execute"
 )
+
+// ERC20Token represents an ERC20 token and its respective state
+type ERC20Token interface {
+	TokenDetails() TokenDetails
+	TokenAddress() Address
+	Is(state Status) bool
+	DeployCommand(key tss.KeyID) Command
+	StartVoting(tx Hash) (vote.PollKey, error)
+	ValidatePollKey(key vote.PollKey) error
+	ConfirmationFailed()
+	ConfirmationSuccessful()
+}
 
 // Address wraps EVM Address
 type Address common.Address

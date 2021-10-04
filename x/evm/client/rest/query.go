@@ -2,13 +2,14 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -213,12 +214,12 @@ func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		recipientChain := mux.Vars(r)[utils.PathVarRecipientChain]
 		linkedAddress := mux.Vars(r)[utils.PathVarLinkedAddress]
-		symbol := mux.Vars(r)[utils.PathvarSymbol]
+		asset := mux.Vars(r)[utils.PathvarAsset]
 
 		params := types.DepositQueryParams{
 			Chain:   recipientChain,
 			Address: linkedAddress,
-			Symbol:  symbol,
+			Asset:   asset,
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 

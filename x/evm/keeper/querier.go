@@ -220,12 +220,12 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway address not set"))
 	}
 
-	tokenAddr, err := k.GetTokenAddress(ctx, params.Symbol, gatewayAddr)
-	if err != nil {
-		return nil, err
+	token := k.GetERC20Token(ctx, params.Asset)
+	if !token.Is(types.Confirmed) {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
 	}
 
-	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, tokenAddr, params.Address, gatewayAddr)
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, token.TokenAddress(), params.Address, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -273,24 +273,19 @@ func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]
 }
 
 // QueryTokenAddress returns the address of the token contract with the given parameters
-func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
+func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
 
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	gateway, ok := k.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
+	token := k.GetERC20Token(ctx, asset)
+	if !token.Is(types.Initialized) {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
-	addr, err := k.GetTokenAddress(ctx, symbol, gateway)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	return addr.Bytes(), nil
+	return token.TokenAddress().Bytes(), nil
 }
 
 // QueryDepositState returns the state of an ERC20 deposit confirmation
