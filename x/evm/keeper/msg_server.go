@@ -824,8 +824,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	command := token.DeployCommand(masterKeyID)
-	if err := keeper.SetCommand(ctx, command); err != nil {
+	if err := keeper.SetCommand(ctx, token.DeployCommand(masterKeyID)); err != nil {
 		return nil, err
 	}
 
