@@ -274,7 +274,6 @@ func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]
 
 // QueryTokenAddress returns the address of the token contract with the given parameters
 func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
-
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
