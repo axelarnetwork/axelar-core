@@ -281,7 +281,7 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asse
 	}
 
 	token := k.GetERC20Token(ctx, asset)
-	if !token.Is(types.Initialized) {
+	if token.Is(types.NonExistent) {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
