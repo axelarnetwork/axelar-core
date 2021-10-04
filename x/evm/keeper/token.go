@@ -102,7 +102,7 @@ func (t *erc20Token) TokenAddress() types.Address {
 func (t *erc20Token) StartVoting(txID types.Hash) (vote.PollKey, error) {
 	switch {
 	case t.Is(types.Confirmed):
-		return vote.PollKey{}, fmt.Errorf("token %s is already registered", t.Asset)
+		return vote.PollKey{}, fmt.Errorf("token %s is already confirmed", t.Asset)
 	case t.Is(types.Voting):
 		return vote.PollKey{}, fmt.Errorf("voting for token %s is already underway", t.Asset)
 	case t.Is(types.NonExistent):

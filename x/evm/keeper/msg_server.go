@@ -119,11 +119,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	_, ok = s.nexus.GetChain(ctx, req.Asset.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
-	}
-
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
