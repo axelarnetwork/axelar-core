@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -13,21 +12,14 @@ import (
 type erc20Token struct {
 	types.ERC20TokenMetadata
 
-	ctx                    sdk.Context
-	setMeta                func(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata)
-	getRevoteLockingPeriod func(ctx sdk.Context) (int64, bool)
-	getMinVoterCount       func(ctx sdk.Context) (int64, bool)
-	getVotingThreshold     func(ctx sdk.Context) (utils.Threshold, bool)
+	ctx     sdk.Context
+	setMeta func(meta types.ERC20TokenMetadata)
 }
 
-func createERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) *erc20Token {
+func createERC20Token(setter func(meta types.ERC20TokenMetadata), meta types.ERC20TokenMetadata) *erc20Token {
 	token := &erc20Token{
-		ctx:                    ctx,
-		ERC20TokenMetadata:     meta,
-		setMeta:                k.setTokenMetadata,
-		getRevoteLockingPeriod: k.GetRevoteLockingPeriod,
-		getMinVoterCount:       k.GetMinVoterCount,
-		getVotingThreshold:     k.GetVotingThreshold,
+		ERC20TokenMetadata: meta,
+		setMeta:            setter,
 	}
 
 	return token
@@ -88,7 +80,7 @@ func (t *erc20Token) StartVoting(txID types.Hash) error {
 
 	t.ERC20TokenMetadata.TxHash = txID
 	t.Status |= types.Waiting
-	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
+	t.setMeta(t.ERC20TokenMetadata)
 
 	return nil
 }
@@ -103,7 +95,7 @@ func (t *erc20Token) Reset() error {
 
 	t.Status = types.Initialized
 	t.ERC20TokenMetadata.TxHash = types.Hash{}
-	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
+	t.setMeta(t.ERC20TokenMetadata)
 	return nil
 }
 
@@ -116,7 +108,7 @@ func (t *erc20Token) Confirm() error {
 	}
 
 	t.Status = types.Confirmed
-	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
+	t.setMeta(t.ERC20TokenMetadata)
 
 	return nil
 }

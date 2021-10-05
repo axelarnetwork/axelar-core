@@ -366,7 +366,9 @@ func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.To
 		return nil, err
 	}
 	k.setTokenMetadata(ctx, asset, metadata)
-	return createERC20Token(ctx, k, metadata), nil
+	return createERC20Token(func(meta types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, meta)
+	}, metadata), nil
 }
 
 func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
@@ -375,7 +377,9 @@ func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
 		return &erc20Token{ERC20TokenMetadata: types.ERC20TokenMetadata{Status: types.NonExistent}}
 	}
 
-	return createERC20Token(ctx, k, metadata)
+	return createERC20Token(func(meta types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, meta)
+	}, metadata)
 }
 
 // SetCommand stores the given command; note that overwriting is not allowed
@@ -716,13 +720,13 @@ func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, boo
 }
 
 func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
-	key := []byte(tokenMetadataPrefix + asset)
+	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&meta)
 	k.getStore(ctx, k.chain).Set(key, bz)
 }
 
 func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
-	key := []byte(tokenMetadataPrefix + asset)
+	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
 	bz := k.getStore(ctx, k.chain).Get(key)
 	if bz == nil {
 		return types.ERC20TokenMetadata{}, false

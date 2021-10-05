@@ -640,7 +640,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	case token.Is(types.Confirmed):
 		return nil, fmt.Errorf("token %s already confirmed", token.GetAsset())
 	case !token.Is(types.Waiting):
-		return nil, fmt.Errorf("voting for token not underway %s", token.GetAsset())
+		return nil, fmt.Errorf("voting for token '%s' not underway", token.GetAsset())
 	case getPollKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
 		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
 	default:
