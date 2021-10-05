@@ -40,11 +40,11 @@ func (decorator HandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 // LogMsgDecorator logs all messages in blocks
 type LogMsgDecorator struct {
-	cdc codec.JSONCodec
+	cdc codec.Codec
 }
 
 // NewLogMsgDecorator is the constructor for LogMsgDecorator
-func NewLogMsgDecorator(cdc codec.JSONCodec) LogMsgDecorator {
+func NewLogMsgDecorator(cdc codec.Codec) LogMsgDecorator {
 	return LogMsgDecorator{cdc: cdc}
 }
 
