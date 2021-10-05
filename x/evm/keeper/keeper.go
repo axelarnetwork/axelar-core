@@ -360,14 +360,14 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, true
 }
 
-func (k keeper) InitERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 	metadata := types.ERC20TokenMetadata{
 		Asset:   asset,
 		Details: details,
 		Status:  types.Initialized,
 	}
 
-	token := renderERC20Token(ctx, k, metadata)
+	token := createERC20Token(ctx, k, metadata)
 	err := token.initialize(k)
 	if err != nil {
 		return nil, err

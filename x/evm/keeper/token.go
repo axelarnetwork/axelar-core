@@ -36,7 +36,7 @@ func renderERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) 
 
 func (t *erc20Token) initialize(k keeper) error {
 	// perform a few checks now, so that it is impossible to get errors later
-	if other := k.GetERC20Token(t.ctx, t.Asset); !other.Is(types.NonExistent) {
+	if k.GetERC20Token(t.ctx, t.Asset).Is(types.NonExistent) {
 		return fmt.Errorf("token '%s' already set", t.Asset)
 	}
 
@@ -79,7 +79,7 @@ func (t *erc20Token) initialize(k keeper) error {
 	return nil
 }
 
-func (t *erc20Token) TokenDetails() types.TokenDetails {
+func (t *erc20Token) GetDetails() types.TokenDetails {
 	return t.Details
 }
 
@@ -91,7 +91,7 @@ func (t *erc20Token) Is(status types.Status) bool {
 	return status&t.Status == status
 }
 
-func (t *erc20Token) DeployCommand(key tss.KeyID) (types.Command, error) {
+func (t *erc20Token) CreateDeployCommand(key tss.KeyID) (types.Command, error) {
 	if t.Is(types.NonExistent) {
 		return types.Command{}, fmt.Errorf("token is non-existent")
 	}
@@ -102,19 +102,14 @@ func (t *erc20Token) DeployCommand(key tss.KeyID) (types.Command, error) {
 		return types.Command{}, err
 	}
 
-	command, err := types.CreateDeployTokenCommand(
+	return types.CreateDeployTokenCommand(
 		t.ERC20TokenMetadata.ChainID.BigInt(),
 		key,
 		t.Details,
 	)
-	if err != nil {
-		return types.Command{}, err
-	}
-
-	return command, nil
 }
 
-func (t *erc20Token) TokenAddress() types.Address {
+func (t *erc20Token) GetAddress() types.Address {
 	return t.ERC20TokenMetadata.TokenAddress
 
 }
@@ -175,7 +170,7 @@ func (t *erc20Token) ValidatePollKey(key vote.PollKey) error {
 	}
 }
 
-func (t *erc20Token) ConfirmationFailed() {
+func (t *erc20Token) Reject() {
 	if !t.Is(types.Initialized) {
 		return
 	}
@@ -184,7 +179,7 @@ func (t *erc20Token) ConfirmationFailed() {
 	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
 }
 
-func (t *erc20Token) ConfirmationSuccessful() {
+func (t *erc20Token) Confirm() {
 	if !t.Is(types.Initialized) {
 		return
 	}
