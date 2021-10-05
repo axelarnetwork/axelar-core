@@ -45,6 +45,8 @@ import (
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
+	app.SetConfig()
+
 	encodingConfig := app.MakeEncodingConfig()
 
 	initClientCtx := client.Context{}.
