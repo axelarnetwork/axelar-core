@@ -155,7 +155,7 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string
 			if err != nil {
 				return 0, err
 			}
-			return int32(t), nil
+			return uint32(t), nil
 		}},
 		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
 			cdc.MustUnmarshalJSON([]byte(s), &participants)
