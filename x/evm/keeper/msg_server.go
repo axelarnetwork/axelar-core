@@ -634,8 +634,17 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
-	if err := validatePollKey(token, req.PollKey); err != nil {
-		return nil, err
+	switch {
+	case token.Is(types.NonExistent):
+		return nil, fmt.Errorf("token %s non-existent", token.GetAsset())
+	case token.Is(types.Confirmed):
+		return nil, fmt.Errorf("token %s already confirmed", token.GetAsset())
+	case !token.Is(types.Waiting):
+		return nil, fmt.Errorf("voting for token not underway %s", token.GetAsset())
+	case getPollKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
+		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
+	default:
+		// assert: the token is known and has not been confirmed before
 	}
 
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
@@ -1310,20 +1319,4 @@ func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) 
 
 func getPollKey(txID types.Hash, asset string) vote.PollKey {
 	return vote.NewPollKey(types.ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
-}
-
-func validatePollKey(t types.ERC20Token, key vote.PollKey) error {
-	switch {
-	case t.Is(types.NonExistent):
-		return fmt.Errorf("token %s non-existent", t.GetAsset())
-	case t.Is(types.Confirmed):
-		return fmt.Errorf("token %s already confirmed", t.GetAsset())
-	case !t.Is(types.Waiting):
-		return fmt.Errorf("voting for token not underway %s", t.GetAsset())
-	case getPollKey(t.GetTxID(), t.GetAsset()) != key:
-		return fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(t.GetTxID(), t.GetAsset()).String(), key.String())
-	default:
-		// assert: the token is known and has not been confirmed before
-		return nil
-	}
 }
