@@ -34,51 +34,6 @@ func createERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) 
 	return token
 }
 
-func (t *erc20Token) initialize(k keeper) error {
-	// perform a few checks now, so that it is impossible to get errors later
-	if k.GetERC20Token(t.ctx, t.Asset).Is(types.Initialized) {
-		return fmt.Errorf("token '%s' already set", t.Asset)
-	}
-
-	gatewayAddr, found := k.GetGatewayAddress(t.ctx)
-	if !found {
-		return fmt.Errorf("axelar gateway address for chain '%s' not set", k.chain)
-	}
-
-	_, found = k.GetTokenByteCodes(t.ctx)
-	if !found {
-		return fmt.Errorf("bytecodes for token contract for chain '%s' not found", k.chain)
-	}
-
-	if err := t.ERC20TokenMetadata.Details.Validate(); err != nil {
-		return err
-	}
-
-	var network string
-	subspace, ok := k.getSubspace(t.ctx, k.chain)
-	if !ok {
-		return fmt.Errorf("could not find subspace for chain '%s'", k.chain)
-	}
-
-	subspace.Get(t.ctx, types.KeyNetwork, &network)
-
-	chainID := k.GetChainIDByNetwork(t.ctx, network)
-	if chainID == nil {
-		return fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
-	}
-
-	tokenAddr, err := k.getTokenAddress(t.ctx, t.Asset, t.Details, gatewayAddr)
-	if err != nil {
-		return err
-	}
-
-	// all good
-	t.ERC20TokenMetadata.TokenAddress = types.Address(tokenAddr)
-	t.ERC20TokenMetadata.ChainID = sdk.NewIntFromBigInt(chainID)
-	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
-	return nil
-}
-
 func (t *erc20Token) GetDetails() types.TokenDetails {
 	return t.Details
 }
