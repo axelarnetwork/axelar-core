@@ -123,7 +123,7 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 					Threshold:        recResponse.Threshold,
 					PartyUids:        recResponse.PartyUids,
 					PartyShareCounts: recResponse.PartyShareCounts,
-					MyPartyIndex:     int32(index),
+					MyPartyIndex:     uint32(index),
 				},
 				KeygenOutput: recResponse.KeygenOutput,
 			}

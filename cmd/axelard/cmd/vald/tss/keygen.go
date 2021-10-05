@@ -73,7 +73,7 @@ func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
 	done := false
 	session := mgr.timeoutQueue.Enqueue(keyID, e.Height+timeout)
 
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, int32(myIndex), participants, participantShareCounts)
+	stream, cancel, err := mgr.startKeygen(keyID, threshold, uint32(myIndex), participants, participantShareCounts)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func parseKeygenAckParams(attributes map[string]string) (keyID string, height in
 }
 
 func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	keyID string, threshold int32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
+	keyID string, threshold uint32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
 
 	parsers := []*parse.AttributeParser{
 		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
@@ -155,7 +155,7 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string
 			if err != nil {
 				return 0, err
 			}
-			return int32(t), nil
+			return uint32(t), nil
 		}},
 		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
 			cdc.MustUnmarshalJSON([]byte(s), &participants)
@@ -175,10 +175,10 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string
 		return "", 0, nil, nil, 0, err
 	}
 
-	return results[0].(string), results[1].(int32), results[2].([]string), results[3].([]uint32), results[4].(int64), nil
+	return results[0].(string), results[1].(uint32), results[2].([]string), results[3].([]uint32), results[4].(int64), nil
 }
 
-func (mgr *Mgr) startKeygen(keyID string, threshold int32, myIndex int32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {
+func (mgr *Mgr) startKeygen(keyID string, threshold uint32, myIndex uint32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {
 	if _, ok := mgr.getKeygenStream(keyID); ok {
 		return nil, nil, fmt.Errorf("keygen protocol for ID %s already in progress", keyID)
 	}

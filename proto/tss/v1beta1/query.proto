@@ -38,7 +38,7 @@ enum VoteStatus {
 message QueryRecoveryResponse {
   repeated string party_uids = 1;
   repeated uint32 party_share_counts = 2;
-  int32 threshold = 3;
+  uint32 threshold = 3;
   tss.tofnd.v1beta1.KeygenOutput keygen_output = 4;
 }
 

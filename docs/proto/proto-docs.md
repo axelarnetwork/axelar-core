@@ -2974,8 +2974,8 @@ Key presence check types
 | `new_key_uid` | [string](#string) |  |  |
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
-| `my_party_index` | [int32](#int32) |  | parties[my_party_index] belongs to the server |
-| `threshold` | [int32](#int32) |  |  |
+| `my_party_index` | [uint32](#uint32) |  | parties[my_party_index] belongs to the server |
+| `threshold` | [uint32](#uint32) |  |  |
 
 
 
@@ -3443,7 +3443,7 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
-| `threshold` | [int32](#int32) |  |  |
+| `threshold` | [uint32](#uint32) |  |  |
 | `keygen_output` | [tss.tofnd.v1beta1.KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 
