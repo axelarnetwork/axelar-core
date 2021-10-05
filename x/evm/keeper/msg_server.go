@@ -127,7 +127,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
-	pollKey, properties, err := token.StartVoting(req.TxID)
+	err := token.StartVoting(req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,11 +146,30 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not retrieve revote locking period")
+	}
+
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold not found")
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count not found")
+	}
+
+	pollKey := getPollKey(req.TxID, req.Asset.Name)
+
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
 		seqNo,
-		properties...,
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
 	); err != nil {
 		return nil, err
 	}
@@ -615,7 +634,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
-	if err := token.ValidatePollKey(req.PollKey); err != nil {
+	if err := validatePollKey(token, req.PollKey); err != nil {
 		return nil, err
 	}
 
@@ -1287,4 +1306,24 @@ func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) 
 	}
 
 	return
+}
+
+func getPollKey(txID types.Hash, asset string) vote.PollKey {
+	return vote.NewPollKey(types.ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
+}
+
+func validatePollKey(t types.ERC20Token, key vote.PollKey) error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.GetAsset())
+	case t.Is(types.Confirmed):
+		return fmt.Errorf("token %s already confirmed", t.GetAsset())
+	case !t.Is(types.Waiting):
+		return fmt.Errorf("voting for token not underway %s", t.GetAsset())
+	case getPollKey(t.GetTxID(), t.GetAsset()) != key:
+		return fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(t.GetTxID(), t.GetAsset()).String(), key.String())
+	default:
+		// assert: the token is known and has not been confirmed before
+		return nil
+	}
 }

@@ -757,9 +757,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
+			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
+				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			},
+			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 			GetERC20TokenFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
 				if asset == msg.Asset.Name {
@@ -824,12 +829,15 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		token.StartVoting(types.Hash(hash))
+		err := token.StartVoting(types.Hash(hash))
+		if err != nil {
+			panic(err)
+		}
 		pollKey := getPollKey(btc.Bitcoin.NativeAsset, types.Hash(hash))
 		voteReq.Asset = btc.Bitcoin.NativeAsset
 		voteReq.PollKey = pollKey
 
-		_, err := server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
+		_, err = server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -1437,6 +1445,14 @@ func createMockERC20Token(asset string, details types.TokenDetails) *mockERC20To
 	}
 }
 
+func (t *mockERC20Token) GetAsset() string {
+	return t.asset
+}
+
+func (t *mockERC20Token) GetTxID() types.Hash {
+	return t.hash
+}
+
 func (t *mockERC20Token) GetDetails() types.TokenDetails {
 	return t.details
 }
@@ -1456,18 +1472,20 @@ func (t *mockERC20Token) Is(status types.Status) bool {
 	return status&t.status == status
 }
 
-func (t *mockERC20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProperty, error) {
-	if t.status == types.Initialized {
-		t.hash = txID
-		t.status |= types.Waiting
-		properties := []vote.PollProperty{
-			vote.ExpiryAt(rand.I64Between(10, 100)),
-			vote.Threshold(utils.NewThreshold(rand.I64Between(1, 10), rand.I64Between(10, 100))),
-			vote.MinVoterCount(rand.I64Between(10, 100)),
-		}
-		return getPollKey(t.asset, txID), properties, nil
+func (t *mockERC20Token) StartVoting(txID types.Hash) error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.asset)
+	case t.Is(types.Confirmed):
+		return fmt.Errorf("token %s already confirmed", t.asset)
+	case t.Is(types.Waiting):
+		return fmt.Errorf("voting for token %s is already underway", t.asset)
 	}
-	return vote.PollKey{}, nil, fmt.Errorf("token not initialized")
+
+	t.hash = txID
+	t.status = types.Waiting
+	return nil
+
 }
 
 func (t *mockERC20Token) CreateDeployCommand(key tss.KeyID) (types.Command, error) {

@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Ethereum network labels
@@ -60,12 +59,13 @@ const (
 
 // ERC20Token represents an ERC20 token and its respective state
 type ERC20Token interface {
+	GetAsset() string
 	GetDetails() TokenDetails
 	GetAddress() Address
+	GetTxID() Hash
 	Is(state Status) bool
 	CreateDeployCommand(key tss.KeyID) (Command, error)
-	StartVoting(tx Hash) (vote.PollKey, []vote.PollProperty, error)
-	ValidatePollKey(key vote.PollKey) error
+	StartVoting(tx Hash) error
 	Reset() error
 	Confirm() error
 }
