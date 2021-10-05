@@ -1502,7 +1502,7 @@ func (t *mockERC20Token) ValidatePollKey(key vote.PollKey) error {
 	}
 }
 
-func (t *mockERC20Token) Reject() {
+func (t *mockERC20Token) Reset() {
 	t.status = types.Initialized
 }
 

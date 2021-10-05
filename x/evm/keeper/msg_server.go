@@ -642,7 +642,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Failed) {
-		token.Reject()
+		token.Reset()
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -661,7 +661,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		token.Reject()
+		token.Reset()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{

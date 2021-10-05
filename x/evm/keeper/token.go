@@ -170,12 +170,13 @@ func (t *erc20Token) ValidatePollKey(key vote.PollKey) error {
 	}
 }
 
-func (t *erc20Token) Reject() {
+func (t *erc20Token) Reset() {
 	if !t.Is(types.Initialized) {
 		return
 	}
 
 	t.Status = types.Initialized
+	t.ERC20TokenMetadata.TxHash = types.Hash{}
 	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
 }
 

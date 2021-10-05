@@ -66,7 +66,7 @@ type ERC20Token interface {
 	CreateDeployCommand(key tss.KeyID) (Command, error)
 	StartVoting(tx Hash) (vote.PollKey, []vote.PollProperty, error)
 	ValidatePollKey(key vote.PollKey) error
-	Reject()
+	Reset()
 	Confirm()
 }
 
