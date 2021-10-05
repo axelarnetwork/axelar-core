@@ -876,6 +876,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("already registered", testutils.Func(func(t *testing.T) {
 		setup()
+		hash := common.BytesToHash(rand.Bytes(common.HashLength))
+		token.StartVoting(types.Hash(hash))
 		token.Confirm()
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -1502,10 +1504,26 @@ func (t *mockERC20Token) ValidatePollKey(key vote.PollKey) error {
 	}
 }
 
-func (t *mockERC20Token) Reset() {
+func (t *mockERC20Token) Reset() error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.asset)
+	case !t.Is(types.Voting):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.asset, t.status.String())
+	}
+
 	t.status = types.Initialized
+	return nil
 }
 
-func (t *mockERC20Token) Confirm() {
-	t.status |= types.Confirmed
+func (t *mockERC20Token) Confirm() error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.asset)
+	case !t.Is(types.Voting):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.asset, t.status.String())
+	}
+
+	t.status = types.Confirmed
+	return nil
 }

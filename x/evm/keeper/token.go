@@ -47,11 +47,11 @@ func (t *erc20Token) Is(status types.Status) bool {
 }
 
 func (t *erc20Token) CreateDeployCommand(key tss.KeyID) (types.Command, error) {
-	if t.Is(types.NonExistent) {
-		return types.Command{}, fmt.Errorf("token is non-existent")
-	}
-	if t.Is(types.Confirmed) {
-		return types.Command{}, fmt.Errorf("token is already confirmed")
+	switch {
+	case t.Is(types.NonExistent):
+		return types.Command{}, fmt.Errorf("token %s non-existent", t.Asset)
+	case t.Is(types.Confirmed):
+		return types.Command{}, fmt.Errorf("token %s already confirmed", t.Asset)
 	}
 	if err := key.Validate(); err != nil {
 		return types.Command{}, err
@@ -71,12 +71,12 @@ func (t *erc20Token) GetAddress() types.Address {
 
 func (t *erc20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProperty, error) {
 	switch {
+	case t.Is(types.NonExistent):
+		return vote.PollKey{}, nil, fmt.Errorf("token %s non-existent", t.Asset)
 	case t.Is(types.Confirmed):
-		return vote.PollKey{}, nil, fmt.Errorf("token %s is already confirmed", t.Asset)
+		return vote.PollKey{}, nil, fmt.Errorf("token %s already confirmed", t.Asset)
 	case t.Is(types.Voting):
 		return vote.PollKey{}, nil, fmt.Errorf("voting for token %s is already underway", t.Asset)
-	case t.Is(types.NonExistent):
-		return vote.PollKey{}, nil, fmt.Errorf("non-existent token for asset '%s'", t.Asset)
 	}
 
 	period, ok := t.getRevoteLockingPeriod(t.ctx)
@@ -113,6 +113,8 @@ func (t *erc20Token) getPollKey(txID types.Hash) vote.PollKey {
 
 func (t *erc20Token) ValidatePollKey(key vote.PollKey) error {
 	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.Asset)
 	case t.Is(types.Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.Asset)
 	case !t.Is(types.Voting):
@@ -125,21 +127,30 @@ func (t *erc20Token) ValidatePollKey(key vote.PollKey) error {
 	}
 }
 
-func (t *erc20Token) Reset() {
-	if !t.Is(types.Initialized) {
-		return
+func (t *erc20Token) Reset() error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.Asset)
+	case !t.Is(types.Voting):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.Asset, t.Status.String())
 	}
 
 	t.Status = types.Initialized
 	t.ERC20TokenMetadata.TxHash = types.Hash{}
 	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
+	return nil
 }
 
-func (t *erc20Token) Confirm() {
-	if !t.Is(types.Initialized) {
-		return
+func (t *erc20Token) Confirm() error {
+	switch {
+	case t.Is(types.NonExistent):
+		return fmt.Errorf("token %s non-existent", t.Asset)
+	case !t.Is(types.Voting):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.Asset, t.Status.String())
 	}
 
-	t.Status |= types.Confirmed
+	t.Status = types.Confirmed
 	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
+
+	return nil
 }
