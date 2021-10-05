@@ -635,10 +635,6 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
 	switch {
-	case token.Is(types.NonExistent):
-		return nil, fmt.Errorf("token %s non-existent", token.GetAsset())
-	case token.Is(types.Confirmed):
-		return nil, fmt.Errorf("token %s already confirmed", token.GetAsset())
 	case !token.Is(types.Waiting):
 		return nil, fmt.Errorf("voting for token '%s' not underway", token.GetAsset())
 	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
