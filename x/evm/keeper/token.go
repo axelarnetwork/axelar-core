@@ -3,8 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -12,7 +10,6 @@ import (
 type erc20Token struct {
 	types.ERC20TokenMetadata
 
-	ctx     sdk.Context
 	setMeta func(meta types.ERC20TokenMetadata)
 }
 
