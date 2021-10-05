@@ -22,6 +22,7 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
@@ -48,6 +49,7 @@ func Test_wBTC_mint(t *testing.T) {
 	// create a chain with nodes and assign them as validators
 	chain, nodeData := initChain(nodeCount, "mint")
 	listeners := registerWaitEventListeners(nodeData[0])
+	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
 
 	// register proxies for all validators
 	for i := 0; i < nodeCount; i++ {
@@ -57,6 +59,13 @@ func Test_wBTC_mint(t *testing.T) {
 		}
 		res := <-chain.Submit(&snapshotTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
 		assert.NoError(t, res.Error)
+
+		res = <-chain.Submit(&nexusTypes.RegisterChainMaintainerRequest{Sender: nodeData[i].Proxy, Chains: chains})
+		assert.NoError(t, res.Error)
+	}
+
+	if err := waitFor(listeners.chainActivated, 1); err != nil {
+		assert.FailNow(t, "chain activation", err)
 	}
 
 	// start keygen
@@ -74,7 +83,6 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.FailNow(t, "keygen", err)
 	}
 
-	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
 	for _, c := range chains {
 		masterKeyID := randStrings.Next()
 		masterKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
@@ -169,7 +177,7 @@ func Test_wBTC_mint(t *testing.T) {
 	assert.NoError(t, err)
 	txHash := common.BytesToHash(bz)
 
-	bz, err = nodeData[0].Node.Query(
+	_, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)

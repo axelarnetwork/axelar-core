@@ -16,10 +16,12 @@ import (
 )
 
 var (
-	senderPrefix     = utils.KeyFromStr("send")
-	chainPrefix      = utils.KeyFromStr("chain")
-	totalPrefix      = utils.KeyFromStr("total")
-	registeredPrefix = utils.KeyFromStr("registered")
+	senderPrefix          = utils.KeyFromStr("send")
+	chainPrefix           = utils.KeyFromStr("chain")
+	totalPrefix           = utils.KeyFromStr("total")
+	registeredPrefix      = utils.KeyFromStr("registered")
+	chainMaintainerPrefix = utils.KeyFromStr("maintainer")
+	chainActivatedPrefix  = utils.KeyFromStr("activated")
 
 	sequenceKey = utils.KeyFromStr("nextID")
 	registered  = []byte{0x01}
@@ -230,6 +232,47 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	}
 
 	return transfers
+}
+
+// AddChainMaintainer adds the given address to be one of the given chain's maintainers
+func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) {
+	key := chainMaintainerPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(maintainer.String()))
+	k.getStore(ctx).SetRaw(key, maintainer)
+}
+
+// RemoveChainMaintainer removes the given address from the given chain's maintainers
+func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) {
+	key := chainMaintainerPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.LowerCaseKey(maintainer.String()))
+	k.getStore(ctx).Delete(key)
+}
+
+// GetChainMaintainers returns the maintainers of the given chain
+func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress {
+	maintainers := make([]sdk.ValAddress, 0)
+
+	prefix := chainMaintainerPrefix.Append(utils.LowerCaseKey(chain.Name))
+	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), prefix.AsKey())
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		maintainer := iter.Value()
+		maintainers = append(maintainers, maintainer)
+	}
+
+	return maintainers
+}
+
+// ActivateChain activates the given chain
+func (k Keeper) ActivateChain(ctx sdk.Context, chain exported.Chain) {
+	key := chainActivatedPrefix.Append(utils.LowerCaseKey(chain.Name))
+	k.getStore(ctx).SetRaw(key, []byte{})
+}
+
+// IsChainActivated returns true if the given chain is activated; false otherwise
+func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
+	key := chainActivatedPrefix.Append(utils.LowerCaseKey(chain.Name))
+
+	return k.getStore(ctx).Has(key)
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

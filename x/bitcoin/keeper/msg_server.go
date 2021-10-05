@@ -148,21 +148,11 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, exported.Bitcoin, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", exported.Bitcoin.Name)
-	}
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
-	}
-
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", req.OutPointInfo.OutPoint, req.OutPointInfo.Address, req.OutPointInfo.Amount))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
-		counter,
+		s.nexus.GetChainMaintainers(ctx, exported.Bitcoin),
 		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
 		vote.Threshold(s.GetVotingThreshold(ctx)),
 		vote.MinVoterCount(s.GetMinVoterCount(ctx)),

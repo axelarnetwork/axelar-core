@@ -77,9 +77,16 @@
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
+- [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
+    - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
+    - [Validator](#snapshot.exported.v1beta1.Validator)
+  
+    - [ValidatorIllegibility](#snapshot.exported.v1beta1.ValidatorIllegibility)
+  
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollKey](#vote.exported.v1beta1.PollKey)
     - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
+    - [Voter](#vote.exported.v1beta1.Voter)
   
     - [PollState](#vote.exported.v1beta1.PollState)
   
@@ -181,11 +188,17 @@
 - [nexus/v1beta1/genesis.proto](#nexus/v1beta1/genesis.proto)
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
-- [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
-    - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
-    - [Validator](#snapshot.exported.v1beta1.Validator)
+- [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
   
-    - [ValidatorIllegibility](#snapshot.exported.v1beta1.ValidatorIllegibility)
+- [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
+    - [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest)
+    - [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse)
+    - [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest)
+    - [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse)
+  
+- [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
+    - [MsgService](#nexus.v1beta1.MsgService)
   
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
@@ -1232,6 +1245,75 @@ deposit address
 
 
 
+<a name="snapshot/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/exported/v1beta1/types.proto
+
+
+
+<a name="snapshot.exported.v1beta1.Snapshot"></a>
+
+### Snapshot
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [Validator](#snapshot.exported.v1beta1.Validator) | repeated |  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `height` | [int64](#int64) |  |  |
+| `total_share_count` | [bytes](#bytes) |  |  |
+| `counter` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `corruption_threshold` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="snapshot.exported.v1beta1.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `share_count` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+
+### ValidatorIllegibility
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
+| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
+| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
+| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
+| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="vote/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1265,12 +1347,29 @@ vote can have any data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `snapshot_seq_no` | [int64](#int64) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `state` | [PollState](#vote.exported.v1beta1.PollState) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
+| `voters` | [Voter](#vote.exported.v1beta1.Voter) | repeated |  |
+| `total_voting_power` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vote.exported.v1beta1.Voter"></a>
+
+### Voter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `voting_power` | [int64](#int64) |  |  |
 
 
 
@@ -2625,6 +2724,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chains` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) | repeated |  |
+| `chain_activation_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -2671,44 +2771,22 @@ GenesisState represents the genesis state
 
 
 
-<a name="snapshot/exported/v1beta1/types.proto"></a>
+<a name="nexus/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## snapshot/exported/v1beta1/types.proto
+## nexus/v1beta1/query.proto
 
 
 
-<a name="snapshot.exported.v1beta1.Snapshot"></a>
+<a name="nexus.v1beta1.QueryChainMaintainersResponse"></a>
 
-### Snapshot
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#snapshot.exported.v1beta1.Validator) | repeated |  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `height` | [int64](#int64) |  |  |
-| `total_share_count` | [bytes](#bytes) |  |  |
-| `counter` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `corruption_threshold` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="snapshot.exported.v1beta1.Validator"></a>
-
-### Validator
+### QueryChainMaintainersResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `share_count` | [int64](#int64) |  |  |
+| `maintainers` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -2716,25 +2794,104 @@ GenesisState represents the genesis state
 
  <!-- end messages -->
 
+ <!-- end enums -->
 
-<a name="snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+ <!-- end HasExtensions -->
 
-### ValidatorIllegibility
+ <!-- end services -->
 
 
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
-| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
-| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
-| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
-| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
-| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
 
+<a name="nexus/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/tx.proto
+
+
+
+<a name="nexus.v1beta1.DeregisterChainMaintainerRequest"></a>
+
+### DeregisterChainMaintainerRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.DeregisterChainMaintainerResponse"></a>
+
+### DeregisterChainMaintainerResponse
+
+
+
+
+
+
+
+<a name="nexus.v1beta1.RegisterChainMaintainerRequest"></a>
+
+### RegisterChainMaintainerRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.RegisterChainMaintainerResponse"></a>
+
+### RegisterChainMaintainerResponse
+
+
+
+
+
+
+ <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="nexus.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the nexus Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
+| `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
 
  <!-- end services -->
 

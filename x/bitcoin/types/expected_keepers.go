@@ -71,7 +71,7 @@ type BTCKeeper interface {
 
 // Voter is the interface that provides voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
@@ -79,7 +79,7 @@ type Voter interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 
 // Signer provides keygen and signing functionality
@@ -118,6 +118,8 @@ type Nexus interface {
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
+	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
+	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }
 
 // Snapshotter provides snapshot functionality

@@ -60,7 +60,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 func TestPoll_Expiry(t *testing.T) {
 	setup := func() exported.PollMetadata {
 		key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
-		return types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
+		return types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	}
 	repeats := 20
 	notExpiredStates := []exported.PollState{exported.NonExistent, exported.Pending, exported.Completed, exported.Failed}
@@ -124,22 +124,22 @@ func TestPoll_Is(t *testing.T) {
 
 func TestPoll_Vote(t *testing.T) {
 	var (
-		shareCounts     map[string]int64
-		totalShareCount sdk.Int
+		votingPowers     map[string]int64
+		totalVotingPower sdk.Int
 	)
 
 	setup := func(metadata exported.PollMetadata, currBlockHeight int64) *types.Poll {
-		shareCounts = randomEvenShareCounts()
+		votingPowers = randomEvenVotingPowers()
 
-		totalShareCount = sdk.ZeroInt()
-		for _, share := range shareCounts {
-			totalShareCount = totalShareCount.AddRaw(share)
+		totalVotingPower = sdk.ZeroInt()
+		for _, votingPower := range votingPowers {
+			totalVotingPower = totalVotingPower.AddRaw(votingPower)
 		}
 
 		allVotes := make(map[string]types.TalliedVote)
 		hasVoted := make(map[string]bool)
 		store := &mock.StoreMock{
-			GetTotalVoterCountFunc: func() int64 { return int64(len(shareCounts)) },
+			GetTotalVoterCountFunc: func() int64 { return int64(len(votingPowers)) },
 			SetVoteFunc: func(addr sdk.ValAddress, v types.TalliedVote) {
 				hasVoted[addr.String()] = true
 				allVotes[v.Hash()] = v
@@ -150,13 +150,23 @@ func TestPoll_Vote(t *testing.T) {
 			},
 			GetVotesFunc: func() []types.TalliedVote { return getValues(allVotes) },
 			HasVotedFunc: func(addr sdk.ValAddress) bool { return hasVoted[addr.String()] },
-			GetShareCountFunc: func(address sdk.ValAddress) (int64, bool) {
-				shareCount, ok := shareCounts[address.String()]
-				return shareCount, ok
+			GetVotingPowerFunc: func(address sdk.ValAddress) (int64, bool) {
+				votingPower, ok := votingPowers[address.String()]
+				return votingPower, ok
 			},
-			GetTotalShareCountFunc: func() sdk.Int { return totalShareCount },
-			SetMetadataFunc:        func(exported.PollMetadata) {},
+			GetTotalVotingPowerFunc: func() sdk.Int { return totalVotingPower },
+			SetMetadataFunc:         func(exported.PollMetadata) {},
 		}
+
+		for voterAddress, votingPower := range votingPowers {
+			validator, err := sdk.ValAddressFromBech32(voterAddress)
+			if err != nil {
+				panic(err)
+			}
+
+			metadata.Voters = append(metadata.Voters, exported.Voter{Validator: validator, VotingPower: votingPower})
+		}
+		metadata.TotalVotingPower = totalVotingPower
 
 		return types.NewPoll(metadata, currBlockHeight, store).WithLogger(log.TestingLogger())
 	}
@@ -166,8 +176,8 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(exported.PollMetadata{State: exported.NonExistent}, rand.PosI64())
 
 		voter := rand.ValAddr()
-		shareCounts[voter.String()] = rand.PosI64()
-		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
+		votingPowers[voter.String()] = rand.PosI64()
+		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
 		assert.Error(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
 	}).Repeat(repeats))
@@ -177,8 +187,8 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(exported.PollMetadata{State: exported.Completed, Result: result}, rand.PosI64())
 
 		voter := rand.ValAddr()
-		shareCounts[voter.String()] = rand.PosI64()
-		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
+		votingPowers[voter.String()] = rand.PosI64()
+		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
 		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
 	}).Repeat(repeats))
@@ -187,8 +197,8 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(exported.PollMetadata{State: exported.Failed}, rand.PosI64())
 
 		voter := rand.ValAddr()
-		shareCounts[voter.String()] = rand.PosI64()
-		totalShareCount = sdk.NewInt(shareCounts[voter.String()]).MulRaw(10)
+		votingPowers[voter.String()] = rand.PosI64()
+		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
 		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
 	}).Repeat(repeats))
@@ -207,14 +217,16 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
-		totalShareCount = totalShareCount.AddRaw(voterShareCount)
+		voterVotingPower := totalVotingPower.QuoRaw(int64(len(votingPowers))).Int64() // votingPowers are int64, so this can never be out of bounds
+		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
 
 		voterAddr := rand.ValAddr()
-		shareCounts[voterAddr.String()] = voterShareCount
+		votingPowers[voterAddr.String()] = voterVotingPower
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
+		fmt.Printf("poll.State %#v\n", poll.State)
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
+		fmt.Printf("poll.State %#v\n", poll.State)
 		assert.True(t, poll.Is(exported.Pending))
 	}).Repeat(repeats))
 
@@ -226,11 +238,11 @@ func TestPoll_Vote(t *testing.T) {
 		assert.True(t, poll.Is(exported.Expired))
 		assert.True(t, poll.Is(exported.Pending))
 
-		voterShareCount := rand.PosI64()
-		totalShareCount = totalShareCount.AddRaw(voterShareCount)
+		voterVotingPower := rand.PosI64()
+		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
 
 		voterAddr := rand.ValAddr()
-		shareCounts[voterAddr.String()] = voterShareCount
+		votingPowers[voterAddr.String()] = voterVotingPower
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
@@ -240,11 +252,11 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		voterShareCount := totalShareCount.QuoRaw(int64(len(shareCounts))).Int64() // shareCounts are int64, so this can never be out of bounds
-		totalShareCount = totalShareCount.AddRaw(voterShareCount)
+		voterVotingPower := totalVotingPower.QuoRaw(int64(len(votingPowers))).Int64() // votingPowers are int64, so this can never be out of bounds
+		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
 
 		voterAddr := rand.ValAddr()
-		shareCounts[voterAddr.String()] = voterShareCount
+		votingPowers[voterAddr.String()] = voterVotingPower
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
@@ -256,7 +268,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(metadata, rand.PosI64())
 
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
-		for voter := range shareCounts {
+		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
 			assert.NoError(t, poll.Vote(addr, voteValue))
 		}
@@ -269,8 +281,8 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		t.Log(len(shareCounts), "votes")
-		for voter := range shareCounts {
+		t.Log(len(votingPowers), "votes")
+		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
 			voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 			assert.NoError(t, poll.Vote(addr, voteValue))
@@ -394,25 +406,25 @@ func TestPoll_Delete(t *testing.T) {
 	}
 }
 
-func randomEvenShareCounts() map[string]int64 {
-	shareCounts := make(map[string]int64)
+func randomEvenVotingPowers() map[string]int64 {
+	votingPowers := make(map[string]int64)
 
 	total := sdk.ZeroInt()
 	for i := 0; i < int(rand.I64Between(1, 20)); i++ {
 		addr := sdk.ValAddress(rand.Bytes(20))
-		share := rand.I64Between(1, 100)
-		shareCounts[addr.String()] = share
-		total = total.AddRaw(share)
+		votingPower := rand.I64Between(1, 100)
+		votingPowers[addr.String()] = votingPower
+		total = total.AddRaw(votingPower)
 	}
 
-	// redraw shares if any one share is greater than half of the total
-	for _, share := range shareCounts {
-		if total.QuoRaw(2).LT(sdk.NewInt(share)) {
-			return randomEvenShareCounts()
+	// redraw voting power if any one votingPower is greater than half of the total
+	for _, votingPower := range votingPowers {
+		if total.QuoRaw(2).LT(sdk.NewInt(votingPower)) {
+			return randomEvenVotingPowers()
 		}
 	}
 
-	return shareCounts
+	return votingPowers
 }
 
 func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
@@ -425,7 +437,7 @@ func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
 
 func newRandomPollMetadata() exported.PollMetadata {
 	key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
-	poll := types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, rand.PosI64())
+	poll := types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	poll.ExpiresAt = rand.I64Between(1, 1000000)
 	return poll
 }

@@ -108,6 +108,8 @@
       - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
+    - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+      - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
@@ -234,6 +236,9 @@
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
+    - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
+      - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
+      - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
     - [sign \[file\]](axelard_tx_sign.md)	 - Sign a transaction generated offline
     - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands

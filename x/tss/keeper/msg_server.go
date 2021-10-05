@@ -344,18 +344,8 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
-		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
-		}
-
 		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), keyID))
-				continue
-			}
-
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", keyID, criminal.GetPartyUid(), criminal.CrimeType.String()))
@@ -466,17 +456,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
-		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
-		}
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing signature %s",
-					criminalAddress.String(), req.PollKey.ID))
-				continue
-			}
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))

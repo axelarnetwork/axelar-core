@@ -26,20 +26,20 @@ var _ types.Store = &StoreMock{}
 // 			GetPollFunc: func(key exported.PollKey) exported.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			GetShareCountFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool) {
-// 				panic("mock out the GetShareCount method")
-// 			},
-// 			GetTotalShareCountFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
-// 				panic("mock out the GetTotalShareCount method")
-// 			},
 // 			GetTotalVoterCountFunc: func() int64 {
 // 				panic("mock out the GetTotalVoterCount method")
+// 			},
+// 			GetTotalVotingPowerFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
+// 				panic("mock out the GetTotalVotingPower method")
 // 			},
 // 			GetVoteFunc: func(hash string) (types.TalliedVote, bool) {
 // 				panic("mock out the GetVote method")
 // 			},
 // 			GetVotesFunc: func() []types.TalliedVote {
 // 				panic("mock out the GetVotes method")
+// 			},
+// 			GetVotingPowerFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool) {
+// 				panic("mock out the GetVotingPower method")
 // 			},
 // 			HasVotedFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the HasVoted method")
@@ -63,20 +63,20 @@ type StoreMock struct {
 	// GetPollFunc mocks the GetPoll method.
 	GetPollFunc func(key exported.PollKey) exported.Poll
 
-	// GetShareCountFunc mocks the GetShareCount method.
-	GetShareCountFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool)
-
-	// GetTotalShareCountFunc mocks the GetTotalShareCount method.
-	GetTotalShareCountFunc func() github_com_cosmos_cosmos_sdk_types.Int
-
 	// GetTotalVoterCountFunc mocks the GetTotalVoterCount method.
 	GetTotalVoterCountFunc func() int64
+
+	// GetTotalVotingPowerFunc mocks the GetTotalVotingPower method.
+	GetTotalVotingPowerFunc func() github_com_cosmos_cosmos_sdk_types.Int
 
 	// GetVoteFunc mocks the GetVote method.
 	GetVoteFunc func(hash string) (types.TalliedVote, bool)
 
 	// GetVotesFunc mocks the GetVotes method.
 	GetVotesFunc func() []types.TalliedVote
+
+	// GetVotingPowerFunc mocks the GetVotingPower method.
+	GetVotingPowerFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool)
 
 	// HasVotedFunc mocks the HasVoted method.
 	HasVotedFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
@@ -97,16 +97,11 @@ type StoreMock struct {
 			// Key is the key argument value.
 			Key exported.PollKey
 		}
-		// GetShareCount holds details about calls to the GetShareCount method.
-		GetShareCount []struct {
-			// Voter is the voter argument value.
-			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-		}
-		// GetTotalShareCount holds details about calls to the GetTotalShareCount method.
-		GetTotalShareCount []struct {
-		}
 		// GetTotalVoterCount holds details about calls to the GetTotalVoterCount method.
 		GetTotalVoterCount []struct {
+		}
+		// GetTotalVotingPower holds details about calls to the GetTotalVotingPower method.
+		GetTotalVotingPower []struct {
 		}
 		// GetVote holds details about calls to the GetVote method.
 		GetVote []struct {
@@ -115,6 +110,11 @@ type StoreMock struct {
 		}
 		// GetVotes holds details about calls to the GetVotes method.
 		GetVotes []struct {
+		}
+		// GetVotingPower holds details about calls to the GetVotingPower method.
+		GetVotingPower []struct {
+			// Voter is the voter argument value.
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// HasVoted holds details about calls to the HasVoted method.
 		HasVoted []struct {
@@ -134,16 +134,16 @@ type StoreMock struct {
 			Vote types.TalliedVote
 		}
 	}
-	lockDeletePoll         sync.RWMutex
-	lockGetPoll            sync.RWMutex
-	lockGetShareCount      sync.RWMutex
-	lockGetTotalShareCount sync.RWMutex
-	lockGetTotalVoterCount sync.RWMutex
-	lockGetVote            sync.RWMutex
-	lockGetVotes           sync.RWMutex
-	lockHasVoted           sync.RWMutex
-	lockSetMetadata        sync.RWMutex
-	lockSetVote            sync.RWMutex
+	lockDeletePoll          sync.RWMutex
+	lockGetPoll             sync.RWMutex
+	lockGetTotalVoterCount  sync.RWMutex
+	lockGetTotalVotingPower sync.RWMutex
+	lockGetVote             sync.RWMutex
+	lockGetVotes            sync.RWMutex
+	lockGetVotingPower      sync.RWMutex
+	lockHasVoted            sync.RWMutex
+	lockSetMetadata         sync.RWMutex
+	lockSetVote             sync.RWMutex
 }
 
 // DeletePoll calls DeletePollFunc.
@@ -203,63 +203,6 @@ func (mock *StoreMock) GetPollCalls() []struct {
 	return calls
 }
 
-// GetShareCount calls GetShareCountFunc.
-func (mock *StoreMock) GetShareCount(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool) {
-	if mock.GetShareCountFunc == nil {
-		panic("StoreMock.GetShareCountFunc: method is nil but Store.GetShareCount was just called")
-	}
-	callInfo := struct {
-		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-	}{
-		Voter: voter,
-	}
-	mock.lockGetShareCount.Lock()
-	mock.calls.GetShareCount = append(mock.calls.GetShareCount, callInfo)
-	mock.lockGetShareCount.Unlock()
-	return mock.GetShareCountFunc(voter)
-}
-
-// GetShareCountCalls gets all the calls that were made to GetShareCount.
-// Check the length with:
-//     len(mockedStore.GetShareCountCalls())
-func (mock *StoreMock) GetShareCountCalls() []struct {
-	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-} {
-	var calls []struct {
-		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-	}
-	mock.lockGetShareCount.RLock()
-	calls = mock.calls.GetShareCount
-	mock.lockGetShareCount.RUnlock()
-	return calls
-}
-
-// GetTotalShareCount calls GetTotalShareCountFunc.
-func (mock *StoreMock) GetTotalShareCount() github_com_cosmos_cosmos_sdk_types.Int {
-	if mock.GetTotalShareCountFunc == nil {
-		panic("StoreMock.GetTotalShareCountFunc: method is nil but Store.GetTotalShareCount was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetTotalShareCount.Lock()
-	mock.calls.GetTotalShareCount = append(mock.calls.GetTotalShareCount, callInfo)
-	mock.lockGetTotalShareCount.Unlock()
-	return mock.GetTotalShareCountFunc()
-}
-
-// GetTotalShareCountCalls gets all the calls that were made to GetTotalShareCount.
-// Check the length with:
-//     len(mockedStore.GetTotalShareCountCalls())
-func (mock *StoreMock) GetTotalShareCountCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetTotalShareCount.RLock()
-	calls = mock.calls.GetTotalShareCount
-	mock.lockGetTotalShareCount.RUnlock()
-	return calls
-}
-
 // GetTotalVoterCount calls GetTotalVoterCountFunc.
 func (mock *StoreMock) GetTotalVoterCount() int64 {
 	if mock.GetTotalVoterCountFunc == nil {
@@ -283,6 +226,32 @@ func (mock *StoreMock) GetTotalVoterCountCalls() []struct {
 	mock.lockGetTotalVoterCount.RLock()
 	calls = mock.calls.GetTotalVoterCount
 	mock.lockGetTotalVoterCount.RUnlock()
+	return calls
+}
+
+// GetTotalVotingPower calls GetTotalVotingPowerFunc.
+func (mock *StoreMock) GetTotalVotingPower() github_com_cosmos_cosmos_sdk_types.Int {
+	if mock.GetTotalVotingPowerFunc == nil {
+		panic("StoreMock.GetTotalVotingPowerFunc: method is nil but Store.GetTotalVotingPower was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetTotalVotingPower.Lock()
+	mock.calls.GetTotalVotingPower = append(mock.calls.GetTotalVotingPower, callInfo)
+	mock.lockGetTotalVotingPower.Unlock()
+	return mock.GetTotalVotingPowerFunc()
+}
+
+// GetTotalVotingPowerCalls gets all the calls that were made to GetTotalVotingPower.
+// Check the length with:
+//     len(mockedStore.GetTotalVotingPowerCalls())
+func (mock *StoreMock) GetTotalVotingPowerCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetTotalVotingPower.RLock()
+	calls = mock.calls.GetTotalVotingPower
+	mock.lockGetTotalVotingPower.RUnlock()
 	return calls
 }
 
@@ -340,6 +309,37 @@ func (mock *StoreMock) GetVotesCalls() []struct {
 	mock.lockGetVotes.RLock()
 	calls = mock.calls.GetVotes
 	mock.lockGetVotes.RUnlock()
+	return calls
+}
+
+// GetVotingPower calls GetVotingPowerFunc.
+func (mock *StoreMock) GetVotingPower(voter github_com_cosmos_cosmos_sdk_types.ValAddress) (int64, bool) {
+	if mock.GetVotingPowerFunc == nil {
+		panic("StoreMock.GetVotingPowerFunc: method is nil but Store.GetVotingPower was just called")
+	}
+	callInfo := struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Voter: voter,
+	}
+	mock.lockGetVotingPower.Lock()
+	mock.calls.GetVotingPower = append(mock.calls.GetVotingPower, callInfo)
+	mock.lockGetVotingPower.Unlock()
+	return mock.GetVotingPowerFunc(voter)
+}
+
+// GetVotingPowerCalls gets all the calls that were made to GetVotingPower.
+// Check the length with:
+//     len(mockedStore.GetVotingPowerCalls())
+func (mock *StoreMock) GetVotingPowerCalls() []struct {
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockGetVotingPower.RLock()
+	calls = mock.calls.GetVotingPower
+	mock.lockGetVotingPower.RUnlock()
 	return calls
 }
 

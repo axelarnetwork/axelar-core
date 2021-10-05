@@ -143,6 +143,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		btcKeeper *mock.BTCKeeperMock
 		voter     *mock.VoterMock
 		signer    *mock.SignerMock
+		nexusMock *mock.NexusMock
 		ctx       sdk.Context
 		msg       *types.ConfirmOutpointRequest
 		server    types.MsgServiceServer
@@ -168,7 +169,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			GetMinVoterCountFunc:              func(ctx sdk.Context) int64 { return types.DefaultParams().MinVoterCount },
 		}
 		voter = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
 		}
 
 		signer = &mock.SignerMock{
@@ -180,10 +181,16 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 			},
 		}
 
+		nexusMock = &mock.NexusMock{
+			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
+				return []sdk.ValAddress{}
+			},
+		}
+
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		msg = randomMsgConfirmOutpoint()
 		msg.OutPointInfo.Address = address.EncodeAddress()
-		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, &mock.NexusMock{}, voter, &mock.SnapshotterMock{})
+		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusMock, voter, &mock.SnapshotterMock{})
 	}
 
 	repeatCount := 20
@@ -239,7 +246,7 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voter.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+		voter.InitializePollFunc = func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error {
 			return fmt.Errorf("poll setup failed")
 		}
 

@@ -33,7 +33,7 @@ var _ types.Voter = &VoterMock{}
 // 			GetPollFunc: func(ctx sdk.Context, pollKey exported.PollKey) exported.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			InitializePollFunc: func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+// 			InitializePollFunc: func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
 // 				panic("mock out the InitializePoll method")
 // 			},
 // 		}
@@ -47,7 +47,7 @@ type VoterMock struct {
 	GetPollFunc func(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 
 	// InitializePollFunc mocks the InitializePoll method.
-	InitializePollFunc func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+	InitializePollFunc func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -64,8 +64,8 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// Key is the key argument value.
 			Key exported.PollKey
-			// SnapshotSeqNo is the snapshotSeqNo argument value.
-			SnapshotSeqNo int64
+			// Voters is the voters argument value.
+			Voters []sdk.ValAddress
 			// PollProperties is the pollProperties argument value.
 			PollProperties []exported.PollProperty
 		}
@@ -110,25 +110,25 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // InitializePoll calls InitializePollFunc.
-func (mock *VoterMock) InitializePoll(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+func (mock *VoterMock) InitializePoll(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
 	if mock.InitializePollFunc == nil {
 		panic("VoterMock.InitializePollFunc: method is nil but Voter.InitializePoll was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
 		Key            exported.PollKey
-		SnapshotSeqNo  int64
+		Voters         []sdk.ValAddress
 		PollProperties []exported.PollProperty
 	}{
 		Ctx:            ctx,
 		Key:            key,
-		SnapshotSeqNo:  snapshotSeqNo,
+		Voters:         voters,
 		PollProperties: pollProperties,
 	}
 	mock.lockInitializePoll.Lock()
 	mock.calls.InitializePoll = append(mock.calls.InitializePoll, callInfo)
 	mock.lockInitializePoll.Unlock()
-	return mock.InitializePollFunc(ctx, key, snapshotSeqNo, pollProperties...)
+	return mock.InitializePollFunc(ctx, key, voters, pollProperties...)
 }
 
 // InitializePollCalls gets all the calls that were made to InitializePoll.
@@ -137,13 +137,13 @@ func (mock *VoterMock) InitializePoll(ctx sdk.Context, key exported.PollKey, sna
 func (mock *VoterMock) InitializePollCalls() []struct {
 	Ctx            sdk.Context
 	Key            exported.PollKey
-	SnapshotSeqNo  int64
+	Voters         []sdk.ValAddress
 	PollProperties []exported.PollProperty
 } {
 	var calls []struct {
 		Ctx            sdk.Context
 		Key            exported.PollKey
-		SnapshotSeqNo  int64
+		Voters         []sdk.ValAddress
 		PollProperties []exported.PollProperty
 	}
 	mock.lockInitializePoll.RLock()
@@ -1416,6 +1416,9 @@ var _ types.Nexus = &NexusMock{}
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
+// 			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
+// 				panic("mock out the GetChainMaintainers method")
+// 			},
 // 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
@@ -1424,6 +1427,9 @@ var _ types.Nexus = &NexusMock{}
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx sdk.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
+// 			},
+// 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+// 				panic("mock out the IsChainActivated method")
 // 			},
 // 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
@@ -1444,6 +1450,9 @@ type NexusMock struct {
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
 
+	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
+	GetChainMaintainersFunc func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
+
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 
@@ -1452,6 +1461,9 @@ type NexusMock struct {
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx sdk.Context, chainName string, denom string) bool
+
+	// IsChainActivatedFunc mocks the IsChainActivated method.
+	IsChainActivatedFunc func(ctx sdk.Context, chain nexus.Chain) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
@@ -1481,6 +1493,13 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
+		GetChainMaintainers []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 		// GetRecipient holds details about calls to the GetRecipient method.
 		GetRecipient []struct {
 			// Ctx is the ctx argument value.
@@ -1506,6 +1525,13 @@ type NexusMock struct {
 			// Denom is the denom argument value.
 			Denom string
 		}
+		// IsChainActivated holds details about calls to the IsChainActivated method.
+		IsChainActivated []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -1519,9 +1545,11 @@ type NexusMock struct {
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
+	lockGetChainMaintainers    sync.RWMutex
 	lockGetRecipient           sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
 	lockIsAssetRegistered      sync.RWMutex
+	lockIsChainActivated       sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 }
 
@@ -1631,6 +1659,41 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetChainMaintainers calls GetChainMaintainersFunc.
+func (mock *NexusMock) GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
+	if mock.GetChainMaintainersFunc == nil {
+		panic("NexusMock.GetChainMaintainersFunc: method is nil but Nexus.GetChainMaintainers was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChainMaintainers.Lock()
+	mock.calls.GetChainMaintainers = append(mock.calls.GetChainMaintainers, callInfo)
+	mock.lockGetChainMaintainers.Unlock()
+	return mock.GetChainMaintainersFunc(ctx, chain)
+}
+
+// GetChainMaintainersCalls gets all the calls that were made to GetChainMaintainers.
+// Check the length with:
+//     len(mockedNexus.GetChainMaintainersCalls())
+func (mock *NexusMock) GetChainMaintainersCalls() []struct {
+	Ctx   sdk.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}
+	mock.lockGetChainMaintainers.RLock()
+	calls = mock.calls.GetChainMaintainers
+	mock.lockGetChainMaintainers.RUnlock()
 	return calls
 }
 
@@ -1744,6 +1807,41 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 	mock.lockIsAssetRegistered.RLock()
 	calls = mock.calls.IsAssetRegistered
 	mock.lockIsAssetRegistered.RUnlock()
+	return calls
+}
+
+// IsChainActivated calls IsChainActivatedFunc.
+func (mock *NexusMock) IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool {
+	if mock.IsChainActivatedFunc == nil {
+		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockIsChainActivated.Lock()
+	mock.calls.IsChainActivated = append(mock.calls.IsChainActivated, callInfo)
+	mock.lockIsChainActivated.Unlock()
+	return mock.IsChainActivatedFunc(ctx, chain)
+}
+
+// IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
+// Check the length with:
+//     len(mockedNexus.IsChainActivatedCalls())
+func (mock *NexusMock) IsChainActivatedCalls() []struct {
+	Ctx   sdk.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain nexus.Chain
+	}
+	mock.lockIsChainActivated.RLock()
+	calls = mock.calls.IsChainActivated
+	mock.lockIsChainActivated.RUnlock()
 	return calls
 }
 
