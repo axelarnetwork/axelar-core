@@ -361,19 +361,12 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 }
 
 func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
-	metadata := types.ERC20TokenMetadata{
-		Asset:   asset,
-		Details: details,
-		Status:  types.Initialized,
-	}
-
-	token := createERC20Token(ctx, k, metadata)
-	err := k.initializeToken(token)
+	metadata, err := k.initTokenMetadata(ctx, asset, details)
 	if err != nil {
 		return nil, err
 	}
-
-	return token, nil
+	k.setTokenMetadata(ctx, asset, metadata)
+	return createERC20Token(ctx, k, metadata), nil
 }
 
 func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
@@ -741,47 +734,50 @@ func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20Toke
 	return result, true
 }
 
-func (k keeper) initializeToken(t *erc20Token) error {
+func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
 	// perform a few checks now, so that it is impossible to get errors later
-	if k.GetERC20Token(t.ctx, t.Asset).Is(types.Initialized) {
-		return fmt.Errorf("token '%s' already set", t.Asset)
+	if !k.GetERC20Token(ctx, asset).Is(types.NonExistent) {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("token '%s' already set", asset)
 	}
 
-	gatewayAddr, found := k.GetGatewayAddress(t.ctx)
+	gatewayAddr, found := k.GetGatewayAddress(ctx)
 	if !found {
-		return fmt.Errorf("axelar gateway address for chain '%s' not set", k.chain)
+		return types.ERC20TokenMetadata{}, fmt.Errorf("axelar gateway address for chain '%s' not set", k.chain)
 	}
 
-	_, found = k.GetTokenByteCodes(t.ctx)
+	_, found = k.GetTokenByteCodes(ctx)
 	if !found {
-		return fmt.Errorf("bytecodes for token contract for chain '%s' not found", k.chain)
+		return types.ERC20TokenMetadata{}, fmt.Errorf("bytecodes for token contract for chain '%s' not found", k.chain)
 	}
 
-	if err := t.ERC20TokenMetadata.Details.Validate(); err != nil {
-		return err
+	if err := details.Validate(); err != nil {
+		return types.ERC20TokenMetadata{}, err
 	}
 
 	var network string
-	subspace, ok := k.getSubspace(t.ctx, k.chain)
+	subspace, ok := k.getSubspace(ctx, k.chain)
 	if !ok {
-		return fmt.Errorf("could not find subspace for chain '%s'", k.chain)
+		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find subspace for chain '%s'", k.chain)
 	}
 
-	subspace.Get(t.ctx, types.KeyNetwork, &network)
+	subspace.Get(ctx, types.KeyNetwork, &network)
 
-	chainID := k.GetChainIDByNetwork(t.ctx, network)
+	chainID := k.GetChainIDByNetwork(ctx, network)
 	if chainID == nil {
-		return fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
+		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
 	}
 
-	tokenAddr, err := k.getTokenAddress(t.ctx, t.Asset, t.Details, gatewayAddr)
+	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
 	if err != nil {
-		return err
+		return types.ERC20TokenMetadata{}, err
 	}
 
 	// all good
-	t.ERC20TokenMetadata.TokenAddress = types.Address(tokenAddr)
-	t.ERC20TokenMetadata.ChainID = sdk.NewIntFromBigInt(chainID)
-	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
-	return nil
+	return types.ERC20TokenMetadata{
+		Asset:        asset,
+		Details:      details,
+		TokenAddress: types.Address(tokenAddr),
+		ChainID:      sdk.NewIntFromBigInt(chainID),
+		Status:       types.Initialized,
+	}, nil
 }
