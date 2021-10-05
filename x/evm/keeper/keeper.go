@@ -382,7 +382,7 @@ func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
 		return &erc20Token{ERC20TokenMetadata: types.ERC20TokenMetadata{Status: types.NonExistent}}
 	}
 
-	return renderERC20Token(ctx, k, metadata)
+	return createERC20Token(ctx, k, metadata)
 }
 
 // SetCommand stores the given command; note that overwriting is not allowed

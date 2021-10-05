@@ -74,14 +74,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	tokenAddr := token.TokenAddress()
+	tokenAddr := token.GetAddress()
 
 	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	symbol := token.TokenDetails().Symbol
+	symbol := token.GetDetails().Symbol
 
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
@@ -133,7 +133,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	// if token was initialized, the token and gateway addresses are available
-	tokenAddr := token.TokenAddress()
+	tokenAddr := token.GetAddress()
 	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
@@ -165,7 +165,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, token.TokenDetails().Symbol),
+			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
@@ -642,7 +642,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Failed) {
-		token.ConfirmationFailed()
+		token.Reject()
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -661,7 +661,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		token.ConfirmationFailed()
+		token.Reject()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
@@ -673,7 +673,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.RegisterAsset(ctx, chain.Name, req.Asset)
-	token.ConfirmationSuccessful()
+	token.Confirm()
 
 	return &types.VoteConfirmTokenResponse{
 		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil
@@ -802,12 +802,12 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.InitERC20Token(ctx, req.Asset.Name, req.TokenDetails)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.DeployCommand(masterKeyID)
+	cmd, err := token.CreateDeployCommand(masterKeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1023,7 +1023,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			chainID,
 			secondaryKeyID,
 			transferIDtoCommandID(transfer.ID),
-			token.TokenDetails().Symbol,
+			token.GetDetails().Symbol,
 			common.HexToAddress(transfer.Recipient.Address),
 			transfer.Asset.Amount.BigInt(),
 		)

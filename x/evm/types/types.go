@@ -60,14 +60,14 @@ const (
 
 // ERC20Token represents an ERC20 token and its respective state
 type ERC20Token interface {
-	TokenDetails() TokenDetails
-	TokenAddress() Address
+	GetDetails() TokenDetails
+	GetAddress() Address
 	Is(state Status) bool
-	DeployCommand(key tss.KeyID) (Command, error)
+	CreateDeployCommand(key tss.KeyID) (Command, error)
 	StartVoting(tx Hash) (vote.PollKey, []vote.PollProperty, error)
 	ValidatePollKey(key vote.PollKey) error
-	ConfirmationFailed()
-	ConfirmationSuccessful()
+	Reject()
+	Confirm()
 }
 
 // Address wraps EVM Address

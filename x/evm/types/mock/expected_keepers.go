@@ -2095,6 +2095,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			AssembleTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
 // 				panic("mock out the AssembleTx method")
 // 			},
+// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+// 				panic("mock out the CreateERC20Token method")
+// 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
 // 			},
@@ -2188,9 +2191,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
 // 			},
-// 			InitERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
-// 				panic("mock out the InitERC20Token method")
-// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -2236,6 +2236,9 @@ type ChainKeeperMock struct {
 
 	// AssembleTxFunc mocks the AssembleTx method.
 	AssembleTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error)
+
+	// CreateERC20TokenFunc mocks the CreateERC20Token method.
+	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
 
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)
@@ -2330,9 +2333,6 @@ type ChainKeeperMock struct {
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
 
-	// InitERC20TokenFunc mocks the InitERC20Token method.
-	InitERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
-
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
@@ -2385,6 +2385,15 @@ type ChainKeeperMock struct {
 			Pk ecdsa.PublicKey
 			// Sig is the sig argument value.
 			Sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+		}
+		// CreateERC20Token holds details about calls to the CreateERC20Token method.
+		CreateERC20Token []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Asset is the asset argument value.
+			Asset string
+			// Details is the details argument value.
+			Details types.TokenDetails
 		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
@@ -2575,15 +2584,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// InitERC20Token holds details about calls to the InitERC20Token method.
-		InitERC20Token []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Asset is the asset argument value.
-			Asset string
-			// Details is the details argument value.
-			Details types.TokenDetails
-		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -2672,6 +2672,7 @@ type ChainKeeperMock struct {
 	}
 	lockArchiveTransferKey               sync.RWMutex
 	lockAssembleTx                       sync.RWMutex
+	lockCreateERC20Token                 sync.RWMutex
 	lockDeleteDeposit                    sync.RWMutex
 	lockDeletePendingDeposit             sync.RWMutex
 	lockDeletePendingTransferKey         sync.RWMutex
@@ -2703,7 +2704,6 @@ type ChainKeeperMock struct {
 	lockGetUnsignedBatchedCommands       sync.RWMutex
 	lockGetUnsignedTx                    sync.RWMutex
 	lockGetVotingThreshold               sync.RWMutex
-	lockInitERC20Token                   sync.RWMutex
 	lockLogger                           sync.RWMutex
 	lockSetBurnerInfo                    sync.RWMutex
 	lockSetCommand                       sync.RWMutex
@@ -2792,6 +2792,45 @@ func (mock *ChainKeeperMock) AssembleTxCalls() []struct {
 	mock.lockAssembleTx.RLock()
 	calls = mock.calls.AssembleTx
 	mock.lockAssembleTx.RUnlock()
+	return calls
+}
+
+// CreateERC20Token calls CreateERC20TokenFunc.
+func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+	if mock.CreateERC20TokenFunc == nil {
+		panic("ChainKeeperMock.CreateERC20TokenFunc: method is nil but ChainKeeper.CreateERC20Token was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Asset   string
+		Details types.TokenDetails
+	}{
+		Ctx:     ctx,
+		Asset:   asset,
+		Details: details,
+	}
+	mock.lockCreateERC20Token.Lock()
+	mock.calls.CreateERC20Token = append(mock.calls.CreateERC20Token, callInfo)
+	mock.lockCreateERC20Token.Unlock()
+	return mock.CreateERC20TokenFunc(ctx, asset, details)
+}
+
+// CreateERC20TokenCalls gets all the calls that were made to CreateERC20Token.
+// Check the length with:
+//     len(mockedChainKeeper.CreateERC20TokenCalls())
+func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Asset   string
+	Details types.TokenDetails
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Asset   string
+		Details types.TokenDetails
+	}
+	mock.lockCreateERC20Token.RLock()
+	calls = mock.calls.CreateERC20Token
+	mock.lockCreateERC20Token.RUnlock()
 	return calls
 }
 
@@ -3820,45 +3859,6 @@ func (mock *ChainKeeperMock) GetVotingThresholdCalls() []struct {
 	mock.lockGetVotingThreshold.RLock()
 	calls = mock.calls.GetVotingThreshold
 	mock.lockGetVotingThreshold.RUnlock()
-	return calls
-}
-
-// InitERC20Token calls InitERC20TokenFunc.
-func (mock *ChainKeeperMock) InitERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
-	if mock.InitERC20TokenFunc == nil {
-		panic("ChainKeeperMock.InitERC20TokenFunc: method is nil but ChainKeeper.InitERC20Token was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Asset   string
-		Details types.TokenDetails
-	}{
-		Ctx:     ctx,
-		Asset:   asset,
-		Details: details,
-	}
-	mock.lockInitERC20Token.Lock()
-	mock.calls.InitERC20Token = append(mock.calls.InitERC20Token, callInfo)
-	mock.lockInitERC20Token.Unlock()
-	return mock.InitERC20TokenFunc(ctx, asset, details)
-}
-
-// InitERC20TokenCalls gets all the calls that were made to InitERC20Token.
-// Check the length with:
-//     len(mockedChainKeeper.InitERC20TokenCalls())
-func (mock *ChainKeeperMock) InitERC20TokenCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Asset   string
-	Details types.TokenDetails
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Asset   string
-		Details types.TokenDetails
-	}
-	mock.lockInitERC20Token.RLock()
-	calls = mock.calls.InitERC20Token
-	mock.lockInitERC20Token.RUnlock()
 	return calls
 }
 

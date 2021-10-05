@@ -225,7 +225,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
 	}
 
-	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, token.TokenAddress(), params.Address, gatewayAddr)
+	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, token.GetAddress(), params.Address, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asse
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
-	return token.TokenAddress().Bytes(), nil
+	return token.GetAddress().Bytes(), nil
 }
 
 // QueryDepositState returns the state of an ERC20 deposit confirmation

@@ -21,7 +21,7 @@ type erc20Token struct {
 	getVotingThreshold     func(ctx sdk.Context) (utils.Threshold, bool)
 }
 
-func renderERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) *erc20Token {
+func createERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) *erc20Token {
 	token := &erc20Token{
 		ctx:                    ctx,
 		ERC20TokenMetadata:     meta,
@@ -36,7 +36,7 @@ func renderERC20Token(ctx sdk.Context, k keeper, meta types.ERC20TokenMetadata) 
 
 func (t *erc20Token) initialize(k keeper) error {
 	// perform a few checks now, so that it is impossible to get errors later
-	if k.GetERC20Token(t.ctx, t.Asset).Is(types.NonExistent) {
+	if k.GetERC20Token(t.ctx, t.Asset).Is(types.Initialized) {
 		return fmt.Errorf("token '%s' already set", t.Asset)
 	}
 

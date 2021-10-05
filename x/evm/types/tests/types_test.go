@@ -151,9 +151,9 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	keeper := k.ForChain(ctx, chain)
 	keeper.SetGatewayAddress(ctx, axelarGateway)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
-	token, err := keeper.InitERC20Token(ctx, asset, tokenDetails)
+	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, token.TokenAddress())
+	assert.Equal(t, expected, token.GetAddress())
 }
 
 func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {

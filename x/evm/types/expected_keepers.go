@@ -79,7 +79,7 @@ type ChainKeeper interface {
 	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
-	InitERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
+	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
 }
 
