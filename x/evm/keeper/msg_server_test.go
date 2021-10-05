@@ -418,8 +418,14 @@ func TestLink_Success(t *testing.T) {
 		panic(err)
 	}
 
-	token.StartVoting(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
-	token.Confirm()
+	err = token.StartConfirmation(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+	if err != nil {
+		panic(err)
+	}
+	err = token.Confirm()
+	if err != nil {
+		panic(err)
+	}
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
 
@@ -770,7 +776,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				if asset == msg.Asset.Name {
 					return token
 				}
-				return &mockERC20Token{status: types.NonExistent}
+				return types.NilToken()
 			},
 		}
 		v = &mock.VoterMock{
@@ -823,17 +829,17 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, getPollKey(btc.Bitcoin.NativeAsset, msg.TxID))
+		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.Bitcoin.NativeAsset))
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		err := token.StartVoting(types.Hash(hash))
+		err := token.StartConfirmation(types.Hash(hash))
 		if err != nil {
 			panic(err)
 		}
-		pollKey := getPollKey(btc.Bitcoin.NativeAsset, types.Hash(hash))
+		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.Bitcoin.NativeAsset)
 		voteReq.Asset = btc.Bitcoin.NativeAsset
 		voteReq.PollKey = pollKey
 
@@ -874,7 +880,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("token unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		chaink.GetERC20TokenFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			return &mockERC20Token{status: types.NonExistent}
+			return types.NilToken()
 		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -885,7 +891,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("already registered", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		token.StartVoting(types.Hash(hash))
+		token.StartConfirmation(types.Hash(hash))
 		token.Confirm()
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -1257,7 +1263,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			SetCommandFunc: func(ctx sdk.Context, command types.Command) error { return nil },
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
-					return nil, fmt.Errorf("gateway address not set")
+					return types.NilToken(), fmt.Errorf("gateway address not set")
 				}
 				return createMockERC20Token(asset, details), nil
 			},
@@ -1428,21 +1434,26 @@ func createDetails() types.TokenDetails {
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
 
-type mockERC20Token struct {
+func createMockERC20Token(asset string, details types.TokenDetails) types.ERC20Token {
+	meta := types.ERC20TokenMetadata{
+		Asset:        asset,
+		Details:      details,
+		Status:       types.Initialized,
+		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
+	}
+	return types.CreateERC20Token(
+		func(meta types.ERC20TokenMetadata) {},
+		meta,
+	)
+}
+
+/*type mockERC20Token struct {
 	asset   string
 	details types.TokenDetails
 	status  types.Status
 	hash    types.Hash
 	address types.Address
-}
-
-func createMockERC20Token(asset string, details types.TokenDetails) *mockERC20Token {
-	return &mockERC20Token{
-		asset:   asset,
-		details: details,
-		status:  types.Initialized,
-		address: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-	}
 }
 
 func (t *mockERC20Token) GetAsset() string {
@@ -1544,4 +1555,4 @@ func (t *mockERC20Token) Confirm() error {
 
 	t.status = types.Confirmed
 	return nil
-}
+}*/

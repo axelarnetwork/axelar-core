@@ -363,22 +363,22 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 	metadata, err := k.initTokenMetadata(ctx, asset, details)
 	if err != nil {
-		return nil, err
+		return types.NilToken(), err
 	}
 	k.setTokenMetadata(ctx, asset, metadata)
-	return createERC20Token(func(meta types.ERC20TokenMetadata) {
-		k.setTokenMetadata(ctx, asset, meta)
+	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, m)
 	}, metadata), nil
 }
 
 func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
 	metadata, ok := k.getTokenMetadata(ctx, asset)
 	if !ok {
-		return &erc20Token{ERC20TokenMetadata: types.ERC20TokenMetadata{Status: types.NonExistent}}
+		return types.NilToken()
 	}
 
-	return createERC20Token(func(meta types.ERC20TokenMetadata) {
-		k.setTokenMetadata(ctx, asset, meta)
+	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, m)
 	}, metadata)
 }
 
@@ -740,7 +740,7 @@ func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20Toke
 
 func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
 	// perform a few checks now, so that it is impossible to get errors later
-	if !k.GetERC20Token(ctx, asset).Is(types.NonExistent) {
+	if token := k.GetERC20Token(ctx, asset); !token.Is(types.NonExistent) {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("token '%s' already set", asset)
 	}
 

@@ -127,7 +127,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
-	err := token.StartVoting(req.TxID)
+	err := token.StartConfirmation(req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("min voter count not found")
 	}
 
-	pollKey := getPollKey(req.TxID, req.Asset.Name)
+	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
 
 	if err := s.voter.InitializePoll(
 		ctx,
@@ -641,8 +641,8 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("token %s already confirmed", token.GetAsset())
 	case !token.Is(types.Waiting):
 		return nil, fmt.Errorf("voting for token '%s' not underway", token.GetAsset())
-	case getPollKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
-		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
+	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
+		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
 	default:
 		// assert: the token is known and has not been confirmed before
 	}
@@ -1315,8 +1315,4 @@ func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) 
 	}
 
 	return
-}
-
-func getPollKey(txID types.Hash, asset string) vote.PollKey {
-	return vote.NewPollKey(types.ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
 }
