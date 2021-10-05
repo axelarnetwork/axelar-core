@@ -75,7 +75,7 @@ func (t *erc20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProp
 		return vote.PollKey{}, nil, fmt.Errorf("token %s non-existent", t.Asset)
 	case t.Is(types.Confirmed):
 		return vote.PollKey{}, nil, fmt.Errorf("token %s already confirmed", t.Asset)
-	case t.Is(types.Voting):
+	case t.Is(types.Waiting):
 		return vote.PollKey{}, nil, fmt.Errorf("voting for token %s is already underway", t.Asset)
 	}
 
@@ -101,7 +101,7 @@ func (t *erc20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProp
 	}
 
 	t.ERC20TokenMetadata.TxHash = txID
-	t.Status |= types.Voting
+	t.Status |= types.Waiting
 	t.setMeta(t.ctx, t.Asset, t.ERC20TokenMetadata)
 
 	return t.getPollKey(txID), properties, nil
@@ -117,7 +117,7 @@ func (t *erc20Token) ValidatePollKey(key vote.PollKey) error {
 		return fmt.Errorf("token %s non-existent", t.Asset)
 	case t.Is(types.Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.Asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("voting for token not underway %s", t.Asset)
 	case t.getPollKey(t.TxHash) != key:
 		return fmt.Errorf("poll key mismatch (expected %s, got %s)", t.getPollKey(t.TxHash).String(), key.String())
@@ -131,7 +131,7 @@ func (t *erc20Token) Reset() error {
 	switch {
 	case t.Is(types.NonExistent):
 		return fmt.Errorf("token %s non-existent", t.Asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.Asset, t.Status.String())
 	}
 
@@ -145,7 +145,7 @@ func (t *erc20Token) Confirm() error {
 	switch {
 	case t.Is(types.NonExistent):
 		return fmt.Errorf("token %s non-existent", t.Asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.Asset, t.Status.String())
 	}
 

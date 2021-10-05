@@ -71,7 +71,7 @@ enum Status {
   // be powers of 2
   STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
   STATUS_INITIALIZED = 1 [ (gogoproto.enumvalue_customname) = "Initialized" ];
-  STATUS_VOTING = 2 [ (gogoproto.enumvalue_customname) = "Voting" ];
+  STATUS_WAITING = 2 [ (gogoproto.enumvalue_customname) = "Waiting" ];
   STATUS_CONFIRMED = 4 [ (gogoproto.enumvalue_customname) = "Confirmed" ];
 }
 

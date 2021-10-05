@@ -1459,7 +1459,7 @@ func (t *mockERC20Token) Is(status types.Status) bool {
 func (t *mockERC20Token) StartVoting(txID types.Hash) (vote.PollKey, []vote.PollProperty, error) {
 	if t.status == types.Initialized {
 		t.hash = txID
-		t.status |= types.Voting
+		t.status |= types.Waiting
 		properties := []vote.PollProperty{
 			vote.ExpiryAt(rand.I64Between(10, 100)),
 			vote.Threshold(utils.NewThreshold(rand.I64Between(1, 10), rand.I64Between(10, 100))),
@@ -1494,7 +1494,7 @@ func (t *mockERC20Token) ValidatePollKey(key vote.PollKey) error {
 	switch {
 	case t.Is(types.Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("voting for token not underway %s", t.asset)
 	case getPollKey(t.asset, t.hash) != key:
 		return fmt.Errorf("poll key mismatch (expected %s, got %s)", getPollKey(t.asset, t.hash).String(), key.String())
@@ -1508,7 +1508,7 @@ func (t *mockERC20Token) Reset() error {
 	switch {
 	case t.Is(types.NonExistent):
 		return fmt.Errorf("token %s non-existent", t.asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.asset, t.status.String())
 	}
 
@@ -1520,7 +1520,7 @@ func (t *mockERC20Token) Confirm() error {
 	switch {
 	case t.Is(types.NonExistent):
 		return fmt.Errorf("token %s non-existent", t.asset)
-	case !t.Is(types.Voting):
+	case !t.Is(types.Waiting):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.asset, t.status.String())
 	}
 
