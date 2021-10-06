@@ -340,6 +340,7 @@ func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, err
 		// path should never be called, because all those Msgs should be
 		// registered within the `msgServiceRouter` already.
 		msgRoute := legacyMsg.Route()
+		ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName)).Debug(fmt.Sprintf("received legacy message type %s", legacyMsg.Type()))
 		handler := s.router.Route(ctx, msgRoute)
 		if handler == nil {
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s", msgRoute)

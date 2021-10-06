@@ -292,7 +292,7 @@ func (k Keeper) DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.Ke
 }
 
 func (k Keeper) setSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID, counter int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.Amino.MustMarshalBinaryBare(counter))
+	ctx.KVStore(k.storeKey).Set([]byte(snapshotForKeyIDPrefix+keyID), k.cdc.MustMarshalLengthPrefixed(counter))
 }
 
 // GetSnapshotCounterForKeyID returns the snapshot round in which the key with the given ID was created, if the key exists
@@ -302,7 +302,7 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID
 		return 0, false
 	}
 	var counter int64
-	k.cdc.Amino.MustUnmarshalBinaryBare(bz, &counter)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &counter)
 	return counter, true
 }
 
