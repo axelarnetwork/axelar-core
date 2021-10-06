@@ -581,7 +581,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 		chain := rand.StrBetween(5, 20)
 		msg = &types.ConfirmChainRequest{
-			Sender: rand.Bytes(20),
+			Sender: rand.AccAddr(),
 			Name:   chain,
 		}
 		voteReq = &types.VoteConfirmChainRequest{Name: chain}
@@ -819,7 +819,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails())
 		msg = &types.ConfirmTokenRequest{
-			Sender: rand.Bytes(20),
+			Sender: rand.AccAddr(),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset),
@@ -959,7 +959,7 @@ func TestAddChain(t *testing.T) {
 		params := types.DefaultParams()[0]
 		params.Chain = name
 		msg = &types.AddChainRequest{
-			Sender:      rand.Bytes(20),
+			Sender:      rand.AccAddr(),
 			Name:        name,
 			NativeAsset: nativeAsset,
 			Params:      params,
@@ -1080,7 +1080,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		msg = &types.ConfirmDepositRequest{
-			Sender:        rand.Bytes(20),
+			Sender:        rand.AccAddr(),
 			Chain:         evmChain,
 			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Amount:        sdk.NewUint(mathRand.Uint64()),
