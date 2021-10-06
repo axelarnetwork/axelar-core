@@ -286,6 +286,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			},
 			GetUnconfirmedAmountFunc: func(sdk.Context, tss.KeyID) btcutil.Amount { return 0 },
 			SetUnconfirmedAmountFunc: func(sdk.Context, tss.KeyID, btcutil.Amount) {},
+			LoggerFunc:               func(sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 		voter = &mock.VoterMock{
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {

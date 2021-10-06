@@ -251,7 +251,7 @@ func (k Keeper) getKeygenStart(ctx sdk.Context, keyID exported.KeyID) (int64, bo
 }
 
 func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
+	storageKey := fmt.Sprintf("%s%s_%s_%d", rotationPrefix, chain.Name, keyRole.SimpleString(), rotation)
 
 	keyID := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
 	if keyID == nil {
@@ -262,14 +262,14 @@ func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, key
 }
 
 func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole, keyID exported.KeyID) {
-	storageKey := fmt.Sprintf("%s%d_%s_%s", rotationPrefix, rotation, chain.Name, keyRole.SimpleString())
+	storageKey := fmt.Sprintf("%s%s_%s_%d", rotationPrefix, chain.Name, keyRole.SimpleString(), rotation)
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), []byte(keyID))
 }
 
 // GetRotationCount returns the current rotation count for the given chain and key role
 func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationCountPrefix, chain.Name, keyRole.SimpleString())
 
 	bz := ctx.KVStore(k.storeKey).Get([]byte(storageKey))
 	if bz == nil {
@@ -281,7 +281,7 @@ func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 }
 
 func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotation int64) {
-	storageKey := fmt.Sprintf("%s%s_%s", rotationPrefix, chain.Name, keyRole.SimpleString())
+	storageKey := fmt.Sprintf("%s%s_%s", rotationCountPrefix, chain.Name, keyRole.SimpleString())
 
 	ctx.KVStore(k.storeKey).Set([]byte(storageKey), k.cdc.MustMarshalLengthPrefixed(rotation))
 }

@@ -38,7 +38,7 @@ enum VoteStatus {
 message QueryRecoveryResponse {
   repeated string party_uids = 1;
   repeated uint32 party_share_counts = 2;
-  int32 threshold = 3;
+  uint32 threshold = 3;
   tss.tofnd.v1beta1.KeygenOutput keygen_output = 4;
 }
 
@@ -62,6 +62,29 @@ message QueryKeyShareResponse {
 
 message QueryDeactivatedOperatorsResponse {
   repeated string operator_addresses = 1;
+}
+
+message QueryActiveOldKeysValidatorResponse {
+  message KeyInfo {
+    string id = 1 [
+      (gogoproto.customname) = "ID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+    string chain = 2;
+    int32 role = 3
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
+  }
+  repeated KeyInfo keys_info = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryActiveOldKeysResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message QueryExternalKeyIDResponse {

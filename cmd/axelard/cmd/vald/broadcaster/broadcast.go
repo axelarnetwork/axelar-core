@@ -33,15 +33,17 @@ func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) 
 }
 
 // Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
+func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	var response *sdk.TxResponse
 	// serialize concurrent calls to broadcast
-	return b.pipeline.Push(func() error {
+	err := b.pipeline.Push(func() error {
+
 		txf, err := b.txFactory.Prepare(ctx)
 		if err != nil {
 			return err
 		}
 
-		res, err := Broadcast(ctx, txf, msgs)
+		response, err = Broadcast(ctx, txf, msgs)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -51,13 +53,14 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
 		}
 
 		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
-			res.TxHash, res.Code, res.RawLog))
+			response.TxHash, response.Code, response.RawLog))
 
 		// broadcast has been successful, so increment sequence number
 		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
 
 		return nil
 	})
+	return response, err
 }
 
 // Broadcast bundles the given messages into a single transaction and submits it to the blockchain.

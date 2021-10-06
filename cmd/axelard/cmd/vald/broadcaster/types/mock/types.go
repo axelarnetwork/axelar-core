@@ -2084,7 +2084,7 @@ var _ types.Broadcaster = &BroadcasterMock{}
 //
 // 		// make and configure a mocked types.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			BroadcastFunc: func(ctx sdkClient.Context, msgs ...sdk.Msg) error {
+// 			BroadcastFunc: func(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
@@ -2095,7 +2095,7 @@ var _ types.Broadcaster = &BroadcasterMock{}
 // 	}
 type BroadcasterMock struct {
 	// BroadcastFunc mocks the Broadcast method.
-	BroadcastFunc func(ctx sdkClient.Context, msgs ...sdk.Msg) error
+	BroadcastFunc func(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2111,7 +2111,7 @@ type BroadcasterMock struct {
 }
 
 // Broadcast calls BroadcastFunc.
-func (mock *BroadcasterMock) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) error {
+func (mock *BroadcasterMock) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	callInfo := struct {
 		Ctx  sdkClient.Context
 		Msgs []sdk.Msg
@@ -2124,9 +2124,10 @@ func (mock *BroadcasterMock) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) e
 	mock.lockBroadcast.Unlock()
 	if mock.BroadcastFunc == nil {
 		var (
-			errOut error
+			txResponseOut *sdk.TxResponse
+			errOut        error
 		)
-		return errOut
+		return txResponseOut, errOut
 	}
 	return mock.BroadcastFunc(ctx, msgs...)
 }

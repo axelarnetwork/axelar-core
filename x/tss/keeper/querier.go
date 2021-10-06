@@ -19,14 +19,16 @@ import (
 
 // Query paths
 const (
-	QuerySignature            = "signature"
-	QueryKey                  = "key"
-	QueryRecovery             = "recovery"
-	QueryKeyID                = "key-id"
-	QueryKeySharesByKeyID     = "key-share-id"
-	QueryKeySharesByValidator = "key-share-validator"
-	QueryDeactivated          = "deactivated"
-	QExternalKeyID            = "external-key-id"
+	QuerySignature                = "signature"
+	QueryKey                      = "key"
+	QueryRecovery                 = "recovery"
+	QueryKeyID                    = "key-id"
+	QueryKeySharesByKeyID         = "key-share-id"
+	QueryKeySharesByValidator     = "key-share-validator"
+	QueryActiveOldKeys            = "active-old-keys"
+	QueryActiveOldKeysByValidator = "active-old-keys-validator"
+	QueryDeactivated              = "deactivated"
+	QExternalKeyID                = "external-key-id"
 )
 
 // NewQuerier returns a new querier for the TSS module
@@ -64,6 +66,10 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 			res, err = queryKeySharesByKeyID(ctx, k, s, keyID)
 		case QueryKeySharesByValidator:
 			res, err = queryKeySharesByValidator(ctx, k, n, s, path[1])
+		case QueryActiveOldKeys:
+			res, err = queryActiveOldKeyIDs(ctx, k, n, path[1], path[2])
+		case QueryActiveOldKeysByValidator:
+			res, err = queryActiveOldKeyIDsByValidator(ctx, k, n, s, path[1])
 		case QueryDeactivated:
 			res, err = queryDeactivatedOperator(ctx, k, s, staking)
 		default:
@@ -123,7 +129,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 	}
 
 	resp := types.QueryRecoveryResponse{
-		Threshold:        int32(snapshot.CorruptionThreshold),
+		Threshold:        uint32(snapshot.CorruptionThreshold),
 		PartyUids:        participants,
 		PartyShareCounts: participantShareCounts,
 		KeygenOutput: &tofnd.KeygenOutput{
@@ -240,6 +246,73 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 	}
 
 	return keyShareInfos.Marshal()
+}
+
+func queryActiveOldKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
+	var queryResponse types.QueryActiveOldKeysResponse
+
+	chain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("could not find chain '%s'", chainName)
+	}
+
+	role, err := exported.KeyRoleFromSimpleStr(roleStr)
+	if err != nil {
+		return nil, err
+	}
+
+	keys, err := k.GetOldActiveKeys(ctx, chain, role)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range keys {
+		queryResponse.KeyIDs = append(queryResponse.KeyIDs, key.ID)
+	}
+	return queryResponse.Marshal()
+}
+
+func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {
+	var allKeys []types.QueryActiveOldKeysValidatorResponse_KeyInfo
+	var queryResponse types.QueryActiveOldKeysValidatorResponse
+
+	for _, chain := range n.GetChains(ctx) {
+		for _, role := range exported.GetKeyRoles() {
+			keys, err := k.GetOldActiveKeys(ctx, chain, role)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, key := range keys {
+				allKeys = append(allKeys, types.QueryActiveOldKeysValidatorResponse_KeyInfo{
+					ID:    key.ID,
+					Chain: chain.Name,
+					Role:  role,
+				})
+			}
+		}
+	}
+
+	for _, key := range allKeys {
+		counter, ok := k.GetSnapshotCounterForKeyID(ctx, key.ID)
+		if !ok {
+			return nil, fmt.Errorf("could not get snapshot counter from keyID %s", key.ID)
+		}
+
+		snapshot, ok := s.GetSnapshot(ctx, counter)
+		if !ok {
+			return nil, fmt.Errorf("no snapshot found for counter number %d", counter)
+		}
+
+		for _, validator := range snapshot.Validators {
+			validatorAddr := validator.GetSDKValidator().GetOperator().String()
+			if validatorAddr == targetValidatorAddr {
+				queryResponse.KeysInfo = append(queryResponse.KeysInfo, key)
+				break
+			}
+		}
+	}
+	return queryResponse.Marshal()
 }
 
 func queryKeySharesByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, s types.Snapshotter, targetValidatorAddr string) ([]byte, error) {

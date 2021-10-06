@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	rotationPrefix             = "rotation_count_"
+	rotationPrefix             = "rotation_"
+	rotationCountPrefix        = "rotation_count_"
 	keygenStartHeight          = "block_height_"
 	pkPrefix                   = "pk_"
 	groupRecoverPrefix         = "group_recovery_info_"

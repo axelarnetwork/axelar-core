@@ -10,7 +10,6 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params is the parameter set for this module
 message Params {
-  int64 locking_period = 1 [ deprecated = true ];
   // KeyRequirements defines the requirement for each key role
   repeated tss.exported.v1beta1.KeyRequirement key_requirements = 2
       [ (gogoproto.nullable) = false ];

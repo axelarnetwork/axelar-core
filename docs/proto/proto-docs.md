@@ -233,6 +233,9 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
+    - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
+    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
@@ -2971,8 +2974,8 @@ Key presence check types
 | `new_key_uid` | [string](#string) |  |  |
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
-| `my_party_index` | [int32](#int32) |  | parties[my_party_index] belongs to the server |
-| `threshold` | [int32](#int32) |  |  |
+| `my_party_index` | [uint32](#uint32) |  | parties[my_party_index] belongs to the server |
+| `threshold` | [uint32](#uint32) |  |  |
 
 
 
@@ -3242,7 +3245,6 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `locking_period` | [int64](#int64) |  | **Deprecated.**  |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
@@ -3299,6 +3301,53 @@ Params is the parameter set for this module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
+
+### QueryActiveOldKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
+
+### QueryActiveOldKeysValidatorResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
+
+### QueryActiveOldKeysValidatorResponse.KeyInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `role` | [int32](#int32) |  |  |
+
+
+
 
 
 
@@ -3394,7 +3443,7 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
-| `threshold` | [int32](#int32) |  |  |
+| `threshold` | [uint32](#uint32) |  |  |
 | `keygen_output` | [tss.tofnd.v1beta1.KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 

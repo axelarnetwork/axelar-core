@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -248,8 +247,6 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	logger := ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-	logger.Info(fmt.Sprintf("bitcoin outpoint confirmation result is %s", poll.GetResult()))
 	s.DeletePendingOutPointInfo(ctx, req.PollKey)
 
 	// handle poll result
@@ -270,6 +267,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		}, nil
 	}
 
+	s.Logger(ctx).Info(fmt.Sprintf("outpoint %s was confirmed ", req.OutPoint))
 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	addr, ok := s.GetAddress(ctx, pendingOutPointInfo.Address)

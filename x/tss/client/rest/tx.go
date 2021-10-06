@@ -23,14 +23,16 @@ const (
 	TxMasterKeyRotate      = "rotate"
 	TxRegisterExternalKeys = "register-external-keys"
 
-	QuerySignature            = keeper.QuerySignature
-	QueryKey                  = keeper.QueryKey
-	QueryRecovery             = keeper.QueryRecovery
-	QueryKeyID                = keeper.QueryKeyID
-	QueryKeySharesByKeyID     = keeper.QueryKeySharesByKeyID
-	QueryKeySharesByValidator = keeper.QueryKeySharesByValidator
-	QueryDeactivated          = keeper.QueryDeactivated
-	QueryExternalKeyID        = "external-key-id"
+	QuerySignature                = keeper.QuerySignature
+	QueryKey                      = keeper.QueryKey
+	QueryRecovery                 = keeper.QueryRecovery
+	QueryKeyID                    = keeper.QueryKeyID
+	QueryKeySharesByKeyID         = keeper.QueryKeySharesByKeyID
+	QueryActiveOldKeys            = keeper.QueryActiveOldKeys
+	QueryActiveOldKeysByValidator = keeper.QueryActiveOldKeysByValidator
+	QueryKeySharesByValidator     = keeper.QueryKeySharesByValidator
+	QueryDeactivated              = keeper.QueryDeactivated
+	QueryExternalKeyID            = "external-key-id"
 )
 
 // ReqRegisterExternalKey represents a request to register external keys for a chain
@@ -68,6 +70,8 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerRecovery(cliCtx), QueryRecovery)
 	registerQuery(QueryHandlerKeyID(cliCtx), QueryKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
+	registerQuery(QueryHandlerActiveOldKeys(cliCtx), QueryActiveOldKeys, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
+	registerQuery(QueryHandlerActiveOldKeysByValidator(cliCtx), QueryActiveOldKeysByValidator, clientUtils.PathVarCosmosAddress)
 	registerQuery(QueryHandlerKeySharesByValidator(cliCtx), QueryKeySharesByValidator, clientUtils.PathVarCosmosAddress)
 	registerQuery(QueryHandlerDeactivatedOperator(cliCtx), QueryDeactivated)
 	registerQuery(QueryHandlerExternalKeyID(cliCtx), QueryExternalKeyID, clientUtils.PathVarChain)

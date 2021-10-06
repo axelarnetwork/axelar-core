@@ -1,24 +1,16 @@
-## axelard query distribution rewards
+## axelard query tss active-old-keys
 
-Query all distribution delegator rewards or rewards from a particular validator
-
-### Synopsis
-
-Query all rewards earned by a delegator, optionally restrict to rewards from a single validator.
-
-Example:
-$ <appd> query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
-$ <appd> query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+Query active old key IDs by validator
 
 ```
-axelard query distribution rewards [delegator-addr] [validator-addr] [flags]
+axelard query tss active-old-keys [chain] [role] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for rewards
+  -h, --help          help for active-old-keys
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -35,4 +27,4 @@ axelard query distribution rewards [delegator-addr] [validator-addr] [flags]
 
 ### SEE ALSO
 
-- [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
+- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
