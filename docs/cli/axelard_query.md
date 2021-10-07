@@ -34,6 +34,7 @@ axelard query [flags]
 - [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
 - [axelard query evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
 - [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
 - [axelard query gov](axelard_query_gov.md)	 - Querying commands for the governance module
 - [axelard query ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
 - [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
@@ -44,6 +45,6 @@ axelard query [flags]
 - [axelard query staking](axelard_query_staking.md)	 - Querying commands for the staking module
 - [axelard query tendermint-validator-set](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
 - [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
-- [axelard query tx](axelard_query_tx.md)	 - Query for a transaction by hash, addr++seq combination or signature in a committed block
+- [axelard query tx](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
 - [axelard query txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
 - [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module

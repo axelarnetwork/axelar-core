@@ -3,7 +3,7 @@ package types_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -14,7 +14,7 @@ import (
 
 func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	// proper addresses need to be a specific length, otherwise the json unmarshaling fails
-	sender := make([]byte, sdk.AddrLen)
+	sender := make([]byte, address.Len)
 	for i := range sender {
 		sender[i] = 0
 	}
@@ -32,9 +32,9 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	}
 	encCfg := app.MakeEncodingConfig()
 
-	bz := encCfg.Marshaler.MustMarshalBinaryLengthPrefixed(&vote)
+	bz := encCfg.Marshaler.MustMarshalLengthPrefixed(&vote)
 	var msg tss.VotePubKeyRequest
-	encCfg.Marshaler.MustUnmarshalBinaryLengthPrefixed(bz, &msg)
+	encCfg.Marshaler.MustUnmarshalLengthPrefixed(bz, &msg)
 
 	assert.Equal(t, vote, msg)
 

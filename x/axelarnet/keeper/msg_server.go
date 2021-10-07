@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -325,27 +326,30 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 }
 
 func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-	var result *sdk.Result
-	var msgFqName string
+
+	var msgResult *sdk.Result
 	var err error
 
-	if svcMsg, ok := msg.(sdk.ServiceMsg); ok {
-		msgFqName = svcMsg.MethodName
-		handler := s.msgSvcRouter.Handler(msgFqName)
-		if handler == nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message service method: %s;", msgFqName)
-		}
-		result, err = handler(ctx, svcMsg.Request)
-
-	} else {
+	if handler := s.msgSvcRouter.Handler(msg); handler != nil {
+		// ADR 031 request type routing
+		msgResult, err = handler(ctx, msg)
+	} else if legacyMsg, ok := msg.(legacytx.LegacyMsg); ok {
 		// legacy sdk.Msg routing
-		msgRoute := msg.Route()
-		msgFqName = msg.Type()
+		// Assuming that the app developer has migrated all their Msgs to
+		// proto messages and has registered all `Msg services`, then this
+		// path should never be called, because all those Msgs should be
+		// registered within the `msgServiceRouter` already.
+		msgRoute := legacyMsg.Route()
+		s.Logger(ctx).Debug(fmt.Sprintf("received legacy message type %s", legacyMsg.Type()))
 		handler := s.router.Route(ctx, msgRoute)
 		if handler == nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s;", msgRoute)
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s", msgRoute)
 		}
-		result, err = handler(ctx, msg)
+
+		msgResult, err = handler(ctx, msg)
+	} else {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
 	}
-	return result, err
+
+	return msgResult, err
 }

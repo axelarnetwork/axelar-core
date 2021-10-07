@@ -33,12 +33,12 @@ type Keeper struct {
 	staking  types.StakingKeeper
 	slasher  exported.Slasher
 	tss      exported.Tss
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	params   params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
@@ -109,7 +109,7 @@ func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, 
 	}
 
 	var snapshot exported.Snapshot
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &snapshot)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &snapshot)
 
 	return snapshot, true
 }
@@ -141,7 +141,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 	}
 
 	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
-		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower())
+		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower(k.staking.PowerReduction(ctx)))
 
 		// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 		// and it is not exposed in the ValidatorI interface
@@ -189,12 +189,12 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 	// minBondFractionPerShare is only relavant if KeyShareDistributionPolicy is set to WeightedByStake
 	minBondFractionPerShare := utils.Threshold{Numerator: 1, Denominator: keyRequirement.MaxTotalShareCount}
 	for _, validator := range validators {
-		if keyRequirement.KeyShareDistributionPolicy == tss.WeightedByStake && !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower()), totalConsensusPower) {
+		if keyRequirement.KeyShareDistributionPolicy == tss.WeightedByStake && !minBondFractionPerShare.IsMet(sdk.NewInt(validator.GetConsensusPower(k.staking.PowerReduction(ctx))), totalConsensusPower) {
 			nonParticipants = append(nonParticipants, exported.NewValidator(validator, 0))
 			continue
 		}
 
-		snapshotConsensusPower = snapshotConsensusPower.AddRaw(validator.GetConsensusPower())
+		snapshotConsensusPower = snapshotConsensusPower.AddRaw(validator.GetConsensusPower(k.staking.PowerReduction(ctx)))
 		participants = append(participants, exported.NewValidator(validator, 0))
 	}
 
@@ -212,12 +212,12 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 
 	// Since IterateBondedValidatorsByPower iterates validators by power in descending order, the last participant is
 	// the one with least amount of bond among all participants
-	bondPerShare := participants[len(participants)-1].GetSDKValidator().GetConsensusPower()
+	bondPerShare := participants[len(participants)-1].GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))
 	totalShareCount := sdk.ZeroInt()
 	for i := range participants {
 		switch keyRequirement.KeyShareDistributionPolicy {
 		case tss.WeightedByStake:
-			participants[i].ShareCount = participants[i].GetSDKValidator().GetConsensusPower() / bondPerShare
+			participants[i].ShareCount = participants[i].GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx)) / bondPerShare
 		case tss.OnePerValidator:
 			participants[i].ShareCount = 1
 		default:
@@ -249,21 +249,21 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		KeyShareDistributionPolicy: keyRequirement.KeyShareDistributionPolicy,
 		CorruptionThreshold:        corruptionThreshold,
 	}
-	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalBinaryLengthPrefixed(&snapshot))
+	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalLengthPrefixed(&snapshot))
 
 	// build event-related data
 	participantsAddr := make([]string, 0, len(participants))
 	participantsStake := make([]uint32, 0, len(participants))
 	for _, participant := range participants {
 		participantsAddr = append(participantsAddr, participant.GetSDKValidator().GetOperator().String())
-		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower()))
+		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
 	}
 
 	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
 	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
 	for _, nonParticipant := range nonParticipants {
 		nonParticipantsAddr = append(nonParticipantsAddr, nonParticipant.GetSDKValidator().GetOperator().String())
-		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower()))
+		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
 	}
 
 	ctx.EventManager().EmitEvent(

@@ -146,5 +146,5 @@ func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
 	resp := types.QueryValidatorsResponse{Validators: validators}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

@@ -23,7 +23,7 @@ func (m GenesisState) Validate() error {
 
 // GetGenesisStateFromAppState returns x/tss GenesisState given raw application
 // genesis state.
-func GetGenesisStateFromAppState(cdc codec.Marshaler, appState map[string]json.RawMessage) GenesisState {
+func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.RawMessage) GenesisState {
 	var genesisState GenesisState
 	if appState[ModuleName] != nil {
 		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)

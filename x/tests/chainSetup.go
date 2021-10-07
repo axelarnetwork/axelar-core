@@ -173,7 +173,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
 			totalPower := sdk.ZeroInt()
 			for _, val := range validators {
-				totalPower = totalPower.AddRaw(val.ConsensusPower())
+				totalPower = totalPower.AddRaw(val.ConsensusPower(sdk.DefaultPowerReduction))
 			}
 			return totalPower
 		},
@@ -185,6 +185,9 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 				}
 			}
 			return nil
+		},
+		PowerReductionFunc: func(_ sdk.Context) sdk.Int {
+			return sdk.DefaultPowerReduction
 		},
 	}
 
@@ -227,7 +230,7 @@ func initChain(nodeCount int, test string) (*fake.BlockChain, []nodeData) {
 	// if we give different amounts of tokens to each validator, we
 	// introduce a non-deterministic test failure
 	// TODO: investigate why there is a non-deterministic test failure
-	tokens := sdk.TokensFromConsensusPower(rand.I64Between(100, 1000))
+	tokens := sdk.TokensFromConsensusPower(rand.I64Between(100, 1000), sdk.DefaultPowerReduction)
 	var validators []stakingtypes.Validator
 	for i := 0; i < nodeCount; i++ {
 		// assign validators

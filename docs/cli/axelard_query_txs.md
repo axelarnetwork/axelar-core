@@ -19,12 +19,12 @@ axelard query txs [flags]
 ### Options
 
 ```
-      --events string            list of transaction events in the form of {eventType}.{eventAttribute}={value}
-  -h, --help                     help for txs
-      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "test")
-      --limit int                Query number of transactions results per page returned (default 30)
-  -n, --node string              Node to connect to (default "tcp://localhost:26657")
-      --page int                 Query a specific page of paginated results (default 1)
+      --events string   list of transaction events in the form of {eventType}.{eventAttribute}={value}
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for txs
+      --limit int       Query number of transactions results per page returned (default 30)
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --page int        Query a specific page of paginated results (default 1)
 ```
 
 ### Options inherited from parent commands

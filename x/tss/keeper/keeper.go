@@ -169,7 +169,7 @@ func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
 
 	// marshal private recover info before storing
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(recoveryInfo)
+	bz := k.cdc.MustMarshalLengthPrefixed(recoveryInfo)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
@@ -181,7 +181,7 @@ func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, k
 
 	// private recovery infos has been marshaled in keeper
 	var privateRecoveryInfos []byte
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &privateRecoveryInfos)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &privateRecoveryInfos)
 
 	return privateRecoveryInfos
 }
@@ -210,7 +210,7 @@ func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID) {
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
 	key := fmt.Sprintf("%s%s", keyRequirementPrefix, keyRequirement.KeyRole.SimpleString())
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(keyRequirement)
+	bz := k.cdc.MustMarshalLengthPrefixed(keyRequirement)
 
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 }
@@ -225,7 +225,7 @@ func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (ex
 	}
 
 	var keyRequirement exported.KeyRequirement
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyRequirement)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &keyRequirement)
 
 	return keyRequirement, true
 }
@@ -411,7 +411,7 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID) {
 	storageKey := []byte(fmt.Sprintf("%s%s", externalKeyIDsPrefix, chain.Name))
 
-	ctx.KVStore(k.storeKey).Set(storageKey, k.cdc.MustMarshalBinaryLengthPrefixed(keyIDs))
+	ctx.KVStore(k.storeKey).Set(storageKey, k.cdc.MustMarshalLengthPrefixed(keyIDs))
 }
 
 // GetExternalKeyIDs retrieves the current list of external key IDs
@@ -424,7 +424,7 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exporte
 	}
 
 	var keyIDs []exported.KeyID
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &keyIDs)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &keyIDs)
 
 	return keyIDs, true
 }

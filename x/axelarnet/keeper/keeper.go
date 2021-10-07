@@ -19,11 +19,11 @@ var (
 // Keeper provides access to all state changes regarding the Axelarnet module
 type Keeper struct {
 	storeKey sdk.StoreKey
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, ) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, ) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey}
 }
 
@@ -44,7 +44,7 @@ func (k Keeper) RegisterIBCPath(ctx sdk.Context, asset, path string) error {
 
 // SetPendingRefund saves pending refundable message
 func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, fee sdk.Coin) error {
-	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
 	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
 	return nil
 }
@@ -52,7 +52,7 @@ func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, fe
 // GetPendingRefund retrieves a pending refundable message
 func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (sdk.Coin, bool) {
 	var fee sdk.Coin
-	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
 	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
 
 	return fee, ok
@@ -60,7 +60,7 @@ func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (s
 
 // DeletePendingRefund retrieves a pending refundable message
 func (k Keeper) DeletePendingRefund(ctx sdk.Context, req types.RefundMsgRequest) {
-	hash := sha256.Sum256(k.cdc.MustMarshalBinaryLengthPrefixed(&req))
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
 	k.getStore(ctx).Delete(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])))
 }
 

@@ -62,7 +62,7 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QuerySignatureResponse
-			if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
+			if err := types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res); err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
 
@@ -93,7 +93,7 @@ func GetCmdGetKey(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryKeyResponse
-			if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
+			if err := types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res); err != nil {
 				return sdkerrors.Wrapf(err, "failed to get key")
 			}
 
@@ -334,7 +334,7 @@ func GetCmdGetDeactivatedOperators(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "could not get deactivated operator addresses")
 			}
 			var res types.QueryDeactivatedOperatorsResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return cliCtx.PrintProto(&res)
 		},
@@ -364,7 +364,7 @@ func GetCmdExternalKeyID(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryExternalKeyIDResponse
-			types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
 		},

@@ -49,7 +49,7 @@ The pass backend requires GnuPG: https://gnupg.org/
 ### SEE ALSO
 
 - [axelard](axelard.md)	 - Axelar App
-- [axelard keys add](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to disk
+- [axelard keys add](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file
 - [axelard keys delete](axelard_keys_delete.md)	 - Delete the given keys
 - [axelard keys export](axelard_keys_export.md)	 - Export private keys
 - [axelard keys import](axelard_keys_import.md)	 - Import private keys into the local keybase

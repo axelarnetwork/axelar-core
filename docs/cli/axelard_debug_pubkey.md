@@ -1,14 +1,13 @@
 ## axelard debug pubkey
 
-Decode a ED25519 pubkey from hex, base64, or bech32
+Decode a pubkey from proto JSON
 
 ### Synopsis
 
-Decode a pubkey from hex, base64, or bech32.
+Decode a pubkey from proto JSON and display it's address.
 
 Example:
-$ <appd> debug pubkey TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz
-$ <appd> debug pubkey cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
+$ <appd> debug pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}'
 
 ```
 axelard debug pubkey [pubkey] [flags]

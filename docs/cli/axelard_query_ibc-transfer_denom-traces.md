@@ -27,6 +27,7 @@ axelard query ibc-transfer denom-traces [flags]
       --offset uint       pagination offset of denominations trace to query for
       --page uint         pagination page of denominations trace to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of denominations trace to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

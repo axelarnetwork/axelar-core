@@ -31,7 +31,7 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
 
 	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	bz := k.cdc.MustMarshalLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
 
 	k.emitAckEvent(ctx, types.AttributeValueSign, info.KeyID, info.SigID, height)
@@ -53,7 +53,7 @@ func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignI
 
 	for ; iter.Valid(); iter.Next() {
 		var info exported.SignInfo
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
+		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &info)
 		infos = append(infos, info)
 	}
 
@@ -100,14 +100,14 @@ func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, boo
 		return exported.Key{}, false
 	}
 	var info exported.SignInfo
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &info)
 
 	return k.GetKey(ctx, info.KeyID)
 }
 
 // SetInfoForSig stores key ID for the given sig ID
 func (k Keeper) SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo) {
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
+	bz := k.cdc.MustMarshalLengthPrefixed(info)
 	ctx.KVStore(k.storeKey).Set([]byte(infoForSigPrefix+sigID), bz)
 }
 
@@ -118,7 +118,7 @@ func (k Keeper) GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo,
 		return exported.SignInfo{}, false
 	}
 	var info exported.SignInfo
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &info)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &info)
 	return info, true
 }
 

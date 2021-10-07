@@ -1,25 +1,15 @@
-## axelard tx ibc solo update
+## axelard query feegrant
 
-update existing client with a header
-
-### Synopsis
-
-update existing client with a solo machine header
+Querying commands for the feegrant module
 
 ```
-axelard tx ibc solo update [client-id] [path/to/header.json] [flags]
-```
-
-### Examples
-
-```
-<appd> tx ibc solo machine update [client-id] [path/to/header.json] --from node0 --home ../node0/<app>cli --chain-id $CID
+axelard query feegrant [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for update
+  -h, --help   help for feegrant
 ```
 
 ### Options inherited from parent commands
@@ -35,4 +25,6 @@ axelard tx ibc solo update [client-id] [path/to/header.json] [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query feegrant grant](axelard_query_feegrant_grant.md)	 - Query details of a single grant
+- [axelard query feegrant grants](axelard_query_feegrant_grants.md)	 - Query all grants of a grantee

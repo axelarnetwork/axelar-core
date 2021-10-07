@@ -8,6 +8,8 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -303,19 +305,26 @@ func (n *Node) start() {
 		// handle messages
 		for _, msg := range b.msgs {
 			if err := msg.ValidateBasic(); err != nil {
-				n.Ctx.Logger().Error(fmt.Sprintf("error when validating message %s", msg.Type()))
+				n.Ctx.Logger().Error(fmt.Sprintf("error when validating message %s", proto.MessageName(msg)))
 
 				msg.out <- &Result{nil, err}
-			} else if h := n.router.Route(n.Ctx, msg.Route()); h != nil {
-				res, err := h(n.Ctx, msg.Msg)
+
+			} else if legacyMsg, ok := msg.Msg.(legacytx.LegacyMsg); ok {
+				msgRoute := legacyMsg.Route()
+				handler := n.router.Route(n.Ctx, msgRoute)
+				if handler == nil {
+					panic(fmt.Sprintf("no handler for route %s defined", msgRoute))
+				}
+
+				res, err := handler(n.Ctx, msg.Msg)
 				if err != nil {
-					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msg.Route(), err.Error()))
+					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msgRoute, err.Error()))
 					// to allow failed messages we need to implement a cache for the multistore to revert in case of failure
 					// outputing the error message here so that we can have a sense for why it panics in case verbose mode is not active.
-					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s\nmessage: %v", msg.Route(), err.Error(), msg))
+					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s\nmessage: %v", msgRoute, err.Error(), msg))
 				}
 				msgEvents := sdk.Events{
-					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, msg.Type())),
+					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, proto.MessageName(msg))),
 				}
 
 				if res != nil {
@@ -331,7 +340,7 @@ func (n *Node) start() {
 				}
 				msg.out <- &Result{res, err}
 			} else {
-				panic(fmt.Sprintf("no handler for route %s defined", msg.Route()))
+				panic(fmt.Sprintf("can't route message %+v", msg))
 			}
 		}
 		// end block

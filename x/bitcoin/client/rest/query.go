@@ -35,14 +35,14 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 		params := types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]}
 		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress)
 
-		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrDepositAddr).Error())
 			return
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -66,7 +66,7 @@ func QueryHandlerDepositStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryDepositStatusResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
@@ -107,7 +107,7 @@ func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -175,7 +175,7 @@ func QueryHandlerLatestTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryTxResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -198,7 +198,7 @@ func QueryHandlerSignedTx(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryTxResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

@@ -153,7 +153,7 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 			},
 		}
 
-		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
+		return types.ModuleCdc.MarshalLengthPrefixed(&res)
 	}
 
 	var res types.QuerySignatureResponse
@@ -165,7 +165,7 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 		res.VoteStatus = types.Pending
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
+	return types.ModuleCdc.MarshalLengthPrefixed(&res)
 }
 
 func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
@@ -176,7 +176,7 @@ func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.
 			Role:       key.Role,
 		}
 
-		return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
+		return types.ModuleCdc.MarshalLengthPrefixed(&res)
 	}
 
 	var res types.QueryKeyResponse
@@ -188,7 +188,7 @@ func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.
 		res.VoteStatus = types.Pending
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&res)
+	return types.ModuleCdc.MarshalLengthPrefixed(&res)
 }
 
 // queryKeyID returns the keyID of the most recent key for a provided keyChain and keyRole
@@ -393,7 +393,7 @@ func queryDeactivatedOperator(ctx sdk.Context, k types.TSSKeeper, s types.Snapsh
 		OperatorAddresses: deactivatedValidators,
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryExternalKeyID returns the keyIDs of the current set of external keys for the given chain
@@ -412,5 +412,5 @@ func QueryExternalKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chain
 		KeyIDs: externalKeyIDs,
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

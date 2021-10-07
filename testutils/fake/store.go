@@ -66,6 +66,11 @@ func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdk.TraceContext) sdk.Cac
 	panic("implement me")
 }
 
+// CacheWrapWithListeners is not implemented
+func (t TestKVStore) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+	panic("implement me")
+}
+
 // Get returns the value of the given key, nil if it does not exist
 func (t TestKVStore) Get(key []byte) []byte {
 	t.mutex.RLock()

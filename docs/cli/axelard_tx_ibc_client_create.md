@@ -1,21 +1,21 @@
-## axelard tx ibc connection open-ack
+## axelard tx ibc client create
 
-relay the acceptance of a connection open attempt
+create new IBC client
 
 ### Synopsis
 
-Relay the acceptance of a connection open attempt from chain B to chain A
+create a new IBC client with the specified client state and consensus state
+\- ClientState JSON example: {"@type":"/ibc.lightclients.solomachine.v1.ClientState","sequence":"1","frozen_sequence":"0","consensus_state":{"public_key":{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AtK50+5pJOoaa04qqAqrnyAqsYrwrR/INnA6UPIaYZlp"},"diversifier":"testing","timestamp":"10"},"allow_update_after_proposal":false}
+\- ConsensusState JSON example: {"@type":"/ibc.lightclients.solomachine.v1.ConsensusState","public_key":{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AtK50+5pJOoaa04qqAqrnyAqsYrwrR/INnA6UPIaYZlp"},"diversifier":"testing","timestamp":"10"}
 
 ```
-axelard tx ibc connection open-ack [connection-id] [counterparty-connection-id] [path/to/client_state.json] [consensus-height] [proof-height]
-		[path/to/proof_try.json] [path/to/proof_client.json] [path/to/proof_consensus.json] [version] [flags]
+axelard tx ibc client create [path/to/client_state.json] [path/to/consensus_state.json] [flags]
 ```
 
 ### Examples
 
 ```
-<appd> tx ibc connection open-ack [connection-id] [counterparty-connection-id] [path/to/client_state.json] [consensus-height] [proof-height]
-			[path/to/proof_try.json] [path/to/proof_client.json] [path/to/proof_consensus.json] [version]
+<appd> tx ibc client create [path/to/client_state.json] [path/to/consensus_state.json] --from node0 --home ../node0/<app>cli --chain-id $CID
 ```
 
 ### Options
@@ -24,18 +24,19 @@ axelard tx ibc connection open-ack [connection-id] [counterparty-connection-id] 
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
       --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for open-ack
+  -h, --help                     help for create
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
-      --memo string              Memo to send along with transaction
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
@@ -56,4 +57,4 @@ axelard tx ibc connection open-ack [connection-id] [counterparty-connection-id] 
 
 ### SEE ALSO
 
-- [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
+- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands

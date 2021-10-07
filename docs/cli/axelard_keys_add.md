@@ -1,6 +1,6 @@
 ## axelard keys add
 
-Add an encrypted private key (either newly generated or recovered), encrypt it, and save to disk
+Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file
 
 ### Synopsis
 
@@ -16,10 +16,14 @@ local keystore.
 Use the --pubkey flag to add arbitrary public keys to the keystore for constructing
 multisig transactions.
 
-You can add a multisig key by passing the list of key names you want the public
-key to be composed of to the --multisig flag and the minimum number of signatures
-required through --multisig-threshold. The keys are sorted by address, unless
-the flag --nosort is set.
+You can create and store a multisig key by passing the list of key names stored in a keyring
+and the minimum number of signatures required through --multisig-threshold. The keys are
+sorted by address, unless the flag --nosort is set.
+Example:
+
+```
+keys add mymultisig --multisig "keyname1,keyname2,keyname3" --multisig-threshold 2
+```
 
 ```
 axelard keys add <name> [flags]
@@ -37,11 +41,11 @@ axelard keys add <name> [flags]
       --index uint32             Address index number for HD derivation
   -i, --interactive              Interactively prompt user for BIP39 passphrase and mnemonic
       --ledger                   Store a local reference to a private key on a Ledger device
-      --multisig strings         Construct and store a multisig public key (implies --pubkey)
+      --multisig strings         List of key names stored in keyring to construct a public legacy multisig key
       --multisig-threshold int   K out of N required signatures. For use in conjunction with --multisig (default 1)
       --no-backup                Don't print out seed phrase (if others are watching the terminal)
       --nosort                   Keys passed to --multisig are taken in the order they're supplied
-      --pubkey string            Parse a public key in bech32 format and save it to disk
+      --pubkey string            Parse a public key in JSON format and saves key info to <name> file.
       --recover                  Provide seed phrase to recover existing key instead of creating
 ```
 

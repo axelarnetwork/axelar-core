@@ -27,6 +27,4 @@ axelard tx ibc [flags]
 
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
 - [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-- [axelard tx ibc connection](axelard_tx_ibc_connection.md)	 - IBC connection transaction subcommands
-- [axelard tx ibc solo](axelard_tx_ibc_solo.md)	 - Solo Machine transaction subcommands
-- [axelard tx ibc tendermint-client](axelard_tx_ibc_tendermint-client.md)	 - Tendermint client transaction subcommands
+- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands

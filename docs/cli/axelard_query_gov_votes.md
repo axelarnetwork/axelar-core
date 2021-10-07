@@ -25,6 +25,7 @@ axelard query gov votes [proposal-id] [flags]
       --offset uint       pagination offset of votes to query for
       --page uint         pagination page of votes to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of votes to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

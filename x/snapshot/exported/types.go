@@ -23,7 +23,7 @@ type SDKValidator interface {
 	codectypes.UnpackInterfacesMessage
 	GetOperator() sdk.ValAddress
 	GetConsAddr() (sdk.ConsAddress, error)
-	GetConsensusPower() int64
+	GetConsensusPower(sdk.Int) int64
 	IsJailed() bool
 }
 

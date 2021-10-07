@@ -111,7 +111,7 @@ func QueryLatestBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, s typ
 		return nil, err
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.BatchedCommands, s types.Signer) (types.QueryBatchedCommandsResponse, error) {
@@ -183,7 +183,7 @@ func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chain
 
 	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryAddressByKeyID returns the address of the given key ID
@@ -201,7 +201,7 @@ func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainNa
 	address := crypto.PubkeyToAddress(key.Value)
 	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
@@ -323,7 +323,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&depositState)
+	return types.ModuleCdc.MarshalLengthPrefixed(&depositState)
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
@@ -410,7 +410,7 @@ func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, 
 		return nil, err
 	}
 
-	return types.ModuleCdc.MarshalBinaryLengthPrefixed(&resp)
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.BatchedCommands, bool) {

@@ -68,7 +68,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 
-		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "recipient chain not found")
@@ -92,7 +92,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return tss.Key{}, false
 		}
 
-		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "secondary key not set")
@@ -152,7 +152,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.CrossChainAddress{}, false
 		}
 
-		_, err = keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+		_, err = keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "deposit address is not linked with recipient address")
@@ -207,10 +207,10 @@ func TestQueryDepositAddress(t *testing.T) {
 			Address: types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}, types.DefaultParams().Network).Address,
 			KeyID:   secondaryKey.ID,
 		}
-		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalBinaryLengthPrefixed(&params))
+		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
 		var actual types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -338,7 +338,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		assert.NoError(t, err)
 
 		var actual types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 		assert.Equal(t, expected, actual)
 	}))
 
@@ -372,7 +372,7 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
 		var actual types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &actual)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)

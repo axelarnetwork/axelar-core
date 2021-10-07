@@ -123,7 +123,7 @@ func TestSnapshots(t *testing.T) {
 			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
-				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.Bytes(sdk.AddrLen))
+				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), rand.AccAddr())
 			}
 
 			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
@@ -140,7 +140,7 @@ func TestSnapshots(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
@@ -159,7 +159,7 @@ func TestSnapshots(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
+				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 		})
@@ -188,7 +188,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedProxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		expectedProxy := rand.AccAddr()
 		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
@@ -201,8 +201,8 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
 		setup()
 
-		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
-		proxy := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+		address := rand.ValAddr()
+		proxy := rand.AccAddr()
 		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
 
 		assert.Error(t, err)
@@ -227,7 +227,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
-		expectedProxy = rand.Bytes(sdk.AddrLen)
+		expectedProxy = rand.AccAddr()
 
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
@@ -249,7 +249,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
 		setup()
 
-		address := sdk.ValAddress(rand.Bytes(sdk.AddrLen))
+		address := rand.ValAddr()
 		err := snapshotKeeper.DeactivateProxy(ctx, address)
 
 		assert.Error(t, err)
@@ -300,8 +300,8 @@ func genValidators(t *testing.T, numValidators, totalConsPower int) []stakingtyp
 		}
 
 		validators[i] = staking.Validator{
-			OperatorAddress: sdk.ValAddress(rand.Bytes(sdk.AddrLen)).String(),
-			Tokens:          sdk.TokensFromConsensusPower(int64(power)),
+			OperatorAddress: rand.ValAddr().String(),
+			Tokens:          sdk.TokensFromConsensusPower(int64(power), sdk.DefaultPowerReduction),
 			Status:          stakingtypes.Bonded,
 			ConsensusPubkey: pk,
 		}
@@ -325,7 +325,7 @@ func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
 
 	for _, val := range validators {
 		staker.validators = append(staker.validators, val)
-		staker.totalPower = staker.totalPower.AddRaw(val.GetConsensusPower())
+		staker.totalPower = staker.totalPower.AddRaw(val.GetConsensusPower(sdk.DefaultPowerReduction))
 	}
 
 	return staker
@@ -351,4 +351,8 @@ func (k mockStaker) Validator(_ sdk.Context, addr sdk.ValAddress) stakingtypes.V
 	}
 
 	return nil
+}
+
+func (k mockStaker) PowerReduction(ctx sdk.Context) sdk.Int {
+	return sdk.DefaultPowerReduction
 }

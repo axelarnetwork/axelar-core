@@ -83,6 +83,9 @@ var _ types.Client = &ClientMock{}
 // 			GenesisFunc: func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
 // 				panic("mock out the Genesis method")
 // 			},
+// 			GenesisChunkedFunc: func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
+// 				panic("mock out the GenesisChunked method")
+// 			},
 // 			HealthFunc: func(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
 // 				panic("mock out the Health method")
 // 			},
@@ -206,6 +209,9 @@ type ClientMock struct {
 
 	// GenesisFunc mocks the Genesis method.
 	GenesisFunc func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error)
+
+	// GenesisChunkedFunc mocks the GenesisChunked method.
+	GenesisChunkedFunc func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error)
 
 	// HealthFunc mocks the Health method.
 	HealthFunc func(contextMoqParam context.Context) (*coretypes.ResultHealth, error)
@@ -404,6 +410,13 @@ type ClientMock struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 		}
+		// GenesisChunked holds details about calls to the GenesisChunked method.
+		GenesisChunked []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// V is the v argument value.
+			V uint
+		}
 		// Health holds details about calls to the Health method.
 		Health []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -544,6 +557,7 @@ type ClientMock struct {
 	lockConsensusState       sync.RWMutex
 	lockDumpConsensusState   sync.RWMutex
 	lockGenesis              sync.RWMutex
+	lockGenesisChunked       sync.RWMutex
 	lockHealth               sync.RWMutex
 	lockIsRunning            sync.RWMutex
 	lockNetInfo              sync.RWMutex
@@ -1278,6 +1292,45 @@ func (mock *ClientMock) GenesisCalls() []struct {
 	mock.lockGenesis.RLock()
 	calls = mock.calls.Genesis
 	mock.lockGenesis.RUnlock()
+	return calls
+}
+
+// GenesisChunked calls GenesisChunkedFunc.
+func (mock *ClientMock) GenesisChunked(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
+	callInfo := struct {
+		ContextMoqParam context.Context
+		V               uint
+	}{
+		ContextMoqParam: contextMoqParam,
+		V:               v,
+	}
+	mock.lockGenesisChunked.Lock()
+	mock.calls.GenesisChunked = append(mock.calls.GenesisChunked, callInfo)
+	mock.lockGenesisChunked.Unlock()
+	if mock.GenesisChunkedFunc == nil {
+		var (
+			resultGenesisChunkOut *coretypes.ResultGenesisChunk
+			errOut                error
+		)
+		return resultGenesisChunkOut, errOut
+	}
+	return mock.GenesisChunkedFunc(contextMoqParam, v)
+}
+
+// GenesisChunkedCalls gets all the calls that were made to GenesisChunked.
+// Check the length with:
+//     len(mockedClient.GenesisChunkedCalls())
+func (mock *ClientMock) GenesisChunkedCalls() []struct {
+	ContextMoqParam context.Context
+	V               uint
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		V               uint
+	}
+	mock.lockGenesisChunked.RLock()
+	calls = mock.calls.GenesisChunked
+	mock.lockGenesisChunked.RUnlock()
 	return calls
 }
 
@@ -2374,10 +2427,10 @@ var _ types.Keyring = &KeyringMock{}
 // 			ListFunc: func() ([]keyring.Info, error) {
 // 				panic("mock out the List method")
 // 			},
-// 			NewAccountFunc: func(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+// 			NewAccountFunc: func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
 // 				panic("mock out the NewAccount method")
 // 			},
-// 			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+// 			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
 // 				panic("mock out the NewMnemonic method")
 // 			},
 // 			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
@@ -2439,10 +2492,10 @@ type KeyringMock struct {
 	ListFunc func() ([]keyring.Info, error)
 
 	// NewAccountFunc mocks the NewAccount method.
-	NewAccountFunc func(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error)
+	NewAccountFunc func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error)
 
 	// NewMnemonicFunc mocks the NewMnemonic method.
-	NewMnemonicFunc func(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error)
+	NewMnemonicFunc func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error)
 
 	// SaveLedgerKeyFunc mocks the SaveLedgerKey method.
 	SaveLedgerKeyFunc func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error)
@@ -2533,8 +2586,8 @@ type KeyringMock struct {
 			UID string
 			// Mnemonic is the mnemonic argument value.
 			Mnemonic string
-			// Bip39Passwd is the bip39Passwd argument value.
-			Bip39Passwd string
+			// Bip39Passphrase is the bip39Passphrase argument value.
+			Bip39Passphrase string
 			// HdPath is the hdPath argument value.
 			HdPath string
 			// Algo is the algo argument value.
@@ -2548,6 +2601,8 @@ type KeyringMock struct {
 			Language keyring.Language
 			// HdPath is the hdPath argument value.
 			HdPath string
+			// Bip39Passphrase is the bip39Passphrase argument value.
+			Bip39Passphrase string
 			// Algo is the algo argument value.
 			Algo keyring.SignatureAlgo
 		}
@@ -3018,19 +3073,19 @@ func (mock *KeyringMock) ListCalls() []struct {
 }
 
 // NewAccount calls NewAccountFunc.
-func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passwd string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
 	callInfo := struct {
-		UID         string
-		Mnemonic    string
-		Bip39Passwd string
-		HdPath      string
-		Algo        keyring.SignatureAlgo
+		UID             string
+		Mnemonic        string
+		Bip39Passphrase string
+		HdPath          string
+		Algo            keyring.SignatureAlgo
 	}{
-		UID:         uid,
-		Mnemonic:    mnemonic,
-		Bip39Passwd: bip39Passwd,
-		HdPath:      hdPath,
-		Algo:        algo,
+		UID:             uid,
+		Mnemonic:        mnemonic,
+		Bip39Passphrase: bip39Passphrase,
+		HdPath:          hdPath,
+		Algo:            algo,
 	}
 	mock.lockNewAccount.Lock()
 	mock.calls.NewAccount = append(mock.calls.NewAccount, callInfo)
@@ -3042,25 +3097,25 @@ func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passwd str
 		)
 		return infoOut, errOut
 	}
-	return mock.NewAccountFunc(uid, mnemonic, bip39Passwd, hdPath, algo)
+	return mock.NewAccountFunc(uid, mnemonic, bip39Passphrase, hdPath, algo)
 }
 
 // NewAccountCalls gets all the calls that were made to NewAccount.
 // Check the length with:
 //     len(mockedKeyring.NewAccountCalls())
 func (mock *KeyringMock) NewAccountCalls() []struct {
-	UID         string
-	Mnemonic    string
-	Bip39Passwd string
-	HdPath      string
-	Algo        keyring.SignatureAlgo
+	UID             string
+	Mnemonic        string
+	Bip39Passphrase string
+	HdPath          string
+	Algo            keyring.SignatureAlgo
 } {
 	var calls []struct {
-		UID         string
-		Mnemonic    string
-		Bip39Passwd string
-		HdPath      string
-		Algo        keyring.SignatureAlgo
+		UID             string
+		Mnemonic        string
+		Bip39Passphrase string
+		HdPath          string
+		Algo            keyring.SignatureAlgo
 	}
 	mock.lockNewAccount.RLock()
 	calls = mock.calls.NewAccount
@@ -3069,17 +3124,19 @@ func (mock *KeyringMock) NewAccountCalls() []struct {
 }
 
 // NewMnemonic calls NewMnemonicFunc.
-func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
 	callInfo := struct {
-		UID      string
-		Language keyring.Language
-		HdPath   string
-		Algo     keyring.SignatureAlgo
+		UID             string
+		Language        keyring.Language
+		HdPath          string
+		Bip39Passphrase string
+		Algo            keyring.SignatureAlgo
 	}{
-		UID:      uid,
-		Language: language,
-		HdPath:   hdPath,
-		Algo:     algo,
+		UID:             uid,
+		Language:        language,
+		HdPath:          hdPath,
+		Bip39Passphrase: bip39Passphrase,
+		Algo:            algo,
 	}
 	mock.lockNewMnemonic.Lock()
 	mock.calls.NewMnemonic = append(mock.calls.NewMnemonic, callInfo)
@@ -3092,23 +3149,25 @@ func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPa
 		)
 		return infoOut, sOut, errOut
 	}
-	return mock.NewMnemonicFunc(uid, language, hdPath, algo)
+	return mock.NewMnemonicFunc(uid, language, hdPath, bip39Passphrase, algo)
 }
 
 // NewMnemonicCalls gets all the calls that were made to NewMnemonic.
 // Check the length with:
 //     len(mockedKeyring.NewMnemonicCalls())
 func (mock *KeyringMock) NewMnemonicCalls() []struct {
-	UID      string
-	Language keyring.Language
-	HdPath   string
-	Algo     keyring.SignatureAlgo
+	UID             string
+	Language        keyring.Language
+	HdPath          string
+	Bip39Passphrase string
+	Algo            keyring.SignatureAlgo
 } {
 	var calls []struct {
-		UID      string
-		Language keyring.Language
-		HdPath   string
-		Algo     keyring.SignatureAlgo
+		UID             string
+		Language        keyring.Language
+		HdPath          string
+		Bip39Passphrase string
+		Algo            keyring.SignatureAlgo
 	}
 	mock.lockNewMnemonic.RLock()
 	calls = mock.calls.NewMnemonic

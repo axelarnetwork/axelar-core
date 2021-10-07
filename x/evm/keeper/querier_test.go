@@ -157,7 +157,7 @@ func TestQueryDepositState(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		var depositState types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(res, &depositState)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(res, &depositState)
 		assert.Equal(types.DepositStatus_None, depositState.Status)
 	}).Repeat(repeatCount))
 
@@ -182,7 +182,7 @@ func TestQueryDepositState(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		var depositState types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(res, &depositState)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(res, &depositState)
 		assert.Equal(types.DepositStatus_Pending, depositState.Status)
 
 	}).Repeat(repeatCount))
@@ -207,7 +207,7 @@ func TestQueryDepositState(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		var depositState types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(res, &depositState)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(res, &depositState)
 		assert.Equal(types.DepositStatus_Confirmed, depositState.Status)
 
 	}).Repeat(repeatCount))
@@ -232,7 +232,7 @@ func TestQueryDepositState(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		var depositState types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(res, &depositState)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(res, &depositState)
 		assert.Equal(types.DepositStatus_Burned, depositState.Status)
 
 	}).Repeat(repeatCount))

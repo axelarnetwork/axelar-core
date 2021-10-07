@@ -50,7 +50,7 @@ func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(v
 	}
 
 	var key gogoprototypes.BytesValue
-	q.store.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &key)
+	q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
 
 	if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
 		return false

@@ -42,7 +42,7 @@ func QueryHandlerSigStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QuerySignatureResponse
-		if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
+		if err := types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get sig status").Error())
 			return
 		}
@@ -68,7 +68,7 @@ func QueryHandlerKeyStatus(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryKeyResponse
-		if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(bz, &res); err != nil {
+		if err := types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "failed to get key status").Error())
 			return
 		}
@@ -286,7 +286,7 @@ func QueryHandlerDeactivatedOperator(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryDeactivatedOperatorsResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
@@ -311,7 +311,7 @@ func QueryHandlerExternalKeyID(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryExternalKeyIDResponse
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

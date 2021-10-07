@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/gogo/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
@@ -39,11 +40,11 @@ func (decorator HandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 // LogMsgDecorator logs all messages in blocks
 type LogMsgDecorator struct {
-	cdc codec.Marshaler
+	cdc codec.Codec
 }
 
 // NewLogMsgDecorator is the constructor for LogMsgDecorator
-func NewLogMsgDecorator(cdc codec.Marshaler) LogMsgDecorator {
+func NewLogMsgDecorator(cdc codec.Codec) LogMsgDecorator {
 	return LogMsgDecorator{cdc: cdc}
 }
 
@@ -53,7 +54,7 @@ func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 
 	for _, msg := range msgs {
 		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %s",
-			msg.Type(),
+			proto.MessageName(msg),
 			ctx.BlockHeight(),
 			string(d.cdc.MustMarshalJSON(msg)),
 		))
