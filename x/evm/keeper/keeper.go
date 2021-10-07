@@ -721,7 +721,7 @@ func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, boo
 
 func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
 	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&meta)
+	bz := k.cdc.MustMarshalLengthPrefixed(&meta)
 	k.getStore(ctx, k.chain).Set(key, bz)
 }
 
@@ -733,7 +733,7 @@ func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20Toke
 	}
 
 	var result types.ERC20TokenMetadata
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &result)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &result)
 
 	return result, true
 }
