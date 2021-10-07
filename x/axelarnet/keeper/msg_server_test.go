@@ -427,6 +427,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger {return log.TestingLogger() },
 			GetPendingRefundFunc:    func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true },
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
 		}
