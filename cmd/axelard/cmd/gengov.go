@@ -89,7 +89,7 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().StringVar(&minDeposit, flagMinDeposit, "", "Minimum deposit for a proposal to enter voting period")
-	cmd.Flags().Uint64Var(&maxDepositPeriod, flagMaxDepositPeriod, 0, "Maximum period in ns for AXL holders to deposit on a proposal (time ns)")
+	cmd.Flags().Uint64Var(&maxDepositPeriod, flagMaxDepositPeriod, 0, "Maximum period for AXL holders to deposit on a proposal (time ns)")
 	cmd.Flags().Uint64Var(&votingPeriod, flagVotingPeriod, 0, "Length of the voting period (time ns)")
 
 	return cmd
