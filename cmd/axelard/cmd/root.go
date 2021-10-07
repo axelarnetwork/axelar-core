@@ -157,6 +157,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
 		SetGenesisEVMContractsCmd(app.DefaultNodeHome),
 		SetGenesisChainParamsCmd(app.DefaultNodeHome),
+		SetGenesisGovCmd(app.DefaultNodeHome),
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 	)
 
