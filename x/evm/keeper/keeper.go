@@ -93,10 +93,9 @@ func (k keeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain) {
 // GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
 func (k keeper) GetPendingChain(ctx sdk.Context, chainName string) (nexus.Chain, bool) {
 	var chain nexus.Chain
-	if !k.getStore(ctx, chainName).Get(pendingChainKey, &chain) {
-		return nexus.Chain{}, false
-	}
-	return chain, true
+	found := k.getStore(ctx, chainName).Get(pendingChainKey, &chain)
+
+	return chain, found
 }
 
 // DeletePendingChain deletes a chain that is not registered yet
@@ -498,11 +497,9 @@ func (k keeper) DeletePendingDeposit(ctx sdk.Context, key exported.PollKey) {
 // GetPendingDeposit returns the deposit associated with the given poll
 func (k keeper) GetPendingDeposit(ctx sdk.Context, key exported.PollKey) (types.ERC20Deposit, bool) {
 	var deposit types.ERC20Deposit
-	if !k.getStore(ctx, k.chain).Get(pendingDepositPrefix.AppendStr(key.String()), &deposit) {
-		return types.ERC20Deposit{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(pendingDepositPrefix.AppendStr(key.String()), &deposit)
 
-	return deposit, true
+	return deposit, found
 }
 
 // SetDeposit stores confirmed or burned deposits
@@ -545,21 +542,17 @@ func (k keeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
 // GetArchivedTransferKey returns an archived transfer of ownership/operatorship associated with the given poll
 func (k keeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
 	var transferKey types.TransferKey
-	if !k.getStore(ctx, k.chain).Get(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
-		return types.TransferKey{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 
-	return transferKey, true
+	return transferKey, found
 }
 
 // GetPendingTransferKey returns the transfer ownership/operatorship associated with the given poll
 func (k keeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
 	var transferKey types.TransferKey
-	if !k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
-		return types.TransferKey{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 
-	return transferKey, true
+	return transferKey, found
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
@@ -617,11 +610,9 @@ func (k keeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands type
 // GetUnsignedBatchedCommands retrieves the unsigned batched commands
 func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedCommands, bool) {
 	var batchedCommands types.BatchedCommands
-	if !k.getStore(ctx, k.chain).Get(unsignedBatchedCommandsKey, &batchedCommands) {
-		return types.BatchedCommands{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(unsignedBatchedCommandsKey, &batchedCommands)
 
-	return batchedCommands, true
+	return batchedCommands, found
 }
 
 // DeleteUnsignedBatchedCommands deletes the unsigned batched commands
@@ -641,11 +632,9 @@ func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.
 func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.BatchedCommands, bool) {
 	key := signedBatchedCommandsPrefix.AppendStr(hex.EncodeToString(id))
 	var batchedCommands types.BatchedCommands
-	if !k.getStore(ctx, k.chain).Get(key, &batchedCommands) {
-		return types.BatchedCommands{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(key, &batchedCommands)
 
-	return batchedCommands, true
+	return batchedCommands, found
 }
 
 // SetLatestSignedBatchedCommandsID stores the ID of the latest signed batched commands
@@ -692,11 +681,9 @@ func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20
 func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
 	var result types.ERC20TokenMetadata
 	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
-	if !k.getStore(ctx, k.chain).Get(key, &result) {
-		return types.ERC20TokenMetadata{}, false
-	}
+	found := k.getStore(ctx, k.chain).Get(key, &result)
 
-	return result, true
+	return result, found
 }
 
 func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
