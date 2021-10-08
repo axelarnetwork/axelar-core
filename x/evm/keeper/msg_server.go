@@ -3,7 +3,6 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -992,17 +991,6 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	return &types.SignTxResponse{TxID: txID}, nil
 }
 
-func transferIDtoCommandID(transferID uint64) types.CommandID {
-	var commandID types.CommandID
-
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, transferID)
-
-	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
-
-	return commandID
-}
-
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	keeper := s.ForChain(ctx, req.Chain)
@@ -1015,11 +1003,6 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 	if len(pendingTransfers) == 0 {
 		return &types.CreatePendingTransfersResponse{}, nil
-	}
-
-	chainID := s.getChainID(ctx, req.Chain)
-	if chainID == nil {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	if _, nextSecondaryKeyAssigned := s.signer.GetNextKey(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
@@ -1038,18 +1021,8 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	for _, transfer := range transfers {
 		token := keeper.GetERC20Token(ctx, transfer.Asset.Denom)
-		if !token.Is(types.Confirmed) {
-			return nil, fmt.Errorf("asset %s not confirmed", transfer.Asset.Denom)
-		}
+		command, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
-		command, err := types.CreateMintTokenCommand(
-			chainID,
-			secondaryKeyID,
-			transferIDtoCommandID(transfer.ID),
-			token.GetDetails().Symbol,
-			common.HexToAddress(transfer.Recipient.Address),
-			transfer.Asset.Amount.BigInt(),
-		)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
