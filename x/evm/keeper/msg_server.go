@@ -56,7 +56,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, senderChain.Name)
+	keeper := s.ForChain(senderChain.Name)
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -124,7 +124,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
 	err := token.RecordDeployment(req.TxID)
@@ -217,7 +217,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 
 		seqNo = snapshot.Counter
 	}
-	keeper := s.ForChain(ctx, req.Name)
+	keeper := s.ForChain(req.Name)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
@@ -266,7 +266,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 
 	_, state, ok := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
 	switch {
@@ -375,7 +375,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -522,7 +522,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
 
@@ -631,7 +631,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
 	switch {
 	case !token.Is(types.Pending):
@@ -710,7 +710,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 
 	pendingTransfer, pendingTransferFound := keeper.GetPendingTransferKey(ctx, req.PollKey)
 	archivedTransfer, archivedTransferFound := keeper.GetArchivedTransferKey(ctx, req.PollKey)
@@ -806,7 +806,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, req.Chain)
+	keeper := s.ForChain(req.Chain)
 	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !found {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
@@ -844,7 +844,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnTokensRequest) (*types.CreateBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(ctx, req.Chain)
+	keeper := s.ForChain(req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -910,7 +910,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 	tx := req.UnmarshaledTx()
 	txID := tx.Hash().String()
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 
 	keeper.SetUnsignedTx(ctx, txID, tx)
 	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
@@ -1005,7 +1005,7 @@ func transferIDtoCommandID(transferID uint64) types.CommandID {
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(ctx, req.Chain)
+	keeper := s.ForChain(req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -1141,7 +1141,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 
 func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateTransferOwnershipRequest) (*types.CreateTransferOwnershipResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(ctx, req.Chain)
+	keeper := s.ForChain(req.Chain)
 
 	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -1161,7 +1161,7 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 
 func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(ctx, req.Chain)
+	keeper := s.ForChain(req.Chain)
 
 	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -1191,7 +1191,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	keeper := s.ForChain(ctx, chain.Name)
+	keeper := s.ForChain(chain.Name)
 	batchedCommands, err := getBatchedCommandsToSign(ctx, keeper, chainID)
 	if err != nil {
 		return nil, err
@@ -1305,7 +1305,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
 	for _, p := range s.GetParams(ctx) {
 		if strings.EqualFold(p.Chain, chain) {
-			chainID = s.ForChain(ctx, chain).GetChainIDByNetwork(ctx, p.Network)
+			chainID = s.ForChain(chain).GetChainIDByNetwork(ctx, p.Network)
 		}
 	}
 

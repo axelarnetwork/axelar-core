@@ -19,7 +19,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.BaseKeeper, nex
 	chains := nexus.GetChains(ctx)
 
 	for _, chain := range chains {
-		handleUnsignedBatchedCommands(ctx, k.ForChain(ctx, chain.Name), signer)
+		handleUnsignedBatchedCommands(ctx, k.ForChain(chain.Name), signer)
 	}
 
 	return nil
