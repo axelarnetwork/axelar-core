@@ -138,25 +138,22 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 
 	chain := "Ethereum"
-	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	asset := "axelar"
 	tokenName := "axelar token"
 	tokenSymbol := "at"
 	decimals := uint8(18)
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
-	expected := common.HexToAddress("0x3264387346a9C63FB1F3375Fc59E3a9967408D34")
+	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	expected := types.Address(common.HexToAddress("0x3264387346a9C63FB1F3375Fc59E3a9967408D34"))
 
 	k.SetParams(ctx, types.DefaultParams()...)
-	account, err := sdk.AccAddressFromBech32("cosmos1vjyc4qmsdtdl5a4ruymnjqpchm5gyqde63sqdh")
-	assert.NoError(t, err)
 	keeper := k.ForChain(ctx, chain)
+	keeper.SetGatewayAddress(ctx, axelarGateway)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
-	keeper.SetTokenInfo(ctx, tokenName, &types.CreateDeployTokenRequest{Sender: account, TokenDetails: tokenDetails})
-
-	actual, err := keeper.GetTokenAddress(ctx, tokenName, axelarGateway)
-
+	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected, token.GetAddress())
 }
 
 func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
@@ -167,7 +164,7 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
-	tokenAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
+	tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
 	expectedBurnerAddr := common.HexToAddress("0xC857f4173BdC159B6254504ABd88d144eba6Aa1B")
 	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
 

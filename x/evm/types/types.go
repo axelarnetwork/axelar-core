@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Ethereum network labels
@@ -56,6 +57,127 @@ const (
 	transferOperatorshipMaxGasCost           = 150000
 	axelarGatewayFuncExecute                 = "execute"
 )
+
+// ERC20Token represents an ERC20 token and its respective state
+type ERC20Token struct {
+	metadata ERC20TokenMetadata
+	setMeta  func(meta ERC20TokenMetadata)
+}
+
+// CreateERC20Token returns an ERC20Token struct
+func CreateERC20Token(setter func(meta ERC20TokenMetadata), meta ERC20TokenMetadata) ERC20Token {
+	token := ERC20Token{
+		metadata: meta,
+		setMeta:  setter,
+	}
+
+	return token
+}
+
+// GetAsset returns the asset name
+func (t *ERC20Token) GetAsset() string {
+	return t.metadata.Asset
+}
+
+// GetTxID returns the tx ID set with StartConfirmation
+func (t *ERC20Token) GetTxID() Hash {
+	return t.metadata.TxHash
+}
+
+// GetDetails returns the details of the token
+func (t *ERC20Token) GetDetails() TokenDetails {
+	return t.metadata.Details
+}
+
+// Is returns true if the given status matches the token's status
+func (t *ERC20Token) Is(status Status) bool {
+	// this special case check is needed, because 0 & x == 0 is true for any x
+	if status == NonExistent {
+		return t.metadata.Status == NonExistent
+	}
+	return status&t.metadata.Status == status
+}
+
+// CreateDeployCommand returns a token deployment command for the token
+func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
+	switch {
+	case t.Is(NonExistent):
+		return Command{}, fmt.Errorf("token %s non-existent", t.metadata.Asset)
+	case t.Is(Confirmed):
+		return Command{}, fmt.Errorf("token %s already confirmed", t.metadata.Asset)
+	}
+	if err := key.Validate(); err != nil {
+		return Command{}, err
+	}
+
+	return CreateDeployTokenCommand(
+		t.metadata.ChainID.BigInt(),
+		key,
+		t.metadata.Details,
+	)
+}
+
+// GetAddress returns the token's address
+func (t *ERC20Token) GetAddress() Address {
+	return t.metadata.TokenAddress
+
+}
+
+// RecordDeployment signals that the token confirmation is underway for the given tx ID
+func (t *ERC20Token) RecordDeployment(txID Hash) error {
+	switch {
+	case t.Is(NonExistent):
+		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
+	case t.Is(Confirmed):
+		return fmt.Errorf("token %s already confirmed", t.metadata.Asset)
+	case t.Is(Pending):
+		return fmt.Errorf("voting for token %s is already underway", t.metadata.Asset)
+	}
+
+	t.metadata.TxHash = txID
+	t.metadata.Status |= Pending
+	t.setMeta(t.metadata)
+
+	return nil
+}
+
+// RejectDeployment reverts the token state back to Initialized
+func (t *ERC20Token) RejectDeployment() error {
+	switch {
+	case t.Is(NonExistent):
+		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
+	case !t.Is(Pending):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.metadata.Asset, t.metadata.Status.String())
+	}
+
+	t.metadata.Status = Initialized
+	t.metadata.TxHash = Hash{}
+	t.setMeta(t.metadata)
+	return nil
+}
+
+// ConfirmDeployment signals that the token was successfully confirmed
+func (t *ERC20Token) ConfirmDeployment() error {
+	switch {
+	case t.Is(NonExistent):
+		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
+	case !t.Is(Pending):
+		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.metadata.Asset, t.metadata.Status.String())
+	}
+
+	t.metadata.Status = Confirmed
+	t.setMeta(t.metadata)
+
+	return nil
+}
+
+// NilToken returns a nil erc20 token
+var NilToken = ERC20Token{}
+
+// GetConfirmTokenKey creates a poll key for token confirmation
+func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
+	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
+}
 
 // Address wraps EVM Address
 type Address common.Address

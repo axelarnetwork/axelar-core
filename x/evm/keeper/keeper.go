@@ -38,14 +38,12 @@ const (
 	chainPrefix                 = "chain_"
 	subspacePrefix              = "subspace_"
 	unsignedPrefix              = "unsigned_"
-	pendingTokenPrefix          = "pending_token_"
+	tokenMetadataPrefix         = "token_deployment_"
 	pendingDepositPrefix        = "pending_deposit_"
 	confirmedDepositPrefix      = "confirmed_deposit_"
 	burnedDepositPrefix         = "burned_deposit_"
 	commandPrefix               = "command_"
-	assetPrefix                 = "asset_"
 	burnerAddrPrefix            = "burnerAddr_"
-	tokenAddrPrefix             = "tokenAddr_"
 	pendingTransferKeyPrefix    = "pending_transfer_key_"
 	archivedTransferKeyPrefix   = "archived_transfer_key_"
 	signedBatchedCommandsPrefix = "signed_batched_commands_"
@@ -257,32 +255,12 @@ func (k keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types
 	return &result
 }
 
-// GetTokenSymbol returns the symbol for a given token
-func (k keeper) GetTokenSymbol(ctx sdk.Context, assetName string) (string, bool) {
-	tokenInfo := k.getTokenInfo(ctx, assetName)
-	if tokenInfo == nil {
-		return "", false
-	}
-
-	return tokenInfo.TokenDetails.Symbol, true
-}
-
-// GetTokenAddress calculates the token address for some asset with the provided axelar gateway address
-func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr common.Address) (common.Address, error) {
+// calculates the token address for some asset with the provided axelar gateway address
+func (k keeper) getTokenAddress(ctx sdk.Context, assetName string, details types.TokenDetails, gatewayAddr common.Address) (common.Address, error) {
 	assetName = strings.ToLower(assetName)
 
-	bz := k.getStore(ctx, k.chain).Get([]byte(tokenAddrPrefix + assetName))
-	if bz != nil {
-		return common.BytesToAddress(bz), nil
-	}
-
-	tokenInfo := k.getTokenInfo(ctx, assetName)
-	if tokenInfo == nil {
-		return common.Address{}, fmt.Errorf("symbol not found")
-	}
-
 	var saltToken [32]byte
-	copy(saltToken[:], crypto.Keccak256Hash([]byte(tokenInfo.TokenDetails.Symbol)).Bytes())
+	copy(saltToken[:], crypto.Keccak256Hash([]byte(details.Symbol)).Bytes())
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
@@ -300,7 +278,7 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
-	packed, err := arguments.Pack(tokenInfo.TokenDetails.TokenName, tokenInfo.TokenDetails.Symbol, tokenInfo.TokenDetails.Decimals, tokenInfo.TokenDetails.Capacity.BigInt())
+	packed, err := arguments.Pack(details.TokenName, details.Symbol, details.Decimals, details.Capacity.BigInt())
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -314,12 +292,11 @@ func (k keeper) GetTokenAddress(ctx sdk.Context, assetName string, gatewayAddr c
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
-	k.getStore(ctx, k.chain).Set([]byte(tokenAddrPrefix+assetName), tokenAddr.Bytes())
 	return tokenAddr, nil
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr common.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
+func (k keeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return common.Address{}, common.Hash{}, err
@@ -383,28 +360,26 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, true
 }
 
-// SetPendingTokenDeployment stores a pending ERC20 token deployment
-func (k keeper) SetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey, token types.ERC20TokenDeployment) {
-	bz := k.cdc.MustMarshalLengthPrefixed(&token)
-	k.getStore(ctx, k.chain).Set([]byte(pendingTokenPrefix+key.String()), bz)
-}
-
-// SetTokenInfo stores the token info
-func (k keeper) SetTokenInfo(ctx sdk.Context, assetName string, msg *types.CreateDeployTokenRequest) {
-	bz := k.cdc.MustMarshalLengthPrefixed(msg)
-	k.getStore(ctx, k.chain).Set([]byte(assetPrefix+strings.ToLower(assetName)), bz)
-}
-
-// getTokenInfo retrieves the token info
-func (k keeper) getTokenInfo(ctx sdk.Context, assetName string) *types.CreateDeployTokenRequest {
-	bz := k.getStore(ctx, k.chain).Get([]byte(assetPrefix + strings.ToLower(assetName)))
-	if bz == nil {
-		return nil
+func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+	metadata, err := k.initTokenMetadata(ctx, asset, details)
+	if err != nil {
+		return types.NilToken, err
 	}
-	var msg types.CreateDeployTokenRequest
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &msg)
 
-	return &msg
+	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, m)
+	}, metadata), nil
+}
+
+func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
+	metadata, ok := k.getTokenMetadata(ctx, asset)
+	if !ok {
+		return types.NilToken
+	}
+
+	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, asset, m)
+	}, metadata)
 }
 
 // SetCommand stores the given command; note that overwriting is not allowed
@@ -530,23 +505,6 @@ func (k keeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 	subspace, _ := k.getSubspace(ctx, k.chain)
 	subspace.Get(ctx, types.KeyNetwork, &network)
 	return evmTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, network))
-}
-
-// DeletePendingToken deletes the token associated with the given poll
-func (k keeper) DeletePendingToken(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete([]byte(pendingTokenPrefix + key.String()))
-}
-
-// GetPendingTokenDeployment returns the token associated with the given poll
-func (k keeper) GetPendingTokenDeployment(ctx sdk.Context, key exported.PollKey) (types.ERC20TokenDeployment, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTokenPrefix + key.String()))
-	if bz == nil {
-		return types.ERC20TokenDeployment{}, false
-	}
-	var tokenDeployment types.ERC20TokenDeployment
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &tokenDeployment)
-
-	return tokenDeployment, true
 }
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
@@ -759,4 +717,73 @@ func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, boo
 		k.subspaces[chainKey] = subspace
 	}
 	return subspace, true
+}
+
+func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
+	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
+	bz := k.cdc.MustMarshalLengthPrefixed(&meta)
+	k.getStore(ctx, k.chain).Set(key, bz)
+}
+
+func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
+	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
+	bz := k.getStore(ctx, k.chain).Get(key)
+	if bz == nil {
+		return types.ERC20TokenMetadata{}, false
+	}
+
+	var result types.ERC20TokenMetadata
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &result)
+
+	return result, true
+}
+
+func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
+	// perform a few checks now, so that it is impossible to get errors later
+	if token := k.GetERC20Token(ctx, asset); !token.Is(types.NonExistent) {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("token '%s' already set", asset)
+	}
+
+	gatewayAddr, found := k.GetGatewayAddress(ctx)
+	if !found {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("axelar gateway address for chain '%s' not set", k.chain)
+	}
+
+	_, found = k.GetTokenByteCodes(ctx)
+	if !found {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("bytecodes for token contract for chain '%s' not found", k.chain)
+	}
+
+	if err := details.Validate(); err != nil {
+		return types.ERC20TokenMetadata{}, err
+	}
+
+	var network string
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find subspace for chain '%s'", k.chain)
+	}
+
+	subspace.Get(ctx, types.KeyNetwork, &network)
+
+	chainID := k.GetChainIDByNetwork(ctx, network)
+	if chainID == nil {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
+	}
+
+	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
+	if err != nil {
+		return types.ERC20TokenMetadata{}, err
+	}
+
+	// all good
+	meta := types.ERC20TokenMetadata{
+		Asset:        asset,
+		Details:      details,
+		TokenAddress: types.Address(tokenAddr),
+		ChainID:      sdk.NewIntFromBigInt(chainID),
+		Status:       types.Initialized,
+	}
+	k.setTokenMetadata(ctx, asset, meta)
+	return meta, nil
 }
