@@ -27,7 +27,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 var (
@@ -219,16 +218,16 @@ func (k keeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 
 // SetGatewayAddress sets the contract address for Axelar Gateway
 func (k keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
-	k.getStore(ctx, k.chain).Set(gatewayKey, &gogoprototypes.BytesValue{Value: addr.Bytes()})
+	k.getStore(ctx, k.chain).SetRaw(gatewayKey, addr.Bytes())
 }
 
 // GetGatewayAddress gets the contract address for Axelar Gateway
 func (k keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
-	bz := gogoprototypes.BytesValue{}
-	if !k.getStore(ctx, k.chain).Get(gatewayKey, &bz) {
+	bz := k.getStore(ctx, k.chain).GetRaw(gatewayKey)
+	if bz == nil {
 		return common.Address{}, false
 	}
-	return common.BytesToAddress(bz.Value), true
+	return common.BytesToAddress(bz), true
 }
 
 // SetBurnerInfo saves the burner info for a given address
@@ -397,13 +396,13 @@ func (k keeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Co
 }
 
 func (k keeper) GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
-	bz := gogoprototypes.BytesValue{}
-	if !k.getStore(ctx, k.chain).Get(unsignedPrefix.AppendStr(txID), &bz) {
+	bz := k.getStore(ctx, k.chain).GetRaw(unsignedPrefix.AppendStr(txID))
+	if bz == nil {
 		return nil
 	}
 
 	var tx evmTypes.Transaction
-	err := tx.UnmarshalBinary(bz.Value)
+	err := tx.UnmarshalBinary(bz)
 	if err != nil {
 		panic(err)
 	}
@@ -418,7 +417,7 @@ func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transac
 		panic(err)
 	}
 
-	k.getStore(ctx, k.chain).Set(unsignedPrefix.AppendStr(txID), &gogoprototypes.BytesValue{Value: bz})
+	k.getStore(ctx, k.chain).SetRaw(unsignedPrefix.AppendStr(txID), bz)
 }
 
 // SetPendingDeposit stores a pending deposit
@@ -651,15 +650,14 @@ func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.Batc
 
 // SetLatestSignedBatchedCommandsID stores the ID of the latest signed batched commands
 func (k keeper) SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte) {
-	k.getStore(ctx, k.chain).Set(latestSignedBatchedCommandsIDKey, &gogoprototypes.BytesValue{Value: id})
+	k.getStore(ctx, k.chain).SetRaw(latestSignedBatchedCommandsIDKey, id)
 }
 
 // GetLatestSignedBatchedCommandsID retrieves the ID of the latest signed batched commands
 func (k keeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool) {
-	var bz gogoprototypes.BytesValue
-	found := k.getStore(ctx, k.chain).Get(latestSignedBatchedCommandsIDKey, &bz)
+	bz := k.getStore(ctx, k.chain).GetRaw(latestSignedBatchedCommandsIDKey)
 
-	return bz.Value, found
+	return bz, bz != nil
 }
 
 func (k keeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
