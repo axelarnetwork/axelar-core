@@ -29,24 +29,24 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-const (
-	gatewayKey                       = "gateway"
-	pendingChainKey                  = "pending_chain_asset"
-	unsignedBatchedCommandsKey       = "unsigned_batched_commands"
-	latestSignedBatchedCommandsIDKey = "latest_signed_batched_commands_id"
+var (
+	gatewayKey                       = utils.KeyFromStr("gateway")
+	pendingChainKey                  = utils.KeyFromStr("pending_chain_asset")
+	unsignedBatchedCommandsKey       = utils.KeyFromStr("unsigned_batched_commands")
+	latestSignedBatchedCommandsIDKey = utils.KeyFromStr("latest_signed_batched_commands_id")
 
-	chainPrefix                 = "chain_"
-	subspacePrefix              = "subspace_"
-	unsignedPrefix              = "unsigned_"
-	tokenMetadataPrefix         = "token_deployment_"
-	pendingDepositPrefix        = "pending_deposit_"
-	confirmedDepositPrefix      = "confirmed_deposit_"
-	burnedDepositPrefix         = "burned_deposit_"
-	commandPrefix               = "command_"
-	burnerAddrPrefix            = "burnerAddr_"
-	pendingTransferKeyPrefix    = "pending_transfer_key_"
-	archivedTransferKeyPrefix   = "archived_transfer_key_"
-	signedBatchedCommandsPrefix = "signed_batched_commands_"
+	chainPrefix                 = utils.KeyFromStr("chain")
+	subspacePrefix              = utils.KeyFromStr("subspace")
+	unsignedPrefix              = utils.KeyFromStr("unsigned")
+	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
+	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
+	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
+	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
+	commandPrefix               = utils.KeyFromStr("command")
+	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
+	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
+	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
+	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands")
 
 	commandQueueName = "command_queue"
 )
@@ -87,23 +87,20 @@ func (k keeper) ForChain(ctx sdk.Context, chain string) types.ChainKeeper {
 
 // SetPendingChain stores the chain pending for confirmation
 func (k keeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain) {
-	k.getStore(ctx, chain.Name).Set([]byte(pendingChainKey), k.cdc.MustMarshalLengthPrefixed(&chain))
+	k.getStore(ctx, chain.Name).Set(pendingChainKey, &chain)
 }
 
 // GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
 func (k keeper) GetPendingChain(ctx sdk.Context, chainName string) (nexus.Chain, bool) {
-	bz := k.getStore(ctx, chainName).Get([]byte(pendingChainKey))
-	if bz == nil {
-		return nexus.Chain{}, false
-	}
 	var chain nexus.Chain
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &chain)
-	return chain, true
+	found := k.getStore(ctx, chainName).Get(pendingChainKey, &chain)
+
+	return chain, found
 }
 
 // DeletePendingChain deletes a chain that is not registered yet
 func (k keeper) DeletePendingChain(ctx sdk.Context, chain string) {
-	k.getStore(ctx, chain).Delete([]byte(pendingChainKey))
+	k.getStore(ctx, chain).Delete(pendingChainKey)
 }
 
 // SetParams sets the evm module's parameters
@@ -112,7 +109,7 @@ func (k keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 		chain := strings.ToLower(p.Chain)
 
 		// set the chain before calling the subspace so it is recognized as an existing chain
-		ctx.KVStore(k.storeKey).Set([]byte(subspacePrefix+chain), []byte(p.Chain))
+		k.getBaseStore(ctx).SetRaw(subspacePrefix.AppendStr(chain), []byte(p.Chain))
 		subspace, _ := k.getSubspace(ctx, chain)
 		subspace.SetParamSet(ctx, &p)
 	}
@@ -120,8 +117,8 @@ func (k keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 
 // GetParams gets the evm module's parameters
 func (k keeper) GetParams(ctx sdk.Context) []types.Params {
-	params := make([]types.Params, 0)
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(subspacePrefix))
+	ps := make([]types.Params, 0)
+	iter := k.getBaseStore(ctx).Iterator(subspacePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -130,10 +127,10 @@ func (k keeper) GetParams(ctx sdk.Context) []types.Params {
 
 		var p types.Params
 		subspace.GetParamSet(ctx, &p)
-		params = append(params, p)
+		ps = append(ps, p)
 	}
 
-	return params
+	return ps
 }
 
 // GetName returns the chain name
@@ -220,37 +217,28 @@ func (k keeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 
 // SetGatewayAddress sets the contract address for Axelar Gateway
 func (k keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
-	k.getStore(ctx, k.chain).Set([]byte(gatewayKey), addr.Bytes())
+	k.getStore(ctx, k.chain).SetRaw(gatewayKey, addr.Bytes())
 }
 
 // GetGatewayAddress gets the contract address for Axelar Gateway
 func (k keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(gatewayKey))
-	if bz == nil {
-		return common.Address{}, false
-	}
-	return common.BytesToAddress(bz), true
+	bz := k.getStore(ctx, k.chain).GetRaw(gatewayKey)
+	return common.BytesToAddress(bz), bz != nil
 }
 
 // SetBurnerInfo saves the burner info for a given address
 func (k keeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
-	key := append([]byte(burnerAddrPrefix), burnerAddr.Bytes()...)
-	bz := k.cdc.MustMarshalLengthPrefixed(burnerInfo)
-
-	k.getStore(ctx, k.chain).Set(key, bz)
+	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
+	k.getStore(ctx, k.chain).Set(key, burnerInfo)
 }
 
 // GetBurnerInfo retrieves the burner info for a given address
 func (k keeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types.BurnerInfo {
-	key := append([]byte(burnerAddrPrefix), burnerAddr.Bytes()...)
-
-	bz := k.getStore(ctx, k.chain).Get(key)
-	if bz == nil {
+	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
+	var result types.BurnerInfo
+	if !k.getStore(ctx, k.chain).Get(key, &result) {
 		return nil
 	}
-
-	var result types.BurnerInfo
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &result)
 
 	return &result
 }
@@ -384,8 +372,8 @@ func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
 
 // SetCommand stores the given command; note that overwriting is not allowed
 func (k keeper) SetCommand(ctx sdk.Context, command types.Command) error {
-	key := utils.KeyFromStr(commandPrefix).AppendStr(command.ID.Hex())
-	if bz := k.getStore(ctx, k.chain).Get(key.AsKey()); bz != nil {
+	key := commandPrefix.AppendStr(command.ID.Hex())
+	if k.getStore(ctx, k.chain).Has(key) {
 		return fmt.Errorf("command %s already exists", command.ID.Hex())
 	}
 
@@ -395,19 +383,16 @@ func (k keeper) SetCommand(ctx sdk.Context, command types.Command) error {
 
 // GetCommand retrieves the command for the given ID
 func (k keeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Command {
-	bz := k.getStore(ctx, k.chain).Get(utils.KeyFromStr(commandPrefix).AppendStr(commandID.Hex()).AsKey())
-	if bz == nil {
+	var command types.Command
+	if !k.getStore(ctx, k.chain).Get(commandPrefix.AppendStr(commandID.Hex()), &command) {
 		return nil
 	}
-
-	var command types.Command
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &command)
 
 	return &command
 }
 
 func (k keeper) GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
-	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedPrefix + txID))
+	bz := k.getStore(ctx, k.chain).GetRaw(unsignedPrefix.AppendStr(txID))
 	if bz == nil {
 		return nil
 	}
@@ -428,28 +413,22 @@ func (k keeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transac
 		panic(err)
 	}
 
-	k.getStore(ctx, k.chain).Set([]byte(unsignedPrefix+txID), bz)
+	k.getStore(ctx, k.chain).SetRaw(unsignedPrefix.AppendStr(txID), bz)
 }
 
 // SetPendingDeposit stores a pending deposit
 func (k keeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, deposit *types.ERC20Deposit) {
-	bz := k.cdc.MustMarshalLengthPrefixed(deposit)
-	k.getStore(ctx, k.chain).Set([]byte(pendingDepositPrefix+key.String()), bz)
+	k.getStore(ctx, k.chain).Set(pendingDepositPrefix.AppendStr(key.String()), deposit)
 }
 
 // GetDeposit retrieves a confirmed/burned deposit
 func (k keeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 	var deposit types.ERC20Deposit
 
-	bz := k.getStore(ctx, k.chain).Get([]byte(confirmedDepositPrefix + txID.Hex() + "_" + burnAddr.Hex()))
-	if bz != nil {
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
+	if !k.getStore(ctx, k.chain).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.CONFIRMED, true
 	}
-
-	bz = k.getStore(ctx, k.chain).Get([]byte(burnedDepositPrefix + txID.Hex() + "_" + burnAddr.Hex()))
-	if bz != nil {
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
+	if !k.getStore(ctx, k.chain).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.BURNED, true
 	}
 
@@ -459,14 +438,12 @@ func (k keeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Ad
 // GetConfirmedDeposits retrieves all the confirmed ERC20 deposits
 func (k keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 	var deposits []types.ERC20Deposit
-	iter := sdk.KVStorePrefixIterator(k.getStore(ctx, k.chain), []byte(confirmedDepositPrefix))
+	iter := k.getStore(ctx, k.chain).Iterator(confirmedDepositPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-
 		var deposit types.ERC20Deposit
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
+		iter.UnmarshalValue(&deposit)
 		deposits = append(deposits, deposit)
 	}
 
@@ -509,30 +486,24 @@ func (k keeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
 func (k keeper) DeletePendingDeposit(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete([]byte(pendingDepositPrefix + key.String()))
+	k.getStore(ctx, k.chain).Delete(pendingDepositPrefix.AppendStr(key.String()))
 }
 
 // GetPendingDeposit returns the deposit associated with the given poll
 func (k keeper) GetPendingDeposit(ctx sdk.Context, key exported.PollKey) (types.ERC20Deposit, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(pendingDepositPrefix + key.String()))
-	if bz == nil {
-		return types.ERC20Deposit{}, false
-	}
 	var deposit types.ERC20Deposit
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
+	found := k.getStore(ctx, k.chain).Get(pendingDepositPrefix.AppendStr(key.String()), &deposit)
 
-	return deposit, true
+	return deposit, found
 }
 
 // SetDeposit stores confirmed or burned deposits
 func (k keeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {
-	bz := k.cdc.MustMarshalLengthPrefixed(&deposit)
-
 	switch state {
 	case types.CONFIRMED:
-		k.getStore(ctx, k.chain).Set([]byte(confirmedDepositPrefix+deposit.TxID.Hex()+"_"+deposit.BurnerAddress.Hex()), bz)
+		k.getStore(ctx, k.chain).Set(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()), &deposit)
 	case types.BURNED:
-		k.getStore(ctx, k.chain).Set([]byte(burnedDepositPrefix+deposit.TxID.Hex()+"_"+deposit.BurnerAddress.Hex()), bz)
+		k.getStore(ctx, k.chain).Set(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()), &deposit)
 	default:
 		panic("invalid deposit state")
 	}
@@ -540,53 +511,43 @@ func (k keeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state ty
 
 // DeleteDeposit deletes the given deposit
 func (k keeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
-	k.getStore(ctx, k.chain).Delete([]byte(confirmedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
-	k.getStore(ctx, k.chain).Delete([]byte(burnedDepositPrefix + deposit.TxID.Hex() + "_" + deposit.BurnerAddress.Hex()))
+	k.getStore(ctx, k.chain).Delete(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
+	k.getStore(ctx, k.chain).Delete(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
 }
 
 // SetPendingTransferKey stores a pending transfer ownership/operatorship
 func (k keeper) SetPendingTransferKey(ctx sdk.Context, key exported.PollKey, transferKey *types.TransferKey) {
-	bz := k.cdc.MustMarshalLengthPrefixed(transferKey)
-	k.getStore(ctx, k.chain).Set([]byte(pendingTransferKeyPrefix+key.String()), bz)
+	k.getStore(ctx, k.chain).Set(pendingTransferKeyPrefix.AppendStr(key.String()), transferKey)
 }
 
 // DeletePendingTransferKey deletes a pending transfer ownership/operatorship
 func (k keeper) DeletePendingTransferKey(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete([]byte(pendingTransferKeyPrefix + key.String()))
+	k.getStore(ctx, k.chain).Delete(pendingTransferKeyPrefix.AppendStr(key.String()))
 }
 
 // ArchiveTransferKey archives an ownership transfer so it is no longer pending but can still be queried
 func (k keeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
-	transfer := k.getStore(ctx, k.chain).Get([]byte(pendingTransferKeyPrefix + key.String()))
-
-	if transfer != nil {
+	var transferKey types.TransferKey
+	if !k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
 		k.DeletePendingTransferKey(ctx, key)
-		k.getStore(ctx, k.chain).Set([]byte(archivedTransferKeyPrefix+key.String()), transfer)
+		k.getStore(ctx, k.chain).Set(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 	}
 }
 
 // GetArchivedTransferKey returns an archived transfer of ownership/operatorship associated with the given poll
 func (k keeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(archivedTransferKeyPrefix + key.String()))
-	if bz == nil {
-		return types.TransferKey{}, false
-	}
 	var transferKey types.TransferKey
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &transferKey)
+	found := k.getStore(ctx, k.chain).Get(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 
-	return transferKey, true
+	return transferKey, found
 }
 
 // GetPendingTransferKey returns the transfer ownership/operatorship associated with the given poll
 func (k keeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(pendingTransferKeyPrefix + key.String()))
-	if bz == nil {
-		return types.TransferKey{}, false
-	}
 	var transferKey types.TransferKey
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &transferKey)
+	found := k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 
-	return transferKey, true
+	return transferKey, found
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
@@ -633,109 +594,67 @@ func (k keeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int {
 
 // GetCommandQueue returns the queue of commands
 func (k keeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
-	return utils.NewBlockHeightKVQueue(commandQueueName, utils.NewNormalizedStore(k.getStore(ctx, k.chain), k.cdc), ctx.BlockHeight(), k.Logger(ctx))
+	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chain), ctx.BlockHeight(), k.Logger(ctx))
 }
 
 // SetUnsignedBatchedCommands stores the given unsigned batched commands
 func (k keeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
-	bz := k.cdc.MustMarshalLengthPrefixed(&batchedCommands)
-	k.getStore(ctx, k.chain).Set([]byte(unsignedBatchedCommandsKey), bz)
+	k.getStore(ctx, k.chain).Set(unsignedBatchedCommandsKey, &batchedCommands)
 }
 
 // GetUnsignedBatchedCommands retrieves the unsigned batched commands
 func (k keeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedCommands, bool) {
-	bz := k.getStore(ctx, k.chain).Get([]byte(unsignedBatchedCommandsKey))
-	if bz == nil {
-		return types.BatchedCommands{}, false
-	}
-
 	var batchedCommands types.BatchedCommands
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &batchedCommands)
+	found := k.getStore(ctx, k.chain).Get(unsignedBatchedCommandsKey, &batchedCommands)
 
-	return batchedCommands, true
+	return batchedCommands, found
 }
 
 // DeleteUnsignedBatchedCommands deletes the unsigned batched commands
 func (k keeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
-	k.getStore(ctx, k.chain).Delete([]byte(unsignedBatchedCommandsKey))
+	k.getStore(ctx, k.chain).Delete(unsignedBatchedCommandsKey)
 }
 
 // SetSignedBatchedCommands stores the signed batched commands
 func (k keeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
 	batchedCommands.Status = types.Signed
-	bz := k.cdc.MustMarshalLengthPrefixed(&batchedCommands)
-	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(batchedCommands.ID))
+	key := signedBatchedCommandsPrefix.AppendStr(hex.EncodeToString(batchedCommands.ID))
 
-	k.getStore(ctx, k.chain).Set([]byte(key), bz)
+	k.getStore(ctx, k.chain).Set(key, &batchedCommands)
 }
 
 // GetSignedBatchedCommands retrieves the signed batched commands of given ID
 func (k keeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.BatchedCommands, bool) {
-	key := fmt.Sprintf("%s%s", signedBatchedCommandsPrefix, hex.EncodeToString(id))
-	bz := k.getStore(ctx, k.chain).Get([]byte(key))
-	if bz == nil {
-		return types.BatchedCommands{}, false
-	}
-
+	key := signedBatchedCommandsPrefix.AppendStr(hex.EncodeToString(id))
 	var batchedCommands types.BatchedCommands
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &batchedCommands)
+	found := k.getStore(ctx, k.chain).Get(key, &batchedCommands)
 
-	return batchedCommands, true
+	return batchedCommands, found
 }
 
 // SetLatestSignedBatchedCommandsID stores the ID of the latest signed batched commands
 func (k keeper) SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte) {
-	k.getStore(ctx, k.chain).Set([]byte(latestSignedBatchedCommandsIDKey), id)
+	k.getStore(ctx, k.chain).SetRaw(latestSignedBatchedCommandsIDKey, id)
 }
 
 // GetLatestSignedBatchedCommandsID retrieves the ID of the latest signed batched commands
 func (k keeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool) {
-	id := k.getStore(ctx, k.chain).Get([]byte(latestSignedBatchedCommandsIDKey))
+	bz := k.getStore(ctx, k.chain).GetRaw(latestSignedBatchedCommandsIDKey)
 
-	return id, id != nil
-}
-
-func (k keeper) getStore(ctx sdk.Context, chain string) prefix.Store {
-	pre := []byte(chainPrefix + strings.ToLower(chain) + "_")
-	return prefix.NewStore(ctx.KVStore(k.storeKey), pre)
-}
-
-func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
-	chainLower := strings.ToLower(chain)
-
-	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
-	// The following checks has to be done regardless, if we would only do it dependent on the existence of a subspace
-	// different nodes would consume different amounts of gas and it would result in a consensus failure
-	if !ctx.KVStore(k.storeKey).Has([]byte(subspacePrefix + chainLower)) {
-		return params.Subspace{}, false
-	}
-
-	chainKey := types.ModuleName + "_" + chainLower
-	subspace, ok := k.subspaces[chainKey]
-	if !ok {
-		subspace = k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
-		k.subspaces[chainKey] = subspace
-	}
-	return subspace, true
+	return bz, bz != nil
 }
 
 func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
-	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
-	bz := k.cdc.MustMarshalLengthPrefixed(&meta)
-	k.getStore(ctx, k.chain).Set(key, bz)
+	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
+	k.getStore(ctx, k.chain).Set(key, &meta)
 }
 
 func (k keeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
-	key := []byte(tokenMetadataPrefix + strings.ToLower(asset))
-	bz := k.getStore(ctx, k.chain).Get(key)
-	if bz == nil {
-		return types.ERC20TokenMetadata{}, false
-	}
-
 	var result types.ERC20TokenMetadata
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &result)
+	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
+	found := k.getStore(ctx, k.chain).Get(key, &result)
 
-	return result, true
+	return result, found
 }
 
 func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
@@ -786,4 +705,32 @@ func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.T
 	}
 	k.setTokenMetadata(ctx, asset, meta)
 	return meta, nil
+}
+
+func (k keeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
+	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
+	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
+}
+
+func (k keeper) getBaseStore(ctx sdk.Context) utils.KVStore {
+	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
+	chainLower := strings.ToLower(chain)
+
+	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
+	// The following checks has to be done regardless, if we would only do it dependent on the existence of a subspace
+	// different nodes would consume different amounts of gas and it would result in a consensus failure
+	if !k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(chainLower)) {
+		return params.Subspace{}, false
+	}
+
+	chainKey := types.ModuleName + "_" + chainLower
+	subspace, ok := k.subspaces[chainKey]
+	if !ok {
+		subspace = k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
+		k.subspaces[chainKey] = subspace
+	}
+	return subspace, true
 }
