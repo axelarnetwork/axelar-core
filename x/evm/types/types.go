@@ -124,7 +124,7 @@ func (t *ERC20Token) GetAddress() Address {
 }
 
 // StartConfirmation signals that the token confirmation is underway for the given tx ID
-func (t *ERC20Token) StartConfirmation(txID Hash) error {
+func (t *ERC20Token) RecordDeployment(txID Hash) error {
 	switch {
 	case t.Is(NonExistent):
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
@@ -142,7 +142,7 @@ func (t *ERC20Token) StartConfirmation(txID Hash) error {
 }
 
 // Reset reverts the token state back to Initialized
-func (t *ERC20Token) Reset() error {
+func (t *ERC20Token) RejectDeployment() error {
 	switch {
 	case t.Is(NonExistent):
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
@@ -157,7 +157,7 @@ func (t *ERC20Token) Reset() error {
 }
 
 // Confirm signals that the token was successfully confirmed
-func (t *ERC20Token) Confirm() error {
+func (t *ERC20Token) ConfirmDeployment() error {
 	switch {
 	case t.Is(NonExistent):
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
@@ -172,12 +172,7 @@ func (t *ERC20Token) Confirm() error {
 }
 
 // NilToken returns a nil erc20 token
-func NilToken() ERC20Token {
-	return CreateERC20Token(
-		func(ERC20TokenMetadata) {},
-		ERC20TokenMetadata{Status: NonExistent},
-	)
-}
+var NilToken = ERC20Token{}
 
 // GetConfirmTokenKey creates a poll key for token confirmation
 func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
