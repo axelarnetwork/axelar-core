@@ -132,10 +132,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	// if token was initialized, the token and gateway addresses are available
-	tokenAddr := token.GetAddress()
-	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
-
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
@@ -174,6 +170,9 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
+	// if token was initialized, both token and gateway addresses are available
+	tokenAddr := token.GetAddress()
+	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
 	ctx.EventManager().EmitEvent(
