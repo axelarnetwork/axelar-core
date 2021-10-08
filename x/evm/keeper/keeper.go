@@ -118,7 +118,8 @@ func (k keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 // GetParams gets the evm module's parameters
 func (k keeper) GetParams(ctx sdk.Context) []types.Params {
 	params := make([]types.Params, 0)
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), subspacePrefix.AsKey())
+	normalized := utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+	iter := normalized.Iterator(subspacePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
