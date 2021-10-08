@@ -418,11 +418,11 @@ func TestLink_Success(t *testing.T) {
 		panic(err)
 	}
 
-	err = token.StartConfirmation(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+	err = token.RecordDeployment(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
 	if err != nil {
 		panic(err)
 	}
-	err = token.Confirm()
+	err = token.ConfirmDeployment()
 	if err != nil {
 		panic(err)
 	}
@@ -776,7 +776,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				if asset == msg.Asset.Name {
 					return token
 				}
-				return types.NilToken()
+				return types.NilToken
 			},
 		}
 		v = &mock.VoterMock{
@@ -835,7 +835,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		err := token.StartConfirmation(types.Hash(hash))
+		err := token.RecordDeployment(types.Hash(hash))
 		if err != nil {
 			panic(err)
 		}
@@ -880,7 +880,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("token unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		chaink.GetERC20TokenFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			return types.NilToken()
+			return types.NilToken
 		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -891,8 +891,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("already registered", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		token.StartConfirmation(types.Hash(hash))
-		token.Confirm()
+		token.RecordDeployment(types.Hash(hash))
+		token.ConfirmDeployment()
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1263,7 +1263,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			SetCommandFunc: func(ctx sdk.Context, command types.Command) error { return nil },
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
-					return types.NilToken(), fmt.Errorf("gateway address not set")
+					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
 				return createMockERC20Token(asset, details), nil
 			},

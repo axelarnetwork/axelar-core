@@ -46,7 +46,7 @@ func TestQueryTokenAddress(t *testing.T) {
 				if asset == a {
 					return createMockConfirmedERC20Token(asset, types.Address(expectedAddress), createDetails())
 				}
-				return types.NilToken()
+				return types.NilToken
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -82,7 +82,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	t.Run("token not deployed", testutils.Func(func(t *testing.T) {
 		setup()
 		chainKeeper.GetERC20TokenFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			return types.NilToken()
+			return types.NilToken
 		}
 
 		_, err := evmKeeper.QueryTokenAddress(ctx, chainKeeper, nexusKeeper, asset)
@@ -277,7 +277,7 @@ func TestQueryDepositAddress(t *testing.T) {
 				if btc.Bitcoin.NativeAsset == a {
 					return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails())
 				}
-				return types.NilToken()
+				return types.NilToken
 			},
 			GetBurnerAddressAndSaltFunc: func(sdk.Context, types.Address, string, common.Address) (common.Address, common.Hash, error) {
 				return expectedAddress, randomHash(), nil
@@ -338,7 +338,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			if dataStr.Asset == a {
 				return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails())
 			}
-			return types.NilToken()
+			return types.NilToken
 		}
 
 		res, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
@@ -365,7 +365,7 @@ func TestQueryDepositAddress(t *testing.T) {
 	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
 		setup()
 		chainKeeper.GetERC20TokenFunc = func(ctx sdk.Context, a string) types.ERC20Token {
-			return types.NilToken()
+			return types.NilToken
 		}
 
 		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)

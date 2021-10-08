@@ -127,7 +127,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset.Name)
 
-	err := token.StartConfirmation(req.TxID)
+	err := token.RecordDeployment(req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	if poll.Is(vote.Failed) {
-		token.Reset()
+		token.RejectDeployment()
 		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -685,7 +685,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		token.Reset()
+		token.RejectDeployment()
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmTokenResponse{
@@ -697,7 +697,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.RegisterAsset(ctx, chain.Name, req.Asset)
-	token.Confirm()
+	token.ConfirmDeployment()
 
 	return &types.VoteConfirmTokenResponse{
 		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil

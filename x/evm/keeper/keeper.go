@@ -363,7 +363,7 @@ func (k keeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 	metadata, err := k.initTokenMetadata(ctx, asset, details)
 	if err != nil {
-		return types.NilToken(), err
+		return types.NilToken, err
 	}
 	k.setTokenMetadata(ctx, asset, metadata)
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
@@ -374,7 +374,7 @@ func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.To
 func (k keeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
 	metadata, ok := k.getTokenMetadata(ctx, asset)
 	if !ok {
-		return types.NilToken()
+		return types.NilToken
 	}
 
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {

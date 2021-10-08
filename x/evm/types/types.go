@@ -123,7 +123,7 @@ func (t *ERC20Token) GetAddress() Address {
 
 }
 
-// StartConfirmation signals that the token confirmation is underway for the given tx ID
+// RecordDeployment signals that the token confirmation is underway for the given tx ID
 func (t *ERC20Token) RecordDeployment(txID Hash) error {
 	switch {
 	case t.Is(NonExistent):
@@ -141,7 +141,7 @@ func (t *ERC20Token) RecordDeployment(txID Hash) error {
 	return nil
 }
 
-// Reset reverts the token state back to Initialized
+// RejectDeployment reverts the token state back to Initialized
 func (t *ERC20Token) RejectDeployment() error {
 	switch {
 	case t.Is(NonExistent):
@@ -156,7 +156,7 @@ func (t *ERC20Token) RejectDeployment() error {
 	return nil
 }
 
-// Confirm signals that the token was successfully confirmed
+// ConfirmDeployment signals that the token was successfully confirmed
 func (t *ERC20Token) ConfirmDeployment() error {
 	switch {
 	case t.Is(NonExistent):
