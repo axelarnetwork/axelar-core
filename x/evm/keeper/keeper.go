@@ -35,18 +35,18 @@ var (
 	unsignedBatchedCommandsKey       = utils.KeyFromStr("unsigned_batched_commands")
 	latestSignedBatchedCommandsIDKey = utils.KeyFromStr("latest_signed_batched_commands_id")
 
-	chainPrefix                 = utils.KeyFromStr("chain_")
-	subspacePrefix              = utils.KeyFromStr("subspace_")
-	unsignedPrefix              = utils.KeyFromStr("unsigned_")
-	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment_")
-	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit_")
-	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit_")
-	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit_")
-	commandPrefix               = utils.KeyFromStr("command_")
-	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr_")
-	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key_")
-	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key_")
-	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands_")
+	chainPrefix                 = utils.KeyFromStr("chain")
+	subspacePrefix              = utils.KeyFromStr("subspace")
+	unsignedPrefix              = utils.KeyFromStr("unsigned")
+	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
+	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
+	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
+	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
+	commandPrefix               = utils.KeyFromStr("command")
+	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
+	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
+	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
+	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands")
 
 	commandQueueName = "command_queue"
 )
@@ -109,7 +109,7 @@ func (k keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 		chain := strings.ToLower(p.Chain)
 
 		// set the chain before calling the subspace so it is recognized as an existing chain
-		ctx.KVStore(k.storeKey).Set(subspacePrefix.AppendStr(chain).AsKey(), []byte(p.Chain))
+		k.getBaseStore(ctx).SetRaw(subspacePrefix.AppendStr(chain), []byte(p.Chain))
 		subspace, _ := k.getSubspace(ctx, chain)
 		subspace.SetParamSet(ctx, &p)
 	}
@@ -117,9 +117,8 @@ func (k keeper) SetParams(ctx sdk.Context, params ...types.Params) {
 
 // GetParams gets the evm module's parameters
 func (k keeper) GetParams(ctx sdk.Context) []types.Params {
-	params := make([]types.Params, 0)
-	normalized := utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
-	iter := normalized.Iterator(subspacePrefix)
+	ps := make([]types.Params, 0)
+	iter := k.getBaseStore(ctx).Iterator(subspacePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -128,10 +127,10 @@ func (k keeper) GetParams(ctx sdk.Context) []types.Params {
 
 		var p types.Params
 		subspace.GetParamSet(ctx, &p)
-		params = append(params, p)
+		ps = append(ps, p)
 	}
 
-	return params
+	return ps
 }
 
 // GetName returns the chain name
@@ -224,10 +223,7 @@ func (k keeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
 // GetGatewayAddress gets the contract address for Axelar Gateway
 func (k keeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 	bz := k.getStore(ctx, k.chain).GetRaw(gatewayKey)
-	if bz == nil {
-		return common.Address{}, false
-	}
-	return common.BytesToAddress(bz), true
+	return common.BytesToAddress(bz), bz != nil
 }
 
 // SetBurnerInfo saves the burner info for a given address
@@ -446,10 +442,8 @@ func (k keeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-
 		var deposit types.ERC20Deposit
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &deposit)
+		iter.UnmarshalValue(&deposit)
 		deposits = append(deposits, deposit)
 	}
 
@@ -650,30 +644,6 @@ func (k keeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 	return bz, bz != nil
 }
 
-func (k keeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
-	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
-	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
-}
-
-func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
-	chainLower := strings.ToLower(chain)
-
-	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
-	// The following checks has to be done regardless, if we would only do it dependent on the existence of a subspace
-	// different nodes would consume different amounts of gas and it would result in a consensus failure
-	if !ctx.KVStore(k.storeKey).Has(subspacePrefix.AppendStr(chainLower).AsKey()) {
-		return params.Subspace{}, false
-	}
-
-	chainKey := types.ModuleName + "_" + chainLower
-	subspace, ok := k.subspaces[chainKey]
-	if !ok {
-		subspace = k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
-		k.subspaces[chainKey] = subspace
-	}
-	return subspace, true
-}
-
 func (k keeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
 	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
 	k.getStore(ctx, k.chain).Set(key, &meta)
@@ -735,4 +705,32 @@ func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.T
 	}
 	k.setTokenMetadata(ctx, asset, meta)
 	return meta, nil
+}
+
+func (k keeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
+	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
+	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
+}
+
+func (k keeper) getBaseStore(ctx sdk.Context) utils.KVStore {
+	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+func (k keeper) getSubspace(ctx sdk.Context, chain string) (params.Subspace, bool) {
+	chainLower := strings.ToLower(chain)
+
+	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
+	// The following checks has to be done regardless, if we would only do it dependent on the existence of a subspace
+	// different nodes would consume different amounts of gas and it would result in a consensus failure
+	if !k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(chainLower)) {
+		return params.Subspace{}, false
+	}
+
+	chainKey := types.ModuleName + "_" + chainLower
+	subspace, ok := k.subspaces[chainKey]
+	if !ok {
+		subspace = k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
+		k.subspaces[chainKey] = subspace
+	}
+	return subspace, true
 }
