@@ -365,7 +365,7 @@ func (k keeper) CreateERC20Token(ctx sdk.Context, asset string, details types.To
 	if err != nil {
 		return types.NilToken, err
 	}
-	k.setTokenMetadata(ctx, asset, metadata)
+
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
 		k.setTokenMetadata(ctx, asset, m)
 	}, metadata), nil
@@ -777,11 +777,13 @@ func (k keeper) initTokenMetadata(ctx sdk.Context, asset string, details types.T
 	}
 
 	// all good
-	return types.ERC20TokenMetadata{
+	meta := types.ERC20TokenMetadata{
 		Asset:        asset,
 		Details:      details,
 		TokenAddress: types.Address(tokenAddr),
 		ChainID:      sdk.NewIntFromBigInt(chainID),
 		Status:       types.Initialized,
-	}, nil
+	}
+	k.setTokenMetadata(ctx, asset, meta)
+	return meta, nil
 }
