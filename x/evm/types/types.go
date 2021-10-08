@@ -130,12 +130,12 @@ func (t *ERC20Token) RecordDeployment(txID Hash) error {
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
 	case t.Is(Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.metadata.Asset)
-	case t.Is(Waiting):
+	case t.Is(Pending):
 		return fmt.Errorf("voting for token %s is already underway", t.metadata.Asset)
 	}
 
 	t.metadata.TxHash = txID
-	t.metadata.Status |= Waiting
+	t.metadata.Status |= Pending
 	t.setMeta(t.metadata)
 
 	return nil
@@ -146,7 +146,7 @@ func (t *ERC20Token) RejectDeployment() error {
 	switch {
 	case t.Is(NonExistent):
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
-	case !t.Is(Waiting):
+	case !t.Is(Pending):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.metadata.Asset, t.metadata.Status.String())
 	}
 
@@ -161,7 +161,7 @@ func (t *ERC20Token) ConfirmDeployment() error {
 	switch {
 	case t.Is(NonExistent):
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
-	case !t.Is(Waiting):
+	case !t.Is(Pending):
 		return fmt.Errorf("token %s not waiting confirmation (current status: %s)", t.metadata.Asset, t.metadata.Status.String())
 	}
 

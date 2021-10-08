@@ -635,7 +635,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	keeper := s.ForChain(ctx, chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
 	switch {
-	case !token.Is(types.Waiting):
+	case !token.Is(types.Pending):
 		return nil, fmt.Errorf("no open poll for token '%s'", token.GetAsset())
 	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
 		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())

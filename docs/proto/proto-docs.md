@@ -1818,7 +1818,7 @@ TransferKey contains information for a transfer ownership or operatorship
 | ---- | ------ | ----------- |
 | STATUS_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
 | STATUS_INITIALIZED | 1 |  |
-| STATUS_WAITING | 2 |  |
+| STATUS_PENDING | 2 |  |
 | STATUS_CONFIRMED | 4 |  |
 
 
