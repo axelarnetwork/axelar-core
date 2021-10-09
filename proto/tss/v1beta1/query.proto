@@ -20,8 +20,14 @@ message QuerySignatureResponse {
 }
 
 message QueryKeyResponse {
+  message Key {
+    string x = 1;
+    string y = 2;
+  }
+
   VoteStatus vote_status = 1;
   tss.exported.v1beta1.KeyRole role = 2;
+  Key key = 3;
 }
 
 enum VoteStatus {
