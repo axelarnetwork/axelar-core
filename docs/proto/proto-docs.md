@@ -3412,6 +3412,7 @@ Params is the parameter set for this module
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 

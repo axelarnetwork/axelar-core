@@ -180,6 +180,10 @@ func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exp
 			},
 		}
 
+		if key.RotatedAt != nil {
+			res.RotatedAt = key.RotatedAt
+		}
+
 		return types.ModuleCdc.MarshalLengthPrefixed(&res)
 	}
 
