@@ -2086,9 +2086,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			ArchiveTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)  {
 // 				panic("mock out the ArchiveTransferKey method")
 // 			},
-// 			AssembleTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
-// 				panic("mock out the AssembleTx method")
-// 			},
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
@@ -2140,9 +2137,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetGatewayByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetGatewayByteCodes method")
 // 			},
-// 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error) {
-// 				panic("mock out the GetHashToSign method")
-// 			},
 // 			GetLatestSignedBatchedCommandsIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetLatestSignedBatchedCommandsID method")
 // 			},
@@ -2176,11 +2170,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetTokenByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetTokenByteCodes method")
 // 			},
+// 			GetTxWithSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
+// 				panic("mock out the GetTxWithSig method")
+// 			},
 // 			GetUnsignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.BatchedCommands, bool) {
 // 				panic("mock out the GetUnsignedBatchedCommands method")
-// 			},
-// 			GetUnsignedTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) *evmTypes.Transaction {
-// 				panic("mock out the GetUnsignedTx method")
 // 			},
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
@@ -2212,11 +2206,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetSignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
 // 				panic("mock out the SetSignedBatchedCommands method")
 // 			},
+// 			SetTxToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error) {
+// 				panic("mock out the SetTxToSign method")
+// 			},
 // 			SetUnsignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
 // 				panic("mock out the SetUnsignedBatchedCommands method")
-// 			},
-// 			SetUnsignedTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction)  {
-// 				panic("mock out the SetUnsignedTx method")
 // 			},
 // 		}
 //
@@ -2227,9 +2221,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 type ChainKeeperMock struct {
 	// ArchiveTransferKeyFunc mocks the ArchiveTransferKey method.
 	ArchiveTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)
-
-	// AssembleTxFunc mocks the AssembleTx method.
-	AssembleTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error)
 
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
@@ -2282,9 +2273,6 @@ type ChainKeeperMock struct {
 	// GetGatewayByteCodesFunc mocks the GetGatewayByteCodes method.
 	GetGatewayByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
-	// GetHashToSignFunc mocks the GetHashToSign method.
-	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error)
-
 	// GetLatestSignedBatchedCommandsIDFunc mocks the GetLatestSignedBatchedCommandsID method.
 	GetLatestSignedBatchedCommandsIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
@@ -2318,11 +2306,11 @@ type ChainKeeperMock struct {
 	// GetTokenByteCodesFunc mocks the GetTokenByteCodes method.
 	GetTokenByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
+	// GetTxWithSigFunc mocks the GetTxWithSig method.
+	GetTxWithSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error)
+
 	// GetUnsignedBatchedCommandsFunc mocks the GetUnsignedBatchedCommands method.
 	GetUnsignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.BatchedCommands, bool)
-
-	// GetUnsignedTxFunc mocks the GetUnsignedTx method.
-	GetUnsignedTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) *evmTypes.Transaction
 
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
@@ -2354,11 +2342,11 @@ type ChainKeeperMock struct {
 	// SetSignedBatchedCommandsFunc mocks the SetSignedBatchedCommands method.
 	SetSignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
 
+	// SetTxToSignFunc mocks the SetTxToSign method.
+	SetTxToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error)
+
 	// SetUnsignedBatchedCommandsFunc mocks the SetUnsignedBatchedCommands method.
 	SetUnsignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
-
-	// SetUnsignedTxFunc mocks the SetUnsignedTx method.
-	SetUnsignedTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2368,17 +2356,6 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key vote.PollKey
-		}
-		// AssembleTx holds details about calls to the AssembleTx method.
-		AssembleTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TxID is the txID argument value.
-			TxID string
-			// Pk is the pk argument value.
-			Pk ecdsa.PublicKey
-			// Sig is the sig argument value.
-			Sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 		}
 		// CreateERC20Token holds details about calls to the CreateERC20Token method.
 		CreateERC20Token []struct {
@@ -2493,13 +2470,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetHashToSign holds details about calls to the GetHashToSign method.
-		GetHashToSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TxID is the txID argument value.
-			TxID string
-		}
 		// GetLatestSignedBatchedCommandsID holds details about calls to the GetLatestSignedBatchedCommandsID method.
 		GetLatestSignedBatchedCommandsID []struct {
 			// Ctx is the ctx argument value.
@@ -2561,17 +2531,19 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetUnsignedBatchedCommands holds details about calls to the GetUnsignedBatchedCommands method.
-		GetUnsignedBatchedCommands []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// GetUnsignedTx holds details about calls to the GetUnsignedTx method.
-		GetUnsignedTx []struct {
+		// GetTxWithSig holds details about calls to the GetTxWithSig method.
+		GetTxWithSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TxID is the txID argument value.
 			TxID string
+			// Sig is the sig argument value.
+			Sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+		}
+		// GetUnsignedBatchedCommands holds details about calls to the GetUnsignedBatchedCommands method.
+		GetUnsignedBatchedCommands []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetVotingThreshold holds details about calls to the GetVotingThreshold method.
 		GetVotingThreshold []struct {
@@ -2647,6 +2619,15 @@ type ChainKeeperMock struct {
 			// BatchedCommands is the batchedCommands argument value.
 			BatchedCommands types.BatchedCommands
 		}
+		// SetTxToSign holds details about calls to the SetTxToSign method.
+		SetTxToSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Tx is the tx argument value.
+			Tx *evmTypes.Transaction
+			// Pk is the pk argument value.
+			Pk ecdsa.PublicKey
+		}
 		// SetUnsignedBatchedCommands holds details about calls to the SetUnsignedBatchedCommands method.
 		SetUnsignedBatchedCommands []struct {
 			// Ctx is the ctx argument value.
@@ -2654,18 +2635,8 @@ type ChainKeeperMock struct {
 			// BatchedCommands is the batchedCommands argument value.
 			BatchedCommands types.BatchedCommands
 		}
-		// SetUnsignedTx holds details about calls to the SetUnsignedTx method.
-		SetUnsignedTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TxID is the txID argument value.
-			TxID string
-			// Tx is the tx argument value.
-			Tx *evmTypes.Transaction
-		}
 	}
 	lockArchiveTransferKey               sync.RWMutex
-	lockAssembleTx                       sync.RWMutex
 	lockCreateERC20Token                 sync.RWMutex
 	lockDeleteDeposit                    sync.RWMutex
 	lockDeletePendingDeposit             sync.RWMutex
@@ -2683,7 +2654,6 @@ type ChainKeeperMock struct {
 	lockGetERC20Token                    sync.RWMutex
 	lockGetGatewayAddress                sync.RWMutex
 	lockGetGatewayByteCodes              sync.RWMutex
-	lockGetHashToSign                    sync.RWMutex
 	lockGetLatestSignedBatchedCommandsID sync.RWMutex
 	lockGetMinVoterCount                 sync.RWMutex
 	lockGetName                          sync.RWMutex
@@ -2695,8 +2665,8 @@ type ChainKeeperMock struct {
 	lockGetRevoteLockingPeriod           sync.RWMutex
 	lockGetSignedBatchedCommands         sync.RWMutex
 	lockGetTokenByteCodes                sync.RWMutex
+	lockGetTxWithSig                     sync.RWMutex
 	lockGetUnsignedBatchedCommands       sync.RWMutex
-	lockGetUnsignedTx                    sync.RWMutex
 	lockGetVotingThreshold               sync.RWMutex
 	lockLogger                           sync.RWMutex
 	lockSetBurnerInfo                    sync.RWMutex
@@ -2707,8 +2677,8 @@ type ChainKeeperMock struct {
 	lockSetPendingDeposit                sync.RWMutex
 	lockSetPendingTransferKey            sync.RWMutex
 	lockSetSignedBatchedCommands         sync.RWMutex
+	lockSetTxToSign                      sync.RWMutex
 	lockSetUnsignedBatchedCommands       sync.RWMutex
-	lockSetUnsignedTx                    sync.RWMutex
 }
 
 // ArchiveTransferKey calls ArchiveTransferKeyFunc.
@@ -2743,49 +2713,6 @@ func (mock *ChainKeeperMock) ArchiveTransferKeyCalls() []struct {
 	mock.lockArchiveTransferKey.RLock()
 	calls = mock.calls.ArchiveTransferKey
 	mock.lockArchiveTransferKey.RUnlock()
-	return calls
-}
-
-// AssembleTx calls AssembleTxFunc.
-func (mock *ChainKeeperMock) AssembleTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, pk ecdsa.PublicKey, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
-	if mock.AssembleTxFunc == nil {
-		panic("ChainKeeperMock.AssembleTxFunc: method is nil but ChainKeeper.AssembleTx was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Pk   ecdsa.PublicKey
-		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-		Pk:   pk,
-		Sig:  sig,
-	}
-	mock.lockAssembleTx.Lock()
-	mock.calls.AssembleTx = append(mock.calls.AssembleTx, callInfo)
-	mock.lockAssembleTx.Unlock()
-	return mock.AssembleTxFunc(ctx, txID, pk, sig)
-}
-
-// AssembleTxCalls gets all the calls that were made to AssembleTx.
-// Check the length with:
-//     len(mockedChainKeeper.AssembleTxCalls())
-func (mock *ChainKeeperMock) AssembleTxCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-	Pk   ecdsa.PublicKey
-	Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Pk   ecdsa.PublicKey
-		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-	}
-	mock.lockAssembleTx.RLock()
-	calls = mock.calls.AssembleTx
-	mock.lockAssembleTx.RUnlock()
 	return calls
 }
 
@@ -3372,41 +3299,6 @@ func (mock *ChainKeeperMock) GetGatewayByteCodesCalls() []struct {
 	return calls
 }
 
-// GetHashToSign calls GetHashToSignFunc.
-func (mock *ChainKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) (common.Hash, error) {
-	if mock.GetHashToSignFunc == nil {
-		panic("ChainKeeperMock.GetHashToSignFunc: method is nil but ChainKeeper.GetHashToSign was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-	}
-	mock.lockGetHashToSign.Lock()
-	mock.calls.GetHashToSign = append(mock.calls.GetHashToSign, callInfo)
-	mock.lockGetHashToSign.Unlock()
-	return mock.GetHashToSignFunc(ctx, txID)
-}
-
-// GetHashToSignCalls gets all the calls that were made to GetHashToSign.
-// Check the length with:
-//     len(mockedChainKeeper.GetHashToSignCalls())
-func (mock *ChainKeeperMock) GetHashToSignCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-	}
-	mock.lockGetHashToSign.RLock()
-	calls = mock.calls.GetHashToSign
-	mock.lockGetHashToSign.RUnlock()
-	return calls
-}
-
 // GetLatestSignedBatchedCommandsID calls GetLatestSignedBatchedCommandsIDFunc.
 func (mock *ChainKeeperMock) GetLatestSignedBatchedCommandsID(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 	if mock.GetLatestSignedBatchedCommandsIDFunc == nil {
@@ -3759,6 +3651,45 @@ func (mock *ChainKeeperMock) GetTokenByteCodesCalls() []struct {
 	return calls
 }
 
+// GetTxWithSig calls GetTxWithSigFunc.
+func (mock *ChainKeeperMock) GetTxWithSig(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
+	if mock.GetTxWithSigFunc == nil {
+		panic("ChainKeeperMock.GetTxWithSigFunc: method is nil but ChainKeeper.GetTxWithSig was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		TxID string
+		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+	}{
+		Ctx:  ctx,
+		TxID: txID,
+		Sig:  sig,
+	}
+	mock.lockGetTxWithSig.Lock()
+	mock.calls.GetTxWithSig = append(mock.calls.GetTxWithSig, callInfo)
+	mock.lockGetTxWithSig.Unlock()
+	return mock.GetTxWithSigFunc(ctx, txID, sig)
+}
+
+// GetTxWithSigCalls gets all the calls that were made to GetTxWithSig.
+// Check the length with:
+//     len(mockedChainKeeper.GetTxWithSigCalls())
+func (mock *ChainKeeperMock) GetTxWithSigCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	TxID string
+	Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		TxID string
+		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+	}
+	mock.lockGetTxWithSig.RLock()
+	calls = mock.calls.GetTxWithSig
+	mock.lockGetTxWithSig.RUnlock()
+	return calls
+}
+
 // GetUnsignedBatchedCommands calls GetUnsignedBatchedCommandsFunc.
 func (mock *ChainKeeperMock) GetUnsignedBatchedCommands(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.BatchedCommands, bool) {
 	if mock.GetUnsignedBatchedCommandsFunc == nil {
@@ -3787,41 +3718,6 @@ func (mock *ChainKeeperMock) GetUnsignedBatchedCommandsCalls() []struct {
 	mock.lockGetUnsignedBatchedCommands.RLock()
 	calls = mock.calls.GetUnsignedBatchedCommands
 	mock.lockGetUnsignedBatchedCommands.RUnlock()
-	return calls
-}
-
-// GetUnsignedTx calls GetUnsignedTxFunc.
-func (mock *ChainKeeperMock) GetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string) *evmTypes.Transaction {
-	if mock.GetUnsignedTxFunc == nil {
-		panic("ChainKeeperMock.GetUnsignedTxFunc: method is nil but ChainKeeper.GetUnsignedTx was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-	}
-	mock.lockGetUnsignedTx.Lock()
-	mock.calls.GetUnsignedTx = append(mock.calls.GetUnsignedTx, callInfo)
-	mock.lockGetUnsignedTx.Unlock()
-	return mock.GetUnsignedTxFunc(ctx, txID)
-}
-
-// GetUnsignedTxCalls gets all the calls that were made to GetUnsignedTx.
-// Check the length with:
-//     len(mockedChainKeeper.GetUnsignedTxCalls())
-func (mock *ChainKeeperMock) GetUnsignedTxCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-	}
-	mock.lockGetUnsignedTx.RLock()
-	calls = mock.calls.GetUnsignedTx
-	mock.lockGetUnsignedTx.RUnlock()
 	return calls
 }
 
@@ -4183,6 +4079,45 @@ func (mock *ChainKeeperMock) SetSignedBatchedCommandsCalls() []struct {
 	return calls
 }
 
+// SetTxToSign calls SetTxToSignFunc.
+func (mock *ChainKeeperMock) SetTxToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error) {
+	if mock.SetTxToSignFunc == nil {
+		panic("ChainKeeperMock.SetTxToSignFunc: method is nil but ChainKeeper.SetTxToSign was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Tx  *evmTypes.Transaction
+		Pk  ecdsa.PublicKey
+	}{
+		Ctx: ctx,
+		Tx:  tx,
+		Pk:  pk,
+	}
+	mock.lockSetTxToSign.Lock()
+	mock.calls.SetTxToSign = append(mock.calls.SetTxToSign, callInfo)
+	mock.lockSetTxToSign.Unlock()
+	return mock.SetTxToSignFunc(ctx, tx, pk)
+}
+
+// SetTxToSignCalls gets all the calls that were made to SetTxToSign.
+// Check the length with:
+//     len(mockedChainKeeper.SetTxToSignCalls())
+func (mock *ChainKeeperMock) SetTxToSignCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Tx  *evmTypes.Transaction
+	Pk  ecdsa.PublicKey
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Tx  *evmTypes.Transaction
+		Pk  ecdsa.PublicKey
+	}
+	mock.lockSetTxToSign.RLock()
+	calls = mock.calls.SetTxToSign
+	mock.lockSetTxToSign.RUnlock()
+	return calls
+}
+
 // SetUnsignedBatchedCommands calls SetUnsignedBatchedCommandsFunc.
 func (mock *ChainKeeperMock) SetUnsignedBatchedCommands(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands) {
 	if mock.SetUnsignedBatchedCommandsFunc == nil {
@@ -4215,44 +4150,5 @@ func (mock *ChainKeeperMock) SetUnsignedBatchedCommandsCalls() []struct {
 	mock.lockSetUnsignedBatchedCommands.RLock()
 	calls = mock.calls.SetUnsignedBatchedCommands
 	mock.lockSetUnsignedBatchedCommands.RUnlock()
-	return calls
-}
-
-// SetUnsignedTx calls SetUnsignedTxFunc.
-func (mock *ChainKeeperMock) SetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction) {
-	if mock.SetUnsignedTxFunc == nil {
-		panic("ChainKeeperMock.SetUnsignedTxFunc: method is nil but ChainKeeper.SetUnsignedTx was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Tx   *evmTypes.Transaction
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-		Tx:   tx,
-	}
-	mock.lockSetUnsignedTx.Lock()
-	mock.calls.SetUnsignedTx = append(mock.calls.SetUnsignedTx, callInfo)
-	mock.lockSetUnsignedTx.Unlock()
-	mock.SetUnsignedTxFunc(ctx, txID, tx)
-}
-
-// SetUnsignedTxCalls gets all the calls that were made to SetUnsignedTx.
-// Check the length with:
-//     len(mockedChainKeeper.SetUnsignedTxCalls())
-func (mock *ChainKeeperMock) SetUnsignedTxCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-	Tx   *evmTypes.Transaction
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Tx   *evmTypes.Transaction
-	}
-	mock.lockSetUnsignedTx.RLock()
-	calls = mock.calls.SetUnsignedTx
-	mock.lockSetUnsignedTx.RUnlock()
 	return calls
 }

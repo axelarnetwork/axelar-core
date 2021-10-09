@@ -364,17 +364,12 @@ func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	pk, ok := s.GetKeyForSigID(ctx, txID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for sig ID %s", txID))
-	}
-
 	sig, status := s.GetSig(ctx, txID)
 	if status != tss.SigStatus_Signed {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", txID))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find signature for tx '%s' (current status: %s)", txID, status.String()))
 	}
 
-	signedTx, err := k.AssembleTx(ctx, txID, pk.Value, sig)
+	signedTx, err := k.GetTxWithSig(ctx, txID, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
