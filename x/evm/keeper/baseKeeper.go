@@ -20,7 +20,6 @@ var _ types.BaseKeeper = baseKeeper{}
 
 // Keeper implements both the base chainKeeper and chain chainKeeper
 type baseKeeper struct {
-	chain        string
 	storeKey     sdk.StoreKey
 	cdc          codec.BinaryCodec
 	paramsKeeper types.ParamsKeeper
@@ -30,7 +29,6 @@ type baseKeeper struct {
 // NewKeeper returns a new EVM base keeper
 func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) types.BaseKeeper {
 	return baseKeeper{
-		chain:        "",
 		cdc:          cdc,
 		storeKey:     storeKey,
 		paramsKeeper: paramsKeeper,
@@ -45,8 +43,10 @@ func (k baseKeeper) Logger(ctx sdk.Context) log.Logger {
 
 // ForChain returns the keeper associated to the given chain
 func (k baseKeeper) ForChain(chain string) types.ChainKeeper {
-	k.chain = strings.ToLower(chain)
-	return chainKeeper{k}
+	return chainKeeper{
+		baseKeeper: k,
+		chain:      strings.ToLower(chain),
+	}
 }
 
 // SetPendingChain stores the chain pending for confirmation

@@ -49,6 +49,7 @@ var _ types.ChainKeeper = chainKeeper{}
 
 type chainKeeper struct {
 	baseKeeper
+	chain string
 }
 
 // GetName returns the chain name
