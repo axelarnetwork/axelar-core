@@ -48,7 +48,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
-			chainKeeper = k.ForChain(ctx, path[1])
+			chainKeeper = k.ForChain(path[1])
 		}
 
 		switch path[0] {

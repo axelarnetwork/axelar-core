@@ -148,7 +148,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	expected := types.Address(common.HexToAddress("0x3264387346a9C63FB1F3375Fc59E3a9967408D34"))
 
 	k.SetParams(ctx, types.DefaultParams()...)
-	keeper := k.ForChain(ctx, chain)
+	keeper := k.ForChain(chain)
 	keeper.SetGatewayAddress(ctx, axelarGateway)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
 	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails)
@@ -170,7 +170,7 @@ func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
 
 	k.SetParams(ctx, types.DefaultParams()...)
 
-	actualburnerAddr, actualSalt, err := k.ForChain(ctx, exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
+	actualburnerAddr, actualSalt, err := k.ForChain(exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
