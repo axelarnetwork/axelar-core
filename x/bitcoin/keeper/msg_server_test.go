@@ -2,13 +2,13 @@ package keeper_test
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	mathRand "math/rand"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -36,98 +36,7 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
-	"github.com/btcsuite/btcd/btcec"
 )
-
-func TestJCS_ConsolidationAddress(t *testing.T) {
-	btcMasterGenesisValue := "Ajwe7VbkwlRdVabWKOgupZ624Cb/r978K7qlpDVHbfxa"
-	bz, err := base64.RawStdEncoding.DecodeString(btcMasterGenesisValue)
-	assert.NoError(t, err)
-
-	btcMasterGenesisKey, err := btcec.ParsePubKey(bz, btcec.S256())
-
-	assert.NoError(t, err)
-
-	btcMasterGenesis := tss.Key{
-		ID:    "btc-master-genesis",
-		Value: *btcMasterGenesisKey.ToECDSA(),
-		Role:  tss.MasterKey,
-	}
-
-	//btcMaster4E := "\002\270\354\257O-\311&\213t\310\0317\375`\242\007S`\241\177\004\307\3522\362'\217\313,s\305\315"
-	btcMaster4EValue := "Arjsr08tySaLdMgZN/1gogdTYKF/BMfqMvInj8ssc8XN"
-
-	bz, err = base64.RawStdEncoding.DecodeString(btcMaster4EValue)
-	assert.NoError(t, err)
-
-	btcMaster4EKey, err := btcec.ParsePubKey(bz, btcec.S256())
-
-	assert.NoError(t, err)
-
-	btcMaster4e := tss.Key{
-		ID:    "btc-master-4e",
-		Value: *btcMaster4EKey.ToECDSA(),
-		Role:  tss.MasterKey,
-	}
-
-	/*btcMaster1Value := "A8qYVsUX94iXAsaX5gNZNyfQyttz2xA8QobHnEoiCfUS"
-
-	bz, err = base64.RawStdEncoding.DecodeString(btcMaster1Value)
-	assert.NoError(t, err)
-
-	btcMaster1Key, err := btcec.ParsePubKey(bz, btcec.S256())
-
-	assert.NoError(t, err)
-
-	btcMaster1 := tss.Key{
-		ID:    "btc-master-1",
-		Value: *btcMaster1Key.ToECDSA(),
-		Role:  tss.MasterKey,
-	}*/
-
-	externalKeyValues := []string{
-		"BHgVQmpAWS49l+ycAkeJ1jOuuulan3wsitDORlBs0kt8eekZcPJHJ9sy5SRkPoJedeGYhjDssrgh1fa7hCfbbgM",
-		"BEU3rlIW2yXMKYE0hs0zQTROozdggQ9GkBwmT7YFB1YHRuDJAHdSb+CxX3/o3+coUTL80YF23F1x8Ydr3k9ZBhA",
-		"BLx9cYZ43/htM22rC8tsFcej2qoEI4OL7o4ROtecdspTW4YvdmgIIIYAf7R99fcQyxToe+DVIxZtv0d/O6gfD/8",
-		"BF23pSxMkFbhtklPgiFnsqVcPn4d9P7h0XjSuUGWdeEPfYj2TgDU4NdR02SYBZvqww5WsukuGtxkQOF3YOkcGfM",
-		"BKkaa/72mGsW1R/Zn6dDWhnIkQuuAUIDXe/A9YHCccWYBx4dQcgwZvTIsgmNrYZdRvJ0T8bHEHns2bUdvcmkw30",
-		"BFrHkG3XkwPesKtLcNUHRf3n6T2CDJ5s8Kfz7Hjgvf2zuCaO6JkTU2RLS+4FBuuDHEN4H7Cnw+C3xoQ00f8PT/A",
-	}
-
-	var externalKeys []tss.Key
-
-	for i, value := range externalKeyValues {
-		bz, err = base64.RawStdEncoding.DecodeString(value)
-		assert.NoError(t, err)
-
-		key, err := btcec.ParsePubKey(bz, btcec.S256())
-		assert.NoError(t, err)
-
-		externalKeys = append(externalKeys,
-			tss.Key{
-				ID:    tss.KeyID(fmt.Sprintf("btc-external-key-%d", i)),
-				Value: *key.ToECDSA(),
-				Role:  tss.ExternalKey,
-			},
-		)
-	}
-
-	threshold := tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator
-
-	layout := "2006-01-02T15:04:05Z"
-	//btcMasterGenesisTS := "2021-09-27T22:30:17Z"
-	btcMaster1TS := "2021-09-30T02:25:03Z"
-
-	ts, err := time.Parse(layout, btcMaster1TS)
-	assert.NoError(t, err)
-
-	internal := ts.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration)
-	external := ts.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration)
-
-	addr := types.NewMasterConsolidationAddress(btcMaster4e, btcMasterGenesis, threshold, externalKeys, internal, external, types.Testnet3)
-
-	fmt.Printf("Consolidation address: %s\n", addr.Address)
-}
 
 func TestHandleMsgLink(t *testing.T) {
 	var (
