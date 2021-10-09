@@ -365,7 +365,7 @@ func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 	return deposits
 }
 
-// GetTxWithSig sets a signature for a previously stored raw transaction
+// GetTxWithSig sets a signature for a previously stored raw transaction and returns the resulting data structure
 func (k chainKeeper) GetTxWithSig(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error) {
 	var meta types.TransactionMetadata
 	if !k.getStore(ctx, k.chain).Get(transactionPrefix.AppendStr(txID), &meta) {
