@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -115,6 +116,37 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		key,
 		t.metadata.Details,
 	)
+}
+
+// CreateMintCommand returns a mint deployment command for the token
+func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainTransfer) (Command, error) {
+	if !t.Is(Confirmed) {
+		return Command{}, fmt.Errorf("token %s not confirmed (current status: %s)",
+			t.metadata.Asset, t.metadata.Status.String())
+	}
+	if err := key.Validate(); err != nil {
+		return Command{}, err
+	}
+
+	return CreateMintTokenCommand(
+		t.metadata.ChainID.BigInt(),
+		key,
+		transferIDtoCommandID(transfer.ID),
+		t.metadata.Details.Symbol,
+		common.HexToAddress(transfer.Recipient.Address),
+		transfer.Asset.Amount.BigInt(),
+	)
+}
+
+func transferIDtoCommandID(transferID uint64) CommandID {
+	var commandID CommandID
+
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, transferID)
+
+	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
+
+	return commandID
 }
 
 // GetAddress returns the token's address
