@@ -919,7 +919,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	// if we retrieved a key ID, the key itself must exist
 	key, _ := s.signer.GetKey(ctx, keyID)
 	hash := keeper.GetHashToSign(ctx, tx)
-	err := keeper.SetTxToSign(ctx, hash.Hex(), tx, key.Value)
+	err := keeper.SetUnsignedTx(ctx, hash.Hex(), tx, key.Value)
 	if err != nil {
 		return nil, err
 	}

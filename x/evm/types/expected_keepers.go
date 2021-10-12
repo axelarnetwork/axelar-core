@@ -77,8 +77,8 @@ type ChainKeeper interface {
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 
 	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
-	SetTxToSign(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
-	GetTxWithSig(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
+	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
+	AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token

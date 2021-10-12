@@ -361,7 +361,7 @@ func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find signature for tx '%s' (current status: %s)", txID, status.String()))
 	}
 
-	signedTx, err := k.GetTxWithSig(ctx, txID, sig)
+	signedTx, err := k.AssembleTx(ctx, txID, sig)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
 	}
