@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
@@ -276,6 +277,42 @@ func TestPoll_Vote(t *testing.T) {
 		}
 
 		assert.True(t, poll.Is(exported.Failed), poll.State)
+	}).Repeat(repeats))
+
+	t.Run("should complete the poll when total voter count is less than minimum voter count and minimum voter count is not met", testutils.Func(func(t *testing.T) {
+		metadata := newRandomPollMetadata()
+		poll := setup(metadata, rand.PosI64())
+		poll.MinVoterCount = int64(len(shareCounts) + 1)
+
+		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		for voter := range shareCounts {
+			addr, _ := sdk.ValAddressFromBech32(voter)
+			assert.NoError(t, poll.Vote(addr, voteValue))
+		}
+
+		assert.True(t, poll.Is(exported.Completed))
+		assert.Equal(t, voteValue, poll.GetResult())
+	}).Repeat(repeats))
+
+	t.Run("should not complete the poll when total voter count is greater than or equal to minimum voter count and minimum voter count is not met", testutils.Func(func(t *testing.T) {
+		metadata := newRandomPollMetadata()
+		poll := setup(metadata, rand.PosI64())
+		poll.MinVoterCount = int64(len(shareCounts))
+		poll.VotingThreshold = utils.ZeroThreshold
+
+		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voterCount := int64(0)
+		for voter := range shareCounts {
+			if voterCount > metadata.MinVoterCount-2 {
+				break
+			}
+
+			addr, _ := sdk.ValAddressFromBech32(voter)
+			assert.NoError(t, poll.Vote(addr, voteValue))
+			voterCount++
+		}
+
+		assert.True(t, poll.Is(exported.Pending))
 	}).Repeat(repeats))
 }
 
