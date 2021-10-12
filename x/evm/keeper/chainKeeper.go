@@ -322,7 +322,7 @@ func (k chainKeeper) SetTxToSign(ctx sdk.Context, txID string, rawTx *evmTypes.T
 
 	meta := types.TransactionMetadata{
 		RawTX:  bzTX,
-		PubKey: btcecPK.SerializeUncompressed(),
+		PubKey: btcecPK.SerializeCompressed(),
 	}
 
 	k.getStore(ctx, k.chain).Set(transactionPrefix.AppendStr(txID), &meta)
