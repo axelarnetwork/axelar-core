@@ -41,6 +41,8 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
+	rewardMock "github.com/axelarnetwork/axelar-core/x/reward/types/mock"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -61,12 +63,14 @@ func randomSender() sdk.AccAddress {
 }
 
 type testMocks struct {
-	Keygen  *tssMock.TofndKeyGenClientMock
-	Sign    *tssMock.TofndSignClientMock
-	Staker  *snapshotTypesMock.StakingKeeperMock
-	Tofnd   *tssMock.TofndClientMock
-	Slasher *snapshotExportedMock.SlasherMock
-	Tss     *snapshotExportedMock.TssMock
+	Keygen      *tssMock.TofndKeyGenClientMock
+	Sign        *tssMock.TofndSignClientMock
+	Staker      *snapshotTypesMock.StakingKeeperMock
+	Tofnd       *tssMock.TofndClientMock
+	Slasher     *snapshotExportedMock.SlasherMock
+	Tss         *snapshotExportedMock.TssMock
+	Banker      *rewardMock.BankerMock
+	Distributor *rewardMock.DistributorMock
 }
 
 type nodeData struct {
@@ -80,10 +84,13 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger().With("node", moniker))
 	encCfg := app.MakeEncodingConfig()
 
+	rewardSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
+	rewardKeeper := rewardKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), rewardSubspace, mocks.Banker, mocks.Distributor, mocks.Staker)
+
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, mocks.Staker)
+	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, mocks.Staker, rewardKeeper)
 
 	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
