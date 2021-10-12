@@ -949,17 +949,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		return nil, err
 	}
 
-	byteCode, ok := keeper.GetGatewayByteCodes(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve gateway bytecodes for chain %s", req.Chain)
-	}
-
-	secondaryKey, ok := s.signer.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-	if !ok {
-		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
-	}
-
-	deploymentBytecode, err := types.GetGatewayDeploymentBytecode(byteCode, crypto.PubkeyToAddress(secondaryKey.Value))
+	deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, keeper, s.signer, chain)
 	if err != nil {
 		return nil, err
 	}
@@ -989,6 +979,42 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	)
 
 	return &types.SignTxResponse{TxID: txID}, nil
+}
+
+func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
+	externalKeyIDs, ok := s.GetExternalKeyIDs(ctx, chain)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s keys for chain %s found", tss.ExternalKey.SimpleString(), chain.Name))
+	}
+
+	externalKeyAddresses := make([]common.Address, 0)
+	for _, externalKeyID := range externalKeyIDs {
+		externalKey, ok := s.GetKey(ctx, externalKeyID)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s key %s for chain %s not found", tss.ExternalKey.SimpleString(), externalKeyID, chain.Name))
+		}
+
+		externalKeyAddresses = append(externalKeyAddresses, crypto.PubkeyToAddress(externalKey.Value))
+	}
+
+	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+	}
+
+	secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+	}
+
+	bz, _ := k.GetGatewayByteCodes(ctx)
+	return types.GetGatewayDeploymentBytecode(
+		bz,
+		externalKeyAddresses,
+		uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
+		crypto.PubkeyToAddress(masterKey.Value),
+		crypto.PubkeyToAddress(secondaryKey.Value),
+	)
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {

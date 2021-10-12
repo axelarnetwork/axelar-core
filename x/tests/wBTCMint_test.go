@@ -100,22 +100,20 @@ func Test_wBTC_mint(t *testing.T) {
 		rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
 
-		if c == btc.Bitcoin.Name {
-			var externalKeys []tssTypes.RegisterExternalKeysRequest_ExternalKey
-			for i := 0; i < int(tssTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
-				privKey, err := btcec.NewPrivateKey(btcec.S256())
-				if err != nil {
-					panic(err)
-				}
-				externalKeys = append(externalKeys, tssTypes.RegisterExternalKeysRequest_ExternalKey{
-					ID:     testutils.RandKeyID(),
-					PubKey: privKey.PubKey().SerializeCompressed(),
-				})
+		var externalKeys []tssTypes.RegisterExternalKeysRequest_ExternalKey
+		for i := 0; i < int(tssTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
+			privKey, err := btcec.NewPrivateKey(btcec.S256())
+			if err != nil {
+				panic(err)
 			}
-
-			registerExternalKeysResult := <-chain.Submit(tssTypes.NewRegisterExternalKeysRequest(randomSender(), btc.Bitcoin.Name, externalKeys...))
-			assert.NoError(t, registerExternalKeysResult.Error)
+			externalKeys = append(externalKeys, tssTypes.RegisterExternalKeysRequest_ExternalKey{
+				ID:     testutils.RandKeyID(),
+				PubKey: privKey.PubKey().SerializeCompressed(),
+			})
 		}
+
+		registerExternalKeysResult := <-chain.Submit(tssTypes.NewRegisterExternalKeysRequest(randomSender(), c, externalKeys...))
+		assert.NoError(t, registerExternalKeysResult.Error)
 	}
 
 	// setup axelar gateway

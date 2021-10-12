@@ -19,7 +19,7 @@ func (m CreatePendingTransfersRequest) Route() string {
 
 // Type returns the type of the message
 func (m CreatePendingTransfersRequest) Type() string {
-	return "SignPendingTransfers"
+	return "CreatePendingTransfers"
 }
 
 // ValidateBasic executes a stateless message validation
