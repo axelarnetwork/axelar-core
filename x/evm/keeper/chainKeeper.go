@@ -312,10 +312,10 @@ func (k chainKeeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *typ
 }
 
 // SetTxToSign stores an unsigned transaction by hash
-func (k chainKeeper) SetTxToSign(ctx sdk.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error) {
-	bzTX, err := tx.MarshalBinary()
+func (k chainKeeper) SetTxToSign(ctx sdk.Context, txID string, rawTx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
+	bzTX, err := rawTx.MarshalBinary()
 	if err != nil {
-		return common.Hash{}, err
+		return err
 	}
 
 	btcecPK := btcec.PublicKey(pk)
@@ -325,10 +325,9 @@ func (k chainKeeper) SetTxToSign(ctx sdk.Context, tx *evmTypes.Transaction, pk e
 		PubKey: btcecPK.SerializeUncompressed(),
 	}
 
-	hash := k.getSigner(ctx).Hash(tx)
-	k.getStore(ctx, k.chain).Set(transactionPrefix.AppendStr(hash.String()), &meta)
+	k.getStore(ctx, k.chain).Set(transactionPrefix.AppendStr(txID), &meta)
 
-	return hash, nil
+	return nil
 }
 
 // SetPendingDeposit stores a pending deposit
@@ -395,6 +394,12 @@ func (k chainKeeper) GetTxWithSig(ctx sdk.Context, txID string, sig tss.Signatur
 	}
 
 	return rawTx.WithSignature(signer, recoverableSig[:])
+}
+
+// GetHashToSign returns the hash to sign of a previously stored raw transaction
+func (k chainKeeper) GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash {
+	signer := k.getSigner(ctx)
+	return signer.Hash(rawTx)
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {

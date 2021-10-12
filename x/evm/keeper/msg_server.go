@@ -918,7 +918,8 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", req.Tx))
 	// if we retrieved a key ID, the key itself must exist
 	key, _ := s.signer.GetKey(ctx, keyID)
-	hash, err := keeper.SetTxToSign(ctx, tx, key.Value)
+	hash := keeper.GetHashToSign(ctx, tx)
+	err := keeper.SetTxToSign(ctx, hash.Hex(), tx, key.Value)
 	if err != nil {
 		return nil, err
 	}

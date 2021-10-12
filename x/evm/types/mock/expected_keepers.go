@@ -2229,6 +2229,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetGatewayByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetGatewayByteCodes method")
 // 			},
+// 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash {
+// 				panic("mock out the GetHashToSign method")
+// 			},
 // 			GetLatestSignedBatchedCommandsIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetLatestSignedBatchedCommandsID method")
 // 			},
@@ -2298,7 +2301,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetSignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
 // 				panic("mock out the SetSignedBatchedCommands method")
 // 			},
-// 			SetTxToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error) {
+// 			SetTxToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
 // 				panic("mock out the SetTxToSign method")
 // 			},
 // 			SetUnsignedBatchedCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)  {
@@ -2364,6 +2367,9 @@ type ChainKeeperMock struct {
 
 	// GetGatewayByteCodesFunc mocks the GetGatewayByteCodes method.
 	GetGatewayByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
+
+	// GetHashToSignFunc mocks the GetHashToSign method.
+	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash
 
 	// GetLatestSignedBatchedCommandsIDFunc mocks the GetLatestSignedBatchedCommandsID method.
 	GetLatestSignedBatchedCommandsIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -2435,7 +2441,7 @@ type ChainKeeperMock struct {
 	SetSignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
 
 	// SetTxToSignFunc mocks the SetTxToSign method.
-	SetTxToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error)
+	SetTxToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
 
 	// SetUnsignedBatchedCommandsFunc mocks the SetUnsignedBatchedCommands method.
 	SetUnsignedBatchedCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, batchedCommands types.BatchedCommands)
@@ -2561,6 +2567,13 @@ type ChainKeeperMock struct {
 		GetGatewayByteCodes []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetHashToSign holds details about calls to the GetHashToSign method.
+		GetHashToSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// RawTx is the rawTx argument value.
+			RawTx *evmTypes.Transaction
 		}
 		// GetLatestSignedBatchedCommandsID holds details about calls to the GetLatestSignedBatchedCommandsID method.
 		GetLatestSignedBatchedCommandsID []struct {
@@ -2715,6 +2728,8 @@ type ChainKeeperMock struct {
 		SetTxToSign []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// TxID is the txID argument value.
+			TxID string
 			// Tx is the tx argument value.
 			Tx *evmTypes.Transaction
 			// Pk is the pk argument value.
@@ -2746,6 +2761,7 @@ type ChainKeeperMock struct {
 	lockGetERC20Token                    sync.RWMutex
 	lockGetGatewayAddress                sync.RWMutex
 	lockGetGatewayByteCodes              sync.RWMutex
+	lockGetHashToSign                    sync.RWMutex
 	lockGetLatestSignedBatchedCommandsID sync.RWMutex
 	lockGetMinVoterCount                 sync.RWMutex
 	lockGetName                          sync.RWMutex
@@ -3388,6 +3404,41 @@ func (mock *ChainKeeperMock) GetGatewayByteCodesCalls() []struct {
 	mock.lockGetGatewayByteCodes.RLock()
 	calls = mock.calls.GetGatewayByteCodes
 	mock.lockGetGatewayByteCodes.RUnlock()
+	return calls
+}
+
+// GetHashToSign calls GetHashToSignFunc.
+func (mock *ChainKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash {
+	if mock.GetHashToSignFunc == nil {
+		panic("ChainKeeperMock.GetHashToSignFunc: method is nil but ChainKeeper.GetHashToSign was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		RawTx *evmTypes.Transaction
+	}{
+		Ctx:   ctx,
+		RawTx: rawTx,
+	}
+	mock.lockGetHashToSign.Lock()
+	mock.calls.GetHashToSign = append(mock.calls.GetHashToSign, callInfo)
+	mock.lockGetHashToSign.Unlock()
+	return mock.GetHashToSignFunc(ctx, rawTx)
+}
+
+// GetHashToSignCalls gets all the calls that were made to GetHashToSign.
+// Check the length with:
+//     len(mockedChainKeeper.GetHashToSignCalls())
+func (mock *ChainKeeperMock) GetHashToSignCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	RawTx *evmTypes.Transaction
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		RawTx *evmTypes.Transaction
+	}
+	mock.lockGetHashToSign.RLock()
+	calls = mock.calls.GetHashToSign
+	mock.lockGetHashToSign.RUnlock()
 	return calls
 }
 
@@ -4172,37 +4223,41 @@ func (mock *ChainKeeperMock) SetSignedBatchedCommandsCalls() []struct {
 }
 
 // SetTxToSign calls SetTxToSignFunc.
-func (mock *ChainKeeperMock) SetTxToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, tx *evmTypes.Transaction, pk ecdsa.PublicKey) (common.Hash, error) {
+func (mock *ChainKeeperMock) SetTxToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
 	if mock.SetTxToSignFunc == nil {
 		panic("ChainKeeperMock.SetTxToSignFunc: method is nil but ChainKeeper.SetTxToSign was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Tx  *evmTypes.Transaction
-		Pk  ecdsa.PublicKey
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		TxID string
+		Tx   *evmTypes.Transaction
+		Pk   ecdsa.PublicKey
 	}{
-		Ctx: ctx,
-		Tx:  tx,
-		Pk:  pk,
+		Ctx:  ctx,
+		TxID: txID,
+		Tx:   tx,
+		Pk:   pk,
 	}
 	mock.lockSetTxToSign.Lock()
 	mock.calls.SetTxToSign = append(mock.calls.SetTxToSign, callInfo)
 	mock.lockSetTxToSign.Unlock()
-	return mock.SetTxToSignFunc(ctx, tx, pk)
+	return mock.SetTxToSignFunc(ctx, txID, tx, pk)
 }
 
 // SetTxToSignCalls gets all the calls that were made to SetTxToSign.
 // Check the length with:
 //     len(mockedChainKeeper.SetTxToSignCalls())
 func (mock *ChainKeeperMock) SetTxToSignCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	Tx  *evmTypes.Transaction
-	Pk  ecdsa.PublicKey
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	TxID string
+	Tx   *evmTypes.Transaction
+	Pk   ecdsa.PublicKey
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Tx  *evmTypes.Transaction
-		Pk  ecdsa.PublicKey
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		TxID string
+		Tx   *evmTypes.Transaction
+		Pk   ecdsa.PublicKey
 	}
 	mock.lockSetTxToSign.RLock()
 	calls = mock.calls.SetTxToSign
