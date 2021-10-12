@@ -178,10 +178,7 @@ func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exp
 				X: hex.EncodeToString(key.Value.X.Bytes()),
 				Y: hex.EncodeToString(key.Value.Y.Bytes()),
 			},
-		}
-
-		if key.RotatedAt != nil {
-			res.RotatedAt = key.RotatedAt
+			RotatedAt: key.RotatedAt,
 		}
 
 		return types.ModuleCdc.MarshalLengthPrefixed(&res)

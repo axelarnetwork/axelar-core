@@ -29,7 +29,8 @@ message QueryKeyResponse {
   VoteStatus vote_status = 1;
   tss.exported.v1beta1.KeyRole role = 2;
   Key key = 3;
-  google.protobuf.Timestamp rotated_at = 4 [ (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp rotated_at = 4
+      [ (gogoproto.nullable) = true, (gogoproto.stdtime) = true ];
 }
 
 enum VoteStatus {
