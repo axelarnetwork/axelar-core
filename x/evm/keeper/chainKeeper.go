@@ -32,7 +32,7 @@ var (
 
 	chainPrefix                 = utils.KeyFromStr("chain")
 	subspacePrefix              = utils.KeyFromStr("subspace")
-	transactionPrefix           = utils.KeyFromStr("transaction")
+	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
 	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
@@ -325,7 +325,7 @@ func (k chainKeeper) SetTxToSign(ctx sdk.Context, txID string, rawTx *evmTypes.T
 		PubKey: btcecPK.SerializeCompressed(),
 	}
 
-	k.getStore(ctx, k.chain).Set(transactionPrefix.AppendStr(txID), &meta)
+	k.getStore(ctx, k.chain).Set(unsignedTxPrefix.AppendStr(txID), &meta)
 
 	return nil
 }
@@ -367,7 +367,7 @@ func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 // GetTxWithSig sets a signature for a previously stored raw transaction and returns the resulting data structure
 func (k chainKeeper) GetTxWithSig(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error) {
 	var meta types.TransactionMetadata
-	if !k.getStore(ctx, k.chain).Get(transactionPrefix.AppendStr(txID), &meta) {
+	if !k.getStore(ctx, k.chain).Get(unsignedTxPrefix.AppendStr(txID), &meta) {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
 	}
 
