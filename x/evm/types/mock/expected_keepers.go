@@ -244,6 +244,12 @@ var _ types.Signer = &SignerMock{}
 // 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
+// 			GetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+// 				panic("mock out the GetExternalKeyIDs method")
+// 			},
+// 			GetExternalMultisigThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+// 				panic("mock out the GetExternalMultisigThreshold method")
+// 			},
 // 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
@@ -283,6 +289,12 @@ type SignerMock struct {
 
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalKeyIDsFunc mocks the GetExternalKeyIDs method.
+	GetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
+	GetExternalMultisigThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -349,6 +361,18 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
+		// GetExternalKeyIDs holds details about calls to the GetExternalKeyIDs method.
+		GetExternalKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
+		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
+		GetExternalMultisigThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
 			// Ctx is the ctx argument value.
@@ -403,17 +427,19 @@ type SignerMock struct {
 			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		}
 	}
-	lockAssertMatchesRequirements  sync.RWMutex
-	lockAssignNextKey              sync.RWMutex
-	lockGetCurrentKey              sync.RWMutex
-	lockGetCurrentKeyID            sync.RWMutex
-	lockGetKey                     sync.RWMutex
-	lockGetKeyForSigID             sync.RWMutex
-	lockGetNextKey                 sync.RWMutex
-	lockGetSig                     sync.RWMutex
-	lockGetSnapshotCounterForKeyID sync.RWMutex
-	lockRotateKey                  sync.RWMutex
-	lockScheduleSign               sync.RWMutex
+	lockAssertMatchesRequirements    sync.RWMutex
+	lockAssignNextKey                sync.RWMutex
+	lockGetCurrentKey                sync.RWMutex
+	lockGetCurrentKeyID              sync.RWMutex
+	lockGetExternalKeyIDs            sync.RWMutex
+	lockGetExternalMultisigThreshold sync.RWMutex
+	lockGetKey                       sync.RWMutex
+	lockGetKeyForSigID               sync.RWMutex
+	lockGetNextKey                   sync.RWMutex
+	lockGetSig                       sync.RWMutex
+	lockGetSnapshotCounterForKeyID   sync.RWMutex
+	lockRotateKey                    sync.RWMutex
+	lockScheduleSign                 sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -581,6 +607,72 @@ func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
 	mock.lockGetCurrentKeyID.RLock()
 	calls = mock.calls.GetCurrentKeyID
 	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetExternalKeyIDs calls GetExternalKeyIDsFunc.
+func (mock *SignerMock) GetExternalKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
+	if mock.GetExternalKeyIDsFunc == nil {
+		panic("SignerMock.GetExternalKeyIDsFunc: method is nil but Signer.GetExternalKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetExternalKeyIDs.Lock()
+	mock.calls.GetExternalKeyIDs = append(mock.calls.GetExternalKeyIDs, callInfo)
+	mock.lockGetExternalKeyIDs.Unlock()
+	return mock.GetExternalKeyIDsFunc(ctx, chain)
+}
+
+// GetExternalKeyIDsCalls gets all the calls that were made to GetExternalKeyIDs.
+// Check the length with:
+//     len(mockedSigner.GetExternalKeyIDsCalls())
+func (mock *SignerMock) GetExternalKeyIDsCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockGetExternalKeyIDs.RLock()
+	calls = mock.calls.GetExternalKeyIDs
+	mock.lockGetExternalKeyIDs.RUnlock()
+	return calls
+}
+
+// GetExternalMultisigThreshold calls GetExternalMultisigThresholdFunc.
+func (mock *SignerMock) GetExternalMultisigThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+	if mock.GetExternalMultisigThresholdFunc == nil {
+		panic("SignerMock.GetExternalMultisigThresholdFunc: method is nil but Signer.GetExternalMultisigThreshold was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetExternalMultisigThreshold.Lock()
+	mock.calls.GetExternalMultisigThreshold = append(mock.calls.GetExternalMultisigThreshold, callInfo)
+	mock.lockGetExternalMultisigThreshold.Unlock()
+	return mock.GetExternalMultisigThresholdFunc(ctx)
+}
+
+// GetExternalMultisigThresholdCalls gets all the calls that were made to GetExternalMultisigThreshold.
+// Check the length with:
+//     len(mockedSigner.GetExternalMultisigThresholdCalls())
+func (mock *SignerMock) GetExternalMultisigThresholdCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetExternalMultisigThreshold.RLock()
+	calls = mock.calls.GetExternalMultisigThreshold
+	mock.lockGetExternalMultisigThreshold.RUnlock()
 	return calls
 }
 
