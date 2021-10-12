@@ -134,6 +134,8 @@ type Signer interface {
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
+	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
+	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool)
 }
 
 // Snapshotter provides access to the snapshot functionality

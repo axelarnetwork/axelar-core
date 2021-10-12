@@ -44,7 +44,6 @@ const (
 
 // NewQuerier returns a new querier for the evm module
 func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
-
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
@@ -321,7 +320,6 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
-
 	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
@@ -332,13 +330,7 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	case BCGateway:
 		bz, _ = k.GetGatewayByteCodes(ctx)
 	case BCGatewayDeployment:
-		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
-		}
-
-		bz, _ = k.GetGatewayByteCodes(ctx)
-		deploymentBytecode, err := types.GetGatewayDeploymentBytecode(bz, crypto.PubkeyToAddress(secondaryKey.Value))
+		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, k, s, chain)
 		if err != nil {
 			return nil, err
 		}

@@ -472,14 +472,24 @@ func CreateTransferOperatorshipCommand(chainID *big.Int, keyID tss.KeyID, newOpe
 }
 
 // GetGatewayDeploymentBytecode returns the deployment bytecode for the gateway contract
-func GetGatewayDeploymentBytecode(contractBytecode []byte, operator common.Address) ([]byte, error) {
+func GetGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, threshold uint8, owner common.Address, operator common.Address) ([]byte, error) {
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	args := abi.Arguments{{Type: addressType}}
-	argBytes, err := args.Pack(operator)
+	args := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressType}, {Type: addressType}}
+	argBytes, err := args.Pack(admins, threshold, owner, operator)
 	if err != nil {
 		return nil, err
 	}
