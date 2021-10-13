@@ -311,7 +311,7 @@ func (k chainKeeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *typ
 	return &command
 }
 
-// SetUnsignedTx stores an unsigned transaction by hash
+// SetUnsignedTx stores an unsigned transaction
 func (k chainKeeper) SetUnsignedTx(ctx sdk.Context, txID string, rawTx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
 	bzTX, err := rawTx.MarshalBinary()
 	if err != nil {
@@ -364,7 +364,7 @@ func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 	return deposits
 }
 
-// AssembleTx sets a signature for a previously stored raw transaction and returns the resulting data structure
+// AssembleTx returns the data structure resulting from a unsigned tx and the provided signature
 func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error) {
 	var meta types.TransactionMetadata
 	if !k.getStore(ctx, k.chain).Get(unsignedTxPrefix.AppendStr(txID), &meta) {
@@ -396,7 +396,7 @@ func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, sig tss.Signature)
 	return rawTx.WithSignature(signer, recoverableSig[:])
 }
 
-// GetHashToSign returns the hash to sign of a previously stored raw transaction
+// GetHashToSign returns the hash to sign of the given raw transaction
 func (k chainKeeper) GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash {
 	signer := k.getSigner(ctx)
 	return signer.Hash(rawTx)
