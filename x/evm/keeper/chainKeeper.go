@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -26,12 +27,9 @@ import (
 
 var (
 	gatewayKey                       = utils.KeyFromStr("gateway")
-	pendingChainKey                  = utils.KeyFromStr("pending_chain_asset")
 	unsignedBatchedCommandsKey       = utils.KeyFromStr("unsigned_batched_commands")
 	latestSignedBatchedCommandsIDKey = utils.KeyFromStr("latest_signed_batched_commands_id")
 
-	chainPrefix                 = utils.KeyFromStr("chain")
-	subspacePrefix              = utils.KeyFromStr("subspace")
 	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
 	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
@@ -58,8 +56,8 @@ func (k chainKeeper) GetName() string {
 	return k.chain
 }
 
-// GetCommandsGasLimit returns the EVM network's gas limist for batched commands
-func (k chainKeeper) GetCommandsGasLimit(ctx sdk.Context) (uint32, bool) {
+// returns the EVM network's gas limist for batched commands
+func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) (uint32, bool) {
 	var commandsGasLimit uint32
 	subspace, ok := k.getSubspace(ctx, k.chain)
 	if !ok {
@@ -297,18 +295,8 @@ func (k chainKeeper) SetCommand(ctx sdk.Context, command types.Command) error {
 		return fmt.Errorf("command %s already exists", command.ID.Hex())
 	}
 
-	k.GetCommandQueue(ctx).Enqueue(key, &command)
+	k.getCommandQueue(ctx).Enqueue(key, &command)
 	return nil
-}
-
-// GetCommand retrieves the command for the given ID
-func (k chainKeeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Command {
-	var command types.Command
-	if !k.getStore(ctx, k.chain).Get(commandPrefix.AppendStr(commandID.Hex()), &command) {
-		return nil
-	}
-
-	return &command
 }
 
 // SetUnsignedTx stores an unsigned transaction
@@ -403,10 +391,22 @@ func (k chainKeeper) GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction)
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
+	// both chain, subspace, and network must be valid if the chain keeper was instantiated,
+	// so a nil value here must be a catastrophic failure
+
 	var network string
-	subspace, _ := k.getSubspace(ctx, k.chain)
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		panic(fmt.Sprintf("could not find subspace for network '%s'", k.chain))
+	}
+
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	return evmTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, network))
+	chainID := k.GetChainIDByNetwork(ctx, network)
+
+	if chainID == nil {
+		panic(fmt.Sprintf("could not find chain ID for network '%s'", network))
+	}
+	return evmTypes.NewEIP155Signer(chainID)
 }
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
@@ -517,8 +517,8 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.I
 	return nil
 }
 
-// GetCommandQueue returns the queue of commands
-func (k chainKeeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
+// returns the queue of commands
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chain), ctx.BlockHeight(), k.Logger(ctx))
 }
 
@@ -569,6 +569,55 @@ func (k chainKeeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, 
 	return bz, bz != nil
 }
 
+func (k chainKeeper) GetBatchedCommandsToSign(ctx sdk.Context) (types.BatchedCommands, error) {
+	if unsignedBatchedCommands, ok := k.GetUnsignedBatchedCommands(ctx); ok {
+		if unsignedBatchedCommands.Is(types.Aborted) {
+			return unsignedBatchedCommands, nil
+		}
+
+		return types.BatchedCommands{}, fmt.Errorf("signing for batched commands %s is still in progress", hex.EncodeToString(unsignedBatchedCommands.ID))
+	}
+
+	var command types.Command
+	commandQueue := k.getCommandQueue(ctx)
+
+	if !commandQueue.Dequeue(&command) {
+		return types.BatchedCommands{}, fmt.Errorf("no commands are found to sign for chain %s", k.GetName())
+	}
+
+	// Only batching commands to be signed by the same key and within the gas limit
+	commandsGasLimit, ok := k.getCommandsGasLimit(ctx)
+	if !ok {
+		return types.BatchedCommands{}, fmt.Errorf("commands gas limit for chain %s not found", k.GetName())
+	}
+	gasCost := uint32(0)
+	keyID := command.KeyID
+	filter := func(value codec.ProtoMarshaler) bool {
+		cmd, ok := value.(*types.Command)
+		gasCost += cmd.MaxGasCost
+
+		return ok && cmd.KeyID == keyID && gasCost <= commandsGasLimit
+	}
+
+	commands := []types.Command{command.Clone()}
+	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
+	for commandQueue.Dequeue(&command, filter) {
+		commands = append(commands, command.Clone())
+	}
+
+	batchedCommands, err := types.NewBatchedCommands(k.getSigner(ctx).ChainID(), keyID, commands)
+	if err != nil {
+		return types.BatchedCommands{}, nil
+	}
+
+	if batchedCommands.PrevBatchedCommandsID == nil {
+		if latestSignedBatchedCommandsID, ok := k.GetLatestSignedBatchedCommandsID(ctx); ok {
+			batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommandsID
+		}
+	}
+	return batchedCommands, nil
+}
+
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
 	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
 	k.getStore(ctx, k.chain).Set(key, &meta)
@@ -602,19 +651,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		return types.ERC20TokenMetadata{}, err
 	}
 
-	var network string
-	subspace, ok := k.getSubspace(ctx, k.chain)
-	if !ok {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find subspace for chain '%s'", k.chain)
-	}
-
-	subspace.Get(ctx, types.KeyNetwork, &network)
-
-	chainID := k.GetChainIDByNetwork(ctx, network)
-	if chainID == nil {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
-	}
-
+	chainID := k.getSigner(ctx).ChainID()
 	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
 	if err != nil {
 		return types.ERC20TokenMetadata{}, err

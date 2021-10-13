@@ -16,6 +16,13 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
+var (
+	pendingChainKey = utils.KeyFromStr("pending_chain_asset")
+
+	chainPrefix    = utils.KeyFromStr("chain")
+	subspacePrefix = utils.KeyFromStr("subspace")
+)
+
 var _ types.BaseKeeper = baseKeeper{}
 
 // Keeper implements both the base chainKeeper and chain chainKeeper

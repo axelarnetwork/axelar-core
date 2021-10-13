@@ -39,7 +39,7 @@ type ChainKeeper interface {
 
 	GetName() string
 	GetNetwork(ctx sdk.Context) (string, bool)
-	GetCommandsGasLimit(ctx sdk.Context) (uint32, bool)
+	//GetCommandsGasLimit(ctx sdk.Context) (uint32, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
 	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)
@@ -64,15 +64,7 @@ type ChainKeeper interface {
 	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
-	GetCommandQueue(ctx sdk.Context) utils.KVQueue
-	SetCommand(ctx sdk.Context, command Command) error
-	SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
-	GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
-	DeleteUnsignedBatchedCommands(ctx sdk.Context)
-	SetSignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
-	GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
-	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
-	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
+	//GetCommandQueue(ctx sdk.Context) utils.KVQueue
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 
@@ -82,6 +74,20 @@ type ChainKeeper interface {
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
+
+	SetCommand(ctx sdk.Context, command Command) error
+
+	GetBatchedCommandsToSign(ctx sdk.Context) (BatchedCommands, error)
+
+	SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
+	DeleteUnsignedBatchedCommands(ctx sdk.Context)
+
+	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
+	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
+
+	SetSignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
 }
 
 // ParamsKeeper represents a global paramstore
