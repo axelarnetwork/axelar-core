@@ -97,6 +97,11 @@ func GetCmdGetKey(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrapf(err, "failed to get key")
 			}
 
+			// force the rotatedAt field to be nil, if the timestamp is for Jan 1, 1970
+			if res.RotatedAt != nil && res.RotatedAt.Unix() == 0 {
+				res.RotatedAt = nil
+			}
+
 			return cliCtx.PrintProto(&res)
 		},
 	}

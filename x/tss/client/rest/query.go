@@ -73,6 +73,11 @@ func QueryHandlerKeyStatus(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		// force the rotatedAt field to be nil, if the timestamp is for Jan 1, 1970
+		if res.RotatedAt != nil && res.RotatedAt.Unix() == 0 {
+			res.RotatedAt = nil
+		}
+
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
