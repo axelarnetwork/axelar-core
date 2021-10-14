@@ -200,6 +200,9 @@
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
   
+- [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
+    - [ChainState](#nexus.v1beta1.ChainState)
+  
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
@@ -2892,6 +2895,39 @@ Msg defines the nexus Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
 | `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/types.proto
+
+
+
+<a name="nexus.v1beta1.ChainState"></a>
+
+### ChainState
+ChainState represents the state of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+| `activated` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

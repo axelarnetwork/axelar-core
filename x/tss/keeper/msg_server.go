@@ -346,6 +346,11 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if err := validateCriminal(criminalAddress, poll); err != nil {
+				s.Logger(ctx).Error(err.Error())
+				continue
+			}
+
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", keyID, criminal.GetPartyUid(), criminal.CrimeType.String()))
@@ -356,6 +361,22 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
+}
+
+func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
+	criminalFound := false
+	for _, voter := range poll.GetVoters() {
+		if criminal.Equals(voter.Validator) {
+			criminalFound = true
+			break
+		}
+	}
+
+	if !criminalFound {
+		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetKey().String())
+	}
+
+	return nil
 }
 
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
@@ -458,6 +479,11 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+			if err := validateCriminal(criminalAddress, poll); err != nil {
+				s.Logger(ctx).Error(err.Error())
+				continue
+			}
+
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))

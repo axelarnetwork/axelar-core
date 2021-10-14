@@ -51,6 +51,10 @@ func NewMsgServerImpl(keeper types.BTCKeeper, s types.Signer, n types.Nexus, v t
 func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitExternalSignatureRequest) (*types.SubmitExternalSignatureResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
+
 	externalKey, ok := s.signer.GetKey(ctx, req.KeyID)
 	if !ok || externalKey.Role != tss.ExternalKey {
 		return nil, fmt.Errorf("external key %s not found", req.KeyID)
@@ -88,6 +92,11 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 // Link handles address linking
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
+
 	masterKey, ok := s.signer.GetCurrentKey(ctx, exported.Bitcoin, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("master key not set")
@@ -134,6 +143,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 // ConfirmOutpoint handles the confirmation of a Bitcoin outpoint
 func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpointRequest) (*types.ConfirmOutpointResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
+
 	_, state, ok := s.GetOutPointInfo(ctx, req.OutPointInfo.GetOutPoint())
 	switch {
 	case !ok:
@@ -175,6 +189,10 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 // VoteConfirmOutpoint handles the votes on an outpoint confirmation
 func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirmOutpointRequest) (*types.VoteConfirmOutpointResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
 
 	// has the outpoint been confirmed before?
 	confirmedOutPointInfo, state, confirmedBefore := s.GetOutPointInfo(ctx, *types.MustConvertOutPointFromStr(req.OutPoint))
@@ -325,6 +343,10 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 
 func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
 
 	unsignedTx, ok := s.GetUnsignedTx(ctx, req.TxType)
 	if !ok || (!unsignedTx.Is(types.Created) && !unsignedTx.Is(types.Aborted)) {
@@ -480,6 +502,10 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRequest) (*types.CreateRescueTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
+
 	if _, ok := s.GetUnsignedTx(ctx, types.Rescue); ok {
 		return nil, fmt.Errorf("rescue in progress")
 	}
@@ -569,6 +595,10 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 // CreateMasterTx creates a master key consolidation transaction
 func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRequest) (*types.CreateMasterTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
 
 	secondaryMin := s.GetMinOutputAmount(ctx)
 	if req.SecondaryKeyAmount > 0 && req.SecondaryKeyAmount < secondaryMin {
@@ -704,6 +734,10 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 // CreatePendingTransfersTx creates a secondary key consolidation transaction
 func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.CreatePendingTransfersTxRequest) (*types.CreatePendingTransfersTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+		return nil, err
+	}
 
 	masterMin := s.GetMinOutputAmount(ctx)
 	if req.MasterKeyAmount > 0 && req.MasterKeyAmount < masterMin {
@@ -1125,4 +1159,13 @@ func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (t
 	}
 
 	return signer.GetKeyByRotationCount(ctx, exported.Bitcoin, tss.MasterKey, oldMasterKeyRotationCount)
+}
+
+func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) error {
+	if !n.IsChainActivated(ctx, chain) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+			fmt.Sprintf("chain %s is not activated yet", chain.Name))
+	}
+
+	return nil
 }

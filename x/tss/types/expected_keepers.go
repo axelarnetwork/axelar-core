@@ -29,12 +29,14 @@ type Nexus interface {
 
 // Voter provides voting functionality
 type Voter interface {
+	// Deprecated: InitializePollWithSnapshot will be removed soon
 	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
+	// Deprecated: InitializePollWithSnapshot will be removed soon
 	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 

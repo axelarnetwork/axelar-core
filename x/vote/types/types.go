@@ -78,12 +78,9 @@ type Store interface {
 	GetVote(hash string) (TalliedVote, bool)
 	HasVoted(voter sdk.ValAddress) bool
 	GetVotes() []TalliedVote
-	GetVotingPower(voter sdk.ValAddress) (int64, bool)
-	GetTotalVotingPower() sdk.Int
 	SetMetadata(metadata exported.PollMetadata)
 	GetPoll(key exported.PollKey) exported.Poll
 	DeletePoll()
-	GetTotalVoterCount() int64
 }
 
 // NewPoll creates a new poll
@@ -132,6 +129,15 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 
 // Initialize initializes the poll
 func (p Poll) Initialize() error {
+	sumVotingPower := sdk.ZeroInt()
+	for _, voter := range p.Voters {
+		sumVotingPower = sumVotingPower.AddRaw(voter.VotingPower)
+	}
+
+	if utils.NewThreshold(sumVotingPower.Int64(), p.TotalVotingPower.Int64()).LT(p.VotingThreshold) {
+		return fmt.Errorf("cannot create poll %s due to it being impossible to pass", p.Key.String())
+	}
+
 	other := p.Store.GetPoll(p.Key)
 	if err := other.Delete(); err != nil {
 		return err
@@ -139,6 +145,19 @@ func (p Poll) Initialize() error {
 
 	p.SetMetadata(p.PollMetadata)
 	return nil
+}
+
+func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
+	fmt.Printf("v %#v\n", v)
+	fmt.Printf("p.PollMetadata.Voters %#v\n", p.PollMetadata.Voters)
+
+	for _, voter := range p.PollMetadata.Voters {
+		if v.Equals(voter.Validator) {
+			return voter.VotingPower
+		}
+	}
+
+	return 0
 }
 
 // Vote records the given vote
@@ -152,8 +171,8 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 		return nil
 	}
 
-	votingPower, ok := p.GetVotingPower(voter)
-	if !ok {
+	votingPower := p.getVotingPower(voter)
+	if votingPower == 0 {
 		return fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
 	}
 
@@ -246,10 +265,8 @@ func (p Poll) getVoterCount() int64 {
 }
 
 func (p *Poll) hasEnoughVotes(majority sdk.Int) bool {
-	voterCount := p.getVoterCount()
-
 	return utils.NewThreshold(majority.Int64(), p.GetTotalVotingPower().Int64()).GTE(p.VotingThreshold) &&
-		(p.GetTotalVoterCount() < p.MinVoterCount || voterCount >= p.MinVoterCount)
+		(int64(len(p.Voters)) < p.MinVoterCount || p.getVoterCount() >= p.MinVoterCount)
 }
 
 func (p *Poll) cannotWin(majority sdk.Int) bool {

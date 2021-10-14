@@ -139,7 +139,6 @@ func TestPoll_Vote(t *testing.T) {
 		allVotes := make(map[string]types.TalliedVote)
 		hasVoted := make(map[string]bool)
 		store := &mock.StoreMock{
-			GetTotalVoterCountFunc: func() int64 { return int64(len(votingPowers)) },
 			SetVoteFunc: func(addr sdk.ValAddress, v types.TalliedVote) {
 				hasVoted[addr.String()] = true
 				allVotes[v.Hash()] = v
@@ -148,14 +147,9 @@ func TestPoll_Vote(t *testing.T) {
 				vote, ok := allVotes[h]
 				return vote, ok
 			},
-			GetVotesFunc: func() []types.TalliedVote { return getValues(allVotes) },
-			HasVotedFunc: func(addr sdk.ValAddress) bool { return hasVoted[addr.String()] },
-			GetVotingPowerFunc: func(address sdk.ValAddress) (int64, bool) {
-				votingPower, ok := votingPowers[address.String()]
-				return votingPower, ok
-			},
-			GetTotalVotingPowerFunc: func() sdk.Int { return totalVotingPower },
-			SetMetadataFunc:         func(exported.PollMetadata) {},
+			GetVotesFunc:    func() []types.TalliedVote { return getValues(allVotes) },
+			HasVotedFunc:    func(addr sdk.ValAddress) bool { return hasVoted[addr.String()] },
+			SetMetadataFunc: func(exported.PollMetadata) {},
 		}
 
 		for voterAddress, votingPower := range votingPowers {
@@ -215,18 +209,13 @@ func TestPoll_Vote(t *testing.T) {
 
 	t.Run("correct vote no completion", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
+		metadata.VotingThreshold = utils.OneThreshold
 		poll := setup(metadata, rand.PosI64())
 
-		voterVotingPower := totalVotingPower.QuoRaw(int64(len(votingPowers))).Int64() // votingPowers are int64, so this can never be out of bounds
-		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
-
-		voterAddr := rand.ValAddr()
-		votingPowers[voterAddr.String()] = voterVotingPower
+		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
-		fmt.Printf("poll.State %#v\n", poll.State)
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
-		fmt.Printf("poll.State %#v\n", poll.State)
 		assert.True(t, poll.Is(exported.Pending))
 	}).Repeat(repeats))
 
@@ -238,11 +227,7 @@ func TestPoll_Vote(t *testing.T) {
 		assert.True(t, poll.Is(exported.Expired))
 		assert.True(t, poll.Is(exported.Pending))
 
-		voterVotingPower := rand.PosI64()
-		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
-
-		voterAddr := rand.ValAddr()
-		votingPowers[voterAddr.String()] = voterVotingPower
+		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
@@ -252,11 +237,7 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		voterVotingPower := totalVotingPower.QuoRaw(int64(len(votingPowers))).Int64() // votingPowers are int64, so this can never be out of bounds
-		totalVotingPower = totalVotingPower.AddRaw(voterVotingPower)
-
-		voterAddr := rand.ValAddr()
-		votingPowers[voterAddr.String()] = voterVotingPower
+		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
@@ -294,10 +275,10 @@ func TestPoll_Vote(t *testing.T) {
 	t.Run("should complete the poll when total voter count is less than minimum voter count and minimum voter count is not met", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
-		poll.MinVoterCount = int64(len(shareCounts) + 1)
+		poll.MinVoterCount = int64(len(votingPowers) + 1)
 
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
-		for voter := range shareCounts {
+		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
 			assert.NoError(t, poll.Vote(addr, voteValue))
 		}
@@ -309,12 +290,12 @@ func TestPoll_Vote(t *testing.T) {
 	t.Run("should not complete the poll when total voter count is greater than or equal to minimum voter count and minimum voter count is not met", testutils.Func(func(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
-		poll.MinVoterCount = int64(len(shareCounts))
+		poll.MinVoterCount = int64(len(votingPowers))
 		poll.VotingThreshold = utils.ZeroThreshold
 
 		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
 		voterCount := int64(0)
-		for voter := range shareCounts {
+		for voter := range votingPowers {
 			if voterCount > metadata.MinVoterCount-2 {
 				break
 			}

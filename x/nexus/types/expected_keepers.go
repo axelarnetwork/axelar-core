@@ -21,8 +21,9 @@ type Nexus interface {
 	ActivateChain(ctx sdk.Context, chain exported.Chain)
 	GetChains(ctx sdk.Context) []exported.Chain
 	GetChain(ctx sdk.Context, chain string) (exported.Chain, bool)
-	AddChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress)
-	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress)
+	IsChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) bool
+	AddChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
+	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
 }
 

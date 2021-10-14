@@ -61,16 +61,7 @@ func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 
 func (k Keeper) initializePoll(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, totalVotingPower sdk.Int, pollProperties ...exported.PollProperty) error {
 	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), voters, totalVotingPower).With(pollProperties...)
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, voters, totalVotingPower)).WithLogger(k.Logger(ctx))
-
-	sumVotingPower := sdk.ZeroInt()
-	for _, voter := range voters {
-		sumVotingPower = sumVotingPower.AddRaw(voter.VotingPower)
-	}
-
-	if utils.NewThreshold(sumVotingPower.Int64(), totalVotingPower.Int64()).LT(metadata.VotingThreshold) {
-		return fmt.Errorf("cannot create poll %s due to it being impossible to pass", key.String())
-	}
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
 
 	return poll.Initialize()
 }
@@ -114,7 +105,7 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
 	}
 
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, metadata.Voters, metadata.TotalVotingPower)).WithLogger(k.Logger(ctx))
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
 
 	return poll
 }
@@ -132,14 +123,12 @@ func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, totalVotingPower sdk.Int) *pollStore {
+func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey) *pollStore {
 	return &pollStore{
-		key:              key,
-		KVStore:          k.getKVStore(ctx),
-		getPoll:          func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
-		voters:           voters,
-		totalVotingPower: totalVotingPower,
-		logger:           k.Logger(ctx),
+		key:     key,
+		KVStore: k.getKVStore(ctx),
+		getPoll: func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
+		logger:  k.Logger(ctx),
 	}
 }
 
@@ -148,30 +137,10 @@ var _ types.Store = &pollStore{}
 type pollStore struct {
 	votesCached bool
 	utils.KVStore
-	logger           log.Logger
-	votes            []types.TalliedVote
-	getPoll          func(key exported.PollKey) exported.Poll
-	voters           []exported.Voter
-	totalVotingPower sdk.Int
-	key              exported.PollKey
-}
-
-func (p *pollStore) GetTotalVoterCount() int64 {
-	return int64(len(p.voters))
-}
-
-func (p *pollStore) GetTotalVotingPower() sdk.Int {
-	return p.totalVotingPower
-}
-
-func (p *pollStore) GetVotingPower(v sdk.ValAddress) (int64, bool) {
-	for _, voter := range p.voters {
-		if v.Equals(voter.Validator) {
-			return voter.VotingPower, true
-		}
-	}
-
-	return 0, false
+	logger  log.Logger
+	votes   []types.TalliedVote
+	getPoll func(key exported.PollKey) exported.Poll
+	key     exported.PollKey
 }
 
 func (p *pollStore) SetVote(voter sdk.ValAddress, vote types.TalliedVote) {

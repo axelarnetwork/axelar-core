@@ -24,7 +24,7 @@ var _ types.Nexus = &NexusMock{}
 // 			ActivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)  {
 // 				panic("mock out the ActivateChain method")
 // 			},
-// 			AddChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress)  {
+// 			AddChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the AddChainMaintainer method")
 // 			},
 // 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool) {
@@ -42,10 +42,13 @@ var _ types.Nexus = &NexusMock{}
 // 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool {
 // 				panic("mock out the IsChainActivated method")
 // 			},
+// 			IsChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 				panic("mock out the IsChainMaintainer method")
+// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress)  {
+// 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the RemoveChainMaintainer method")
 // 			},
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
@@ -62,7 +65,7 @@ type NexusMock struct {
 	ActivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)
 
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
-	AddChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress)
+	AddChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool)
@@ -79,11 +82,14 @@ type NexusMock struct {
 	// IsChainActivatedFunc mocks the IsChainActivated method.
 	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool
 
+	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
+	IsChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
-	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress)
+	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
@@ -137,6 +143,15 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
+		// IsChainMaintainer holds details about calls to the IsChainMaintainer method.
+		IsChainMaintainer []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain exported.Chain
+			// Maintainer is the maintainer argument value.
+			Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -166,6 +181,7 @@ type NexusMock struct {
 	lockGetChains             sync.RWMutex
 	lockGetParams             sync.RWMutex
 	lockIsChainActivated      sync.RWMutex
+	lockIsChainMaintainer     sync.RWMutex
 	lockLogger                sync.RWMutex
 	lockRemoveChainMaintainer sync.RWMutex
 	lockSetParams             sync.RWMutex
@@ -207,7 +223,7 @@ func (mock *NexusMock) ActivateChainCalls() []struct {
 }
 
 // AddChainMaintainer calls AddChainMaintainerFunc.
-func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) {
+func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.AddChainMaintainerFunc == nil {
 		panic("NexusMock.AddChainMaintainerFunc: method is nil but Nexus.AddChainMaintainer was just called")
 	}
@@ -223,7 +239,7 @@ func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types
 	mock.lockAddChainMaintainer.Lock()
 	mock.calls.AddChainMaintainer = append(mock.calls.AddChainMaintainer, callInfo)
 	mock.lockAddChainMaintainer.Unlock()
-	mock.AddChainMaintainerFunc(ctx, chain, validator)
+	return mock.AddChainMaintainerFunc(ctx, chain, validator)
 }
 
 // AddChainMaintainerCalls gets all the calls that were made to AddChainMaintainer.
@@ -412,6 +428,45 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	return calls
 }
 
+// IsChainMaintainer calls IsChainMaintainerFunc.
+func (mock *NexusMock) IsChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+	if mock.IsChainMaintainerFunc == nil {
+		panic("NexusMock.IsChainMaintainerFunc: method is nil but Nexus.IsChainMaintainer was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Chain      exported.Chain
+		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Ctx:        ctx,
+		Chain:      chain,
+		Maintainer: maintainer,
+	}
+	mock.lockIsChainMaintainer.Lock()
+	mock.calls.IsChainMaintainer = append(mock.calls.IsChainMaintainer, callInfo)
+	mock.lockIsChainMaintainer.Unlock()
+	return mock.IsChainMaintainerFunc(ctx, chain, maintainer)
+}
+
+// IsChainMaintainerCalls gets all the calls that were made to IsChainMaintainer.
+// Check the length with:
+//     len(mockedNexus.IsChainMaintainerCalls())
+func (mock *NexusMock) IsChainMaintainerCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	Chain      exported.Chain
+	Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Chain      exported.Chain
+		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockIsChainMaintainer.RLock()
+	calls = mock.calls.IsChainMaintainer
+	mock.lockIsChainMaintainer.RUnlock()
+	return calls
+}
+
 // Logger calls LoggerFunc.
 func (mock *NexusMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -444,7 +499,7 @@ func (mock *NexusMock) LoggerCalls() []struct {
 }
 
 // RemoveChainMaintainer calls RemoveChainMaintainerFunc.
-func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) {
+func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.RemoveChainMaintainerFunc == nil {
 		panic("NexusMock.RemoveChainMaintainerFunc: method is nil but Nexus.RemoveChainMaintainer was just called")
 	}
@@ -460,7 +515,7 @@ func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_ty
 	mock.lockRemoveChainMaintainer.Lock()
 	mock.calls.RemoveChainMaintainer = append(mock.calls.RemoveChainMaintainer, callInfo)
 	mock.lockRemoveChainMaintainer.Unlock()
-	mock.RemoveChainMaintainerFunc(ctx, chain, validator)
+	return mock.RemoveChainMaintainerFunc(ctx, chain, validator)
 }
 
 // RemoveChainMaintainerCalls gets all the calls that were made to RemoveChainMaintainer.

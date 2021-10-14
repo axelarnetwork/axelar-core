@@ -93,6 +93,7 @@ type TSS interface {
 // Voter exposes voting functionality
 type Voter interface {
 	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
 	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
@@ -117,6 +118,7 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
+	// Deprecated: InitializePollWithSnapshot will be removed soon
 	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 

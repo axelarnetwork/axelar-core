@@ -30,6 +30,10 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Nexus, staking 
 				continue
 			}
 
+			if !validator.IsBonded() || validator.IsJailed() {
+				continue
+			}
+
 			sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(staking.PowerReduction(ctx)))
 		}
 

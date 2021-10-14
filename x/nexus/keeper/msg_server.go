@@ -38,6 +38,10 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 			return nil, fmt.Errorf("%s is not a registered chain", chainStr)
 		}
 
+		if s.IsChainMaintainer(ctx, chain, validator) {
+			continue
+		}
+
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
 				types.EventTypeChainMaintainer,
@@ -49,7 +53,9 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 		)
 
 		s.Logger(ctx).Info(fmt.Sprintf("validator %s registered maintainer for chain %s", validator.String(), chain.Name))
-		s.AddChainMaintainer(ctx, chain, validator)
+		if err := s.AddChainMaintainer(ctx, chain, validator); err != nil {
+			return nil, err
+		}
 	}
 
 	return &types.RegisterChainMaintainerResponse{}, nil
@@ -69,6 +75,10 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 			return nil, fmt.Errorf("%s is not a registered chain", chainStr)
 		}
 
+		if !s.IsChainMaintainer(ctx, chain, validator) {
+			continue
+		}
+
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
 				types.EventTypeChainMaintainer,
@@ -80,7 +90,9 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 		)
 
 		s.Logger(ctx).Info(fmt.Sprintf("validator %s deregistered maintainer for chain %s", validator.String(), chain.Name))
-		s.RemoveChainMaintainer(ctx, chain, validator)
+		if err := s.RemoveChainMaintainer(ctx, chain, validator); err != nil {
+			return nil, err
+		}
 	}
 
 	return &types.DeregisterChainMaintainerResponse{}, nil

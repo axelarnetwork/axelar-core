@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
@@ -16,11 +15,6 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 	server := keeper.NewMsgServerImpl(k, signer, n, v, snapshotter)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
-
-		if !n.IsChainActivated(ctx, exported.Bitcoin) {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
-				fmt.Sprintf("chain %s is not activated yet", exported.Bitcoin.Name))
-		}
 
 		switch msg := msg.(type) {
 		case *types.LinkRequest:

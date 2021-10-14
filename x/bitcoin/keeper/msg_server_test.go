@@ -88,6 +88,9 @@ func TestHandleMsgLink(t *testing.T) {
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
@@ -182,6 +185,9 @@ func TestHandleMsgConfirmOutpoint(t *testing.T) {
 		}
 
 		nexusMock = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
 			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
 				return []sdk.ValAddress{}
 			},
@@ -309,6 +315,9 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 		}
 
 		nexusKeeper = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{Chain: nexus.Chain{}, Address: ""}, true
@@ -653,7 +662,11 @@ func TestCreateRescueTx(t *testing.T) {
 		}
 
 		voter := &mock.VoterMock{}
-		nexusKeeper := &mock.NexusMock{}
+		nexusKeeper := &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
+		}
 		snapshotter := &mock.SnapshotterMock{}
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signerKeeper, nexusKeeper, voter, snapshotter)
 	}
@@ -991,7 +1004,11 @@ func TestCreateMasterTx(t *testing.T) {
 			SetUnsignedTxFunc:        func(ctx sdk.Context, tx types.UnsignedTx) {},
 		}
 		voter = &mock.VoterMock{}
-		nexusKeeper = &mock.NexusMock{}
+		nexusKeeper = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
+		}
 		signerKeeper = &mock.SignerMock{
 			GetExternalKeyIDsFunc: func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
 				externalKeyIDs := make([]tss.KeyID, len(externalKeys))
@@ -1468,6 +1485,9 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		}
 		voter = &mock.VoterMock{}
 		nexusKeeper = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain == exported.Bitcoin
+			},
 			GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 				if chain == exported.Bitcoin && state == nexus.Pending {
 					return transfers
