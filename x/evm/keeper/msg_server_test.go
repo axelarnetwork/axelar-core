@@ -74,6 +74,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name)
 		secondaryKeyID = tssTestUtils.RandKeyID()
+		commandsSet = nil
 
 		evmChainKeeper = &mock.ChainKeeperMock{
 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
@@ -91,8 +92,8 @@ func TestCreateBurnTokens(t *testing.T) {
 				metadata := types.CommandCutterMetadata{
 					ChainID: sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10000))),
 				}
-				push := func(cmd types.Command) error {
-					commandsSet = append(commandsSet, cmd)
+				push := func(c types.Command) error {
+					commandsSet = append(commandsSet, c)
 					return nil
 
 				}
