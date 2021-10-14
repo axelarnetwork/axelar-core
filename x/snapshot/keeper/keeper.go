@@ -276,7 +276,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		),
 	)
 
-	k.Logger(ctx).Debug(fmt.Sprintf("Snapshot %d has participating validators %v with shares %v and non-participating validators %v with shares %v",
+	k.Logger(ctx).Debug(fmt.Sprintf("Snapshot %d has participating validators %v with stake %v and non-participating validators %v with stake %v",
 		counter,
 		participantsAddr,
 		participantsStake,
