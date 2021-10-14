@@ -668,14 +668,9 @@ func newBatch(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommand
 	}, nil
 }
 
-// Is returns true if the given status matches the specified batch's status
+// Is returns true if batched commands is in the given status; false otherwise
 func (b BatchedCommands) Is(status BatchedCommandsStatus) bool {
-	// this special case check is needed, because 0 & x == 0 is true for any x
-	if status == BatchNonExistent {
-		return b.Status == BatchNonExistent
-	}
-
-	return status&b.Status == status
+	return b.Status == status
 }
 
 const commandIDSize = 32
