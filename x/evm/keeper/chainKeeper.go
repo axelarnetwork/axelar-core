@@ -27,19 +27,16 @@ import (
 var (
 	gatewayKey         = utils.KeyFromStr("gateway")
 	batchedCommandsKey = utils.KeyFromStr("batched_commands")
-	//unsignedBatchedCommandsKey       = utils.KeyFromStr("unsigned_batched_commands")
-	//latestSignedBatchedCommandsIDKey = utils.KeyFromStr("latest_signed_batched_commands_id")
 
-	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
-	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
-	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
-	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
-	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	commandPrefix               = utils.KeyFromStr("command")
-	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
-	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
-	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
-	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands")
+	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx")
+	tokenMetadataPrefix       = utils.KeyFromStr("token_deployment")
+	pendingDepositPrefix      = utils.KeyFromStr("pending_deposit")
+	confirmedDepositPrefix    = utils.KeyFromStr("confirmed_deposit")
+	burnedDepositPrefix       = utils.KeyFromStr("burned_deposit")
+	commandPrefix             = utils.KeyFromStr("command")
+	burnerAddrPrefix          = utils.KeyFromStr("burnerAddr")
+	pendingTransferKeyPrefix  = utils.KeyFromStr("pending_transfer_key")
+	archivedTransferKeyPrefix = utils.KeyFromStr("archived_transfer_key")
 
 	commandQueueName = "command_queue"
 )
