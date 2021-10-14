@@ -98,6 +98,7 @@ func GetCmdGetKey(queryRoute string) *cobra.Command {
 			}
 
 			// force the rotatedAt field to be nil, if the timestamp is for Jan 1, 1970
+			// necessary because of the marshaling/unmarshaling of the Amino codec
 			if res.RotatedAt != nil && res.RotatedAt.Unix() == 0 {
 				res.RotatedAt = nil
 			}
