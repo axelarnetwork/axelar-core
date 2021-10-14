@@ -198,6 +198,39 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		participants = append(participants, exported.NewValidator(validator, 0))
 	}
 
+	// build event-related data
+	participantsAddr := make([]string, 0, len(participants))
+	participantsStake := make([]uint32, 0, len(participants))
+	for _, participant := range participants {
+		participantsAddr = append(participantsAddr, participant.GetSDKValidator().GetOperator().String())
+		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
+	}
+
+	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
+	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
+	for _, nonParticipant := range nonParticipants {
+		nonParticipantsAddr = append(nonParticipantsAddr, nonParticipant.GetSDKValidator().GetOperator().String())
+		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeCreateSnapshot,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsAddr))),
+			sdk.NewAttribute(types.AttributeParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsStake))),
+			sdk.NewAttribute(types.AttributeNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsAddr))),
+			sdk.NewAttribute(types.AttributeNonParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsStake))),
+		),
+	)
+
+	k.Logger(ctx).Debug(fmt.Sprintf("Snapshot %d has participating validators %v with stake %v and non-participating validators %v with stake %v",
+		counter,
+		participantsAddr,
+		participantsStake,
+		nonParticipantsAddr,
+		nonParticipantsStake,
+	))
+
 	if len(participants) == 0 {
 		return exported.Snapshot{}, fmt.Errorf("no validator is eligible for keygen")
 	}
@@ -250,39 +283,6 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		CorruptionThreshold:        corruptionThreshold,
 	}
 	ctx.KVStore(k.storeKey).Set(counterKey(counter), k.cdc.MustMarshalLengthPrefixed(&snapshot))
-
-	// build event-related data
-	participantsAddr := make([]string, 0, len(participants))
-	participantsStake := make([]uint32, 0, len(participants))
-	for _, participant := range participants {
-		participantsAddr = append(participantsAddr, participant.GetSDKValidator().GetOperator().String())
-		participantsStake = append(participantsStake, uint32(participant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
-	}
-
-	nonParticipantsAddr := make([]string, 0, len(nonParticipants))
-	nonParticipantsStake := make([]uint32, 0, len(nonParticipants))
-	for _, nonParticipant := range nonParticipants {
-		nonParticipantsAddr = append(nonParticipantsAddr, nonParticipant.GetSDKValidator().GetOperator().String())
-		nonParticipantsStake = append(nonParticipantsStake, uint32(nonParticipant.GetSDKValidator().GetConsensusPower(k.staking.PowerReduction(ctx))))
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeCreateSnapshot,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsAddr))),
-			sdk.NewAttribute(types.AttributeParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsStake))),
-			sdk.NewAttribute(types.AttributeNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsAddr))),
-			sdk.NewAttribute(types.AttributeNonParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsStake))),
-		),
-	)
-
-	k.Logger(ctx).Debug(fmt.Sprintf("Snapshot %d has participating validators %v with stake %v and non-participating validators %v with stake %v",
-		counter,
-		participantsAddr,
-		participantsStake,
-		nonParticipantsAddr,
-		nonParticipantsStake,
-	))
 
 	return snapshot, nil
 }
