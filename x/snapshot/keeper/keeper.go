@@ -269,13 +269,20 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeCreateSnapshot,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsAddr))),
 			sdk.NewAttribute(types.AttributeParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantsStake))),
 			sdk.NewAttribute(types.AttributeNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsAddr))),
 			sdk.NewAttribute(types.AttributeNonParticipantsStake, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantsStake))),
 		),
 	)
+
+	k.Logger(ctx).Debug(fmt.Sprintf("Snapshot %d has participating validators %v with shares %v and non-participating validators %v with shares %v",
+		counter,
+		participantsAddr,
+		participantsStake,
+		nonParticipantsAddr,
+		nonParticipantsStake,
+	))
 
 	return snapshot, nil
 }
