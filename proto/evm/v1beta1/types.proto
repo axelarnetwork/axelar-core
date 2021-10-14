@@ -75,6 +75,11 @@ enum Status {
   STATUS_CONFIRMED = 4 [ (gogoproto.enumvalue_customname) = "Confirmed" ];
 }
 
+message TransactionMetadata {
+  bytes raw_tx = 1 [ (gogoproto.customname) = "RawTX" ];
+  bytes pub_key = 2;
+}
+
 message Command {
   bytes id = 1 [
     (gogoproto.nullable) = false,

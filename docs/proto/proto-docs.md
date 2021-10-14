@@ -114,6 +114,7 @@
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
     - [TokenDetails](#evm.v1beta1.TokenDetails)
+    - [TransactionMetadata](#evm.v1beta1.TransactionMetadata)
     - [TransferKey](#evm.v1beta1.TransferKey)
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
@@ -1744,6 +1745,22 @@ results to evm relay transaction types
 | `symbol` | [string](#string) |  |  |
 | `decimals` | [uint32](#uint32) |  |  |
 | `capacity` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransactionMetadata"></a>
+
+### TransactionMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `raw_tx` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
 
 
 

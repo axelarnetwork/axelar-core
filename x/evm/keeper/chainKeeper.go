@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -31,7 +32,7 @@ var (
 
 	chainPrefix                 = utils.KeyFromStr("chain")
 	subspacePrefix              = utils.KeyFromStr("subspace")
-	unsignedPrefix              = utils.KeyFromStr("unsigned")
+	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
 	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
@@ -310,29 +311,23 @@ func (k chainKeeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *typ
 	return &command
 }
 
-func (k chainKeeper) GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction {
-	bz := k.getStore(ctx, k.chain).GetRaw(unsignedPrefix.AppendStr(txID))
-	if bz == nil {
-		return nil
-	}
-
-	var tx evmTypes.Transaction
-	err := tx.UnmarshalBinary(bz)
+// SetUnsignedTx stores an unsigned transaction
+func (k chainKeeper) SetUnsignedTx(ctx sdk.Context, txID string, rawTx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
+	bzTX, err := rawTx.MarshalBinary()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	return &tx
-}
+	btcecPK := btcec.PublicKey(pk)
 
-// SetUnsignedTx stores an unsigned transaction by hash
-func (k chainKeeper) SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction) {
-	bz, err := tx.MarshalBinary()
-	if err != nil {
-		panic(err)
+	meta := types.TransactionMetadata{
+		RawTX:  bzTX,
+		PubKey: btcecPK.SerializeCompressed(),
 	}
 
-	k.getStore(ctx, k.chain).SetRaw(unsignedPrefix.AppendStr(txID), bz)
+	k.getStore(ctx, k.chain).Set(unsignedTxPrefix.AppendStr(txID), &meta)
+
+	return nil
 }
 
 // SetPendingDeposit stores a pending deposit
@@ -344,10 +339,10 @@ func (k chainKeeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, de
 func (k chainKeeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 	var deposit types.ERC20Deposit
 
-	if !k.getStore(ctx, k.chain).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chain).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.CONFIRMED, true
 	}
-	if !k.getStore(ctx, k.chain).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chain).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.BURNED, true
 	}
 
@@ -369,16 +364,31 @@ func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 	return deposits
 }
 
-// AssembleTx sets a signature for a previously stored raw transaction
-func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error) {
-	rawTx := k.GetUnsignedTx(ctx, txID)
-	if rawTx == nil {
+// AssembleTx returns the data structure resulting from a unsigned tx and the provided signature
+func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error) {
+	var meta types.TransactionMetadata
+	if !k.getStore(ctx, k.chain).Get(unsignedTxPrefix.AppendStr(txID), &meta) {
 		return nil, fmt.Errorf("raw tx for ID %s has not been prepared yet", txID)
+	}
+
+	btcecPK, err := btcec.ParsePubKey(meta.PubKey, btcec.S256())
+	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
+	if err != nil {
+		panic(err)
+	}
+
+	pk := btcecPK.ToECDSA()
+
+	var rawTx evmTypes.Transaction
+	err = rawTx.UnmarshalBinary(meta.RawTX)
+	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
+	if err != nil {
+		panic(err)
 	}
 
 	signer := k.getSigner(ctx)
 
-	recoverableSig, err := types.ToSignature(sig, signer.Hash(rawTx), pk)
+	recoverableSig, err := types.ToSignature(sig, signer.Hash(&rawTx), *pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
@@ -386,14 +396,10 @@ func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey
 	return rawTx.WithSignature(signer, recoverableSig[:])
 }
 
-// GetHashToSign returns the hash to sign of a previously stored raw transaction
-func (k chainKeeper) GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error) {
-	rawTx := k.GetUnsignedTx(ctx, txID)
-	if rawTx == nil {
-		return common.Hash{}, fmt.Errorf("raw tx with id %s not found", txID)
-	}
+// GetHashToSign returns the hash to sign of the given raw transaction
+func (k chainKeeper) GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash {
 	signer := k.getSigner(ctx)
-	return signer.Hash(rawTx), nil
+	return signer.Hash(rawTx)
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {

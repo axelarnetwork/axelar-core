@@ -908,19 +908,20 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	}
 
 	tx := req.UnmarshaledTx()
-	txID := tx.Hash().String()
 	keeper := s.ForChain(chain.Name)
-
-	keeper.SetUnsignedTx(ctx, txID, tx)
-	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", txID))
-	hash, err := keeper.GetHashToSign(ctx, txID)
-	if err != nil {
-		return nil, err
-	}
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", req.Tx))
+	// if we retrieved a key ID, the key itself must exist
+	key, _ := s.signer.GetKey(ctx, keyID)
+	hash := keeper.GetHashToSign(ctx, tx)
+	err := keeper.SetUnsignedTx(ctx, hash.Hex(), tx, key.Value)
+	if err != nil {
+		return nil, err
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
@@ -940,7 +941,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
 		KeyID:           keyID,
-		SigID:           txID,
+		SigID:           hash.Hex(),
 		Msg:             hash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
 		RequestModule:   types.ModuleName,
@@ -974,11 +975,11 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, txID),
+			sdk.NewAttribute(types.AttributeKeyTxID, hash.Hex()),
 		),
 	)
 
-	return &types.SignTxResponse{TxID: txID}, nil
+	return &types.SignTxResponse{TxID: hash.Hex()}, nil
 }
 
 func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {

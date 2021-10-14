@@ -38,7 +38,6 @@ type ChainKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
 	GetName() string
-	AssembleTx(ctx sdk.Context, txID string, pk ecdsa.PublicKey, sig tss.Signature) (*evmTypes.Transaction, error)
 	GetNetwork(ctx sdk.Context) (string, bool)
 	GetCommandsGasLimit(ctx sdk.Context) (uint32, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
@@ -57,9 +56,6 @@ type ChainKeeper interface {
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	GetUnsignedTx(ctx sdk.Context, txID string) *evmTypes.Transaction
-	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction)
-	GetHashToSign(ctx sdk.Context, txID string) (common.Hash, error)
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
 	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
 	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
@@ -79,6 +75,11 @@ type ChainKeeper interface {
 	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
+
+	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
+	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
+	AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
+
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
 }
