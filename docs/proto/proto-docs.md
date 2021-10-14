@@ -242,6 +242,7 @@
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
@@ -3445,6 +3446,24 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.Key"></a>
+
+### QueryKeyResponse.Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `x` | [string](#string) |  |  |
+| `y` | [string](#string) |  |  |
 
 
 

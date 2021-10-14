@@ -47,7 +47,7 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 			if err != nil {
 				break
 			}
-			res, err = queryKey(ctx, k, v, keyID)
+			res, err = queryKeyStatus(ctx, k, v, keyID)
 		case QueryRecovery:
 			keyID := exported.KeyID(path[1])
 			err = keyID.Validate()
@@ -168,12 +168,17 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 	return types.ModuleCdc.MarshalLengthPrefixed(&res)
 }
 
-func queryKey(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
+func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
 	if key, ok := k.GetKey(ctx, keyID); ok {
 		// poll was successful
 		res := types.QueryKeyResponse{
 			VoteStatus: types.Decided,
 			Role:       key.Role,
+			Key: &types.QueryKeyResponse_Key{
+				X: hex.EncodeToString(key.Value.X.Bytes()),
+				Y: hex.EncodeToString(key.Value.Y.Bytes()),
+			},
+			RotatedAt: key.RotatedAt,
 		}
 
 		return types.ModuleCdc.MarshalLengthPrefixed(&res)
