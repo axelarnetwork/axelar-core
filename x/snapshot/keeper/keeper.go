@@ -3,7 +3,6 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -67,27 +66,10 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
 func (k Keeper) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
-	s, ok := k.GetLatestSnapshot(ctx)
+	counter := k.GetLatestCounter(ctx)
 
-	if !ok {
-		k.setLatestCounter(ctx, 0)
-		return k.executeSnapshot(ctx, 0, keyRequirement)
-	}
-
-	lockingPeriod := k.getLockingPeriod(ctx)
-	if s.Timestamp.Add(lockingPeriod).After(ctx.BlockTime()) {
-		return exported.Snapshot{}, fmt.Errorf("not enough time has passed since last snapshot, need to wait %s longer",
-			s.Timestamp.Add(lockingPeriod).Sub(ctx.BlockTime()).String())
-	}
-
-	k.setLatestCounter(ctx, s.Counter+1)
-	return k.executeSnapshot(ctx, s.Counter+1, keyRequirement)
-}
-
-func (k Keeper) getLockingPeriod(ctx sdk.Context) time.Duration {
-	var lockingPeriod time.Duration
-	k.params.Get(ctx, types.KeyLockingPeriod, &lockingPeriod)
-	return lockingPeriod
+	k.setLatestCounter(ctx, counter+1)
+	return k.executeSnapshot(ctx, counter+1, keyRequirement)
 }
 
 // GetLatestSnapshot retrieves the last created snapshot
