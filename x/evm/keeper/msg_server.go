@@ -833,7 +833,8 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, cmd); err != nil {
+	cutter := keeper.GetCommandCutter(ctx)
+	if err := cutter.EnqueueCommand(cmd); err != nil {
 		return nil, err
 	}
 
@@ -884,12 +885,13 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
 
-		command, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
+		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
-		if err := keeper.SetCommand(ctx, command); err != nil {
+		cutter := keeper.GetCommandCutter(ctx)
+		if err := cutter.EnqueueCommand(cmd); err != nil {
 			return nil, err
 		}
 
@@ -1047,15 +1049,16 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	for _, transfer := range transfers {
 		token := keeper.GetERC20Token(ctx, transfer.Asset.Denom)
-		command, err := token.CreateMintCommand(secondaryKeyID, transfer)
+		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
-		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", command.ID.Hex()))
+		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
-		if err := keeper.SetCommand(ctx, command); err != nil {
+		cutter := keeper.GetCommandCutter(ctx)
+		if err := cutter.EnqueueCommand(cmd); err != nil {
 			return nil, err
 		}
 	}
@@ -1146,12 +1149,13 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	command, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, command); err != nil {
+	cutter := keeper.GetCommandCutter(ctx)
+	if err := cutter.EnqueueCommand(cmd); err != nil {
 		return nil, err
 	}
 
@@ -1166,12 +1170,13 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	command, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, command); err != nil {
+	cutter := keeper.GetCommandCutter(ctx)
+	if err := cutter.EnqueueCommand(cmd); err != nil {
 		return nil, err
 	}
 
@@ -1186,10 +1191,14 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}
 
 	keeper := s.ForChain(chain.Name)
-	batchedCommands, err := keeper.GetBatchedCommandsToSign(ctx)
+	cutter := keeper.GetCommandCutter(ctx)
+	err := cutter.CreateNewBatchToSign()
 	if err != nil {
 		return nil, err
 	}
+
+	// if no error was thrown above, the batch exists
+	batchedCommands := cutter.GetUnsigned()
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
 	if !ok {
@@ -1212,9 +1221,6 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}); err != nil {
 		return nil, err
 	}
-
-	batchedCommands.Status = types.Signing
-	keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

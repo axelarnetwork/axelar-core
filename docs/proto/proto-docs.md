@@ -109,6 +109,7 @@
     - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
+    - [CommandCutterMetadata](#evm.v1beta1.CommandCutterMetadata)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
@@ -1654,6 +1655,23 @@ that is deposited by an user
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CommandCutterMetadata"></a>
+
+### CommandCutterMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `signed` | [BatchedCommands](#evm.v1beta1.BatchedCommands) | repeated |  |
+| `unsigned` | [BatchedCommands](#evm.v1beta1.BatchedCommands) |  |  |
+| `chain_id` | [bytes](#bytes) |  |  |
 
 
 

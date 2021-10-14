@@ -75,19 +75,20 @@ type ChainKeeper interface {
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
 
-	SetCommand(ctx sdk.Context, command Command) error
+	GetCommandCutter(ctx sdk.Context) CommandCutter
+	//SetCommand(ctx sdk.Context, command Command) error
 
-	GetBatchedCommandsToSign(ctx sdk.Context) (BatchedCommands, error)
+	//GetBatchedCommandsToSign(ctx sdk.Context) (BatchedCommands, error)
 
-	SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
-	GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
-	DeleteUnsignedBatchedCommands(ctx sdk.Context)
+	//SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	//GetUnsignedBatchedCommands(ctx sdk.Context) (BatchedCommands, bool)
+	//DeleteUnsignedBatchedCommands(ctx sdk.Context)
 
-	SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
-	GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
+	//SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte)
+	//GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool)
 
-	SetSignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
-	GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
+	//SetSignedBatchedCommands(ctx sdk.Context, batchedCommands BatchedCommands)
+	//GetSignedBatchedCommands(ctx sdk.Context, id []byte) (BatchedCommands, bool)
 }
 
 // ParamsKeeper represents a global paramstore

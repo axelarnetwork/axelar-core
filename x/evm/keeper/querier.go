@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -88,16 +87,12 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 func QueryLatestBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, s types.Signer) ([]byte, error) {
 	var batchedCommands types.BatchedCommands
 
-	unsignedBatchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx)
-	if ok {
+	cutter := keeper.GetCommandCutter(ctx)
+	unsignedBatchedCommands := cutter.GetUnsigned()
+	if unsignedBatchedCommands.Is(types.BatchSigning) || unsignedBatchedCommands.Is(types.BatchAborted) {
 		batchedCommands = unsignedBatchedCommands
 	} else {
-		latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no batched commands exist for chain %s", keeper.GetName()))
-		}
-
-		latestSignedBatchedCommands, ok := keeper.GetSignedBatchedCommands(ctx, latestSignedBatchedCommandsID)
+		latestSignedBatchedCommands, ok := cutter.GetLatestSignedBatchedCommands()
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("cannot find the latest signed batched commands for chain %s", keeper.GetName()))
 		}
@@ -123,7 +118,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.BatchedCo
 	var resp types.QueryBatchedCommandsResponse
 
 	switch batchedCommands.Status {
-	case types.Signed:
+	case types.BatchSigned:
 		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
 		if sigStatus != tss.SigStatus_Signed {
 			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
@@ -395,11 +390,8 @@ func QueryBatchedCommands(ctx sdk.Context, k types.ChainKeeper, s types.Signer, 
 }
 
 func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.BatchedCommands, bool) {
-	if batchedCommands, ok := k.GetSignedBatchedCommands(ctx, id); ok {
-		return batchedCommands, true
-	}
-
-	if batchedCommands, ok := k.GetUnsignedBatchedCommands(ctx); ok && bytes.Equal(batchedCommands.ID, id) {
+	cutter := k.GetCommandCutter(ctx)
+	if batchedCommands, ok := cutter.GetBatchByID(id); ok {
 		return batchedCommands, true
 	}
 
