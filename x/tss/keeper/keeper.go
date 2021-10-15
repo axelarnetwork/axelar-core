@@ -19,29 +19,29 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const (
-	rotationPrefix             = "rotation_"
-	rotationCountPrefix        = "rotation_count_"
-	keygenStartHeight          = "block_height_"
-	pkPrefix                   = "pk_"
-	groupRecoverPrefix         = "group_recovery_info_"
-	privateRecoverPrefix       = "private_recovery_info_"
-	thresholdPrefix            = "threshold_"
-	snapshotForKeyIDPrefix     = "sfkid_"
-	sigPrefix                  = "sig_"
-	infoForSigPrefix           = "info_for_sig_"
-	participatePrefix          = "part_"
-	keyRequirementPrefix       = "key_requirement_"
-	keyRolePrefix              = "key_role_"
-	keyTssSuspendedUntil       = "key_tss_suspended_until_"
-	keyRotatedAtPrefix         = "key_rotated_at_"
-	availablePrefix            = "available_"
-	linkedSeqNumPrefix         = "linked_seq_number_"
-	scheduledKeygenPrefix      = "scheduled_keygen_"
-	scheduledSignPrefix        = "scheduled_sign_"
-	sigStatusPrefix            = "sig_status_"
-	rotationCountOfKeyIDPrefix = "rotation_count_of_key_id_"
-	externalKeyIDsPrefix       = "external_key_ids_"
+var (
+	rotationPrefix             = utils.KeyFromStr("rotation")
+	rotationCountPrefix        = utils.KeyFromStr("rotation_count")
+	keygenStartHeight          = utils.KeyFromStr("block_height")
+	pkPrefix                   = utils.KeyFromStr("pk")
+	groupRecoverPrefix         = utils.KeyFromStr("group_recovery_info")
+	privateRecoverPrefix       = utils.KeyFromStr("private_recovery_info")
+	thresholdPrefix            = utils.KeyFromStr("threshold")
+	snapshotForKeyIDPrefix     = utils.KeyFromStr("sfkid")
+	sigPrefix                  = utils.KeyFromStr("sig")
+	infoForSigPrefix           = utils.KeyFromStr("info_for_sig")
+	participatePrefix          = utils.KeyFromStr("part")
+	keyRequirementPrefix       = utils.KeyFromStr("key_requirement")
+	keyRolePrefix              = utils.KeyFromStr("key_role")
+	keyTssSuspendedUntil       = utils.KeyFromStr("key_tss_suspended_until")
+	keyRotatedAtPrefix         = utils.KeyFromStr("key_rotated_at")
+	availablePrefix            = utils.KeyFromStr("available")
+	linkedSeqNumPrefix         = utils.KeyFromStr("linked_seq_number")
+	scheduledKeygenPrefix      = utils.KeyFromStr("scheduled_keygen")
+	scheduledSignPrefix        = utils.KeyFromStr("scheduled_sign")
+	sigStatusPrefix            = utils.KeyFromStr("sig_status")
+	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
+	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")
 )
 
 // Keeper allows access to the broadcast state
@@ -49,7 +49,7 @@ type Keeper struct {
 	slasher  snapshot.Slasher
 	params   params.Subspace
 	storeKey sdk.StoreKey
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryCodec
 }
 
 // AssertMatchesRequirements checks if the properties of the given key match the requirements for the given role
@@ -113,7 +113,7 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc *codec.LegacyAmino, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		cdc:      cdc,
@@ -154,80 +154,53 @@ func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
 
 // SetGroupRecoveryInfo sets the group recovery info for a given party
 func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte) {
-	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
-	ctx.KVStore(k.storeKey).Set([]byte(key), recoveryInfo)
+	k.getStore(ctx).SetRaw(groupRecoverPrefix.AppendStr(string(keyID)), recoveryInfo)
 }
 
 // GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
 func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte {
-	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
-	return ctx.KVStore(k.storeKey).Get([]byte(key))
+	return k.getStore(ctx).GetRaw(groupRecoverPrefix.AppendStr(string(keyID)))
 }
 
 // SetPrivateRecoveryInfo sets the private recovery info for a given party
 func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte) {
-	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
-
-	// marshal private recover info before storing
-	bz := k.cdc.MustMarshalLengthPrefixed(recoveryInfo)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+	k.getStore(ctx).SetRaw(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()), recoveryInfo)
 }
 
 // GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
 func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte {
-	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-
-	// private recovery infos has been marshaled in keeper
-	var privateRecoveryInfos []byte
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &privateRecoveryInfos)
-
-	return privateRecoveryInfos
+	return k.getStore(ctx).GetRaw(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()))
 }
 
 // HasPrivateRecoveryInfos returns true if the private recovery infos for a given party exists
 func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool {
-	key := fmt.Sprintf("%s%s_%s", privateRecoverPrefix, keyID, sender.String())
-	return ctx.KVStore(k.storeKey).Has([]byte(key))
+	return k.getStore(ctx).Has(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()))
 }
 
 // DeleteAllRecoveryInfos removes all recovery infos (private and group) associated to the given key ID
 func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID) {
-	prefix := fmt.Sprintf("%s%s_", privateRecoverPrefix, keyID)
-	store := ctx.KVStore(k.storeKey)
-
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	store := k.getStore(ctx)
+	prefix := privateRecoverPrefix.AppendStr(string(keyID))
+	iter := store.Iterator(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
+		store.Delete(iter.GetKey())
 	}
 
-	key := fmt.Sprintf("%s%s", groupRecoverPrefix, keyID)
-	ctx.KVStore(k.storeKey).Delete([]byte(key))
+	k.getStore(ctx).Delete(prefix)
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	key := fmt.Sprintf("%s%s", keyRequirementPrefix, keyRequirement.KeyRole.SimpleString())
-	bz := k.cdc.MustMarshalLengthPrefixed(keyRequirement)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+	k.getStore(ctx).Set(keyRequirementPrefix.AppendStr(keyRequirement.KeyRole.SimpleString()), &keyRequirement)
 }
 
 // GetKeyRequirement gets the key requirement for a given chain of a given role
 func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
-	key := fmt.Sprintf("%s%s", keyRequirementPrefix, keyRole.SimpleString())
-
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
-	if bz == nil {
-		return exported.KeyRequirement{}, false
-	}
-
 	var keyRequirement exported.KeyRequirement
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &keyRequirement)
+	ok := k.getStore(ctx).Get(keyRequirementPrefix.AppendStr(keyRole.SimpleString()), &keyRequirement)
 
-	return keyRequirement, true
+	return keyRequirement, ok
 }
 
 // GetMaxMissedBlocksPerWindow returns the maximum percent of blocks a validator is allowed
@@ -249,17 +222,15 @@ func (k Keeper) GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64 {
 }
 
 func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {
-	key := fmt.Sprintf("%s%s", keyTssSuspendedUntil, validator.String())
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(suspendedUntilBlockNumber))
 
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+	k.getStore(ctx).SetRaw(keyTssSuspendedUntil.AppendStr(validator.String()), bz)
 }
 
 // GetTssSuspendedUntil returns the block number at which a validator is released from TSS suspension
 func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
-	key := fmt.Sprintf("%s%s", keyTssSuspendedUntil, validator.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	bz := k.getStore(ctx).GetRaw(keyTssSuspendedUntil.AppendStr(validator.String()))
 	if bz == nil {
 		return 0
 	}
@@ -274,23 +245,22 @@ func (k Keeper) SetAvailableOperator(ctx sdk.Context, ID string, ackType exporte
 		return fmt.Errorf("ID cannot be empty")
 	}
 
-	key := fmt.Sprintf("%s%s_%s_%s", availablePrefix, ID, ackType.String(), validator.String())
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	key := availablePrefix.AppendStr(ID).AppendStr(ackType.String()).AppendStr(validator.String())
+	bz := k.getStore(ctx).GetRaw(key)
 	if bz != nil {
 		return fmt.Errorf("validator already submitted its ack for the specified ID and type")
 	}
 
 	bz = make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
-
+	k.getStore(ctx).SetRaw(key, bz)
 	return nil
 }
 
 // IsOperatorAvailable returns true if the validator already submitted an acknowledgments for the given ID
 func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
-	key := fmt.Sprintf("%s%s_%s_%s", availablePrefix, ID, ackType.String(), validator.String())
-	return ctx.KVStore(k.storeKey).Has([]byte(key))
+	key := availablePrefix.AppendStr(ID).AppendStr(ackType.String()).AppendStr(validator.String())
+	return k.getStore(ctx).Has(key)
 }
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
@@ -307,16 +277,13 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType
 		return nil
 	}
 
-	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, sessionID, ackType.String())
-	store := ctx.KVStore(k.storeKey)
-	var addresses []sdk.ValAddress
-
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	prefix := availablePrefix.AppendStr(sessionID).AppendStr(ackType.String())
+	iter := k.getStore(ctx).Iterator(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
+	var addresses []sdk.ValAddress
 	for ; iter.Valid(); iter.Next() {
-
-		validator := strings.TrimPrefix(string(iter.Key()), prefix)
+		validator := strings.TrimPrefix(string(iter.Key()), string(prefix.AsKey())+"_")
 		address, err := sdk.ValAddressFromBech32(validator)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s due to parsing error: %s", validator, err.Error()))
@@ -338,34 +305,31 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType
 
 // DeleteAvailableOperators removes the validator that sent an ack for some key/sign ID (if it exists)
 func (k Keeper) DeleteAvailableOperators(ctx sdk.Context, sessionID string, ackType exported.AckType) {
-	prefix := fmt.Sprintf("%s%s_%s_", availablePrefix, sessionID, ackType.String())
-	store := ctx.KVStore(k.storeKey)
-
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	store := k.getStore(ctx)
+	iter := store.Iterator(availablePrefix.AppendStr(sessionID).AppendStr(ackType.String()))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.Key())
+		store.Delete(iter.GetKey())
 	}
 }
 
 // links a set of available operators to a snapshot counter
 func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, validators []sdk.ValAddress) {
-	key := fmt.Sprintf("%s%d", linkedSeqNumPrefix, counter)
+	key := linkedSeqNumPrefix.AppendStr(strconv.FormatInt(counter, 10))
 
 	values := make([]string, len(validators))
 	for i, validator := range validators {
 		values[i] = validator.String()
 	}
 	list, _ := json.Marshal(values)
-
-	ctx.KVStore(k.storeKey).Set([]byte(key), list)
+	k.getStore(ctx).SetRaw(key, list)
 }
 
 // OperatorIsAvailableForCounter returns true if the given validator address is available for the specified snapshot counter
 func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
-	key := fmt.Sprintf("%s%d", linkedSeqNumPrefix, counter)
-	bz := ctx.KVStore(k.storeKey).Get([]byte(key))
+	key := linkedSeqNumPrefix.AppendStr(strconv.FormatInt(counter, 10))
+	bz := k.getStore(ctx).GetRaw(key)
 
 	if bz == nil {
 		return false
@@ -409,22 +373,22 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 
 // SetExternalKeyIDs stores the given list of external key IDs
 func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID) {
-	storageKey := []byte(fmt.Sprintf("%s%s", externalKeyIDsPrefix, chain.Name))
-
-	ctx.KVStore(k.storeKey).Set(storageKey, k.cdc.MustMarshalLengthPrefixed(keyIDs))
+	storageKey := externalKeyIDsPrefix.Append(utils.LowerCaseKey(chain.Name))
+	list, _ := json.Marshal(keyIDs)
+	k.getStore(ctx).SetRaw(storageKey, list)
 }
 
 // GetExternalKeyIDs retrieves the current list of external key IDs
 func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool) {
-	storageKey := []byte(fmt.Sprintf("%s%s", externalKeyIDsPrefix, chain.Name))
+	storageKey := externalKeyIDsPrefix.Append(utils.LowerCaseKey(chain.Name))
 
-	bz := ctx.KVStore(k.storeKey).Get(storageKey)
+	bz := k.getStore(ctx).GetRaw(storageKey)
 	if bz == nil {
 		return []exported.KeyID{}, false
 	}
 
 	var keyIDs []exported.KeyID
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &keyIDs)
+	_ = json.Unmarshal(bz, &keyIDs)
 
 	return keyIDs, true
 }
@@ -441,4 +405,8 @@ func (k Keeper) emitAckEvent(ctx sdk.Context, action string, keyID exported.KeyI
 	}
 
 	ctx.EventManager().EmitEvent(event)
+}
+
+func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
+	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
