@@ -359,29 +359,19 @@ func (s msgServer) ConfirmKeyTransfer(c context.Context, req *types.ConfirmKeyTr
 		return nil, fmt.Errorf("key %s does not exist (yet)", req.KeyID)
 	}
 
-	var keyRole tss.KeyRole
-	switch req.TransferType {
-	case types.Ownership:
-		keyRole = tss.MasterKey
-	case types.Operatorship:
-		keyRole = tss.SecondaryKey
-	default:
-		return nil, fmt.Errorf("invalid transfer type %s", req.TransferType.SimpleString())
-	}
-
-	_, ok = s.signer.GetNextKey(ctx, chain, keyRole)
-	if !ok {
-		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
-	}
-
+	addr := types.Address(crypto.PubkeyToAddress(pk.Value))
 	keeper := s.ForChain(chain.Name)
-
-	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
+	transfer := keeper.GetKeyTransfer(ctx, addr)
+	if err := transfer.RecordTransfer(req.TxID); err != nil {
+		return nil, err
 	}
 
-	currentKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
+	_, ok = s.signer.GetNextKey(ctx, chain, transfer.GetKeyRole())
+	if !ok {
+		return nil, fmt.Errorf("next %s key for chain %s not set yet", transfer.GetKeyRole(), chain.Name)
+	}
+
+	currentKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, transfer.GetKeyRole())
 	if !ok {
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
@@ -406,7 +396,7 @@ func (s msgServer) ConfirmKeyTransfer(c context.Context, req *types.ConfirmKeyTr
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.TransferType.SimpleString(), req.KeyID))
+	pollKey := types.GetConfirmTransferKey(req.TxID, req.TransferType, addr)
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -418,13 +408,8 @@ func (s msgServer) ConfirmKeyTransfer(c context.Context, req *types.ConfirmKeyTr
 		return nil, err
 	}
 
-	transferKey := types.KeyTransferMetadata{
-		TxID:      req.TxID,
-		Type:      req.TransferType,
-		NextKeyID: pk.ID,
-	}
-	keeper.SetPendingTransferKey(ctx, pollKey, &transferKey)
-
+	// if transfer was initialized, gateway addresses must be available
+	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
@@ -434,7 +419,7 @@ func (s msgServer) ConfirmKeyTransfer(c context.Context, req *types.ConfirmKeyTr
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferKeyType, req.TransferType.SimpleString()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk.Value).Hex()),
+			sdk.NewAttribute(types.AttributeKeyAddress, addr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -633,6 +618,8 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	keeper := s.ForChain(chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
 	switch {
+	case token.Is(types.Confirmed):
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("token '%s' already confirmed", token.GetAsset())}, nil
 	case !token.Is(types.Pending):
 		return nil, fmt.Errorf("no open poll for token '%s'", token.GetAsset())
 	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
@@ -710,26 +697,15 @@ func (s msgServer) VoteConfirmKeyTransfer(c context.Context, req *types.VoteConf
 	}
 
 	keeper := s.ForChain(chain.Name)
-
-	pendingTransfer, pendingTransferFound := keeper.GetPendingTransferKey(ctx, req.PollKey)
-	archivedTransfer, archivedTransferFound := keeper.GetArchivedTransferKey(ctx, req.PollKey)
-
-	var nextKey tss.Key
+	transfer := keeper.GetKeyTransfer(ctx, req.NewAddress)
 	switch {
-	case !pendingTransferFound && !archivedTransferFound:
-		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.PollKey.String())
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case archivedTransferFound:
-		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("%s in %s to keyID %s already confirmed", archivedTransfer.Type.SimpleString(), archivedTransfer.TxID.Hex(), archivedTransfer.NextKeyID)}, nil
-	case pendingTransferFound:
-		nextKey, ok = s.signer.GetKey(ctx, pendingTransfer.NextKeyID)
-		if !ok {
-			return nil, fmt.Errorf("key %s cannot be found", pendingTransfer.NextKeyID)
-		}
+	case transfer.Is(types.Confirmed):
+		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("%s in %s to address %s already confirmed", transfer.GetType().SimpleString(), transfer.GetTxID().Hex(), transfer.GetAddress().Hex())}, nil
+	case !transfer.Is(types.Pending):
+		return nil, fmt.Errorf("no open poll for key transfer to address '%s'", transfer.GetAddress())
+	case req.PollKey != types.GetConfirmTransferKey(transfer.GetTxID(), transfer.GetType(), transfer.GetAddress()):
+		return nil, fmt.Errorf("%s in %s to address %s does not match poll %s", transfer.GetType().SimpleString(), req.TxID.Hex(), req.NewAddress.Hex(), req.PollKey.String())
 
-		if crypto.PubkeyToAddress(nextKey.Value) != common.Address(req.NewAddress) || pendingTransfer.Type != req.TransferType || pendingTransfer.TxID != req.TxID {
-			return nil, fmt.Errorf("%s in %s to address %s does not match poll %s", pendingTransfer.Type.SimpleString(), req.TxID.Hex(), req.NewAddress.Hex(), req.PollKey.String())
-		}
 	default:
 		// assert: the transfer ownership/operatorship is known and has not been confirmed before
 	}
@@ -757,7 +733,7 @@ func (s msgServer) VoteConfirmKeyTransfer(c context.Context, req *types.VoteConf
 	}
 
 	if poll.Is(vote.Failed) {
-		keeper.DeletePendingTransferKey(ctx, req.PollKey)
+		transfer.RejectTransfer()
 		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -769,13 +745,13 @@ func (s msgServer) VoteConfirmKeyTransfer(c context.Context, req *types.VoteConf
 	// TODO: handle rejected case
 
 	s.Logger(ctx).Info(fmt.Sprintf("%s transfer ownership confirmation result is %s", chain.Name, poll.GetResult()))
-	keeper.ArchiveTransferKey(ctx, req.PollKey)
+	transfer.ConfirmTransfer()
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyTransferKeyType, pendingTransfer.Type.SimpleString()),
+		sdk.NewAttribute(types.AttributeKeyTransferKeyType, transfer.GetType().SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
@@ -791,7 +767,7 @@ func (s msgServer) VoteConfirmKeyTransfer(c context.Context, req *types.VoteConf
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	if err := s.signer.RotateKey(ctx, chain, nextKey.Role); err != nil {
+	if err := s.signer.RotateKey(ctx, chain, transfer.GetKeyRole()); err != nil {
 		return nil, err
 	}
 
@@ -1068,15 +1044,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.KeyTransferType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
-	chain, ok := s.nexus.GetChain(ctx, chainStr)
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.KeyTransferType, keeper types.ChainKeeper, nextKeyID tss.KeyID) (types.Command, error) {
+	chain, ok := s.nexus.GetChain(ctx, keeper.GetName())
 	if !ok {
-		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
-	}
-
-	chainID := s.getChainID(ctx, chainStr)
-	if chainID == nil {
-		return types.Command{}, fmt.Errorf("could not find chain ID for '%s'", chainStr)
+		return types.Command{}, fmt.Errorf("%s is not a registered chain", keeper.GetName())
 	}
 
 	var keyRole tss.KeyRole
@@ -1106,15 +1077,18 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKey.ID, keyRole.SimpleString())
 	}
 
-	newAddress := crypto.PubkeyToAddress(nextKey.Value)
 	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
 	}
 
-	command, err := types.CreateTransferCommand(transferKeyType, chainID, currMasterKeyID, newAddress)
+	transfer, err := keeper.StartKeyTransfer(ctx, transferKeyType, nextKey)
 	if err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		return types.Command{}, sdkerrors.Wrapf(err, "failed to start key transfer to key '%s'", nextKeyID)
+	}
+	command, err := transfer.CreateTransferCommand(currMasterKeyID)
+	if err != nil {
+		return types.Command{}, sdkerrors.Wrapf(err, "failed to create %s command", transferKeyType.SimpleString())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
@@ -1123,7 +1097,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", keyRole.SimpleString(), chain.Name)
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, newAddress.Hex()))
+	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, transfer.GetAddress().Hex()))
 
 	return command, nil
 }
@@ -1132,11 +1106,7 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 	ctx := sdk.UnwrapSDKContext(c)
 	keeper := s.ForChain(req.Chain)
 
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	command, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
+	command, err := s.createTransferKeyCommand(ctx, types.Ownership, keeper, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1152,11 +1122,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	ctx := sdk.UnwrapSDKContext(c)
 	keeper := s.ForChain(req.Chain)
 
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	command, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
+	command, err := s.createTransferKeyCommand(ctx, types.Operatorship, keeper, req.KeyID)
 	if err != nil {
 		return nil, err
 	}

@@ -67,12 +67,10 @@ type ERC20Token struct {
 
 // CreateERC20Token returns an ERC20Token struct
 func CreateERC20Token(setter func(meta ERC20TokenMetadata), meta ERC20TokenMetadata) ERC20Token {
-	token := ERC20Token{
+	return ERC20Token{
 		metadata: meta,
 		setMeta:  setter,
 	}
-
-	return token
 }
 
 // GetAsset returns the asset name
@@ -80,7 +78,7 @@ func (t *ERC20Token) GetAsset() string {
 	return t.metadata.Asset
 }
 
-// GetTxID returns the tx ID set with StartConfirmation
+// GetTxID returns the tx ID set with RecordDeployment
 func (t *ERC20Token) GetTxID() Hash {
 	return t.metadata.TxHash
 }
@@ -206,9 +204,138 @@ func (t *ERC20Token) ConfirmDeployment() error {
 // NilToken returns a nil erc20 token
 var NilToken = ERC20Token{}
 
+// KeyTransfer represents an ownership/operatorship key transfer and its respective state
+type KeyTransfer struct {
+	metadata KeyTransferMetadata
+	setMeta  func(meta KeyTransferMetadata)
+}
+
+// NewKeyTransfer returns an ERC20Token struct
+func NewKeyTransfer(setter func(meta KeyTransferMetadata), meta KeyTransferMetadata) KeyTransfer {
+	return KeyTransfer{
+		metadata: meta,
+		setMeta:  setter,
+	}
+}
+
+// GetAddress returns the address to which ownership/operatorship is being transferred to
+func (t *KeyTransfer) GetAddress() Address {
+	return t.metadata.NextAddress
+}
+
+// GetKeyRole returns MasterKey for transfer of type ownership, SecondaryKey for type operatorship
+func (t *KeyTransfer) GetKeyRole() tss.KeyRole {
+	return t.metadata.KeyRole
+}
+
+// GetType returns the key transfer type
+func (t *KeyTransfer) GetType() KeyTransferType {
+	return t.metadata.Type
+}
+
+// GetTxID returns the tx ID set with RercordTransfer
+func (t *KeyTransfer) GetTxID() Hash {
+	return t.metadata.TxHash
+}
+
+// Is returns true if the given status matches the token's status
+func (t *KeyTransfer) Is(status Status) bool {
+	// this special case check is needed, because 0 & x == 0 is true for any x
+	if status == NonExistent {
+		return t.metadata.Status == NonExistent
+	}
+	return status&t.metadata.Status == status
+}
+
+// CreateTransferCommand returns a command to transfer ownership/operatorship of the contract
+func (t *KeyTransfer) CreateTransferCommand(keyID tss.KeyID) (Command, error) {
+	var cmd string
+	var gasCost uint32
+
+	switch t.metadata.Type {
+	case Ownership:
+		cmd = axelarGatewayCommandTransferOwnership
+		gasCost = transferOwnershipMaxGasCost
+	case Operatorship:
+		cmd = axelarGatewayCommandTransferOperatorship
+		gasCost = transferOperatorshipMaxGasCost
+	default:
+		return Command{}, fmt.Errorf("invalid transfer key type %s", t.metadata.Type.SimpleString())
+	}
+
+	params, err := createTransferParams(t.metadata.NextAddress)
+	if err != nil {
+		return Command{}, err
+	}
+
+	return Command{
+		ID:         NewCommandID(t.metadata.NextAddress.Bytes(), t.metadata.ChainID.BigInt()),
+		Command:    cmd,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: gasCost,
+	}, nil
+}
+
+// RecordTransfer signals that the key transfer confirmation is underway for the given tx ID
+func (t *KeyTransfer) RecordTransfer(txHash Hash) error {
+	switch {
+	case t.Is(Confirmed):
+		return fmt.Errorf("key transfer for address '%s' already completed", t.metadata.NextAddress.Hex())
+	case t.Is(Pending):
+		return fmt.Errorf("key transfer for address '%s' currently being confirmed", t.metadata.NextAddress.Hex())
+	case t.Is(NonExistent):
+		return fmt.Errorf("no key transfer for address '%s' has been started yet", t.metadata.NextAddress.Hex())
+	}
+
+	t.metadata.TxHash = txHash
+	t.metadata.Status |= Pending
+	t.setMeta(t.metadata)
+
+	return nil
+}
+
+// RejectTransfer reverts the token state back to Initialized
+func (t *KeyTransfer) RejectTransfer() error {
+	switch {
+	case t.Is(NonExistent):
+		return fmt.Errorf("key transfer to address %s non-existent", t.metadata.NextAddress)
+	case !t.Is(Pending):
+		return fmt.Errorf("key transfer for address %s not waiting confirmation (current status: %s)", t.metadata.NextAddress, t.metadata.Status.String())
+	}
+
+	t.metadata.Status = Initialized
+	t.metadata.TxHash = Hash{}
+	t.setMeta(t.metadata)
+	return nil
+}
+
+// ConfirmTransfer signals that the token was successfully confirmed
+func (t *KeyTransfer) ConfirmTransfer() error {
+	switch {
+	case t.Is(NonExistent):
+		return fmt.Errorf("key transfer to address %s non-existent", t.metadata.NextAddress)
+	case !t.Is(Pending):
+		return fmt.Errorf("key transfer for address %s not waiting confirmation (current status: %s)", t.metadata.NextAddress, t.metadata.Status.String())
+	}
+
+	t.metadata.Status = Confirmed
+	t.setMeta(t.metadata)
+
+	return nil
+}
+
+// NilKeyTransfer is a nil KeyTransfer
+var NilKeyTransfer = KeyTransfer{}
+
 // GetConfirmTokenKey creates a poll key for token confirmation
 func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
 	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
+}
+
+// GetConfirmTransferKey creates a poll key for key transfer confirmation
+func GetConfirmTransferKey(txID Hash, transferType KeyTransferType, addr Address) vote.PollKey {
+	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s_%s", txID.Hex(), transferType.SimpleString(), addr.Hex()))
 }
 
 // Address wraps EVM Address
@@ -436,36 +563,6 @@ func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, sym
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: mintTokenMaxGasCost,
-	}, nil
-}
-
-// CreateTransferCommand creates a command to transfer ownership/operatorship of the contract
-func CreateTransferCommand(transferType KeyTransferType, chainID *big.Int, keyID tss.KeyID, newAddr common.Address) (Command, error) {
-	var cmd string
-	var gasCost uint32
-
-	switch transferType {
-	case Ownership:
-		cmd = axelarGatewayCommandTransferOwnership
-		gasCost = transferOwnershipMaxGasCost
-	case Operatorship:
-		cmd = axelarGatewayCommandTransferOperatorship
-		gasCost = transferOperatorshipMaxGasCost
-	default:
-		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
-	}
-
-	params, err := createTransferParams(newAddr)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return Command{
-		ID:         NewCommandID(newAddr.Bytes(), chainID),
-		Command:    cmd,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: gasCost,
 	}, nil
 }
 
@@ -780,7 +877,7 @@ func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	return result, nil
 }
 
-func createTransferParams(newOwnerAddr common.Address) ([]byte, error) {
+func createTransferParams(newOwnerAddr Address) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err

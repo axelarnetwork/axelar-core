@@ -34,6 +34,7 @@ var (
 	subspacePrefix              = utils.KeyFromStr("subspace")
 	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
 	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
+	keyTransferMetadataPrefix   = utils.KeyFromStr("key_transfer")
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
@@ -275,7 +276,7 @@ func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details typ
 	}
 
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
-		k.setTokenMetadata(ctx, asset, m)
+		k.setTokenMetadata(ctx, m)
 	}, metadata), nil
 }
 
@@ -286,7 +287,7 @@ func (k chainKeeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Tok
 	}
 
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
-		k.setTokenMetadata(ctx, asset, m)
+		k.setTokenMetadata(ctx, m)
 	}, metadata)
 }
 
@@ -475,6 +476,30 @@ func (k chainKeeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey
 	return transferKey, found
 }
 
+// StartKeyTransfer initializes a key transfer for the given key and type
+func (k chainKeeper) StartKeyTransfer(ctx sdk.Context, transferType types.KeyTransferType, nextKey tss.Key) (types.KeyTransfer, error) {
+	metadata, err := k.initKeyTransferMetadata(ctx, transferType, nextKey)
+	if err != nil {
+		return types.NilKeyTransfer, err
+	}
+
+	return types.NewKeyTransfer(func(m types.KeyTransferMetadata) {
+		k.setKeyTransferMetadata(ctx, m)
+	}, metadata), nil
+}
+
+// GetKeyTransfer returns the key transfer for the provided address
+func (k chainKeeper) GetKeyTransfer(ctx sdk.Context, addr types.Address) types.KeyTransfer {
+	metadata, ok := k.getKeyTransferMetadata(ctx, addr)
+	if !ok {
+		return types.NilKeyTransfer
+	}
+
+	return types.NewKeyTransfer(func(m types.KeyTransferMetadata) {
+		k.setKeyTransferMetadata(ctx, m)
+	}, metadata)
+}
+
 // GetNetworkByID returns the network name for a given chain and network ID
 func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool) {
 	if id == nil {
@@ -569,8 +594,13 @@ func (k chainKeeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, 
 	return bz, bz != nil
 }
 
-func (k chainKeeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
-	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
+func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {
+	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(meta.Asset))
+	k.getStore(ctx, k.chain).Set(key, &meta)
+}
+
+func (k chainKeeper) setKeyTransferMetadata(ctx sdk.Context, meta types.KeyTransferMetadata) {
+	key := keyTransferMetadataPrefix.Append(utils.LowerCaseKey(meta.NextAddress.Hex()))
 	k.getStore(ctx, k.chain).Set(key, &meta)
 }
 
@@ -580,6 +610,59 @@ func (k chainKeeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC2
 	found := k.getStore(ctx, k.chain).Get(key, &result)
 
 	return result, found
+}
+
+func (k chainKeeper) getKeyTransferMetadata(ctx sdk.Context, addr types.Address) (types.KeyTransferMetadata, bool) {
+	var result types.KeyTransferMetadata
+	key := keyTransferMetadataPrefix.Append(utils.LowerCaseKey(addr.Hex()))
+	found := k.getStore(ctx, k.chain).Get(key, &result)
+
+	return result, found
+}
+
+func (k chainKeeper) initKeyTransferMetadata(ctx sdk.Context, transferType types.KeyTransferType, nextKey tss.Key) (types.KeyTransferMetadata, error) {
+	// perform a few checks now, so that it is impossible to get errors later
+	addr := types.Address(crypto.PubkeyToAddress(nextKey.Value))
+	if transfer := k.GetKeyTransfer(ctx, addr); !transfer.Is(types.NonExistent) {
+		return types.KeyTransferMetadata{}, fmt.Errorf("transfer for key '%s' already set", nextKey.ID)
+	}
+
+	_, found := k.GetGatewayAddress(ctx)
+	if !found {
+		return types.KeyTransferMetadata{}, fmt.Errorf("axelar gateway address for chain '%s' not set", k.chain)
+	}
+
+	if err := transferType.Validate(); err != nil {
+		return types.KeyTransferMetadata{}, err
+	}
+
+	var keyRole tss.KeyRole
+	switch transferType {
+	// since transfer type validation succeeded, it can only be one of above values below
+	case types.Ownership:
+		keyRole = tss.MasterKey
+	case types.Operatorship:
+		keyRole = tss.SecondaryKey
+	}
+
+	if keyRole != nextKey.Role {
+		return types.KeyTransferMetadata{},
+			fmt.Errorf("key role mismatch (transfer type '%s' requires '%s', received '%s')",
+				transferType.SimpleString(), keyRole.SimpleString(), nextKey.Role.SimpleString())
+	}
+
+	chainID := k.getSigner(ctx).ChainID()
+
+	//all good
+	meta := types.KeyTransferMetadata{
+		Type:        transferType,
+		NextAddress: addr,
+		ChainID:     sdk.NewIntFromBigInt(chainID),
+		KeyRole:     keyRole,
+		Status:      types.Initialized,
+	}
+	k.setKeyTransferMetadata(ctx, meta)
+	return meta, nil
 }
 
 func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
@@ -602,18 +685,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		return types.ERC20TokenMetadata{}, err
 	}
 
-	var network string
-	subspace, ok := k.getSubspace(ctx, k.chain)
-	if !ok {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find subspace for chain '%s'", k.chain)
-	}
-
-	subspace.Get(ctx, types.KeyNetwork, &network)
-
-	chainID := k.GetChainIDByNetwork(ctx, network)
-	if chainID == nil {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
-	}
+	chainID := k.getSigner(ctx).ChainID()
 
 	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
 	if err != nil {
@@ -628,6 +700,6 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		ChainID:      sdk.NewIntFromBigInt(chainID),
 		Status:       types.Initialized,
 	}
-	k.setTokenMetadata(ctx, asset, meta)
+	k.setTokenMetadata(ctx, meta)
 	return meta, nil
 }

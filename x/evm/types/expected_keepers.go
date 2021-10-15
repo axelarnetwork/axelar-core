@@ -57,11 +57,6 @@ type ChainKeeper interface {
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
-	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (KeyTransferMetadata, bool)
-	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *KeyTransferMetadata)
-	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (KeyTransferMetadata, bool)
-	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
-	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetCommandQueue(ctx sdk.Context) utils.KVQueue
@@ -79,6 +74,9 @@ type ChainKeeper interface {
 	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
 	AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
+
+	StartKeyTransfer(ctx sdk.Context, transferType KeyTransferType, nextKey tss.Key) (KeyTransfer, error)
+	GetKeyTransfer(ctx sdk.Context, addr Address) KeyTransfer
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token

@@ -160,18 +160,22 @@ enum SigType {
 // operatorship
 message KeyTransferMetadata {
 
-  bytes tx_id = 1 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
+  bytes tx_hash = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   KeyTransferType type = 2;
-  string next_key_id = 3 [
-    (gogoproto.customname) = "NextKeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  bytes next_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+
+  bytes chain_id = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customname) = "ChainID",
+    (gogoproto.nullable) = false
   ];
-  Status status = 4;
+  int32 key_role = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
+
+  Status status = 6;
 }
 
 enum DepositStatus {

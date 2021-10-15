@@ -23,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
@@ -84,12 +85,19 @@ func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
-	actual, err := types.CreateTransferCommand(
-		types.Ownership,
-		chainID,
-		keyID,
-		newOwnerAddr,
+
+	meta := types.KeyTransferMetadata{
+		Type:        types.Ownership,
+		NextAddress: types.Address(newOwnerAddr),
+		ChainID:     sdk.NewIntFromBigInt(chainID),
+		KeyRole:     tss.MasterKey,
+		Status:      types.Initialized,
+	}
+	transfer := types.NewKeyTransfer(
+		func(types.KeyTransferMetadata) {},
+		meta,
 	)
+	actual, err := transfer.CreateTransferCommand(keyID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
@@ -101,12 +109,18 @@ func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
-	actual, err := types.CreateTransferCommand(
-		types.Operatorship,
-		chainID,
-		keyID,
-		newOperatorAddr,
+	meta := types.KeyTransferMetadata{
+		Type:        types.Operatorship,
+		NextAddress: types.Address(newOperatorAddr),
+		ChainID:     sdk.NewIntFromBigInt(chainID),
+		KeyRole:     tss.SecondaryKey,
+		Status:      types.Initialized,
+	}
+	transfer := types.NewKeyTransfer(
+		func(types.KeyTransferMetadata) {},
+		meta,
 	)
+	actual, err := transfer.CreateTransferCommand(keyID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))

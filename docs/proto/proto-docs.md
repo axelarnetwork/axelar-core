@@ -1709,9 +1709,11 @@ operatorship
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
+| `tx_hash` | [bytes](#bytes) |  |  |
 | `type` | [KeyTransferType](#evm.v1beta1.KeyTransferType) |  |  |
-| `next_key_id` | [string](#string) |  |  |
+| `next_address` | [bytes](#bytes) |  |  |
+| `chain_id` | [bytes](#bytes) |  |  |
+| `key_role` | [int32](#int32) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 
 
