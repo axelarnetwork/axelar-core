@@ -53,7 +53,7 @@ message ConfirmTokenRequest {
 
 message ConfirmTokenResponse {}
 
-message ConfirmTransferKeyRequest {
+message ConfirmKeyTransferRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -62,7 +62,7 @@ message ConfirmTransferKeyRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  evm.v1beta1.TransferKeyType transfer_type = 4;
+  evm.v1beta1.KeyTransferType transfer_type = 4;
   string key_id = 5 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -70,7 +70,7 @@ message ConfirmTransferKeyRequest {
   ];
 }
 
-message ConfirmTransferKeyResponse {}
+message ConfirmKeyTransferResponse {}
 
 // MsgLink represents the message that links a cross chain address to a burner
 // address
@@ -174,7 +174,7 @@ message VoteConfirmTokenRequest {
 
 message VoteConfirmTokenResponse { string log = 1; }
 
-message VoteConfirmTransferKeyRequest {
+message VoteConfirmKeyTransferRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -184,12 +184,12 @@ message VoteConfirmTransferKeyRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  evm.v1beta1.TransferKeyType transfer_type = 5;
+  evm.v1beta1.KeyTransferType transfer_type = 5;
   bytes new_address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bool confirmed = 7;
 }
-message VoteConfirmTransferKeyResponse { string log = 1; }
+message VoteConfirmKeyTransferResponse { string log = 1; }
 
 message CreateTransferOwnershipRequest {
   bytes sender = 1 [ (gogoproto.casttype) =

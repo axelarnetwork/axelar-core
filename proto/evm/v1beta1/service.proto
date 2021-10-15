@@ -39,8 +39,8 @@ service MsgService {
     };
   }
 
-  rpc ConfirmTransferKey(ConfirmTransferKeyRequest)
-      returns (ConfirmTransferKeyResponse) {
+  rpc ConfirmKeyTransfer(ConfirmKeyTransferRequest)
+      returns (ConfirmKeyTransferResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm-transfer-ownership"
       body : "*"
@@ -71,8 +71,8 @@ service MsgService {
     };
   }
 
-  rpc VoteConfirmTransferKey(VoteConfirmTransferKeyRequest)
-      returns (VoteConfirmTransferKeyResponse) {
+  rpc VoteConfirmKeyTransfer(VoteConfirmKeyTransferRequest)
+      returns (VoteConfirmKeyTransferResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/vote-confirm-transfer-key",
       body : "*"

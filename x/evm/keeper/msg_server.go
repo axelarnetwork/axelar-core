@@ -346,8 +346,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	return &types.ConfirmDepositResponse{}, nil
 }
 
-// ConfirmTransferKey handles transfer ownership/operatorship confirmations
-func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTransferKeyRequest) (*types.ConfirmTransferKeyResponse, error) {
+// ConfirmKeyTransfer handles transfer ownership/operatorship confirmations
+func (s msgServer) ConfirmKeyTransfer(c context.Context, req *types.ConfirmKeyTransferRequest) (*types.ConfirmKeyTransferResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -418,7 +418,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	transferKey := types.TransferKey{
+	transferKey := types.KeyTransferMetadata{
 		TxID:      req.TxID,
 		Type:      req.TransferType,
 		NextKeyID: pk.ID,
@@ -440,7 +440,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		),
 	)
 
-	return &types.ConfirmTransferKeyResponse{}, nil
+	return &types.ConfirmKeyTransferResponse{}, nil
 }
 
 func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
@@ -701,8 +701,8 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil
 }
 
-// VoteConfirmTransferKey handles votes for transfer ownership/operatorship confirmations
-func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConfirmTransferKeyRequest) (*types.VoteConfirmTransferKeyResponse, error) {
+// VoteConfirmKeyTransfer handles votes for transfer ownership/operatorship confirmations
+func (s msgServer) VoteConfirmKeyTransfer(c context.Context, req *types.VoteConfirmKeyTransferRequest) (*types.VoteConfirmKeyTransferResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -720,7 +720,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, fmt.Errorf("no transfer ownership found for poll %s", req.PollKey.String())
 	// If the voting threshold has been met and additional votes are received they should not return an error
 	case archivedTransferFound:
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("%s in %s to keyID %s already confirmed", archivedTransfer.Type.SimpleString(), archivedTransfer.TxID.Hex(), archivedTransfer.NextKeyID)}, nil
+		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("%s in %s to keyID %s already confirmed", archivedTransfer.Type.SimpleString(), archivedTransfer.TxID.Hex(), archivedTransfer.NextKeyID)}, nil
 	case pendingTransferFound:
 		nextKey, ok = s.signer.GetKey(ctx, pendingTransfer.NextKeyID)
 		if !ok {
@@ -753,12 +753,12 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("not enough votes to confirm %s in %s to %s yet", req.TransferType.SimpleString(), req.TxID.Hex(), req.NewAddress.Hex())}, nil
+		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("not enough votes to confirm %s in %s to %s yet", req.TransferType.SimpleString(), req.TxID.Hex(), req.NewAddress.Hex())}, nil
 	}
 
 	if poll.Is(vote.Failed) {
 		keeper.DeletePendingTransferKey(ctx, req.PollKey)
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+		return &types.VoteConfirmKeyTransferResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
 	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
@@ -783,7 +783,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
-		return &types.VoteConfirmTransferKeyResponse{
+		return &types.VoteConfirmKeyTransferResponse{
 			Log: fmt.Sprintf("transfer ownership in %s to %s was discarded", req.TxID.Hex(), req.NewAddress.Hex()),
 		}, nil
 	}
@@ -795,7 +795,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
-	return &types.VoteConfirmTransferKeyResponse{}, nil
+	return &types.VoteConfirmKeyTransferResponse{}, nil
 }
 
 func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {
@@ -1068,7 +1068,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.KeyTransferType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -1112,18 +1112,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
 	}
 
-	var command types.Command
-	var err error
-
-	switch transferKeyType {
-	case types.Ownership:
-		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
-	case types.Operatorship:
-		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
-	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
-	}
-
+	command, err := types.CreateTransferCommand(transferKeyType, chainID, currMasterKeyID, newAddress)
 	if err != nil {
 		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
 	}

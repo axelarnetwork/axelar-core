@@ -294,7 +294,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
-	transferKeyType evmTypes.TransferKeyType,
+	transferKeyType evmTypes.KeyTransferType,
 	gatewayAddr, newOwnerAddr common.Address,
 	confHeight uint64,
 	pollKey vote.PollKey,
@@ -328,7 +328,7 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 
 	return results[0].(string),
 		results[1].(common.Hash),
-		results[2].(evmTypes.TransferKeyType),
+		results[2].(evmTypes.KeyTransferType),
 		results[3].(common.Address),
 		results[4].(common.Address),
 		results[5].(uint64),
@@ -420,7 +420,7 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
-func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr, expectedNewAddr common.Address) (err error) {
+func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.KeyTransferType, gatewayAddr, expectedNewAddr common.Address) (err error) {
 	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		log := txReceipt.Logs[i]
 		// Event is not emitted by the axelar gateway

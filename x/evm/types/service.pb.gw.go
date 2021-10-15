@@ -203,8 +203,8 @@ func local_request_MsgService_ConfirmDeposit_0(ctx context.Context, marshaler ru
 
 }
 
-func request_MsgService_ConfirmTransferKey_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ConfirmTransferKeyRequest
+func request_MsgService_ConfirmKeyTransfer_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ConfirmKeyTransferRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -215,13 +215,13 @@ func request_MsgService_ConfirmTransferKey_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.ConfirmTransferKey(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ConfirmKeyTransfer(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_MsgService_ConfirmTransferKey_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ConfirmTransferKeyRequest
+func local_request_MsgService_ConfirmKeyTransfer_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ConfirmKeyTransferRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -232,7 +232,7 @@ func local_request_MsgService_ConfirmTransferKey_0(ctx context.Context, marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.ConfirmTransferKey(ctx, &protoReq)
+	msg, err := server.ConfirmKeyTransfer(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -339,8 +339,8 @@ func local_request_MsgService_VoteConfirmToken_0(ctx context.Context, marshaler 
 
 }
 
-func request_MsgService_VoteConfirmTransferKey_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq VoteConfirmTransferKeyRequest
+func request_MsgService_VoteConfirmKeyTransfer_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq VoteConfirmKeyTransferRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -351,13 +351,13 @@ func request_MsgService_VoteConfirmTransferKey_0(ctx context.Context, marshaler 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.VoteConfirmTransferKey(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.VoteConfirmKeyTransfer(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_MsgService_VoteConfirmTransferKey_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq VoteConfirmTransferKeyRequest
+func local_request_MsgService_VoteConfirmKeyTransfer_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq VoteConfirmKeyTransferRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -368,7 +368,7 @@ func local_request_MsgService_VoteConfirmTransferKey_0(ctx context.Context, mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.VoteConfirmTransferKey(ctx, &protoReq)
+	msg, err := server.VoteConfirmKeyTransfer(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -731,7 +731,7 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_ConfirmTransferKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_ConfirmKeyTransfer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -740,14 +740,14 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_MsgService_ConfirmTransferKey_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_MsgService_ConfirmKeyTransfer_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_ConfirmTransferKey_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_ConfirmKeyTransfer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -811,7 +811,7 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_VoteConfirmTransferKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_VoteConfirmKeyTransfer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -820,14 +820,14 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_MsgService_VoteConfirmTransferKey_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_MsgService_VoteConfirmKeyTransfer_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_VoteConfirmTransferKey_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_VoteConfirmKeyTransfer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1112,7 +1112,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_ConfirmTransferKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_ConfirmKeyTransfer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1121,14 +1121,14 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_MsgService_ConfirmTransferKey_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_MsgService_ConfirmKeyTransfer_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_ConfirmTransferKey_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_ConfirmKeyTransfer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1192,7 +1192,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_VoteConfirmTransferKey_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_VoteConfirmKeyTransfer_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1201,14 +1201,14 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_MsgService_VoteConfirmTransferKey_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_MsgService_VoteConfirmKeyTransfer_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_VoteConfirmTransferKey_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_VoteConfirmKeyTransfer_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1384,7 +1384,7 @@ var (
 
 	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-erc20-deposit"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmTransferKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-transfer-ownership"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmKeyTransfer_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-transfer-ownership"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_VoteConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -1392,7 +1392,7 @@ var (
 
 	pattern_MsgService_VoteConfirmToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-token"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_VoteConfirmTransferKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-transfer-key"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_VoteConfirmKeyTransfer_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-transfer-key"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_CreateDeployToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-deploy-token"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -1420,7 +1420,7 @@ var (
 
 	forward_MsgService_ConfirmDeposit_0 = runtime.ForwardResponseMessage
 
-	forward_MsgService_ConfirmTransferKey_0 = runtime.ForwardResponseMessage
+	forward_MsgService_ConfirmKeyTransfer_0 = runtime.ForwardResponseMessage
 
 	forward_MsgService_VoteConfirmChain_0 = runtime.ForwardResponseMessage
 
@@ -1428,7 +1428,7 @@ var (
 
 	forward_MsgService_VoteConfirmToken_0 = runtime.ForwardResponseMessage
 
-	forward_MsgService_VoteConfirmTransferKey_0 = runtime.ForwardResponseMessage
+	forward_MsgService_VoteConfirmKeyTransfer_0 = runtime.ForwardResponseMessage
 
 	forward_MsgService_CreateDeployToken_0 = runtime.ForwardResponseMessage
 

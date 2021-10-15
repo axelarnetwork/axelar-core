@@ -208,7 +208,7 @@ func GetCmdConfirmTransferOwnership() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Ownership, keyID)
+			msg := types.NewConfirmKeyTransferRequest(cliCtx.GetFromAddress(), chain, txID, types.Ownership, keyID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -235,7 +235,7 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
+			msg := types.NewConfirmKeyTransferRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -45,8 +45,8 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("votes on confirmation of deposit %s started", msg.TxID.Hex())
 			}
 			return result, err
-		case *types.ConfirmTransferKeyRequest:
-			res, err := server.ConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
+		case *types.ConfirmKeyTransferRequest:
+			res, err := server.ConfirmKeyTransfer(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
@@ -73,8 +73,8 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = res.Log
 			}
 			return result, err
-		case *types.VoteConfirmTransferKeyRequest:
-			res, err := server.VoteConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
+		case *types.VoteConfirmKeyTransferRequest:
+			res, err := server.VoteConfirmKeyTransfer(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = res.Log

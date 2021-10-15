@@ -129,14 +129,14 @@ message BatchedCommands {
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
 }
 
-enum TransferKeyType {
+enum KeyTransferType {
   option (gogoproto.goproto_enum_prefix) = false;
 
-  TRANSFER_KEY_TYPE_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "UnspecifiedTransferKeyType" ];
-  TRANSFER_KEY_TYPE_OWNERSHIP = 1
+  KEY_TRANSFER_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "UnspecifiedKeyTransferType" ];
+  KEY_TRANSFER_TYPE_OWNERSHIP = 1
       [ (gogoproto.enumvalue_customname) = "Ownership" ];
-  TRANSFER_KEY_TYPE_OPERATORSHIP = 2
+  KEY_TRANSFER_TYPE_OPERATORSHIP = 2
       [ (gogoproto.enumvalue_customname) = "Operatorship" ];
 }
 
@@ -156,20 +156,22 @@ enum SigType {
   SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
 }
 
-// TransferKey contains information for a transfer ownership or operatorship
-message TransferKey {
+// KeyTransferMetadata contains information for a transfer ownership or
+// operatorship
+message KeyTransferMetadata {
 
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  TransferKeyType type = 2;
+  KeyTransferType type = 2;
   string next_key_id = 3 [
     (gogoproto.customname) = "NextKeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
+  Status status = 4;
 }
 
 enum DepositStatus {

@@ -282,7 +282,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 }
 
 // GetHandlerConfirmTransferKey returns a handler to confirm a transfer ownership
-func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.TransferKeyType) http.HandlerFunc {
+func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.KeyTransferType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmTransferKey
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
@@ -299,7 +299,7 @@ func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.T
 
 		txID := common.HexToHash(req.TxID)
 
-		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, transferKeyType, req.KeyID)
+		msg := types.NewConfirmKeyTransferRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, transferKeyType, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

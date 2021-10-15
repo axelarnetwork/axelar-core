@@ -111,17 +111,17 @@
     - [Command](#evm.v1beta1.Command)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
+    - [KeyTransferMetadata](#evm.v1beta1.KeyTransferMetadata)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
     - [TokenDetails](#evm.v1beta1.TokenDetails)
     - [TransactionMetadata](#evm.v1beta1.TransactionMetadata)
-    - [TransferKey](#evm.v1beta1.TransferKey)
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [KeyTransferType](#evm.v1beta1.KeyTransferType)
     - [SigType](#evm.v1beta1.SigType)
     - [Status](#evm.v1beta1.Status)
-    - [TransferKeyType](#evm.v1beta1.TransferKeyType)
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
@@ -143,10 +143,10 @@
     - [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse)
     - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
+    - [ConfirmKeyTransferRequest](#evm.v1beta1.ConfirmKeyTransferRequest)
+    - [ConfirmKeyTransferResponse](#evm.v1beta1.ConfirmKeyTransferResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
-    - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
-    - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
     - [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest)
     - [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse)
     - [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest)
@@ -167,10 +167,10 @@
     - [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse)
     - [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest)
     - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
+    - [VoteConfirmKeyTransferRequest](#evm.v1beta1.VoteConfirmKeyTransferRequest)
+    - [VoteConfirmKeyTransferResponse](#evm.v1beta1.VoteConfirmKeyTransferResponse)
     - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
     - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
-    - [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest)
-    - [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse)
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
@@ -1700,6 +1700,25 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
+<a name="evm.v1beta1.KeyTransferMetadata"></a>
+
+### KeyTransferMetadata
+KeyTransferMetadata contains information for a transfer ownership or
+operatorship
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `type` | [KeyTransferType](#evm.v1beta1.KeyTransferType) |  |  |
+| `next_key_id` | [string](#string) |  |  |
+| `status` | [Status](#evm.v1beta1.Status) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.NetworkInfo"></a>
 
 ### NetworkInfo
@@ -1766,23 +1785,6 @@ results to evm relay transaction types
 
 
 
-
-<a name="evm.v1beta1.TransferKey"></a>
-
-### TransferKey
-TransferKey contains information for a transfer ownership or operatorship
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
-| `next_key_id` | [string](#string) |  |  |
-
-
-
-
-
  <!-- end messages -->
 
 
@@ -1814,6 +1816,19 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
+<a name="evm.v1beta1.KeyTransferType"></a>
+
+### KeyTransferType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_TRANSFER_TYPE_UNSPECIFIED | 0 |  |
+| KEY_TRANSFER_TYPE_OWNERSHIP | 1 |  |
+| KEY_TRANSFER_TYPE_OPERATORSHIP | 2 |  |
+
+
+
 <a name="evm.v1beta1.SigType"></a>
 
 ### SigType
@@ -1838,19 +1853,6 @@ TransferKey contains information for a transfer ownership or operatorship
 | STATUS_INITIALIZED | 1 |  |
 | STATUS_PENDING | 2 |  |
 | STATUS_CONFIRMED | 4 |  |
-
-
-
-<a name="evm.v1beta1.TransferKeyType"></a>
-
-### TransferKeyType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TRANSFER_KEY_TYPE_UNSPECIFIED | 0 |  |
-| TRANSFER_KEY_TYPE_OWNERSHIP | 1 |  |
-| TRANSFER_KEY_TYPE_OPERATORSHIP | 2 |  |
 
 
  <!-- end enums -->
@@ -2127,6 +2129,35 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
+<a name="evm.v1beta1.ConfirmKeyTransferRequest"></a>
+
+### ConfirmKeyTransferRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `transfer_type` | [KeyTransferType](#evm.v1beta1.KeyTransferType) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmKeyTransferResponse"></a>
+
+### ConfirmKeyTransferResponse
+
+
+
+
+
+
+
 <a name="evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
@@ -2148,35 +2179,6 @@ MsgConfirmToken represents a token deploy confirmation message
 <a name="evm.v1beta1.ConfirmTokenResponse"></a>
 
 ### ConfirmTokenResponse
-
-
-
-
-
-
-
-<a name="evm.v1beta1.ConfirmTransferKeyRequest"></a>
-
-### ConfirmTransferKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ConfirmTransferKeyResponse"></a>
-
-### ConfirmTransferKeyResponse
 
 
 
@@ -2487,6 +2489,42 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
+<a name="evm.v1beta1.VoteConfirmKeyTransferRequest"></a>
+
+### VoteConfirmKeyTransferRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `transfer_type` | [KeyTransferType](#evm.v1beta1.KeyTransferType) |  |  |
+| `new_address` | [bytes](#bytes) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.VoteConfirmKeyTransferResponse"></a>
+
+### VoteConfirmKeyTransferResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.VoteConfirmTokenRequest"></a>
 
 ### VoteConfirmTokenRequest
@@ -2510,42 +2548,6 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 <a name="evm.v1beta1.VoteConfirmTokenResponse"></a>
 
 ### VoteConfirmTokenResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.VoteConfirmTransferKeyRequest"></a>
-
-### VoteConfirmTransferKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
-| `new_address` | [bytes](#bytes) |  |  |
-| `confirmed` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.VoteConfirmTransferKeyResponse"></a>
-
-### VoteConfirmTransferKeyResponse
 
 
 
@@ -2591,11 +2593,11 @@ Msg defines the evm Msg service.
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
-| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
+| `ConfirmKeyTransfer` | [ConfirmKeyTransferRequest](#evm.v1beta1.ConfirmKeyTransferRequest) | [ConfirmKeyTransferResponse](#evm.v1beta1.ConfirmKeyTransferResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote-confirm-chain|
 | `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | POST|/axelar/evm/vote-confirm-deposit|
 | `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | POST|/axelar/evm/vote-confirm-token|
-| `VoteConfirmTransferKey` | [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest) | [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
+| `VoteConfirmKeyTransfer` | [VoteConfirmKeyTransferRequest](#evm.v1beta1.VoteConfirmKeyTransferRequest) | [VoteConfirmKeyTransferResponse](#evm.v1beta1.VoteConfirmKeyTransferResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
 | `CreateDeployToken` | [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create-deploy-token|
 | `CreateBurnTokens` | [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `SignTx` | [SignTxRequest](#evm.v1beta1.SignTxRequest) | [SignTxResponse](#evm.v1beta1.SignTxResponse) |  | POST|/axelar/evm/sign-tx|

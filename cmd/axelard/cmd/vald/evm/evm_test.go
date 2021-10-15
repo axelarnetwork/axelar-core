@@ -403,7 +403,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t,msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -513,7 +513,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.True(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.True(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -536,7 +536,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -550,7 +550,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("new owner mismatch", testutils.Func(func(t *testing.T) {
@@ -563,7 +563,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
@@ -581,7 +581,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 
 	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
@@ -594,7 +594,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmKeyTransferRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -643,4 +643,3 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
 	return msg.(*axelarnetTypes.RefundMsgRequest).GetInnerMessage()
 }
-

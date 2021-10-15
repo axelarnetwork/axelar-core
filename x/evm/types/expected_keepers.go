@@ -57,9 +57,9 @@ type ChainKeeper interface {
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	SetGatewayAddress(ctx sdk.Context, addr common.Address)
-	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
-	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
+	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (KeyTransferMetadata, bool)
+	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *KeyTransferMetadata)
+	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (KeyTransferMetadata, bool)
 	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
 	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)

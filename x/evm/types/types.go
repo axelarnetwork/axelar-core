@@ -439,35 +439,33 @@ func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, sym
 	}, nil
 }
 
-// CreateTransferOwnershipCommand creates a command to transfer ownership of the contract
-func CreateTransferOwnershipCommand(chainID *big.Int, keyID tss.KeyID, newOwnerAddr common.Address) (Command, error) {
-	params, err := createTransferOwnershipParams(newOwnerAddr)
+// CreateTransferCommand creates a command to transfer ownership/operatorship of the contract
+func CreateTransferCommand(transferType KeyTransferType, chainID *big.Int, keyID tss.KeyID, newAddr common.Address) (Command, error) {
+	var cmd string
+	var gasCost uint32
+
+	switch transferType {
+	case Ownership:
+		cmd = axelarGatewayCommandTransferOwnership
+		gasCost = transferOwnershipMaxGasCost
+	case Operatorship:
+		cmd = axelarGatewayCommandTransferOperatorship
+		gasCost = transferOperatorshipMaxGasCost
+	default:
+		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
+	}
+
+	params, err := createTransferParams(newAddr)
 	if err != nil {
 		return Command{}, err
 	}
 
 	return Command{
-		ID:         NewCommandID(newOwnerAddr.Bytes(), chainID),
-		Command:    axelarGatewayCommandTransferOwnership,
+		ID:         NewCommandID(newAddr.Bytes(), chainID),
+		Command:    cmd,
 		Params:     params,
 		KeyID:      keyID,
-		MaxGasCost: transferOwnershipMaxGasCost,
-	}, nil
-}
-
-// CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
-func CreateTransferOperatorshipCommand(chainID *big.Int, keyID tss.KeyID, newOperatorAddr common.Address) (Command, error) {
-	params, err := createTransferOperatorshipParams(newOperatorAddr)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return Command{
-		ID:         NewCommandID(newOperatorAddr.Bytes(), chainID),
-		Command:    axelarGatewayCommandTransferOperatorship,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: transferOperatorshipMaxGasCost,
+		MaxGasCost: gasCost,
 	}, nil
 }
 
@@ -591,7 +589,7 @@ func (c *CommandID) Unmarshal(data []byte) error {
 }
 
 // TransferKeyTypeFromSimpleStr converts a given string into TransferKeyType
-func TransferKeyTypeFromSimpleStr(str string) (TransferKeyType, error) {
+func TransferKeyTypeFromSimpleStr(str string) (KeyTransferType, error) {
 	switch strings.ToLower(str) {
 	case Ownership.SimpleString():
 		return Ownership, nil
@@ -603,7 +601,7 @@ func TransferKeyTypeFromSimpleStr(str string) (TransferKeyType, error) {
 }
 
 // Validate returns an error if the TransferKeyType is invalid; nil otherwise
-func (t TransferKeyType) Validate() error {
+func (t KeyTransferType) Validate() error {
 	switch t {
 	case Ownership, Operatorship:
 		return nil
@@ -613,7 +611,7 @@ func (t TransferKeyType) Validate() error {
 }
 
 // SimpleString returns a human-readable string representing the TransferKeyType
-func (t TransferKeyType) SimpleString() string {
+func (t KeyTransferType) SimpleString() string {
 	switch t {
 	case Ownership:
 		return "transfer_ownership"
@@ -782,7 +780,7 @@ func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	return result, nil
 }
 
-func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) {
+func createTransferParams(newOwnerAddr common.Address) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
@@ -790,21 +788,6 @@ func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) 
 
 	arguments := abi.Arguments{{Type: addressType}}
 	result, err := arguments.Pack(newOwnerAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func createTransferOperatorshipParams(newOperatorAddr common.Address) ([]byte, error) {
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(newOperatorAddr)
 	if err != nil {
 		return nil, err
 	}
