@@ -339,10 +339,10 @@ func (k chainKeeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, de
 func (k chainKeeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 	var deposit types.ERC20Deposit
 
-	if !k.getStore(ctx, k.chain).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chain).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.CONFIRMED, true
 	}
-	if !k.getStore(ctx, k.chain).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chain).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
 		return deposit, types.BURNED, true
 	}
 
