@@ -40,8 +40,6 @@ var (
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
-	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
-	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands")
 
 	commandQueueName = "command_queue"
@@ -439,41 +437,6 @@ func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, sta
 func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 	k.getStore(ctx, k.chain).Delete(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, k.chain).Delete(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
-}
-
-// SetPendingTransferKey stores a pending transfer ownership/operatorship
-func (k chainKeeper) SetPendingTransferKey(ctx sdk.Context, key exported.PollKey, transferKey *types.KeyTransferMetadata) {
-	k.getStore(ctx, k.chain).Set(pendingTransferKeyPrefix.AppendStr(key.String()), transferKey)
-}
-
-// DeletePendingTransferKey deletes a pending transfer ownership/operatorship
-func (k chainKeeper) DeletePendingTransferKey(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chain).Delete(pendingTransferKeyPrefix.AppendStr(key.String()))
-}
-
-// ArchiveTransferKey archives an ownership transfer so it is no longer pending but can still be queried
-func (k chainKeeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
-	var transferKey types.KeyTransferMetadata
-	if !k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
-		k.DeletePendingTransferKey(ctx, key)
-		k.getStore(ctx, k.chain).Set(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-	}
-}
-
-// GetArchivedTransferKey returns an archived transfer of ownership/operatorship associated with the given poll
-func (k chainKeeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (types.KeyTransferMetadata, bool) {
-	var transferKey types.KeyTransferMetadata
-	found := k.getStore(ctx, k.chain).Get(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-
-	return transferKey, found
-}
-
-// GetPendingTransferKey returns the transfer ownership/operatorship associated with the given poll
-func (k chainKeeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (types.KeyTransferMetadata, bool) {
-	var transferKey types.KeyTransferMetadata
-	found := k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-
-	return transferKey, found
 }
 
 // StartKeyTransfer initializes a key transfer for the given key and type
