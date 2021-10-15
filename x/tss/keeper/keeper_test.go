@@ -90,7 +90,7 @@ func setup() *testSetup {
 		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}
 
-	k := NewKeeper(encCfg.Amino, sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k
