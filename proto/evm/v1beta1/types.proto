@@ -109,7 +109,7 @@ enum BatchedCommandsStatus {
       [ (gogoproto.enumvalue_customname) = "BatchSigned" ];
 }
 
-message CommandCutterMetadata {
+/*message CommandCutterMetadata {
   repeated BatchedCommands signed = 1 [ (gogoproto.nullable) = false ];
   BatchedCommands unsigned = 2 [ (gogoproto.nullable) = false ];
   bytes chain_id = 3 [
@@ -117,9 +117,9 @@ message CommandCutterMetadata {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-}
+}*/
 
-message BatchedCommands {
+message CommandBatchMetadata {
   bytes id = 1 [ (gogoproto.customname) = "ID" ];
   repeated bytes command_ids = 2 [
     (gogoproto.nullable) = false,

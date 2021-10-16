@@ -106,10 +106,9 @@
   
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
     - [Asset](#evm.v1beta1.Asset)
-    - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
-    - [CommandCutterMetadata](#evm.v1beta1.CommandCutterMetadata)
+    - [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
@@ -1602,27 +1601,6 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="evm.v1beta1.BatchedCommands"></a>
-
-### BatchedCommands
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [bytes](#bytes) |  |  |
-| `command_ids` | [bytes](#bytes) | repeated |  |
-| `data` | [bytes](#bytes) |  |  |
-| `sig_hash` | [bytes](#bytes) |  |  |
-| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.BurnerInfo"></a>
 
 ### BurnerInfo
@@ -1662,17 +1640,21 @@ that is deposited by an user
 
 
 
-<a name="evm.v1beta1.CommandCutterMetadata"></a>
+<a name="evm.v1beta1.CommandBatchMetadata"></a>
 
-### CommandCutterMetadata
+### CommandBatchMetadata
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `signed` | [BatchedCommands](#evm.v1beta1.BatchedCommands) | repeated |  |
-| `unsigned` | [BatchedCommands](#evm.v1beta1.BatchedCommands) |  |  |
-| `chain_id` | [bytes](#bytes) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+| `command_ids` | [bytes](#bytes) | repeated |  |
+| `data` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 

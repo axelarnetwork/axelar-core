@@ -833,8 +833,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	cutter := keeper.GetCommandCutter(ctx)
-	if err := cutter.EnqueueCommand(cmd); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -890,8 +889,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
-		cutter := keeper.GetCommandCutter(ctx)
-		if err := cutter.EnqueueCommand(cmd); err != nil {
+		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
 
@@ -1057,8 +1055,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
-		cutter := keeper.GetCommandCutter(ctx)
-		if err := cutter.EnqueueCommand(cmd); err != nil {
+		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
 	}
@@ -1154,8 +1151,7 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 		return nil, err
 	}
 
-	cutter := keeper.GetCommandCutter(ctx)
-	if err := cutter.EnqueueCommand(cmd); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -1175,8 +1171,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 		return nil, err
 	}
 
-	cutter := keeper.GetCommandCutter(ctx)
-	if err := cutter.EnqueueCommand(cmd); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -1191,18 +1186,17 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}
 
 	keeper := s.ForChain(chain.Name)
-	cutter := keeper.GetCommandCutter(ctx)
-	err := cutter.CreateNewBatchToSign()
+	id, err := keeper.CreateNewBatchToSign(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// if no error was thrown above, the batch exists
-	batchedCommands := cutter.GetUnsigned()
+	batchedCommands := keeper.GetBatchByID(ctx, id)
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.GetKeyID())
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.GetKeyID())
 	}
 
 	sigMetadata := types.SigMetadata{
@@ -1210,11 +1204,11 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Chain: chain.Name,
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           batchedCommands.KeyID,
+		KeyID:           batchedCommands.GetKeyID(),
 		SigID:           batchedCommandsIDHex,
-		Msg:             batchedCommands.SigHash.Bytes(),
+		Msg:             batchedCommands.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
@@ -1232,7 +1226,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.ID}, nil
+	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {

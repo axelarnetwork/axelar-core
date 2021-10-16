@@ -25,14 +25,16 @@ import (
 )
 
 var (
-	gatewayKey         = utils.KeyFromStr("gateway")
-	batchedCommandsKey = utils.KeyFromStr("batched_commands")
+	gatewayKey             = utils.KeyFromStr("gateway")
+	unsignedBatchIDKey     = utils.KeyFromStr("unsigned_command_batch_id")
+	latestSignedBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
 
 	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx")
 	tokenMetadataPrefix       = utils.KeyFromStr("token_deployment")
 	pendingDepositPrefix      = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix    = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix       = utils.KeyFromStr("burned_deposit")
+	commandBatchPrefix        = utils.KeyFromStr("command_batch")
 	commandPrefix             = utils.KeyFromStr("command")
 	burnerAddrPrefix          = utils.KeyFromStr("burnerAddr")
 	pendingTransferKeyPrefix  = utils.KeyFromStr("pending_transfer_key")
@@ -287,8 +289,8 @@ func (k chainKeeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Tok
 	}, metadata)
 }
 
-// stores the given command; note that overwriting is not allowed
-func (k chainKeeper) setCommand(ctx sdk.Context, command types.Command) error {
+// EnqueueCommand stores the given command; note that overwriting is not allowed
+func (k chainKeeper) EnqueueCommand(ctx sdk.Context, command types.Command) error {
 	key := commandPrefix.AppendStr(command.ID.Hex())
 	if k.getStore(ctx, k.chain).Has(key) {
 		return fmt.Errorf("command %s already exists", command.ID.Hex())
@@ -516,39 +518,107 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.I
 	return nil
 }
 
-func (k chainKeeper) GetCommandCutter(ctx sdk.Context) types.CommandCutter {
-	commandCutterMetadata, ok := k.getBatchedCommandsMetadata(ctx)
+func (k chainKeeper) getUnsigned(ctx sdk.Context) types.CommandBatchMetadata {
+	var unsigned types.CommandBatchMetadata
+	if id := k.getStore(ctx, k.chain).GetRaw(unsignedBatchIDKey); id != nil {
+		k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &unsigned)
+	}
+
+	return unsigned
+}
+
+func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
+	var cmd types.Command
+	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
+	return cmd, ok
+}
+
+func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
+	k.getStore(ctx, k.chain).Set(commandBatchPrefix.AppendStr(string(meta.ID)), &meta)
+}
+
+// GetBatchByID retrieves the specified batch if it exists
+func (k chainKeeper) GetBatchByID(ctx sdk.Context, id []byte) types.CommandBatch {
+	var batch types.CommandBatchMetadata
+	k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &batch)
+
+	setter := func(m types.CommandBatchMetadata) {
+		k.setCommandBatchMetadata(ctx, m)
+	}
+
+	return types.NewCommandBatch(batch, setter)
+}
+
+// GetLatestCommandBatch returns the latest batch of signed commands, if it exists
+func (k chainKeeper) GetLatestCommandBatch(ctx sdk.Context) types.CommandBatch {
+	if batch := k.getUnsigned(ctx); batch.Status != types.BatchNonExistent {
+		setter := func(m types.CommandBatchMetadata) {}
+		if batch.Status != types.BatchSigned {
+			setter = func(m types.CommandBatchMetadata) {
+				k.setCommandBatchMetadata(ctx, m)
+			}
+		}
+		return types.NewCommandBatch(batch, setter)
+	}
+
+	var batch types.CommandBatchMetadata
+	if id := k.getStore(ctx, k.chain).GetRaw(latestSignedBatchIDKey); id != nil {
+		k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &batch)
+	}
+
+	return types.NewCommandBatch(batch, func(types.CommandBatchMetadata) {})
+}
+
+// CreateNewBatchToSign creates a new batch of commands to be signed
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
+	unsigned := k.getUnsigned(ctx)
+	if unsigned.Status == types.BatchSigning || unsigned.Status == types.BatchAborted {
+		return nil, fmt.Errorf("signing for command batch '%s' is still in progress", unsigned.ID)
+	}
+
+	if unsigned.Status == types.BatchSigned {
+		k.getStore(ctx, k.chain).SetRaw(latestSignedBatchIDKey, unsigned.ID)
+	}
+
+	command, ok := k.popCommand(ctx)
 	if !ok {
-		commandCutterMetadata.Unsigned = types.NilBatch
-		commandCutterMetadata.ChainID = sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
-	}
-	commandsGasLimit := k.getCommandsGasLimit(ctx)
-
-	push := func(cmd types.Command) error {
-		return k.setCommand(ctx, cmd)
-
-	}
-	pop := func(filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
-		var cmd types.Command
-		ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
-		return cmd, ok
-	}
-	set := func(meta types.CommandCutterMetadata) {
-		k.setBatchedCommandsMetadata(ctx, meta)
+		return nil, fmt.Errorf("no commands to sign found")
 	}
 
-	return types.NewCommandCutter(commandCutterMetadata, commandsGasLimit, push, pop, set)
-}
+	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
+	gasLimit := k.getCommandsGasLimit(ctx)
+	gasCost := uint32(command.MaxGasCost)
+	keyID := command.KeyID
+	filter := func(value codec.ProtoMarshaler) bool {
+		cmd, ok := value.(*types.Command)
+		gasCost += cmd.MaxGasCost
 
-func (k chainKeeper) setBatchedCommandsMetadata(ctx sdk.Context, meta types.CommandCutterMetadata) {
-	k.getStore(ctx, k.chain).Set(batchedCommandsKey, &meta)
-}
+		return ok && cmd.KeyID == keyID && gasCost <= gasLimit
+	}
 
-func (k chainKeeper) getBatchedCommandsMetadata(ctx sdk.Context) (types.CommandCutterMetadata, bool) {
-	var meta types.CommandCutterMetadata
-	found := k.getStore(ctx, k.chain).Get(batchedCommandsKey, &meta)
+	commands := []types.Command{command.Clone()}
+	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
+	for {
+		cmd, ok := k.popCommand(ctx, filter)
+		if !ok {
+			break
+		}
+		commands = append(commands, cmd.Clone())
+	}
 
-	return meta, found
+	batchedCommands, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
+	if err != nil {
+		return nil, err
+	}
+
+	if latestSignedBatchedCommands := k.GetLatestCommandBatch(ctx); latestSignedBatchedCommands.Is(types.BatchSigned) {
+		batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommands.GetID()
+	}
+
+	k.setCommandBatchMetadata(ctx, batchedCommands)
+	k.getStore(ctx, k.chain).SetRaw(unsignedBatchIDKey, batchedCommands.ID)
+
+	return batchedCommands.ID, nil
 }
 
 // returns the queue of commands

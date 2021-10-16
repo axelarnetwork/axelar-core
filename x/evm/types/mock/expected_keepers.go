@@ -2184,6 +2184,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
+// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, error) {
+// 				panic("mock out the CreateNewBatchToSign method")
+// 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
 // 			},
@@ -2193,8 +2196,14 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			DeletePendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)  {
 // 				panic("mock out the DeletePendingTransferKey method")
 // 			},
+// 			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error {
+// 				panic("mock out the EnqueueCommand method")
+// 			},
 // 			GetArchivedTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool) {
 // 				panic("mock out the GetArchivedTransferKey method")
+// 			},
+// 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
+// 				panic("mock out the GetBatchByID method")
 // 			},
 // 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
@@ -2207,9 +2216,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 // 				panic("mock out the GetChainIDByNetwork method")
-// 			},
-// 			GetCommandCutterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandCutter {
-// 				panic("mock out the GetCommandCutter method")
 // 			},
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
@@ -2228,6 +2234,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash {
 // 				panic("mock out the GetHashToSign method")
+// 			},
+// 			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
+// 				panic("mock out the GetLatestCommandBatch method")
 // 			},
 // 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
 // 				panic("mock out the GetMinVoterCount method")
@@ -2296,6 +2305,9 @@ type ChainKeeperMock struct {
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
 
+	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
+	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, error)
+
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)
 
@@ -2305,8 +2317,14 @@ type ChainKeeperMock struct {
 	// DeletePendingTransferKeyFunc mocks the DeletePendingTransferKey method.
 	DeletePendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)
 
+	// EnqueueCommandFunc mocks the EnqueueCommand method.
+	EnqueueCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error
+
 	// GetArchivedTransferKeyFunc mocks the GetArchivedTransferKey method.
 	GetArchivedTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool)
+
+	// GetBatchByIDFunc mocks the GetBatchByID method.
+	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
 	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
@@ -2319,9 +2337,6 @@ type ChainKeeperMock struct {
 
 	// GetChainIDByNetworkFunc mocks the GetChainIDByNetwork method.
 	GetChainIDByNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int
-
-	// GetCommandCutterFunc mocks the GetCommandCutter method.
-	GetCommandCutterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandCutter
 
 	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
@@ -2340,6 +2355,9 @@ type ChainKeeperMock struct {
 
 	// GetHashToSignFunc mocks the GetHashToSign method.
 	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash
+
+	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
+	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
 
 	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
 	GetMinVoterCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool)
@@ -2419,6 +2437,11 @@ type ChainKeeperMock struct {
 			// Details is the details argument value.
 			Details types.TokenDetails
 		}
+		// CreateNewBatchToSign holds details about calls to the CreateNewBatchToSign method.
+		CreateNewBatchToSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -2440,12 +2463,26 @@ type ChainKeeperMock struct {
 			// Key is the key argument value.
 			Key vote.PollKey
 		}
+		// EnqueueCommand holds details about calls to the EnqueueCommand method.
+		EnqueueCommand []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Cmd is the cmd argument value.
+			Cmd types.Command
+		}
 		// GetArchivedTransferKey holds details about calls to the GetArchivedTransferKey method.
 		GetArchivedTransferKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key vote.PollKey
+		}
+		// GetBatchByID holds details about calls to the GetBatchByID method.
+		GetBatchByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ID is the id argument value.
+			ID []byte
 		}
 		// GetBurnerAddressAndSalt holds details about calls to the GetBurnerAddressAndSalt method.
 		GetBurnerAddressAndSalt []struct {
@@ -2476,11 +2513,6 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Network is the network argument value.
 			Network string
-		}
-		// GetCommandCutter holds details about calls to the GetCommandCutter method.
-		GetCommandCutter []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetConfirmedDeposits holds details about calls to the GetConfirmedDeposits method.
 		GetConfirmedDeposits []struct {
@@ -2519,6 +2551,11 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// RawTx is the rawTx argument value.
 			RawTx *evmTypes.Transaction
+		}
+		// GetLatestCommandBatch holds details about calls to the GetLatestCommandBatch method.
+		GetLatestCommandBatch []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
 		GetMinVoterCount []struct {
@@ -2637,21 +2674,24 @@ type ChainKeeperMock struct {
 	lockArchiveTransferKey            sync.RWMutex
 	lockAssembleTx                    sync.RWMutex
 	lockCreateERC20Token              sync.RWMutex
+	lockCreateNewBatchToSign          sync.RWMutex
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeletePendingDeposit          sync.RWMutex
 	lockDeletePendingTransferKey      sync.RWMutex
+	lockEnqueueCommand                sync.RWMutex
 	lockGetArchivedTransferKey        sync.RWMutex
+	lockGetBatchByID                  sync.RWMutex
 	lockGetBurnerAddressAndSalt       sync.RWMutex
 	lockGetBurnerByteCodes            sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
-	lockGetCommandCutter              sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetERC20Token                 sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetGatewayByteCodes           sync.RWMutex
 	lockGetHashToSign                 sync.RWMutex
+	lockGetLatestCommandBatch         sync.RWMutex
 	lockGetMinVoterCount              sync.RWMutex
 	lockGetName                       sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
@@ -2784,6 +2824,37 @@ func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
 	return calls
 }
 
+// CreateNewBatchToSign calls CreateNewBatchToSignFunc.
+func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, error) {
+	if mock.CreateNewBatchToSignFunc == nil {
+		panic("ChainKeeperMock.CreateNewBatchToSignFunc: method is nil but ChainKeeper.CreateNewBatchToSign was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockCreateNewBatchToSign.Lock()
+	mock.calls.CreateNewBatchToSign = append(mock.calls.CreateNewBatchToSign, callInfo)
+	mock.lockCreateNewBatchToSign.Unlock()
+	return mock.CreateNewBatchToSignFunc(ctx)
+}
+
+// CreateNewBatchToSignCalls gets all the calls that were made to CreateNewBatchToSign.
+// Check the length with:
+//     len(mockedChainKeeper.CreateNewBatchToSignCalls())
+func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockCreateNewBatchToSign.RLock()
+	calls = mock.calls.CreateNewBatchToSign
+	mock.lockCreateNewBatchToSign.RUnlock()
+	return calls
+}
+
 // DeleteDeposit calls DeleteDepositFunc.
 func (mock *ChainKeeperMock) DeleteDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit) {
 	if mock.DeleteDepositFunc == nil {
@@ -2889,6 +2960,41 @@ func (mock *ChainKeeperMock) DeletePendingTransferKeyCalls() []struct {
 	return calls
 }
 
+// EnqueueCommand calls EnqueueCommandFunc.
+func (mock *ChainKeeperMock) EnqueueCommand(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error {
+	if mock.EnqueueCommandFunc == nil {
+		panic("ChainKeeperMock.EnqueueCommandFunc: method is nil but ChainKeeper.EnqueueCommand was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Cmd types.Command
+	}{
+		Ctx: ctx,
+		Cmd: cmd,
+	}
+	mock.lockEnqueueCommand.Lock()
+	mock.calls.EnqueueCommand = append(mock.calls.EnqueueCommand, callInfo)
+	mock.lockEnqueueCommand.Unlock()
+	return mock.EnqueueCommandFunc(ctx, cmd)
+}
+
+// EnqueueCommandCalls gets all the calls that were made to EnqueueCommand.
+// Check the length with:
+//     len(mockedChainKeeper.EnqueueCommandCalls())
+func (mock *ChainKeeperMock) EnqueueCommandCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Cmd types.Command
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Cmd types.Command
+	}
+	mock.lockEnqueueCommand.RLock()
+	calls = mock.calls.EnqueueCommand
+	mock.lockEnqueueCommand.RUnlock()
+	return calls
+}
+
 // GetArchivedTransferKey calls GetArchivedTransferKeyFunc.
 func (mock *ChainKeeperMock) GetArchivedTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool) {
 	if mock.GetArchivedTransferKeyFunc == nil {
@@ -2921,6 +3027,41 @@ func (mock *ChainKeeperMock) GetArchivedTransferKeyCalls() []struct {
 	mock.lockGetArchivedTransferKey.RLock()
 	calls = mock.calls.GetArchivedTransferKey
 	mock.lockGetArchivedTransferKey.RUnlock()
+	return calls
+}
+
+// GetBatchByID calls GetBatchByIDFunc.
+func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
+	if mock.GetBatchByIDFunc == nil {
+		panic("ChainKeeperMock.GetBatchByIDFunc: method is nil but ChainKeeper.GetBatchByID was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  []byte
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetBatchByID.Lock()
+	mock.calls.GetBatchByID = append(mock.calls.GetBatchByID, callInfo)
+	mock.lockGetBatchByID.Unlock()
+	return mock.GetBatchByIDFunc(ctx, id)
+}
+
+// GetBatchByIDCalls gets all the calls that were made to GetBatchByID.
+// Check the length with:
+//     len(mockedChainKeeper.GetBatchByIDCalls())
+func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  []byte
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  []byte
+	}
+	mock.lockGetBatchByID.RLock()
+	calls = mock.calls.GetBatchByID
+	mock.lockGetBatchByID.RUnlock()
 	return calls
 }
 
@@ -3065,37 +3206,6 @@ func (mock *ChainKeeperMock) GetChainIDByNetworkCalls() []struct {
 	mock.lockGetChainIDByNetwork.RLock()
 	calls = mock.calls.GetChainIDByNetwork
 	mock.lockGetChainIDByNetwork.RUnlock()
-	return calls
-}
-
-// GetCommandCutter calls GetCommandCutterFunc.
-func (mock *ChainKeeperMock) GetCommandCutter(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandCutter {
-	if mock.GetCommandCutterFunc == nil {
-		panic("ChainKeeperMock.GetCommandCutterFunc: method is nil but ChainKeeper.GetCommandCutter was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetCommandCutter.Lock()
-	mock.calls.GetCommandCutter = append(mock.calls.GetCommandCutter, callInfo)
-	mock.lockGetCommandCutter.Unlock()
-	return mock.GetCommandCutterFunc(ctx)
-}
-
-// GetCommandCutterCalls gets all the calls that were made to GetCommandCutter.
-// Check the length with:
-//     len(mockedChainKeeper.GetCommandCutterCalls())
-func (mock *ChainKeeperMock) GetCommandCutterCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetCommandCutter.RLock()
-	calls = mock.calls.GetCommandCutter
-	mock.lockGetCommandCutter.RUnlock()
 	return calls
 }
 
@@ -3298,6 +3408,37 @@ func (mock *ChainKeeperMock) GetHashToSignCalls() []struct {
 	mock.lockGetHashToSign.RLock()
 	calls = mock.calls.GetHashToSign
 	mock.lockGetHashToSign.RUnlock()
+	return calls
+}
+
+// GetLatestCommandBatch calls GetLatestCommandBatchFunc.
+func (mock *ChainKeeperMock) GetLatestCommandBatch(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
+	if mock.GetLatestCommandBatchFunc == nil {
+		panic("ChainKeeperMock.GetLatestCommandBatchFunc: method is nil but ChainKeeper.GetLatestCommandBatch was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetLatestCommandBatch.Lock()
+	mock.calls.GetLatestCommandBatch = append(mock.calls.GetLatestCommandBatch, callInfo)
+	mock.lockGetLatestCommandBatch.Unlock()
+	return mock.GetLatestCommandBatchFunc(ctx)
+}
+
+// GetLatestCommandBatchCalls gets all the calls that were made to GetLatestCommandBatch.
+// Check the length with:
+//     len(mockedChainKeeper.GetLatestCommandBatchCalls())
+func (mock *ChainKeeperMock) GetLatestCommandBatchCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetLatestCommandBatch.RLock()
+	calls = mock.calls.GetLatestCommandBatch
+	mock.lockGetLatestCommandBatch.RUnlock()
 	return calls
 }
 

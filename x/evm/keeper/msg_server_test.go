@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
-	rand2 "math/rand"
 	"strings"
 	"testing"
 
@@ -87,28 +86,6 @@ func TestCreateBurnTokens(t *testing.T) {
 			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {},
 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{}
-			},
-			GetCommandCutterFunc: func(sdk.Context) types.CommandCutter {
-				metadata := types.CommandCutterMetadata{
-					ChainID: sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10000))),
-				}
-				push := func(c types.Command) error {
-					commandsSet = append(commandsSet, c)
-					return nil
-
-				}
-				pop := func(filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
-					return types.Command{}, false
-				}
-				set := func(meta types.CommandCutterMetadata) {}
-
-				return types.NewCommandCutter(
-					metadata,
-					rand2.Uint32(),
-					push,
-					pop,
-					set,
-				)
 			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
@@ -212,7 +189,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), depositCount)
 		assert.Len(t, evmChainKeeper.SetDepositCalls(), depositCount)
-		assert.Len(t, evmChainKeeper.GetCommandCutterCalls(), depositCount)
+		assert.Len(t, evmChainKeeper.EnqueueCommandCalls(), depositCount)
 
 		for _, setDepositCall := range evmChainKeeper.SetDepositCalls() {
 			assert.Equal(t, types.BURNED, setDepositCall.State)
@@ -272,7 +249,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 3)
 		assert.Len(t, evmChainKeeper.SetDepositCalls(), 3)
-		assert.Len(t, evmChainKeeper.GetCommandCutterCalls(), 1)
+		assert.Len(t, evmChainKeeper.EnqueueCommandCalls(), 1)
 	}).Repeat(repeats))
 }
 
@@ -1282,27 +1259,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
-			GetCommandCutterFunc: func(sdk.Context) types.CommandCutter {
-				metadata := types.CommandCutterMetadata{
-					ChainID: sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10000))),
-				}
-				push := func(cmd types.Command) error {
-					return nil
 
-				}
-				pop := func(filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
-					return types.Command{}, false
-				}
-				set := func(meta types.CommandCutterMetadata) {}
-
-				return types.NewCommandCutter(
-					metadata,
-					rand2.Uint32(),
-					push,
-					pop,
-					set,
-				)
-			},
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
@@ -1338,7 +1295,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(chaink.GetCommandCutterCalls()))
+		assert.Equal(t, 1, len(chaink.EnqueueCommandCalls()))
 	}).Repeat(repeats))
 
 	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {

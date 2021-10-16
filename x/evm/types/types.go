@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -511,138 +510,74 @@ func (c Command) Clone() Command {
 	return clone
 }
 
-// CommandCutter manages batches of axelar gateway commands
-type CommandCutter struct {
-	metadata         CommandCutterMetadata
-	commandsGasLimit uint32
+// NilBatch is a nil batch of commands
+var NilBatch = CommandBatch{}
 
-	push    func(Command) error
-	pop     func(filters ...func(value codec.ProtoMarshaler) bool) (Command, bool)
-	setMeta func(meta CommandCutterMetadata)
+// CommandBatch represents a batch of commands
+type CommandBatch struct {
+	metadata CommandBatchMetadata
+	setter   func(batch CommandBatchMetadata)
 }
 
-// NewCommandCutter is the constructor for BatchedCommands
-func NewCommandCutter(
-	meta CommandCutterMetadata,
-	gasLimit uint32,
-	push func(Command) error,
-	pop func(filters ...func(value codec.ProtoMarshaler) bool) (Command, bool),
-	setMeta func(meta CommandCutterMetadata),
-
-) CommandCutter {
-	return CommandCutter{
-		metadata:         meta,
-		commandsGasLimit: gasLimit,
-		push:             push,
-		pop:              pop,
-		setMeta:          setMeta,
+// NewCommandBatch returns a new command batch struct
+func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBatchMetadata)) CommandBatch {
+	return CommandBatch{
+		metadata: metadata,
+		setter:   setter,
 	}
 }
 
-// GetBatchByID retrieves the specified batch if it exists
-func (b *CommandCutter) GetBatchByID(id []byte) (BatchedCommands, bool) {
-	if bytes.Equal(b.metadata.Unsigned.ID, id) {
-		return b.metadata.Unsigned, true
-	}
-
-	var batch BatchedCommands
-	for _, unsigned := range b.metadata.Signed {
-		if bytes.Equal(unsigned.ID, id) {
-			batch = unsigned
-			break
-		}
-	}
-
-	return batch, bytes.Equal(batch.ID, id)
+// GetPrevBatchedCommandsID returns the batch that preceeds this one
+func (b *CommandBatch) GetPrevBatchedCommandsID() []byte {
+	return b.metadata.PrevBatchedCommandsID
 }
 
-// EnqueueCommand adds a command to be added to a batch
-func (b *CommandCutter) EnqueueCommand(cmd Command) error {
-	return b.push(cmd)
+// GetStatus returns the batch's status
+func (b *CommandBatch) GetStatus() BatchedCommandsStatus {
+	return b.metadata.Status
 }
 
-// GetUnsigned returns the batched commands waiting to be signed
-func (b *CommandCutter) GetUnsigned() BatchedCommands {
-	return b.metadata.Unsigned
+// GetData returns the batch's data
+func (b *CommandBatch) GetData() []byte {
+	return b.metadata.Data
 }
 
-// CreateNewBatchToSign creates a new batch of commands to be signed
-func (b *CommandCutter) CreateNewBatchToSign() error {
-	if b.GetUnsigned().ID != nil && !b.GetUnsigned().Is(BatchNonExistent) {
-		return fmt.Errorf("signing for batched commands '%s' is still in progress", b.GetUnsigned().ID)
-	}
+// GetID returns the batch ID
+func (b *CommandBatch) GetID() []byte {
+	return b.metadata.ID
 
-	command, ok := b.pop()
-	if !ok {
-		return fmt.Errorf("no commands to sign found")
-	}
-
-	gasCost := uint32(command.MaxGasCost)
-	keyID := command.KeyID
-	filter := func(value codec.ProtoMarshaler) bool {
-		cmd, ok := value.(*Command)
-		gasCost += cmd.MaxGasCost
-
-		return ok && cmd.KeyID == keyID && gasCost <= b.commandsGasLimit
-	}
-
-	commands := []Command{command.Clone()}
-	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
-	for {
-		cmd, ok := b.pop(filter)
-		if !ok {
-			break
-		}
-		commands = append(commands, cmd.Clone())
-	}
-
-	batchedCommands, err := newBatch(b.metadata.ChainID.BigInt(), keyID, commands)
-	if err != nil {
-		return err
-	}
-
-	if latestSignedBatchedCommands, ok := b.GetLatestSignedBatchedCommands(); ok {
-		batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommands.ID
-	}
-
-	b.metadata.Unsigned = batchedCommands
-	b.setMeta(b.metadata)
-	return nil
 }
 
-// SetStatusForUnsigned sets the status of the unsigned batch, returns true if status was updated
-func (b *CommandCutter) SetStatusForUnsigned(status BatchedCommandsStatus) bool {
-	if (b.GetUnsigned().Status == BatchSigning ||
-		b.GetUnsigned().Status == BatchAborted) &&
-		status != BatchNonExistent {
+// GetKeyID returns the batch's key ID
+func (b *CommandBatch) GetKeyID() tss.KeyID {
+	return b.metadata.KeyID
 
-		b.metadata.Unsigned.Status = status
-		if status == BatchSigned {
-			b.metadata.Signed = append(b.metadata.Signed, b.GetUnsigned())
-			b.metadata.Unsigned = NilBatch
+}
 
-		}
+// GetSigHash returns the batch's key ID
+func (b *CommandBatch) GetSigHash() Hash {
+	return b.metadata.SigHash
 
-		b.setMeta(b.metadata)
+}
+
+// Is returns true if batched commands is in the given status; false otherwise
+func (b *CommandBatch) Is(status BatchedCommandsStatus) bool {
+	return b.metadata.Status == status
+}
+
+// SetStatus sets the status for the batch, returning true if the status was updated
+func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
+	if b.metadata.Status != BatchNonExistent && b.metadata.Status != BatchSigned {
+		b.metadata.Status = status
+		b.setter(b.metadata)
 		return true
 	}
 
 	return false
 }
 
-// GetLatestSignedBatchedCommands returns the latest batch of signed commands, if it exists
-func (b *CommandCutter) GetLatestSignedBatchedCommands() (BatchedCommands, bool) {
-	if len(b.metadata.Signed) > 0 {
-		return b.metadata.Signed[len(b.metadata.Signed)-1], true
-	}
-
-	return BatchedCommands{}, false
-}
-
-// NilBatch is a nil batch of commands
-var NilBatch = BatchedCommands{}
-
-func newBatch(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommands, error) {
+// NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
+func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
@@ -655,10 +590,10 @@ func newBatch(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommand
 
 	data, err := packArguments(chainID, commandIDs, commands, commandParams)
 	if err != nil {
-		return BatchedCommands{}, err
+		return CommandBatchMetadata{}, err
 	}
 
-	return BatchedCommands{
+	return CommandBatchMetadata{
 		ID:         crypto.Keccak256(data),
 		CommandIDs: commandIDs,
 		Data:       data,
@@ -666,11 +601,6 @@ func newBatch(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommand
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
-}
-
-// Is returns true if batched commands is in the given status; false otherwise
-func (b BatchedCommands) Is(status BatchedCommandsStatus) bool {
-	return b.Status == status
 }
 
 const commandIDSize = 32
