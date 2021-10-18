@@ -1,25 +1,27 @@
-## axelard query tx
+## axelard query ibc-transfer escrow-address
 
-Query for a transaction by hash, addr++seq combination or signature in a committed block
+Get the escrow address for a channel
 
 ### Synopsis
 
-Example:
-$ <appd> query tx <hash>
-$ <appd> query tx --type=acc_seq <addr>:<sequence>
-$ <appd> query tx --type=signature \<sig1_base64,sig2_base64...>
+Get the escrow address for a channel
 
 ```
-axelard query tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature] [flags]
+axelard query ibc-transfer escrow-address [flags]
+```
+
+### Examples
+
+```
+<appd> query ibc-transfer escrow-address [port] [channel-id]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for tx
+  -h, --help          help for escrow-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --type string   The type to be used when querying tx, can be one of "hash", "acc_seq", "signature" (default "hash")
 ```
 
 ### Options inherited from parent commands
@@ -35,4 +37,4 @@ axelard query tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature] [flags
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands

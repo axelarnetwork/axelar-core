@@ -248,40 +248,31 @@ func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, exte
 		AddOp(txscript.OP_EQUAL).
 		AddOp(txscript.OP_IF)
 	// if (externalMultiSigThreshold + 1) signatures exist on the stack
-	for i := 0; i < int(externalMultiSigThreshold+1); i++ {
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
 		builder = builder.AddOp(txscript.OP_TOALTSTACK)
 	}
 	builder = builder.AddOp(txscript.OP_0)
-	for i := 0; i < int(externalMultiSigThreshold+1); i++ {
+	for i := 0; i < int(externalMultiSigThreshold); i++ {
 		builder = builder.AddOp(txscript.OP_FROMALTSTACK)
 	}
 
-	builder = builder.AddOp(txscript.OP_0)
-	for i := 0; i < int(externalMultiSigThreshold); i++ {
-		builder = builder.
-			AddInt64(externalMultiSigThreshold).
-			AddOp(txscript.OP_PICK)
-	}
 	builder = builder.AddInt64(externalMultiSigThreshold)
 	for _, externelKey := range externalKeys {
 		builder = builder.AddData(externelKey.SerializeCompressed())
 	}
 	builder = builder.
 		AddInt64(int64(len(externalKeys))).
-		AddOp(txscript.OP_CHECKMULTISIGVERIFY)
-
-	builder = builder.
-		AddInt64(externalMultiSigThreshold + 1).
+		// Verify m/n multisig from external keys
+		AddOp(txscript.OP_CHECKMULTISIGVERIFY).
+		AddOp(txscript.OP_0).
+		AddOp(txscript.OP_SWAP).
+		AddInt64(1).
 		AddData(pubKey1.SerializeCompressed()).
-		AddData(pubKey2.SerializeCompressed())
-	for _, externelKey := range externalKeys {
-		builder = builder.AddData(externelKey.SerializeCompressed())
-	}
-	builder = builder.
-		AddInt64(int64(len(externalKeys)) + 2).
-		AddOp(txscript.OP_CHECKMULTISIG)
-	// if one signature exists on the stack
-	builder = builder.AddOp(txscript.OP_ELSE).
+		AddData(pubKey2.SerializeCompressed()).
+		AddInt64(2).
+		// Verify 1/2 multisig from internalKey1 and internalKey2
+		AddOp(txscript.OP_CHECKMULTISIG).
+		AddOp(txscript.OP_ELSE).
 		AddOp(txscript.OP_DEPTH).
 		AddOp(txscript.OP_1).
 		AddOp(txscript.OP_EQUALVERIFY).
@@ -294,6 +285,7 @@ func createTimelockScript(pubKey1 btcec.PublicKey, pubKey2 btcec.PublicKey, exte
 		AddData(pubKey1.SerializeCompressed()).
 		AddData(pubKey2.SerializeCompressed()).
 		AddOp(txscript.OP_2).
+		// Verify 1/2 multisig from internalKey1 and internalKey2
 		AddOp(txscript.OP_CHECKMULTISIG).
 		AddOp(txscript.OP_ENDIF)
 	redeemScript, err := builder.Script()
@@ -609,19 +601,19 @@ func (m UnsignedTx) Is(status TxStatus) bool {
 	return m.Status == status
 }
 
-// EnableTimelockAndRBF enables timelock(https://en.bitcoin.it/wiki/Timelock) and replace-by-fee(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) on the given transaction.
-func EnableTimelockAndRBF(tx *wire.MsgTx) *wire.MsgTx {
+// DisableTimelock disables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
+func DisableTimelock(tx *wire.MsgTx) *wire.MsgTx {
 	for i := range tx.TxIn {
-		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum - 1
+		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum
 	}
 
 	return tx
 }
 
-// DisableTimelockAndRBF disables timelock(https://en.bitcoin.it/wiki/Timelock) and replace-by-fee(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki) on the given transaction.
-func DisableTimelockAndRBF(tx *wire.MsgTx) *wire.MsgTx {
+// EnableTimelock enables timelock(https://en.bitcoin.it/wiki/Timelock) on the given transaction.
+func EnableTimelock(tx *wire.MsgTx) *wire.MsgTx {
 	for i := range tx.TxIn {
-		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum
+		tx.TxIn[i].Sequence = wire.MaxTxInSequenceNum - 1
 	}
 
 	return tx

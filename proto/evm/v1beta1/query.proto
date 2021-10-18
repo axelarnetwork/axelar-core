@@ -32,6 +32,17 @@ message QueryAddressResponse {
   string key_id = 2 [ (gogoproto.customname) = "KeyID" ];
 }
 
+message QueryDepositStateParams {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes burner_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 amount = 3;
+}
+
 message QueryDepositStateResponse {
   string log = 1;
   DepositStatus status = 2;

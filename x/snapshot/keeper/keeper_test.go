@@ -147,17 +147,15 @@ func TestSnapshots(t *testing.T) {
 			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
 			assert.Error(t, err)
 
-			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
-
-			counter++
+			counter += 2
 			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
 
 			assert.NoError(t, err)
 
-			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 1)
+			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 2)
 
 			assert.True(t, ok)
-			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
+			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(2))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(), snapshot.Validators[i].GetSDKValidator().GetConsensusPower())
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())

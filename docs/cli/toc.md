@@ -55,7 +55,7 @@
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [deploy-gateway \[chain\]](axelard_query_evm_deploy-gateway.md)	 - Obtain a raw transaction for the deployment of Axelar Gateway.
       - [deposit-address \[evm chain\] \[recipient chain\] \[recipient address\] \[symbol\]](axelard_query_evm_deposit-address.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
-      - [deposit-state \[chain\] \[txID\] \[deposit address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
+      - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [send-tx \[chain\] \[txID\]](axelard_query_evm_send-tx.md)	 - Send a transaction that spends tx \[txID\] to chain \[chain\]
@@ -100,6 +100,7 @@
     - [ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
       - [denom-trace \[hash\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
       - [denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
+      - [escrow-address](axelard_query_ibc-transfer_escrow-address.md)	 - Get the escrow address for a channel
       - [params](axelard_query_ibc-transfer_params.md)	 - Query the current ibc-transfer parameters
     - [mint](axelard_query_mint.md)	 - Querying commands for the minting module
       - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
@@ -140,7 +141,7 @@
       - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
       - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
-    - [tx \[hash\]](axelard_query_tx.md)	 - Query for a transaction by hash in a committed block
+    - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, addr++seq combination or signature in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied

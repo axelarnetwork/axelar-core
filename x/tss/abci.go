@@ -153,8 +153,8 @@ func startSign(
 		return err
 	}
 
-	nonParticipantShareCounts := make([]int64, 0, len(excluded))
-	nonParticipants := make([]string, 0, len(excluded))
+	nonParticipantShareCounts := make([]int64, len(excluded))
+	nonParticipants := make([]string, len(excluded))
 	for i, validator := range excluded {
 		nonParticipants[i] = validator.GetSDKValidator().String()
 		nonParticipantShareCounts[i] = validator.ShareCount

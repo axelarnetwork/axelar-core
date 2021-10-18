@@ -243,7 +243,7 @@ func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
 	voterCount := p.getVoterCount()
 
 	return utils.NewThreshold(majorityShare.Int64(), p.GetTotalShareCount().Int64()).GTE(p.VotingThreshold) &&
-		(voterCount == p.GetTotalVoterCount() || voterCount >= p.MinVoterCount)
+		(p.GetTotalVoterCount() < p.MinVoterCount || voterCount >= p.MinVoterCount)
 }
 
 func (p *Poll) cannotWin(majorityShare sdk.Int) bool {
