@@ -65,7 +65,6 @@ func TestCreateBurnTokens(t *testing.T) {
 		ctx            sdk.Context
 		req            *types.CreateBurnTokensRequest
 		secondaryKeyID tss.KeyID
-		commandsSet    []types.Command
 	)
 
 	repeats := 20
@@ -73,7 +72,6 @@ func TestCreateBurnTokens(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name)
 		secondaryKeyID = tssTestUtils.RandKeyID()
-		commandsSet = nil
 
 		evmChainKeeper = &mock.ChainKeeperMock{
 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
@@ -87,6 +85,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{}
 			},
+			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
 			ForChainFunc: func(string) types.ChainKeeper {
@@ -196,12 +195,12 @@ func TestCreateBurnTokens(t *testing.T) {
 		}
 
 		commandIDSeen := make(map[string]bool)
-		for _, commandSet := range commandsSet {
-			_, ok := commandIDSeen[commandSet.ID.Hex()]
-			commandIDSeen[commandSet.ID.Hex()] = true
+		for _, command := range evmChainKeeper.EnqueueCommandCalls() {
+			_, ok := commandIDSeen[command.Cmd.ID.Hex()]
+			commandIDSeen[command.Cmd.ID.Hex()] = true
 
 			assert.False(t, ok)
-			assert.Equal(t, secondaryKeyID, commandSet.KeyID)
+			assert.Equal(t, secondaryKeyID, command.Cmd.KeyID)
 		}
 	}).Repeat(repeats))
 
@@ -1266,6 +1265,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				}
 				return createMockERC20Token(asset, details), nil
 			},
+
+			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 		}
 
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
