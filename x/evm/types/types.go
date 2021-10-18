@@ -510,9 +510,6 @@ func (c Command) Clone() Command {
 	return clone
 }
 
-// NilBatch is a nil batch of commands
-var NilBatch = CommandBatch{}
-
 // CommandBatch represents a batch of commands
 type CommandBatch struct {
 	metadata CommandBatchMetadata

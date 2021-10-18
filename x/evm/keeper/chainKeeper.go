@@ -572,12 +572,15 @@ func (k chainKeeper) GetLatestCommandBatch(ctx sdk.Context) types.CommandBatch {
 // CreateNewBatchToSign creates a new batch of commands to be signed
 func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
 	unsigned := k.getUnsigned(ctx)
-	if unsigned.Status == types.BatchSigning || unsigned.Status == types.BatchAborted {
+	switch k.getUnsigned(ctx).Status {
+	case types.BatchSigning:
+		fallthrough
+	case types.BatchAborted:
 		return nil, fmt.Errorf("signing for command batch '%s' is still in progress", unsigned.ID)
-	}
-
-	if unsigned.Status == types.BatchSigned {
+	case types.BatchSigned:
 		k.getStore(ctx, k.chain).SetRaw(latestSignedBatchIDKey, unsigned.ID)
+	default:
+		// first batch to be created
 	}
 
 	command, ok := k.popCommand(ctx)
