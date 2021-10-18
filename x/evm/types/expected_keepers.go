@@ -73,7 +73,6 @@ type ChainKeeper interface {
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
 	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
 
-	//GetCommandCutter(ctx sdk.Context) CommandCutter
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	CreateNewBatchToSign(ctx sdk.Context) ([]byte, error)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
