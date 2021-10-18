@@ -171,6 +171,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		keys.Commands(app.DefaultNodeHome),
 	)
 
+	// Add rosetta command
+	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
+
 	defaults := map[string]string{
 		flags.FlagKeyringBackend:   "test",
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,

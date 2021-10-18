@@ -152,6 +152,7 @@
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+  - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
