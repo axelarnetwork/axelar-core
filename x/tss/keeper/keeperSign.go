@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -30,9 +32,8 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
 
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, height, exported.AckType_Sign.String(), info.SigID)
-	bz := k.cdc.MustMarshalLengthPrefixed(info)
-	ctx.KVStore(k.storeKey).Set([]byte(key), bz)
+	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(height, 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
+	k.getStore(ctx).Set(key, &info)
 
 	k.emitAckEvent(ctx, types.AttributeValueSign, info.KeyID, info.SigID, height)
 	k.Logger(ctx).Info(fmt.Sprintf(
@@ -44,16 +45,15 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 
 // GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
 func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignInfo {
-	prefix := fmt.Sprintf("%s%d_%s_", scheduledSignPrefix, ctx.BlockHeight(), exported.AckType_Sign.String())
-	store := ctx.KVStore(k.storeKey)
+	prefix := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String())
 	var infos []exported.SignInfo
 
-	iter := sdk.KVStorePrefixIterator(store, []byte(prefix))
+	iter := k.getStore(ctx).Iterator(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		var info exported.SignInfo
-		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &info)
+		iter.UnmarshalValue(&info)
 		infos = append(infos, info)
 	}
 
@@ -62,8 +62,9 @@ func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignI
 
 // DeleteScheduledSign removes a keygen request for the current height
 func (k Keeper) DeleteScheduledSign(ctx sdk.Context, sigID string) {
-	key := fmt.Sprintf("%s%d_%s_%s", scheduledSignPrefix, ctx.BlockHeight(), exported.AckType_Sign, sigID)
-	ctx.KVStore(k.storeKey).Delete([]byte(key))
+	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
+		AppendStr(exported.AckType_Sign.String()).AppendStr(sigID)
+	k.getStore(ctx).Delete(key)
 }
 
 // GetSig returns the signature associated with sigID
@@ -74,7 +75,7 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, expor
 		return exported.Signature{}, status
 	}
 
-	bz := ctx.KVStore(k.storeKey).Get([]byte(sigPrefix + sigID))
+	bz := k.getStore(ctx).GetRaw(sigPrefix.AppendStr(sigID))
 	if bz == nil {
 		return exported.Signature{}, exported.SigStatus_Invalid
 	}
@@ -82,7 +83,6 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, expor
 	btcecSig, err := btcec.ParseDERSignature(bz, btcec.S256())
 	if err != nil {
 		return exported.Signature{}, exported.SigStatus_Invalid
-
 	}
 
 	return exported.Signature{R: btcecSig.R, S: btcecSig.S}, exported.SigStatus_Signed
@@ -90,53 +90,43 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, expor
 
 // SetSig stores the given signature by its ID
 func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
-	ctx.KVStore(k.storeKey).Set([]byte(sigPrefix+sigID), signature)
+	k.getStore(ctx).SetRaw(sigPrefix.AppendStr(sigID), signature)
 }
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(infoForSigPrefix + sigID))
-	if bz == nil {
-		return exported.Key{}, false
-	}
 	var info exported.SignInfo
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &info)
-
+	k.getStore(ctx).Get(infoForSigPrefix.AppendStr(sigID), &info)
 	return k.GetKey(ctx, info.KeyID)
 }
 
 // SetInfoForSig stores key ID for the given sig ID
 func (k Keeper) SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo) {
-	bz := k.cdc.MustMarshalLengthPrefixed(info)
-	ctx.KVStore(k.storeKey).Set([]byte(infoForSigPrefix+sigID), bz)
+	k.getStore(ctx).Set(infoForSigPrefix.AppendStr(sigID), &info)
 }
 
 // GetInfoForSig stores key ID for the given sig ID
 func (k Keeper) GetInfoForSig(ctx sdk.Context, sigID string) (exported.SignInfo, bool) {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(infoForSigPrefix + sigID))
-	if bz == nil {
-		return exported.SignInfo{}, false
-	}
 	var info exported.SignInfo
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &info)
-	return info, true
+	ok := k.getStore(ctx).Get(infoForSigPrefix.AppendStr(sigID), &info)
+	return info, ok
 }
 
 // DeleteInfoForSig deletes the key ID associated with the given signature
 func (k Keeper) DeleteInfoForSig(ctx sdk.Context, sigID string) {
-	ctx.KVStore(k.storeKey).Delete([]byte(infoForSigPrefix + sigID))
+	k.getStore(ctx).Delete(infoForSigPrefix.AppendStr(sigID))
 }
 
 // SetSigStatus defines the status of some sign sig ID
 func (k Keeper) SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus) {
 	bz := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bz, uint32(status))
-	ctx.KVStore(k.storeKey).Set([]byte(sigStatusPrefix+sigID), bz)
+	k.getStore(ctx).SetRaw(sigStatusPrefix.AppendStr(sigID), bz)
 }
 
 // returns the status of a sig ID
 func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(sigStatusPrefix + sigID))
+	bz := k.getStore(ctx).GetRaw(sigStatusPrefix.AppendStr(sigID))
 	if bz == nil {
 		return exported.SigStatus_Unspecified
 	}
@@ -184,7 +174,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		activeValidators = append(activeValidators, validator)
 	}
 
-	selectedSigners := k.optimizedSigningSet(ctx, activeValidators, snap.CorruptionThreshold)
+	selectedSigners := k.optimizedSigningSet(activeValidators, snap.CorruptionThreshold)
 
 	for _, signer := range selectedSigners {
 		k.setParticipateInSign(ctx, sigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
@@ -195,7 +185,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 
 // selects a subset of the given participants whose total number of shares
 // represent the top of the list and amount to at least threshold+1.
-func (k Keeper) optimizedSigningSet(ctx sdk.Context, activeValidators []snapshot.Validator, threshold int64) []snapshot.Validator {
+func (k Keeper) optimizedSigningSet(activeValidators []snapshot.Validator, threshold int64) []snapshot.Validator {
 	if len(activeValidators) == 0 {
 		return []snapshot.Validator{}
 	}
@@ -217,18 +207,20 @@ func (k Keeper) optimizedSigningSet(ctx sdk.Context, activeValidators []snapshot
 }
 
 func (k Keeper) setParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress, shareCount int64) {
-	ctx.KVStore(k.storeKey).Set([]byte(participatePrefix+"sign_"+sigID+validator.String()), big.NewInt(shareCount).Bytes())
+	key := participatePrefix.AppendStr("sign").AppendStr(sigID).AppendStr(validator.String())
+	k.getStore(ctx).SetRaw(key, big.NewInt(shareCount).Bytes())
 }
 
 // GetSignParticipants returns the list of participants for specified sig ID
 func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
-	prefix := participatePrefix + "sign_" + sigID
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
+	prefix := participatePrefix.AppendStr("sign").AppendStr(sigID)
+
+	iter := k.getStore(ctx).Iterator(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	participants := make([]string, 0)
 	for ; iter.Valid(); iter.Next() {
-		participants = append(participants, strings.TrimPrefix(string(iter.Key()), prefix))
+		participants = append(participants, strings.TrimPrefix(string(iter.Key()), string(prefix.AsKey())+"_"))
 	}
 
 	return participants
@@ -236,8 +228,9 @@ func (k Keeper) GetSignParticipants(ctx sdk.Context, sigID string) []string {
 
 // GetSignParticipantsShares returns the list of participants share counts for specified sig ID
 func (k Keeper) GetSignParticipantsShares(ctx sdk.Context, sigID string) []int64 {
-	prefix := participatePrefix + "sign_" + sigID
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(prefix))
+	prefix := participatePrefix.AppendStr("sign").AppendStr(sigID)
+
+	iter := k.getStore(ctx).Iterator(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	shares := make([]int64, 0)
@@ -250,17 +243,19 @@ func (k Keeper) GetSignParticipantsShares(ctx sdk.Context, sigID string) []int64
 
 // GetSignParticipantsAsJSON returns the list of participants for specified sig ID in JSON format
 func (k Keeper) GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte {
-	return k.cdc.MustMarshalJSON(k.GetSignParticipants(ctx, sigID))
+	list, _ := json.Marshal(k.GetSignParticipants(ctx, sigID))
+	return list
 }
 
 // GetSignParticipantsSharesAsJSON returns the list of participant share counts for specified sig ID in JSON format
 func (k Keeper) GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte {
-	return k.cdc.MustMarshalJSON(k.GetSignParticipantsShares(ctx, sigID))
+	list, _ := json.Marshal(k.GetSignParticipantsShares(ctx, sigID))
+	return list
 }
 
 // DoesValidatorParticipateInSign returns true if given validator participates in signing for the given sig ID; otherwise, false
 func (k Keeper) DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool {
-	return ctx.KVStore(k.storeKey).Has([]byte(participatePrefix + "sign_" + sigID + validator.String()))
+	return k.getStore(ctx).Has(participatePrefix.AppendStr("sign").AppendStr(sigID).AppendStr(validator.String()))
 }
 
 // PenalizeCriminal penalizes the criminal caught during tss protocol according to the given crime type
