@@ -210,7 +210,6 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	}
 
 	keygenAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
-	signAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
 
 	queryKeygen := createNewBlockEventQuery(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenStart, err := tmEvents.Subscribe(eventBus, queryKeygen)
@@ -222,6 +221,12 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	signStart, err := tmEvents.Subscribe(eventBus, querySign)
 	if err != nil {
 		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
+	}
+
+	querySignAck := createNewBlockEventQuery(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
+	signAck, err := tmEvents.Subscribe(eventBus, querySignAck)
+	if err != nil {
+		panic(fmt.Errorf("unable to subscribe with sign ack event query: %v", err))
 	}
 
 	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)

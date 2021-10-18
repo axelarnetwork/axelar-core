@@ -460,7 +460,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+			if _, err := s.signer.EnqueueSign(ctx, tss.SignInfo{
 				KeyID:           sigRequirement.KeyID,
 				SigID:           sigID,
 				Msg:             sigRequirement.SigHash,

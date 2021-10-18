@@ -939,7 +939,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		Chain: chain.Name,
 	}
 
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+	if _, err := s.signer.EnqueueSign(ctx, tss.SignInfo{
 		KeyID:           keyID,
 		SigID:           hash.Hex(),
 		Msg:             hash.Bytes(),
@@ -1214,7 +1214,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}
 
 	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+	if _, err := s.signer.EnqueueSign(ctx, tss.SignInfo{
 		KeyID:           batchedCommands.KeyID,
 		SigID:           batchedCommandsIDHex,
 		Msg:             batchedCommands.SigHash.Bytes(),

@@ -19,15 +19,25 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
-func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
+const signInfoQueueName = "sign_info"
+
+// EnqueueSign enqueue the pending sign info into a queue and returns the position of the added sign info.
+// Returns error if queue is full
+func (k Keeper) EnqueueSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 	status := k.getSigStatus(ctx, info.SigID)
 	if status == exported.SigStatus_Signed ||
 		status == exported.SigStatus_Signing ||
-		status == exported.SigStatus_Scheduled {
+		status == exported.SigStatus_Scheduled ||
+		status == exported.SigStatus_Queued {
 		return -1, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
+	return k.GetSignInfoQueue(ctx, k.GetSignInfoQueueSize(ctx)).Enqueue(&info)
+}
+
+// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
+// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64 {
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
 	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
@@ -40,7 +50,7 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
 		info.SigID, info.KeyID, height, ctx.BlockHeight()))
 
-	return height, nil
+	return height
 }
 
 // GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
@@ -267,4 +277,9 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 	default:
 		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
 	}
+}
+
+// GetSignInfoQueue returns the queue of sign info
+func (k Keeper) GetSignInfoQueue(ctx sdk.Context, size int64) utils.SequenceQueue {
+	return utils.NewSequenceKVQueue(signInfoQueueName, k.getStore(ctx), size, k.Logger(ctx))
 }

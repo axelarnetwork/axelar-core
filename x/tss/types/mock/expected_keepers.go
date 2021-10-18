@@ -1281,6 +1281,9 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
+// 			GetMaxSigningSharesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the GetMaxSigningShares method")
+// 			},
 // 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
@@ -1341,7 +1344,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, req tsstypes.StartKeygenRequest) (int64, error) {
 // 				panic("mock out the ScheduleKeygen method")
 // 			},
-// 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
+// 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
 // 				panic("mock out the ScheduleSign method")
 // 			},
 // 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
@@ -1450,6 +1453,9 @@ type TSSKeeperMock struct {
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
 	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
 
+	// GetMaxSigningSharesFunc mocks the GetMaxSigningShares method.
+	GetMaxSigningSharesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
 
@@ -1511,7 +1517,7 @@ type TSSKeeperMock struct {
 	ScheduleKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, req tsstypes.StartKeygenRequest) (int64, error)
 
 	// ScheduleSignFunc mocks the ScheduleSign method.
-	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error)
+	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
 	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
@@ -1717,6 +1723,11 @@ type TSSKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
+		// GetMaxSigningShares holds details about calls to the GetMaxSigningShares method.
+		GetMaxSigningShares []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetNextKey holds details about calls to the GetNextKey method.
 		GetNextKey []struct {
@@ -2023,6 +2034,7 @@ type TSSKeeperMock struct {
 	lockGetKey                              sync.RWMutex
 	lockGetKeyForSigID                      sync.RWMutex
 	lockGetKeyRequirement                   sync.RWMutex
+	lockGetMaxSigningShares                 sync.RWMutex
 	lockGetNextKey                          sync.RWMutex
 	lockGetNextKeyID                        sync.RWMutex
 	lockGetOldActiveKeys                    sync.RWMutex
@@ -2833,6 +2845,37 @@ func (mock *TSSKeeperMock) GetKeyRequirementCalls() []struct {
 	return calls
 }
 
+// GetMaxSigningShares calls GetMaxSigningSharesFunc.
+func (mock *TSSKeeperMock) GetMaxSigningShares(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.GetMaxSigningSharesFunc == nil {
+		panic("TSSKeeperMock.GetMaxSigningSharesFunc: method is nil but TSSKeeper.GetMaxSigningShares was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMaxSigningShares.Lock()
+	mock.calls.GetMaxSigningShares = append(mock.calls.GetMaxSigningShares, callInfo)
+	mock.lockGetMaxSigningShares.Unlock()
+	return mock.GetMaxSigningSharesFunc(ctx)
+}
+
+// GetMaxSigningSharesCalls gets all the calls that were made to GetMaxSigningShares.
+// Check the length with:
+//     len(mockedTSSKeeper.GetMaxSigningSharesCalls())
+func (mock *TSSKeeperMock) GetMaxSigningSharesCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetMaxSigningShares.RLock()
+	calls = mock.calls.GetMaxSigningShares
+	mock.lockGetMaxSigningShares.RUnlock()
+	return calls
+}
+
 // GetNextKey calls GetNextKeyFunc.
 func (mock *TSSKeeperMock) GetNextKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 	if mock.GetNextKeyFunc == nil {
@@ -3574,7 +3617,7 @@ func (mock *TSSKeeperMock) ScheduleKeygenCalls() []struct {
 }
 
 // ScheduleSign calls ScheduleSignFunc.
-func (mock *TSSKeeperMock) ScheduleSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
+func (mock *TSSKeeperMock) ScheduleSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
 	if mock.ScheduleSignFunc == nil {
 		panic("TSSKeeperMock.ScheduleSignFunc: method is nil but TSSKeeper.ScheduleSign was just called")
 	}

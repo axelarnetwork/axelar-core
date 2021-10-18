@@ -810,11 +810,12 @@ SignInfo holds information about a sign request
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | SIG_STATUS_UNSPECIFIED | 0 |  |
-| SIG_STATUS_SCHEDULED | 1 |  |
-| SIG_STATUS_SIGNING | 2 |  |
-| SIG_STATUS_SIGNED | 3 |  |
-| SIG_STATUS_ABORTED | 4 |  |
-| SIG_STATUS_INVALID | 5 |  |
+| SIG_STATUS_QUEUED | 1 |  |
+| SIG_STATUS_SCHEDULED | 2 |  |
+| SIG_STATUS_SIGNING | 3 |  |
+| SIG_STATUS_SIGNED | 4 |  |
+| SIG_STATUS_ABORTED | 5 |  |
+| SIG_STATUS_INVALID | 6 |  |
 
 
  <!-- end enums -->
@@ -3288,6 +3289,8 @@ Params is the parameter set for this module
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `sign_info_queue_size` | [int64](#int64) |  |  |
+| `max_signing_shares` | [int64](#int64) |  |  |
 
 
 

@@ -78,7 +78,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
@@ -91,6 +91,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	height := s.Keeper.GetParams(s.Ctx).AckWindowInBlocks + s.Ctx.BlockHeight()
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
@@ -157,7 +158,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
@@ -170,6 +171,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	height := s.Keeper.GetParams(s.Ctx).AckWindowInBlocks + s.Ctx.BlockHeight()
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
@@ -200,7 +202,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
@@ -212,7 +214,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	msgToSign = []byte("second message")
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
@@ -238,9 +240,8 @@ func TestScheduleSignAtHeight(t *testing.T) {
 				SnapshotCounter: snapshotSeq + int64(i),
 			}
 			expectedInfos[i] = info
-			height, err := s.Keeper.ScheduleSign(s.Ctx, info)
+			height:= s.Keeper.ScheduleSign(s.Ctx, info)
 
-			assert.NoError(t, err)
 			assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
 		}
 
@@ -280,13 +281,12 @@ func TestScheduleSignEvents(t *testing.T) {
 		currentHeight := s.Ctx.BlockHeight()
 		keyID := exported.KeyID(rand2.Str(20))
 		sigID := rand2.Str(20)
-		height, err := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+		height := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
 			KeyID:           keyID,
 			SigID:           sigID,
 			Msg:             rand.Bytes(20),
 			SnapshotCounter: snap.Counter,
 		})
-		assert.NoError(t, err)
 		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
 
 		assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)

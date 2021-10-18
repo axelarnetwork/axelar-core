@@ -59,3 +59,164 @@ func TestNewBlockHeightKVQueue(t *testing.T) {
 		assert.Equal(t, items, actualItems)
 	}).Repeat(repeats))
 }
+func TestNewSequenceKVQueue(t *testing.T) {
+	repeats := 20
+
+	t.Run("enqueue within limit and dequeue", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		queueSize := rand.I64Between(10, 1000)
+		itemCount := rand.I64Between(0, queueSize)
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		currSize := int64(0)
+		kvQueue := NewSequenceKVQueue("test-enqueue-dequeue", store, queueSize, log.TestingLogger())
+		for _, item := range items {
+			pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: item})
+			currSize++
+			assert.Equal(t, err, nil)
+			assert.Equal(t, pos, currSize)
+			assert.Equal(t, kvQueue.Size(), currSize)
+		}
+
+		var actualItems []string
+		var actualItem gogoprototypes.StringValue
+		for seq := int64(0); seq < itemCount; seq++ {
+			kvQueue.DequeueSequence(&actualItem, seq)
+			actualItems = append(actualItems, actualItem.Value)
+		}
+		assert.Equal(t, items, actualItems)
+	}).Repeat(repeats))
+
+	t.Run("peek ith item, where i is smaller than queue size", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		queueSize := rand.I64Between(10, 1000)
+		itemCount := rand.I64Between(1, queueSize)
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		var currSize int64
+		kvQueue := NewSequenceKVQueue("test-enqueue-dequeue", store, queueSize, log.TestingLogger())
+		for _, item := range items {
+			pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: item})
+			currSize++
+			assert.Equal(t, err, nil)
+			assert.Equal(t, pos, currSize)
+			assert.Equal(t, kvQueue.Size(), currSize)
+		}
+
+		for i := int64(0); i < itemCount; i++ {
+			var actualItem gogoprototypes.StringValue
+			seq := kvQueue.Peek(i, &actualItem)
+			assert.Equal(t, items[i], actualItem.Value)
+			assert.Equal(t, i, seq)
+		}
+
+	}).Repeat(repeats))
+
+	t.Run("dequeue the last item", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		queueSize := rand.I64Between(10, 1000)
+		itemCount := rand.I64Between(1, queueSize)
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		var currSize int64
+		kvQueue := NewSequenceKVQueue("test-enqueue-dequeue", store, queueSize, log.TestingLogger())
+		for _, item := range items {
+			pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: item})
+			currSize ++
+			assert.Equal(t, err, nil)
+			assert.Equal(t, pos, currSize)
+			assert.Equal(t, kvQueue.Size(), currSize)
+		}
+
+		var actualItems []string
+		var actualItem gogoprototypes.StringValue
+		var reverseItems []string
+		for i := itemCount - 1; i > 0; i-- {
+			seq := kvQueue.Peek(i, &actualItem)
+			_ = kvQueue.DequeueSequence(&actualItem, seq)
+			actualItems = append(actualItems, actualItem.Value)
+			reverseItems = append(reverseItems, items[i])
+		}
+
+		assert.Equal(t, reverseItems, actualItems)
+
+	}).Repeat(repeats))
+
+	t.Run("should return error when enqueue item when queue size is full", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		queueSize := rand.I64Between(0, 1000)
+		itemCount := queueSize + 1
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		var currSize int64
+		kvQueue := NewSequenceKVQueue("test-enqueue-dequeue", store, queueSize, log.TestingLogger())
+		var i int64
+		for ; i < itemCount-1; i++ {
+			pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: items[i]})
+			currSize++
+			assert.Equal(t, err, nil)
+			assert.Equal(t, pos, currSize)
+			assert.Equal(t, kvQueue.Size(), currSize)
+		}
+		pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: items[i]})
+		assert.Error(t, err)
+		assert.Equal(t, pos, int64(-1))
+		assert.Equal(t, kvQueue.Size(), currSize)
+
+	}).Repeat(repeats))
+
+	t.Run("should return false when dequeue sequence item when sequence is not found", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		queueSize := rand.I64Between(0, 1000)
+		itemCount := rand.I64Between(1, queueSize)
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		var currSize int64
+		kvQueue := NewSequenceKVQueue("test-enqueue-dequeue", store, queueSize, log.TestingLogger())
+		var i int64
+		for ; i < itemCount-1; i++ {
+			pos, err := kvQueue.Enqueue(&gogoprototypes.StringValue{Value: items[i]})
+			currSize++
+			assert.Equal(t, err, nil)
+			assert.Equal(t, pos, currSize)
+			assert.Equal(t, kvQueue.Size(), currSize)
+		}
+
+		var actualItem gogoprototypes.StringValue
+
+		found := kvQueue.DequeueSequence(&actualItem, itemCount)
+		assert.Equal(t, false, found)
+
+	}).Repeat(repeats))
+
+}

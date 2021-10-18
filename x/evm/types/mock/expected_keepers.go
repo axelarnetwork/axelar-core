@@ -238,6 +238,9 @@ var _ types.Signer = &SignerMock{}
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
+// 			EnqueueSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
+// 				panic("mock out the EnqueueSign method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -268,9 +271,6 @@ var _ types.Signer = &SignerMock{}
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
-// 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-// 				panic("mock out the ScheduleSign method")
-// 			},
 // 		}
 //
 // 		// use mockedSigner in code that requires types.Signer
@@ -283,6 +283,9 @@ type SignerMock struct {
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error
+
+	// EnqueueSignFunc mocks the EnqueueSign method.
+	EnqueueSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -314,9 +317,6 @@ type SignerMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
 
-	// ScheduleSignFunc mocks the ScheduleSign method.
-	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
@@ -342,6 +342,13 @@ type SignerMock struct {
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		}
+		// EnqueueSign holds details about calls to the EnqueueSign method.
+		EnqueueSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Info is the info argument value.
+			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -419,16 +426,10 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
-		// ScheduleSign holds details about calls to the ScheduleSign method.
-		ScheduleSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Info is the info argument value.
-			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		}
 	}
 	lockAssertMatchesRequirements    sync.RWMutex
 	lockAssignNextKey                sync.RWMutex
+	lockEnqueueSign                  sync.RWMutex
 	lockGetCurrentKey                sync.RWMutex
 	lockGetCurrentKeyID              sync.RWMutex
 	lockGetExternalKeyIDs            sync.RWMutex
@@ -439,7 +440,6 @@ type SignerMock struct {
 	lockGetSig                       sync.RWMutex
 	lockGetSnapshotCounterForKeyID   sync.RWMutex
 	lockRotateKey                    sync.RWMutex
-	lockScheduleSign                 sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -529,6 +529,41 @@ func (mock *SignerMock) AssignNextKeyCalls() []struct {
 	mock.lockAssignNextKey.RLock()
 	calls = mock.calls.AssignNextKey
 	mock.lockAssignNextKey.RUnlock()
+	return calls
+}
+
+// EnqueueSign calls EnqueueSignFunc.
+func (mock *SignerMock) EnqueueSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
+	if mock.EnqueueSignFunc == nil {
+		panic("SignerMock.EnqueueSignFunc: method is nil but Signer.EnqueueSign was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+	}{
+		Ctx:  ctx,
+		Info: info,
+	}
+	mock.lockEnqueueSign.Lock()
+	mock.calls.EnqueueSign = append(mock.calls.EnqueueSign, callInfo)
+	mock.lockEnqueueSign.Unlock()
+	return mock.EnqueueSignFunc(ctx, info)
+}
+
+// EnqueueSignCalls gets all the calls that were made to EnqueueSign.
+// Check the length with:
+//     len(mockedSigner.EnqueueSignCalls())
+func (mock *SignerMock) EnqueueSignCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+	}
+	mock.lockEnqueueSign.RLock()
+	calls = mock.calls.EnqueueSign
+	mock.lockEnqueueSign.RUnlock()
 	return calls
 }
 
@@ -891,41 +926,6 @@ func (mock *SignerMock) RotateKeyCalls() []struct {
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
 	mock.lockRotateKey.RUnlock()
-	return calls
-}
-
-// ScheduleSign calls ScheduleSignFunc.
-func (mock *SignerMock) ScheduleSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-	if mock.ScheduleSignFunc == nil {
-		panic("SignerMock.ScheduleSignFunc: method is nil but Signer.ScheduleSign was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}{
-		Ctx:  ctx,
-		Info: info,
-	}
-	mock.lockScheduleSign.Lock()
-	mock.calls.ScheduleSign = append(mock.calls.ScheduleSign, callInfo)
-	mock.lockScheduleSign.Unlock()
-	return mock.ScheduleSignFunc(ctx, info)
-}
-
-// ScheduleSignCalls gets all the calls that were made to ScheduleSign.
-// Check the length with:
-//     len(mockedSigner.ScheduleSignCalls())
-func (mock *SignerMock) ScheduleSignCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}
-	mock.lockScheduleSign.RLock()
-	calls = mock.calls.ScheduleSign
-	mock.lockScheduleSign.RUnlock()
 	return calls
 }
 
