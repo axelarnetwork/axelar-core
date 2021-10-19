@@ -525,40 +525,40 @@ func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBat
 }
 
 // GetPrevBatchedCommandsID returns the batch that preceeds this one
-func (b *CommandBatch) GetPrevBatchedCommandsID() []byte {
+func (b CommandBatch) GetPrevBatchedCommandsID() []byte {
 	return b.metadata.PrevBatchedCommandsID
 }
 
 // GetStatus returns the batch's status
-func (b *CommandBatch) GetStatus() BatchedCommandsStatus {
+func (b CommandBatch) GetStatus() BatchedCommandsStatus {
 	return b.metadata.Status
 }
 
 // GetData returns the batch's data
-func (b *CommandBatch) GetData() []byte {
+func (b CommandBatch) GetData() []byte {
 	return b.metadata.Data
 }
 
 // GetID returns the batch ID
-func (b *CommandBatch) GetID() []byte {
+func (b CommandBatch) GetID() []byte {
 	return b.metadata.ID
 
 }
 
 // GetKeyID returns the batch's key ID
-func (b *CommandBatch) GetKeyID() tss.KeyID {
+func (b CommandBatch) GetKeyID() tss.KeyID {
 	return b.metadata.KeyID
 
 }
 
 // GetSigHash returns the batch's key ID
-func (b *CommandBatch) GetSigHash() Hash {
+func (b CommandBatch) GetSigHash() Hash {
 	return b.metadata.SigHash
 
 }
 
 // Is returns true if batched commands is in the given status; false otherwise
-func (b *CommandBatch) Is(status BatchedCommandsStatus) bool {
+func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
 }
 
