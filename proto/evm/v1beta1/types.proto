@@ -100,16 +100,16 @@ enum BatchedCommandsStatus {
   option (gogoproto.goproto_enum_prefix) = false;
 
   BATCHED_COMMANDS_STATUS_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "UnspecifiedBatchedCommandsStatus" ];
+      [ (gogoproto.enumvalue_customname) = "BatchNonExistent" ];
   BATCHED_COMMANDS_STATUS_SIGNING = 1
-      [ (gogoproto.enumvalue_customname) = "Signing" ];
+      [ (gogoproto.enumvalue_customname) = "BatchSigning" ];
   BATCHED_COMMANDS_STATUS_ABORTED = 2
-      [ (gogoproto.enumvalue_customname) = "Aborted" ];
+      [ (gogoproto.enumvalue_customname) = "BatchAborted" ];
   BATCHED_COMMANDS_STATUS_SIGNED = 3
-      [ (gogoproto.enumvalue_customname) = "Signed" ];
+      [ (gogoproto.enumvalue_customname) = "BatchSigned" ];
 }
 
-message BatchedCommands {
+message CommandBatchMetadata {
   bytes id = 1 [ (gogoproto.customname) = "ID" ];
   repeated bytes command_ids = 2 [
     (gogoproto.nullable) = false,

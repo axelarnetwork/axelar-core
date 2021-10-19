@@ -203,7 +203,7 @@ func (t *ERC20Token) ConfirmDeployment() error {
 	return nil
 }
 
-// NilToken returns a nil erc20 token
+// NilToken is a nil erc20 token
 var NilToken = ERC20Token{}
 
 // GetConfirmTokenKey creates a poll key for token confirmation
@@ -510,8 +510,71 @@ func (c Command) Clone() Command {
 	return clone
 }
 
-// NewBatchedCommands is the constructor for BatchedCommands
-func NewBatchedCommands(chainID *big.Int, keyID tss.KeyID, cmds []Command) (BatchedCommands, error) {
+// CommandBatch represents a batch of commands
+type CommandBatch struct {
+	metadata CommandBatchMetadata
+	setter   func(batch CommandBatchMetadata)
+}
+
+// NewCommandBatch returns a new command batch struct
+func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBatchMetadata)) CommandBatch {
+	return CommandBatch{
+		metadata: metadata,
+		setter:   setter,
+	}
+}
+
+// GetPrevBatchedCommandsID returns the batch that preceeds this one
+func (b CommandBatch) GetPrevBatchedCommandsID() []byte {
+	return b.metadata.PrevBatchedCommandsID
+}
+
+// GetStatus returns the batch's status
+func (b CommandBatch) GetStatus() BatchedCommandsStatus {
+	return b.metadata.Status
+}
+
+// GetData returns the batch's data
+func (b CommandBatch) GetData() []byte {
+	return b.metadata.Data
+}
+
+// GetID returns the batch ID
+func (b CommandBatch) GetID() []byte {
+	return b.metadata.ID
+
+}
+
+// GetKeyID returns the batch's key ID
+func (b CommandBatch) GetKeyID() tss.KeyID {
+	return b.metadata.KeyID
+
+}
+
+// GetSigHash returns the batch's key ID
+func (b CommandBatch) GetSigHash() Hash {
+	return b.metadata.SigHash
+
+}
+
+// Is returns true if batched commands is in the given status; false otherwise
+func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
+	return b.metadata.Status == status
+}
+
+// SetStatus sets the status for the batch, returning true if the status was updated
+func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
+	if b.metadata.Status != BatchNonExistent && b.metadata.Status != BatchSigned {
+		b.metadata.Status = status
+		b.setter(b.metadata)
+		return true
+	}
+
+	return false
+}
+
+// NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
+func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
@@ -524,22 +587,17 @@ func NewBatchedCommands(chainID *big.Int, keyID tss.KeyID, cmds []Command) (Batc
 
 	data, err := packArguments(chainID, commandIDs, commands, commandParams)
 	if err != nil {
-		return BatchedCommands{}, err
+		return CommandBatchMetadata{}, err
 	}
 
-	return BatchedCommands{
+	return CommandBatchMetadata{
 		ID:         crypto.Keccak256(data),
 		CommandIDs: commandIDs,
 		Data:       data,
 		SigHash:    Hash(GetSignHash(data)),
-		Status:     Signing,
+		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
-}
-
-// Is returns true if batched commands is in the given status; false otherwise
-func (b BatchedCommands) Is(status BatchedCommandsStatus) bool {
-	return b.Status == status
 }
 
 const commandIDSize = 32

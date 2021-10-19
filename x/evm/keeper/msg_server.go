@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -834,7 +833,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, cmd); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -885,12 +884,12 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
 
-		command, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
+		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
-		if err := keeper.SetCommand(ctx, command); err != nil {
+		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
 
@@ -1048,15 +1047,15 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	for _, transfer := range transfers {
 		token := keeper.GetERC20Token(ctx, transfer.Asset.Denom)
-		command, err := token.CreateMintCommand(secondaryKeyID, transfer)
+		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
-		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", command.ID.Hex()))
+		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
-		if err := keeper.SetCommand(ctx, command); err != nil {
+		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
 	}
@@ -1147,12 +1146,12 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	command, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, command); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -1167,12 +1166,12 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	command, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := keeper.SetCommand(ctx, command); err != nil {
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
 
@@ -1186,26 +1185,18 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	chainID := s.getChainID(ctx, req.Chain)
-	if chainID == nil {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
-	}
-
 	keeper := s.ForChain(chain.Name)
-	batchedCommands, err := getBatchedCommandsToSign(ctx, keeper, chainID)
+	id, err := keeper.CreateNewBatchToSign(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchedCommands.PrevBatchedCommandsID == nil {
-		if latestSignedBatchedCommandsID, ok := keeper.GetLatestSignedBatchedCommandsID(ctx); ok {
-			batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommandsID
-		}
-	}
+	// if no error was thrown above, the batch exists
+	batchedCommands := keeper.GetBatchByID(ctx, id)
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.KeyID)
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.GetKeyID())
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.KeyID)
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.GetKeyID())
 	}
 
 	sigMetadata := types.SigMetadata{
@@ -1213,20 +1204,17 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Chain: chain.Name,
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
 	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
-		KeyID:           batchedCommands.KeyID,
+		KeyID:           batchedCommands.GetKeyID(),
 		SigID:           batchedCommandsIDHex,
-		Msg:             batchedCommands.SigHash.Bytes(),
+		Msg:             batchedCommands.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
 	}); err != nil {
 		return nil, err
 	}
-
-	batchedCommands.Status = types.Signing
-	keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -1238,53 +1226,18 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.ID}, nil
-}
-
-func getBatchedCommandsToSign(ctx sdk.Context, keeper types.ChainKeeper, chainID *big.Int) (types.BatchedCommands, error) {
-	if unsignedBatchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx); ok {
-		if unsignedBatchedCommands.Is(types.Aborted) {
-			return unsignedBatchedCommands, nil
-		}
-
-		return types.BatchedCommands{}, fmt.Errorf("signing for batched commands %s is still in progress", hex.EncodeToString(unsignedBatchedCommands.ID))
-	}
-
-	var command types.Command
-	commandQueue := keeper.GetCommandQueue(ctx)
-
-	if !commandQueue.Dequeue(&command) {
-		return types.BatchedCommands{}, fmt.Errorf("no commands are found to sign for chain %s", keeper.GetName())
-	}
-
-	// Only batching commands to be signed by the same key and within the gas limit
-	commandsGasLimit, ok := keeper.GetCommandsGasLimit(ctx)
-	if !ok {
-		return types.BatchedCommands{}, fmt.Errorf("commands gas limit for chain %s not found", keeper.GetName())
-	}
-	gasCost := uint32(0)
-	keyID := command.KeyID
-	filter := func(value codec.ProtoMarshaler) bool {
-		cmd, ok := value.(*types.Command)
-		gasCost += cmd.MaxGasCost
-
-		return ok && cmd.KeyID == keyID && gasCost <= commandsGasLimit
-	}
-
-	commands := []types.Command{command.Clone()}
-	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
-	for commandQueue.Dequeue(&command, filter) {
-		commands = append(commands, command.Clone())
-	}
-
-	return types.NewBatchedCommands(chainID, keyID, commands)
+	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, found := s.nexus.GetChain(ctx, req.Name); found {
-		return &types.AddChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Name)
+		return nil, fmt.Errorf("chain '%s' is already registered", req.Name)
+	}
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, err
 	}
 
 	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true})

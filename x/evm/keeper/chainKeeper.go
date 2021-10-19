@@ -2,12 +2,12 @@ package keeper
 
 import (
 	"crypto/ecdsa"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -25,23 +25,20 @@ import (
 )
 
 var (
-	gatewayKey                       = utils.KeyFromStr("gateway")
-	pendingChainKey                  = utils.KeyFromStr("pending_chain_asset")
-	unsignedBatchedCommandsKey       = utils.KeyFromStr("unsigned_batched_commands")
-	latestSignedBatchedCommandsIDKey = utils.KeyFromStr("latest_signed_batched_commands_id")
+	gatewayKey             = utils.KeyFromStr("gateway")
+	unsignedBatchIDKey     = utils.KeyFromStr("unsigned_command_batch_id")
+	latestSignedBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
 
-	chainPrefix                 = utils.KeyFromStr("chain")
-	subspacePrefix              = utils.KeyFromStr("subspace")
-	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
-	tokenMetadataPrefix         = utils.KeyFromStr("token_deployment")
-	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
-	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
-	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	commandPrefix               = utils.KeyFromStr("command")
-	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
-	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
-	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
-	signedBatchedCommandsPrefix = utils.KeyFromStr("signed_batched_commands")
+	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx")
+	tokenMetadataPrefix       = utils.KeyFromStr("token_deployment")
+	pendingDepositPrefix      = utils.KeyFromStr("pending_deposit")
+	confirmedDepositPrefix    = utils.KeyFromStr("confirmed_deposit")
+	burnedDepositPrefix       = utils.KeyFromStr("burned_deposit")
+	commandBatchPrefix        = utils.KeyFromStr("command_batch")
+	commandPrefix             = utils.KeyFromStr("command")
+	burnerAddrPrefix          = utils.KeyFromStr("burnerAddr")
+	pendingTransferKeyPrefix  = utils.KeyFromStr("pending_transfer_key")
+	archivedTransferKeyPrefix = utils.KeyFromStr("archived_transfer_key")
 
 	commandQueueName = "command_queue"
 )
@@ -58,17 +55,19 @@ func (k chainKeeper) GetName() string {
 	return k.chain
 }
 
-// GetCommandsGasLimit returns the EVM network's gas limist for batched commands
-func (k chainKeeper) GetCommandsGasLimit(ctx sdk.Context) (uint32, bool) {
+// returns the EVM network's gas limist for batched commands
+func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) uint32 {
 	var commandsGasLimit uint32
 	subspace, ok := k.getSubspace(ctx, k.chain)
+
+	// the subspace must exist, if not we have a catastrophic failure
 	if !ok {
-		return 0, false
+		panic(fmt.Sprintf("subspace for chain '%s' not set", k.chain))
 	}
 
 	subspace.Get(ctx, types.KeyCommandsGasLimit, &commandsGasLimit)
 
-	return commandsGasLimit, true
+	return commandsGasLimit
 }
 
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to
@@ -290,25 +289,15 @@ func (k chainKeeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Tok
 	}, metadata)
 }
 
-// SetCommand stores the given command; note that overwriting is not allowed
-func (k chainKeeper) SetCommand(ctx sdk.Context, command types.Command) error {
+// EnqueueCommand stores the given command; note that overwriting is not allowed
+func (k chainKeeper) EnqueueCommand(ctx sdk.Context, command types.Command) error {
 	key := commandPrefix.AppendStr(command.ID.Hex())
 	if k.getStore(ctx, k.chain).Has(key) {
 		return fmt.Errorf("command %s already exists", command.ID.Hex())
 	}
 
-	k.GetCommandQueue(ctx).Enqueue(key, &command)
+	k.getCommandQueue(ctx).Enqueue(key, &command)
 	return nil
-}
-
-// GetCommand retrieves the command for the given ID
-func (k chainKeeper) GetCommand(ctx sdk.Context, commandID types.CommandID) *types.Command {
-	var command types.Command
-	if !k.getStore(ctx, k.chain).Get(commandPrefix.AppendStr(commandID.Hex()), &command) {
-		return nil
-	}
-
-	return &command
 }
 
 // SetUnsignedTx stores an unsigned transaction
@@ -403,10 +392,22 @@ func (k chainKeeper) GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction)
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
+	// both chain, subspace, and network must be valid if the chain keeper was instantiated,
+	// so a nil value here must be a catastrophic failure
+
 	var network string
-	subspace, _ := k.getSubspace(ctx, k.chain)
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		panic(fmt.Sprintf("could not find subspace for network '%s'", k.chain))
+	}
+
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	return evmTypes.NewEIP155Signer(k.GetChainIDByNetwork(ctx, network))
+	chainID := k.GetChainIDByNetwork(ctx, network)
+
+	if chainID == nil {
+		panic(fmt.Sprintf("could not find chain ID for network '%s'", network))
+	}
+	return evmTypes.NewEIP155Signer(chainID)
 }
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
@@ -517,56 +518,115 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.I
 	return nil
 }
 
-// GetCommandQueue returns the queue of commands
-func (k chainKeeper) GetCommandQueue(ctx sdk.Context) utils.KVQueue {
+func (k chainKeeper) getUnsigned(ctx sdk.Context) types.CommandBatchMetadata {
+	var unsigned types.CommandBatchMetadata
+	if id := k.getStore(ctx, k.chain).GetRaw(unsignedBatchIDKey); id != nil {
+		k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &unsigned)
+	}
+
+	return unsigned
+}
+
+func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
+	var cmd types.Command
+	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
+	return cmd, ok
+}
+
+func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
+	k.getStore(ctx, k.chain).Set(commandBatchPrefix.AppendStr(string(meta.ID)), &meta)
+}
+
+// GetBatchByID retrieves the specified batch if it exists
+func (k chainKeeper) GetBatchByID(ctx sdk.Context, id []byte) types.CommandBatch {
+	var batch types.CommandBatchMetadata
+	k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &batch)
+
+	setter := func(m types.CommandBatchMetadata) {
+		k.setCommandBatchMetadata(ctx, m)
+	}
+
+	return types.NewCommandBatch(batch, setter)
+}
+
+// GetLatestCommandBatch returns the latest batch of signed commands, if it exists
+func (k chainKeeper) GetLatestCommandBatch(ctx sdk.Context) types.CommandBatch {
+	if batch := k.getUnsigned(ctx); batch.Status != types.BatchNonExistent {
+		setter := func(m types.CommandBatchMetadata) {}
+		if batch.Status != types.BatchSigned {
+			setter = func(m types.CommandBatchMetadata) {
+				k.setCommandBatchMetadata(ctx, m)
+			}
+		}
+		return types.NewCommandBatch(batch, setter)
+	}
+
+	var batch types.CommandBatchMetadata
+	if id := k.getStore(ctx, k.chain).GetRaw(latestSignedBatchIDKey); id != nil {
+		k.getStore(ctx, k.chain).Get(commandBatchPrefix.AppendStr(string(id)), &batch)
+	}
+
+	return types.NewCommandBatch(batch, func(types.CommandBatchMetadata) {})
+}
+
+// CreateNewBatchToSign creates a new batch of commands to be signed
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
+	unsigned := k.getUnsigned(ctx)
+	switch k.getUnsigned(ctx).Status {
+	case types.BatchSigning:
+		fallthrough
+	case types.BatchAborted:
+		return nil, fmt.Errorf("signing for command batch '%s' is still in progress", unsigned.ID)
+	case types.BatchSigned:
+		k.getStore(ctx, k.chain).SetRaw(latestSignedBatchIDKey, unsigned.ID)
+	default:
+		// first batch to be created
+	}
+
+	command, ok := k.popCommand(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no commands to sign found")
+	}
+
+	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
+	gasLimit := k.getCommandsGasLimit(ctx)
+	gasCost := uint32(command.MaxGasCost)
+	keyID := command.KeyID
+	filter := func(value codec.ProtoMarshaler) bool {
+		cmd, ok := value.(*types.Command)
+		gasCost += cmd.MaxGasCost
+
+		return ok && cmd.KeyID == keyID && gasCost <= gasLimit
+	}
+
+	commands := []types.Command{command.Clone()}
+	// TODO: limit the number of commands that are signed each time to avoid going above the gas limit
+	for {
+		cmd, ok := k.popCommand(ctx, filter)
+		if !ok {
+			break
+		}
+		commands = append(commands, cmd.Clone())
+	}
+
+	batchedCommands, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
+	if err != nil {
+		return nil, err
+	}
+
+	if latestSignedBatchedCommands := k.GetLatestCommandBatch(ctx); latestSignedBatchedCommands.Is(types.BatchSigned) {
+		batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommands.GetID()
+	}
+
+	k.setCommandBatchMetadata(ctx, batchedCommands)
+	k.getStore(ctx, k.chain).SetRaw(unsignedBatchIDKey, batchedCommands.ID)
+
+	return batchedCommands.ID, nil
+}
+
+// returns the queue of commands
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chain), ctx.BlockHeight(), k.Logger(ctx))
-}
-
-// SetUnsignedBatchedCommands stores the given unsigned batched commands
-func (k chainKeeper) SetUnsignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
-	k.getStore(ctx, k.chain).Set(unsignedBatchedCommandsKey, &batchedCommands)
-}
-
-// GetUnsignedBatchedCommands retrieves the unsigned batched commands
-func (k chainKeeper) GetUnsignedBatchedCommands(ctx sdk.Context) (types.BatchedCommands, bool) {
-	var batchedCommands types.BatchedCommands
-	found := k.getStore(ctx, k.chain).Get(unsignedBatchedCommandsKey, &batchedCommands)
-
-	return batchedCommands, found
-}
-
-// DeleteUnsignedBatchedCommands deletes the unsigned batched commands
-func (k chainKeeper) DeleteUnsignedBatchedCommands(ctx sdk.Context) {
-	k.getStore(ctx, k.chain).Delete(unsignedBatchedCommandsKey)
-}
-
-// SetSignedBatchedCommands stores the signed batched commands
-func (k chainKeeper) SetSignedBatchedCommands(ctx sdk.Context, batchedCommands types.BatchedCommands) {
-	batchedCommands.Status = types.Signed
-	key := signedBatchedCommandsPrefix.AppendStr(hex.EncodeToString(batchedCommands.ID))
-
-	k.getStore(ctx, k.chain).Set(key, &batchedCommands)
-}
-
-// GetSignedBatchedCommands retrieves the signed batched commands of given ID
-func (k chainKeeper) GetSignedBatchedCommands(ctx sdk.Context, id []byte) (types.BatchedCommands, bool) {
-	key := signedBatchedCommandsPrefix.AppendStr(hex.EncodeToString(id))
-	var batchedCommands types.BatchedCommands
-	found := k.getStore(ctx, k.chain).Get(key, &batchedCommands)
-
-	return batchedCommands, found
-}
-
-// SetLatestSignedBatchedCommandsID stores the ID of the latest signed batched commands
-func (k chainKeeper) SetLatestSignedBatchedCommandsID(ctx sdk.Context, id []byte) {
-	k.getStore(ctx, k.chain).SetRaw(latestSignedBatchedCommandsIDKey, id)
-}
-
-// GetLatestSignedBatchedCommandsID retrieves the ID of the latest signed batched commands
-func (k chainKeeper) GetLatestSignedBatchedCommandsID(ctx sdk.Context) ([]byte, bool) {
-	bz := k.getStore(ctx, k.chain).GetRaw(latestSignedBatchedCommandsIDKey)
-
-	return bz, bz != nil
 }
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
@@ -602,19 +662,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		return types.ERC20TokenMetadata{}, err
 	}
 
-	var network string
-	subspace, ok := k.getSubspace(ctx, k.chain)
-	if !ok {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find subspace for chain '%s'", k.chain)
-	}
-
-	subspace.Get(ctx, types.KeyNetwork, &network)
-
-	chainID := k.GetChainIDByNetwork(ctx, network)
-	if chainID == nil {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("could not find chain ID for chain '%s'", k.chain)
-	}
-
+	chainID := k.getSigner(ctx).ChainID()
 	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
 	if err != nil {
 		return types.ERC20TokenMetadata{}, err
