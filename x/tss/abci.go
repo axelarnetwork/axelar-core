@@ -43,8 +43,8 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		keeper.DeleteAvailableOperators(ctx, string(request.KeyID), exported.AckType_Keygen)
 	}
 
-	signInfoQueue := keeper.GetSignInfoQueue(ctx, keeper.GetSignInfoQueueSize(ctx))
-	sequentialSign(ctx, signInfoQueue, keeper, snapshotter)
+	signQueue := keeper.GetSignQueue(ctx)
+	sequentialSign(ctx, signQueue, keeper, snapshotter)
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
 	if len(signInfos) > 0 {
@@ -273,16 +273,16 @@ func startSign(
 }
 
 // sequentialSign limits tss sign within max signing shares
-func sequentialSign(ctx sdk.Context, signInfoQueue utils.SequenceQueue, k types.TSSKeeper, s types.Snapshotter) {
-	var i int64
-	var currSigningShares int64
+func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
+	var i uint64
+	var signShares int64
 	var signInfo exported.SignInfo
 
-	maxSigningShares := k.GetMaxSigningShares(ctx)
-	for currSigningShares < maxSigningShares {
-		seq := signInfoQueue.Peek(i, &signInfo)
+	maxSignShares := k.GetMaxSignShares(ctx)
+	for signShares < maxSignShares {
+		ok := signQueue.Peek(i, &signInfo)
 		// queue is empty at i
-		if seq == -1 {
+		if !ok {
 			break
 		}
 
@@ -291,20 +291,20 @@ func sequentialSign(ctx sdk.Context, signInfoQueue utils.SequenceQueue, k types.
 
 		switch sigStatus {
 		case exported.SigStatus_Queued:
-			currSigningShares += snap.CorruptionThreshold + 1
-			if currSigningShares > maxSigningShares {
+			signShares += snap.CorruptionThreshold + 1
+			if signShares > maxSignShares {
 				return
 			}
 			k.ScheduleSign(ctx, signInfo)
-			ctx.Logger().Debug(fmt.Sprintf("schedule sign %s, current signing shares %d, queue size %d", signInfo.SigID, currSigningShares, signInfoQueue.Size()))
+			ctx.Logger().Debug(fmt.Sprintf("schedule sign %s, current sign shares %d, queue size %d", signInfo.SigID, signShares, signQueue.Size()))
 			i++
 		case exported.SigStatus_Scheduled, exported.SigStatus_Signing:
-			currSigningShares += snap.CorruptionThreshold + 1
-			ctx.Logger().Debug(fmt.Sprintf("signing %s, current signing shares %d, queue size %d", signInfo.SigID, currSigningShares, signInfoQueue.Size()))
+			signShares += snap.CorruptionThreshold + 1
+			ctx.Logger().Debug(fmt.Sprintf("signing %s, current signing shares %d, queue size %d", signInfo.SigID, signShares, signQueue.Size()))
 			i++
 		case exported.SigStatus_Signed, exported.SigStatus_Aborted, exported.SigStatus_Invalid:
-			signInfoQueue.DequeueSequence(&signInfo, seq)
-			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s, queue size %d", signInfo.SigID, sigStatus, signInfoQueue.Size()))
+			signQueue.Dequeue(i, &signInfo)
+			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s, queue size %d", signInfo.SigID, sigStatus, signQueue.Size()))
 		default:
 
 		}

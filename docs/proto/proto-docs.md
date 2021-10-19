@@ -3289,8 +3289,8 @@ Params is the parameter set for this module
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `sign_info_queue_size` | [int64](#int64) |  |  |
-| `max_signing_shares` | [int64](#int64) |  |  |
+| `max_sign_queue_size` | [int64](#int64) |  |  |
+| `max_sign_shares` | [int64](#int64) |  |  |
 
 
 

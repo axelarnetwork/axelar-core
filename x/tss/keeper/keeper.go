@@ -221,18 +221,18 @@ func (k Keeper) GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64 {
 	return count
 }
 
-// GetSignInfoQueueSize returns the size of sign info queue
-func (k Keeper) GetSignInfoQueueSize(ctx sdk.Context) int64 {
+// GetMaxSignQueueSize returns the maximum size of sign queue
+func (k Keeper) GetMaxSignQueueSize(ctx sdk.Context) int64 {
 	var size int64
-	k.params.Get(ctx, types.KeySignInfoQueueSize, &size)
+	k.params.Get(ctx, types.KeyMaxSignQueueSize, &size)
 
 	return size
 }
 
-// GetMaxSigningShares returns the max number of signing shares
-func (k Keeper) GetMaxSigningShares(ctx sdk.Context) int64 {
+// GetMaxSignShares returns the max number of sign shares
+func (k Keeper) GetMaxSignShares(ctx sdk.Context) int64 {
 	var shares int64
-	k.params.Get(ctx, types.KeyMaxSigningShares, &shares)
+	k.params.Get(ctx, types.KeyMaxSignShares, &shares)
 
 	return shares
 }

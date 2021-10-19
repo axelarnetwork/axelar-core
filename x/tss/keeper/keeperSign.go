@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -19,7 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const signInfoQueueName = "sign_info"
+const signQueueName = "signqueue"
 
 // EnqueueSign enqueue the pending sign info into a queue and returns the position of the added sign info.
 // Returns error if queue is full
@@ -29,10 +30,15 @@ func (k Keeper) EnqueueSign(ctx sdk.Context, info exported.SignInfo) (int64, err
 		status == exported.SigStatus_Signing ||
 		status == exported.SigStatus_Scheduled ||
 		status == exported.SigStatus_Queued {
-		return -1, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
+		return 0, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
-	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
-	return k.GetSignInfoQueue(ctx, k.GetSignInfoQueueSize(ctx)).Enqueue(&info)
+
+	q := k.GetSignQueue(ctx)
+	err := q.Enqueue(&info)
+	if err == nil {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
+	}
+	return int64(q.Size()), err
 }
 
 // ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
@@ -279,7 +285,8 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 	}
 }
 
-// GetSignInfoQueue returns the queue of sign info
-func (k Keeper) GetSignInfoQueue(ctx sdk.Context, size int64) utils.SequenceQueue {
-	return utils.NewSequenceKVQueue(signInfoQueueName, k.getStore(ctx), size, k.Logger(ctx))
+// GetSignQueue returns the sign queue
+func (k Keeper) GetSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(signQueueName))
+	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.GetMaxSignQueueSize(ctx)), k.Logger(ctx))
 }

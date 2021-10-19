@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,14 +17,6 @@ type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
-}
-
-// SequenceQueue represents a queue built with the SequenceKVQueue
-type SequenceQueue interface {
-	Enqueue(value codec.ProtoMarshaler) (int64, error)
-	DequeueSequence(value codec.ProtoMarshaler, sequence int64) bool
-	Peek(n int64, value codec.ProtoMarshaler) int64
-	Size() int64
 }
 
 // BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
@@ -94,116 +85,113 @@ func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueu
 
 // SequenceKVQueue is a queue that orders items with the sequence number at which the items are enqueued;
 type SequenceKVQueue struct {
-	store    KVStore
-	size     int64
-	name     Key
-	sequence Key
-	logger   log.Logger
+	store         KVStore
+	maxSize       uint64
+	seqNo         uint64
+	size          uint64
+	prevLookupIdx uint64
+	prevIter      Iterator
+	logger        log.Logger
 }
 
 var (
 	sizeKey     = KeyFromStr("size")
 	sequenceKey = KeyFromStr("sequence")
+	queueKey    = KeyFromStr("queue")
 )
 
 // NewSequenceKVQueue is the constructor of SequenceKVQueue
-func NewSequenceKVQueue(name string, store KVStore, size int64, logger log.Logger) SequenceKVQueue {
-	return SequenceKVQueue{store: store, size: size, name: KeyFromStr(name), logger: logger}
+func NewSequenceKVQueue(store KVStore, maxSize uint64, logger log.Logger) SequenceKVQueue {
+	var seqNo uint64
+	bz := store.GetRaw(sequenceKey)
+	if bz != nil {
+		seqNo = binary.BigEndian.Uint64(bz)
+	}
+
+	var size uint64
+	bz = store.GetRaw(sizeKey)
+	if bz != nil {
+		size = binary.BigEndian.Uint64(bz)
+	}
+
+	return SequenceKVQueue{store: store, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key. Returns queue position and status
-func (q SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) (int64, error) {
-	if q.Size() >= q.size {
-		return -1, fmt.Errorf("sign queue is full")
+func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
+	if q.size >= q.maxSize {
+		return fmt.Errorf("queue is full")
 	}
 
-	sequence := q.Sequence()
-	sequenceBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(sequenceBz, uint64(sequence))
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, q.seqNo)
 
-	q.store.Set(q.name.Append(KeyFromBz(sequenceBz)), value)
-	q.increSize()
-	q.increSequence()
+	q.store.Set(queueKey.Append(KeyFromBz(bz)), value)
+	q.incrSize()
+	q.incrSeqNo()
 
-	return q.Size(), nil
+	return nil
 }
 
-// DequeueSequence pops the value with the given sequence of the queue and unmarshals it into the given object, and return true if value if found
-func (q SequenceKVQueue) DequeueSequence(value codec.ProtoMarshaler, sequence int64) bool {
-	iter := q.store.Iterator(q.name)
-	defer CloseLogError(iter, q.logger)
-
-	sequenceBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(sequenceBz, uint64(sequence))
-
-	for ; iter.Valid(); iter.Next() {
-		if iter.GetKey().Equals(q.name.Append(KeyFromBz(sequenceBz))) {
-			iter.UnmarshalValue(value)
-			q.store.Delete(iter.GetKey())
-			q.decreSize()
-			return true
-		}
+// Dequeue pops the nth value off and unmarshals it into the given object. Returns false if empty or object not of the correct type.
+func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
+	ok := q.Peek(n, value)
+	if ok {
+		q.store.Delete(q.prevIter.GetKey())
+		q.decrSize()
 	}
-	return false
+	return ok
 }
 
 // Size returns the given current size of the queue
-func (q SequenceKVQueue) Size() int64 {
-	bz := q.store.GetRaw(sizeKey.Append(q.name))
-	if bz == nil {
-		return 0
-	}
-	return int64(binary.BigEndian.Uint64(bz))
-}
-
-// Sequence returns the current sequence of the queue
-func (q SequenceKVQueue) Sequence() int64 {
-	bz := q.store.GetRaw(sequenceKey.Append(q.name))
-	if bz == nil {
-		return 0
-	}
-	return int64(binary.BigEndian.Uint64(bz))
+func (q *SequenceKVQueue) Size() uint64 {
+	return q.size
 }
 
 // Peek unmarshals the value into the given object at the given index and returns its sequence number.
 // Returns -1 if index is out of range
-func (q SequenceKVQueue) Peek(i int64, value codec.ProtoMarshaler) int64 {
-	if i >= q.Size() {
-		return -1
+func (q *SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
+	if n >= q.size {
+		return false
 	}
 
-	iter := q.store.Iterator(q.name)
+	var i uint64
+	iter := q.store.Iterator(queueKey)
+	if q.prevLookupIdx < n && q.prevIter != nil {
+		iter = q.prevIter
+		i = q.prevLookupIdx
+	}
 	defer CloseLogError(iter, q.logger)
 
-	var counter int64
-	for ; iter.Valid() && counter < i; iter.Next() {
-		counter++
+	for ; iter.Valid() && i < n; iter.Next() {
+		i++
 	}
 
+	q.prevLookupIdx = n
+	q.prevIter = iter
 	iter.UnmarshalValue(value)
-	seq := strings.TrimPrefix(string(iter.Key()), string(q.name.AsKey())+"_")
-	return int64(binary.BigEndian.Uint64([]byte(seq)))
+	return true
 }
 
-func (q SequenceKVQueue) increSize() {
-	currSize := q.Size()
+func (q *SequenceKVQueue) incrSize() {
+	q.size++
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, uint64(currSize)+1)
-	q.store.SetRaw(sizeKey.Append(q.name), bz)
+	binary.BigEndian.PutUint64(bz, q.size)
+	q.store.SetRaw(sizeKey, bz)
 }
 
-func (q SequenceKVQueue) decreSize() {
-	currSize := q.Size()
-	if currSize > 0 {
+func (q *SequenceKVQueue) decrSize() {
+	if q.size > 0 {
+		q.size--
 		bz := make([]byte, 8)
-		binary.BigEndian.PutUint64(bz, uint64(currSize)-1)
-		q.store.SetRaw(sizeKey.Append(q.name), bz)
+		binary.BigEndian.PutUint64(bz, q.size)
+		q.store.SetRaw(sizeKey, bz)
 	}
 }
 
-func (q SequenceKVQueue) increSequence() {
-	currSequence := q.Sequence()
+func (q *SequenceKVQueue) incrSeqNo() {
+	q.seqNo++
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, uint64(currSequence)+1)
-	q.store.SetRaw(sequenceKey.Append(q.name), bz)
+	binary.BigEndian.PutUint64(bz, q.seqNo)
+	q.store.SetRaw(sequenceKey, bz)
 }

@@ -117,6 +117,6 @@ type TSSKeeper interface {
 	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
-	GetMaxSigningShares(ctx sdk.Context) int64
+	GetMaxSignShares(ctx sdk.Context) int64
 
 }
