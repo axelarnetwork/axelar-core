@@ -21,8 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+// ScheduleKeygen sets a keygen to start at the current block height
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
 	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
 		AppendStr(exported.AckType_Keygen.String()).AppendStr(string(req.KeyID))

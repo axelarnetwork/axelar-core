@@ -19,8 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// ScheduleSign sets a sign to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+// ScheduleSign sets a sign to start at the current block height
 func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 	status := k.getSigStatus(ctx, info.SigID)
 	if status == exported.SigStatus_Signed ||
