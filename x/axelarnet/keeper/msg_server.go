@@ -57,19 +57,29 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	burnerAddr := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
+	depositAddress := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: burnerAddr.String()},
+		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
 
-	return &types.LinkResponse{DepositAddr: burnerAddr.String()}, nil
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeLink,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
+		),
+	)
+
+	return &types.LinkResponse{DepositAddr: depositAddress.String()}, nil
 }
 
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	depositAddr := nexus.CrossChainAddress{Address: req.BurnerAddress.String(), Chain: exported.Axelarnet}
+	depositAddr := nexus.CrossChainAddress{Address: req.DepositAddress.String(), Chain: exported.Axelarnet}
 
 	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
 	switch {
@@ -93,7 +103,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
 		if err := s.bank.SendCoins(
-			ctx, req.BurnerAddress, escrowAddress, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(req.Token),
 		); err != nil {
 			return nil, err
 		}
@@ -107,7 +117,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
 		if err := s.bank.SendCoins(
-			ctx, req.BurnerAddress, escrowAddress, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(req.Token),
 		); err != nil {
 			return nil, err
 		}
@@ -115,7 +125,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet.Name, req.Token.Denom):
 		// transfer the coins from linked address to module account and burn them
 		if err := s.bank.SendCoinsFromAccountToModule(
-			ctx, req.BurnerAddress, types.ModuleName, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, types.ModuleName, sdk.NewCoins(req.Token),
 		); err != nil {
 			return nil, err
 		}
@@ -143,7 +153,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, req.Token.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	return &types.ConfirmDepositResponse{}, nil

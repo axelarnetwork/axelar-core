@@ -33,10 +33,10 @@ type ReqLink struct {
 
 // ReqConfirmDeposit represents a request to confirm a deposit
 type ReqConfirmDeposit struct {
-	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxID          string       `json:"tx_id" yaml:"tx_id"`
-	Amount        string       `json:"amount" yaml:"amount"`
-	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
+	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
+	TxID           string       `json:"tx_id" yaml:"tx_id"`
+	Amount         string       `json:"amount" yaml:"amount"`
+	DepositAddress string       `json:"deposit_address" yaml:"deposit_address"`
 }
 
 // ReqExecutePendingTransfers represents a request to execute pending token transfers
@@ -127,13 +127,13 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		burnerAddr, err := sdk.AccAddressFromBech32(req.BurnerAddress)
+		depositAddr, err := sdk.AccAddressFromBech32(req.DepositAddress)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewConfirmDepositRequest(fromAddr, txID, coin, burnerAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, txID, coin, depositAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
