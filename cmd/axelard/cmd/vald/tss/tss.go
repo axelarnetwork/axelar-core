@@ -231,7 +231,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	defer cancel()
 
 	request := &tofnd.KeyPresenceRequest{
-		KeyUid: "testkey",
+		KeyUid: "dummyID",
 	}
 
 	response, err := mgr.client.KeyPresence(grpcCtx, request)
@@ -240,13 +240,9 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	}
 
 	switch response.Response {
-	case tofnd.RESPONSE_UNSPECIFIED:
-		fallthrough
-	case tofnd.RESPONSE_FAIL:
+	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
 		return sdkerrors.Wrap(err, "tofnd not set up correctly")
-	case tofnd.RESPONSE_PRESENT:
-		fallthrough
-	case tofnd.RESPONSE_ABSENT:
+	case tofnd.RESPONSE_PRESENT, tofnd.RESPONSE_ABSENT:
 		mgr.Logger.Info(fmt.Sprintf("sending ack for height '%d'", height))
 		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, height)
 		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
