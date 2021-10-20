@@ -1,0 +1,25 @@
+syntax = "proto3";
+package nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message RegisterChainMaintainerRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2;
+}
+
+message RegisterChainMaintainerResponse {}
+
+message DeregisterChainMaintainerRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2;
+}
+
+message DeregisterChainMaintainerResponse {}

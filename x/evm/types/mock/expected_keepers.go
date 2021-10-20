@@ -103,8 +103,11 @@ var _ types.Voter = &VoterMock{}
 // 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey vote.PollKey) vote.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error {
+// 			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, voters []github_com_cosmos_cosmos_sdk_types.ValAddress, pollProperties ...vote.PollProperty) error {
 // 				panic("mock out the InitializePoll method")
+// 			},
+// 			InitializePollWithSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error {
+// 				panic("mock out the InitializePollWithSnapshot method")
 // 			},
 // 		}
 //
@@ -117,7 +120,10 @@ type VoterMock struct {
 	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollKey vote.PollKey) vote.Poll
 
 	// InitializePollFunc mocks the InitializePoll method.
-	InitializePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, voters []github_com_cosmos_cosmos_sdk_types.ValAddress, pollProperties ...vote.PollProperty) error
+
+	// InitializePollWithSnapshotFunc mocks the InitializePollWithSnapshot method.
+	InitializePollWithSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -134,14 +140,26 @@ type VoterMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key vote.PollKey
+			// Voters is the voters argument value.
+			Voters []github_com_cosmos_cosmos_sdk_types.ValAddress
+			// PollProperties is the pollProperties argument value.
+			PollProperties []vote.PollProperty
+		}
+		// InitializePollWithSnapshot holds details about calls to the InitializePollWithSnapshot method.
+		InitializePollWithSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Key is the key argument value.
+			Key vote.PollKey
 			// SnapshotSeqNo is the snapshotSeqNo argument value.
 			SnapshotSeqNo int64
 			// PollProperties is the pollProperties argument value.
 			PollProperties []vote.PollProperty
 		}
 	}
-	lockGetPoll        sync.RWMutex
-	lockInitializePoll sync.RWMutex
+	lockGetPoll                    sync.RWMutex
+	lockInitializePoll             sync.RWMutex
+	lockInitializePollWithSnapshot sync.RWMutex
 }
 
 // GetPoll calls GetPollFunc.
@@ -180,9 +198,52 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // InitializePoll calls InitializePollFunc.
-func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error {
+func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, voters []github_com_cosmos_cosmos_sdk_types.ValAddress, pollProperties ...vote.PollProperty) error {
 	if mock.InitializePollFunc == nil {
 		panic("VoterMock.InitializePollFunc: method is nil but Voter.InitializePoll was just called")
+	}
+	callInfo := struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		Key            vote.PollKey
+		Voters         []github_com_cosmos_cosmos_sdk_types.ValAddress
+		PollProperties []vote.PollProperty
+	}{
+		Ctx:            ctx,
+		Key:            key,
+		Voters:         voters,
+		PollProperties: pollProperties,
+	}
+	mock.lockInitializePoll.Lock()
+	mock.calls.InitializePoll = append(mock.calls.InitializePoll, callInfo)
+	mock.lockInitializePoll.Unlock()
+	return mock.InitializePollFunc(ctx, key, voters, pollProperties...)
+}
+
+// InitializePollCalls gets all the calls that were made to InitializePoll.
+// Check the length with:
+//     len(mockedVoter.InitializePollCalls())
+func (mock *VoterMock) InitializePollCalls() []struct {
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	Key            vote.PollKey
+	Voters         []github_com_cosmos_cosmos_sdk_types.ValAddress
+	PollProperties []vote.PollProperty
+} {
+	var calls []struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		Key            vote.PollKey
+		Voters         []github_com_cosmos_cosmos_sdk_types.ValAddress
+		PollProperties []vote.PollProperty
+	}
+	mock.lockInitializePoll.RLock()
+	calls = mock.calls.InitializePoll
+	mock.lockInitializePoll.RUnlock()
+	return calls
+}
+
+// InitializePollWithSnapshot calls InitializePollWithSnapshotFunc.
+func (mock *VoterMock) InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error {
+	if mock.InitializePollWithSnapshotFunc == nil {
+		panic("VoterMock.InitializePollWithSnapshotFunc: method is nil but Voter.InitializePollWithSnapshot was just called")
 	}
 	callInfo := struct {
 		Ctx            github_com_cosmos_cosmos_sdk_types.Context
@@ -195,16 +256,16 @@ func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Con
 		SnapshotSeqNo:  snapshotSeqNo,
 		PollProperties: pollProperties,
 	}
-	mock.lockInitializePoll.Lock()
-	mock.calls.InitializePoll = append(mock.calls.InitializePoll, callInfo)
-	mock.lockInitializePoll.Unlock()
-	return mock.InitializePollFunc(ctx, key, snapshotSeqNo, pollProperties...)
+	mock.lockInitializePollWithSnapshot.Lock()
+	mock.calls.InitializePollWithSnapshot = append(mock.calls.InitializePollWithSnapshot, callInfo)
+	mock.lockInitializePollWithSnapshot.Unlock()
+	return mock.InitializePollWithSnapshotFunc(ctx, key, snapshotSeqNo, pollProperties...)
 }
 
-// InitializePollCalls gets all the calls that were made to InitializePoll.
+// InitializePollWithSnapshotCalls gets all the calls that were made to InitializePollWithSnapshot.
 // Check the length with:
-//     len(mockedVoter.InitializePollCalls())
-func (mock *VoterMock) InitializePollCalls() []struct {
+//     len(mockedVoter.InitializePollWithSnapshotCalls())
+func (mock *VoterMock) InitializePollWithSnapshotCalls() []struct {
 	Ctx            github_com_cosmos_cosmos_sdk_types.Context
 	Key            vote.PollKey
 	SnapshotSeqNo  int64
@@ -216,9 +277,9 @@ func (mock *VoterMock) InitializePollCalls() []struct {
 		SnapshotSeqNo  int64
 		PollProperties []vote.PollProperty
 	}
-	mock.lockInitializePoll.RLock()
-	calls = mock.calls.InitializePoll
-	mock.lockInitializePoll.RUnlock()
+	mock.lockInitializePollWithSnapshot.RLock()
+	calls = mock.calls.InitializePollWithSnapshot
+	mock.lockInitializePollWithSnapshot.RUnlock()
 	return calls
 }
 
@@ -948,6 +1009,9 @@ var _ types.Nexus = &NexusMock{}
 // 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
+// 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetChainMaintainers method")
+// 			},
 // 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []nexus.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
@@ -959,6 +1023,9 @@ var _ types.Nexus = &NexusMock{}
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
+// 			},
+// 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) bool {
+// 				panic("mock out the IsChainActivated method")
 // 			},
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
 // 				panic("mock out the LinkAddresses method")
@@ -985,6 +1052,9 @@ type NexusMock struct {
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
 
+	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
+	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
+
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []nexus.Chain
 
@@ -996,6 +1066,9 @@ type NexusMock struct {
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) bool
+
+	// IsChainActivatedFunc mocks the IsChainActivated method.
+	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
@@ -1031,6 +1104,13 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
+		GetChainMaintainers []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
 			// Ctx is the ctx argument value.
@@ -1061,6 +1141,13 @@ type NexusMock struct {
 			// Denom is the denom argument value.
 			Denom string
 		}
+		// IsChainActivated holds details about calls to the IsChainActivated method.
+		IsChainActivated []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -1090,10 +1177,12 @@ type NexusMock struct {
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
+	lockGetChainMaintainers    sync.RWMutex
 	lockGetChains              sync.RWMutex
 	lockGetRecipient           sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
 	lockIsAssetRegistered      sync.RWMutex
+	lockIsChainActivated       sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
@@ -1205,6 +1294,41 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetChainMaintainers calls GetChainMaintainersFunc.
+func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
+	if mock.GetChainMaintainersFunc == nil {
+		panic("NexusMock.GetChainMaintainersFunc: method is nil but Nexus.GetChainMaintainers was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChainMaintainers.Lock()
+	mock.calls.GetChainMaintainers = append(mock.calls.GetChainMaintainers, callInfo)
+	mock.lockGetChainMaintainers.Unlock()
+	return mock.GetChainMaintainersFunc(ctx, chain)
+}
+
+// GetChainMaintainersCalls gets all the calls that were made to GetChainMaintainers.
+// Check the length with:
+//     len(mockedNexus.GetChainMaintainersCalls())
+func (mock *NexusMock) GetChainMaintainersCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockGetChainMaintainers.RLock()
+	calls = mock.calls.GetChainMaintainers
+	mock.lockGetChainMaintainers.RUnlock()
 	return calls
 }
 
@@ -1349,6 +1473,41 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 	mock.lockIsAssetRegistered.RLock()
 	calls = mock.calls.IsAssetRegistered
 	mock.lockIsAssetRegistered.RUnlock()
+	return calls
+}
+
+// IsChainActivated calls IsChainActivatedFunc.
+func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) bool {
+	if mock.IsChainActivatedFunc == nil {
+		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockIsChainActivated.Lock()
+	mock.calls.IsChainActivated = append(mock.calls.IsChainActivated, callInfo)
+	mock.lockIsChainActivated.Unlock()
+	return mock.IsChainActivatedFunc(ctx, chain)
+}
+
+// IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
+// Check the length with:
+//     len(mockedNexus.IsChainActivatedCalls())
+func (mock *NexusMock) IsChainActivatedCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+	}
+	mock.lockIsChainActivated.RLock()
+	calls = mock.calls.IsChainActivated
+	mock.lockIsChainActivated.RUnlock()
 	return calls
 }
 

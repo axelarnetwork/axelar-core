@@ -17,19 +17,17 @@ import (
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	eth2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm"
+	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
@@ -84,7 +82,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper)
+	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, mocks.Staker)
 
 	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
@@ -120,12 +118,14 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 	})
+	nexusHandler := nexus.NewHandler(nexusK, snapKeeper)
 
 	router = router.
 		AddRoute(sdk.NewRoute(snapshotTypes.RouterKey, snapshotHandler)).
 		AddRoute(sdk.NewRoute(btcTypes.RouterKey, btcHandler)).
 		AddRoute(sdk.NewRoute(evmTypes.RouterKey, ethHandler)).
-		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler))
+		AddRoute(sdk.NewRoute(tssTypes.RouterKey, tssHandler)).
+		AddRoute(sdk.NewRoute(nexusTypes.RouterKey, nexusHandler))
 
 	queriers := map[string]sdk.Querier{
 		btcTypes.QuerierRoute: btcKeeper.NewQuerier(bitcoinKeeper, signer, nexusK),
@@ -145,6 +145,9 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 				return tss.EndBlocker(ctx, req, signer, voter, snapKeeper)
+			},
+			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+				return nexus.EndBlocker(ctx, req, nexusK, mocks.Staker)
 			},
 		)
 	return node
@@ -477,9 +480,17 @@ type listeners struct {
 	btcDone        <-chan abci.Event
 	ethDepositDone <-chan abci.Event
 	ethTokenDone   <-chan abci.Event
+	chainActivated <-chan abci.Event
 }
 
 func registerWaitEventListeners(n nodeData) listeners {
+	// register listener for keygen completion
+	chainActivated := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		attributes := mapifyAttributes(event)
+		return event.Type == nexusTypes.EventTypeChain &&
+			attributes[sdk.AttributeKeyAction] == nexusTypes.AttributeValueActivated
+	})
+
 	// register listener for keygen completion
 	keygenDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
@@ -524,6 +535,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 		btcDone:        btcConfirmationDone,
 		ethDepositDone: ethDepositDone,
 		ethTokenDone:   ethTokenDone,
+		chainActivated: chainActivated,
 	}
 }
 
@@ -533,7 +545,6 @@ func waitFor(eventDone <-chan abci.Event, repeats int) error {
 	for i := 0; i < repeats; i++ {
 		select {
 		case <-eventDone:
-			break
 		case <-timeout.Done():
 			return fmt.Errorf("timeout at %d of %d", i, repeats-1)
 		}
@@ -547,43 +558,4 @@ func mapifyAttributes(event abci.Event) map[string]string {
 		m[attribute.Key] = attribute.Value
 	}
 	return m
-}
-
-func createTokenDeployLogs(gateway, addr common.Address) []*gethTypes.Log {
-	numLogs := rand.I64Between(1, 100)
-	pos := rand.I64Between(0, numLogs)
-	var logs []*gethTypes.Log
-
-	for i := int64(0); i < numLogs; i++ {
-		stringType, err := abi.NewType("string", "string", nil)
-		if err != nil {
-			panic(err)
-		}
-		addressType, err := abi.NewType("address", "address", nil)
-		if err != nil {
-			panic(err)
-		}
-		args := abi.Arguments{{Type: stringType}, {Type: addressType}}
-
-		if i == pos {
-			data, err := args.Pack("satoshi", addr)
-			if err != nil {
-				panic(err)
-			}
-			logs = append(logs, &gethTypes.Log{Address: gateway, Data: data, Topics: []common.Hash{eth2.ERC20TokenDeploymentSig}})
-			continue
-		}
-
-		randDenom := rand.Str(4)
-		randGateway := common.BytesToAddress(rand.Bytes(common.AddressLength))
-		randAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-		randData, err := args.Pack(randDenom, randAddr)
-		randTopic := common.BytesToHash(rand.Bytes(common.HashLength))
-		if err != nil {
-			panic(err)
-		}
-		logs = append(logs, &gethTypes.Log{Address: randGateway, Data: randData, Topics: []common.Hash{randTopic}})
-	}
-
-	return logs
 }

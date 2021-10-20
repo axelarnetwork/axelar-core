@@ -85,7 +85,7 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID exported.K
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, string(keyID))
-	if err := voter.InitializePoll(
+	if err := voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
 		snapshot.Counter,

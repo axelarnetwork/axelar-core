@@ -97,6 +97,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		}
 		tssKeeper = &mock.TSSMock{}
 		nexusKeeper = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				if chain == req.Chain {
 					return exported.Ethereum, true
@@ -276,7 +277,8 @@ func TestLink_UnknownChain(t *testing.T) {
 	asset := rand.Str(3)
 
 	n := &mock.NexusMock{
-		GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
+		GetChainFunc:         func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
 	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
@@ -312,6 +314,7 @@ func TestLink_NoGateway(t *testing.T) {
 
 	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -344,6 +347,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 
 	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -376,6 +380,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -435,7 +440,8 @@ func TestLink_Success(t *testing.T) {
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
-		LinkAddressesFunc: func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
+		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -592,7 +598,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
+				if strings.EqualFold(chain, msg.Name) {
 					return chaink
 				}
 				return nil
@@ -600,14 +606,14 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if strings.ToLower(chain) == strings.ToLower(msg.Name) {
+				if strings.EqualFold(chain, msg.Name) {
 					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
 				}
 				return nexus.Chain{}, false
 			},
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+			InitializePollWithSnapshotFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
 				return nil
 			},
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
@@ -624,6 +630,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -651,7 +658,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.InitializePollCalls()))
+		assert.Equal(t, 1, len(v.InitializePollWithSnapshotCalls()))
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
@@ -702,7 +709,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.InitializePollCalls()))
+		assert.Equal(t, 1, len(v.InitializePollWithSnapshotCalls()))
 	}).Repeat(repeats))
 
 	t.Run("registered chain", testutils.Func(func(t *testing.T) {
@@ -725,7 +732,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+		v.InitializePollWithSnapshotFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
 			return fmt.Errorf("poll setup failed")
 		}
 
@@ -754,7 +761,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		voteReq = &types.VoteConfirmTokenRequest{Chain: evmChain}
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+				if strings.EqualFold(chain, evmChain) {
 					return chaink
 				}
 				return nil
@@ -778,7 +785,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
@@ -792,6 +799,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		}
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
+			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
+				return []sdk.ValAddress{}
+			},
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -899,27 +910,9 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
+		v.InitializePollFunc = func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error {
 			return fmt.Errorf("poll setup failed")
 		}
-
-		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no key", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
-
-		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, tss.KeyID) (int64, bool) { return 0, false }
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -954,6 +947,7 @@ func TestAddChain(t *testing.T) {
 		tssMock = &mock.TSSMock{}
 
 		n = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -1021,7 +1015,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		voteReq = &types.VoteConfirmDepositRequest{Chain: evmChain}
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+				if strings.EqualFold(chain, evmChain) {
 					return chaink
 				}
 				return nil
@@ -1052,7 +1046,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
@@ -1077,6 +1071,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		n = &mock.NexusMock{
+			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress { return []sdk.ValAddress{} },
+			IsChainActivatedFunc:    func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -1189,25 +1185,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return fmt.Errorf("failed") }
-
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no key", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
-
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("no snapshot counter", testutils.Func(func(t *testing.T) {
-		setup()
-		s.GetSnapshotCounterForKeyIDFunc = func(sdk.Context, tss.KeyID) (int64, bool) { return 0, false }
+		v.InitializePollFunc = func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error {
+			return fmt.Errorf("failed")
+		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1231,7 +1211,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+				if strings.EqualFold(chain, evmChain) {
 					return chaink
 				}
 				return nil
@@ -1271,6 +1251,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok

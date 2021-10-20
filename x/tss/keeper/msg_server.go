@@ -344,15 +344,10 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
 		)
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
-		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
-		}
-
 		for _, criminal := range keygenResult.Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing key %s", criminalAddress.String(), keyID))
+			if err := validateCriminal(criminalAddress, poll); err != nil {
+				s.Logger(ctx).Error(err.Error())
 				continue
 			}
 
@@ -366,6 +361,22 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
+}
+
+func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
+	criminalFound := false
+	for _, voter := range poll.GetVoters() {
+		if criminal.Equals(voter.Validator) {
+			criminalFound = true
+			break
+		}
+	}
+
+	if !criminalFound {
+		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetKey().String())
+	}
+
+	return nil
 }
 
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
@@ -466,17 +477,13 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
 
-		snapshot, found := s.snapshotter.GetSnapshot(ctx, poll.GetSnapshotSeqNo())
-		if !found {
-			return nil, fmt.Errorf("no snapshot found for counter %d", poll.GetSnapshotSeqNo())
-		}
 		for _, criminal := range signResult.GetCriminals().Criminals {
 			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if _, found := snapshot.GetValidator(criminalAddress); !found {
-				s.Logger(ctx).Info(fmt.Sprintf("received criminal %s who is not a participant of producing signature %s",
-					criminalAddress.String(), req.PollKey.ID))
+			if err := validateCriminal(criminalAddress, poll); err != nil {
+				s.Logger(ctx).Error(err.Error())
 				continue
 			}
+
 			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
 			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))

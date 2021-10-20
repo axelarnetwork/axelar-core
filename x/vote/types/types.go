@@ -21,7 +21,7 @@ var _ codectypes.UnpackInterfacesMessage = TalliedVote{}
 type Voters []sdk.ValAddress
 
 // NewTalliedVote is the constructor for TalliedVote
-func NewTalliedVote(voter sdk.ValAddress, shareCount int64, data codec.ProtoMarshaler) TalliedVote {
+func NewTalliedVote(voter sdk.ValAddress, votingPower int64, data codec.ProtoMarshaler) TalliedVote {
 	if voter == nil {
 		panic("voter cannot be nil")
 	}
@@ -31,7 +31,7 @@ func NewTalliedVote(voter sdk.ValAddress, shareCount int64, data codec.ProtoMars
 	}
 
 	return TalliedVote{
-		Tally:  sdk.NewInt(shareCount),
+		Tally:  sdk.NewInt(votingPower),
 		Data:   d,
 		Voters: Voters{voter},
 	}
@@ -50,15 +50,16 @@ func (m TalliedVote) Hash() string {
 
 // NewPollMetaData is the constructor for PollMetadata.
 // It is not in the exported package to make it clear that only the vote module is supposed to use it.
-func NewPollMetaData(key exported.PollKey, threshold utils.Threshold, snapshotSeqNo int64) exported.PollMetadata {
+func NewPollMetaData(key exported.PollKey, threshold utils.Threshold, voters []exported.Voter, totalVotingPower sdk.Int) exported.PollMetadata {
 	return exported.PollMetadata{
-		Key:             key,
-		SnapshotSeqNo:   snapshotSeqNo,
-		ExpiresAt:       -1,
-		Result:          nil,
-		VotingThreshold: threshold,
-		State:           exported.Pending,
-		MinVoterCount:   0,
+		Key:              key,
+		ExpiresAt:        -1,
+		Result:           nil,
+		VotingThreshold:  threshold,
+		State:            exported.Pending,
+		MinVoterCount:    0,
+		Voters:           voters,
+		TotalVotingPower: totalVotingPower,
 	}
 }
 
@@ -77,12 +78,9 @@ type Store interface {
 	GetVote(hash string) (TalliedVote, bool)
 	HasVoted(voter sdk.ValAddress) bool
 	GetVotes() []TalliedVote
-	GetShareCount(voter sdk.ValAddress) (int64, bool)
-	GetTotalShareCount() sdk.Int
 	SetMetadata(metadata exported.PollMetadata)
 	GetPoll(key exported.PollKey) exported.Poll
 	DeletePoll()
-	GetTotalVoterCount() int64
 }
 
 // NewPoll creates a new poll
@@ -131,6 +129,15 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 
 // Initialize initializes the poll
 func (p Poll) Initialize() error {
+	sumVotingPower := sdk.ZeroInt()
+	for _, voter := range p.Voters {
+		sumVotingPower = sumVotingPower.AddRaw(voter.VotingPower)
+	}
+
+	if utils.NewThreshold(sumVotingPower.Int64(), p.TotalVotingPower.Int64()).LT(p.VotingThreshold) {
+		return fmt.Errorf("cannot create poll %s due to it being impossible to pass", p.Key.String())
+	}
+
 	other := p.Store.GetPoll(p.Key)
 	if err := other.Delete(); err != nil {
 		return err
@@ -138,6 +145,19 @@ func (p Poll) Initialize() error {
 
 	p.SetMetadata(p.PollMetadata)
 	return nil
+}
+
+func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
+	fmt.Printf("v %#v\n", v)
+	fmt.Printf("p.PollMetadata.Voters %#v\n", p.PollMetadata.Voters)
+
+	for _, voter := range p.PollMetadata.Voters {
+		if v.Equals(voter.Validator) {
+			return voter.VotingPower
+		}
+	}
+
+	return 0
 }
 
 // Vote records the given vote
@@ -151,8 +171,8 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 		return nil
 	}
 
-	shareCount, ok := p.GetShareCount(voter)
-	if !ok {
+	votingPower := p.getVotingPower(voter)
+	if votingPower == 0 {
 		return fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
 	}
 
@@ -160,7 +180,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 		return fmt.Errorf("voter %s has already voted", voter.String())
 	}
 
-	p.SetVote(voter, p.tally(voter, shareCount, data))
+	p.SetVote(voter, p.tally(voter, votingPower, data))
 
 	majorityVote := p.getMajorityVote()
 	if p.hasEnoughVotes(majorityVote.Tally) {
@@ -206,9 +226,14 @@ func (p *Poll) GetKey() exported.PollKey {
 	return p.Key
 }
 
-// GetSnapshotSeqNo returns the sequence number of the snapshot associated with the poll
-func (p *Poll) GetSnapshotSeqNo() int64 {
-	return p.SnapshotSeqNo
+// GetVoters returns the poll's voters
+func (p *Poll) GetVoters() []exported.Voter {
+	return p.Voters
+}
+
+// GetTotalVotingPower returns the total voting power of the poll
+func (p *Poll) GetTotalVotingPower() sdk.Int {
+	return p.TotalVotingPower
 }
 
 func (p *Poll) updateExpiry(currentBlockHeight int64) {
@@ -217,13 +242,13 @@ func (p *Poll) updateExpiry(currentBlockHeight int64) {
 	}
 }
 
-func (p *Poll) tally(voter sdk.ValAddress, shareCount int64, data codec.ProtoMarshaler) TalliedVote {
+func (p *Poll) tally(voter sdk.ValAddress, votingPower int64, data codec.ProtoMarshaler) TalliedVote {
 	var talliedVote TalliedVote
 	if existingVote, ok := p.GetVote(hash(data)); !ok {
-		talliedVote = NewTalliedVote(voter, shareCount, data)
+		talliedVote = NewTalliedVote(voter, votingPower, data)
 	} else {
 		talliedVote = existingVote
-		talliedVote.Tally = talliedVote.Tally.AddRaw(shareCount)
+		talliedVote.Tally = talliedVote.Tally.AddRaw(votingPower)
 		talliedVote.Voters = append(talliedVote.Voters, voter)
 	}
 	return talliedVote
@@ -239,18 +264,16 @@ func (p Poll) getVoterCount() int64 {
 	return count
 }
 
-func (p *Poll) hasEnoughVotes(majorityShare sdk.Int) bool {
-	voterCount := p.getVoterCount()
-
-	return utils.NewThreshold(majorityShare.Int64(), p.GetTotalShareCount().Int64()).GTE(p.VotingThreshold) &&
-		(p.GetTotalVoterCount() < p.MinVoterCount || voterCount >= p.MinVoterCount)
+func (p *Poll) hasEnoughVotes(majority sdk.Int) bool {
+	return utils.NewThreshold(majority.Int64(), p.GetTotalVotingPower().Int64()).GTE(p.VotingThreshold) &&
+		(int64(len(p.Voters)) < p.MinVoterCount || p.getVoterCount() >= p.MinVoterCount)
 }
 
-func (p *Poll) cannotWin(majorityShare sdk.Int) bool {
-	alreadyTallied := p.getTalliedShareCount()
-	missingShares := p.GetTotalShareCount().Sub(alreadyTallied)
+func (p *Poll) cannotWin(majority sdk.Int) bool {
+	alreadyTallied := p.getTalliedVotingPower()
+	missingVotingPower := p.GetTotalVotingPower().Sub(alreadyTallied)
 
-	return utils.NewThreshold(majorityShare.Add(missingShares).Int64(), p.GetTotalShareCount().Int64()).LT(p.VotingThreshold)
+	return utils.NewThreshold(majority.Add(missingVotingPower).Int64(), p.GetTotalVotingPower().Int64()).LT(p.VotingThreshold)
 }
 
 func (p Poll) getMajorityVote() TalliedVote {
@@ -265,7 +288,7 @@ func (p Poll) getMajorityVote() TalliedVote {
 	return result
 }
 
-func (p Poll) getTalliedShareCount() sdk.Int {
+func (p Poll) getTalliedVotingPower() sdk.Int {
 	result := sdk.ZeroInt()
 
 	for _, talliedVote := range p.GetVotes() {

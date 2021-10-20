@@ -367,7 +367,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], snapK,
+		appCodec, keys[voteTypes.StoreKey], snapK, stakingK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey],
@@ -403,7 +403,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		snapshot.NewAppModule(snapK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
 		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK),
+		nexus.NewAppModule(nexusK, snapK, stakingK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, bApp.MsgServiceRouter(), bApp.Router(), logger),
@@ -415,7 +415,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName)
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, tssTypes.ModuleName, btcTypes.ModuleName, evmTypes.ModuleName)
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, tssTypes.ModuleName, btcTypes.ModuleName, evmTypes.ModuleName, nexusTypes.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
