@@ -288,5 +288,5 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 // GetSignQueue returns the sign queue
 func (k Keeper) GetSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(signQueueName))
-	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.GetMaxSignQueueSize(ctx)), k.Logger(ctx))
+	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.getMaxSignQueueSize(ctx)), k.Logger(ctx))
 }

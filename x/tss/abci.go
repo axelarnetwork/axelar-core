@@ -278,14 +278,10 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 	var signShares int64
 	var signInfo exported.SignInfo
 
-	maxSignShares := k.GetMaxSignShares(ctx)
-	for signShares < maxSignShares {
-		ok := signQueue.Peek(i, &signInfo)
-		// queue is empty at i
-		if !ok {
-			break
-		}
+	defer func(){ ctx.Logger().Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size()))}()
 
+	maxSignShares := k.GetMaxSignShares(ctx)
+	for signShares < maxSignShares && signQueue.Peek(i, &signInfo)  {
 		_, sigStatus := k.GetSig(ctx, signInfo.SigID)
 		snap, _ := s.GetSnapshot(ctx, signInfo.SnapshotCounter)
 
@@ -296,15 +292,15 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 				return
 			}
 			k.ScheduleSign(ctx, signInfo)
-			ctx.Logger().Debug(fmt.Sprintf("schedule sign %s, current sign shares %d, queue size %d", signInfo.SigID, signShares, signQueue.Size()))
+			ctx.Logger().Debug(fmt.Sprintf("scheduling sign %s", signInfo.SigID))
 			i++
 		case exported.SigStatus_Scheduled, exported.SigStatus_Signing:
 			signShares += snap.CorruptionThreshold + 1
-			ctx.Logger().Debug(fmt.Sprintf("signing %s, current signing shares %d, queue size %d", signInfo.SigID, signShares, signQueue.Size()))
+			ctx.Logger().Debug(fmt.Sprintf("signing %s in progress", signInfo.SigID))
 			i++
 		case exported.SigStatus_Signed, exported.SigStatus_Aborted, exported.SigStatus_Invalid:
 			signQueue.Dequeue(i, &signInfo)
-			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s, queue size %d", signInfo.SigID, sigStatus, signQueue.Size()))
+			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s", signInfo.SigID, sigStatus))
 		default:
 
 		}

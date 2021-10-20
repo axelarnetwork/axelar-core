@@ -100,21 +100,21 @@ var (
 	queueKey    = KeyFromStr("queue")
 )
 
-// NewSequenceKVQueue is the constructor of SequenceKVQueue
-func NewSequenceKVQueue(store KVStore, maxSize uint64, logger log.Logger) SequenceKVQueue {
+// NewSequenceKVQueue is the constructor of SequenceKVQueue. The prefixStore should isolate the namespace of the queue
+func NewSequenceKVQueue(prefixStore KVStore, maxSize uint64, logger log.Logger) SequenceKVQueue {
 	var seqNo uint64
-	bz := store.GetRaw(sequenceKey)
+	bz := prefixStore.GetRaw(sequenceKey)
 	if bz != nil {
 		seqNo = binary.BigEndian.Uint64(bz)
 	}
 
 	var size uint64
-	bz = store.GetRaw(sizeKey)
+	bz = prefixStore.GetRaw(sizeKey)
 	if bz != nil {
 		size = binary.BigEndian.Uint64(bz)
 	}
 
-	return SequenceKVQueue{store: store, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
+	return SequenceKVQueue{store: prefixStore, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key. Returns queue position and status
@@ -133,7 +133,8 @@ func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
 	return nil
 }
 
-// Dequeue pops the nth value off and unmarshals it into the given object. Returns false if empty or object not of the correct type.
+// Dequeue pops the nth value off and unmarshals it into the given object, returns false if n is out of range
+// n is 0-based
 func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
 	ok := q.Peek(n, value)
 	if ok {
@@ -144,12 +145,12 @@ func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
 }
 
 // Size returns the given current size of the queue
-func (q *SequenceKVQueue) Size() uint64 {
+func (q SequenceKVQueue) Size() uint64 {
 	return q.size
 }
 
-// Peek unmarshals the value into the given object at the given index and returns its sequence number.
-// Returns -1 if index is out of range
+// Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
+// n is 0-based
 func (q *SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
 	if n >= q.size {
 		return false
