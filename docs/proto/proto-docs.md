@@ -454,7 +454,7 @@ MsgConfirmDeposit represents a deposit confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
+| `deposit_address` | [bytes](#bytes) |  |  |
 
 
 
