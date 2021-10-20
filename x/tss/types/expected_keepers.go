@@ -86,7 +86,7 @@ type TSSKeeper interface {
 	EmitAckEvent(ctx sdk.Context)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
-	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, height int64)
+	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress)
 	GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress
 	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool
 	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, counter int64)
@@ -119,6 +119,5 @@ type TSSKeeper interface {
 	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetAckPeriodInBlocks(ctx sdk.Context) int64
-	GetAckWindowInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 }

@@ -6,11 +6,8 @@ import (
 )
 
 // NewAckRequest constructor for AckRequest
-func NewAckRequest(sender sdk.AccAddress, height int64) *AckRequest {
-	return &AckRequest{
-		Sender: sender,
-		Height: height,
-	}
+func NewAckRequest(sender sdk.AccAddress) *AckRequest {
+	return &AckRequest{Sender: sender}
 }
 
 // Route implements the sdk.Msg interface.
@@ -24,10 +21,6 @@ func (m AckRequest) Type() string { return "Ack" }
 func (m AckRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-
-	if m.Height < 0 {
-		return sdkerrors.Wrap(ErrTss, "invalid height")
 	}
 
 	return nil

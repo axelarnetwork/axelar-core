@@ -20,12 +20,9 @@ message Params {
   // AckPeriodInBlocks defines the time period in blocks for tss to
   // emit the event asking validators to send acknowledgments for keygen/sign
   int64 ack_period_in_blocks = 4;
-  // AckWindowInBlocks defines the time period in blocks for validators to
-  // submit their acknowledgements after the aforementioned event is received
-  int64 ack_window_in_blocks = 5;
-  utils.v1beta1.Threshold max_missed_blocks_per_window = 6
+  utils.v1beta1.Threshold max_missed_blocks_per_window = 5
       [ (gogoproto.nullable) = false ];
-  int64 unbonding_locking_key_rotation_count = 7;
-  utils.v1beta1.Threshold external_multisig_threshold = 8
+  int64 unbonding_locking_key_rotation_count = 6;
+  utils.v1beta1.Threshold external_multisig_threshold = 7
       [ (gogoproto.nullable) = false ];
 }

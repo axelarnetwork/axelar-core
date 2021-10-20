@@ -384,14 +384,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 			return false
 		}
 
-		height, err := strconv.ParseInt(m[tssTypes.AttributeKeyHeight], 10, 64)
-		if err != nil {
-			panic(fmt.Sprintf("cannot convert string to int64: %s", err.Error()))
-		}
-
-		_ = submitMsg(&tssTypes.AckRequest{
-			Sender: n.Proxy,
-			Height: height})
+		_ = submitMsg(&tssTypes.AckRequest{Sender: n.Proxy})
 
 		return true
 	})

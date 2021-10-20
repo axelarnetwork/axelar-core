@@ -93,23 +93,8 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
-	if s.IsOperatorAvailable(ctx, validator) {
-		return nil, fmt.Errorf("sender [%s] already submitted an ACK message within the current period and window", req.Sender)
-	}
-
-	eventHeight := ctx.BlockHeight() - (ctx.BlockHeight() % s.GetAckPeriodInBlocks(ctx))
-	if req.Height != eventHeight {
-		return nil, fmt.Errorf("height mismatch for sender [%s] (expected %d, got %d)", req.Sender, eventHeight, req.Height)
-	}
-
-	if ctx.BlockHeight()-req.Height > s.GetAckWindowInBlocks(ctx) {
-		s.Logger(ctx).Debug(fmt.Sprintf("late ACK message for sender %s "+
-			"(should have arrived until height %d, current height %d)", req.Sender, eventHeight+s.GetAckWindowInBlocks(ctx), ctx.BlockHeight()))
-		return &types.AckResponse{}, nil
-	}
-
 	s.Logger(ctx).Debug(fmt.Sprintf("updating availability for sender %s", req.Sender))
-	s.SetAvailableOperator(ctx, validator, eventHeight)
+	s.SetAvailableOperator(ctx, validator)
 	return &types.AckResponse{}, nil
 }
 

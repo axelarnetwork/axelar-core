@@ -76,9 +76,8 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
-	eventHeight := s.Ctx.BlockHeight() - (s.Ctx.BlockHeight() % s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), eventHeight)
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
 	}
 
 	// start keygen to record the snapshot for each key
@@ -158,9 +157,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
-	eventHeight := s.Ctx.BlockHeight() - (s.Ctx.BlockHeight() % s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), eventHeight)
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
 	}
 
 	// start keygen to record the snapshot for each key

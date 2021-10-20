@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strconv"
 	"sync"
 	"time"
 
@@ -226,7 +225,6 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 
 // ProcessAck broadcasts an acknowledgment
 func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
-	height, err := parseAckParams(e.Attributes)
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
@@ -243,8 +241,8 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
 		return sdkerrors.Wrap(err, "tofnd not set up correctly")
 	case tofnd.RESPONSE_PRESENT, tofnd.RESPONSE_ABSENT:
-		mgr.Logger.Info(fmt.Sprintf("sending ack for height '%d'", height))
-		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, height)
+		mgr.Logger.Info("sending acknowledgment")
+		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress)
 		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
@@ -370,17 +368,4 @@ func prepareTrafficIn(principalAddr string, from string, sessionID string, paylo
 		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, principalAddr))
 
 	return msgIn
-}
-
-func parseAckParams(attributes map[string]string) (height int64, err error) {
-	parsers := []*parse.AttributeParser{
-		{Key: tss.AttributeKeyHeight, Map: func(s string) (interface{}, error) { return strconv.ParseInt(s, 10, 64) }},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return 0, err
-	}
-
-	return results[0].(int64), nil
 }

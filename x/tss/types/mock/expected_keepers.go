@@ -1251,9 +1251,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetAckPeriodInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetAckPeriodInBlocks method")
 // 			},
-// 			GetAckWindowInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-// 				panic("mock out the GetAckWindowInBlocks method")
-// 			},
 // 			GetAllKeygenRequestsAtCurrentHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.StartKeygenRequest {
 // 				panic("mock out the GetAllKeygenRequestsAtCurrentHeight method")
 // 			},
@@ -1353,7 +1350,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
-// 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, height int64)  {
+// 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress)  {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
 // 			SetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
@@ -1425,9 +1422,6 @@ type TSSKeeperMock struct {
 
 	// GetAckPeriodInBlocksFunc mocks the GetAckPeriodInBlocks method.
 	GetAckPeriodInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
-
-	// GetAckWindowInBlocksFunc mocks the GetAckWindowInBlocks method.
-	GetAckWindowInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetAllKeygenRequestsAtCurrentHeightFunc mocks the GetAllKeygenRequestsAtCurrentHeight method.
 	GetAllKeygenRequestsAtCurrentHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.StartKeygenRequest
@@ -1529,7 +1523,7 @@ type TSSKeeperMock struct {
 	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
-	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, height int64)
+	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress)
 
 	// SetExternalKeyIDsFunc mocks the SetExternalKeyIDs method.
 	SetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
@@ -1647,11 +1641,6 @@ type TSSKeeperMock struct {
 		}
 		// GetAckPeriodInBlocks holds details about calls to the GetAckPeriodInBlocks method.
 		GetAckPeriodInBlocks []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// GetAckWindowInBlocks holds details about calls to the GetAckWindowInBlocks method.
-		GetAckWindowInBlocks []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -1906,8 +1895,6 @@ type TSSKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-			// Height is the height argument value.
-			Height int64
 		}
 		// SetExternalKeyIDs holds details about calls to the SetExternalKeyIDs method.
 		SetExternalKeyIDs []struct {
@@ -2015,7 +2002,6 @@ type TSSKeeperMock struct {
 	lockDoesValidatorParticipateInSign      sync.RWMutex
 	lockEmitAckEvent                        sync.RWMutex
 	lockGetAckPeriodInBlocks                sync.RWMutex
-	lockGetAckWindowInBlocks                sync.RWMutex
 	lockGetAllKeygenRequestsAtCurrentHeight sync.RWMutex
 	lockGetAvailableOperators               sync.RWMutex
 	lockGetCurrentKey                       sync.RWMutex
@@ -2464,37 +2450,6 @@ func (mock *TSSKeeperMock) GetAckPeriodInBlocksCalls() []struct {
 	mock.lockGetAckPeriodInBlocks.RLock()
 	calls = mock.calls.GetAckPeriodInBlocks
 	mock.lockGetAckPeriodInBlocks.RUnlock()
-	return calls
-}
-
-// GetAckWindowInBlocks calls GetAckWindowInBlocksFunc.
-func (mock *TSSKeeperMock) GetAckWindowInBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-	if mock.GetAckWindowInBlocksFunc == nil {
-		panic("TSSKeeperMock.GetAckWindowInBlocksFunc: method is nil but TSSKeeper.GetAckWindowInBlocks was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetAckWindowInBlocks.Lock()
-	mock.calls.GetAckWindowInBlocks = append(mock.calls.GetAckWindowInBlocks, callInfo)
-	mock.lockGetAckWindowInBlocks.Unlock()
-	return mock.GetAckWindowInBlocksFunc(ctx)
-}
-
-// GetAckWindowInBlocksCalls gets all the calls that were made to GetAckWindowInBlocks.
-// Check the length with:
-//     len(mockedTSSKeeper.GetAckWindowInBlocksCalls())
-func (mock *TSSKeeperMock) GetAckWindowInBlocksCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetAckWindowInBlocks.RLock()
-	calls = mock.calls.GetAckWindowInBlocks
-	mock.lockGetAckWindowInBlocks.RUnlock()
 	return calls
 }
 
@@ -3682,23 +3637,21 @@ func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
 }
 
 // SetAvailableOperator calls SetAvailableOperatorFunc.
-func (mock *TSSKeeperMock) SetAvailableOperator(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, height int64) {
+func (mock *TSSKeeperMock) SetAvailableOperator(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) {
 	if mock.SetAvailableOperatorFunc == nil {
 		panic("TSSKeeperMock.SetAvailableOperatorFunc: method is nil but TSSKeeper.SetAvailableOperator was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-		Height    int64
 	}{
 		Ctx:       ctx,
 		Validator: validator,
-		Height:    height,
 	}
 	mock.lockSetAvailableOperator.Lock()
 	mock.calls.SetAvailableOperator = append(mock.calls.SetAvailableOperator, callInfo)
 	mock.lockSetAvailableOperator.Unlock()
-	mock.SetAvailableOperatorFunc(ctx, validator, height)
+	mock.SetAvailableOperatorFunc(ctx, validator)
 }
 
 // SetAvailableOperatorCalls gets all the calls that were made to SetAvailableOperator.
@@ -3707,12 +3660,10 @@ func (mock *TSSKeeperMock) SetAvailableOperator(ctx github_com_cosmos_cosmos_sdk
 func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-	Height    int64
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-		Height    int64
 	}
 	mock.lockSetAvailableOperator.RLock()
 	calls = mock.calls.SetAvailableOperator

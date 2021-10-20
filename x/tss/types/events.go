@@ -18,7 +18,6 @@ const (
 	AttributeKeySigModule = "sigModule"
 	AttributeKeySigData   = "sigData"
 
-	AttributeKeyHeight                    = "height"
 	AttributeKeyKeyAckType                = "ackType"
 	AttributeKeySessionID                 = "sessionID"
 	AttributeKeyThreshold                 = "threshold"

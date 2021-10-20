@@ -10,7 +10,6 @@ axelard set-genesis-tss [flags]
 
 ```
       --ack-period int   time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign
-      --ack-window int   time period in blocks for validators to submit their acknowledgements after the event is received
   -h, --help             help for set-genesis-tss
 ```
 

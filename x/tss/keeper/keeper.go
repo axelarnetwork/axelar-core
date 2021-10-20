@@ -160,14 +160,6 @@ func (k Keeper) GetAckPeriodInBlocks(ctx sdk.Context) int64 {
 	return result
 }
 
-// GetAckWindowInBlocks returns the acknowledgment event period
-func (k Keeper) GetAckWindowInBlocks(ctx sdk.Context) int64 {
-	var result int64
-	k.params.Get(ctx, types.KeyAckWindowInBlocks, &result)
-
-	return result
-}
-
 // SetGroupRecoveryInfo sets the group recovery info for a given party
 func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte) {
 	k.getStore(ctx).SetRaw(groupRecoverPrefix.AppendStr(string(keyID)), recoveryInfo)
@@ -254,11 +246,11 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 	return int64(binary.LittleEndian.Uint64(bz))
 }
 
-// SetAvailableOperator signals that a validator sent the ack requested at the specified height.
-func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, height int64) {
+// SetAvailableOperator signals that a validator sent an ack
+func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress) {
 	key := availablePrefix.AppendStr(validator.String())
 	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(height))
+	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
 	k.getStore(ctx).SetRaw(key, bz)
 }
 
@@ -395,7 +387,6 @@ func (k Keeper) EmitAckEvent(ctx sdk.Context) {
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
-			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		))
 	}
 }

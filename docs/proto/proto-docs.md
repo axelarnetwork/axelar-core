@@ -3478,7 +3478,6 @@ Params is the parameter set for this module
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `ack_period_in_blocks` | [int64](#int64) |  | AckPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign |
-| `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time period in blocks for validators to submit their acknowledgements after the aforementioned event is received |
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
@@ -3771,7 +3770,6 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `height` | [int64](#int64) |  |  |
 
 
 

@@ -19,7 +19,6 @@ var (
 	KeyKeyRequirements                  = []byte("keyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
 	KeyAckPeriodInBlocks                = []byte("AckPeriodInBlocks")
-	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
@@ -60,7 +59,6 @@ func DefaultParams() Params {
 			},
 		},
 		SuspendDurationInBlocks:          2000,
-		AckWindowInBlocks:                5,
 		AckPeriodInBlocks:                50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 8,
@@ -81,7 +79,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
 		params.NewParamSetPair(KeyAckPeriodInBlocks, &m.AckPeriodInBlocks, validateInt64("AckPeriodInBlocks")),
-		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
 		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
 		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validateInt64("UnbondingLockingKeyRotationCount")),
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
@@ -99,10 +96,6 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateInt64("AckPeriodInBlocks")(m.AckPeriodInBlocks); err != nil {
-		return err
-	}
-
-	if err := validateInt64("AckWindowInBlocks")(m.AckWindowInBlocks); err != nil {
 		return err
 	}
 
