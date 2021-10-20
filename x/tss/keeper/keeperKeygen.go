@@ -24,9 +24,6 @@ import (
 // ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
 // to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
-	/*var height int64
-	k.params.Get(ctx, types.KeyAckPeriodInBlocks, &height)
-	height += ctx.BlockHeight()*/
 	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
 		AppendStr(exported.AckType_Keygen.String()).AppendStr(string(req.KeyID))
 	if k.getStore(ctx).Has(key) {
@@ -34,8 +31,6 @@ func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (i
 	}
 
 	k.getStore(ctx).Set(key, &req)
-	//k.EmitAckEvent(ctx)
-
 	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
 	return ctx.BlockHeight(), nil
 }

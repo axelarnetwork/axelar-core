@@ -209,8 +209,6 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
 	}
 
-	//ack := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSend)
-
 	queryAck := createNewBlockEventQuery(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 	ack, err := tmEvents.Subscribe(eventBus, queryAck)
 	if err != nil {

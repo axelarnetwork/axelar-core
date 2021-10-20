@@ -30,14 +30,9 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 	}
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
-	/*var height int64
-	k.params.Get(ctx, types.KeyAckPeriodInBlocks, &height)
-	height += ctx.BlockHeight()*/
-
 	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
 	k.getStore(ctx).Set(key, &info)
 
-	//k.EmitAckEvent(ctx)
 	k.Logger(ctx).Info(fmt.Sprintf(
 		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
 		info.SigID, info.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))

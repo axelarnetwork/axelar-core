@@ -249,7 +249,6 @@ func TestScheduleSignAtHeight(t *testing.T) {
 		}
 
 		// verify signs from above
-		//s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckPeriodInBlocks)
 		infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
 
 		actualNumInfos := 0

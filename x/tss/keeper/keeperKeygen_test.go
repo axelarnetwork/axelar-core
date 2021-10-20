@@ -172,7 +172,6 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 		}
 
 		// verify keygens from above
-		//s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckPeriodInBlocks)
 		reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 
 		actualNumReqs := 0
