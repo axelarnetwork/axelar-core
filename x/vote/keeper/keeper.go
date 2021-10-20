@@ -11,7 +11,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -28,14 +27,16 @@ type Keeper struct {
 	storeKey    sdk.StoreKey
 	cdc         codec.BinaryCodec
 	snapshotter types.Snapshotter
+	staking     types.StakingKeeper
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter, staking types.StakingKeeper) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,
 		snapshotter: snapshotter,
+		staking:     staking,
 	}
 	return keeper
 }
@@ -58,18 +59,43 @@ func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 	return threshold
 }
 
-// InitializePoll initializes a new poll
-func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
-	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), snapshotSeqNo).With(pollProperties...)
-
-	snap, ok := k.snapshotter.GetSnapshot(ctx, metadata.SnapshotSeqNo)
-	if !ok {
-		return fmt.Errorf("snapshot %d for poll %s must exist", metadata.SnapshotSeqNo, metadata.Key)
-	}
-
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, snap)).WithLogger(k.Logger(ctx))
+func (k Keeper) initializePoll(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, totalVotingPower sdk.Int, pollProperties ...exported.PollProperty) error {
+	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), voters, totalVotingPower).With(pollProperties...)
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
 
 	return poll.Initialize()
+}
+
+// InitializePoll initializes a new poll with the given validators
+func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, voterAddresses []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
+	voters := make([]exported.Voter, 0)
+
+	for _, voterAddress := range voterAddresses {
+		validator := k.staking.Validator(ctx, voterAddress)
+		if validator == nil {
+			k.Logger(ctx).Debug(fmt.Sprintf("voter %s is not a validator", voterAddress.String()))
+			continue
+		}
+
+		voters = append(voters, exported.Voter{Validator: voterAddress, VotingPower: validator.GetConsensusPower(k.staking.PowerReduction(ctx))})
+	}
+
+	return k.initializePoll(ctx, key, voters, k.staking.GetLastTotalPower(ctx), pollProperties...)
+}
+
+// InitializePollWithSnapshot initializes a new poll with the given snapshot sequence number
+func (k Keeper) InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+	snap, ok := k.snapshotter.GetSnapshot(ctx, snapshotSeqNo)
+	if !ok {
+		return fmt.Errorf("snapshot %d does not exist", snapshotSeqNo)
+	}
+
+	voters := make([]exported.Voter, 0)
+	for _, validator := range snap.Validators {
+		voters = append(voters, exported.Voter{Validator: validator.GetSDKValidator().GetOperator(), VotingPower: validator.ShareCount})
+	}
+
+	return k.initializePoll(ctx, key, voters, snap.TotalShareCount, pollProperties...)
 }
 
 // GetPoll returns an existing poll to record votes
@@ -79,12 +105,7 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
 	}
 
-	snap, ok := k.snapshotter.GetSnapshot(ctx, metadata.SnapshotSeqNo)
-	if !ok {
-		// if the poll already exists the snapshot MUST be there
-		panic(fmt.Errorf("could not find snapshot %d for poll %s", metadata.SnapshotSeqNo, pollKey))
-	}
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key, snap)).WithLogger(k.Logger(ctx))
+	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
 
 	return poll
 }
@@ -102,13 +123,12 @@ func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey, snap snapshot.Snapshot) *pollStore {
+func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey) *pollStore {
 	return &pollStore{
-		key:      key,
-		snapshot: snap,
-		KVStore:  k.getKVStore(ctx),
-		getPoll:  func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
-		logger:   k.Logger(ctx),
+		key:     key,
+		KVStore: k.getKVStore(ctx),
+		getPoll: func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
+		logger:  k.Logger(ctx),
 	}
 }
 
@@ -117,27 +137,10 @@ var _ types.Store = &pollStore{}
 type pollStore struct {
 	votesCached bool
 	utils.KVStore
-	logger   log.Logger
-	votes    []types.TalliedVote
-	getPoll  func(key exported.PollKey) exported.Poll
-	snapshot snapshot.Snapshot
-	key      exported.PollKey
-}
-
-func (p *pollStore) GetTotalVoterCount() int64 {
-	return int64(len(p.snapshot.Validators))
-}
-
-func (p *pollStore) GetTotalShareCount() sdk.Int {
-	return p.snapshot.TotalShareCount
-}
-
-func (p *pollStore) GetShareCount(voter sdk.ValAddress) (int64, bool) {
-	val, ok := p.snapshot.GetValidator(voter)
-	if !ok {
-		return 0, false
-	}
-	return val.ShareCount, true
+	logger  log.Logger
+	votes   []types.TalliedVote
+	getPoll func(key exported.PollKey) exported.Poll
+	key     exported.PollKey
 }
 
 func (p *pollStore) SetVote(voter sdk.ValAddress, vote types.TalliedVote) {

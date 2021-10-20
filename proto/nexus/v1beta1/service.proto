@@ -1,0 +1,29 @@
+syntax = "proto3";
+package nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "nexus/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the nexus Msg service.
+service MsgService {
+  rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
+      returns (RegisterChainMaintainerResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/registerChainMaintainer"
+      body : "*"
+    };
+  }
+
+  rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
+      returns (DeregisterChainMaintainerResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/deregisterChainMaintainer"
+      body : "*"
+    };
+  }
+}

@@ -6,7 +6,7 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
@@ -32,13 +32,16 @@ var _ exported.Poll = &PollMock{}
 // 			GetResultFunc: func() codec.ProtoMarshaler {
 // 				panic("mock out the GetResult method")
 // 			},
-// 			GetSnapshotSeqNoFunc: func() int64 {
-// 				panic("mock out the GetSnapshotSeqNo method")
+// 			GetTotalVotingPowerFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
+// 				panic("mock out the GetTotalVotingPower method")
+// 			},
+// 			GetVotersFunc: func() []exported.Voter {
+// 				panic("mock out the GetVoters method")
 // 			},
 // 			IsFunc: func(state exported.PollState) bool {
 // 				panic("mock out the Is method")
 // 			},
-// 			VoteFunc: func(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
+// 			VoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error {
 // 				panic("mock out the Vote method")
 // 			},
 // 		}
@@ -60,14 +63,17 @@ type PollMock struct {
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
 
-	// GetSnapshotSeqNoFunc mocks the GetSnapshotSeqNo method.
-	GetSnapshotSeqNoFunc func() int64
+	// GetTotalVotingPowerFunc mocks the GetTotalVotingPower method.
+	GetTotalVotingPowerFunc func() github_com_cosmos_cosmos_sdk_types.Int
+
+	// GetVotersFunc mocks the GetVoters method.
+	GetVotersFunc func() []exported.Voter
 
 	// IsFunc mocks the Is method.
 	IsFunc func(state exported.PollState) bool
 
 	// VoteFunc mocks the Vote method.
-	VoteFunc func(voter sdk.ValAddress, data codec.ProtoMarshaler) error
+	VoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -83,8 +89,11 @@ type PollMock struct {
 		// GetResult holds details about calls to the GetResult method.
 		GetResult []struct {
 		}
-		// GetSnapshotSeqNo holds details about calls to the GetSnapshotSeqNo method.
-		GetSnapshotSeqNo []struct {
+		// GetTotalVotingPower holds details about calls to the GetTotalVotingPower method.
+		GetTotalVotingPower []struct {
+		}
+		// GetVoters holds details about calls to the GetVoters method.
+		GetVoters []struct {
 		}
 		// Is holds details about calls to the Is method.
 		Is []struct {
@@ -94,18 +103,19 @@ type PollMock struct {
 		// Vote holds details about calls to the Vote method.
 		Vote []struct {
 			// Voter is the voter argument value.
-			Voter sdk.ValAddress
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 			// Data is the data argument value.
 			Data codec.ProtoMarshaler
 		}
 	}
-	lockAllowOverride    sync.RWMutex
-	lockDelete           sync.RWMutex
-	lockGetKey           sync.RWMutex
-	lockGetResult        sync.RWMutex
-	lockGetSnapshotSeqNo sync.RWMutex
-	lockIs               sync.RWMutex
-	lockVote             sync.RWMutex
+	lockAllowOverride       sync.RWMutex
+	lockDelete              sync.RWMutex
+	lockGetKey              sync.RWMutex
+	lockGetResult           sync.RWMutex
+	lockGetTotalVotingPower sync.RWMutex
+	lockGetVoters           sync.RWMutex
+	lockIs                  sync.RWMutex
+	lockVote                sync.RWMutex
 }
 
 // AllowOverride calls AllowOverrideFunc.
@@ -212,29 +222,55 @@ func (mock *PollMock) GetResultCalls() []struct {
 	return calls
 }
 
-// GetSnapshotSeqNo calls GetSnapshotSeqNoFunc.
-func (mock *PollMock) GetSnapshotSeqNo() int64 {
-	if mock.GetSnapshotSeqNoFunc == nil {
-		panic("PollMock.GetSnapshotSeqNoFunc: method is nil but Poll.GetSnapshotSeqNo was just called")
+// GetTotalVotingPower calls GetTotalVotingPowerFunc.
+func (mock *PollMock) GetTotalVotingPower() github_com_cosmos_cosmos_sdk_types.Int {
+	if mock.GetTotalVotingPowerFunc == nil {
+		panic("PollMock.GetTotalVotingPowerFunc: method is nil but Poll.GetTotalVotingPower was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockGetSnapshotSeqNo.Lock()
-	mock.calls.GetSnapshotSeqNo = append(mock.calls.GetSnapshotSeqNo, callInfo)
-	mock.lockGetSnapshotSeqNo.Unlock()
-	return mock.GetSnapshotSeqNoFunc()
+	mock.lockGetTotalVotingPower.Lock()
+	mock.calls.GetTotalVotingPower = append(mock.calls.GetTotalVotingPower, callInfo)
+	mock.lockGetTotalVotingPower.Unlock()
+	return mock.GetTotalVotingPowerFunc()
 }
 
-// GetSnapshotSeqNoCalls gets all the calls that were made to GetSnapshotSeqNo.
+// GetTotalVotingPowerCalls gets all the calls that were made to GetTotalVotingPower.
 // Check the length with:
-//     len(mockedPoll.GetSnapshotSeqNoCalls())
-func (mock *PollMock) GetSnapshotSeqNoCalls() []struct {
+//     len(mockedPoll.GetTotalVotingPowerCalls())
+func (mock *PollMock) GetTotalVotingPowerCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockGetSnapshotSeqNo.RLock()
-	calls = mock.calls.GetSnapshotSeqNo
-	mock.lockGetSnapshotSeqNo.RUnlock()
+	mock.lockGetTotalVotingPower.RLock()
+	calls = mock.calls.GetTotalVotingPower
+	mock.lockGetTotalVotingPower.RUnlock()
+	return calls
+}
+
+// GetVoters calls GetVotersFunc.
+func (mock *PollMock) GetVoters() []exported.Voter {
+	if mock.GetVotersFunc == nil {
+		panic("PollMock.GetVotersFunc: method is nil but Poll.GetVoters was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetVoters.Lock()
+	mock.calls.GetVoters = append(mock.calls.GetVoters, callInfo)
+	mock.lockGetVoters.Unlock()
+	return mock.GetVotersFunc()
+}
+
+// GetVotersCalls gets all the calls that were made to GetVoters.
+// Check the length with:
+//     len(mockedPoll.GetVotersCalls())
+func (mock *PollMock) GetVotersCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetVoters.RLock()
+	calls = mock.calls.GetVoters
+	mock.lockGetVoters.RUnlock()
 	return calls
 }
 
@@ -270,12 +306,12 @@ func (mock *PollMock) IsCalls() []struct {
 }
 
 // Vote calls VoteFunc.
-func (mock *PollMock) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
+func (mock *PollMock) Vote(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error {
 	if mock.VoteFunc == nil {
 		panic("PollMock.VoteFunc: method is nil but Poll.Vote was just called")
 	}
 	callInfo := struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		Data  codec.ProtoMarshaler
 	}{
 		Voter: voter,
@@ -291,11 +327,11 @@ func (mock *PollMock) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) erro
 // Check the length with:
 //     len(mockedPoll.VoteCalls())
 func (mock *PollMock) VoteCalls() []struct {
-	Voter sdk.ValAddress
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 	Data  codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		Data  codec.ProtoMarshaler
 	}
 	mock.lockVote.RLock()

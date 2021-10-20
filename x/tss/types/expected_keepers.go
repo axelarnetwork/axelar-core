@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -29,13 +29,15 @@ type Nexus interface {
 
 // Voter provides voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient
@@ -57,8 +59,8 @@ type TofndSignClient interface {
 // actually used by this module
 type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
-	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool)
-	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator types.ValidatorI) (stop bool))
+	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 }
 
 // TSSKeeper provides keygen and signing functionality

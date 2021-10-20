@@ -223,7 +223,7 @@ func startSign(
 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)))
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
-	if err := voter.InitializePoll(
+	if err := voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
 		snap.Counter,
