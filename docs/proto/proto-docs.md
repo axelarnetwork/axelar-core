@@ -106,9 +106,9 @@
   
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
     - [Asset](#evm.v1beta1.Asset)
-    - [BatchedCommands](#evm.v1beta1.BatchedCommands)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
     - [Command](#evm.v1beta1.Command)
+    - [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
@@ -1472,6 +1472,11 @@ address
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `position` | [int64](#int64) |  |  |
+
+
 
 
 
@@ -1602,27 +1607,6 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="evm.v1beta1.BatchedCommands"></a>
-
-### BatchedCommands
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [bytes](#bytes) |  |  |
-| `command_ids` | [bytes](#bytes) | repeated |  |
-| `data` | [bytes](#bytes) |  |  |
-| `sig_hash` | [bytes](#bytes) |  |  |
-| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.BurnerInfo"></a>
 
 ### BurnerInfo
@@ -1656,6 +1640,27 @@ that is deposited by an user
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CommandBatchMetadata"></a>
+
+### CommandBatchMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command_ids` | [bytes](#bytes) | repeated |  |
+| `data` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2382,6 +2387,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `batched_commands_id` | [bytes](#bytes) |  |  |
+| `position` | [int64](#int64) |  |  |
 
 
 
@@ -2414,6 +2420,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [string](#string) |  |  |
+| `position` | [int64](#int64) |  |  |
 
 
 
@@ -3290,7 +3297,7 @@ Params is the parameter set for this module
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `max_sign_queue_size` | [int64](#int64) |  |  |
-| `max_sign_shares` | [int64](#int64) |  |  |
+| `max_simultaneous_sign_shares` | [int64](#int64) |  |  |
 
 
 

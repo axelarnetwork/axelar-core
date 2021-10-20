@@ -20,7 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-const signQueueName = "signqueue"
+const signQueueName = "sign_queue"
 
 // EnqueueSign enqueue the pending sign info into a queue and returns the position of the added sign info.
 // Returns error if queue is full

@@ -30,23 +30,20 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, si
 		return
 	}
 
-	batchedCommands, ok := keeper.GetUnsignedBatchedCommands(ctx)
-	if !ok || !batchedCommands.Is(types.Signing) {
+	batchedCommands := keeper.GetLatestCommandBatch(ctx)
+	if !batchedCommands.Is(types.BatchSigning) {
 		return
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.ID)
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
 	_, status := signer.GetSig(ctx, batchedCommandsIDHex)
 	switch status {
 	case tss.SigStatus_Signed:
-		keeper.DeleteUnsignedBatchedCommands(ctx)
-		keeper.SetSignedBatchedCommands(ctx, batchedCommands)
-		keeper.SetLatestSignedBatchedCommandsID(ctx, batchedCommands.ID)
+		batchedCommands.SetStatus(types.BatchSigned)
 	case tss.SigStatus_Scheduled, tss.SigStatus_Signing:
 		return
 	default:
-		batchedCommands.Status = types.Aborted
-		keeper.SetUnsignedBatchedCommands(ctx, batchedCommands)
+		batchedCommands.SetStatus(types.BatchAborted)
 		return
 	}
 }

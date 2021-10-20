@@ -26,5 +26,5 @@ message Params {
   utils.v1beta1.Threshold external_multisig_threshold = 7
       [ (gogoproto.nullable) = false ];
   int64 max_sign_queue_size = 8;
-  int64 max_sign_shares = 9;
+  int64 max_simultaneous_sign_shares = 9;
 }

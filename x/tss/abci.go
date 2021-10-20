@@ -274,14 +274,14 @@ func startSign(
 
 // sequentialSign limits tss sign within max signing shares
 func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
-	var i uint64
-	var signShares int64
+	i := uint64(0)
+	signShares := int64(0)
 	var signInfo exported.SignInfo
 
-	defer func(){ ctx.Logger().Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size()))}()
+	defer func() { ctx.Logger().Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size())) }()
 
-	maxSignShares := k.GetMaxSignShares(ctx)
-	for signShares < maxSignShares && signQueue.Peek(i, &signInfo)  {
+	maxSignShares := k.GetMaxSimultaneousSignShares(ctx)
+	for signShares < maxSignShares && signQueue.Peek(i, &signInfo) {
 		_, sigStatus := k.GetSig(ctx, signInfo.SigID)
 		snap, _ := s.GetSnapshot(ctx, signInfo.SnapshotCounter)
 
@@ -302,7 +302,7 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 			signQueue.Dequeue(i, &signInfo)
 			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s", signInfo.SigID, sigStatus))
 		default:
-
+			panic("invalid sig status type")
 		}
 	}
 }

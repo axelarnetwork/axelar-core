@@ -140,6 +140,12 @@ func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
 	if ok {
 		q.store.Delete(q.prevIter.GetKey())
 		q.decrSize()
+		if n <= q.prevLookupIdx {
+			q.prevLookupIdx--
+		}
+		if n == q.size {
+			q.prevIter = nil
+		}
 	}
 	return ok
 }
@@ -158,7 +164,7 @@ func (q *SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
 
 	var i uint64
 	iter := q.store.Iterator(queueKey)
-	if q.prevLookupIdx < n && q.prevIter != nil {
+	if q.prevLookupIdx <= n && q.prevIter != nil {
 		iter = q.prevIter
 		i = q.prevLookupIdx
 	}

@@ -229,10 +229,10 @@ func (k Keeper) getMaxSignQueueSize(ctx sdk.Context) int64 {
 	return size
 }
 
-// GetMaxSignShares returns the max number of sign shares
-func (k Keeper) GetMaxSignShares(ctx sdk.Context) int64 {
+// GetMaxSimultaneousSignShares returns the max simultaneous number of sign shares
+func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	var shares int64
-	k.params.Get(ctx, types.KeyMaxSignShares, &shares)
+	k.params.Get(ctx, types.MaxSimultaneousSignShares, &shares)
 
 	return shares
 }

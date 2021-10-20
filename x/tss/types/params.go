@@ -23,7 +23,7 @@ var (
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
 	KeyMaxSignQueueSize                 = []byte("MaxSignQueueSize")
-	KeyMaxSignShares                    = []byte("MaxSignShares")
+	MaxSimultaneousSignShares           = []byte("MaxSimultaneousSignShares")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -66,7 +66,7 @@ func DefaultParams() Params {
 		UnbondingLockingKeyRotationCount: 8,
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 3, Denominator: 6},
 		MaxSignQueueSize:                 50,
-		MaxSignShares:                    26,
+		MaxSimultaneousSignShares:        26,
 	}
 }
 
@@ -87,7 +87,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validatorPosInt64("UnbondingLockingKeyRotationCount")),
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		params.NewParamSetPair(KeyMaxSignQueueSize, &m.MaxSignQueueSize, validatorPosInt64("MaxSignQueueSize")),
-		params.NewParamSetPair(KeyMaxSignShares, &m.MaxSignShares, validatorPosInt64("MaxSignShares")),
+		params.NewParamSetPair(MaxSimultaneousSignShares, &m.MaxSimultaneousSignShares, validatorPosInt64("MaxSimultaneousSignShares")),
 	}
 }
 
@@ -121,7 +121,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatorPosInt64("MaxSignShares")(m.MaxSignShares); err != nil {
+	if err := validatorPosInt64("MaxSimultaneousSignShares")(m.MaxSimultaneousSignShares); err != nil {
 		return err
 	}
 

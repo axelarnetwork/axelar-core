@@ -85,9 +85,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{}
 			},
-			SetCommandFunc: func(ctx sdk.Context, command types.Command) error {
-				return nil
-			},
+			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
 			ForChainFunc: func(string) types.ChainKeeper {
@@ -190,19 +188,19 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), depositCount)
 		assert.Len(t, evmChainKeeper.SetDepositCalls(), depositCount)
-		assert.Len(t, evmChainKeeper.SetCommandCalls(), depositCount)
+		assert.Len(t, evmChainKeeper.EnqueueCommandCalls(), depositCount)
 
 		for _, setDepositCall := range evmChainKeeper.SetDepositCalls() {
 			assert.Equal(t, types.BURNED, setDepositCall.State)
 		}
 
 		commandIDSeen := make(map[string]bool)
-		for _, setCommandCall := range evmChainKeeper.SetCommandCalls() {
-			_, ok := commandIDSeen[setCommandCall.Command.ID.Hex()]
-			commandIDSeen[setCommandCall.Command.ID.Hex()] = true
+		for _, command := range evmChainKeeper.EnqueueCommandCalls() {
+			_, ok := commandIDSeen[command.Cmd.ID.Hex()]
+			commandIDSeen[command.Cmd.ID.Hex()] = true
 
 			assert.False(t, ok)
-			assert.Equal(t, secondaryKeyID, setCommandCall.Command.KeyID)
+			assert.Equal(t, secondaryKeyID, command.Cmd.KeyID)
 		}
 	}).Repeat(repeats))
 
@@ -250,7 +248,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 3)
 		assert.Len(t, evmChainKeeper.SetDepositCalls(), 3)
-		assert.Len(t, evmChainKeeper.SetCommandCalls(), 1)
+		assert.Len(t, evmChainKeeper.EnqueueCommandCalls(), 1)
 	}).Repeat(repeats))
 }
 
@@ -1260,13 +1258,15 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
-			SetCommandFunc: func(ctx sdk.Context, command types.Command) error { return nil },
+
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
 				return createMockERC20Token(asset, details), nil
 			},
+
+			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 		}
 
 		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
@@ -1296,7 +1296,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(chaink.SetCommandCalls()))
+		assert.Equal(t, 1, len(chaink.EnqueueCommandCalls()))
 	}).Repeat(repeats))
 
 	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {

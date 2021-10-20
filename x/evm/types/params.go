@@ -255,5 +255,12 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	return nil
+	// ensure that the network is one of the supported ones
+	for _, n := range m.Networks {
+		if n.Name == m.Network {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("'%s' not part of the network list", m.Network)
 }
