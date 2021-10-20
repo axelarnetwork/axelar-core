@@ -22,7 +22,12 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
-	keeper.EmitAckEvent(ctx)
+	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetAckPeriodInBlocks(ctx)) == 0 {
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
+		))
+	}
 
 	keygenReqs := keeper.GetAllKeygenRequestsAtCurrentHeight(ctx)
 	if len(keygenReqs) > 0 {

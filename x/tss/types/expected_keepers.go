@@ -83,7 +83,6 @@ type TSSKeeper interface {
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
-	EmitAckEvent(ctx sdk.Context)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress)

@@ -1245,9 +1245,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			DoesValidatorParticipateInSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the DoesValidatorParticipateInSign method")
 // 			},
-// 			EmitAckEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
-// 				panic("mock out the EmitAckEvent method")
-// 			},
 // 			GetAckPeriodInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetAckPeriodInBlocks method")
 // 			},
@@ -1416,9 +1413,6 @@ type TSSKeeperMock struct {
 
 	// DoesValidatorParticipateInSignFunc mocks the DoesValidatorParticipateInSign method.
 	DoesValidatorParticipateInSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
-
-	// EmitAckEventFunc mocks the EmitAckEvent method.
-	EmitAckEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context)
 
 	// GetAckPeriodInBlocksFunc mocks the GetAckPeriodInBlocks method.
 	GetAckPeriodInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
@@ -1633,11 +1627,6 @@ type TSSKeeperMock struct {
 			SigID string
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-		}
-		// EmitAckEvent holds details about calls to the EmitAckEvent method.
-		EmitAckEvent []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetAckPeriodInBlocks holds details about calls to the GetAckPeriodInBlocks method.
 		GetAckPeriodInBlocks []struct {
@@ -2000,7 +1989,6 @@ type TSSKeeperMock struct {
 	lockDeleteSnapshotCounterForKeyID       sync.RWMutex
 	lockDoesValidatorParticipateInKeygen    sync.RWMutex
 	lockDoesValidatorParticipateInSign      sync.RWMutex
-	lockEmitAckEvent                        sync.RWMutex
 	lockGetAckPeriodInBlocks                sync.RWMutex
 	lockGetAllKeygenRequestsAtCurrentHeight sync.RWMutex
 	lockGetAvailableOperators               sync.RWMutex
@@ -2388,37 +2376,6 @@ func (mock *TSSKeeperMock) DoesValidatorParticipateInSignCalls() []struct {
 	mock.lockDoesValidatorParticipateInSign.RLock()
 	calls = mock.calls.DoesValidatorParticipateInSign
 	mock.lockDoesValidatorParticipateInSign.RUnlock()
-	return calls
-}
-
-// EmitAckEvent calls EmitAckEventFunc.
-func (mock *TSSKeeperMock) EmitAckEvent(ctx github_com_cosmos_cosmos_sdk_types.Context) {
-	if mock.EmitAckEventFunc == nil {
-		panic("TSSKeeperMock.EmitAckEventFunc: method is nil but TSSKeeper.EmitAckEvent was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockEmitAckEvent.Lock()
-	mock.calls.EmitAckEvent = append(mock.calls.EmitAckEvent, callInfo)
-	mock.lockEmitAckEvent.Unlock()
-	mock.EmitAckEventFunc(ctx)
-}
-
-// EmitAckEventCalls gets all the calls that were made to EmitAckEvent.
-// Check the length with:
-//     len(mockedTSSKeeper.EmitAckEventCalls())
-func (mock *TSSKeeperMock) EmitAckEventCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockEmitAckEvent.RLock()
-	calls = mock.calls.EmitAckEvent
-	mock.lockEmitAckEvent.RUnlock()
 	return calls
 }
 

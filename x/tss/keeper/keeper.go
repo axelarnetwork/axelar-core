@@ -381,16 +381,6 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exporte
 	return keyIDs, true
 }
 
-// EmitAckEvent emits the acknowledgment event
-func (k Keeper) EmitAckEvent(ctx sdk.Context) {
-	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%k.GetAckPeriodInBlocks(ctx)) == 0 {
-		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
-		))
-	}
-}
-
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
