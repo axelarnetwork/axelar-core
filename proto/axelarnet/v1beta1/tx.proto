@@ -30,7 +30,7 @@ message ConfirmDepositRequest {
   bytes tx_id = 2 [ (gogoproto.customname) = "TxID" ];
   cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
 
-  bytes burner_address = 4
+  bytes deposit_address = 4
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }

@@ -28,7 +28,7 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully confirmed of deposit to {%s}", msg.BurnerAddress.String())
+				result.Log = fmt.Sprintf("successfully confirmed of deposit to {%s}", msg.DepositAddress.String())
 			}
 			return result, err
 		case *types.ExecutePendingTransfersRequest:
