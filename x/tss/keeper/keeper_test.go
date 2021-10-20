@@ -157,7 +157,7 @@ func TestAvailableOperator(t *testing.T) {
 	t.Run("operator available (edge case)", testutils.Func(func(t *testing.T) {
 		s := setup()
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight + 1
+		height := eventHeight
 		repeats := int(rand.I64Between(5, 20))
 		snapshotSeq := rand.I64Between(1, 100)
 
@@ -184,7 +184,7 @@ func TestAvailableOperator(t *testing.T) {
 	t.Run("operator unavailable", testutils.Func(func(t *testing.T) {
 		s := setup()
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight - rand.I64Between(s.Keeper.GetAckPeriodInBlocks(s.Ctx), s.Keeper.GetAckPeriodInBlocks(s.Ctx)*2)
+		height := eventHeight - (1 + rand.I64Between(s.Keeper.GetAckPeriodInBlocks(s.Ctx), s.Keeper.GetAckPeriodInBlocks(s.Ctx)*2))
 		repeats := int(rand.I64Between(5, 20))
 		snapshotSeq := rand.I64Between(1, 100)
 
@@ -212,7 +212,7 @@ func TestAvailableOperator(t *testing.T) {
 	t.Run("operator unavailable (edge case)", testutils.Func(func(t *testing.T) {
 		s := setup()
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight - s.Keeper.GetAckPeriodInBlocks(s.Ctx)
+		height := eventHeight - (1 + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
 		snapshotSeq := rand.I64Between(1, 100)
 

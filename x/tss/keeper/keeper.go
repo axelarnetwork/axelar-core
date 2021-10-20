@@ -264,7 +264,7 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) b
 	}
 	height := int64(binary.LittleEndian.Uint64(bz))
 
-	return (ctx.BlockHeight() - height) < k.GetAckPeriodInBlocks(ctx)
+	return (ctx.BlockHeight() - height) <= k.GetAckPeriodInBlocks(ctx)
 }
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
@@ -290,7 +290,7 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress {
 		}
 
 		height := int64(binary.LittleEndian.Uint64(iter.Value()))
-		if (ctx.BlockHeight() - height) >= k.GetAckPeriodInBlocks(ctx) {
+		if (ctx.BlockHeight() - height) > k.GetAckPeriodInBlocks(ctx) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale acknowledgement "+
 				"[current height %d, event height %d]", validator, ctx.BlockHeight(), height))
 			continue
