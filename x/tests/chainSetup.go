@@ -45,7 +45,6 @@ import (
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapshotTypesMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
-	tssExported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -380,21 +379,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		}
 
 		m := mapifyAttributes(event)
-		var ackType tssExported.AckType
-		var ID string
 
-		switch m[sdk.AttributeKeyAction] {
-		case tssTypes.AttributeValueKeygen:
-			ackType = tssExported.AckType_Keygen
-			ID = m[tssTypes.AttributeKeyKeyID]
-		case tssTypes.AttributeValueSign:
-			ackType = tssExported.AckType_Sign
-			ID = m[tssTypes.AttributeKeySigID]
-		default:
-			return false
-		}
-
-		if m[tssTypes.AttributeKeyKeyID] == "" {
+		if m[sdk.AttributeKeyAction] != tssTypes.AttributeValueSend {
 			return false
 		}
 
@@ -404,10 +390,8 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 		}
 
 		_ = submitMsg(&tssTypes.AckRequest{
-			Sender:  n.Proxy,
-			ID:      ID,
-			AckType: ackType,
-			Height:  height})
+			Sender: n.Proxy,
+			Height: height})
 
 		return true
 	})
@@ -481,6 +465,7 @@ type listeners struct {
 	ethDepositDone <-chan abci.Event
 	ethTokenDone   <-chan abci.Event
 	chainActivated <-chan abci.Event
+	ackRequested   <-chan abci.Event
 }
 
 func registerWaitEventListeners(n nodeData) listeners {
@@ -529,6 +514,13 @@ func registerWaitEventListeners(n nodeData) listeners {
 			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueDecided
 	})
 
+	// register listener for ack request
+	ackRequested := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		attributes := mapifyAttributes(event)
+		return event.Type == tssTypes.EventTypeAck &&
+			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
+	})
+
 	return listeners{
 		keygenDone:     keygenDone,
 		signDone:       signDone,
@@ -536,6 +528,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 		ethDepositDone: ethDepositDone,
 		ethTokenDone:   ethTokenDone,
 		chainActivated: chainActivated,
+		ackRequested:   ackRequested,
 	}
 }
 

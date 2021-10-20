@@ -83,6 +83,11 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	for _, c := range chains {
+		// wait for ack event
+		if err := waitFor(listeners.ackRequested, 1); err != nil {
+			assert.FailNow(t, "ack", err)
+		}
+
 		masterKeyID := randStrings.Next()
 		masterKeygenResult := <-chain.Submit(tssTypes.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
 		assert.NoError(t, masterKeygenResult.Error)

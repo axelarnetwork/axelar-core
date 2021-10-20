@@ -18,6 +18,125 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 )
 
+func TestMsgServer_Ack(t *testing.T) {
+	var (
+		server      types.MsgServiceServer
+		ctx         sdk.Context
+		tssKeeper   *mock.TSSKeeperMock
+		proxy       sdk.AccAddress
+		validator   sdk.ValAddress
+		eventHeight int64
+	)
+	setup := func() {
+		proxy = rand.AccAddr()
+		validator = rand.ValAddr()
+		eventHeight = rand.I64Between(1, 5) * types.DefaultParams().AckPeriodInBlocks
+
+		tssKeeper = &mock.TSSKeeperMock{
+			LoggerFunc: func(_ sdk.Context) log.Logger { return ctx.Logger() },
+			IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress) bool {
+				return false
+			},
+			GetAckPeriodInBlocksFunc: func(_ sdk.Context) int64 {
+				return types.DefaultParams().AckPeriodInBlocks
+			},
+			GetAckWindowInBlocksFunc: func(_ sdk.Context) int64 {
+				return types.DefaultParams().AckWindowInBlocks
+			},
+			SetAvailableOperatorFunc: func(sdk.Context, sdk.ValAddress, int64) {},
+		}
+		snapshotter := &mock.SnapshotterMock{
+			GetOperatorFunc: func(_ sdk.Context, p sdk.AccAddress) sdk.ValAddress {
+				if p.Equals(proxy) {
+					return validator
+				}
+				return sdk.ValAddress{}
+			},
+		}
+		staker := &mock.StakingKeeperMock{}
+		voter := &mock.VoterMock{}
+		nexusKeeper := &mock.NexusMock{}
+
+		server = NewMsgServerImpl(tssKeeper, snapshotter, staker, voter, nexusKeeper)
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: eventHeight + rand.I64Between(1, types.DefaultParams().AckWindowInBlocks)}, false, log.TestingLogger())
+	}
+
+	repeats := 20
+
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.Ack(sdk.WrapSDKContext(ctx), &types.AckRequest{
+			Sender: proxy,
+			Height: eventHeight,
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, tssKeeper.IsOperatorAvailableCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckPeriodInBlocksCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckWindowInBlocksCalls(), 1)
+		assert.Len(t, tssKeeper.SetAvailableOperatorCalls(), 1)
+		assert.Len(t, tssKeeper.LoggerCalls(), 1)
+
+	}).Repeat(repeats))
+
+	t.Run("ACK already sent", testutils.Func(func(t *testing.T) {
+		setup()
+
+		tssKeeper.IsOperatorAvailableFunc = func(_ sdk.Context, v sdk.ValAddress) bool {
+			return v.Equals(validator)
+		}
+		_, err := server.Ack(sdk.WrapSDKContext(ctx), &types.AckRequest{
+			Sender: proxy,
+			Height: eventHeight,
+		})
+
+		assert.Error(t, err)
+		assert.Len(t, tssKeeper.IsOperatorAvailableCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckPeriodInBlocksCalls(), 0)
+		assert.Len(t, tssKeeper.GetAckWindowInBlocksCalls(), 0)
+		assert.Len(t, tssKeeper.SetAvailableOperatorCalls(), 0)
+		assert.Len(t, tssKeeper.LoggerCalls(), 0)
+
+	}).Repeat(repeats))
+
+	t.Run("height mismatch", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := server.Ack(sdk.WrapSDKContext(ctx), &types.AckRequest{
+			Sender: proxy,
+			Height: eventHeight - types.DefaultParams().AckPeriodInBlocks,
+		})
+
+		assert.Error(t, err)
+		assert.Len(t, tssKeeper.IsOperatorAvailableCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckPeriodInBlocksCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckWindowInBlocksCalls(), 0)
+		assert.Len(t, tssKeeper.SetAvailableOperatorCalls(), 0)
+		assert.Len(t, tssKeeper.LoggerCalls(), 0)
+
+	}).Repeat(repeats))
+
+	t.Run("late ACK", testutils.Func(func(t *testing.T) {
+		setup()
+
+		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().AckWindowInBlocks + rand.I64Between(1, 10))
+
+		_, err := server.Ack(sdk.WrapSDKContext(ctx), &types.AckRequest{
+			Sender: proxy,
+			Height: eventHeight,
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, tssKeeper.IsOperatorAvailableCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckPeriodInBlocksCalls(), 1)
+		assert.Len(t, tssKeeper.GetAckWindowInBlocksCalls(), 2)
+		assert.Len(t, tssKeeper.SetAvailableOperatorCalls(), 0)
+		assert.Len(t, tssKeeper.LoggerCalls(), 1)
+
+	}).Repeat(repeats))
+}
+
 func TestMsgServer_RotateKey(t *testing.T) {
 	var (
 		server    types.MsgServiceServer

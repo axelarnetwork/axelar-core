@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
+	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,8 +19,10 @@ import (
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 // Session defines a tss session which is either signing or keygen
@@ -220,6 +224,42 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 	return nil
 }
 
+// ProcessAck broadcasts an acknowledgment
+func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
+	height, err := parseAckParams(e.Attributes)
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	request := &tofnd.KeyPresenceRequest{
+		KeyUid: "testkey",
+	}
+
+	response, err := mgr.client.KeyPresence(grpcCtx, request)
+	if err != nil {
+		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
+	}
+
+	switch response.Response {
+	case tofnd.RESPONSE_UNSPECIFIED:
+		fallthrough
+	case tofnd.RESPONSE_FAIL:
+		return sdkerrors.Wrap(err, "tofnd not set up correctly")
+	case tofnd.RESPONSE_PRESENT:
+		fallthrough
+	case tofnd.RESPONSE_ABSENT:
+		mgr.Logger.Info(fmt.Sprintf("sending ack for height '%d'", height))
+		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, height)
+		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+		}
+	default:
+		return sdkerrors.Wrap(err, "unknown tofnd response")
+	}
+
+	return nil
+}
+
 func (mgr *Mgr) abortSign(sigID string) (err error) {
 	stream, ok := mgr.getSignStream(sigID)
 	if !ok {
@@ -334,4 +374,17 @@ func prepareTrafficIn(principalAddr string, from string, sessionID string, paylo
 		sessionID, from, payload.ToPartyUid, payload.IsBroadcast, principalAddr))
 
 	return msgIn
+}
+
+func parseAckParams(attributes map[string]string) (height int64, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyHeight, Map: func(s string) (interface{}, error) { return strconv.ParseInt(s, 10, 64) }},
+	}
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return 0, err
+	}
+
+	return results[0].(int64), nil
 }

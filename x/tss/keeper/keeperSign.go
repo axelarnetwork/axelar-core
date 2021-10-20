@@ -30,17 +30,19 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 	}
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
-	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
+	/*var height int64
+	k.params.Get(ctx, types.KeyAckPeriodInBlocks, &height)
+	height += ctx.BlockHeight()*/
 
-	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(height, 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
+	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
 	k.getStore(ctx).Set(key, &info)
 
-	k.emitAckEvent(ctx, types.AttributeValueSign, info.KeyID, info.SigID, height)
+	//k.EmitAckEvent(ctx)
 	k.Logger(ctx).Info(fmt.Sprintf(
 		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
-		info.SigID, info.KeyID, height, ctx.BlockHeight()))
+		info.SigID, info.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
 
-	return height, nil
+	return ctx.BlockHeight(), nil
 }
 
 // GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
@@ -137,7 +139,7 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 // the active share count and excluded validators if no error
 func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
 	var activeValidators []snapshot.Validator
-	available := k.GetAvailableOperators(ctx, sigID, exported.AckType_Sign, ctx.BlockHeight())
+	available := k.GetAvailableOperators(ctx)
 	validatorAvailable := make(map[string]bool)
 	for _, validator := range available {
 		validatorAvailable[validator.String()] = true

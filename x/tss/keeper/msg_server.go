@@ -93,37 +93,24 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
-	if s.IsOperatorAvailable(ctx, req.ID, req.AckType, validator) {
-		return nil, fmt.Errorf("sender [%s] already submitted an ACK message for keygen/sig ID %s", req.Sender, req.ID)
+	if s.IsOperatorAvailable(ctx, validator) {
+		return nil, fmt.Errorf("sender [%s] already submitted an ACK message within the current period and window", req.Sender)
 	}
 
-	switch req.AckType {
-	case exported.AckType_Keygen:
-		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
-			req.ID, ctx.BlockHeight(), req.Sender.String()))
-
-		keyID := exported.KeyID(req.ID)
-		if err := keyID.Validate(); err != nil {
-			return nil, err
-		}
-		if s.HasKeygenStarted(ctx, keyID) {
-			s.Logger(ctx).Info(fmt.Sprintf("late keygen ACK message (keygen with ID '%s' has already started)", req.ID))
-			return &types.AckResponse{}, nil
-		}
-
-	case exported.AckType_Sign:
-		s.Logger(ctx).Info(fmt.Sprintf("received sign acknowledgment for id [%s] at height %d from %s",
-			req.ID, ctx.BlockHeight(), req.Sender.String()))
-
-		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
-			s.Logger(ctx).Info(fmt.Sprintf("late sign ACK message (sign with ID '%s' has already started)", req.ID))
-			return &types.AckResponse{}, nil
-		}
-	default:
-		return nil, fmt.Errorf("unknown ack type")
+	eventHeight := ctx.BlockHeight() - (ctx.BlockHeight() % s.GetAckPeriodInBlocks(ctx))
+	if req.Height != eventHeight {
+		return nil, fmt.Errorf("height mismatch for sender [%s] (expected %d, got %d)", req.Sender, eventHeight, req.Height)
 	}
 
-	return &types.AckResponse{}, s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
+	if ctx.BlockHeight()-req.Height > s.GetAckWindowInBlocks(ctx) {
+		s.Logger(ctx).Debug(fmt.Sprintf("late ACK message for sender %s "+
+			"(should have arrived until height %d, current height %d)", req.Sender, eventHeight+s.GetAckWindowInBlocks(ctx), ctx.BlockHeight()))
+		return &types.AckResponse{}, nil
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("updating availability for sender %s", req.Sender))
+	s.SetAvailableOperator(ctx, validator, eventHeight)
+	return &types.AckResponse{}, nil
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {

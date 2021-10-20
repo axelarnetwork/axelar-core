@@ -209,8 +209,13 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
 	}
 
-	keygenAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueKeygen)
-	signAck := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSign)
+	//ack := subscribe(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSend)
+
+	queryAck := createNewBlockEventQuery(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSend)
+	ack, err := tmEvents.Subscribe(eventBus, queryAck)
+	if err != nil {
+		panic(fmt.Errorf("unable to subscribe with ack event query: %v", err))
+	}
 
 	queryKeygen := createNewBlockEventQuery(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	keygenStart, err := tmEvents.Subscribe(eventBus, queryKeygen)
@@ -255,10 +260,9 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			tssMgr.ProcessNewBlockHeader(height)
 			return nil
 		})),
-		tmEvents.Consume(keygenAck, tssMgr.ProcessKeygenAck),
+		tmEvents.Consume(ack, tssMgr.ProcessAck),
 		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
-		tmEvents.Consume(signAck, tssMgr.ProcessSignAck),
 		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
 		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
 		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),

@@ -15,47 +15,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
-
-// ProcessKeygenAck broadcasts an acknowledgment for a keygen
-func (mgr *Mgr) ProcessKeygenAck(e tmEvents.Event) error {
-	keyID, height, err := parseKeygenAckParams(e.Attributes)
-	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
-	defer cancel()
-
-	request := &tofnd.KeyPresenceRequest{
-		KeyUid: keyID,
-	}
-
-	response, err := mgr.client.KeyPresence(grpcCtx, request)
-	if err != nil {
-		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc for key ID '%s'", keyID)
-	}
-
-	switch response.Response {
-	case tofnd.RESPONSE_UNSPECIFIED:
-		fallthrough
-	case tofnd.RESPONSE_FAIL:
-		return sdkerrors.Wrap(err, "tofnd not set up correctly")
-	case tofnd.RESPONSE_PRESENT:
-		return sdkerrors.Wrap(err, "key ID '%s' already present at tofnd")
-	case tofnd.RESPONSE_ABSENT:
-		mgr.Logger.Info(fmt.Sprintf("sending keygen ack for key ID '%s'", keyID))
-		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, keyID, exported.AckType_Keygen, height)
-		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
-		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
-			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
-		}
-	default:
-		return sdkerrors.Wrap(err, "unknown tofnd response")
-	}
-
-	return nil
-}
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
@@ -129,20 +92,6 @@ func (mgr *Mgr) ProcessKeygenMsg(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
 	}
 	return nil
-}
-
-func parseKeygenAckParams(attributes map[string]string) (keyID string, height int64, err error) {
-	parsers := []*parse.AttributeParser{
-		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
-		{Key: tss.AttributeKeyHeight, Map: func(s string) (interface{}, error) { return strconv.ParseInt(s, 10, 64) }},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return results[0].(string), results[1].(int64), nil
 }
 
 func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (

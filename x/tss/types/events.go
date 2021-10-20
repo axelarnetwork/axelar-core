@@ -34,8 +34,7 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueKeygen   = "keygen"
-	AttributeValueSign     = "sign"
+	AttributeValueSend     = "send"
 	AttributeValueStart    = "start"
 	AttributeValueMsg      = "message"
 	AttributeValueDecided  = "decided"

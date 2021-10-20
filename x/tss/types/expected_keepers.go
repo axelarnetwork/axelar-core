@@ -83,13 +83,13 @@ type TSSKeeper interface {
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
+	EmitAckEvent(ctx sdk.Context)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
-	SetAvailableOperator(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) error
-	GetAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
-	DeleteAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType)
-	IsOperatorAvailable(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) bool
-	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, id string, ackType exported.AckType, counter int64)
+	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, height int64)
+	GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress
+	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool
+	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, counter int64)
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
@@ -118,5 +118,7 @@ type TSSKeeper interface {
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
 	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
+	GetAckPeriodInBlocks(ctx sdk.Context) int64
+	GetAckWindowInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 }
