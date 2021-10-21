@@ -93,37 +93,9 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
-	if s.IsOperatorAvailable(ctx, req.ID, req.AckType, validator) {
-		return nil, fmt.Errorf("sender [%s] already submitted an ACK message for keygen/sig ID %s", req.Sender, req.ID)
-	}
-
-	switch req.AckType {
-	case exported.AckType_Keygen:
-		s.Logger(ctx).Info(fmt.Sprintf("received keygen acknowledgment for id [%s] at height %d from %s",
-			req.ID, ctx.BlockHeight(), req.Sender.String()))
-
-		keyID := exported.KeyID(req.ID)
-		if err := keyID.Validate(); err != nil {
-			return nil, err
-		}
-		if s.HasKeygenStarted(ctx, keyID) {
-			s.Logger(ctx).Info(fmt.Sprintf("late keygen ACK message (keygen with ID '%s' has already started)", req.ID))
-			return &types.AckResponse{}, nil
-		}
-
-	case exported.AckType_Sign:
-		s.Logger(ctx).Info(fmt.Sprintf("received sign acknowledgment for id [%s] at height %d from %s",
-			req.ID, ctx.BlockHeight(), req.Sender.String()))
-
-		if _, found := s.GetKeyForSigID(ctx, req.ID); found {
-			s.Logger(ctx).Info(fmt.Sprintf("late sign ACK message (sign with ID '%s' has already started)", req.ID))
-			return &types.AckResponse{}, nil
-		}
-	default:
-		return nil, fmt.Errorf("unknown ack type")
-	}
-
-	return &types.AckResponse{}, s.SetAvailableOperator(ctx, req.ID, req.AckType, validator)
+	s.Logger(ctx).Debug(fmt.Sprintf("updating availability for sender %s", req.Sender))
+	s.SetAvailableOperator(ctx, validator)
+	return &types.AckResponse{}, nil
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {

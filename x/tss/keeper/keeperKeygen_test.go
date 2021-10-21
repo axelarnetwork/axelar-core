@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -166,14 +165,13 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 			height, err := s.Keeper.ScheduleKeygen(s.Ctx, *req)
 
 			assert.NoError(t, err)
-			assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+			assert.Equal(t, currentHeight, height)
 
 			height, err = s.Keeper.ScheduleKeygen(s.Ctx, *req)
 			assert.EqualError(t, err, fmt.Sprintf("keygen for key ID '%s' already set", req.KeyID))
 		}
 
 		// verify keygens from above
-		s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckWindowInBlocks)
 		reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 
 		actualNumReqs := 0
@@ -194,40 +192,5 @@ func TestScheduleKeygenAtHeight(t *testing.T) {
 			reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
 			assert.Len(t, reqs, actualNumReqs-(i+1))
 		}
-	}).Repeat(20))
-}
-
-func TestScheduleKeygenEvents(t *testing.T) {
-	t.Run("testing scheduled keygen events", testutils.Func(func(t *testing.T) {
-		s := setup()
-		currentHeight := s.Ctx.BlockHeight()
-		keyID := exported.KeyID(rand2.Str(20))
-		height, err := s.Keeper.ScheduleKeygen(s.Ctx, types.StartKeygenRequest{
-			Sender:  rand2.AccAddr(),
-			KeyID:   keyID,
-			KeyRole: exported.MasterKey,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
-
-		assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)
-		assert.Equal(t, s.Ctx.EventManager().ABCIEvents()[0].Type, types.EventTypeAck)
-
-		var heightFound, keyIDFound bool
-		for _, attribute := range s.Ctx.EventManager().ABCIEvents()[0].Attributes {
-			switch string(attribute.Key) {
-			case types.AttributeKeyHeight:
-				if string(attribute.Value) == strconv.FormatInt(height, 10) {
-					heightFound = true
-				}
-			case types.AttributeKeyKeyID:
-				if string(attribute.Value) == string(keyID) {
-					keyIDFound = true
-				}
-			}
-		}
-
-		assert.True(t, heightFound)
-		assert.True(t, keyIDFound)
 	}).Repeat(20))
 }

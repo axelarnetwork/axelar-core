@@ -22,6 +22,13 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
+	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetAckPeriodInBlocks(ctx)) == 0 {
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
+		))
+	}
+
 	keygenReqs := keeper.GetAllKeygenRequestsAtCurrentHeight(ctx)
 	if len(keygenReqs) > 0 {
 		keeper.Logger(ctx).Info(fmt.Sprintf("processing %d keygens at height %d", len(keygenReqs), ctx.BlockHeight()))
@@ -31,7 +38,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		counter := snapshotter.GetLatestCounter(ctx) + 1
 
 		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-		keeper.LinkAvailableOperatorsToSnapshot(ctx, string(request.KeyID), exported.AckType_Keygen, counter)
+		keeper.LinkAvailableOperatorsToSnapshot(ctx, counter)
 
 		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
 		if err != nil {
@@ -39,7 +46,6 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		}
 
 		keeper.DeleteKeygenStart(ctx, request.KeyID)
-		keeper.DeleteAvailableOperators(ctx, string(request.KeyID), exported.AckType_Keygen)
 	}
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
@@ -54,7 +60,6 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		}
 
 		keeper.DeleteScheduledSign(ctx, info.SigID)
-		keeper.DeleteAvailableOperators(ctx, info.SigID, exported.AckType_Sign)
 	}
 
 	return nil

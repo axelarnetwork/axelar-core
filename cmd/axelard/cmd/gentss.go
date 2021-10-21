@@ -19,7 +19,7 @@ import (
 const (
 	flagKeygen       = "keygen"
 	flagCorruption   = "corruption"
-	flagAck          = "ack-window"
+	flagAckPeriod    = "ack-period"
 	flagBondFraction = "bond-fraction"
 )
 
@@ -27,7 +27,7 @@ const (
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		ackWindow int64
+		ackPeriod int64
 	)
 
 	cmd := &cobra.Command{
@@ -51,8 +51,8 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 			}
 			genesisTSS := tssTypes.GetGenesisStateFromAppState(cdc, appState)
 
-			if ackWindow > 0 {
-				genesisTSS.Params.AckWindowInBlocks = ackWindow
+			if ackPeriod > 0 {
+				genesisTSS.Params.AckPeriodInBlocks = ackPeriod
 			}
 
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
@@ -73,7 +73,6 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 	}
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
-	cmd.Flags().Int64Var(&ackWindow, flagAck, 0, "A positive integer representing the time period for validators to submit acknowledgments for a keygen/sign in terms of number of blocks")
-
+	cmd.Flags().Int64Var(&ackPeriod, flagAckPeriod, 0, "time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign")
 	return cmd
 }

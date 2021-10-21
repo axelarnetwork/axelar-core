@@ -3477,7 +3477,7 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
-| `ack_window_in_blocks` | [int64](#int64) |  | AckWindowInBlocks defines the time limit in blocks for a broadcaster to submit their acknowledgment of a sign/keygen start |
+| `ack_period_in_blocks` | [int64](#int64) |  | AckPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign |
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
@@ -3770,9 +3770,6 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `id` | [string](#string) |  | can be either a key ID or a sig ID, depending on the type |
-| `ack_type` | [tss.exported.v1beta1.AckType](#tss.exported.v1beta1.AckType) |  |  |
-| `height` | [int64](#int64) |  |  |
 
 
 

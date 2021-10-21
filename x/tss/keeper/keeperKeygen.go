@@ -4,9 +4,10 @@ import (
 	"crypto/ecdsa"
 	"encoding/binary"
 	"fmt"
-	gogoprototypes "github.com/gogo/protobuf/types"
 	"strconv"
 	"time"
+
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,21 +21,17 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// ScheduleKeygen sets a keygen to start at block currentHeight + AckWindow and emits events
-// to ask vald processes about sending their acknowledgments It returns the height at which it was scheduled
+// ScheduleKeygen sets a keygen to start at the current block height
 func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
-	height := k.GetParams(ctx).AckWindowInBlocks + ctx.BlockHeight()
-	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(height, 10)).
+	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
 		AppendStr(exported.AckType_Keygen.String()).AppendStr(string(req.KeyID))
 	if k.getStore(ctx).Has(key) {
 		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.KeyID)
 	}
 
 	k.getStore(ctx).Set(key, &req)
-	k.emitAckEvent(ctx, types.AttributeValueKeygen, req.KeyID, "", height)
-
-	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.KeyID, height, ctx.BlockHeight()))
-	return height, nil
+	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
+	return ctx.BlockHeight(), nil
 }
 
 // GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height

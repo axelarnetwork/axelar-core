@@ -18,7 +18,7 @@ const (
 var (
 	KeyKeyRequirements                  = []byte("keyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
-	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
+	KeyAckPeriodInBlocks                = []byte("AckPeriodInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
@@ -59,7 +59,7 @@ func DefaultParams() Params {
 			},
 		},
 		SuspendDurationInBlocks:          2000,
-		AckWindowInBlocks:                4,
+		AckPeriodInBlocks:                50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 8,
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 3, Denominator: 6},
@@ -78,7 +78,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
-		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validateInt64("AckWindowInBlocks")),
+		params.NewParamSetPair(KeyAckPeriodInBlocks, &m.AckPeriodInBlocks, validateInt64("AckPeriodInBlocks")),
 		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
 		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validateInt64("UnbondingLockingKeyRotationCount")),
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
@@ -95,7 +95,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateInt64("AckWindowInBlocks")(m.AckWindowInBlocks); err != nil {
+	if err := validateInt64("AckPeriodInBlocks")(m.AckPeriodInBlocks); err != nil {
 		return err
 	}
 

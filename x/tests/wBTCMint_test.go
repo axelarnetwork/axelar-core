@@ -68,6 +68,11 @@ func Test_wBTC_mint(t *testing.T) {
 		assert.FailNow(t, "chain activation", err)
 	}
 
+	// wait for ack event
+	if err := waitFor(listeners.ackRequested, 1); err != nil {
+		assert.FailNow(t, "ack", err)
+	}
+
 	// start keygen
 	btcMasterKeyID := randStrings.Next()
 	btcKeygenResult := <-chain.Submit(types.NewStartKeygenRequest(randomSender(), btcMasterKeyID, tss.MasterKey))
