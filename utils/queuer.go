@@ -85,13 +85,11 @@ func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueu
 
 // SequenceKVQueue is a queue that orders items with the sequence number at which the items are enqueued;
 type SequenceKVQueue struct {
-	store         KVStore
-	maxSize       uint64
-	seqNo         uint64
-	size          uint64
-	prevLookupIdx uint64
-	prevIter      Iterator
-	logger        log.Logger
+	store   KVStore
+	maxSize uint64
+	seqNo   uint64
+	size    uint64
+	logger  log.Logger
 }
 
 var (
@@ -136,16 +134,10 @@ func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
 // Dequeue pops the nth value off and unmarshals it into the given object, returns false if n is out of range
 // n is 0-based
 func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
-	ok := q.Peek(n, value)
+	key, ok := q.peek(n, value)
 	if ok {
-		q.store.Delete(q.prevIter.GetKey())
+		q.store.Delete(key)
 		q.decrSize()
-		if n <= q.prevLookupIdx {
-			q.prevLookupIdx--
-		}
-		if n == q.size {
-			q.prevIter = nil
-		}
 	}
 	return ok
 }
@@ -158,26 +150,24 @@ func (q SequenceKVQueue) Size() uint64 {
 // Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
 // n is 0-based
 func (q *SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
+	_, ok := q.peek(n, value)
+	return ok
+}
+
+func (q SequenceKVQueue) peek(n uint64, value codec.ProtoMarshaler) (Key, bool) {
 	if n >= q.size {
-		return false
+		return nil, false
 	}
 
 	var i uint64
 	iter := q.store.Iterator(queueKey)
-	if q.prevLookupIdx <= n && q.prevIter != nil {
-		iter = q.prevIter
-		i = q.prevLookupIdx
-	}
 	defer CloseLogError(iter, q.logger)
 
 	for ; iter.Valid() && i < n; iter.Next() {
 		i++
 	}
-
-	q.prevLookupIdx = n
-	q.prevIter = iter
 	iter.UnmarshalValue(value)
-	return true
+	return iter.GetKey(), true
 }
 
 func (q *SequenceKVQueue) incrSize() {
