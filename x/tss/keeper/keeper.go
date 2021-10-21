@@ -152,6 +152,14 @@ func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
 	return result
 }
 
+// GetAckPeriodInBlocks returns the acknowledgment event period
+func (k Keeper) GetAckPeriodInBlocks(ctx sdk.Context) int64 {
+	var result int64
+	k.params.Get(ctx, types.KeyAckPeriodInBlocks, &result)
+
+	return result
+}
+
 // SetGroupRecoveryInfo sets the group recovery info for a given party
 func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte) {
 	k.getStore(ctx).SetRaw(groupRecoverPrefix.AppendStr(string(keyID)), recoveryInfo)
@@ -254,52 +262,43 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 	return int64(binary.LittleEndian.Uint64(bz))
 }
 
-// SetAvailableOperator sets the height at which a validator sent his ack for some key/sign ID. Returns an error if
-// the validator already submitted a ack for the given ID and type.
-func (k Keeper) SetAvailableOperator(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) error {
-	if ID == "" {
-		return fmt.Errorf("ID cannot be empty")
-	}
-
-	key := availablePrefix.AppendStr(ID).AppendStr(ackType.String()).AppendStr(validator.String())
-	bz := k.getStore(ctx).GetRaw(key)
-	if bz != nil {
-		return fmt.Errorf("validator already submitted its ack for the specified ID and type")
-	}
-
-	bz = make([]byte, 8)
+// SetAvailableOperator signals that a validator sent an ack
+func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress) {
+	key := availablePrefix.AppendStr(validator.String())
+	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
 	k.getStore(ctx).SetRaw(key, bz)
-	return nil
 }
 
-// IsOperatorAvailable returns true if the validator already submitted an acknowledgments for the given ID
-func (k Keeper) IsOperatorAvailable(ctx sdk.Context, ID string, ackType exported.AckType, validator sdk.ValAddress) bool {
-	key := availablePrefix.AppendStr(ID).AppendStr(ackType.String()).AppendStr(validator.String())
-	return k.getStore(ctx).Has(key)
+// IsOperatorAvailable returns true if the validator has a non-stale ack
+func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool {
+	key := availablePrefix.AppendStr(validator.String())
+
+	bz := k.getStore(ctx).GetRaw(key)
+	if bz == nil {
+		return false
+	}
+	height := int64(binary.LittleEndian.Uint64(bz))
+
+	return (ctx.BlockHeight() - height) <= k.GetAckPeriodInBlocks(ctx)
 }
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
-func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, sessionID string, ackType exported.AckType, snapshotSeqNo int64) {
-	operators := k.GetAvailableOperators(ctx, sessionID, ackType, ctx.BlockHeight())
+func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, snapshotSeqNo int64) {
+	operators := k.GetAvailableOperators(ctx)
 	if len(operators) > 0 {
 		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
 	}
 }
 
-// GetAvailableOperators gets all operators that sent an acknowledgment for the given keygen/sign ID until some given height
-func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress {
-	if sessionID == "" {
-		return nil
-	}
-
-	prefix := availablePrefix.AppendStr(sessionID).AppendStr(ackType.String())
-	iter := k.getStore(ctx).Iterator(prefix)
+// GetAvailableOperators gets all operators that still have a non-stale acknowledgment
+func (k Keeper) GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress {
+	iter := k.getStore(ctx).Iterator(availablePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	var addresses []sdk.ValAddress
 	for ; iter.Valid(); iter.Next() {
-		validator := strings.TrimPrefix(string(iter.Key()), string(prefix.AsKey())+"_")
+		validator := strings.TrimPrefix(string(iter.Key()), string(availablePrefix.AsKey())+"_")
 		address, err := sdk.ValAddressFromBech32(validator)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s due to parsing error: %s", validator, err.Error()))
@@ -307,9 +306,9 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType
 		}
 
 		height := int64(binary.LittleEndian.Uint64(iter.Value()))
-		if height > heightLimit {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to late acknowledgement"+
-				" [received at height %d and height limit %d]", validator, height, heightLimit))
+		if (ctx.BlockHeight() - height) > k.GetAckPeriodInBlocks(ctx) {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale acknowledgement "+
+				"[current height %d, event height %d]", validator, ctx.BlockHeight(), height))
 			continue
 		}
 
@@ -317,17 +316,6 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, sessionID string, ackType
 	}
 
 	return addresses
-}
-
-// DeleteAvailableOperators removes the validator that sent an ack for some key/sign ID (if it exists)
-func (k Keeper) DeleteAvailableOperators(ctx sdk.Context, sessionID string, ackType exported.AckType) {
-	store := k.getStore(ctx)
-	iter := store.Iterator(availablePrefix.AppendStr(sessionID).AppendStr(ackType.String()))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.GetKey())
-	}
 }
 
 // links a set of available operators to a snapshot counter
@@ -407,20 +395,6 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exporte
 	_ = json.Unmarshal(bz, &keyIDs)
 
 	return keyIDs, true
-}
-
-func (k Keeper) emitAckEvent(ctx sdk.Context, action string, keyID exported.KeyID, sigID string, height int64) {
-	event := sdk.NewEvent(types.EventTypeAck,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, action),
-		sdk.NewAttribute(types.AttributeKeyKeyID, string(keyID)),
-		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(height, 10)),
-	)
-	if action == types.AttributeValueSign {
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigID, sigID))
-	}
-
-	ctx.EventManager().EmitEvent(event)
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

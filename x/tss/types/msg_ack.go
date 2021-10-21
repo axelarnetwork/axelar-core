@@ -1,19 +1,13 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewAckRequest constructor for AckRequest
-func NewAckRequest(sender sdk.AccAddress, ID string, ackType exported.AckType, height int64) *AckRequest {
-	return &AckRequest{
-		Sender:  sender,
-		ID:      ID,
-		AckType: ackType,
-		Height:  height,
-	}
+func NewAckRequest(sender sdk.AccAddress) *AckRequest {
+	return &AckRequest{Sender: sender}
 }
 
 // Route implements the sdk.Msg interface.
@@ -27,18 +21,6 @@ func (m AckRequest) Type() string { return "Ack" }
 func (m AckRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-	if m.ID == "" {
-		return sdkerrors.Wrap(ErrTss, "id must be set")
-	}
-
-	if m.AckType != exported.AckType_Keygen && m.AckType != exported.AckType_Sign {
-		return sdkerrors.Wrapf(ErrTss, "ack type must be either '%s' or '%s'",
-			exported.AckType_Keygen.String(), exported.AckType_Sign.String())
-	}
-
-	if m.Height < 0 {
-		return sdkerrors.Wrap(ErrTss, "invalid height")
 	}
 
 	return nil

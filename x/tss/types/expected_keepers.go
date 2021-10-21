@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -29,13 +29,15 @@ type Nexus interface {
 
 // Voter provides voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient
@@ -57,8 +59,8 @@ type TofndSignClient interface {
 // actually used by this module
 type StakingKeeper interface {
 	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
-	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool)
-	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator types.ValidatorI) (stop bool))
+	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 }
 
 // TSSKeeper provides keygen and signing functionality
@@ -83,11 +85,10 @@ type TSSKeeper interface {
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
-	SetAvailableOperator(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) error
-	GetAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType, heightLimit int64) []sdk.ValAddress
-	DeleteAvailableOperators(ctx sdk.Context, id string, ackType exported.AckType)
-	IsOperatorAvailable(ctx sdk.Context, id string, ackType exported.AckType, validator sdk.ValAddress) bool
-	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, id string, ackType exported.AckType, counter int64)
+	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress)
+	GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress
+	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool
+	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, counter int64)
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
@@ -116,6 +117,7 @@ type TSSKeeper interface {
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
 	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
+	GetAckPeriodInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
 

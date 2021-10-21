@@ -28,6 +28,7 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
@@ -62,8 +63,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	const nodeCount = 10
 	chain, nodeData := initChain(nodeCount, "keyRotation")
 	listeners := registerWaitEventListeners(nodeData[0])
+	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
 
-	// register proxies for all validators
+	// register proxies and chain maintainers for all validators
 	for i := 0; i < nodeCount; i++ {
 		operatorAddress, err := sdk.ValAddressFromBech32(nodeData[i].Validator.OperatorAddress)
 		if err != nil {
@@ -71,11 +73,21 @@ func TestBitcoinKeyRotation(t *testing.T) {
 		}
 		res := <-chain.Submit(&snapshotTypes.RegisterProxyRequest{PrincipalAddr: operatorAddress, ProxyAddr: nodeData[i].Proxy})
 		assert.NoError(t, res.Error)
+
+		res = <-chain.Submit(&nexusTypes.RegisterChainMaintainerRequest{Sender: nodeData[i].Proxy, Chains: chains})
+		assert.NoError(t, res.Error)
 	}
 
-	chains := []string{btc.Bitcoin.Name, evm.Ethereum.Name}
+	if err := waitFor(listeners.chainActivated, 1); err != nil {
+		assert.FailNow(t, "chain activation", err)
+	}
 
 	for _, c := range chains {
+		// wait for ack event
+		if err := waitFor(listeners.ackRequested, 1); err != nil {
+			assert.FailNow(t, "ack", err)
+		}
+
 		masterKeyID := randStrings.Next()
 		masterKeygenResult := <-chain.Submit(tssTypes.NewStartKeygenRequest(randomSender(), masterKeyID, tss.MasterKey))
 		assert.NoError(t, masterKeygenResult.Error)
@@ -169,14 +181,14 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	assert.NoError(t, err)
 	txHash := common.BytesToHash(bz)
 
-	bz, err = nodeData[0].Node.Query(
+	_, err = nodeData[0].Node.Query(
 		[]string{evmTypes.QuerierRoute, evmKeeper.QAxelarGatewayAddress, "ethereum"},
 		abci.RequestQuery{Data: nil},
 	)
 	assert.NoError(t, err)
 
-	confirmResult1 := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", asset, txHash))
-	assert.NoError(t, confirmResult1.Error)
+	confirmResult := <-chain.Submit(evmTypes.NewConfirmTokenRequest(randomSender(), "ethereum", asset, txHash))
+	assert.NoError(t, confirmResult.Error)
 
 	if err := waitFor(listeners.ethTokenDone, 1); err != nil {
 		assert.FailNow(t, "confirmation", err)

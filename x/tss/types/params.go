@@ -18,7 +18,7 @@ const (
 var (
 	KeyKeyRequirements                  = []byte("keyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
-	KeyAckWindowInBlocks                = []byte("AckWindowInBlocks")
+	KeyAckPeriodInBlocks                = []byte("AckPeriodInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
@@ -61,7 +61,7 @@ func DefaultParams() Params {
 			},
 		},
 		SuspendDurationInBlocks:          2000,
-		AckWindowInBlocks:                4,
+		AckPeriodInBlocks:                50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 8,
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 3, Denominator: 6},
@@ -82,12 +82,12 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
-		params.NewParamSetPair(KeyAckWindowInBlocks, &m.AckWindowInBlocks, validatorPosInt64("AckWindowInBlocks")),
+		params.NewParamSetPair(KeyAckPeriodInBlocks, &m.AckPeriodInBlocks, validatePosInt64("AckPeriodInBlocks")),
 		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
-		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validatorPosInt64("UnbondingLockingKeyRotationCount")),
+		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validatePosInt64("UnbondingLockingKeyRotationCount")),
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
-		params.NewParamSetPair(KeyMaxSignQueueSize, &m.MaxSignQueueSize, validatorPosInt64("MaxSignQueueSize")),
-		params.NewParamSetPair(MaxSimultaneousSignShares, &m.MaxSimultaneousSignShares, validatorPosInt64("MaxSimultaneousSignShares")),
+		params.NewParamSetPair(KeyMaxSignQueueSize, &m.MaxSignQueueSize, validatePosInt64("MaxSignQueueSize")),
+		params.NewParamSetPair(MaxSimultaneousSignShares, &m.MaxSimultaneousSignShares, validatePosInt64("MaxSimultaneousSignShares")),
 	}
 }
 
@@ -101,7 +101,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatorPosInt64("AckWindowInBlocks")(m.AckWindowInBlocks); err != nil {
+	if err := validatePosInt64("AckPeriodInBlocks")(m.AckPeriodInBlocks); err != nil {
 		return err
 	}
 
@@ -109,7 +109,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatorPosInt64("UnbondingLockingKeyRotationCount")(m.UnbondingLockingKeyRotationCount); err != nil {
+	if err := validatePosInt64("UnbondingLockingKeyRotationCount")(m.UnbondingLockingKeyRotationCount); err != nil {
 		return err
 	}
 
@@ -117,11 +117,11 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatorPosInt64("MaxSignQueueSize")(m.MaxSignQueueSize); err != nil {
+	if err := validatePosInt64("MaxSignQueueSize")(m.MaxSignQueueSize); err != nil {
 		return err
 	}
 
-	if err := validatorPosInt64("MaxSimultaneousSignShares")(m.MaxSimultaneousSignShares); err != nil {
+	if err := validatePosInt64("MaxSimultaneousSignShares")(m.MaxSimultaneousSignShares); err != nil {
 		return err
 	}
 
@@ -163,7 +163,7 @@ func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error 
 	return nil
 }
 
-func validatorPosInt64(field string) func(value interface{}) error {
+func validatePosInt64(field string) func(value interface{}) error {
 	return func(value interface{}) error {
 		val, ok := value.(int64)
 		if !ok {

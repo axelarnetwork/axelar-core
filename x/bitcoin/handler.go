@@ -15,6 +15,7 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 	server := keeper.NewMsgServerImpl(k, signer, n, v, snapshotter)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case *types.LinkRequest:
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)

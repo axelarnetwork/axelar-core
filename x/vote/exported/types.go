@@ -95,6 +95,7 @@ type Poll interface {
 	AllowOverride()
 	GetResult() codec.ProtoMarshaler
 	GetKey() PollKey
-	GetSnapshotSeqNo() int64
+	GetVoters() []Voter
+	GetTotalVotingPower() sdk.Int
 	Delete() error
 }

@@ -149,7 +149,7 @@ func (q SequenceKVQueue) Size() uint64 {
 
 // Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
 // n is 0-based
-func (q *SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
+func (q SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
 	_, ok := q.peek(n, value)
 	return ok
 }

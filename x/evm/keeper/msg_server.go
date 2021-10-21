@@ -46,6 +46,15 @@ func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s typ
 	}
 }
 
+func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) error {
+	if !n.IsChainActivated(ctx, chain) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+			fmt.Sprintf("chain %s is not activated yet", chain.Name))
+	}
+
+	return nil
+}
+
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -54,8 +63,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	keeper := s.ForChain(senderChain.Name)
+	if err := validateChainActivated(ctx, s.nexus, senderChain); err != nil {
+		return nil, err
+	}
 
+	keeper := s.ForChain(senderChain.Name)
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -117,6 +129,10 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	_, ok = s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
@@ -128,16 +144,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	err := token.RecordDeployment(req.TxID)
 	if err != nil {
 		return nil, err
-	}
-
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-	}
-
-	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
@@ -156,11 +162,10 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
-
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
-		seqNo,
+		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
@@ -233,7 +238,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
-	if err := s.voter.InitializePoll(
+	if err := s.voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
 		seqNo,
@@ -264,6 +269,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	keeper := s.ForChain(chain.Name)
 
 	_, state, ok := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
@@ -279,16 +288,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnerAddress))
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress)
-	}
-
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-	}
-
-	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", keyID)
 	}
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
@@ -310,7 +309,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
-		seqNo,
+		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
@@ -353,6 +352,10 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	pk, ok := s.signer.GetKey(ctx, req.KeyID)
 	if !ok {
 		return nil, fmt.Errorf("key %s does not exist (yet)", req.KeyID)
@@ -380,16 +383,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	currentKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-	}
-
-	seqNo, ok := s.signer.GetSnapshotCounterForKeyID(ctx, currentKeyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot seqNo for key ID %s registered", currentKeyID)
-	}
-
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
@@ -409,7 +402,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
-		seqNo,
+		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
@@ -518,6 +511,10 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -629,9 +626,16 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	keeper := s.ForChain(chain.Name)
 	token := keeper.GetERC20Token(ctx, req.Asset)
 	switch {
+	case token.Is(types.Confirmed):
+		return &types.VoteConfirmTokenResponse{
+			Log: fmt.Sprintf("token %s deployment already confirmed", req.Asset)}, nil
 	case !token.Is(types.Pending):
 		return nil, fmt.Errorf("no open poll for token '%s'", token.GetAsset())
 	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
@@ -706,6 +710,10 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -804,7 +812,12 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	keeper := s.ForChain(req.Chain)
+
 	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !found {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
@@ -847,6 +860,10 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
 	}
 
 	deposits := keeper.GetConfirmedDeposits(ctx)
@@ -904,6 +921,10 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
 	}
 
 	tx := req.UnmarshaledTx()
@@ -1027,6 +1048,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 	if len(pendingTransfers) == 0 {
 		return &types.CreatePendingTransfersResponse{}, nil
@@ -1072,6 +1097,10 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return types.Command{}, err
 	}
 
 	chainID := s.getChainID(ctx, chainStr)
@@ -1184,6 +1213,15 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	chainID := s.getChainID(ctx, req.Chain)
+	if chainID == nil {
+		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
 	keeper := s.ForChain(chain.Name)

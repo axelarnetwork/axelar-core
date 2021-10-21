@@ -18,7 +18,6 @@ const (
 	AttributeKeySigModule = "sigModule"
 	AttributeKeySigData   = "sigData"
 
-	AttributeKeyHeight                    = "height"
 	AttributeKeyKeyAckType                = "ackType"
 	AttributeKeySessionID                 = "sessionID"
 	AttributeKeyThreshold                 = "threshold"
@@ -34,8 +33,7 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueKeygen   = "keygen"
-	AttributeValueSign     = "sign"
+	AttributeValueSend     = "send"
 	AttributeValueStart    = "start"
 	AttributeValueMsg      = "message"
 	AttributeValueDecided  = "decided"

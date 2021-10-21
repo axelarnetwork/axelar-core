@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"strconv"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestStartSign_EnoughActiveValidators(t *testing.T) {
@@ -74,6 +72,14 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		return snapshot.None, nil
 	}
 
+	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+	s.Ctx = s.Ctx.WithBlockHeight(height)
+
+	for _, val := range snap.Validators {
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+	}
+
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
@@ -86,13 +92,6 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	for _, val := range snap.Validators {
-		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
-		assert.NoError(t, err)
-	}
-
-	height := s.Keeper.GetParams(s.Ctx).AckWindowInBlocks + s.Ctx.BlockHeight()
-	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
@@ -154,6 +153,14 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		return snapshot.None, nil
 	}
 
+	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+	s.Ctx = s.Ctx.WithBlockHeight(height)
+
+	for _, val := range snap.Validators {
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+	}
+
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
@@ -166,13 +173,6 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	for _, val := range snap.Validators {
-		err = s.Keeper.SetAvailableOperator(s.Ctx, sigID, exported.AckType_Sign, val.GetSDKValidator().GetOperator())
-		assert.NoError(t, err)
-	}
-
-	height := s.Keeper.GetParams(s.Ctx).AckWindowInBlocks + s.Ctx.BlockHeight()
-	s.Ctx = s.Ctx.WithBlockHeight(height)
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
 
 	signingShareCount := sdk.ZeroInt()
@@ -242,11 +242,10 @@ func TestScheduleSignAtHeight(t *testing.T) {
 			expectedInfos[i] = info
 			height:= s.Keeper.ScheduleSign(s.Ctx, info)
 
-			assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
+			assert.Equal(t, currentHeight, height)
 		}
 
 		// verify signs from above
-		s.Ctx = s.Ctx.WithBlockHeight(currentHeight + s.Keeper.GetParams(s.Ctx).AckWindowInBlocks)
 		infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
 
 		actualNumInfos := 0
@@ -272,46 +271,5 @@ func TestScheduleSignAtHeight(t *testing.T) {
 			infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
 			assert.Len(t, infos, actualNumInfos-(i+1))
 		}
-	}).Repeat(20))
-}
-
-func TestScheduleSignEvents(t *testing.T) {
-	t.Run("testing scheduled sign events", testutils.Func(func(t *testing.T) {
-		s := setup()
-		currentHeight := s.Ctx.BlockHeight()
-		keyID := exported.KeyID(rand2.Str(20))
-		sigID := rand2.Str(20)
-		height := s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
-			KeyID:           keyID,
-			SigID:           sigID,
-			Msg:             rand.Bytes(20),
-			SnapshotCounter: snap.Counter,
-		})
-		assert.Equal(t, s.Keeper.GetParams(s.Ctx).AckWindowInBlocks+currentHeight, height)
-
-		assert.Len(t, s.Ctx.EventManager().ABCIEvents(), 1)
-		assert.Equal(t, s.Ctx.EventManager().ABCIEvents()[0].Type, types.EventTypeAck)
-
-		var heightFound, keyIDFound, sigIDFound bool
-		for _, attribute := range s.Ctx.EventManager().ABCIEvents()[0].Attributes {
-			switch string(attribute.Key) {
-			case types.AttributeKeyHeight:
-				if string(attribute.Value) == strconv.FormatInt(height, 10) {
-					heightFound = true
-				}
-			case types.AttributeKeyKeyID:
-				if string(attribute.Value) == string(keyID) {
-					keyIDFound = true
-				}
-			case types.AttributeKeySigID:
-				if string(attribute.Value) == sigID {
-					sigIDFound = true
-				}
-			}
-		}
-
-		assert.True(t, heightFound)
-		assert.True(t, keyIDFound)
-		assert.True(t, sigIDFound)
 	}).Repeat(20))
 }

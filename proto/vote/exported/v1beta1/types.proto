@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 import "utils/v1beta1/threshold.proto";
 import "cosmos_proto/cosmos.proto";
+import "snapshot/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -18,11 +19,16 @@ message PollKey {
   string id = 2 [ (gogoproto.customname) = "ID" ];
 }
 
+message Voter {
+  bytes validator = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  int64 voting_power = 2;
+}
+
 // PollMetadata represents a poll with write-in voting, i.e. the result of the
 // vote can have any data type
 message PollMetadata {
   vote.exported.v1beta1.PollKey key = 1 [ (gogoproto.nullable) = false ];
-  int64 snapshot_seq_no = 2;
   int64 expires_at = 3;
   google.protobuf.Any result = 4
       [ (cosmos_proto.accepts_interface) =
@@ -30,6 +36,11 @@ message PollMetadata {
   utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
   exported.v1beta1.PollState state = 6;
   int64 min_voter_count = 7;
+  repeated Voter voters = 8 [ (gogoproto.nullable) = false ];
+  bytes total_voting_power = 9 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
 }
 
 enum PollState {

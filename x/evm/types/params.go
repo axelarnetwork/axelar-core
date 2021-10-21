@@ -80,7 +80,7 @@ func DefaultParams() []Params {
 			},
 		},
 		VotingThreshold:  utils.Threshold{Numerator: 15, Denominator: 100},
-		MinVoterCount:    15,
+		MinVoterCount:    1,
 		CommandsGasLimit: 5000000,
 	}}
 }

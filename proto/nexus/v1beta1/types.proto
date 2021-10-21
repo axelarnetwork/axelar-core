@@ -1,0 +1,18 @@
+syntax = "proto3";
+package nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "nexus/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// ChainState represents the state of a registered blockchain
+message ChainState {
+  nexus.exported.v1beta1.Chain chain = 1 [ (gogoproto.nullable) = false ];
+  repeated bytes maintainers = 2
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bool activated = 3;
+}
