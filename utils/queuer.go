@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -80,4 +81,114 @@ func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueu
 	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
 	q.blockHeight = KeyFromBz(bz)
 	return q
+}
+
+// SequenceKVQueue is a queue that orders items with the sequence number at which the items are enqueued;
+type SequenceKVQueue struct {
+	store   KVStore
+	maxSize uint64
+	seqNo   uint64
+	size    uint64
+	logger  log.Logger
+}
+
+var (
+	sizeKey     = KeyFromStr("size")
+	sequenceKey = KeyFromStr("sequence")
+	queueKey    = KeyFromStr("queue")
+)
+
+// NewSequenceKVQueue is the constructor of SequenceKVQueue. The prefixStore should isolate the namespace of the queue
+func NewSequenceKVQueue(prefixStore KVStore, maxSize uint64, logger log.Logger) SequenceKVQueue {
+	var seqNo uint64
+	bz := prefixStore.GetRaw(sequenceKey)
+	if bz != nil {
+		seqNo = binary.BigEndian.Uint64(bz)
+	}
+
+	var size uint64
+	bz = prefixStore.GetRaw(sizeKey)
+	if bz != nil {
+		size = binary.BigEndian.Uint64(bz)
+	}
+
+	return SequenceKVQueue{store: prefixStore, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
+}
+
+// Enqueue pushes the given value onto the top of the queue and stores the value at given key. Returns queue position and status
+func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
+	if q.size >= q.maxSize {
+		return fmt.Errorf("queue is full")
+	}
+
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, q.seqNo)
+
+	q.store.Set(queueKey.Append(KeyFromBz(bz)), value)
+	q.incrSize()
+	q.incrSeqNo()
+
+	return nil
+}
+
+// Dequeue pops the nth value off and unmarshals it into the given object, returns false if n is out of range
+// n is 0-based
+func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
+	key, ok := q.peek(n, value)
+	if ok {
+		q.store.Delete(key)
+		q.decrSize()
+	}
+	return ok
+}
+
+// Size returns the given current size of the queue
+func (q SequenceKVQueue) Size() uint64 {
+	return q.size
+}
+
+// Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
+// n is 0-based
+func (q SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
+	_, ok := q.peek(n, value)
+	return ok
+}
+
+func (q SequenceKVQueue) peek(n uint64, value codec.ProtoMarshaler) (Key, bool) {
+	if n >= q.size {
+		return nil, false
+	}
+
+	var i uint64
+	iter := q.store.Iterator(queueKey)
+	defer CloseLogError(iter, q.logger)
+
+	for ; iter.Valid() && i < n; iter.Next() {
+		i++
+	}
+	iter.UnmarshalValue(value)
+	return iter.GetKey(), true
+}
+
+func (q *SequenceKVQueue) incrSize() {
+	q.size++
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, q.size)
+	q.store.SetRaw(sizeKey, bz)
+}
+
+func (q *SequenceKVQueue) decrSize() {
+	if q.size > 0 {
+		q.size--
+		bz := make([]byte, 8)
+		binary.BigEndian.PutUint64(bz, q.size)
+		q.store.SetRaw(sizeKey, bz)
+	}
+}
+
+func (q *SequenceKVQueue) incrSeqNo() {
+	q.seqNo++
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, q.seqNo)
+	q.store.SetRaw(sequenceKey, bz)
 }

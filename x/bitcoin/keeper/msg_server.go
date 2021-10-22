@@ -452,7 +452,9 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 			}
 		}
 	}
-
+	// track sign info position in queue
+	pos := int64(0)
+	var err error
 	for _, inputInfo := range unsignedTx.Info.InputInfos {
 		for _, sigRequirement := range inputInfo.SigRequirements {
 			sigID := getSigID(sigRequirement.SigHash, sigRequirement.KeyID)
@@ -472,14 +474,15 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+			pos, err = s.signer.EnqueueSign(ctx, tss.SignInfo{
 				KeyID:           sigRequirement.KeyID,
 				SigID:           sigID,
 				Msg:             sigRequirement.SigHash,
 				SnapshotCounter: snapshot.Counter,
 				RequestModule:   types.ModuleName,
 				Metadata:        "",
-			}); err != nil {
+			})
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -495,7 +498,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		sdk.NewAttribute(types.AttributeTxType, req.TxType.SimpleString()),
 	))
 
-	return &types.SignTxResponse{}, nil
+	return &types.SignTxResponse{Position: pos}, nil
 }
 
 // CreateRescueTx creates a rescue transaction

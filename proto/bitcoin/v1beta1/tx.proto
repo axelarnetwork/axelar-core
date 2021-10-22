@@ -98,4 +98,4 @@ message SignTxRequest {
   bitcoin.v1beta1.TxType tx_type = 2;
 }
 
-message SignTxResponse {}
+message SignTxResponse { int64 position = 1; }

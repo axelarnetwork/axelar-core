@@ -85,7 +85,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	ScheduleSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
+	EnqueueSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)

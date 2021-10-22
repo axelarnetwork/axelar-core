@@ -84,7 +84,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
@@ -165,7 +165,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
@@ -202,7 +202,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
@@ -214,7 +214,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	msgToSign = []byte("second message")
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
@@ -240,9 +240,8 @@ func TestScheduleSignAtHeight(t *testing.T) {
 				SnapshotCounter: snapshotSeq + int64(i),
 			}
 			expectedInfos[i] = info
-			height, err := s.Keeper.ScheduleSign(s.Ctx, info)
+			height:= s.Keeper.ScheduleSign(s.Ctx, info)
 
-			assert.NoError(t, err)
 			assert.Equal(t, currentHeight, height)
 		}
 

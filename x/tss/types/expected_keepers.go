@@ -82,7 +82,7 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	ScheduleKeygen(ctx sdk.Context, req StartKeygenRequest) (int64, error)
-	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
+	ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress)
@@ -119,4 +119,6 @@ type TSSKeeper interface {
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetAckPeriodInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
+	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
+
 }

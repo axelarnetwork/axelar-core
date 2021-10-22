@@ -959,14 +959,15 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		Chain: chain.Name,
 	}
 
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+	pos, err := s.signer.EnqueueSign(ctx, tss.SignInfo{
 		KeyID:           keyID,
 		SigID:           hash.Hex(),
 		Msg:             hash.Bytes(),
 		SnapshotCounter: snapshot.Counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -999,7 +1000,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 		),
 	)
 
-	return &types.SignTxResponse{TxID: hash.Hex()}, nil
+	return &types.SignTxResponse{TxID: hash.Hex(), Position: pos}, nil
 }
 
 func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
@@ -1243,14 +1244,15 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}
 
 	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
-	if _, err := s.signer.ScheduleSign(ctx, tss.SignInfo{
+	pos, err := s.signer.EnqueueSign(ctx, tss.SignInfo{
 		KeyID:           batchedCommands.GetKeyID(),
 		SigID:           batchedCommandsIDHex,
 		Msg:             batchedCommands.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -1264,7 +1266,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID()}, nil
+	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID(), Position: pos}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {

@@ -229,6 +229,22 @@ func (k Keeper) GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64 {
 	return count
 }
 
+// getMaxSignQueueSize returns the maximum size of sign queue
+func (k Keeper) getMaxSignQueueSize(ctx sdk.Context) int64 {
+	var size int64
+	k.params.Get(ctx, types.KeyMaxSignQueueSize, &size)
+
+	return size
+}
+
+// GetMaxSimultaneousSignShares returns the max simultaneous number of sign shares
+func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
+	var shares int64
+	k.params.Get(ctx, types.MaxSimultaneousSignShares, &shares)
+
+	return shares
+}
+
 func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(suspendedUntilBlockNumber))

@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -47,6 +48,9 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 
 		keeper.DeleteKeygenStart(ctx, request.KeyID)
 	}
+
+	signQueue := keeper.GetSignQueue(ctx)
+	sequentialSign(ctx, signQueue, keeper, snapshotter)
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
 	if len(signInfos) > 0 {
@@ -271,4 +275,39 @@ func startSign(
 
 	didStart = true
 	return nil
+}
+
+// sequentialSign limits tss sign within max signing shares
+func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
+	i := uint64(0)
+	signShares := int64(0)
+	var signInfo exported.SignInfo
+
+	defer func() { ctx.Logger().Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size())) }()
+
+	maxSignShares := k.GetMaxSimultaneousSignShares(ctx)
+	for signShares < maxSignShares && signQueue.Peek(i, &signInfo) {
+		_, sigStatus := k.GetSig(ctx, signInfo.SigID)
+		snap, _ := s.GetSnapshot(ctx, signInfo.SnapshotCounter)
+
+		switch sigStatus {
+		case exported.SigStatus_Queued:
+			signShares += snap.CorruptionThreshold + 1
+			if signShares > maxSignShares {
+				return
+			}
+			k.ScheduleSign(ctx, signInfo)
+			ctx.Logger().Debug(fmt.Sprintf("scheduling sign %s", signInfo.SigID))
+			i++
+		case exported.SigStatus_Scheduled, exported.SigStatus_Signing:
+			signShares += snap.CorruptionThreshold + 1
+			ctx.Logger().Debug(fmt.Sprintf("signing %s in progress", signInfo.SigID))
+			i++
+		case exported.SigStatus_Signed, exported.SigStatus_Aborted, exported.SigStatus_Invalid:
+			signQueue.Dequeue(i, &signInfo)
+			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s", signInfo.SigID, sigStatus))
+		default:
+			panic("invalid sig status type")
+		}
+	}
 }

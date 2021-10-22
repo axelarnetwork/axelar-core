@@ -452,13 +452,14 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 }
 
 type listeners struct {
-	keygenDone     <-chan abci.Event
-	signDone       <-chan abci.Event
-	btcDone        <-chan abci.Event
-	ethDepositDone <-chan abci.Event
-	ethTokenDone   <-chan abci.Event
-	chainActivated <-chan abci.Event
-	ackRequested   <-chan abci.Event
+	keygenDone        <-chan abci.Event
+	signDone          <-chan abci.Event
+	btcDone           <-chan abci.Event
+	ethDepositDone    <-chan abci.Event
+	ethTokenDone      <-chan abci.Event
+	chainActivated    <-chan abci.Event
+	ackRequested      <-chan abci.Event
+	consolidationDone <-chan abci.Event
 }
 
 func registerWaitEventListeners(n nodeData) listeners {
@@ -514,14 +515,22 @@ func registerWaitEventListeners(n nodeData) listeners {
 			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
 	})
 
+	// register listener for consolidation done
+	condolidationDone := n.Node.RegisterEventListener(func(event abci.Event) bool {
+		attributes := mapifyAttributes(event)
+		return event.Type == btcTypes.EventTypeConsolidationTx &&
+			attributes[sdk.AttributeKeyAction] == btcTypes.AttributeValueSigned
+	})
+
 	return listeners{
-		keygenDone:     keygenDone,
-		signDone:       signDone,
-		btcDone:        btcConfirmationDone,
-		ethDepositDone: ethDepositDone,
-		ethTokenDone:   ethTokenDone,
-		chainActivated: chainActivated,
-		ackRequested:   ackRequested,
+		keygenDone:        keygenDone,
+		signDone:          signDone,
+		btcDone:           btcConfirmationDone,
+		ethDepositDone:    ethDepositDone,
+		ethTokenDone:      ethTokenDone,
+		chainActivated:    chainActivated,
+		ackRequested:      ackRequested,
+		consolidationDone: condolidationDone,
 	}
 }
 

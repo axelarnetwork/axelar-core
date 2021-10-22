@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -19,14 +20,29 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// ScheduleSign sets a sign to start at the current block height
-func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
+const signQueueName = "sign_queue"
+
+// EnqueueSign enqueue the pending sign info into a queue and returns the position of the added sign info.
+// Returns error if queue is full
+func (k Keeper) EnqueueSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
 	status := k.getSigStatus(ctx, info.SigID)
 	if status == exported.SigStatus_Signed ||
 		status == exported.SigStatus_Signing ||
-		status == exported.SigStatus_Scheduled {
-		return -1, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
+		status == exported.SigStatus_Scheduled ||
+		status == exported.SigStatus_Queued {
+		return 0, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
+
+	q := k.GetSignQueue(ctx)
+	err := q.Enqueue(&info)
+	if err == nil {
+		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
+	}
+	return int64(q.Size()), err
+}
+
+// ScheduleSign sets a sign to start at the current block height
+func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64 {
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
 
 	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
@@ -36,7 +52,7 @@ func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, er
 		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
 		info.SigID, info.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
 
-	return ctx.BlockHeight(), nil
+	return ctx.BlockHeight()
 }
 
 // GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
@@ -263,4 +279,10 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 	default:
 		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
 	}
+}
+
+// GetSignQueue returns the sign queue
+func (k Keeper) GetSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(signQueueName))
+	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.getMaxSignQueueSize(ctx)), k.Logger(ctx))
 }

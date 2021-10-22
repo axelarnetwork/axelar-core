@@ -73,9 +73,10 @@ enum SigStatus {
 
   SIG_STATUS_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  SIG_STATUS_SCHEDULED = 1 [ (gogoproto.enumvalue_customname) = "Scheduled" ];
-  SIG_STATUS_SIGNING = 2 [ (gogoproto.enumvalue_customname) = "Signing" ];
-  SIG_STATUS_SIGNED = 3 [ (gogoproto.enumvalue_customname) = "Signed" ];
-  SIG_STATUS_ABORTED = 4 [ (gogoproto.enumvalue_customname) = "Aborted" ];
-  SIG_STATUS_INVALID = 5 [ (gogoproto.enumvalue_customname) = "Invalid" ];
+  SIG_STATUS_QUEUED = 1 [ (gogoproto.enumvalue_customname) = "Queued" ];
+  SIG_STATUS_SCHEDULED = 2 [ (gogoproto.enumvalue_customname) = "Scheduled" ];
+  SIG_STATUS_SIGNING = 3 [ (gogoproto.enumvalue_customname) = "Signing" ];
+  SIG_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
+  SIG_STATUS_ABORTED = 5 [ (gogoproto.enumvalue_customname) = "Aborted" ];
+  SIG_STATUS_INVALID = 6 [ (gogoproto.enumvalue_customname) = "Invalid" ];
 }
