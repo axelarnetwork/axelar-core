@@ -131,18 +131,15 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
 // the active share count and excluded validators if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
-	var activeValidators []snapshot.Validator
-	available := k.GetAvailableOperators(ctx)
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, info exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
+	var activeValidators, excludedValidators []snapshot.Validator
+	available := k.GetAvailableOperators(ctx, info.KeyID)
 	validatorAvailable := make(map[string]bool)
 	for _, validator := range available {
 		validatorAvailable[validator.String()] = true
 	}
 
-	var excludedValidators []snapshot.Validator
-	validators := snap.Validators
-
-	for _, validator := range validators {
+	for _, validator := range snap.Validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
 			return nil, nil, err
@@ -151,7 +148,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
 				validator.GetSDKValidator().GetOperator().String(),
-				sigID,
+				info.SigID,
 				illegibility.String(),
 			))
 			excludedValidators = append(excludedValidators, validator)
@@ -161,7 +158,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		if !validatorAvailable[validator.GetSDKValidator().GetOperator().String()] {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
 				validator.GetSDKValidator().GetOperator().String(),
-				sigID,
+				info.SigID,
 			))
 			excludedValidators = append(excludedValidators, validator)
 			continue
@@ -173,7 +170,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 	selectedSigners := k.optimizedSigningSet(activeValidators, snap.CorruptionThreshold)
 
 	for _, signer := range selectedSigners {
-		k.setParticipateInSign(ctx, sigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
+		k.setParticipateInSign(ctx, info.SigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
 	}
 
 	return selectedSigners, activeValidators, nil

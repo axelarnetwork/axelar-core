@@ -85,9 +85,8 @@ type TSSKeeper interface {
 	ScheduleSign(ctx sdk.Context, info exported.SignInfo) (int64, error)
 	GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []StartKeygenRequest
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
-	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress)
-	GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress
-	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool
+	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
+	GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress
 	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, counter int64)
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
@@ -107,7 +106,7 @@ type TSSKeeper interface {
 	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, sigID string, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
+	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, info exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)

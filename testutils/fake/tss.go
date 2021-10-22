@@ -59,6 +59,11 @@ func (t *Tofnd) Sign(sigID string, keyID string, msg []byte) []byte {
 	return sig
 }
 
+// HasKey returns true if it holds the key associated with the specified ID
+func (t *Tofnd) HasKey(keyID string) bool {
+	return t.getPrivateKey(keyID) != nil
+}
+
 func (t *Tofnd) getPrivateKey(keyID string) *ecdsa.PrivateKey {
 	t.keyMutex.RLock()
 	defer t.keyMutex.RUnlock()

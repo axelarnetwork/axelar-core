@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -21,11 +22,34 @@ import (
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
 	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetAckPeriodInBlocks(ctx)) == 0 {
+		var keyIDs []exported.KeyID
+		for _, chain := range nexus.GetChains(ctx) {
+			for _, role := range exported.GetKeyRoles() {
+				if currentKey, ok := keeper.GetCurrentKeyID(ctx, chain, role); ok {
+					keyIDs = append(keyIDs, currentKey)
+					keys, err := keeper.GetOldActiveKeys(ctx, chain, role)
+					if err != nil {
+						keeper.Logger(ctx).Error(fmt.Sprintf("unable to retrieve old keys for chain %s with role %s: %s",
+							chain.Name, role.SimpleString(), err))
+						continue
+					}
+
+					for _, key := range keys {
+						keyIDs = append(keyIDs, key.ID)
+					}
+				}
+			}
+		}
+
+		bz, _ := json.Marshal(exported.KeyIDsToStrings(keyIDs))
+		//keeper.SetKeyIDs(ctx, keyIDs)
+
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
+			sdk.NewAttribute(types.AttributeKeyKeyIDs, string(bz)),
 		))
 	}
 
@@ -152,7 +176,7 @@ func startSign(
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info.SigID, snap)
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap)
 	if err != nil {
 		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Aborted)
 		return err

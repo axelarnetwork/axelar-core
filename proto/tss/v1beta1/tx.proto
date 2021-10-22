@@ -80,6 +80,12 @@ message VoteSigResponse { string log = 1; }
 message AckRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  repeated string key_ids = 2 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message AckResponse {}

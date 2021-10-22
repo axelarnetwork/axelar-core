@@ -1,13 +1,14 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewAckRequest constructor for AckRequest
-func NewAckRequest(sender sdk.AccAddress) *AckRequest {
-	return &AckRequest{Sender: sender}
+func NewAckRequest(sender sdk.AccAddress, keyIDs []exported.KeyID) *AckRequest {
+	return &AckRequest{Sender: sender, KeyIDs: keyIDs}
 }
 
 // Route implements the sdk.Msg interface.

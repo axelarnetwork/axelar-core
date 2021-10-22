@@ -77,22 +77,23 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
 	}
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
-	})
+	}
+	_, err = s.Keeper.ScheduleSign(s.Ctx, sigInfo)
 	assert.NoError(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -158,22 +159,23 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
 	}
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.ScheduleSign(s.Ctx, exported.SignInfo{
+	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
-	})
+	}
+	_, err = s.Keeper.ScheduleSign(s.Ctx, sigInfo)
 	assert.NoError(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
