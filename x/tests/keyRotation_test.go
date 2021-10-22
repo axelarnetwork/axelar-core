@@ -267,7 +267,9 @@ func TestBitcoinKeyRotation(t *testing.T) {
 	}
 
 	// wait for the end-block trigger to match signatures with the tx
-	chain.WaitNBlocks(2 * btcTypes.DefaultParams().SigCheckInterval)
+	if err := waitFor(listeners.consolidationDone, 1); err != nil {
+		assert.FailNow(t, "consolidation", err)
+	}
 
 	// get signed tx to Bitcoin
 	bz, err = nodeData[0].Node.Query([]string{btcTypes.QuerierRoute, btcKeeper.QLatestTxByTxType, btcTypes.SecondaryConsolidation.SimpleString()}, abci.RequestQuery{})
