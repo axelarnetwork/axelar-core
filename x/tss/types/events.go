@@ -18,7 +18,6 @@ const (
 	AttributeKeySigModule = "sigModule"
 	AttributeKeySigData   = "sigData"
 
-	AttributeKeyKeyAckType                = "ackType"
 	AttributeKeySessionID                 = "sessionID"
 	AttributeKeyThreshold                 = "threshold"
 	AttributeKeyParticipants              = "participants"
@@ -29,6 +28,7 @@ const (
 	AttributeKeyTimeout                   = "timeout"
 	AttributeKeyDidStart                  = "didStart"
 	AttributeKeyRole                      = "keyRole"
+	AttributeKeyKeyIDs                    = "keyIDs"
 )
 
 // Event attribute values

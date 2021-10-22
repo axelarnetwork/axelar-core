@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
@@ -225,30 +227,41 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 
 // ProcessAck broadcasts an acknowledgment
 func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
-	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
-	defer cancel()
+	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
+	var present []exported.KeyID
 
-	request := &tofnd.KeyPresenceRequest{
-		KeyUid: "dummyID",
-	}
+	for _, keyID := range keyIDs {
+		grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+		defer cancel()
 
-	response, err := mgr.client.KeyPresence(grpcCtx, request)
-	if err != nil {
-		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
-	}
-
-	switch response.Response {
-	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
-		return sdkerrors.Wrap(err, "tofnd not set up correctly")
-	case tofnd.RESPONSE_PRESENT, tofnd.RESPONSE_ABSENT:
-		mgr.Logger.Info("sending acknowledgment")
-		tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress)
-		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
-		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
-			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+		request := &tofnd.KeyPresenceRequest{
+			KeyUid: string(keyID),
 		}
-	default:
-		return sdkerrors.Wrap(err, "unknown tofnd response")
+
+		response, err := mgr.client.KeyPresence(grpcCtx, request)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
+		}
+
+		switch response.Response {
+		case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
+			return sdkerrors.Wrap(err, "tofnd not set up correctly")
+		case tofnd.RESPONSE_ABSENT:
+			// key is absent
+		case tofnd.RESPONSE_PRESENT:
+			present = append(present, keyID)
+		default:
+			return sdkerrors.Wrap(err, "unknown tofnd response")
+		}
+	}
+
+	mgr.Logger.Info(fmt.Sprintf("sending acknowledgment asserting the following keys as present: %s", present))
+
+	tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, present)
+
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 	}
 
 	return nil
@@ -332,6 +345,23 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 		}
 	}()
 	return broadcastChan, resChan, errChan
+}
+
+func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) []exported.KeyID {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
+			var keyIDs []exported.KeyID
+			_ = json.Unmarshal([]byte(s), &keyIDs)
+			return &keyIDs, nil
+		}},
+	}
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		panic(err)
+	}
+
+	return results[0].([]exported.KeyID)
 }
 
 func parseMsgParams(cdc *codec.LegacyAmino, attributes map[string]string) (sessionID string, from string, payload *tofnd.TrafficOut) {

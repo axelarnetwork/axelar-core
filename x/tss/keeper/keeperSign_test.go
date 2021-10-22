@@ -77,22 +77,22 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
 	}
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
+	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
-	})
-	assert.NoError(t, err)
+	}
+	s.Keeper.ScheduleSign(s.Ctx, sigInfo)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -158,22 +158,22 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
-		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator())
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
 	}
 
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
 
-	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
+	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
-	})
-	assert.NoError(t, err)
+	}
+	s.Keeper.ScheduleSign(s.Ctx, sigInfo)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigID, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -240,7 +240,7 @@ func TestScheduleSignAtHeight(t *testing.T) {
 				SnapshotCounter: snapshotSeq + int64(i),
 			}
 			expectedInfos[i] = info
-			height:= s.Keeper.ScheduleSign(s.Ctx, info)
+			height := s.Keeper.ScheduleSign(s.Ctx, info)
 
 			assert.Equal(t, currentHeight, height)
 		}

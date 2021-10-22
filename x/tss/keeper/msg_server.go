@@ -94,7 +94,7 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	s.Logger(ctx).Debug(fmt.Sprintf("updating availability for sender %s", req.Sender))
-	s.SetAvailableOperator(ctx, validator)
+	s.SetAvailableOperator(ctx, validator, req.KeyIDs...)
 	return &types.AckResponse{}, nil
 }
 
