@@ -90,7 +90,8 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
 	}
-	s.Keeper.ScheduleSign(s.Ctx, sigInfo)
+	_, err = s.Keeper.EnqueueSign(s.Ctx, sigInfo)
+	assert.NoError(t, err)
 
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
@@ -171,7 +172,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
 	}
-	s.Keeper.ScheduleSign(s.Ctx, sigInfo)
+	_, err = s.Keeper.EnqueueSign(s.Ctx, sigInfo)
+	assert.NoError(t, err)
 
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
