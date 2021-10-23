@@ -229,8 +229,6 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
-	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
-
 	// tofnd health check using a dummy ID
 	// TODO: we should have a specific GRPC to do this diagnostic
 	request := &tofnd.KeyPresenceRequest{
@@ -252,7 +250,9 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	}
 
 	// check for keys presence according to the IDs included in the event
+	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
+
 	for _, keyID := range *keyIDs {
 		grpcCtx, cancel = context.WithTimeout(context.Background(), mgr.Timeout)
 		defer cancel()
