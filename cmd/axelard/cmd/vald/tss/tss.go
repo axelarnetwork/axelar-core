@@ -245,7 +245,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	switch response.Response {
 	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
 		return sdkerrors.Wrap(err, "tofnd not set up correctly")
-	case tofnd.RESPONSE_ABSENT, tofnd.RESPONSE_PRESENT:
+	case tofnd.RESPONSE_PRESENT, tofnd.RESPONSE_ABSENT:
 		// tofnd is working properly
 	default:
 		return sdkerrors.Wrap(err, "unknown tofnd response")
