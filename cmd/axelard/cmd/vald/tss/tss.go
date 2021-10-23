@@ -229,15 +229,38 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
+	// tofnd health check using a dummy ID
+	// TODO: we should have a specific GRPC to do this diagnostic
+	request := &tofnd.KeyPresenceRequest{
+		KeyUid: string("dummyID"),
+	}
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	response, err := mgr.client.KeyPresence(grpcCtx, request)
+	if err != nil {
+		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
+	}
+
+	switch response.Response {
+	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
+		return sdkerrors.Wrap(err, "tofnd not set up correctly")
+	case tofnd.RESPONSE_ABSENT, tofnd.RESPONSE_PRESENT:
+		// tofnd is working properly
+	default:
+		return sdkerrors.Wrap(err, "unknown tofnd response")
+	}
+
+	// check for keys presence according to the IDs included in the event
 	for _, keyID := range *keyIDs {
-		grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+		grpcCtx, cancel = context.WithTimeout(context.Background(), mgr.Timeout)
 		defer cancel()
 
-		request := &tofnd.KeyPresenceRequest{
+		request = &tofnd.KeyPresenceRequest{
 			KeyUid: string(keyID),
 		}
 
-		response, err := mgr.client.KeyPresence(grpcCtx, request)
+		response, err = mgr.client.KeyPresence(grpcCtx, request)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
 		}
@@ -254,11 +277,10 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		}
 	}
 
-	mgr.Logger.Info(fmt.Sprintf("sending acknowledgment asserting the following keys as present: %s", present))
-
 	tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, present)
-
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+
+	mgr.Logger.Info(fmt.Sprintf("sending acknowledgment asserting the following keys as present: %s", present))
 	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 	}
