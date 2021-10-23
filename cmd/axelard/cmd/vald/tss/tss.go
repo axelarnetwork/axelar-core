@@ -253,12 +253,12 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
-	for _, keyID := range *keyIDs {
+	for _, keyID := range keyIDs {
 		grpcCtx, cancel = context.WithTimeout(context.Background(), mgr.Timeout)
 		defer cancel()
 
 		request = &tofnd.KeyPresenceRequest{
-			KeyUid: string(keyID),
+			KeyUid: keyID,
 		}
 
 		response, err = mgr.client.KeyPresence(grpcCtx, request)
@@ -369,12 +369,12 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 	return broadcastChan, resChan, errChan
 }
 
-func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) *[]string {
+func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) []string {
 	parsers := []*parse.AttributeParser{
 		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
 			var keyIDs []string
 			cdc.MustUnmarshalJSON([]byte(s), &keyIDs)
-			return &keyIDs, nil
+			return keyIDs, nil
 		}},
 	}
 
@@ -383,7 +383,7 @@ func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) *[]str
 		panic(err)
 	}
 
-	return results[0].(*[]string)
+	return results[0].([]string)
 }
 
 func parseMsgParams(cdc *codec.LegacyAmino, attributes map[string]string) (sessionID string, from string, payload *tofnd.TrafficOut) {

@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -44,8 +43,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 			}
 		}
 
-		bz, _ := json.Marshal(exported.KeyIDsToStrings(keyIDs))
-
+		bz := types.ModuleCdc.LegacyAmino.MustMarshalJSON(exported.KeyIDsToStrings(keyIDs))
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
