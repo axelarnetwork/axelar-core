@@ -2,7 +2,6 @@ package tss
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sync"
@@ -230,7 +229,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
-	for _, keyID := range keyIDs {
+	for _, keyID := range *keyIDs {
 		grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 		defer cancel()
 
@@ -249,7 +248,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		case tofnd.RESPONSE_ABSENT:
 			// key is absent
 		case tofnd.RESPONSE_PRESENT:
-			present = append(present, keyID)
+			present = append(present, exported.KeyID(keyID))
 		default:
 			return sdkerrors.Wrap(err, "unknown tofnd response")
 		}
@@ -347,11 +346,12 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 	return broadcastChan, resChan, errChan
 }
 
-func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) []exported.KeyID {
+func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) *[]string {
 	parsers := []*parse.AttributeParser{
 		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
-			var keyIDs []exported.KeyID
-			_ = json.Unmarshal([]byte(s), &keyIDs)
+			var keyIDs []string
+			//_ = json.Unmarshal([]byte(s), &keyIDs)
+			cdc.MustUnmarshalJSON([]byte(s), &keyIDs)
 			return &keyIDs, nil
 		}},
 	}
@@ -361,7 +361,7 @@ func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) []expo
 		panic(err)
 	}
 
-	return results[0].([]exported.KeyID)
+	return results[0].(*[]string)
 }
 
 func parseMsgParams(cdc *codec.LegacyAmino, attributes map[string]string) (sessionID string, from string, payload *tofnd.TrafficOut) {
