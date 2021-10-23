@@ -226,16 +226,17 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 
 // ProcessAck broadcasts an acknowledgment
 func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
 	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
 	// tofnd health check using a dummy ID
 	// TODO: we should have a specific GRPC to do this diagnostic
 	request := &tofnd.KeyPresenceRequest{
-		KeyUid: string("dummyID"),
+		KeyUid: "dummyID",
 	}
-	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
-	defer cancel()
 
 	response, err := mgr.client.KeyPresence(grpcCtx, request)
 	if err != nil {
