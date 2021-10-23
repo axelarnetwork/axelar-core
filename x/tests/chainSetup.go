@@ -391,7 +391,6 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 
 		var present []tssExported.KeyID
 		for _, keyID := range keyIDs {
-
 			if t.HasKey(keyID) {
 				present = append(present, tssExported.KeyID(keyID))
 			}
