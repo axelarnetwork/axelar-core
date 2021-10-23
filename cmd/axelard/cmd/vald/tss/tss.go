@@ -350,7 +350,6 @@ func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) *[]str
 	parsers := []*parse.AttributeParser{
 		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
 			var keyIDs []string
-			//_ = json.Unmarshal([]byte(s), &keyIDs)
 			cdc.MustUnmarshalJSON([]byte(s), &keyIDs)
 			return &keyIDs, nil
 		}},
