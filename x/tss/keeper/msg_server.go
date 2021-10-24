@@ -93,7 +93,8 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("updating availability for sender %s", req.Sender))
+	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of validator %s (proxy address %s) for keys %v at block %d",
+		validator.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
 	s.SetAvailableOperator(ctx, validator, req.KeyIDs...)
 	return &types.AckResponse{}, nil
 }

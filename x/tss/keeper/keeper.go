@@ -265,34 +265,33 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 
 // SetAvailableOperator signals that a validator sent an ack
 func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, presentKeys ...exported.KeyID) {
+	store := k.getStore(ctx)
+
+	// update block height of last seen ack
 	key := availablePrefix.AppendStr(validator.String())
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
-	k.getStore(ctx).SetRaw(key, bz)
+	store.SetRaw(key, bz)
 
-	key = presentKeysPrefix.AppendStr(validator.String())
-	list, _ := json.Marshal(presentKeys)
-	k.getStore(ctx).SetRaw(key, list)
+	// garbage collection
+	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.GetKey())
+	}
+
+	// update keys that operator holds
+	for _, keyID := range presentKeys {
+		key = presentKeysPrefix.AppendStr(validator.String()).AppendStr(string(keyID))
+		store.SetRaw(key, []byte{1})
+	}
 }
 
 func (k Keeper) operatorHasKeys(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID) bool {
-	key := presentKeysPrefix.AppendStr(validator.String())
-	bz := k.getStore(ctx).GetRaw(key)
-	var presentKeyIDs []exported.KeyID
-
-	if bz != nil {
-		_ = json.Unmarshal(bz, &presentKeyIDs)
-	}
-
 	for _, keyID := range keyIDs {
-		ok := false
-		for _, present := range presentKeyIDs {
-			if keyID == present {
-				ok = true
-				break
-			}
-		}
-		if !ok {
+		key := presentKeysPrefix.AppendStr(validator.String()).AppendStr(string(keyID))
+		bz := k.getStore(ctx).GetRaw(key)
+		if bz == nil {
 			return false
 		}
 	}

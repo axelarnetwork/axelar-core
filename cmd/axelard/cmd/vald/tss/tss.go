@@ -281,7 +281,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, present)
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
-	mgr.Logger.Info(fmt.Sprintf("sending acknowledgment asserting the following keys as present: %s", present))
+	mgr.Logger.Info(fmt.Sprintf("operator %s sending acknowledgment for keys: %s", mgr.principalAddr, present))
 	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 	}
