@@ -113,6 +113,11 @@ func Test_wBTC_mint(t *testing.T) {
 		rotateSecondaryKeyResult := <-chain.Submit(types.NewRotateKeyRequest(randomSender(), c, tss.SecondaryKey, secondaryKeyID))
 		assert.NoError(t, rotateSecondaryKeyResult.Error)
 
+		// wait for ack event
+		if err := waitFor(listeners.ackRequested, 1); err != nil {
+			assert.FailNow(t, "ack", err)
+		}
+
 		var externalKeys []tssTypes.RegisterExternalKeysRequest_ExternalKey
 		for i := 0; i < int(tssTypes.DefaultParams().ExternalMultisigThreshold.Denominator); i++ {
 			privKey, err := btcec.NewPrivateKey(btcec.S256())

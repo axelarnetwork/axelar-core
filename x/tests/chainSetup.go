@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -45,6 +46,7 @@ import (
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapshotTypesMock "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss"
+	tssExported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -143,7 +145,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 				return evm.EndBlocker(ctx, req, EVMKeeper, nexusK, signer)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-				return tss.EndBlocker(ctx, req, signer, voter, snapKeeper)
+				return tss.EndBlocker(ctx, req, signer, voter, nexusK, snapKeeper)
 			},
 			func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 				return nexus.EndBlocker(ctx, req, nexusK, mocks.Staker)
@@ -384,7 +386,17 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 			return false
 		}
 
-		_ = submitMsg(&tssTypes.AckRequest{Sender: n.Proxy})
+		var keyIDs []string
+		_ = json.Unmarshal([]byte(m[tssTypes.AttributeKeyKeyIDs]), &keyIDs)
+
+		var present []tssExported.KeyID
+		for _, keyID := range keyIDs {
+			if t.HasKey(keyID) {
+				present = append(present, tssExported.KeyID(keyID))
+			}
+		}
+
+		_ = submitMsg(tssTypes.NewAckRequest(n.Proxy, present))
 
 		return true
 	})

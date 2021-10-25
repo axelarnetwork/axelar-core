@@ -3780,6 +3780,7 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
+| `key_ids` | [string](#string) | repeated |  |
 
 
 

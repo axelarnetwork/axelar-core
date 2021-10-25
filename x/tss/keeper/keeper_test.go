@@ -126,9 +126,19 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 	}, power)
 }
 
+func randKeyIDs() []exported.KeyID {
+	keyIDs := make([]exported.KeyID, 10)
+	for i := range keyIDs {
+		keyIDs[i] = tss.KeyID(rand.HexStr(int(rand.I64Between(exported.KeyIDLengthMin, exported.KeyIDLengthMax))))
+	}
+	return keyIDs
+}
+
 func TestAvailableOperator(t *testing.T) {
 	t.Run("operator available", testutils.Func(func(t *testing.T) {
 		s := setup()
+		keyIDs := randKeyIDs()
+
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		height := eventHeight + rand.I64Between(1, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
@@ -139,13 +149,21 @@ func TestAvailableOperator(t *testing.T) {
 			s.Ctx = s.Ctx.WithBlockHeight(height)
 
 			// not yet available
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i)
 
 			// available
-			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator)
+			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator, keyIDs...)
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
-			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx), availableValidator)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), availableValidator)
+
+			// unknown keys
+			unknownKeys := randKeyIDs()
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), 0)
+			assert.NotContains(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), availableValidator)
 
 			// linked to counter
 			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, availableValidator))
@@ -156,6 +174,8 @@ func TestAvailableOperator(t *testing.T) {
 
 	t.Run("operator available (edge case #1)", testutils.Func(func(t *testing.T) {
 		s := setup()
+		keyIDs := randKeyIDs()
+
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		height := eventHeight
 		repeats := int(rand.I64Between(5, 20))
@@ -166,13 +186,21 @@ func TestAvailableOperator(t *testing.T) {
 			s.Ctx = s.Ctx.WithBlockHeight(height)
 
 			// not yet available
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i)
 
 			// available
-			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator)
+			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator, keyIDs...)
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
-			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx), availableValidator)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), availableValidator)
+
+			// unknown keys
+			unknownKeys := randKeyIDs()
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), 0)
+			assert.NotContains(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), availableValidator)
 
 			// linked to counter
 			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, availableValidator))
@@ -183,6 +211,8 @@ func TestAvailableOperator(t *testing.T) {
 
 	t.Run("operator available (edge case #2)", testutils.Func(func(t *testing.T) {
 		s := setup()
+		keyIDs := randKeyIDs()
+
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		repeats := int(rand.I64Between(5, 20))
 		snapshotSeq := rand.I64Between(1, 100)
@@ -192,13 +222,21 @@ func TestAvailableOperator(t *testing.T) {
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight)
 
 			// not yet available
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i)
 
 			// available
-			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator)
+			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator, keyIDs...)
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight)
-			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx), availableValidator)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), i+1)
+			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), availableValidator)
+
+			// unknown keys
+			unknownKeys := randKeyIDs()
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), 0)
+			assert.NotContains(t, s.Keeper.GetAvailableOperators(s.Ctx, unknownKeys...), availableValidator)
 
 			// linked to counter
 			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, availableValidator))
@@ -209,6 +247,8 @@ func TestAvailableOperator(t *testing.T) {
 
 	t.Run("operator unavailable", testutils.Func(func(t *testing.T) {
 		s := setup()
+		keyIDs := randKeyIDs()
+
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		height := eventHeight - (rand.I64Between(1, 100) + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
@@ -221,11 +261,10 @@ func TestAvailableOperator(t *testing.T) {
 			s.Ctx = s.Ctx.WithBlockHeight(height)
 
 			// never available
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, unavailableValidator))
-			s.Keeper.SetAvailableOperator(s.Ctx, unavailableValidator)
+			s.Keeper.SetAvailableOperator(s.Ctx, unavailableValidator, keyIDs...)
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight)
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, unavailableValidator))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), 0)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), 0)
 
 			// including for counter
 			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, unavailableValidator))
@@ -237,6 +276,8 @@ func TestAvailableOperator(t *testing.T) {
 
 	t.Run("operator unavailable (edge case)", testutils.Func(func(t *testing.T) {
 		s := setup()
+		keyIDs := randKeyIDs()
+
 		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		height := eventHeight - (1 + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
@@ -247,11 +288,10 @@ func TestAvailableOperator(t *testing.T) {
 			s.Ctx = s.Ctx.WithBlockHeight(height)
 
 			// never available
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, unavailableValidator))
-			s.Keeper.SetAvailableOperator(s.Ctx, unavailableValidator)
+			s.Keeper.SetAvailableOperator(s.Ctx, unavailableValidator, keyIDs...)
 			s.Ctx = s.Ctx.WithBlockHeight(eventHeight)
-			assert.False(t, s.Keeper.IsOperatorAvailable(s.Ctx, unavailableValidator))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), 0)
+			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx, keyIDs...), 0)
 
 			// including for counter
 			assert.False(t, s.Keeper.OperatorIsAvailableForCounter(s.Ctx, snapshotSeq, unavailableValidator))

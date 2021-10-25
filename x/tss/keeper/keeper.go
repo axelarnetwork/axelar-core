@@ -36,6 +36,7 @@ var (
 	keyTssSuspendedUntil       = utils.KeyFromStr("key_tss_suspended_until")
 	keyRotatedAtPrefix         = utils.KeyFromStr("key_rotated_at")
 	availablePrefix            = utils.KeyFromStr("available")
+	presentKeysPrefix          = utils.KeyFromStr("present_keys")
 	linkedSeqNumPrefix         = utils.KeyFromStr("linked_seq_number")
 	scheduledKeygenPrefix      = utils.KeyFromStr("scheduled_keygen")
 	scheduledSignPrefix        = utils.KeyFromStr("scheduled_sign")
@@ -263,24 +264,38 @@ func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) 
 }
 
 // SetAvailableOperator signals that a validator sent an ack
-func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress) {
+func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, presentKeys ...exported.KeyID) {
+	store := k.getStore(ctx)
+
+	// update block height of last seen ack
 	key := availablePrefix.AppendStr(validator.String())
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
-	k.getStore(ctx).SetRaw(key, bz)
+	store.SetRaw(key, bz)
+
+	// garbage collection
+	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.GetKey())
+	}
+
+	// update keys that operator holds
+	for _, keyID := range presentKeys {
+		key = presentKeysPrefix.AppendStr(validator.String()).AppendStr(string(keyID))
+		store.SetRaw(key, []byte{1})
+	}
 }
 
-// IsOperatorAvailable returns true if the validator has a non-stale ack
-func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress) bool {
-	key := availablePrefix.AppendStr(validator.String())
-
-	bz := k.getStore(ctx).GetRaw(key)
-	if bz == nil {
-		return false
+func (k Keeper) operatorHasKeys(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID) bool {
+	for _, keyID := range keyIDs {
+		key := presentKeysPrefix.AppendStr(validator.String()).AppendStr(string(keyID))
+		bz := k.getStore(ctx).GetRaw(key)
+		if bz == nil {
+			return false
+		}
 	}
-	height := int64(binary.LittleEndian.Uint64(bz))
-
-	return (ctx.BlockHeight() - height) <= k.GetAckPeriodInBlocks(ctx)
+	return true
 }
 
 // LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
@@ -292,7 +307,7 @@ func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, snapshotSeqNo 
 }
 
 // GetAvailableOperators gets all operators that still have a non-stale acknowledgment
-func (k Keeper) GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress {
+func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress {
 	iter := k.getStore(ctx).Iterator(availablePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
@@ -309,6 +324,11 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context) []sdk.ValAddress {
 		if (ctx.BlockHeight() - height) > k.GetAckPeriodInBlocks(ctx) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale acknowledgement "+
 				"[current height %d, event height %d]", validator, ctx.BlockHeight(), height))
+			continue
+		}
+
+		if !k.operatorHasKeys(ctx, address, keyIDs...) {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due absent keys", validator))
 			continue
 		}
 
