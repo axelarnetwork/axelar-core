@@ -169,7 +169,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 			return false
 		}
 
-		if !k.tss.OperatorIsAvailableForCounter(ctx, counter, validator.GetOperator()) {
+		if !k.tss.IsOperatorAvailable(ctx, validator.GetOperator()) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [not-available]",
 				validator.GetOperator().String(),
 				counter,
@@ -419,10 +419,4 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 	}
 
 	return illegibility, nil
-}
-
-// IsValidatorAvaiableForCounter returns true if the validator sent his acknowledgment in time
-// and was subsequently linked to a snapshot number as an available operator
-func (k Keeper) IsValidatorAvaiableForCounter(ctx sdk.Context, seqNo int64, validator exported.SDKValidator) bool {
-	return k.tss.OperatorIsAvailableForCounter(ctx, seqNo, validator.GetOperator())
 }

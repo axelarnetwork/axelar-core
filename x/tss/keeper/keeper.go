@@ -297,12 +297,17 @@ func (k Keeper) operatorHasKeys(ctx sdk.Context, validator sdk.ValAddress, keyID
 	return true
 }
 
-// LinkAvailableOperatorsToSnapshot links the available operators of some keygen/sign to a snapshot counter
-func (k Keeper) LinkAvailableOperatorsToSnapshot(ctx sdk.Context, snapshotSeqNo int64) {
-	operators := k.GetAvailableOperators(ctx)
-	if len(operators) > 0 {
-		k.setAvailableOperatorsForCounter(ctx, snapshotSeqNo, operators)
+// IsOperatorAvailable returns true if the validator has a non-stale ack and holds the specified keys
+func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID) bool {
+	key := availablePrefix.AppendStr(validator.String())
+
+	bz := k.getStore(ctx).GetRaw(key)
+	if bz == nil {
+		return false
 	}
+	height := int64(binary.LittleEndian.Uint64(bz))
+
+	return (ctx.BlockHeight()-height) <= k.GetAckPeriodInBlocks(ctx) && k.operatorHasKeys(ctx, validator, keyIDs...)
 }
 
 // GetAvailableOperators gets all operators that still have a non-stale acknowledgment
@@ -347,27 +352,6 @@ func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, 
 	}
 	list, _ := json.Marshal(values)
 	k.getStore(ctx).SetRaw(key, list)
-}
-
-// OperatorIsAvailableForCounter returns true if the given validator address is available for the specified snapshot counter
-func (k Keeper) OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool {
-	key := linkedSeqNumPrefix.AppendStr(strconv.FormatInt(counter, 10))
-	bz := k.getStore(ctx).GetRaw(key)
-
-	if bz == nil {
-		return false
-	}
-
-	var list []string
-	_ = json.Unmarshal(bz, &list)
-
-	for _, value := range list {
-		if value == validator.String() {
-			return true
-		}
-	}
-
-	return false
 }
 
 // GetOldActiveKeys gets all the old keys of given key role that are still active for chain

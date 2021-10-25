@@ -106,11 +106,7 @@ func TestSnapshots(t *testing.T) {
 					return tsstypes.DefaultParams().MaxMissedBlocksPerWindow
 				},
 				GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
-				OperatorIsAvailableForCounterFunc: func(_ sdk.Context, c int64, v sdk.ValAddress) bool {
-					if c != counter {
-						return false
-					}
-
+				IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tss.KeyID) bool {
 					for _, validator := range validators {
 						if validator.GetOperator().String() == v.String() {
 							return true

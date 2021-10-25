@@ -204,7 +204,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 			return tssTypes.DefaultParams().MaxMissedBlocksPerWindow
 		},
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
-		OperatorIsAvailableForCounterFunc: func(_ sdk.Context, _ int64, v sdk.ValAddress) bool {
+		IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tssExported.KeyID) bool {
 
 			// we cannot evaluate the counter number, but for the context of the unit tests,
 			// we can assume the validators always send their acknowledgments

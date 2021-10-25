@@ -1317,14 +1317,8 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			HasPrivateRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the HasPrivateRecoveryInfos method")
 // 			},
-// 			LinkAvailableOperatorsToSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64)  {
-// 				panic("mock out the LinkAvailableOperatorsToSnapshot method")
-// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
-// 			},
-// 			OperatorIsAvailableForCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-// 				panic("mock out the OperatorIsAvailableForCounter method")
 // 			},
 // 			PenalizeCriminalFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, criminal github_com_cosmos_cosmos_sdk_types.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)  {
 // 				panic("mock out the PenalizeCriminal method")
@@ -1477,14 +1471,8 @@ type TSSKeeperMock struct {
 	// HasPrivateRecoveryInfosFunc mocks the HasPrivateRecoveryInfos method.
 	HasPrivateRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
 
-	// LinkAvailableOperatorsToSnapshotFunc mocks the LinkAvailableOperatorsToSnapshot method.
-	LinkAvailableOperatorsToSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64)
-
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
-
-	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
-	OperatorIsAvailableForCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// PenalizeCriminalFunc mocks the PenalizeCriminal method.
 	PenalizeCriminalFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, criminal github_com_cosmos_cosmos_sdk_types.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
@@ -1784,26 +1772,10 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// LinkAvailableOperatorsToSnapshot holds details about calls to the LinkAvailableOperatorsToSnapshot method.
-		LinkAvailableOperatorsToSnapshot []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Counter is the counter argument value.
-			Counter int64
-		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// OperatorIsAvailableForCounter holds details about calls to the OperatorIsAvailableForCounter method.
-		OperatorIsAvailableForCounter []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Counter is the counter argument value.
-			Counter int64
-			// Validator is the validator argument value.
-			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// PenalizeCriminal holds details about calls to the PenalizeCriminal method.
 		PenalizeCriminal []struct {
@@ -1978,9 +1950,7 @@ type TSSKeeperMock struct {
 	lockGetSnapshotCounterForKeyID       sync.RWMutex
 	lockGetTssSuspendedUntil             sync.RWMutex
 	lockHasPrivateRecoveryInfos          sync.RWMutex
-	lockLinkAvailableOperatorsToSnapshot sync.RWMutex
 	lockLogger                           sync.RWMutex
-	lockOperatorIsAvailableForCounter    sync.RWMutex
 	lockPenalizeCriminal                 sync.RWMutex
 	lockRotateKey                        sync.RWMutex
 	lockScheduleSign                     sync.RWMutex
@@ -3193,41 +3163,6 @@ func (mock *TSSKeeperMock) HasPrivateRecoveryInfosCalls() []struct {
 	return calls
 }
 
-// LinkAvailableOperatorsToSnapshot calls LinkAvailableOperatorsToSnapshotFunc.
-func (mock *TSSKeeperMock) LinkAvailableOperatorsToSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64) {
-	if mock.LinkAvailableOperatorsToSnapshotFunc == nil {
-		panic("TSSKeeperMock.LinkAvailableOperatorsToSnapshotFunc: method is nil but TSSKeeper.LinkAvailableOperatorsToSnapshot was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Counter int64
-	}{
-		Ctx:     ctx,
-		Counter: counter,
-	}
-	mock.lockLinkAvailableOperatorsToSnapshot.Lock()
-	mock.calls.LinkAvailableOperatorsToSnapshot = append(mock.calls.LinkAvailableOperatorsToSnapshot, callInfo)
-	mock.lockLinkAvailableOperatorsToSnapshot.Unlock()
-	mock.LinkAvailableOperatorsToSnapshotFunc(ctx, counter)
-}
-
-// LinkAvailableOperatorsToSnapshotCalls gets all the calls that were made to LinkAvailableOperatorsToSnapshot.
-// Check the length with:
-//     len(mockedTSSKeeper.LinkAvailableOperatorsToSnapshotCalls())
-func (mock *TSSKeeperMock) LinkAvailableOperatorsToSnapshotCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Counter int64
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Counter int64
-	}
-	mock.lockLinkAvailableOperatorsToSnapshot.RLock()
-	calls = mock.calls.LinkAvailableOperatorsToSnapshot
-	mock.lockLinkAvailableOperatorsToSnapshot.RUnlock()
-	return calls
-}
-
 // Logger calls LoggerFunc.
 func (mock *TSSKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -3256,45 +3191,6 @@ func (mock *TSSKeeperMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
-	return calls
-}
-
-// OperatorIsAvailableForCounter calls OperatorIsAvailableForCounterFunc.
-func (mock *TSSKeeperMock) OperatorIsAvailableForCounter(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-	if mock.OperatorIsAvailableForCounterFunc == nil {
-		panic("TSSKeeperMock.OperatorIsAvailableForCounterFunc: method is nil but TSSKeeper.OperatorIsAvailableForCounter was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Counter   int64
-		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-	}{
-		Ctx:       ctx,
-		Counter:   counter,
-		Validator: validator,
-	}
-	mock.lockOperatorIsAvailableForCounter.Lock()
-	mock.calls.OperatorIsAvailableForCounter = append(mock.calls.OperatorIsAvailableForCounter, callInfo)
-	mock.lockOperatorIsAvailableForCounter.Unlock()
-	return mock.OperatorIsAvailableForCounterFunc(ctx, counter, validator)
-}
-
-// OperatorIsAvailableForCounterCalls gets all the calls that were made to OperatorIsAvailableForCounter.
-// Check the length with:
-//     len(mockedTSSKeeper.OperatorIsAvailableForCounterCalls())
-func (mock *TSSKeeperMock) OperatorIsAvailableForCounterCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Counter   int64
-	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Counter   int64
-		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-	}
-	mock.lockOperatorIsAvailableForCounter.RLock()
-	calls = mock.calls.OperatorIsAvailableForCounter
-	mock.lockOperatorIsAvailableForCounter.RUnlock()
 	return calls
 }
 

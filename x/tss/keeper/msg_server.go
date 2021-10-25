@@ -107,11 +107,6 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, fmt.Errorf("key requirement for key role %s not found", req.KeyRole.SimpleString())
 	}
 
-	counter := s.snapshotter.GetLatestCounter(ctx) + 1
-
-	s.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-	s.TSSKeeper.LinkAvailableOperatorsToSnapshot(ctx, counter)
-
 	// record the snapshot of active validators that we'll use for the key
 	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
 	if err != nil {

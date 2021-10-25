@@ -85,7 +85,6 @@ type TSSKeeper interface {
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
 	GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress
-	LinkAvailableOperatorsToSnapshot(ctx sdk.Context, counter int64)
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
@@ -100,7 +99,6 @@ type TSSKeeper interface {
 	DeleteInfoForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID)
-	OperatorIsAvailableForCounter(ctx sdk.Context, counter int64, validator sdk.ValAddress) bool
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
 	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, info exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
