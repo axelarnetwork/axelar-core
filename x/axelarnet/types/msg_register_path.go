@@ -8,10 +8,10 @@ import (
 )
 
 // NewRegisterIBCPathRequest creates a message of type RegisterIBCPathRequest
-func NewRegisterIBCPathRequest(sender sdk.AccAddress, asset, path string) *RegisterIBCPathRequest {
+func NewRegisterIBCPathRequest(sender sdk.AccAddress, chain, path string) *RegisterIBCPathRequest {
 	return &RegisterIBCPathRequest{
 		Sender: sender,
-		Asset:  asset,
+		Chain:  chain,
 		Path:   path,
 	}
 }
@@ -32,8 +32,8 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Asset == "" {
-		return fmt.Errorf("missing asset")
+	if m.Chain == "" {
+		return fmt.Errorf("missing chain")
 	}
 
 	f := host.NewPathValidator(func(path string) error {

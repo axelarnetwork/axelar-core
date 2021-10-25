@@ -341,13 +341,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 
-	// Create static IBC router, add transfer route, then set and seal it
-	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
-	app.ibcKeeper.SetRouter(ibcRouter)
-
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
@@ -371,8 +364,17 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[voteTypes.StoreKey], snapK, stakingK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey],
+		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
 	)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, bApp.MsgServiceRouter(), bApp.Router(), transferModule, logger)
+
+	// Create static IBC router, add transfer route, then set and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
+
+	// Setting Router will finalize all routes by sealing router
+	// No more routes can be added
+	app.ibcKeeper.SetRouter(ibcRouter)
 
 	tssRouter := tssTypes.NewRouter()
 	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK)).
@@ -412,7 +414,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexus.NewAppModule(nexusK, snapK, stakingK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
-		axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, bApp.MsgServiceRouter(), bApp.Router(), logger),
+		axelarnetModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -521,6 +523,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(btcTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
+	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 
 	return paramsKeeper
 }

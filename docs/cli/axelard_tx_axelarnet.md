@@ -31,4 +31,5 @@ axelard tx axelarnet [flags]
 - [axelard tx axelarnet execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
 - [axelard tx axelarnet link](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
 - [axelard tx axelarnet register-asset](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
-- [axelard tx axelarnet register-path](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for an asset
+- [axelard tx axelarnet register-path](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
+- [axelard tx axelarnet route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains

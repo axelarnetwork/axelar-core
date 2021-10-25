@@ -32,9 +32,14 @@
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
+    - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
+    - [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
+  
+- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
@@ -319,6 +324,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `supported_chains` | [string](#string) | repeated |  |
+| `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 
 
 
@@ -631,13 +637,13 @@ based chain
 
 ### RegisterIBCPathRequest
 MSgRegisterIBCPath represents a message to register an IBC tracing path for
-an asset
+a cosmos chain
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
 | `path` | [string](#string) |  |  |
 
 
@@ -648,6 +654,32 @@ an asset
 <a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
 
 ### RegisterIBCPathResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
+
+### RouteIBCTransfersRequest
+RouteIBCTransfersRequest represents a message to route pending transfers to
+cosmos based chains
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
+
+### RouteIBCTransfersResponse
 
 
 
@@ -691,6 +723,40 @@ Msg defines the axelarnet Msg service.
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
+| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/types.proto
+
+
+
+<a name="axelarnet.v1beta1.IBCTransfer"></a>
+
+### IBCTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `receiver` | [string](#string) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

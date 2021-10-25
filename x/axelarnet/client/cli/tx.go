@@ -30,6 +30,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterIBCPathTx(),
 		GetCmdAddCosmosBasedChain(),
 		GetCmdRegisterAsset(),
+		GetCmdRouteIBCTransfersTx(),
 	)
 
 	return axelarTxCmd
@@ -119,11 +120,11 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterIBCPathTx returns the cli command to register an IBC tracing path for an asset
+// GetCmdRegisterIBCPathTx returns the cli command to register an IBC tracing path for a cosmos chain
 func GetCmdRegisterIBCPathTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-path [asset] [path]",
-		Short: "Register an ibc path for an asset",
+		Use:   "register-path [chain] [path]",
+		Short: "Register an ibc path for a cosmos chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -184,6 +185,30 @@ func GetCmdRegisterAsset() *cobra.Command {
 			denom := args[1]
 
 			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, denom)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRouteIBCTransfersTx returns the cli command to route all pending token transfers to cosmos chains
+func GetCmdRouteIBCTransfersTx() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "route-ibc-transfers",
+		Short: "Routes pending transfers to cosmos chains",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRouteIBCTransfersRequest(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
