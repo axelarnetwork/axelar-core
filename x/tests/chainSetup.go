@@ -42,6 +42,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
+	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	rewardMock "github.com/axelarnetwork/axelar-core/x/reward/types/mock"
 	snapshotExportedMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	snapshotKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
@@ -85,7 +86,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	encCfg := app.MakeEncodingConfig()
 
 	rewardSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
-	rewardKeeper := rewardKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), rewardSubspace, mocks.Banker, mocks.Distributor, mocks.Staker)
+	rewardKeeper := rewardKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(rewardTypes.StoreKey), rewardSubspace, mocks.Banker, mocks.Distributor, mocks.Staker)
 
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
