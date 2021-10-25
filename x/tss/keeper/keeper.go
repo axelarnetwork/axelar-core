@@ -22,7 +22,7 @@ import (
 var (
 	rotationPrefix             = utils.KeyFromStr("rotation")
 	rotationCountPrefix        = utils.KeyFromStr("rotation_count")
-	keygenStartHeight          = utils.KeyFromStr("block_height")
+	keygenStartPrefix          = utils.KeyFromStr("block_height")
 	pkPrefix                   = utils.KeyFromStr("pk")
 	groupRecoverPrefix         = utils.KeyFromStr("group_recovery_info")
 	privateRecoverPrefix       = utils.KeyFromStr("private_recovery_info")
@@ -38,7 +38,6 @@ var (
 	availablePrefix            = utils.KeyFromStr("available")
 	presentKeysPrefix          = utils.KeyFromStr("present_keys")
 	linkedSeqNumPrefix         = utils.KeyFromStr("linked_seq_number")
-	scheduledKeygenPrefix      = utils.KeyFromStr("scheduled_keygen")
 	scheduledSignPrefix        = utils.KeyFromStr("scheduled_sign")
 	sigStatusPrefix            = utils.KeyFromStr("sig_status")
 	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")

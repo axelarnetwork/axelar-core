@@ -1248,9 +1248,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetAckPeriodInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetAckPeriodInBlocks method")
 // 			},
-// 			GetAllKeygenRequestsAtCurrentHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.StartKeygenRequest {
-// 				panic("mock out the GetAllKeygenRequestsAtCurrentHeight method")
-// 			},
 // 			GetAvailableOperatorsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetAvailableOperators method")
 // 			},
@@ -1317,9 +1314,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			HasKeygenStartedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
-// 				panic("mock out the HasKeygenStarted method")
-// 			},
 // 			HasPrivateRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the HasPrivateRecoveryInfos method")
 // 			},
@@ -1337,9 +1331,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
-// 			},
-// 			ScheduleKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, req types.StartKeygenRequest) (int64, error) {
-// 				panic("mock out the ScheduleKeygen method")
 // 			},
 // 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
 // 				panic("mock out the ScheduleSign method")
@@ -1417,9 +1408,6 @@ type TSSKeeperMock struct {
 	// GetAckPeriodInBlocksFunc mocks the GetAckPeriodInBlocks method.
 	GetAckPeriodInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
-	// GetAllKeygenRequestsAtCurrentHeightFunc mocks the GetAllKeygenRequestsAtCurrentHeight method.
-	GetAllKeygenRequestsAtCurrentHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.StartKeygenRequest
-
 	// GetAvailableOperatorsFunc mocks the GetAvailableOperators method.
 	GetAvailableOperatorsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress
 
@@ -1486,9 +1474,6 @@ type TSSKeeperMock struct {
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
-	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
-	HasKeygenStartedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
-
 	// HasPrivateRecoveryInfosFunc mocks the HasPrivateRecoveryInfos method.
 	HasPrivateRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
 
@@ -1506,9 +1491,6 @@ type TSSKeeperMock struct {
 
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
-
-	// ScheduleKeygenFunc mocks the ScheduleKeygen method.
-	ScheduleKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, req types.StartKeygenRequest) (int64, error)
 
 	// ScheduleSignFunc mocks the ScheduleSign method.
 	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64
@@ -1630,11 +1612,6 @@ type TSSKeeperMock struct {
 		}
 		// GetAckPeriodInBlocks holds details about calls to the GetAckPeriodInBlocks method.
 		GetAckPeriodInBlocks []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// GetAllKeygenRequestsAtCurrentHeight holds details about calls to the GetAllKeygenRequestsAtCurrentHeight method.
-		GetAllKeygenRequestsAtCurrentHeight []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -1798,13 +1775,6 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
-		// HasKeygenStarted holds details about calls to the HasKeygenStarted method.
-		HasKeygenStarted []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// HasPrivateRecoveryInfos holds details about calls to the HasPrivateRecoveryInfos method.
 		HasPrivateRecoveryInfos []struct {
 			// Ctx is the ctx argument value.
@@ -1852,13 +1822,6 @@ type TSSKeeperMock struct {
 			Chain nexus.Chain
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-		}
-		// ScheduleKeygen holds details about calls to the ScheduleKeygen method.
-		ScheduleKeygen []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Req is the req argument value.
-			Req types.StartKeygenRequest
 		}
 		// ScheduleSign holds details about calls to the ScheduleSign method.
 		ScheduleSign []struct {
@@ -1982,60 +1945,57 @@ type TSSKeeperMock struct {
 			SnapshotMoqParam snapshot.Snapshot
 		}
 	}
-	lockAssertMatchesRequirements           sync.RWMutex
-	lockAssignNextKey                       sync.RWMutex
-	lockDeleteAllRecoveryInfos              sync.RWMutex
-	lockDeleteInfoForSig                    sync.RWMutex
-	lockDeleteKeygenStart                   sync.RWMutex
-	lockDeleteParticipantsInKeygen          sync.RWMutex
-	lockDeleteSnapshotCounterForKeyID       sync.RWMutex
-	lockDoesValidatorParticipateInKeygen    sync.RWMutex
-	lockDoesValidatorParticipateInSign      sync.RWMutex
-	lockGetAckPeriodInBlocks                sync.RWMutex
-	lockGetAllKeygenRequestsAtCurrentHeight sync.RWMutex
-	lockGetAvailableOperators               sync.RWMutex
-	lockGetCurrentKey                       sync.RWMutex
-	lockGetCurrentKeyID                     sync.RWMutex
-	lockGetExternalKeyIDs                   sync.RWMutex
-	lockGetExternalMultisigThreshold        sync.RWMutex
-	lockGetGroupRecoveryInfo                sync.RWMutex
-	lockGetInfoForSig                       sync.RWMutex
-	lockGetKey                              sync.RWMutex
-	lockGetKeyForSigID                      sync.RWMutex
-	lockGetKeyRequirement                   sync.RWMutex
-	lockGetMaxSimultaneousSignShares        sync.RWMutex
-	lockGetNextKey                          sync.RWMutex
-	lockGetNextKeyID                        sync.RWMutex
-	lockGetOldActiveKeys                    sync.RWMutex
-	lockGetParams                           sync.RWMutex
-	lockGetPrivateRecoveryInfo              sync.RWMutex
-	lockGetSig                              sync.RWMutex
-	lockGetSignParticipants                 sync.RWMutex
-	lockGetSignParticipantsAsJSON           sync.RWMutex
-	lockGetSignParticipantsSharesAsJSON     sync.RWMutex
-	lockGetSnapshotCounterForKeyID          sync.RWMutex
-	lockGetTssSuspendedUntil                sync.RWMutex
-	lockHasKeygenStarted                    sync.RWMutex
-	lockHasPrivateRecoveryInfos             sync.RWMutex
-	lockLinkAvailableOperatorsToSnapshot    sync.RWMutex
-	lockLogger                              sync.RWMutex
-	lockOperatorIsAvailableForCounter       sync.RWMutex
-	lockPenalizeCriminal                    sync.RWMutex
-	lockRotateKey                           sync.RWMutex
-	lockScheduleKeygen                      sync.RWMutex
-	lockScheduleSign                        sync.RWMutex
-	lockSelectSignParticipants              sync.RWMutex
-	lockSetAvailableOperator                sync.RWMutex
-	lockSetExternalKeyIDs                   sync.RWMutex
-	lockSetGroupRecoveryInfo                sync.RWMutex
-	lockSetInfoForSig                       sync.RWMutex
-	lockSetKey                              sync.RWMutex
-	lockSetKeyRole                          sync.RWMutex
-	lockSetParams                           sync.RWMutex
-	lockSetPrivateRecoveryInfo              sync.RWMutex
-	lockSetSig                              sync.RWMutex
-	lockSetSigStatus                        sync.RWMutex
-	lockStartKeygen                         sync.RWMutex
+	lockAssertMatchesRequirements        sync.RWMutex
+	lockAssignNextKey                    sync.RWMutex
+	lockDeleteAllRecoveryInfos           sync.RWMutex
+	lockDeleteInfoForSig                 sync.RWMutex
+	lockDeleteKeygenStart                sync.RWMutex
+	lockDeleteParticipantsInKeygen       sync.RWMutex
+	lockDeleteSnapshotCounterForKeyID    sync.RWMutex
+	lockDoesValidatorParticipateInKeygen sync.RWMutex
+	lockDoesValidatorParticipateInSign   sync.RWMutex
+	lockGetAckPeriodInBlocks             sync.RWMutex
+	lockGetAvailableOperators            sync.RWMutex
+	lockGetCurrentKey                    sync.RWMutex
+	lockGetCurrentKeyID                  sync.RWMutex
+	lockGetExternalKeyIDs                sync.RWMutex
+	lockGetExternalMultisigThreshold     sync.RWMutex
+	lockGetGroupRecoveryInfo             sync.RWMutex
+	lockGetInfoForSig                    sync.RWMutex
+	lockGetKey                           sync.RWMutex
+	lockGetKeyForSigID                   sync.RWMutex
+	lockGetKeyRequirement                sync.RWMutex
+	lockGetMaxSimultaneousSignShares     sync.RWMutex
+	lockGetNextKey                       sync.RWMutex
+	lockGetNextKeyID                     sync.RWMutex
+	lockGetOldActiveKeys                 sync.RWMutex
+	lockGetParams                        sync.RWMutex
+	lockGetPrivateRecoveryInfo           sync.RWMutex
+	lockGetSig                           sync.RWMutex
+	lockGetSignParticipants              sync.RWMutex
+	lockGetSignParticipantsAsJSON        sync.RWMutex
+	lockGetSignParticipantsSharesAsJSON  sync.RWMutex
+	lockGetSnapshotCounterForKeyID       sync.RWMutex
+	lockGetTssSuspendedUntil             sync.RWMutex
+	lockHasPrivateRecoveryInfos          sync.RWMutex
+	lockLinkAvailableOperatorsToSnapshot sync.RWMutex
+	lockLogger                           sync.RWMutex
+	lockOperatorIsAvailableForCounter    sync.RWMutex
+	lockPenalizeCriminal                 sync.RWMutex
+	lockRotateKey                        sync.RWMutex
+	lockScheduleSign                     sync.RWMutex
+	lockSelectSignParticipants           sync.RWMutex
+	lockSetAvailableOperator             sync.RWMutex
+	lockSetExternalKeyIDs                sync.RWMutex
+	lockSetGroupRecoveryInfo             sync.RWMutex
+	lockSetInfoForSig                    sync.RWMutex
+	lockSetKey                           sync.RWMutex
+	lockSetKeyRole                       sync.RWMutex
+	lockSetParams                        sync.RWMutex
+	lockSetPrivateRecoveryInfo           sync.RWMutex
+	lockSetSig                           sync.RWMutex
+	lockSetSigStatus                     sync.RWMutex
+	lockStartKeygen                      sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -2409,37 +2369,6 @@ func (mock *TSSKeeperMock) GetAckPeriodInBlocksCalls() []struct {
 	mock.lockGetAckPeriodInBlocks.RLock()
 	calls = mock.calls.GetAckPeriodInBlocks
 	mock.lockGetAckPeriodInBlocks.RUnlock()
-	return calls
-}
-
-// GetAllKeygenRequestsAtCurrentHeight calls GetAllKeygenRequestsAtCurrentHeightFunc.
-func (mock *TSSKeeperMock) GetAllKeygenRequestsAtCurrentHeight(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.StartKeygenRequest {
-	if mock.GetAllKeygenRequestsAtCurrentHeightFunc == nil {
-		panic("TSSKeeperMock.GetAllKeygenRequestsAtCurrentHeightFunc: method is nil but TSSKeeper.GetAllKeygenRequestsAtCurrentHeight was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetAllKeygenRequestsAtCurrentHeight.Lock()
-	mock.calls.GetAllKeygenRequestsAtCurrentHeight = append(mock.calls.GetAllKeygenRequestsAtCurrentHeight, callInfo)
-	mock.lockGetAllKeygenRequestsAtCurrentHeight.Unlock()
-	return mock.GetAllKeygenRequestsAtCurrentHeightFunc(ctx)
-}
-
-// GetAllKeygenRequestsAtCurrentHeightCalls gets all the calls that were made to GetAllKeygenRequestsAtCurrentHeight.
-// Check the length with:
-//     len(mockedTSSKeeper.GetAllKeygenRequestsAtCurrentHeightCalls())
-func (mock *TSSKeeperMock) GetAllKeygenRequestsAtCurrentHeightCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetAllKeygenRequestsAtCurrentHeight.RLock()
-	calls = mock.calls.GetAllKeygenRequestsAtCurrentHeight
-	mock.lockGetAllKeygenRequestsAtCurrentHeight.RUnlock()
 	return calls
 }
 
@@ -3225,41 +3154,6 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 	return calls
 }
 
-// HasKeygenStarted calls HasKeygenStartedFunc.
-func (mock *TSSKeeperMock) HasKeygenStarted(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
-	if mock.HasKeygenStartedFunc == nil {
-		panic("TSSKeeperMock.HasKeygenStartedFunc: method is nil but TSSKeeper.HasKeygenStarted was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockHasKeygenStarted.Lock()
-	mock.calls.HasKeygenStarted = append(mock.calls.HasKeygenStarted, callInfo)
-	mock.lockHasKeygenStarted.Unlock()
-	return mock.HasKeygenStartedFunc(ctx, keyID)
-}
-
-// HasKeygenStartedCalls gets all the calls that were made to HasKeygenStarted.
-// Check the length with:
-//     len(mockedTSSKeeper.HasKeygenStartedCalls())
-func (mock *TSSKeeperMock) HasKeygenStartedCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockHasKeygenStarted.RLock()
-	calls = mock.calls.HasKeygenStarted
-	mock.lockHasKeygenStarted.RUnlock()
-	return calls
-}
-
 // HasPrivateRecoveryInfos calls HasPrivateRecoveryInfosFunc.
 func (mock *TSSKeeperMock) HasPrivateRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 	if mock.HasPrivateRecoveryInfosFunc == nil {
@@ -3479,41 +3373,6 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
 	mock.lockRotateKey.RUnlock()
-	return calls
-}
-
-// ScheduleKeygen calls ScheduleKeygenFunc.
-func (mock *TSSKeeperMock) ScheduleKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, req types.StartKeygenRequest) (int64, error) {
-	if mock.ScheduleKeygenFunc == nil {
-		panic("TSSKeeperMock.ScheduleKeygenFunc: method is nil but TSSKeeper.ScheduleKeygen was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Req types.StartKeygenRequest
-	}{
-		Ctx: ctx,
-		Req: req,
-	}
-	mock.lockScheduleKeygen.Lock()
-	mock.calls.ScheduleKeygen = append(mock.calls.ScheduleKeygen, callInfo)
-	mock.lockScheduleKeygen.Unlock()
-	return mock.ScheduleKeygenFunc(ctx, req)
-}
-
-// ScheduleKeygenCalls gets all the calls that were made to ScheduleKeygen.
-// Check the length with:
-//     len(mockedTSSKeeper.ScheduleKeygenCalls())
-func (mock *TSSKeeperMock) ScheduleKeygenCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	Req types.StartKeygenRequest
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Req types.StartKeygenRequest
-	}
-	mock.lockScheduleKeygen.RLock()
-	calls = mock.calls.ScheduleKeygen
-	mock.lockScheduleKeygen.RUnlock()
 	return calls
 }
 

@@ -1,16 +1,13 @@
 package keeper
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -18,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
@@ -147,50 +143,4 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 			assert.Equal(t, key.Value, actualKey.Value)
 		}
 	}
-}
-
-func TestScheduleKeygenAtHeight(t *testing.T) {
-	t.Run("testing schedule keygen", testutils.Func(func(t *testing.T) {
-		s := setup()
-		sender := rand2.AccAddr()
-		numReqs := int(rand2.I64Between(10, 30))
-		currentHeight := s.Ctx.BlockHeight()
-		expectedReqs := make([]types.StartKeygenRequest, numReqs)
-
-		// schedule keygens
-		for i := 0; i < numReqs; i++ {
-			keyID := rand2.StrBetween(5, 10)
-			req := types.NewStartKeygenRequest(sender, keyID, exported.MasterKey)
-			expectedReqs[i] = *req
-			height, err := s.Keeper.ScheduleKeygen(s.Ctx, *req)
-
-			assert.NoError(t, err)
-			assert.Equal(t, currentHeight, height)
-
-			height, err = s.Keeper.ScheduleKeygen(s.Ctx, *req)
-			assert.EqualError(t, err, fmt.Sprintf("keygen for key ID '%s' already set", req.KeyID))
-		}
-
-		// verify keygens from above
-		reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
-
-		actualNumReqs := 0
-		for _, expected := range expectedReqs {
-			for _, actual := range reqs {
-				if bytes.Equal(expected.GetSignBytes(), actual.GetSignBytes()) {
-					actualNumReqs++
-					break
-				}
-			}
-		}
-		assert.Len(t, expectedReqs, actualNumReqs)
-		assert.Equal(t, numReqs, actualNumReqs)
-
-		// check that we can delete scheduled keygens
-		for i, req := range reqs {
-			s.Keeper.DeleteScheduledKeygen(s.Ctx, req.KeyID)
-			reqs := s.Keeper.GetAllKeygenRequestsAtCurrentHeight(s.Ctx)
-			assert.Len(t, reqs, actualNumReqs-(i+1))
-		}
-	}).Repeat(20))
 }
