@@ -17,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/address"
 	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/spf13/pflag"
@@ -229,7 +228,7 @@ func setup() (*Broadcaster, client.Context) {
 
 func createMsgsWithRandomSigner() []sdk.Msg {
 	var msgs []sdk.Msg
-	signer := rand.Bytes(address.Len)
+	signer := rand.AccAddr()
 	for i := int64(0); i < rand.I64Between(1, 20); i++ {
 		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
 		if err != nil {
