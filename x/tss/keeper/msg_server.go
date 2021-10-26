@@ -102,14 +102,62 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if s.HasKeygenStarted(ctx, req.KeyID) {
-		return nil, fmt.Errorf("key ID '%s' is already in use", req.KeyID)
+	keyRequirement, ok := s.GetKeyRequirement(ctx, req.KeyRole)
+	if !ok {
+		return nil, fmt.Errorf("key requirement for key role %s not found", req.KeyRole.SimpleString())
 	}
 
-	if _, err := s.ScheduleKeygen(ctx, *req); err != nil {
+	// record the snapshot of active validators that we'll use for the key
+	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
+	if err != nil {
 		return nil, err
 	}
-	s.Logger(ctx).Info(fmt.Sprintf("waiting for keygen acknowledgments for key_id [%s]", req.KeyID))
+
+	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.KeyID, req.KeyRole, snapshot); err != nil {
+		return nil, err
+	}
+
+	participants := make([]string, 0, len(snapshot.Validators))
+	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
+	for _, validator := range snapshot.Validators {
+		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
+		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeKeygen,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
+			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(snapshot.CorruptionThreshold, 10)),
+			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
+			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
+			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.KeygenTimeout, 10)),
+		),
+	)
+
+	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
+
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "corruption", "threshold"},
+		float32(snapshot.CorruptionThreshold),
+		[]metrics.Label{telemetry.NewLabel("keyID", string(req.KeyID))})
+
+	minKeygenThreshold := keyRequirement.MinKeygenThreshold
+	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
+
+	// metrics for keygen participation
+	ts := time.Now().Unix()
+	for _, validator := range snapshot.Validators {
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "keygen", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("keyID", string(req.KeyID)),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
+	}
 
 	return &types.StartKeygenResponse{}, nil
 }
