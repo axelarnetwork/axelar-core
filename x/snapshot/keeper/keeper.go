@@ -322,7 +322,7 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 	key := []byte(proxyPrefix + operator.String())
 	bz := ctx.KVStore(k.storeKey).Get(key)
 	if bz == nil {
-		return fmt.Errorf("no readyness notification found addressed to opetator %s", operator.String())
+		return fmt.Errorf("no readiness notification found addressed to operator %s", operator.String())
 	}
 	if !bytes.Equal(bz, proxy.Bytes()) {
 		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", proxy.String(), sdk.AccAddress(bz))
