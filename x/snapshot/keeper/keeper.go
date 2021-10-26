@@ -67,7 +67,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetProxyReady establishes that the specified proxy si ready to be registered
+// SetProxyReady establishes that the specified proxy is ready to be registered
 func (k Keeper) SetProxyReady(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) {
 	key := []byte(proxyPrefix + operator.String())
 	ctx.KVStore(k.storeKey).Set(key, proxy.Bytes())
