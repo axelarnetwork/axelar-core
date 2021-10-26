@@ -202,6 +202,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 							return err
 						}
 					} else {
+						p.logger.Debug("penalizing voter due to incorrect vote", "voter", voter.String(), "poll", p.PollMetadata.Key.String())
 						p.rewardPool.ClearRewards(voter)
 					}
 				}
@@ -268,6 +269,7 @@ func (p *Poll) updateExpiry(currentBlockHeight int64) {
 			// Penalize voters who failed to vote
 			for _, voter := range p.Voters {
 				if !p.HasVoted(voter.Validator) {
+					p.logger.Debug("penalizing voter due to timeout", "voter", voter.Validator.String(), "poll", p.PollMetadata.Key.String())
 					p.rewardPool.ClearRewards(voter.Validator)
 				}
 			}

@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -66,7 +64,7 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 		return nil
 	}
 
-	p.k.Logger(p.ctx).Info(fmt.Sprintf("releasing rewards in pool %s for validator %s", p.Name, validator.String()))
+	p.k.Logger(p.ctx).Info("releasing rewards in pool", "pool", p.Name, "validator", validator.String())
 
 	if err := p.banker.MintCoins(p.ctx, types.ModuleName, rewards); err != nil {
 		return err
