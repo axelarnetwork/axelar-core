@@ -13,54 +13,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
-
-// ScheduleKeygen sets a keygen to start at the current block height
-func (k Keeper) ScheduleKeygen(ctx sdk.Context, req types.StartKeygenRequest) (int64, error) {
-	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
-		AppendStr(exported.AckType_Keygen.String()).AppendStr(string(req.KeyID))
-	if k.getStore(ctx).Has(key) {
-		return -1, fmt.Errorf("keygen for key ID '%s' already set", req.KeyID)
-	}
-
-	k.getStore(ctx).Set(key, &req)
-	k.Logger(ctx).Info(fmt.Sprintf("keygen for key ID '%s' scheduled for block %d (currently at %d)", req.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
-	return ctx.BlockHeight(), nil
-}
-
-// GetAllKeygenRequestsAtCurrentHeight returns all keygen requests scheduled for the current height
-func (k Keeper) GetAllKeygenRequestsAtCurrentHeight(ctx sdk.Context) []types.StartKeygenRequest {
-	prefix := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Keygen.String())
-	var requests []types.StartKeygenRequest
-
-	iter := k.getStore(ctx).Iterator(prefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var request types.StartKeygenRequest
-		iter.UnmarshalValue(&request)
-		requests = append(requests, request)
-	}
-
-	return requests
-}
-
-// DeleteScheduledKeygen removes a keygen request for the current height
-func (k Keeper) DeleteScheduledKeygen(ctx sdk.Context, keyID exported.KeyID) {
-	key := scheduledKeygenPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
-		AppendStr(exported.AckType_Keygen.String()).AppendStr(string(keyID))
-	k.getStore(ctx).Delete(key)
-}
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error {
-	if _, found := k.getKeygenStart(ctx, keyID); found {
+	if k.hasKeygenStarted(ctx, keyID) {
 		return fmt.Errorf("keyID %s is already in use", keyID)
 	}
 
@@ -69,7 +32,6 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyID exported.K
 		k.setParticipatesInKeygen(ctx, keyID, v.GetSDKValidator().GetOperator())
 	}
 
-	// store block height for this keygen to be able to confirm later if the produced key is allowed as a master key
 	k.setKeygenStart(ctx, keyID)
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyID, snapshot.Counter)
@@ -216,27 +178,17 @@ func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.K
 	return nil
 }
 
-// HasKeygenStarted returns true if a keygen for the given key ID has been started
-func (k Keeper) HasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool {
-	return k.getStore(ctx).GetRaw(keygenStartHeight.AppendStr(string(keyID))) != nil
+func (k Keeper) hasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool {
+	return k.getStore(ctx).Has(keygenStartPrefix.AppendStr(string(keyID)))
 }
 
 // DeleteKeygenStart deletes the start height for the given key
 func (k Keeper) DeleteKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
-	k.getStore(ctx).Delete(keygenStartHeight.AppendStr(string(keyID)))
+	k.getStore(ctx).Delete(keygenStartPrefix.AppendStr(string(keyID)))
 }
 
 func (k Keeper) setKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
-	k.getStore(ctx).Set(keygenStartHeight.AppendStr(string(keyID)), &gogoprototypes.Int64Value{Value: ctx.BlockHeight()})
-}
-
-func (k Keeper) getKeygenStart(ctx sdk.Context, keyID exported.KeyID) (int64, bool) {
-	var blockHeight gogoprototypes.Int64Value
-	if ok := k.getStore(ctx).Get(keygenStartHeight.AppendStr(string(keyID)), &blockHeight); !ok {
-		return 0, false
-	}
-
-	return blockHeight.Value, true
+	k.getStore(ctx).SetRaw(keygenStartPrefix.AppendStr(string(keyID)), []byte{1})
 }
 
 func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {

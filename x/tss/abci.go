@@ -51,31 +51,12 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 		))
 	}
 
-	keygenReqs := keeper.GetAllKeygenRequestsAtCurrentHeight(ctx)
-	if len(keygenReqs) > 0 {
-		keeper.Logger(ctx).Info(fmt.Sprintf("processing %d keygens at height %d", len(keygenReqs), ctx.BlockHeight()))
-	}
-
-	for _, request := range keygenReqs {
-		counter := snapshotter.GetLatestCounter(ctx) + 1
-
-		keeper.Logger(ctx).Info(fmt.Sprintf("linking available operations to snapshot #%d", counter))
-		keeper.LinkAvailableOperatorsToSnapshot(ctx, counter)
-
-		err := startKeygen(ctx, keeper, voter, snapshotter, &request)
-		if err != nil {
-			keeper.Logger(ctx).Error(fmt.Sprintf("error starting keygen: %s", err.Error()))
-		}
-
-		keeper.DeleteKeygenStart(ctx, request.KeyID)
-	}
-
 	signQueue := keeper.GetSignQueue(ctx)
 	sequentialSign(ctx, signQueue, keeper, snapshotter)
 
 	signInfos := keeper.GetAllSignInfosAtCurrentHeight(ctx)
 	if len(signInfos) > 0 {
-		keeper.Logger(ctx).Info(fmt.Sprintf("processing %d signs at height %d", len(keygenReqs), ctx.BlockHeight()))
+		keeper.Logger(ctx).Info(fmt.Sprintf("processing %d signs at height %d", len(signInfos), ctx.BlockHeight()))
 	}
 
 	for _, info := range signInfos {

@@ -827,8 +827,8 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
-// 			OperatorIsAvailableForCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-// 				panic("mock out the OperatorIsAvailableForCounter method")
+// 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
+// 				panic("mock out the IsOperatorAvailable method")
 // 			},
 // 		}
 //
@@ -849,8 +849,8 @@ type TssMock struct {
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
-	// OperatorIsAvailableForCounterFunc mocks the OperatorIsAvailableForCounter method.
-	OperatorIsAvailableForCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
+	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -882,21 +882,21 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
-		// OperatorIsAvailableForCounter holds details about calls to the OperatorIsAvailableForCounter method.
-		OperatorIsAvailableForCounter []struct {
+		// IsOperatorAvailable holds details about calls to the IsOperatorAvailable method.
+		IsOperatorAvailable []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Counter is the counter argument value.
-			Counter int64
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+			// KeyIDs is the keyIDs argument value.
+			KeyIDs []tssexported.KeyID
 		}
 	}
-	lockGetKeyRequirement             sync.RWMutex
-	lockGetMaxMissedBlocksPerWindow   sync.RWMutex
-	lockGetNextKey                    sync.RWMutex
-	lockGetTssSuspendedUntil          sync.RWMutex
-	lockOperatorIsAvailableForCounter sync.RWMutex
+	lockGetKeyRequirement           sync.RWMutex
+	lockGetMaxMissedBlocksPerWindow sync.RWMutex
+	lockGetNextKey                  sync.RWMutex
+	lockGetTssSuspendedUntil        sync.RWMutex
+	lockIsOperatorAvailable         sync.RWMutex
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
@@ -1039,41 +1039,41 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 	return calls
 }
 
-// OperatorIsAvailableForCounter calls OperatorIsAvailableForCounterFunc.
-func (mock *TssMock) OperatorIsAvailableForCounter(ctx github_com_cosmos_cosmos_sdk_types.Context, counter int64, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-	if mock.OperatorIsAvailableForCounterFunc == nil {
-		panic("TssMock.OperatorIsAvailableForCounterFunc: method is nil but Tss.OperatorIsAvailableForCounter was just called")
+// IsOperatorAvailable calls IsOperatorAvailableFunc.
+func (mock *TssMock) IsOperatorAvailable(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
+	if mock.IsOperatorAvailableFunc == nil {
+		panic("TssMock.IsOperatorAvailableFunc: method is nil but Tss.IsOperatorAvailable was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Counter   int64
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyIDs    []tssexported.KeyID
 	}{
 		Ctx:       ctx,
-		Counter:   counter,
 		Validator: validator,
+		KeyIDs:    keyIDs,
 	}
-	mock.lockOperatorIsAvailableForCounter.Lock()
-	mock.calls.OperatorIsAvailableForCounter = append(mock.calls.OperatorIsAvailableForCounter, callInfo)
-	mock.lockOperatorIsAvailableForCounter.Unlock()
-	return mock.OperatorIsAvailableForCounterFunc(ctx, counter, validator)
+	mock.lockIsOperatorAvailable.Lock()
+	mock.calls.IsOperatorAvailable = append(mock.calls.IsOperatorAvailable, callInfo)
+	mock.lockIsOperatorAvailable.Unlock()
+	return mock.IsOperatorAvailableFunc(ctx, validator, keyIDs...)
 }
 
-// OperatorIsAvailableForCounterCalls gets all the calls that were made to OperatorIsAvailableForCounter.
+// IsOperatorAvailableCalls gets all the calls that were made to IsOperatorAvailable.
 // Check the length with:
-//     len(mockedTss.OperatorIsAvailableForCounterCalls())
-func (mock *TssMock) OperatorIsAvailableForCounterCalls() []struct {
+//     len(mockedTss.IsOperatorAvailableCalls())
+func (mock *TssMock) IsOperatorAvailableCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Counter   int64
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	KeyIDs    []tssexported.KeyID
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Counter   int64
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyIDs    []tssexported.KeyID
 	}
-	mock.lockOperatorIsAvailableForCounter.RLock()
-	calls = mock.calls.OperatorIsAvailableForCounter
-	mock.lockOperatorIsAvailableForCounter.RUnlock()
+	mock.lockIsOperatorAvailable.RLock()
+	calls = mock.calls.IsOperatorAvailable
+	mock.lockIsOperatorAvailable.RUnlock()
 	return calls
 }
