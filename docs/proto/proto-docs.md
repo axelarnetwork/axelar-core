@@ -3185,7 +3185,7 @@ Msg defines the snapshot Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `ProxyReady` | [ProxyReadyRequest](#snapshot.v1beta1.ProxyReadyRequest) | [ProxyReadyResponse](#snapshot.v1beta1.ProxyReadyResponse) | ProxyReady defines a method for establishing that a proxy is ready in a validator account's stead. | POST|/axelar/snapshot/proxyReady|
+| `ProxyReady` | [ProxyReadyRequest](#snapshot.v1beta1.ProxyReadyRequest) | [ProxyReadyResponse](#snapshot.v1beta1.ProxyReadyResponse) | ProxyReady defines a method for establishing that a proxy is ready to be registered in a validator account's stead. | POST|/axelar/snapshot/proxyReady|
 | `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
 | `DeactivateProxy` | [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivateProxy|
 

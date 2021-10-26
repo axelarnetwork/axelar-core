@@ -72,8 +72,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgServiceClient interface {
-	// ProxyReady defines a method for establishing that a proxy is ready
-	// in a validator account's stead.
+	// ProxyReady defines a method for establishing that a proxy is ready to be
+	// registered in a validator account's stead.
 	ProxyReady(ctx context.Context, in *ProxyReadyRequest, opts ...grpc.CallOption) (*ProxyReadyResponse, error)
 	// RegisterProxy defines a method for registering a proxy account that can act
 	// in a validator account's stead.
@@ -119,8 +119,8 @@ func (c *msgServiceClient) DeactivateProxy(ctx context.Context, in *DeactivatePr
 
 // MsgServiceServer is the server API for MsgService service.
 type MsgServiceServer interface {
-	// ProxyReady defines a method for establishing that a proxy is ready
-	// in a validator account's stead.
+	// ProxyReady defines a method for establishing that a proxy is ready to be
+	// registered in a validator account's stead.
 	ProxyReady(context.Context, *ProxyReadyRequest) (*ProxyReadyResponse, error)
 	// RegisterProxy defines a method for registering a proxy account that can act
 	// in a validator account's stead.

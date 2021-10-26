@@ -23,7 +23,7 @@ const (
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
-	valdPrefix    = "vald_"
+	proxyPrefix   = "vald_"
 )
 
 // Make sure the keeper implements the Snapshotter interface
@@ -68,9 +68,15 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // SetProxyReady establishes that the specified proxy si ready to be registered
-func (k Keeper) SetProxyReady(ctx sdk.Context, proxy sdk.AccAddress, operator sdk.ValAddress) {
-	key := []byte(valdPrefix + proxy.String())
-	ctx.KVStore(k.storeKey).Set(key, operator.Bytes())
+func (k Keeper) SetProxyReady(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) {
+	key := []byte(proxyPrefix + operator.String())
+	ctx.KVStore(k.storeKey).Set(key, proxy.Bytes())
+}
+
+// IsProxyReady returns true if a proxy has issued a readyness message for the given operator address
+func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
+	key := []byte(proxyPrefix + operator.String())
+	return ctx.KVStore(k.storeKey).Has(key)
 }
 
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
@@ -313,13 +319,13 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
 
-	key := []byte(valdPrefix + proxy.String())
+	key := []byte(proxyPrefix + operator.String())
 	bz := ctx.KVStore(k.storeKey).Get(key)
 	if bz == nil {
-		return fmt.Errorf("no readyness notification found for proxy %s", proxy.String())
+		return fmt.Errorf("no readyness notification found addressed to opetator %s", operator.String())
 	}
-	if !bytes.Equal(bz, operator.Bytes()) {
-		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", operator.String(), sdk.AccAddress(bz))
+	if !bytes.Equal(bz, proxy.Bytes()) {
+		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", proxy.String(), sdk.AccAddress(bz))
 	}
 
 	k.Logger(ctx).Debug("getting proxy count")

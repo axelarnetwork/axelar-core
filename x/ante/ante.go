@@ -88,7 +88,7 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 		case *stakingtypes.MsgUndelegate:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return ctx, err
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			chains := d.nexus.GetChains(ctx)
 
