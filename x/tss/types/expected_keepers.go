@@ -11,12 +11,13 @@ import (
 	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder
 
 // Snapshotter provides snapshot functionality
 type Snapshotter = snapshot.Snapshotter
@@ -115,4 +116,9 @@ type TSSKeeper interface {
 	GetAckPeriodInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
+}
+
+// Rewarder provides reward functionality
+type Rewarder interface {
+	GetPool(ctx sdk.Context, name string) reward.RewardPool
 }

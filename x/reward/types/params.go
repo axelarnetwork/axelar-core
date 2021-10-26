@@ -10,6 +10,7 @@ import (
 // Parameter store keys
 var (
 	KeyExternalChainVotingInflationRate = []byte("ExternalChainVotingInflationRate")
+	KeyTssRelativeInflationRate         = []byte("TssRelativeInflationRate")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -21,6 +22,7 @@ func KeyTable() paramtypes.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		ExternalChainVotingInflationRate: sdk.NewDecWithPrec(5, 3),
+		TssRelativeInflationRate:         sdk.NewDecWithPrec(67, 2),
 	}
 }
 
@@ -35,12 +37,17 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	*/
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyExternalChainVotingInflationRate, &m.ExternalChainVotingInflationRate, validateExternalChainVotingInflationRate),
+		paramtypes.NewParamSetPair(KeyTssRelativeInflationRate, &m.TssRelativeInflationRate, validateTssRelativeInflationRate),
 	}
 }
 
 // Validate performs a validation check on the parameters
 func (m Params) Validate() error {
 	if err := validateExternalChainVotingInflationRate(m.ExternalChainVotingInflationRate); err != nil {
+		return err
+	}
+
+	if err := validateTssRelativeInflationRate(m.TssRelativeInflationRate); err != nil {
 		return err
 	}
 
@@ -58,6 +65,22 @@ func validateExternalChainVotingInflationRate(i interface{}) error {
 	}
 	if v.GT(sdk.OneDec()) {
 		return fmt.Errorf("external chain voting inflation rate too large: %s", v)
+	}
+
+	return nil
+}
+
+func validateTssRelativeInflationRate(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("tss inflation rate cannot be negative: %s", v)
+	}
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("tss inflation rate too large: %s", v)
 	}
 
 	return nil

@@ -99,8 +99,9 @@ func setup() *testSetup {
 		},
 		SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 	}
+	rewarder := &tssMock.RewarderMock{}
 
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher)
+	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher, rewarder)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

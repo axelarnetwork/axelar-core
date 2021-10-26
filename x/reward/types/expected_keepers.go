@@ -6,6 +6,8 @@ import (
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -28,8 +30,9 @@ type Nexus interface {
 
 // Minter provides mint functionality
 type Minter interface {
-	GetParams(ctx sdk.Context) (params minttypes.Params)
+	GetParams(ctx sdk.Context) minttypes.Params
 	StakingTokenSupply(ctx sdk.Context) sdk.Int
+	GetMinter(ctx sdk.Context) minttypes.Minter
 }
 
 // Distributor provides distribution functionality
@@ -40,10 +43,22 @@ type Distributor interface {
 // Staker provides stake functionality
 type Staker interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	PowerReduction(ctx sdk.Context) sdk.Int
+	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 }
 
 // Banker provides bank functionality
 type Banker interface {
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
 	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
+}
+
+// Tss provides tss functionality
+type Tss interface {
+	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
+}
+
+// Snapshotter provides snapshot functionality
+type Snapshotter interface {
+	GetValidatorIllegibility(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
 }

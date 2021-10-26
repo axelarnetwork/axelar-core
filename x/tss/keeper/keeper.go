@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,7 +25,6 @@ var (
 	pkPrefix                   = utils.KeyFromStr("pk")
 	groupRecoverPrefix         = utils.KeyFromStr("group_recovery_info")
 	privateRecoverPrefix       = utils.KeyFromStr("private_recovery_info")
-	thresholdPrefix            = utils.KeyFromStr("threshold")
 	snapshotForKeyIDPrefix     = utils.KeyFromStr("sfkid")
 	sigPrefix                  = utils.KeyFromStr("sig")
 	infoForSigPrefix           = utils.KeyFromStr("info_for_sig")
@@ -37,7 +35,6 @@ var (
 	keyRotatedAtPrefix         = utils.KeyFromStr("key_rotated_at")
 	availablePrefix            = utils.KeyFromStr("available")
 	presentKeysPrefix          = utils.KeyFromStr("present_keys")
-	linkedSeqNumPrefix         = utils.KeyFromStr("linked_seq_number")
 	sigStatusPrefix            = utils.KeyFromStr("sig_status")
 	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
 	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")
@@ -46,6 +43,7 @@ var (
 // Keeper allows access to the broadcast state
 type Keeper struct {
 	slasher  snapshot.Slasher
+	rewarder types.Rewarder
 	params   params.Subspace
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
@@ -113,9 +111,10 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher snapshot.Slasher, rewarder types.Rewarder) Keeper {
 	return Keeper{
 		slasher:  slasher,
+		rewarder: rewarder,
 		cdc:      cdc,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		storeKey: storeKey,
@@ -362,18 +361,6 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID)
 	}
 
 	return addresses
-}
-
-// links a set of available operators to a snapshot counter
-func (k Keeper) setAvailableOperatorsForCounter(ctx sdk.Context, counter int64, validators []sdk.ValAddress) {
-	key := linkedSeqNumPrefix.AppendStr(strconv.FormatInt(counter, 10))
-
-	values := make([]string, len(validators))
-	for i, validator := range validators {
-		values[i] = validator.String()
-	}
-	list, _ := json.Marshal(values)
-	k.getStore(ctx).SetRaw(key, list)
 }
 
 // GetOldActiveKeys gets all the old keys of given key role that are still active for chain

@@ -107,7 +107,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	EVMKeeper.SetParams(ctx, evmParams...)
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
-	signer := tssKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
+	signer := tssKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher, rewardKeeper)
 
 	// set the acknowledgment window just enough for all nodes to be able to submit their acks in time
 	tssParams := tssTypes.DefaultParams()
@@ -132,7 +132,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
 		ValidatorFunc:         mocks.Staker.ValidatorFunc,
-	})
+	}, rewardKeeper)
 	nexusHandler := nexus.NewHandler(nexusK, snapKeeper)
 
 	router = router.

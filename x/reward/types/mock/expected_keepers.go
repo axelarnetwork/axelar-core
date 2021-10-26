@@ -295,6 +295,9 @@ var _ rewardtypes.Minter = &MinterMock{}
 //
 // 		// make and configure a mocked rewardtypes.Minter
 // 		mockedMinter := &MinterMock{
+// 			GetMinterFunc: func(ctx cosmossdktypes.Context) minttypes.Minter {
+// 				panic("mock out the GetMinter method")
+// 			},
 // 			GetParamsFunc: func(ctx cosmossdktypes.Context) minttypes.Params {
 // 				panic("mock out the GetParams method")
 // 			},
@@ -308,6 +311,9 @@ var _ rewardtypes.Minter = &MinterMock{}
 //
 // 	}
 type MinterMock struct {
+	// GetMinterFunc mocks the GetMinter method.
+	GetMinterFunc func(ctx cosmossdktypes.Context) minttypes.Minter
+
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx cosmossdktypes.Context) minttypes.Params
 
@@ -316,6 +322,11 @@ type MinterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetMinter holds details about calls to the GetMinter method.
+		GetMinter []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
 			// Ctx is the ctx argument value.
@@ -327,8 +338,40 @@ type MinterMock struct {
 			Ctx cosmossdktypes.Context
 		}
 	}
+	lockGetMinter          sync.RWMutex
 	lockGetParams          sync.RWMutex
 	lockStakingTokenSupply sync.RWMutex
+}
+
+// GetMinter calls GetMinterFunc.
+func (mock *MinterMock) GetMinter(ctx cosmossdktypes.Context) minttypes.Minter {
+	if mock.GetMinterFunc == nil {
+		panic("MinterMock.GetMinterFunc: method is nil but Minter.GetMinter was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinter.Lock()
+	mock.calls.GetMinter = append(mock.calls.GetMinter, callInfo)
+	mock.lockGetMinter.Unlock()
+	return mock.GetMinterFunc(ctx)
+}
+
+// GetMinterCalls gets all the calls that were made to GetMinter.
+// Check the length with:
+//     len(mockedMinter.GetMinterCalls())
+func (mock *MinterMock) GetMinterCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetMinter.RLock()
+	calls = mock.calls.GetMinter
+	mock.lockGetMinter.RUnlock()
+	return calls
 }
 
 // GetParams calls GetParamsFunc.
@@ -480,6 +523,12 @@ var _ rewardtypes.Staker = &StakerMock{}
 //
 // 		// make and configure a mocked rewardtypes.Staker
 // 		mockedStaker := &StakerMock{
+// 			IterateBondedValidatorsByPowerFunc: func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+// 				panic("mock out the IterateBondedValidatorsByPower method")
+// 			},
+// 			PowerReductionFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+// 				panic("mock out the PowerReduction method")
+// 			},
 // 			ValidatorFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI {
 // 				panic("mock out the Validator method")
 // 			},
@@ -490,11 +539,29 @@ var _ rewardtypes.Staker = &StakerMock{}
 //
 // 	}
 type StakerMock struct {
+	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
+	IterateBondedValidatorsByPowerFunc func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+
+	// PowerReductionFunc mocks the PowerReduction method.
+	PowerReductionFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Int
+
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
+		IterateBondedValidatorsByPower []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Fn is the fn argument value.
+			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+		}
+		// PowerReduction holds details about calls to the PowerReduction method.
+		PowerReduction []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
@@ -503,7 +570,75 @@ type StakerMock struct {
 			Addr cosmossdktypes.ValAddress
 		}
 	}
-	lockValidator sync.RWMutex
+	lockIterateBondedValidatorsByPower sync.RWMutex
+	lockPowerReduction                 sync.RWMutex
+	lockValidator                      sync.RWMutex
+}
+
+// IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
+func (mock *StakerMock) IterateBondedValidatorsByPower(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+	if mock.IterateBondedValidatorsByPowerFunc == nil {
+		panic("StakerMock.IterateBondedValidatorsByPowerFunc: method is nil but Staker.IterateBondedValidatorsByPower was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+	}{
+		Ctx: ctx,
+		Fn:  fn,
+	}
+	mock.lockIterateBondedValidatorsByPower.Lock()
+	mock.calls.IterateBondedValidatorsByPower = append(mock.calls.IterateBondedValidatorsByPower, callInfo)
+	mock.lockIterateBondedValidatorsByPower.Unlock()
+	mock.IterateBondedValidatorsByPowerFunc(ctx, fn)
+}
+
+// IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
+// Check the length with:
+//     len(mockedStaker.IterateBondedValidatorsByPowerCalls())
+func (mock *StakerMock) IterateBondedValidatorsByPowerCalls() []struct {
+	Ctx cosmossdktypes.Context
+	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+	}
+	mock.lockIterateBondedValidatorsByPower.RLock()
+	calls = mock.calls.IterateBondedValidatorsByPower
+	mock.lockIterateBondedValidatorsByPower.RUnlock()
+	return calls
+}
+
+// PowerReduction calls PowerReductionFunc.
+func (mock *StakerMock) PowerReduction(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+	if mock.PowerReductionFunc == nil {
+		panic("StakerMock.PowerReductionFunc: method is nil but Staker.PowerReduction was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockPowerReduction.Lock()
+	mock.calls.PowerReduction = append(mock.calls.PowerReduction, callInfo)
+	mock.lockPowerReduction.Unlock()
+	return mock.PowerReductionFunc(ctx)
+}
+
+// PowerReductionCalls gets all the calls that were made to PowerReduction.
+// Check the length with:
+//     len(mockedStaker.PowerReductionCalls())
+func (mock *StakerMock) PowerReductionCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockPowerReduction.RLock()
+	calls = mock.calls.PowerReduction
+	mock.lockPowerReduction.RUnlock()
+	return calls
 }
 
 // Validator calls ValidatorFunc.

@@ -76,18 +76,24 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
-	nexus  types.Nexus
-	minter types.Minter
+	keeper      keeper.Keeper
+	nexus       types.Nexus
+	minter      types.Minter
+	staker      types.Staker
+	tss         types.Tss
+	snapshotter types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, nexus types.Nexus, minter types.Minter) AppModule {
+func NewAppModule(k keeper.Keeper, nexus types.Nexus, minter types.Minter, staker types.Staker, tss types.Tss, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		nexus:          nexus,
 		minter:         minter,
+		staker:         staker,
+		tss:            tss,
+		snapshotter:    snapshotter,
 	}
 }
 
@@ -136,7 +142,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter)
+	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.tss, am.snapshotter)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
