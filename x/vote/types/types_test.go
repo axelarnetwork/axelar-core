@@ -392,7 +392,7 @@ func randomEvenVotingPowers() map[string]int64 {
 
 	total := sdk.ZeroInt()
 	for i := 0; i < int(rand.I64Between(1, 20)); i++ {
-		addr := sdk.ValAddress(rand.Bytes(20))
+		addr := rand.ValAddr()
 		votingPower := rand.I64Between(1, 100)
 		votingPowers[addr.String()] = votingPower
 		total = total.AddRaw(votingPower)
