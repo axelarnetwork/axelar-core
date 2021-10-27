@@ -119,10 +119,10 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	if !response.KeygenIllegibility.Is(snapshot.None) {
-		s.Logger(ctx).Error(fmt.Sprintf("validator %s is illegible for keygen due to: %s", valAddr.String(), response.KeygenIllegibility.String()))
+		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in keygen due to: %s", valAddr.String(), response.KeygenIllegibility.String()))
 	}
 	if !response.SigningIllegibility.Is(snapshot.None) {
-		s.Logger(ctx).Error(fmt.Sprintf("validator %s is illegible for signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
+		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
 	}
 
 	return response, nil
