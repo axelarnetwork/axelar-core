@@ -290,7 +290,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 
 	// ensure validator illegibilities are displayed
 	for _, log := range res.Logs {
-		if strings.Contains(log.Log, "validator") {
+		if strings.Contains(log.Log, "ineligibilities") {
 			mgr.Logger.Info(log.Log)
 		}
 	}
