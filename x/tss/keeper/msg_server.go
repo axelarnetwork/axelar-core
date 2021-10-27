@@ -108,7 +108,6 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	illegibility, err := s.snapshotter.GetValidatorIllegibility(ctx, &validator)
-
 	if err != nil {
 		s.Logger(ctx).Error(err.Error())
 		return &types.AckResponse{}, nil

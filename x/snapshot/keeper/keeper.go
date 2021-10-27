@@ -160,7 +160,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		}
 
 		if illegibility = illegibility.FilterIllegibilityForNewKey(); !illegibility.Is(exported.None) {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [%s]",
+			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from snapshot %d due to [%s]",
 				validator.GetOperator().String(),
 				counter,
 				illegibility.String(),
@@ -170,7 +170,7 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		}
 
 		if !k.tss.IsOperatorAvailable(ctx, validator.GetOperator()) {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from snapshot %d due to [not-available]",
+			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from snapshot %d due to [not-available]",
 				validator.GetOperator().String(),
 				counter,
 			))
