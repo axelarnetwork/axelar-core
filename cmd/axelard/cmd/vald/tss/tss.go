@@ -288,7 +288,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 	}
 
-	// ensure validator illegibilities are displayed
+	// ensure ineligibilities are displayed
 	for _, log := range res.Logs {
 		if strings.Contains(log.Log, "ineligibilities") {
 			mgr.Logger.Info(log.Log)
