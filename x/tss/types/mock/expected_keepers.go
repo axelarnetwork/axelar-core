@@ -1326,9 +1326,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
-// 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
-// 				panic("mock out the ScheduleSign method")
-// 			},
 // 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
@@ -1364,6 +1361,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
+// 			},
+// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface{InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error}) error {
+// 				panic("mock out the StartSign method")
 // 			},
 // 		}
 //
@@ -1480,9 +1480,6 @@ type TSSKeeperMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
 
-	// ScheduleSignFunc mocks the ScheduleSign method.
-	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64
-
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
 	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error)
 
@@ -1518,6 +1515,11 @@ type TSSKeeperMock struct {
 
 	// StartKeygenFunc mocks the StartKeygen method.
 	StartKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error
+
+	// StartSignFunc mocks the StartSign method.
+	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface {
+		InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+	}) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1795,13 +1797,6 @@ type TSSKeeperMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
-		// ScheduleSign holds details about calls to the ScheduleSign method.
-		ScheduleSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Info is the info argument value.
-			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		}
 		// SelectSignParticipants holds details about calls to the SelectSignParticipants method.
 		SelectSignParticipants []struct {
 			// Ctx is the ctx argument value.
@@ -1916,6 +1911,19 @@ type TSSKeeperMock struct {
 			// Snapshot is the snapshot argument value.
 			Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 		}
+		// StartSign holds details about calls to the StartSign method.
+		StartSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Info is the info argument value.
+			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
+			// Voter is the voter argument value.
+			Voter interface {
+				InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+			}
+		}
 	}
 	lockAssertMatchesRequirements        sync.RWMutex
 	lockAssignNextKey                    sync.RWMutex
@@ -1953,7 +1961,6 @@ type TSSKeeperMock struct {
 	lockLogger                           sync.RWMutex
 	lockPenalizeCriminal                 sync.RWMutex
 	lockRotateKey                        sync.RWMutex
-	lockScheduleSign                     sync.RWMutex
 	lockSelectSignParticipants           sync.RWMutex
 	lockSetAvailableOperator             sync.RWMutex
 	lockSetExternalKeyIDs                sync.RWMutex
@@ -1966,6 +1973,7 @@ type TSSKeeperMock struct {
 	lockSetSig                           sync.RWMutex
 	lockSetSigStatus                     sync.RWMutex
 	lockStartKeygen                      sync.RWMutex
+	lockStartSign                        sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -3272,41 +3280,6 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	return calls
 }
 
-// ScheduleSign calls ScheduleSignFunc.
-func (mock *TSSKeeperMock) ScheduleSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
-	if mock.ScheduleSignFunc == nil {
-		panic("TSSKeeperMock.ScheduleSignFunc: method is nil but TSSKeeper.ScheduleSign was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}{
-		Ctx:  ctx,
-		Info: info,
-	}
-	mock.lockScheduleSign.Lock()
-	mock.calls.ScheduleSign = append(mock.calls.ScheduleSign, callInfo)
-	mock.lockScheduleSign.Unlock()
-	return mock.ScheduleSignFunc(ctx, info)
-}
-
-// ScheduleSignCalls gets all the calls that were made to ScheduleSign.
-// Check the length with:
-//     len(mockedTSSKeeper.ScheduleSignCalls())
-func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}
-	mock.lockScheduleSign.RLock()
-	calls = mock.calls.ScheduleSign
-	mock.lockScheduleSign.RUnlock()
-	return calls
-}
-
 // SelectSignParticipants calls SelectSignParticipantsFunc.
 func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
 	if mock.SelectSignParticipantsFunc == nil {
@@ -3784,6 +3757,57 @@ func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 	mock.lockStartKeygen.RLock()
 	calls = mock.calls.StartKeygen
 	mock.lockStartKeygen.RUnlock()
+	return calls
+}
+
+// StartSign calls StartSignFunc.
+func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface {
+	InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+}) error {
+	if mock.StartSignFunc == nil {
+		panic("TSSKeeperMock.StartSignFunc: method is nil but TSSKeeper.StartSign was just called")
+	}
+	callInfo := struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+		}
+	}{
+		Ctx:         ctx,
+		Info:        info,
+		Snapshotter: snapshotter,
+		Voter:       voter,
+	}
+	mock.lockStartSign.Lock()
+	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
+	mock.lockStartSign.Unlock()
+	return mock.StartSignFunc(ctx, info, snapshotter, voter)
+}
+
+// StartSignCalls gets all the calls that were made to StartSign.
+// Check the length with:
+//     len(mockedTSSKeeper.StartSignCalls())
+func (mock *TSSKeeperMock) StartSignCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+	Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
+	Voter       interface {
+		InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+	}
+} {
+	var calls []struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported1.PollKey, snapshotSeqNo int64, pollProperties ...exported1.PollProperty) error
+		}
+	}
+	mock.lockStartSign.RLock()
+	calls = mock.calls.StartSign
+	mock.lockStartSign.RUnlock()
 	return calls
 }
 

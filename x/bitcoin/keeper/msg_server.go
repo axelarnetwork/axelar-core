@@ -474,14 +474,14 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
 			}
 
-			pos, err = s.signer.EnqueueSign(ctx, tss.SignInfo{
+			err = s.signer.StartSign(ctx, tss.SignInfo{
 				KeyID:           sigRequirement.KeyID,
 				SigID:           sigID,
 				Msg:             sigRequirement.SigHash,
 				SnapshotCounter: snapshot.Counter,
 				RequestModule:   types.ModuleName,
 				Metadata:        "",
-			})
+			}, s.snapshotter, s.voter)
 			if err != nil {
 				return nil, err
 			}

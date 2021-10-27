@@ -38,7 +38,6 @@ var (
 	availablePrefix            = utils.KeyFromStr("available")
 	presentKeysPrefix          = utils.KeyFromStr("present_keys")
 	linkedSeqNumPrefix         = utils.KeyFromStr("linked_seq_number")
-	scheduledSignPrefix        = utils.KeyFromStr("scheduled_sign")
 	sigStatusPrefix            = utils.KeyFromStr("sig_status")
 	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
 	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")

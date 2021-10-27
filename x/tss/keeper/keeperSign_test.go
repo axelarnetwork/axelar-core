@@ -1,14 +1,15 @@
 package keeper
 
 import (
-	"bytes"
+	"crypto/ecdsa"
+	rand3 "crypto/rand"
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -35,30 +36,35 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 140 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
+				StringFunc:            func() string { return val1.String() },
 			}, 140),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 130 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
+				StringFunc:            func() string { return val2.String() },
 			}, 130),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val3 },
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 120 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val3.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
+				StringFunc:            func() string { return val3.String() },
 			}, 120),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val4 },
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 110 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val4.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
+				StringFunc:            func() string { return val4.String() },
 			}, 110),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val5 },
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val5.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
+				StringFunc:            func() string { return val5.String() },
 			}, 100),
 		},
 		Timestamp:       time.Now(),
@@ -70,6 +76,12 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	assert.Equal(t, int64(399), snap.CorruptionThreshold)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 		return snapshot.None, nil
+	}
+	s.Snapshotter.GetSnapshotFunc = func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
+		if seqNo == snap.Counter {
+			return snap, true
+		}
+		return snapshot.Snapshot{}, false
 	}
 
 	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
@@ -83,6 +95,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
+	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
 
 	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
@@ -90,7 +103,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
 	}
-	_, err = s.Keeper.EnqueueSign(s.Ctx, sigInfo)
+	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
 	assert.NoError(t, err)
 
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
@@ -132,12 +145,14 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val1.Bytes(), nil },
 				IsJailedFunc:          func() bool { return true },
+				StringFunc:            func() string { return val1.String() },
 			}, 100),
 			snapshot.NewValidator(&snapMock.SDKValidatorMock{
 				GetOperatorFunc:       func() sdk.ValAddress { return val2 },
 				GetConsensusPowerFunc: func(sdk.Int) int64 { return 100 },
 				GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return val2.Bytes(), nil },
 				IsJailedFunc:          func() bool { return false },
+				StringFunc:            func() string { return val2.String() },
 			}, 100),
 		},
 		Timestamp:       time.Now(),
@@ -153,6 +168,12 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 
 		return snapshot.None, nil
 	}
+	s.Snapshotter.GetSnapshotFunc = func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
+		if seqNo == snap.Counter {
+			return snap, true
+		}
+		return snapshot.Snapshot{}, false
+	}
 
 	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
@@ -165,6 +186,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
 	assert.NoError(t, err)
+	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
 
 	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
@@ -172,8 +194,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		Msg:             msg,
 		SnapshotCounter: snap.Counter,
 	}
-	_, err = s.Keeper.EnqueueSign(s.Ctx, sigInfo)
-	assert.NoError(t, err)
+	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
+	assert.Error(t, err)
 
 	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
 
@@ -201,77 +223,47 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	keyID := exported.KeyID("keyID1")
 	msgToSign := []byte("message")
 
+	for _, val := range snap.Validators {
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
+	}
+
 	// start keygen to record the snapshot for each key
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+
 	assert.NoError(t, err)
-	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
+	err = s.Keeper.StartSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
 		SnapshotCounter: snap.Counter,
-	})
+	}, s.Snapshotter, s.Voter)
 	assert.NoError(t, err)
 
 	keyID = "keyID2"
 	msgToSign = []byte("second message")
+
+	for _, val := range snap.Validators {
+		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
+	}
+
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+
 	assert.NoError(t, err)
-	_, err = s.Keeper.EnqueueSign(s.Ctx, exported.SignInfo{
+	err = s.Keeper.StartSign(s.Ctx, exported.SignInfo{
 		KeyID:           keyID,
 		SigID:           sigID,
 		Msg:             msgToSign,
 		SnapshotCounter: snap.Counter,
-	})
+	}, s.Snapshotter, s.Voter)
 	assert.EqualError(t, err, "sig ID 'sigID' has been used before")
 }
 
-func TestScheduleSignAtHeight(t *testing.T) {
-	t.Run("testing schedule sign", testutils.Func(func(t *testing.T) {
-		s := setup()
-		numSigns := int(rand2.I64Between(10, 30))
-		currentHeight := s.Ctx.BlockHeight()
-		expectedInfos := make([]exported.SignInfo, numSigns)
-		snapshotSeq := rand2.I64Between(20, 50)
-
-		// schedule signs
-		for i := 0; i < numSigns; i++ {
-			info := exported.SignInfo{
-				KeyID:           exported.KeyID(rand2.StrBetween(5, 10)),
-				SigID:           rand2.StrBetween(10, 20),
-				Msg:             []byte(rand2.StrBetween(20, 50)),
-				SnapshotCounter: snapshotSeq + int64(i),
-			}
-			expectedInfos[i] = info
-			height := s.Keeper.ScheduleSign(s.Ctx, info)
-
-			assert.Equal(t, currentHeight, height)
-		}
-
-		// verify signs from above
-		infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
-
-		actualNumInfos := 0
-		for _, expected := range expectedInfos {
-			for _, actual := range infos {
-				bz1, err := actual.Marshal()
-				assert.NoError(t, err)
-				bz2, err := expected.Marshal()
-				assert.NoError(t, err)
-
-				if bytes.Equal(bz1, bz2) {
-					actualNumInfos++
-					break
-				}
-			}
-		}
-		assert.Len(t, expectedInfos, actualNumInfos)
-		assert.Equal(t, numSigns, actualNumInfos)
-
-		// check that we can delete scheduled signs
-		for i, info := range infos {
-			s.Keeper.DeleteScheduledSign(s.Ctx, info.SigID)
-			infos := s.Keeper.GetAllSignInfosAtCurrentHeight(s.Ctx)
-			assert.Len(t, infos, actualNumInfos-(i+1))
-		}
-	}).Repeat(20))
+func generatePubKey() ecdsa.PublicKey {
+	sk, err := ecdsa.GenerateKey(btcec.S256(), rand3.Reader)
+	if err != nil {
+		panic(err)
+	}
+	return sk.PublicKey
 }

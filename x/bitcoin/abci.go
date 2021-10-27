@@ -150,7 +150,7 @@ func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsigne
 			if status != tss.SigStatus_Signed {
 				err := fmt.Errorf("signature for tx %s not yet found", sigID)
 
-				if status != tss.SigStatus_Queued && status != tss.SigStatus_Scheduled && status != tss.SigStatus_Signing {
+				if status != tss.SigStatus_Queued && status != tss.SigStatus_Signing {
 					return nil, &signingAbortError{err: err, abortedKeyID: sigRequirement.KeyID}
 				}
 
