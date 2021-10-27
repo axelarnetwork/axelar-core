@@ -82,7 +82,7 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 			if signShares > maxSignShares {
 				return
 			}
-			requestsSign(ctx, k, voter, signInfo, snap)
+			requestSign(ctx, k, voter, signInfo, snap)
 			ctx.Logger().Debug(fmt.Sprintf("scheduling sign %s", signInfo.SigID))
 			i++
 		case exported.SigStatus_Signing:
@@ -99,7 +99,7 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 }
 
 // request proxies to initiate a tss signing protocol using the specified signing metadata
-func requestsSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
+func requestSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
 	var nonParticipantShareCounts []int64
 	var nonParticipants []string
 	ts := time.Now().Unix()
