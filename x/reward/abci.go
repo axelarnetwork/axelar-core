@@ -15,17 +15,23 @@ func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter) []abci.ValidatorUpdate {
 	totalStakingSupply := m.StakingTokenSupply(ctx)
 	blocksPerYear := m.GetParams(ctx).BlocksPerYear
-	externalChainVotingInflationRate := k.GetParams(ctx).ExternalChainVotingInflationRate
-	externalChainVotingReward := sdk.NewCoin(
-		m.GetParams(ctx).MintDenom,
-		totalStakingSupply.ToDec().Mul(externalChainVotingInflationRate).QuoInt64(int64(blocksPerYear)).RoundInt(),
-	)
+	inflationRate := k.GetParams(ctx).ExternalChainVotingInflationRate
+	denom := m.GetParams(ctx).MintDenom
+	amountPerChain := totalStakingSupply.ToDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
 
 	for _, chain := range n.GetChains(ctx) {
 		externalChainVotingRewardPool := k.GetPool(ctx, chain.Name)
+		maintainers := n.GetChainMaintainers(ctx, chain)
+		if len(maintainers) == 0 {
+			continue
+		}
 
-		for _, maintainer := range n.GetChainMaintainers(ctx, chain) {
-			externalChainVotingRewardPool.AddReward(maintainer, externalChainVotingReward)
+		reward := sdk.NewCoin(
+			denom,
+			amountPerChain.QuoInt64(int64(len(maintainers))).RoundInt(),
+		)
+		for _, maintainer := range maintainers {
+			externalChainVotingRewardPool.AddReward(maintainer, reward)
 		}
 	}
 
