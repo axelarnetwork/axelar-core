@@ -8,7 +8,7 @@ import (
 	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	github_com_axelarnetwork_axelar_core_x_snapshot_exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -1218,7 +1218,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 //
 // 		// make and configure a mocked types.TSSKeeper
 // 		mockedTSSKeeper := &TSSKeeperMock{
-// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
+// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the AssertMatchesRequirements method")
 // 			},
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error {
@@ -1329,7 +1329,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			ScheduleSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64 {
 // 				panic("mock out the ScheduleSign method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
+// 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
 // 				panic("mock out the SelectSignParticipants method")
 // 			},
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
@@ -1362,7 +1362,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetSigStatusFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
 // 				panic("mock out the SetSigStatus method")
 // 			},
-// 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error {
+// 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
 // 		}
@@ -1373,7 +1373,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 	}
 type TSSKeeperMock struct {
 	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
-	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
+	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error
@@ -1484,7 +1484,7 @@ type TSSKeeperMock struct {
 	ScheduleSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) int64
 
 	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
+	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
@@ -1517,7 +1517,7 @@ type TSSKeeperMock struct {
 	SetSigStatusFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
 
 	// StartKeygenFunc mocks the StartKeygen method.
-	StartKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error
+	StartKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1526,7 +1526,7 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Snapshotter is the snapshotter argument value.
-			Snapshotter snapshot.Snapshotter
+			Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 			// KeyID is the keyID argument value.
@@ -1807,11 +1807,11 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Snapshotter is the snapshotter argument value.
-			Snapshotter snapshot.Snapshotter
+			Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 			// Info is the info argument value.
 			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 			// Snap is the snap argument value.
-			Snap snapshot.Snapshot
+			Snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
@@ -1913,8 +1913,8 @@ type TSSKeeperMock struct {
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-			// SnapshotMoqParam is the snapshotMoqParam argument value.
-			SnapshotMoqParam snapshot.Snapshot
+			// Snapshot is the snapshot argument value.
+			Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 		}
 	}
 	lockAssertMatchesRequirements        sync.RWMutex
@@ -1969,13 +1969,13 @@ type TSSKeeperMock struct {
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
-func (mock *TSSKeeperMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
+func (mock *TSSKeeperMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, chain nexus.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 	if mock.AssertMatchesRequirementsFunc == nil {
 		panic("TSSKeeperMock.AssertMatchesRequirementsFunc: method is nil but TSSKeeper.AssertMatchesRequirements was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Chain       nexus.Chain
 		KeyID       github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		KeyRole     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
@@ -1997,14 +1997,14 @@ func (mock *TSSKeeperMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmo
 //     len(mockedTSSKeeper.AssertMatchesRequirementsCalls())
 func (mock *TSSKeeperMock) AssertMatchesRequirementsCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Snapshotter snapshot.Snapshotter
+	Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 	Chain       nexus.Chain
 	KeyID       github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 	KeyRole     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Chain       nexus.Chain
 		KeyID       github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		KeyRole     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
@@ -3308,15 +3308,15 @@ func (mock *TSSKeeperMock) ScheduleSignCalls() []struct {
 }
 
 // SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
+func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
 	if mock.SelectSignParticipantsFunc == nil {
 		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		Snap        snapshot.Snapshot
+		Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}{
 		Ctx:         ctx,
 		Snapshotter: snapshotter,
@@ -3334,15 +3334,15 @@ func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_s
 //     len(mockedTSSKeeper.SelectSignParticipantsCalls())
 func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Snapshotter snapshot.Snapshotter
+	Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	Snap        snapshot.Snapshot
+	Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
+		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		Snap        snapshot.Snapshot
+		Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}
 	mock.lockSelectSignParticipants.RLock()
 	calls = mock.calls.SelectSignParticipants
@@ -3741,45 +3741,45 @@ func (mock *TSSKeeperMock) SetSigStatusCalls() []struct {
 }
 
 // StartKeygen calls StartKeygenFunc.
-func (mock *TSSKeeperMock) StartKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshotMoqParam snapshot.Snapshot) error {
+func (mock *TSSKeeperMock) StartKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 	if mock.StartKeygenFunc == nil {
 		panic("TSSKeeperMock.StartKeygenFunc: method is nil but TSSKeeper.StartKeygen was just called")
 	}
 	callInfo := struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		Voter            types.Voter
-		KeyID            github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		KeyRole          github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-		SnapshotMoqParam snapshot.Snapshot
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		Voter    types.Voter
+		KeyID    github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		KeyRole  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}{
-		Ctx:              ctx,
-		Voter:            voter,
-		KeyID:            keyID,
-		KeyRole:          keyRole,
-		SnapshotMoqParam: snapshotMoqParam,
+		Ctx:      ctx,
+		Voter:    voter,
+		KeyID:    keyID,
+		KeyRole:  keyRole,
+		Snapshot: snapshot,
 	}
 	mock.lockStartKeygen.Lock()
 	mock.calls.StartKeygen = append(mock.calls.StartKeygen, callInfo)
 	mock.lockStartKeygen.Unlock()
-	return mock.StartKeygenFunc(ctx, voter, keyID, keyRole, snapshotMoqParam)
+	return mock.StartKeygenFunc(ctx, voter, keyID, keyRole, snapshot)
 }
 
 // StartKeygenCalls gets all the calls that were made to StartKeygen.
 // Check the length with:
 //     len(mockedTSSKeeper.StartKeygenCalls())
 func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
-	Ctx              github_com_cosmos_cosmos_sdk_types.Context
-	Voter            types.Voter
-	KeyID            github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	KeyRole          github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-	SnapshotMoqParam snapshot.Snapshot
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	Voter    types.Voter
+	KeyID    github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	KeyRole  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 } {
 	var calls []struct {
-		Ctx              github_com_cosmos_cosmos_sdk_types.Context
-		Voter            types.Voter
-		KeyID            github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		KeyRole          github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-		SnapshotMoqParam snapshot.Snapshot
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		Voter    types.Voter
+		KeyID    github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		KeyRole  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}
 	mock.lockStartKeygen.RLock()
 	calls = mock.calls.StartKeygen
@@ -3800,7 +3800,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetLatestCounter method")
 // 			},
-// 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool) {
+// 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
 // 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
@@ -3809,13 +3809,13 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
 // 				panic("mock out the GetProxy method")
 // 			},
-// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool) {
+// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
-// 			GetValidatorIllegibilityFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+// 			GetValidatorIllegibilityFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error) {
 // 				panic("mock out the GetValidatorIllegibility method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (snapshot.Snapshot, error) {
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -3829,7 +3829,7 @@ type SnapshotterMock struct {
 	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
-	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool)
+	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
 
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -3838,13 +3838,13 @@ type SnapshotterMock struct {
 	GetProxyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool)
+	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
 
 	// GetValidatorIllegibilityFunc mocks the GetValidatorIllegibility method.
-	GetValidatorIllegibilityFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
+	GetValidatorIllegibilityFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (snapshot.Snapshot, error)
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3884,7 +3884,7 @@ type SnapshotterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Validator is the validator argument value.
-			Validator snapshot.SDKValidator
+			Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
 		}
 		// TakeSnapshot holds details about calls to the TakeSnapshot method.
 		TakeSnapshot []struct {
@@ -3935,7 +3935,7 @@ func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
-func (mock *SnapshotterMock) GetLatestSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshot.Snapshot, bool) {
+func (mock *SnapshotterMock) GetLatestSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 	if mock.GetLatestSnapshotFunc == nil {
 		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
 	}
@@ -4036,7 +4036,7 @@ func (mock *SnapshotterMock) GetProxyCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (snapshot.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
@@ -4071,13 +4071,13 @@ func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
 }
 
 // GetValidatorIllegibility calls GetValidatorIllegibilityFunc.
-func (mock *SnapshotterMock) GetValidatorIllegibility(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+func (mock *SnapshotterMock) GetValidatorIllegibility(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error) {
 	if mock.GetValidatorIllegibilityFunc == nil {
 		panic("SnapshotterMock.GetValidatorIllegibilityFunc: method is nil but Snapshotter.GetValidatorIllegibility was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Validator snapshot.SDKValidator
+		Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
 	}{
 		Ctx:       ctx,
 		Validator: validator,
@@ -4093,11 +4093,11 @@ func (mock *SnapshotterMock) GetValidatorIllegibility(ctx github_com_cosmos_cosm
 //     len(mockedSnapshotter.GetValidatorIllegibilityCalls())
 func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Validator snapshot.SDKValidator
+	Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Validator snapshot.SDKValidator
+		Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
 	}
 	mock.lockGetValidatorIllegibility.RLock()
 	calls = mock.calls.GetValidatorIllegibility
@@ -4106,7 +4106,7 @@ func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (snapshot.Snapshot, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
