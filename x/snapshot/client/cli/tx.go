@@ -25,12 +25,37 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	snapshotTxCmd.AddCommand(
+		GetCmdProxyReady(),
 		GetCmdRegisterProxy(),
 		GetCmdDeregisterProxy(),
 		GetCmdSendTokens(),
 	)
 
 	return snapshotTxCmd
+}
+
+// GetCmdProxyReady returns the command to establish a proxy as ready to be registered
+func GetCmdProxyReady() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "proxy-ready [operator address]",
+		Short: "Establish a proxy as ready to be registered by the specified operator address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			operator, err := sdk.ValAddressFromBech32(args[0])
+			if err != nil {
+				return sdkerrors.Wrap(types.ErrSnapshot, "operator invalid")
+			}
+
+			msg := types.NewProxyReadyRequest(clientCtx.FromAddress, operator)
+			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 // GetCmdRegisterProxy returns the command to register a proxy

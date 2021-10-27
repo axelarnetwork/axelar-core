@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"time"
@@ -22,6 +23,7 @@ const (
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
+	proxyPrefix   = "vald_"
 )
 
 // Make sure the keeper implements the Snapshotter interface
@@ -63,6 +65,18 @@ func (k Keeper) SetParams(ctx sdk.Context, set types.Params) {
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
+}
+
+// SetProxyReady establishes that the specified proxy is ready to be registered
+func (k Keeper) SetProxyReady(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) {
+	key := []byte(proxyPrefix + operator.String())
+	ctx.KVStore(k.storeKey).Set(key, proxy.Bytes())
+}
+
+// IsProxyReady returns true if a proxy has issued a readiness message for the given operator address
+func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
+	key := []byte(proxyPrefix + operator.String())
+	return ctx.KVStore(k.storeKey).Has(key)
 }
 
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
@@ -298,26 +312,35 @@ func counterKey(counter int64) []byte {
 	return []byte(fmt.Sprintf("%s%d", counterPrefix, counter))
 }
 
-// RegisterProxy registers a proxy address for a given principal, which can broadcast messages in the principal's name
+// RegisterProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
 // The proxy will be marked as active and to be included in the next snapshot by default
-func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy sdk.AccAddress) error {
-	val := k.staking.Validator(ctx, principal)
-	if val == nil {
-		return fmt.Errorf("validator %s is unknown", principal.String())
+func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
+	if val := k.staking.Validator(ctx, operator); val == nil {
+		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
+
+	key := []byte(proxyPrefix + operator.String())
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return fmt.Errorf("no readiness notification found addressed to operator %s", operator.String())
+	}
+	if !bytes.Equal(bz, proxy.Bytes()) {
+		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", proxy.String(), sdk.AccAddress(bz))
+	}
+
 	k.Logger(ctx).Debug("getting proxy count")
 	count := k.getProxyCount(ctx)
 
-	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
 	if storedProxy != nil {
 		ctx.KVStore(k.storeKey).Delete(storedProxy)
 		count--
 	}
 	k.Logger(ctx).Debug("setting proxy")
-	ctx.KVStore(k.storeKey).Set(proxy, principal)
+	ctx.KVStore(k.storeKey).Set(proxy, operator)
 	// Creating a reverse lookup
-	bz := append([]byte{1}, proxy...)
-	ctx.KVStore(k.storeKey).Set(principal, bz)
+	bz = append([]byte{1}, proxy...)
+	ctx.KVStore(k.storeKey).Set(operator, bz)
 	count++
 	k.Logger(ctx).Debug("setting proxy count")
 	k.setProxyCount(ctx, count)
@@ -325,21 +348,21 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, principal sdk.ValAddress, proxy s
 	return nil
 }
 
-// DeactivateProxy deactivates the proxy address for a given principal
-func (k Keeper) DeactivateProxy(ctx sdk.Context, principal sdk.ValAddress) error {
-	val := k.staking.Validator(ctx, principal)
+// DeactivateProxy deactivates the proxy address for a given operator
+func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error {
+	val := k.staking.Validator(ctx, operator)
 	if val == nil {
-		return fmt.Errorf("validator %s is unknown", principal.String())
+		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
 
-	storedProxy := ctx.KVStore(k.storeKey).Get(principal)
+	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
 	if storedProxy == nil {
-		return fmt.Errorf("validator %s has no proxy registered", principal.String())
+		return fmt.Errorf("validator %s has no proxy registered", operator.String())
 	}
 
 	k.Logger(ctx).Debug(fmt.Sprintf("deactivating proxy %s", sdk.AccAddress(storedProxy[1:]).String()))
 	bz := append([]byte{0}, storedProxy[1:]...)
-	ctx.KVStore(k.storeKey).Set(principal, bz)
+	ctx.KVStore(k.storeKey).Set(operator, bz)
 
 	return nil
 }

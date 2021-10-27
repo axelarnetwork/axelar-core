@@ -26,10 +26,19 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
 	return msgServer{Keeper: keeper}
 }
 
+func (s msgServer) ProxyReady(c context.Context, req *types.ProxyReadyRequest) (*types.ProxyReadyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.SetProxyReady(ctx, req.OperatorAddr, req.Sender)
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("proxy %s announced readiness, expecting operator %s",
+		req.Sender.String(), req.OperatorAddr.String()))
+	return &types.ProxyReadyResponse{}, nil
+}
+
 func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequest) (*types.RegisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := s.Keeper.RegisterProxy(ctx, req.PrincipalAddr, req.ProxyAddr); err != nil {
+	if err := s.Keeper.RegisterProxy(ctx, req.Sender, req.ProxyAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
 
@@ -38,7 +47,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeRegisterProxy),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, req.ProxyAddr.String()),
 		),
 	)
@@ -48,18 +57,19 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
-			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
+			telemetry.NewLabel("principal_address", req.Sender.String()),
 			telemetry.NewLabel("proxy_address", req.ProxyAddr.String()),
 		})
 
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s registered proxy %s", req.Sender.String(), req.ProxyAddr.String()))
 	return &types.RegisterProxyResponse{}, nil
 }
 
 func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxyRequest) (*types.DeactivateProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	proxy, _ := s.Keeper.GetProxy(ctx, req.PrincipalAddr)
+	proxy, _ := s.Keeper.GetProxy(ctx, req.Sender)
 
-	if err := s.Keeper.DeactivateProxy(ctx, req.PrincipalAddr); err != nil {
+	if err := s.Keeper.DeactivateProxy(ctx, req.Sender); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
 
@@ -68,7 +78,7 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeactivateProxy),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.PrincipalAddr.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
@@ -78,10 +88,10 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
-			telemetry.NewLabel("principal_address", req.PrincipalAddr.String()),
+			telemetry.NewLabel("principal_address", req.Sender.String()),
 			telemetry.NewLabel("proxy_address", proxy.String()),
 		})
 
-	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.PrincipalAddr, proxy))
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender.String(), proxy.String()))
 	return &types.DeactivateProxyResponse{}, nil
 }
