@@ -12,6 +12,15 @@ option (gogoproto.goproto_registration) = true;
 // Msg defines the snapshot Msg service.
 service MsgService {
 
+  // ProxyReady defines a method for establishing that a proxy is ready to be
+  // registered in a validator account's stead.
+  rpc ProxyReady(ProxyReadyRequest) returns (ProxyReadyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/proxyReady"
+      body : "*"
+    };
+  }
+
   // RegisterProxy defines a method for registering a proxy account that can act
   // in a validator account's stead.
   rpc RegisterProxy(RegisterProxyRequest) returns (RegisterProxyResponse) {

@@ -45,7 +45,7 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 			req := msgs[0].(*axelarnetTypes.RefundMsgRequest)
 			err := d.axelarnet.SetPendingRefund(ctx, *req, fee[0])
 			if err != nil {
-				return ctx, err
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 		}
 
