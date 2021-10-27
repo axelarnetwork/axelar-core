@@ -80,19 +80,19 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("enqueueing sign with corruption threshold [%d], signing share count [%d], online share count [%d], total share count [%d], excluded [%d] validators",
+	q := k.GetSignQueue(ctx)
+	err = q.Enqueue(&info)
+	if err != nil {
+		return err
+	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("enqueued sign with corruption threshold [%d], signing share count [%d], online share count [%d], total share count [%d], excluded [%d] validators",
 		snap.CorruptionThreshold,
 		signingShareCount.Int64(),
 		activeShareCount.Int64(),
 		snap.TotalShareCount.Int64(),
 		len(snap.Validators)-len(participants),
 	))
-
-	q := k.GetSignQueue(ctx)
-	err = q.Enqueue(&info)
-	if err != nil {
-		return err
-	}
 
 	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
 	return nil
