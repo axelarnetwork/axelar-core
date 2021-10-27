@@ -3,6 +3,7 @@ package tss
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -99,24 +100,31 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 
 // starts a tss signing protocol using the specified key for the given chain.
 func startSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
-	participants := k.GetSignParticipants(ctx, info.SigID)
-	selected := make(map[string]bool)
-	for _, p := range participants {
-		selected[p] = true
+	var nonParticipantShareCounts []int64
+	var nonParticipants []string
+	ts := time.Now().Unix()
+
+	for _, validator := range snap.Validators {
+		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
+			nonParticipants = append(nonParticipants, validator.GetSDKValidator().String())
+			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
+			continue
+		}
+
+		// metrics for sign participation
+		telemetry.SetGaugeWithLabels(
+			[]string{types.ModuleName, "sign", "participation"},
+			float32(validator.ShareCount),
+			[]metrics.Label{
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("sigID", info.SigID),
+				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+			})
 	}
 
 	// no need to check if these exists again, sanity checks for that passed at this point
 	key, _ := k.GetKey(ctx, info.KeyID)
 	keyRequirement, _ := k.GetKeyRequirement(ctx, key.Role)
-
-	var nonParticipantShareCounts []int64
-	var nonParticipants []string
-	for _, validator := range snap.Validators {
-		if !selected[validator.GetSDKValidator().GetOperator().String()] {
-			nonParticipants = append(nonParticipants, validator.GetSDKValidator().String())
-			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
-		}
-	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -131,30 +139,15 @@ func startSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info 
 		sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
 	))
 
-	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)),
+	k.SetInfoForSig(ctx, info.SigID, info)
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
+
+	k.Logger(ctx).Info(fmt.Sprintf("next sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)),
 		types.AttributeKeySigID, info.SigID,
 		types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID)),
 		types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID)),
 		types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants)),
-		types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)))
-
-	// metrics for sign participation
-	ts := ctx.BlockTime().Unix()
-	for _, validator := range snap.Validators {
-		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
-			continue
-		}
-
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "sign", "participation"},
-			float32(validator.ShareCount),
-			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("sigID", info.SigID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-			})
-	}
-
-	k.SetInfoForSig(ctx, info.SigID, info)
-	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
+		types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)),
+		types.AttributeKeyPayload, string(info.Msg),
+		types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10))
 }
