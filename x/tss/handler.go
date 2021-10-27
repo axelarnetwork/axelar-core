@@ -21,7 +21,14 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.AckRequest:
 			res, err := server.Ack(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("validator illegibilities: [keygen: %s, signing: %s]",
+					res.KeygenIllegibility.String(),
+					res.SigningIllegibility.String(),
+				)
+			}
+			return result, err
 		case *types.ProcessKeygenTrafficRequest:
 			res, err := server.ProcessKeygenTraffic(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

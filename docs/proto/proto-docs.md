@@ -3793,6 +3793,12 @@ Params is the parameter set for this module
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_illegibility` | [int32](#int32) |  |  |
+| `signing_illegibility` | [int32](#int32) |  |  |
+
+
 
 
 

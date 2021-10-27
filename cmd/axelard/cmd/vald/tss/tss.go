@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -282,8 +283,16 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending acknowledgment for keys: %s", mgr.principalAddr, present))
-	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+	res, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+	}
+
+	// ensure validator illegibilities are displayed
+	for _, log := range res.Logs {
+		if strings.Contains(log.Log, "validator") {
+			mgr.Logger.Info(log.Log)
+		}
 	}
 
 	return nil
