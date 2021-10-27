@@ -30,7 +30,7 @@ func (s msgServer) ProxyReady(c context.Context, req *types.ProxyReadyRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	s.SetProxyReady(ctx, req.OperatorAddr, req.Sender)
-	s.Keeper.Logger(ctx).Info(fmt.Sprintf("proxy %s announced readyness, expecting operator %s",
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("proxy %s announced readiness, expecting operator %s",
 		req.Sender.String(), req.OperatorAddr.String()))
 	return &types.ProxyReadyResponse{}, nil
 }

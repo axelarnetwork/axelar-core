@@ -7,20 +7,20 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-// CheckProxyReadyness checks if the proxy already sent its readyness message
-type CheckProxyReadyness struct {
+// CheckProxyReadiness checks if the proxy already sent its readiness message
+type CheckProxyReadiness struct {
 	snapshotter types.Snapshotter
 }
 
-// NewCheckProxyReadyness constructor for CheckProxyReadyness
-func NewCheckProxyReadyness(snapshotter types.Snapshotter) CheckProxyReadyness {
-	return CheckProxyReadyness{
+// NewCheckProxyReadiness constructor for CheckProxyReadiness
+func NewCheckProxyReadiness(snapshotter types.Snapshotter) CheckProxyReadiness {
+	return CheckProxyReadiness{
 		snapshotter,
 	}
 }
 
 // AnteHandle fails the transaction if it finds any validator holding tss share of active keys is trying to unbond
-func (d CheckProxyReadyness) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+func (d CheckProxyReadiness) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// exempt genesis validator(s) from this check
 	if ctx.BlockHeight() == 0 {
 		return next(ctx, tx, simulate)
@@ -35,7 +35,7 @@ func (d CheckProxyReadyness) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			if !d.snapshotter.IsProxyReady(ctx, valAddress) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "no readyness message found for operator %s", valAddress.String())
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "no readiness message found for operator %s", valAddress.String())
 			}
 		default:
 			continue

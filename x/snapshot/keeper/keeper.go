@@ -73,7 +73,7 @@ func (k Keeper) SetProxyReady(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 	ctx.KVStore(k.storeKey).Set(key, proxy.Bytes())
 }
 
-// IsProxyReady returns true if a proxy has issued a readyness message for the given operator address
+// IsProxyReady returns true if a proxy has issued a readiness message for the given operator address
 func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
 	key := []byte(proxyPrefix + operator.String())
 	return ctx.KVStore(k.storeKey).Has(key)
