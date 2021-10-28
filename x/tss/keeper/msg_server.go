@@ -134,9 +134,9 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 			telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 			telemetry.NewLabel("address", valAddr.String()),
 			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
-			telemetry.NewLabel("keyIDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
-			telemetry.NewLabel("keygen-ineligibilities", response.KeygenIllegibility.String()),
-			telemetry.NewLabel("sign-ineligibilities", response.SigningIllegibility.String()),
+			telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
+			telemetry.NewLabel("keygen_ineligibilities", response.KeygenIllegibility.String()),
+			telemetry.NewLabel("sign_ineligibilities", response.SigningIllegibility.String()),
 		})
 
 	return response, nil
