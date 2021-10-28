@@ -114,10 +114,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	tssRouter := tssTypes.NewRouter()
 	tssRouter = tssRouter.AddRoute(evmTypes.ModuleName, evmTypes.NewTssHandler(EVMKeeper, nexusK, signer)).
 		AddRoute(btcTypes.ModuleName, btcTypes.NewTssHandler(bitcoinKeeper, signer))
-	tssRouter.HasRoute("merda")
 	signer.SetRouter(tssRouter)
-	tssRouter = signer.GetRouter()
-	tssRouter.HasRoute("caralho")
 
 	router := fake.NewRouter()
 
