@@ -2,9 +2,9 @@ package tss
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -288,11 +289,34 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
 	}
 
-	// ensure ineligibilities are displayed
+	allGood := true
 	for _, log := range res.Logs {
-		if strings.Contains(log.Log, "ineligibilities") {
-			mgr.Logger.Info(log.Log)
+		bz, err := hex.DecodeString(log.Log)
+		if err != nil {
+			continue
 		}
+		var reply tss.AckResponse
+		err = reply.Unmarshal(bz)
+		if err != nil {
+			continue
+		}
+
+		if !reply.KeygenIllegibility.Is(snapshot.None) {
+			mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in keygen due to: %s",
+				mgr.principalAddr, reply.KeygenIllegibility.String()))
+			allGood = false
+		}
+		if !reply.SigningIllegibility.Is(snapshot.None) {
+			mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in signing due to: %s",
+				mgr.principalAddr, reply.SigningIllegibility.String()))
+			allGood = false
+		}
+
+		break
+	}
+
+	if allGood {
+		mgr.Logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
 	}
 
 	return nil
