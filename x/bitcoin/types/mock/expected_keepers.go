@@ -1440,7 +1440,7 @@ var _ types.Nexus = &NexusMock{}
 // 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -1475,7 +1475,7 @@ type NexusMock struct {
 	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
+	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
@@ -1515,6 +1515,8 @@ type NexusMock struct {
 			Sender nexus.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount sdk.Coin
+			// FeeRate is the feeRate argument value.
+			FeeRate sdk.Dec
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
@@ -1619,37 +1621,41 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
-		Amount sdk.Coin
+		Ctx     sdk.Context
+		Sender  nexus.CrossChainAddress
+		Amount  sdk.Coin
+		FeeRate sdk.Dec
 	}{
-		Ctx:    ctx,
-		Sender: sender,
-		Amount: amount,
+		Ctx:     ctx,
+		Sender:  sender,
+		Amount:  amount,
+		FeeRate: feeRate,
 	}
 	mock.lockEnqueueForTransfer.Lock()
 	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
 	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount)
+	return mock.EnqueueForTransferFunc(ctx, sender, amount, feeRate)
 }
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx    sdk.Context
-	Sender nexus.CrossChainAddress
-	Amount sdk.Coin
+	Ctx     sdk.Context
+	Sender  nexus.CrossChainAddress
+	Amount  sdk.Coin
+	FeeRate sdk.Dec
 } {
 	var calls []struct {
-		Ctx    sdk.Context
-		Sender nexus.CrossChainAddress
-		Amount sdk.Coin
+		Ctx     sdk.Context
+		Sender  nexus.CrossChainAddress
+		Amount  sdk.Coin
+		FeeRate sdk.Dec
 	}
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer
@@ -2352,6 +2358,9 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetSignedTxFunc: func(ctx sdk.Context, txHash chainhash.Hash) (types.SignedTx, bool) {
 // 				panic("mock out the GetSignedTx method")
 // 			},
+// 			GetTransactionFeeRateFunc: func(ctx sdk.Context) sdk.Dec {
+// 				panic("mock out the GetTransactionFeeRate method")
+// 			},
 // 			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetUnconfirmedAmount method")
 // 			},
@@ -2475,6 +2484,9 @@ type BTCKeeperMock struct {
 
 	// GetSignedTxFunc mocks the GetSignedTx method.
 	GetSignedTxFunc func(ctx sdk.Context, txHash chainhash.Hash) (types.SignedTx, bool)
+
+	// GetTransactionFeeRateFunc mocks the GetTransactionFeeRate method.
+	GetTransactionFeeRateFunc func(ctx sdk.Context) sdk.Dec
 
 	// GetUnconfirmedAmountFunc mocks the GetUnconfirmedAmount method.
 	GetUnconfirmedAmountFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_btcsuite_btcutil.Amount
@@ -2667,6 +2679,11 @@ type BTCKeeperMock struct {
 			// TxHash is the txHash argument value.
 			TxHash chainhash.Hash
 		}
+		// GetTransactionFeeRate holds details about calls to the GetTransactionFeeRate method.
+		GetTransactionFeeRate []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetUnconfirmedAmount holds details about calls to the GetUnconfirmedAmount method.
 		GetUnconfirmedAmount []struct {
 			// Ctx is the ctx argument value.
@@ -2797,6 +2814,7 @@ type BTCKeeperMock struct {
 	lockGetRevoteLockingPeriod                  sync.RWMutex
 	lockGetSigCheckInterval                     sync.RWMutex
 	lockGetSignedTx                             sync.RWMutex
+	lockGetTransactionFeeRate                   sync.RWMutex
 	lockGetUnconfirmedAmount                    sync.RWMutex
 	lockGetUnsignedTx                           sync.RWMutex
 	lockGetVotingThreshold                      sync.RWMutex
@@ -3629,6 +3647,37 @@ func (mock *BTCKeeperMock) GetSignedTxCalls() []struct {
 	mock.lockGetSignedTx.RLock()
 	calls = mock.calls.GetSignedTx
 	mock.lockGetSignedTx.RUnlock()
+	return calls
+}
+
+// GetTransactionFeeRate calls GetTransactionFeeRateFunc.
+func (mock *BTCKeeperMock) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
+	if mock.GetTransactionFeeRateFunc == nil {
+		panic("BTCKeeperMock.GetTransactionFeeRateFunc: method is nil but BTCKeeper.GetTransactionFeeRate was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetTransactionFeeRate.Lock()
+	mock.calls.GetTransactionFeeRate = append(mock.calls.GetTransactionFeeRate, callInfo)
+	mock.lockGetTransactionFeeRate.Unlock()
+	return mock.GetTransactionFeeRateFunc(ctx)
+}
+
+// GetTransactionFeeRateCalls gets all the calls that were made to GetTransactionFeeRate.
+// Check the length with:
+//     len(mockedBTCKeeper.GetTransactionFeeRateCalls())
+func (mock *BTCKeeperMock) GetTransactionFeeRateCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetTransactionFeeRate.RLock()
+	calls = mock.calls.GetTransactionFeeRate
+	mock.lockGetTransactionFeeRate.RUnlock()
 	return calls
 }
 

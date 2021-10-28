@@ -356,6 +356,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `supported_chains` | [string](#string) | repeated |  |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
+| `transaction_fee_rate` | [string](#string) |  |  |
 
 
 
@@ -1260,6 +1261,7 @@ of a transaction
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `max_tx_size` | [int64](#int64) |  |  |
+| `transaction_fee_rate` | [string](#string) |  |  |
 
 
 
@@ -2183,6 +2185,7 @@ Params is the parameter set for this module
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
+| `transaction_fee_rate` | [string](#string) |  |  |
 
 
 

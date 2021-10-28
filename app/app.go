@@ -360,19 +360,18 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
-
 	snapK := snapKeeper.NewKeeper(
 		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
 		slashingK, tssK,
-	)
-	nexusK := nexusKeeper.NewKeeper(
-		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 	votingK := voteKeeper.NewKeeper(
 		appCodec, keys[voteTypes.StoreKey], snapK, stakingK, rewardK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
+	)
+	nexusK := nexusKeeper.NewKeeper(
+		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName), axelarnetK,
 	)
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, bApp.MsgServiceRouter(), bApp.Router(), transferModule, logger)
 

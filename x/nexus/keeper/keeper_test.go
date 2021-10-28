@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 
 	"github.com/stretchr/testify/assert"
 
@@ -30,11 +31,15 @@ const (
 )
 
 var keeper nexusKeeper.Keeper
+var feeRate = sdk.NewDecWithPrec(25, 5)
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	axelarnetKeeper := &mock.AxelarnetKeeperMock{
+		GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
+	}
+	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {
@@ -43,7 +48,7 @@ func TestLinkNoForeignAssetSupport(t *testing.T) {
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
 	assert.Error(t, err)
 }
 
@@ -53,14 +58,14 @@ func TestLinkSuccess(t *testing.T) {
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
 	assert.True(t, ok)
 	assert.Equal(t, recipient, recp)
 
 	sender.Address = rand.Str(20)
-	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.Error(t, err)
 	recp, ok = keeper.GetRecipient(ctx, sender)
 	assert.False(t, ok)
@@ -72,7 +77,7 @@ func TestPrepareNoLink(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, _ := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.Error(t, err)
 }
 
@@ -85,7 +90,7 @@ func TestPrepareSuccess(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		amounts[recipient] = makeRandAmount(btcTypes.Satoshi)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err := keeper.EnqueueForTransfer(ctx, sender, amounts[recipient])
+		err := keeper.EnqueueForTransfer(ctx, sender, amounts[recipient], feeRate)
 		assert.NoError(t, err)
 	}
 
@@ -98,6 +103,7 @@ func TestPrepareSuccess(t *testing.T) {
 		amount, ok := amounts[transfer.Recipient]
 		if ok {
 			count++
+			amount.Amount = amount.Amount.Sub(sdk.NewDecFromInt(amount.Amount).Mul(feeRate).TruncateInt())
 			assert.Equal(t, transfer.Asset, amount)
 		}
 	}
@@ -112,7 +118,7 @@ func TestArchive(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		keeper.LinkAddresses(ctx, sender, recipient)
 		amount := makeRandAmount(btcTypes.Satoshi)
-		err := keeper.EnqueueForTransfer(ctx, sender, amount)
+		err := keeper.EnqueueForTransfer(ctx, sender, amount, feeRate)
 		assert.NoError(t, err)
 	}
 
@@ -146,13 +152,13 @@ func TestTotalInvalid(t *testing.T) {
 	ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
 	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
-	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
+	err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
 	assert.Error(t, err)
 }
 
@@ -165,16 +171,16 @@ func TestTotalSucess(t *testing.T) {
 	ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
 	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi))
+	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
 	total := transfer.Asset.Amount.Int64()
 	amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(rand.I64Between(1, total)))
-	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
+	err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
 	assert.NoError(t, err)
 	amount = sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total))
-	err = keeper.EnqueueForTransfer(ctx, ethSender, amount)
+	err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
 	assert.Error(t, err)
 }
 

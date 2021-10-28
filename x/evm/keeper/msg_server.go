@@ -773,7 +773,13 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+
+	feeRate, ok := keeper.GetTransactionFeeRate(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not retrieve transaction fee rate")
+	}
+
+	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
 		return nil, err
 	}
 	keeper.SetDeposit(ctx, pendingDeposit, types.CONFIRMED)

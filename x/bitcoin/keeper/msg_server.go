@@ -312,7 +312,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 		// handle cross-chain transfer
 		depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
 		amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
-		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx)); err != nil {
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}
 

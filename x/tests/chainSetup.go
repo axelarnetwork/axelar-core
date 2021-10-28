@@ -35,6 +35,8 @@ import (
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin"
 	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -111,8 +113,12 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
+	axelarnetSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), axelarnetTypes.DefaultParamspace)
+	axelarnetK := axelarnetKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(axelarnetTypes.StoreKey), axelarnetSubspace)
+
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
-	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
+	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace, axelarnetK)
+
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
 
 	voter.SetDefaultVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)

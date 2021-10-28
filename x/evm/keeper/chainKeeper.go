@@ -134,6 +134,19 @@ func (k chainKeeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 	return minVoterCount, true
 }
 
+// GetTransactionFeeRate returns the transaction fee rate for evm
+func (k chainKeeper) GetTransactionFeeRate(ctx sdk.Context) (sdk.Dec, bool) {
+	var feeRate sdk.Dec
+
+	subspace, ok := k.getSubspace(ctx, k.chain)
+	if !ok {
+		return feeRate, false
+	}
+
+	subspace.Get(ctx, types.KeyTransactionFeeRate, &feeRate)
+	return feeRate, true
+}
+
 // SetBurnerInfo saves the burner info for a given address
 func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
 	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
