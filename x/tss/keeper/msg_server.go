@@ -125,6 +125,20 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
 	}
 
+	// metrics for heartbeat
+	ts := ctx.BlockTime().Unix()
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "heartbeat"},
+		0,
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+			telemetry.NewLabel("address", valAddr.String()),
+			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
+			telemetry.NewLabel("keyIDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
+			telemetry.NewLabel("keygen-ineligibilities", response.KeygenIllegibility.String()),
+			telemetry.NewLabel("sign-ineligibilities", response.SigningIllegibility.String()),
+		})
+
 	return response, nil
 }
 

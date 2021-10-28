@@ -259,7 +259,7 @@ func startSign(
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
 	// metrics for sign participation
-	ts := ctx.BlockTime().Unix()
+	ts := time.Now().Unix()
 	for _, validator := range snap.Validators {
 		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
 			continue
