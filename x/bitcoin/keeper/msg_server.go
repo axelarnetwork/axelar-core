@@ -698,7 +698,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		[]string{types.ModuleName, "secondary", "address", "balance"},
 		float32(change.Int64()),
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("address", consolidationAddress.Address),
 		})
 
@@ -829,7 +829,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		[]string{types.ModuleName, "secondary", "address", "balance"},
 		float32(change.Int64()),
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("address", consolidationAddress.Address),
 		})
 
