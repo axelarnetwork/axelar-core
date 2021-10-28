@@ -1296,6 +1296,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 // 				panic("mock out the GetPrivateRecoveryInfo method")
 // 			},
+// 			GetRouterFunc: func() types.Router {
+// 				panic("mock out the GetRouter method")
+// 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
 // 				panic("mock out the GetSig method")
 // 			},
@@ -1449,6 +1452,9 @@ type TSSKeeperMock struct {
 
 	// GetPrivateRecoveryInfoFunc mocks the GetPrivateRecoveryInfo method.
 	GetPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte
+
+	// GetRouterFunc mocks the GetRouter method.
+	GetRouterFunc func() types.Router
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -1723,6 +1729,9 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
+		// GetRouter holds details about calls to the GetRouter method.
+		GetRouter []struct {
+		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
 			// Ctx is the ctx argument value.
@@ -1951,6 +1960,7 @@ type TSSKeeperMock struct {
 	lockGetOldActiveKeys                 sync.RWMutex
 	lockGetParams                        sync.RWMutex
 	lockGetPrivateRecoveryInfo           sync.RWMutex
+	lockGetRouter                        sync.RWMutex
 	lockGetSig                           sync.RWMutex
 	lockGetSignParticipants              sync.RWMutex
 	lockGetSignParticipantsAsJSON        sync.RWMutex
@@ -2919,6 +2929,32 @@ func (mock *TSSKeeperMock) GetPrivateRecoveryInfoCalls() []struct {
 	mock.lockGetPrivateRecoveryInfo.RLock()
 	calls = mock.calls.GetPrivateRecoveryInfo
 	mock.lockGetPrivateRecoveryInfo.RUnlock()
+	return calls
+}
+
+// GetRouter calls GetRouterFunc.
+func (mock *TSSKeeperMock) GetRouter() types.Router {
+	if mock.GetRouterFunc == nil {
+		panic("TSSKeeperMock.GetRouterFunc: method is nil but TSSKeeper.GetRouter was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetRouter.Lock()
+	mock.calls.GetRouter = append(mock.calls.GetRouter, callInfo)
+	mock.lockGetRouter.Unlock()
+	return mock.GetRouterFunc()
+}
+
+// GetRouterCalls gets all the calls that were made to GetRouter.
+// Check the length with:
+//     len(mockedTSSKeeper.GetRouterCalls())
+func (mock *TSSKeeperMock) GetRouterCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetRouter.RLock()
+	calls = mock.calls.GetRouter
+	mock.lockGetRouter.RUnlock()
 	return calls
 }
 

@@ -12,6 +12,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
+// Handler defines a function that handles a signature after it has
+// been generated and voted on
+type Handler func(ctx sdk.Context, info SignInfo) error
+
 // Signature - an ECDSA signature
 type Signature struct {
 	R *big.Int
