@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -56,7 +55,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 		[]string{types.ModuleName, "register", "proxy"},
 		0,
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("principal_address", req.Sender.String()),
 			telemetry.NewLabel("proxy_address", req.ProxyAddr.String()),
 		})
@@ -87,7 +86,7 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		[]string{types.ModuleName, "deactivate", "proxy"},
 		0,
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("principal_address", req.Sender.String()),
 			telemetry.NewLabel("proxy_address", proxy.String()),
 		})
