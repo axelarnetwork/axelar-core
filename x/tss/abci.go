@@ -3,7 +3,6 @@ package tss
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -102,7 +101,6 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 func requestSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
 	var nonParticipantShareCounts []int64
 	var nonParticipants []string
-	ts := time.Now().Unix()
 
 	for _, validator := range snap.Validators {
 		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
@@ -116,7 +114,7 @@ func requestSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, inf
 			[]string{types.ModuleName, "sign", "participation"},
 			float32(validator.ShareCount),
 			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 				telemetry.NewLabel("sigID", info.SigID),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
