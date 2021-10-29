@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,14 +22,6 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		case *types.AckRequest:
 			res, err := server.Ack(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				bz, err := res.Marshal()
-				if err != nil {
-					k.Logger(ctx).Error(fmt.Sprintf("could not marshal ack response: %s", err.Error()))
-					return result, nil
-				}
-				result.Log = hex.EncodeToString(bz)
-			}
 			return result, err
 		case *types.ProcessKeygenTrafficRequest:
 			res, err := server.ProcessKeygenTraffic(sdk.WrapSDKContext(ctx), msg)

@@ -299,7 +299,7 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 
 	ctx.EventManager().EmitEvents(result.GetEvents())
 
-	return &types.RefundMsgResponse{Log: result.Log}, nil
+	return &types.RefundMsgResponse{Data: result.Data, Log: result.Log}, nil
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})

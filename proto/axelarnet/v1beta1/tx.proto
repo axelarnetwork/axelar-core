@@ -85,4 +85,7 @@ message RefundMsgRequest {
       [ (cosmos_proto.accepts_interface) = "Refundable" ];
 }
 
-message RefundMsgResponse { string log = 1; }
+message RefundMsgResponse {
+  bytes data = 1;
+  string log = 2;
+}
