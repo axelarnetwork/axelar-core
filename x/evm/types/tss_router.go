@@ -35,7 +35,7 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper ChainKeeper, signer S
 	switch status {
 	case tss.SigStatus_Signed:
 		batchedCommands.SetStatus(BatchSigned)
-	case tss.SigStatus_Scheduled, tss.SigStatus_Signing:
+	case tss.SigStatus_Signing:
 		return
 	default:
 		batchedCommands.SetStatus(BatchAborted)
