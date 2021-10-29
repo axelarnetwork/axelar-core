@@ -65,6 +65,8 @@ func (v ValidatorIllegibility) String() string {
 		fallthrough
 	case v.Is(TssSuspended):
 		illegibilityStrs = append(illegibilityStrs, "tss-suspended")
+	default:
+		illegibilityStrs = append(illegibilityStrs, "none")
 	}
 
 	return strings.Join(illegibilityStrs, ",")

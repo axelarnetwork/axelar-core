@@ -162,7 +162,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		}
 
 		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
+			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
 				validator.GetSDKValidator().GetOperator().String(),
 				info.SigID,
 				illegibility.String(),
@@ -172,7 +172,7 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		}
 
 		if !validatorAvailable[validator.GetSDKValidator().GetOperator().String()] {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
+			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
 				validator.GetSDKValidator().GetOperator().String(),
 				info.SigID,
 			))

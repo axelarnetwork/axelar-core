@@ -21,7 +21,8 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.AckRequest:
 			res, err := server.Ack(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			return result, err
 		case *types.ProcessKeygenTrafficRequest:
 			res, err := server.ProcessKeygenTraffic(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

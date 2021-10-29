@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"strings"
+
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -298,7 +299,7 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 
 	ctx.EventManager().EmitEvents(result.GetEvents())
 
-	return &types.RefundMsgResponse{Log: result.Log}, nil
+	return &types.RefundMsgResponse{Data: result.Data, Log: result.Log}, nil
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})

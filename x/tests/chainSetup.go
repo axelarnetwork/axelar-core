@@ -118,6 +118,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	ethHandler := evm.NewHandler(EVMKeeper, mocks.Tss, voter, signer, nexusK, snapKeeper)
 	tssHandler := tss.NewHandler(signer, snapKeeper, nexusK, voter, &tssMock.StakingKeeperMock{
 		GetLastTotalPowerFunc: mocks.Staker.GetLastTotalPowerFunc,
+		ValidatorFunc:         mocks.Staker.ValidatorFunc,
 	})
 	nexusHandler := nexus.NewHandler(nexusK, snapKeeper)
 

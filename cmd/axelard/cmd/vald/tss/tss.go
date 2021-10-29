@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -282,8 +284,36 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending acknowledgment for keys: %s", mgr.principalAddr, present))
-	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+	txRes, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+	}
+
+	refundRes, err := mgr.extractRefundMsgResponse(txRes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve refund reply")
+	}
+
+	var ackRes tss.AckResponse
+	err = ackRes.Unmarshal(refundRes.Data)
+	if err != nil {
+		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve ack reply")
+	}
+
+	allGood := true
+	if !ackRes.KeygenIllegibility.Is(snapshot.None) {
+		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in keygen due to: %s",
+			mgr.principalAddr, ackRes.KeygenIllegibility.String()))
+		allGood = false
+	}
+	if !ackRes.SigningIllegibility.Is(snapshot.None) {
+		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in signing due to: %s",
+			mgr.principalAddr, ackRes.SigningIllegibility.String()))
+		allGood = false
+	}
+
+	if allGood {
+		mgr.Logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
 	}
 
 	return nil
@@ -305,6 +335,32 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 	}
 
 	return abort(stream)
+}
+
+func (mgr *Mgr) extractRefundMsgResponse(res *sdk.TxResponse) (axelarnet.RefundMsgResponse, error) {
+	var txMsg sdk.TxMsgData
+	var refundReply axelarnet.RefundMsgResponse
+
+	bz, err := hex.DecodeString(res.Data)
+	if err != nil {
+		return axelarnet.RefundMsgResponse{}, err
+	}
+
+	err = mgr.cdc.Unmarshal(bz, &txMsg)
+	if err != nil {
+		return axelarnet.RefundMsgResponse{}, err
+	}
+
+	for _, msg := range txMsg.Data {
+		err = refundReply.Unmarshal(msg.Data)
+		if err != nil {
+			mgr.Logger.Debug(fmt.Sprintf("not a refund response: %v", err))
+			continue
+		}
+		return refundReply, nil
+	}
+
+	return axelarnet.RefundMsgResponse{}, fmt.Errorf("no refund response found in tx response")
 }
 
 func abort(stream Stream) error {

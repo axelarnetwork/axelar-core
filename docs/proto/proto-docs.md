@@ -591,6 +591,7 @@ address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  |  |
 | `log` | [string](#string) |  |  |
 
 
@@ -3820,6 +3821,12 @@ Params is the parameter set for this module
 
 ### AckResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_illegibility` | [int32](#int32) |  |  |
+| `signing_illegibility` | [int32](#int32) |  |  |
 
 
 

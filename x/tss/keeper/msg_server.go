@@ -13,7 +13,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -87,15 +89,55 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	validator := s.snapshotter.GetOperator(ctx, req.Sender)
-	if validator.Empty() {
+	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
+	if valAddr.Empty() {
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
 	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
-		validator.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
-	s.SetAvailableOperator(ctx, validator, req.KeyIDs...)
-	return &types.AckResponse{}, nil
+		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
+	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
+
+	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
+	// and it is not exposed in the ValidatorI interface
+	validator, ok := s.staker.Validator(ctx, valAddr).(stakingtypes.Validator)
+	if !ok {
+		s.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
+		return &types.AckResponse{}, nil
+	}
+
+	illegibility, err := s.snapshotter.GetValidatorIllegibility(ctx, &validator)
+	if err != nil {
+		s.Logger(ctx).Error(err.Error())
+		return &types.AckResponse{}, nil
+	}
+
+	response := &types.AckResponse{
+		KeygenIllegibility:  illegibility.FilterIllegibilityForNewKey(),
+		SigningIllegibility: illegibility.FilterIllegibilityForSigning(),
+	}
+
+	if !response.KeygenIllegibility.Is(snapshot.None) {
+		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in keygen due to: %s", valAddr.String(), response.KeygenIllegibility.String()))
+	}
+	if !response.SigningIllegibility.Is(snapshot.None) {
+		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
+	}
+
+	// metrics for heartbeat
+	telemetry.SetGaugeWithLabels(
+		[]string{types.ModuleName, "heartbeat"},
+		1,
+		[]metrics.Label{
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
+			telemetry.NewLabel("address", valAddr.String()),
+			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
+			telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
+			telemetry.NewLabel("keygen_ineligibilities", response.KeygenIllegibility.String()),
+			telemetry.NewLabel("sign_ineligibilities", response.SigningIllegibility.String()),
+		})
+
+	return response, nil
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {

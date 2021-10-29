@@ -62,6 +62,9 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 		case *types.RefundMsgRequest:
 			res, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = res.Log
+			}
 			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
