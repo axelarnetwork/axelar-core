@@ -112,8 +112,8 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	voter.SetDefaultVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
 
 	tssRouter := tssTypes.NewRouter()
-	tssRouter = tssRouter.AddRoute(evmTypes.ModuleName, evmTypes.NewTssHandler(EVMKeeper, nexusK, signer)).
-		AddRoute(btcTypes.ModuleName, btcTypes.NewTssHandler(bitcoinKeeper, signer))
+	tssRouter = tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(EVMKeeper, nexusK, signer)).
+		AddRoute(btcTypes.ModuleName, btcKeeper.NewTssHandler(bitcoinKeeper, signer))
 	signer.SetRouter(tssRouter)
 
 	router := fake.NewRouter()

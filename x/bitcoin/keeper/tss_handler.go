@@ -1,4 +1,4 @@
-package types
+package keeper
 
 import (
 	"encoding/hex"
@@ -14,6 +14,7 @@ import (
 	"github.com/btcsuite/btcutil"
 
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 type signingAbortError struct {
@@ -26,18 +27,18 @@ func (e *signingAbortError) Error() string {
 }
 
 // NewTssHandler returns the handler for processing signatures delivered by the tss module
-func NewTssHandler(keeper BTCKeeper, signer Signer) tss.Handler {
+func NewTssHandler(keeper types.BTCKeeper, signer types.Signer) tss.Handler {
 	return func(ctx sdk.Context, info tss.SignInfo) error {
-		for _, txType := range GetTxTypes() {
+		for _, txType := range types.GetTxTypes() {
 			handleUnsignedTxForTxType(ctx, keeper, signer, txType)
 		}
 		return nil
 	}
 }
 
-func handleUnsignedTxForTxType(ctx sdk.Context, keeper BTCKeeper, signer Signer, txType TxType) {
+func handleUnsignedTxForTxType(ctx sdk.Context, keeper types.BTCKeeper, signer types.Signer, txType types.TxType) {
 	unsignedTx, ok := keeper.GetUnsignedTx(ctx, txType)
-	if !ok || !unsignedTx.Is(Signing) {
+	if !ok || !unsignedTx.Is(types.Signing) {
 		keeper.Logger(ctx).Debug(fmt.Sprintf("no unsigned %s transaction ready", txType.SimpleString()))
 		return
 	}
@@ -46,14 +47,14 @@ func handleUnsignedTxForTxType(ctx sdk.Context, keeper BTCKeeper, signer Signer,
 	if err != nil {
 		switch e := err.(type) {
 		case *signingAbortError:
-			ctx.EventManager().EmitEvent(sdk.NewEvent(EventTypeConsolidationTx,
-				sdk.NewAttribute(sdk.AttributeKeyModule, ModuleName),
-				sdk.NewAttribute(sdk.AttributeKeyAction, AttributeValueSigningAborted),
-				sdk.NewAttribute(AttributeTxType, txType.SimpleString()),
+			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigningAborted),
+				sdk.NewAttribute(types.AttributeTxType, txType.SimpleString()),
 			))
 
 			unsignedTx.ConfirmationRequired = true
-			unsignedTx.Status = Aborted
+			unsignedTx.Status = types.Aborted
 			unsignedTx.PrevAbortedKeyId = e.abortedKeyID
 			keeper.SetUnsignedTx(ctx, unsignedTx)
 		default:
@@ -81,10 +82,10 @@ func handleUnsignedTxForTxType(ctx sdk.Context, keeper BTCKeeper, signer Signer,
 			keeper.SetConfirmedOutpointInfo(ctx, addressInfo.KeyID, outPoint)
 
 			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeOutpointConfirmation,
-					sdk.NewAttribute(sdk.AttributeKeyModule, ModuleName),
-					sdk.NewAttribute(sdk.AttributeKeyAction, AttributeValueConfirm),
-					sdk.NewAttribute(AttributeKeyOutPointInfo, string(ModuleCdc.MustMarshalJSON(&outPoint))),
+				sdk.NewEvent(types.EventTypeOutpointConfirmation,
+					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+					sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&outPoint))),
 				),
 			)
 		}
@@ -95,9 +96,9 @@ func handleUnsignedTxForTxType(ctx sdk.Context, keeper BTCKeeper, signer Signer,
 		var keyRole tss.KeyRole
 
 		switch txType {
-		case MasterConsolidation:
+		case types.MasterConsolidation:
 			keyRole = tss.MasterKey
-		case SecondaryConsolidation:
+		case types.SecondaryConsolidation:
 			keyRole = tss.SecondaryKey
 		default:
 			keeper.Logger(ctx).Error(fmt.Sprintf("%s transaction should not involve key rotation", txType.SimpleString()))
@@ -111,19 +112,19 @@ func handleUnsignedTxForTxType(ctx sdk.Context, keeper BTCKeeper, signer Signer,
 	}
 
 	keeper.DeleteUnsignedTx(ctx, txType)
-	keeper.SetSignedTx(ctx, NewSignedTx(txType, signedTx, unsignedTx.ConfirmationRequired, unsignedTx.AnyoneCanSpendVout))
+	keeper.SetSignedTx(ctx, types.NewSignedTx(txType, signedTx, unsignedTx.ConfirmationRequired, unsignedTx.AnyoneCanSpendVout))
 	keeper.SetLatestSignedTxHash(ctx, txType, txHash)
 
 	// Notify that consolidation tx can be queried
-	ctx.EventManager().EmitEvent(sdk.NewEvent(EventTypeConsolidationTx,
-		sdk.NewAttribute(sdk.AttributeKeyModule, ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, AttributeValueSigned),
-		sdk.NewAttribute(AttributeTxType, txType.SimpleString()),
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeConsolidationTx,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSigned),
+		sdk.NewAttribute(types.AttributeTxType, txType.SimpleString()),
 	))
 	keeper.Logger(ctx).Info(fmt.Sprintf("transaction %s is fully signed", txHash.String()))
 }
 
-func assembleTx(ctx sdk.Context, k BTCKeeper, signer Signer, unsignedTx *UnsignedTx) (*wire.MsgTx, error) {
+func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsignedTx *types.UnsignedTx) (*wire.MsgTx, error) {
 	tx := unsignedTx.GetTx()
 	outPointsToSign, err := getOutPointsToSign(ctx, tx, k)
 	if err != nil {
@@ -155,7 +156,7 @@ func assembleTx(ctx sdk.Context, k BTCKeeper, signer Signer, unsignedTx *Unsigne
 		sigs = append(sigs, sigsForOutPoint)
 	}
 
-	signedTx, err := AssembleBtcTx(tx, outPointsToSign, sigs)
+	signedTx, err := types.AssembleBtcTx(tx, outPointsToSign, sigs)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +164,11 @@ func assembleTx(ctx sdk.Context, k BTCKeeper, signer Signer, unsignedTx *Unsigne
 	return signedTx, nil
 }
 
-func getKnownOutPoints(ctx sdk.Context, k BTCKeeper, signedTx *wire.MsgTx) ([]OutPointInfo, error) {
-	var knownOutPoints []OutPointInfo
+func getKnownOutPoints(ctx sdk.Context, k types.BTCKeeper, signedTx *wire.MsgTx) ([]types.OutPointInfo, error) {
+	var knownOutPoints []types.OutPointInfo
 
 	networkName := k.GetNetwork(ctx).Name
-	network, err := NetworkFromStr(networkName)
+	network, err := types.NetworkFromStr(networkName)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, fmt.Sprintf("failed to get network %s", networkName))
 	}
@@ -189,22 +190,22 @@ func getKnownOutPoints(ctx sdk.Context, k BTCKeeper, signedTx *wire.MsgTx) ([]Ou
 			continue
 		}
 
-		outpointInfo := NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), addressInfo.Address)
+		outpointInfo := types.NewOutPointInfo(wire.NewOutPoint(&txHash, uint32(i)), btcutil.Amount(output.Value), addressInfo.Address)
 		knownOutPoints = append(knownOutPoints, outpointInfo)
 	}
 
 	return knownOutPoints, nil
 }
 
-func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k BTCKeeper) ([]OutPointToSign, error) {
-	var toSign []OutPointToSign
+func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]types.OutPointToSign, error) {
+	var toSign []types.OutPointToSign
 	for _, in := range tx.TxIn {
 		prevOutInfo, state, ok := k.GetOutPointInfo(ctx, in.PreviousOutPoint)
 		if !ok {
 			return nil, fmt.Errorf("cannot find %s", in.PreviousOutPoint.String())
 		}
 
-		if state != OutPointState_Spent {
+		if state != types.OutPointState_Spent {
 			return nil, fmt.Errorf("outpoint %s is not set as spent", in.PreviousOutPoint.String())
 		}
 
@@ -213,7 +214,7 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k BTCKeeper) ([]OutPoin
 			return nil, fmt.Errorf("address %s not found", prevOutInfo.Address)
 		}
 
-		toSign = append(toSign, OutPointToSign{
+		toSign = append(toSign, types.OutPointToSign{
 			OutPointInfo: prevOutInfo,
 			AddressInfo:  addr,
 		})

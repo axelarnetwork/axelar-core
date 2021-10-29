@@ -54,7 +54,6 @@ func (r *router) AddRoute(module string, handler exported.Handler) Router {
 
 // HasRoute returns true if the router has an handler registered for the given module
 func (r *router) HasRoute(module string) bool {
-	//panic(fmt.Sprintf("wtf: %s %d", module, len(r.routes)))
 	return r.routes[module] != nil
 }
 

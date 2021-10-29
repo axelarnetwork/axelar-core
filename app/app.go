@@ -375,8 +375,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	tssRouter := tssTypes.NewRouter()
-	tssRouter.AddRoute(evmTypes.ModuleName, evmTypes.NewTssHandler(evmK, nexusK, tssK)).
-		AddRoute(btcTypes.ModuleName, btcTypes.NewTssHandler(btcK, tssK))
+	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK)).
+		AddRoute(btcTypes.ModuleName, btcKeeper.NewTssHandler(btcK, tssK))
 	tssK.SetRouter(tssRouter)
 
 	/****  Module Options ****/

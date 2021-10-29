@@ -1,14 +1,15 @@
-package types
+package keeper
 
 import (
 	"encoding/hex"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewTssHandler returns the handler for processing signatures delivered by the tss module
-func NewTssHandler(keeper BaseKeeper, nexus Nexus, signer Signer) tss.Handler {
+func NewTssHandler(keeper types.BaseKeeper, nexus types.Nexus, signer types.Signer) tss.Handler {
 	return func(ctx sdk.Context, info tss.SignInfo) error {
 		chains := nexus.GetChains(ctx)
 
@@ -20,13 +21,13 @@ func NewTssHandler(keeper BaseKeeper, nexus Nexus, signer Signer) tss.Handler {
 	}
 }
 
-func handleUnsignedBatchedCommands(ctx sdk.Context, keeper ChainKeeper, signer Signer) {
+func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) {
 	if _, ok := keeper.GetNetwork(ctx); !ok {
 		return
 	}
 
 	batchedCommands := keeper.GetLatestCommandBatch(ctx)
-	if !batchedCommands.Is(BatchSigning) {
+	if !batchedCommands.Is(types.BatchSigning) {
 		return
 	}
 
@@ -34,11 +35,11 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper ChainKeeper, signer S
 	_, status := signer.GetSig(ctx, batchedCommandsIDHex)
 	switch status {
 	case tss.SigStatus_Signed:
-		batchedCommands.SetStatus(BatchSigned)
+		batchedCommands.SetStatus(types.BatchSigned)
 	case tss.SigStatus_Signing:
 		return
 	default:
-		batchedCommands.SetStatus(BatchAborted)
+		batchedCommands.SetStatus(types.BatchAborted)
 		return
 	}
 }
