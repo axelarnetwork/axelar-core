@@ -164,6 +164,32 @@ func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
 	return 0
 }
 
+func (p *Poll) penalizeIncorrectVoters() error {
+	majorityVote := p.getMajorityVote()
+
+	for _, vote := range p.GetVotes() {
+		data, err := vote.Data.Marshal()
+		if err != nil {
+			panic(err)
+		}
+
+		if bytes.Equal(data, majorityVote.Data.Value) {
+			for _, voter := range vote.Voters {
+				if err := p.rewardPool.ReleaseRewards(voter); err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, voter := range vote.Voters {
+				p.logger.Debug("penalizing voter due to incorrect vote", "voter", voter.String(), "poll", p.PollMetadata.Key.String())
+				p.rewardPool.ClearRewards(voter)
+			}
+		}
+	}
+
+	return nil
+}
+
 // Vote records the given vote
 func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	if p.Is(exported.NonExistent) {
@@ -189,24 +215,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	majorityVote := p.getMajorityVote()
 	if p.hasEnoughVotes(majorityVote.Tally) {
 		if p.rewardPool != nil {
-			// Penalize voters who did not vote correctly
-			for _, vote := range p.GetVotes() {
-				d, err := data.Marshal()
-				if err != nil {
-					panic(err)
-				}
-
-				for _, voter := range vote.Voters {
-					if bytes.Equal(d, majorityVote.Data.Value) {
-						if err := p.rewardPool.ReleaseRewards(voter); err != nil {
-							return err
-						}
-					} else {
-						p.logger.Debug("penalizing voter due to incorrect vote", "voter", voter.String(), "poll", p.PollMetadata.Key.String())
-						p.rewardPool.ClearRewards(voter)
-					}
-				}
-			}
+			p.penalizeIncorrectVoters()
 		}
 
 		p.Result = majorityVote.Data
