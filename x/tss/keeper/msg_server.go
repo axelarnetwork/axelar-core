@@ -126,12 +126,11 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	}
 
 	// metrics for heartbeat
-	ts := ctx.BlockTime().Unix()
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "heartbeat"},
-		0,
+		1,
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("address", valAddr.String()),
 			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
 			telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
