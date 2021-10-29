@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
@@ -190,7 +189,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
-	ts := time.Now().Unix()
+	ts := ctx.BlockTime().Unix()
 	for _, validator := range snapshot.Validators {
 		telemetry.SetGaugeWithLabels(
 			[]string{types.ModuleName, "keygen", "participation"},
@@ -264,7 +263,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "id"},
 		0,
 		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(time.Now().Unix(), 10)),
+			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 			telemetry.NewLabel("keyID", string(req.KeyID)),
 		})
 

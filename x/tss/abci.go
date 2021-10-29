@@ -3,7 +3,6 @@ package tss
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -124,7 +123,7 @@ func startKeygen(
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
-	ts := time.Now().Unix()
+	ts := ctx.BlockTime().Unix()
 	for _, validator := range snapshot.Validators {
 		telemetry.SetGaugeWithLabels(
 			[]string{types.ModuleName, "keygen", "participation"},
@@ -259,7 +258,7 @@ func startSign(
 	k.Logger(ctx).Info(fmt.Sprintf("new Sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)))
 
 	// metrics for sign participation
-	ts := time.Now().Unix()
+	ts := ctx.BlockTime().Unix()
 	for _, validator := range snap.Validators {
 		if !k.DoesValidatorParticipateInSign(ctx, info.SigID, validator.GetSDKValidator().GetOperator()) {
 			continue
