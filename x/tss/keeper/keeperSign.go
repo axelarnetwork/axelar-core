@@ -70,6 +70,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
+	//TODO: method is deprecated, must be replaced with voter.InitializePoll
 	if err := voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
