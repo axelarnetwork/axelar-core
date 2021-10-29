@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -18,65 +17,86 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 const signQueueName = "sign_queue"
 
-// EnqueueSign enqueue the pending sign info into a queue and returns the position of the added sign info.
-// Returns error if queue is full
-func (k Keeper) EnqueueSign(ctx sdk.Context, info exported.SignInfo) (int64, error) {
+// StartSign kickstarts signing
+func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter types.Snapshotter, voter types.InitPoller) error {
 	status := k.getSigStatus(ctx, info.SigID)
 	if status == exported.SigStatus_Signed ||
 		status == exported.SigStatus_Signing ||
-		status == exported.SigStatus_Scheduled ||
 		status == exported.SigStatus_Queued {
-		return 0, fmt.Errorf("sig ID '%s' has been used before", info.SigID)
+		return fmt.Errorf("sig ID '%s' has been used before", info.SigID)
+	}
+
+	snap, ok := snapshotter.GetSnapshot(ctx, info.SnapshotCounter)
+	if !ok {
+		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
+	}
+
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap)
+	if err != nil {
+		return err
+	}
+
+	signingShareCount := sdk.ZeroInt()
+	for _, p := range participants {
+		signingShareCount = signingShareCount.AddRaw(p.ShareCount)
+	}
+
+	activeShareCount := sdk.ZeroInt()
+	for _, v := range active {
+		activeShareCount = activeShareCount.AddRaw(v.ShareCount)
+	}
+
+	if signingShareCount.LTE(sdk.NewInt(snap.CorruptionThreshold)) {
+		return fmt.Errorf(fmt.Sprintf("not enough active validators are online: corruption threshold [%d], online share count [%d], total share count [%d]",
+			snap.CorruptionThreshold,
+			activeShareCount.Int64(),
+			snap.TotalShareCount.Int64(),
+		))
+	}
+
+	key, ok := k.GetKey(ctx, info.KeyID)
+	if !ok {
+		return fmt.Errorf("key %s not found", info.KeyID)
+	}
+
+	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role)
+	if !ok {
+		return fmt.Errorf("key requirement for key role %s not found", key.Role.SimpleString())
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
+	//TODO: method is deprecated, must be replaced with voter.InitializePoll
+	if err := voter.InitializePollWithSnapshot(
+		ctx,
+		pollKey,
+		snap.Counter,
+		vote.ExpiryAt(0),
+		vote.Threshold(keyRequirement.SignVotingThreshold),
+	); err != nil {
+		return err
 	}
 
 	q := k.GetSignQueue(ctx)
-	err := q.Enqueue(&info)
-	if err == nil {
-		k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
-	}
-	return int64(q.Size()), err
-}
-
-// ScheduleSign sets a sign to start at the current block height
-func (k Keeper) ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64 {
-	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Scheduled)
-
-	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String()).AppendStr(info.SigID)
-	k.getStore(ctx).Set(key, &info)
-
-	k.Logger(ctx).Info(fmt.Sprintf(
-		"scheduling signing for sig ID '%s' and key ID '%s' at block %d (currently at %d)",
-		info.SigID, info.KeyID, ctx.BlockHeight(), ctx.BlockHeight()))
-
-	return ctx.BlockHeight()
-}
-
-// GetAllSignInfosAtCurrentHeight returns all keygen requests scheduled for the current height
-func (k Keeper) GetAllSignInfosAtCurrentHeight(ctx sdk.Context) []exported.SignInfo {
-	prefix := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).AppendStr(exported.AckType_Sign.String())
-	var infos []exported.SignInfo
-
-	iter := k.getStore(ctx).Iterator(prefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var info exported.SignInfo
-		iter.UnmarshalValue(&info)
-		infos = append(infos, info)
+	err = q.Enqueue(&info)
+	if err != nil {
+		return err
 	}
 
-	return infos
-}
+	k.Logger(ctx).Info(fmt.Sprintf("enqueued sign with corruption threshold [%d], signing share count [%d], online share count [%d], total share count [%d], excluded [%d] validators",
+		snap.CorruptionThreshold,
+		signingShareCount.Int64(),
+		activeShareCount.Int64(),
+		snap.TotalShareCount.Int64(),
+		len(snap.Validators)-len(participants),
+	))
 
-// DeleteScheduledSign removes a keygen request for the current height
-func (k Keeper) DeleteScheduledSign(ctx sdk.Context, sigID string) {
-	key := scheduledSignPrefix.AppendStr(strconv.FormatInt(ctx.BlockHeight(), 10)).
-		AppendStr(exported.AckType_Sign.String()).AppendStr(sigID)
-	k.getStore(ctx).Delete(key)
+	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Queued)
+	return nil
 }
 
 // GetSig returns the signature associated with sigID

@@ -81,7 +81,7 @@ type TSSKeeper interface {
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
-	ScheduleSign(ctx sdk.Context, info exported.SignInfo) int64
+	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
 	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
 	GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress

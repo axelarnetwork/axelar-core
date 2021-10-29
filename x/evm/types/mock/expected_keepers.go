@@ -299,9 +299,6 @@ var _ types.Signer = &SignerMock{}
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
-// 			EnqueueSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-// 				panic("mock out the EnqueueSign method")
-// 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -332,6 +329,9 @@ var _ types.Signer = &SignerMock{}
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
+// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface{InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error}) error {
+// 				panic("mock out the StartSign method")
+// 			},
 // 		}
 //
 // 		// use mockedSigner in code that requires types.Signer
@@ -344,9 +344,6 @@ type SignerMock struct {
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error
-
-	// EnqueueSignFunc mocks the EnqueueSign method.
-	EnqueueSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -378,6 +375,11 @@ type SignerMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
 
+	// StartSignFunc mocks the StartSign method.
+	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+		InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	}) error
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
@@ -403,13 +405,6 @@ type SignerMock struct {
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
-		// EnqueueSign holds details about calls to the EnqueueSign method.
-		EnqueueSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Info is the info argument value.
-			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -487,10 +482,22 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
+		// StartSign holds details about calls to the StartSign method.
+		StartSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Info is the info argument value.
+			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter snapshot.Snapshotter
+			// Voter is the voter argument value.
+			Voter interface {
+				InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+			}
+		}
 	}
 	lockAssertMatchesRequirements    sync.RWMutex
 	lockAssignNextKey                sync.RWMutex
-	lockEnqueueSign                  sync.RWMutex
 	lockGetCurrentKey                sync.RWMutex
 	lockGetCurrentKeyID              sync.RWMutex
 	lockGetExternalKeyIDs            sync.RWMutex
@@ -501,6 +508,7 @@ type SignerMock struct {
 	lockGetSig                       sync.RWMutex
 	lockGetSnapshotCounterForKeyID   sync.RWMutex
 	lockRotateKey                    sync.RWMutex
+	lockStartSign                    sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -590,41 +598,6 @@ func (mock *SignerMock) AssignNextKeyCalls() []struct {
 	mock.lockAssignNextKey.RLock()
 	calls = mock.calls.AssignNextKey
 	mock.lockAssignNextKey.RUnlock()
-	return calls
-}
-
-// EnqueueSign calls EnqueueSignFunc.
-func (mock *SignerMock) EnqueueSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-	if mock.EnqueueSignFunc == nil {
-		panic("SignerMock.EnqueueSignFunc: method is nil but Signer.EnqueueSign was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}{
-		Ctx:  ctx,
-		Info: info,
-	}
-	mock.lockEnqueueSign.Lock()
-	mock.calls.EnqueueSign = append(mock.calls.EnqueueSign, callInfo)
-	mock.lockEnqueueSign.Unlock()
-	return mock.EnqueueSignFunc(ctx, info)
-}
-
-// EnqueueSignCalls gets all the calls that were made to EnqueueSign.
-// Check the length with:
-//     len(mockedSigner.EnqueueSignCalls())
-func (mock *SignerMock) EnqueueSignCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}
-	mock.lockEnqueueSign.RLock()
-	calls = mock.calls.EnqueueSign
-	mock.lockEnqueueSign.RUnlock()
 	return calls
 }
 
@@ -987,6 +960,57 @@ func (mock *SignerMock) RotateKeyCalls() []struct {
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
 	mock.lockRotateKey.RUnlock()
+	return calls
+}
+
+// StartSign calls StartSignFunc.
+func (mock *SignerMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+	InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+}) error {
+	if mock.StartSignFunc == nil {
+		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
+	}
+	callInfo := struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter snapshot.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}
+	}{
+		Ctx:         ctx,
+		Info:        info,
+		Snapshotter: snapshotter,
+		Voter:       voter,
+	}
+	mock.lockStartSign.Lock()
+	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
+	mock.lockStartSign.Unlock()
+	return mock.StartSignFunc(ctx, info, snapshotter, voter)
+}
+
+// StartSignCalls gets all the calls that were made to StartSign.
+// Check the length with:
+//     len(mockedSigner.StartSignCalls())
+func (mock *SignerMock) StartSignCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+	Snapshotter snapshot.Snapshotter
+	Voter       interface {
+		InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	}
+} {
+	var calls []struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter snapshot.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}
+	}
+	mock.lockStartSign.RLock()
+	calls = mock.calls.StartSign
+	mock.lockStartSign.RUnlock()
 	return calls
 }
 

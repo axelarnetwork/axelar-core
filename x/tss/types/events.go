@@ -26,7 +26,6 @@ const (
 	AttributeKeyNonParticipantShareCounts = "nonParticipantShareCounts"
 	AttributeKeyPayload                   = "payload"
 	AttributeKeyTimeout                   = "timeout"
-	AttributeKeyDidStart                  = "didStart"
 	AttributeKeyRole                      = "keyRole"
 	AttributeKeyKeyIDs                    = "keyIDs"
 )

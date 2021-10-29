@@ -72,6 +72,8 @@ type BTCKeeper interface {
 // Voter is the interface that provides voting functionality
 type Voter interface {
 	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
+	// Deprecated: InitializePollWithSnapshot will be removed soon
+	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
 	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
 }
 
@@ -85,7 +87,7 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	EnqueueSign(ctx sdk.Context, info tss.SignInfo) (int64, error)
+	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)

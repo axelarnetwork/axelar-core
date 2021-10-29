@@ -127,10 +127,7 @@ message SignTxRequest {
   bytes tx = 3;
 }
 
-message SignTxResponse {
-  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
-  int64 position = 2;
-}
+message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
 
 // MsgVoteConfirmChain represents a message that votes on a new EVM chain
 message VoteConfirmChainRequest {
@@ -229,7 +226,6 @@ message SignCommandsRequest {
 message SignCommandsResponse {
   bytes batched_commands_id = 1
       [ (gogoproto.customname) = "BatchedCommandsID" ];
-  int64 position = 2;
 }
 
 message AddChainRequest {

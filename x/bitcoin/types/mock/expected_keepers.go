@@ -36,6 +36,9 @@ var _ types.Voter = &VoterMock{}
 // 			InitializePollFunc: func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
 // 				panic("mock out the InitializePoll method")
 // 			},
+// 			InitializePollWithSnapshotFunc: func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+// 				panic("mock out the InitializePollWithSnapshot method")
+// 			},
 // 		}
 //
 // 		// use mockedVoter in code that requires types.Voter
@@ -48,6 +51,9 @@ type VoterMock struct {
 
 	// InitializePollFunc mocks the InitializePoll method.
 	InitializePollFunc func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error
+
+	// InitializePollWithSnapshotFunc mocks the InitializePollWithSnapshot method.
+	InitializePollWithSnapshotFunc func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -69,9 +75,21 @@ type VoterMock struct {
 			// PollProperties is the pollProperties argument value.
 			PollProperties []exported.PollProperty
 		}
+		// InitializePollWithSnapshot holds details about calls to the InitializePollWithSnapshot method.
+		InitializePollWithSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Key is the key argument value.
+			Key exported.PollKey
+			// SnapshotSeqNo is the snapshotSeqNo argument value.
+			SnapshotSeqNo int64
+			// PollProperties is the pollProperties argument value.
+			PollProperties []exported.PollProperty
+		}
 	}
-	lockGetPoll        sync.RWMutex
-	lockInitializePoll sync.RWMutex
+	lockGetPoll                    sync.RWMutex
+	lockInitializePoll             sync.RWMutex
+	lockInitializePollWithSnapshot sync.RWMutex
 }
 
 // GetPoll calls GetPollFunc.
@@ -152,6 +170,49 @@ func (mock *VoterMock) InitializePollCalls() []struct {
 	return calls
 }
 
+// InitializePollWithSnapshot calls InitializePollWithSnapshotFunc.
+func (mock *VoterMock) InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+	if mock.InitializePollWithSnapshotFunc == nil {
+		panic("VoterMock.InitializePollWithSnapshotFunc: method is nil but Voter.InitializePollWithSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx            sdk.Context
+		Key            exported.PollKey
+		SnapshotSeqNo  int64
+		PollProperties []exported.PollProperty
+	}{
+		Ctx:            ctx,
+		Key:            key,
+		SnapshotSeqNo:  snapshotSeqNo,
+		PollProperties: pollProperties,
+	}
+	mock.lockInitializePollWithSnapshot.Lock()
+	mock.calls.InitializePollWithSnapshot = append(mock.calls.InitializePollWithSnapshot, callInfo)
+	mock.lockInitializePollWithSnapshot.Unlock()
+	return mock.InitializePollWithSnapshotFunc(ctx, key, snapshotSeqNo, pollProperties...)
+}
+
+// InitializePollWithSnapshotCalls gets all the calls that were made to InitializePollWithSnapshot.
+// Check the length with:
+//     len(mockedVoter.InitializePollWithSnapshotCalls())
+func (mock *VoterMock) InitializePollWithSnapshotCalls() []struct {
+	Ctx            sdk.Context
+	Key            exported.PollKey
+	SnapshotSeqNo  int64
+	PollProperties []exported.PollProperty
+} {
+	var calls []struct {
+		Ctx            sdk.Context
+		Key            exported.PollKey
+		SnapshotSeqNo  int64
+		PollProperties []exported.PollProperty
+	}
+	mock.lockInitializePollWithSnapshot.RLock()
+	calls = mock.calls.InitializePollWithSnapshot
+	mock.lockInitializePollWithSnapshot.RUnlock()
+	return calls
+}
+
 // Ensure, that SignerMock does implement types.Signer.
 // If this is not the case, regenerate this file with moq.
 var _ types.Signer = &SignerMock{}
@@ -167,9 +228,6 @@ var _ types.Signer = &SignerMock{}
 // 			},
 // 			AssignNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error {
 // 				panic("mock out the AssignNextKey method")
-// 			},
-// 			EnqueueSignFunc: func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-// 				panic("mock out the EnqueueSign method")
 // 			},
 // 			GetCurrentKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
@@ -231,6 +289,9 @@ var _ types.Signer = &SignerMock{}
 // 			SetSigStatusFunc: func(ctx sdk.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
 // 				panic("mock out the SetSigStatus method")
 // 			},
+// 			StartSignFunc: func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface{InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error}) error {
+// 				panic("mock out the StartSign method")
+// 			},
 // 		}
 //
 // 		// use mockedSigner in code that requires types.Signer
@@ -243,9 +304,6 @@ type SignerMock struct {
 
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error
-
-	// EnqueueSignFunc mocks the EnqueueSign method.
-	EnqueueSignFunc func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -307,6 +365,11 @@ type SignerMock struct {
 	// SetSigStatusFunc mocks the SetSigStatus method.
 	SetSigStatusFunc func(ctx sdk.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
 
+	// StartSignFunc mocks the StartSign method.
+	StartSignFunc func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+		InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+	}) error
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
@@ -332,13 +395,6 @@ type SignerMock struct {
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
-		// EnqueueSign holds details about calls to the EnqueueSign method.
-		EnqueueSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Info is the info argument value.
-			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -502,10 +558,22 @@ type SignerMock struct {
 			// Status is the status argument value.
 			Status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus
 		}
+		// StartSign holds details about calls to the StartSign method.
+		StartSign []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Info is the info argument value.
+			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+			// Snapshotter is the snapshotter argument value.
+			Snapshotter snapshot.Snapshotter
+			// Voter is the voter argument value.
+			Voter interface {
+				InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+			}
+		}
 	}
 	lockAssertMatchesRequirements              sync.RWMutex
 	lockAssignNextKey                          sync.RWMutex
-	lockEnqueueSign                            sync.RWMutex
 	lockGetCurrentKey                          sync.RWMutex
 	lockGetCurrentKeyID                        sync.RWMutex
 	lockGetExternalKeyIDs                      sync.RWMutex
@@ -526,6 +594,7 @@ type SignerMock struct {
 	lockSetKeyRole                             sync.RWMutex
 	lockSetSig                                 sync.RWMutex
 	lockSetSigStatus                           sync.RWMutex
+	lockStartSign                              sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -615,41 +684,6 @@ func (mock *SignerMock) AssignNextKeyCalls() []struct {
 	mock.lockAssignNextKey.RLock()
 	calls = mock.calls.AssignNextKey
 	mock.lockAssignNextKey.RUnlock()
-	return calls
-}
-
-// EnqueueSign calls EnqueueSignFunc.
-func (mock *SignerMock) EnqueueSign(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo) (int64, error) {
-	if mock.EnqueueSignFunc == nil {
-		panic("SignerMock.EnqueueSignFunc: method is nil but Signer.EnqueueSign was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}{
-		Ctx:  ctx,
-		Info: info,
-	}
-	mock.lockEnqueueSign.Lock()
-	mock.calls.EnqueueSign = append(mock.calls.EnqueueSign, callInfo)
-	mock.lockEnqueueSign.Unlock()
-	return mock.EnqueueSignFunc(ctx, info)
-}
-
-// EnqueueSignCalls gets all the calls that were made to EnqueueSign.
-// Check the length with:
-//     len(mockedSigner.EnqueueSignCalls())
-func (mock *SignerMock) EnqueueSignCalls() []struct {
-	Ctx  sdk.Context
-	Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	}
-	mock.lockEnqueueSign.RLock()
-	calls = mock.calls.EnqueueSign
-	mock.lockEnqueueSign.RUnlock()
 	return calls
 }
 
@@ -1394,6 +1428,57 @@ func (mock *SignerMock) SetSigStatusCalls() []struct {
 	mock.lockSetSigStatus.RLock()
 	calls = mock.calls.SetSigStatus
 	mock.lockSetSigStatus.RUnlock()
+	return calls
+}
+
+// StartSign calls StartSignFunc.
+func (mock *SignerMock) StartSign(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+	InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+}) error {
+	if mock.StartSignFunc == nil {
+		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
+	}
+	callInfo := struct {
+		Ctx         sdk.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter snapshot.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+		}
+	}{
+		Ctx:         ctx,
+		Info:        info,
+		Snapshotter: snapshotter,
+		Voter:       voter,
+	}
+	mock.lockStartSign.Lock()
+	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
+	mock.lockStartSign.Unlock()
+	return mock.StartSignFunc(ctx, info, snapshotter, voter)
+}
+
+// StartSignCalls gets all the calls that were made to StartSign.
+// Check the length with:
+//     len(mockedSigner.StartSignCalls())
+func (mock *SignerMock) StartSignCalls() []struct {
+	Ctx         sdk.Context
+	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+	Snapshotter snapshot.Snapshotter
+	Voter       interface {
+		InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+	}
+} {
+	var calls []struct {
+		Ctx         sdk.Context
+		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
+		Snapshotter snapshot.Snapshotter
+		Voter       interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+		}
+	}
+	mock.lockStartSign.RLock()
+	calls = mock.calls.StartSign
+	mock.lockStartSign.RUnlock()
 	return calls
 }
 

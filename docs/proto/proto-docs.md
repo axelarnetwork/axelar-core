@@ -830,11 +830,10 @@ SignInfo holds information about a sign request
 | ---- | ------ | ----------- |
 | SIG_STATUS_UNSPECIFIED | 0 |  |
 | SIG_STATUS_QUEUED | 1 |  |
-| SIG_STATUS_SCHEDULED | 2 |  |
-| SIG_STATUS_SIGNING | 3 |  |
-| SIG_STATUS_SIGNED | 4 |  |
-| SIG_STATUS_ABORTED | 5 |  |
-| SIG_STATUS_INVALID | 6 |  |
+| SIG_STATUS_SIGNING | 2 |  |
+| SIG_STATUS_SIGNED | 3 |  |
+| SIG_STATUS_ABORTED | 4 |  |
+| SIG_STATUS_INVALID | 5 |  |
 
 
  <!-- end enums -->
@@ -2492,7 +2491,6 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `batched_commands_id` | [bytes](#bytes) |  |  |
-| `position` | [int64](#int64) |  |  |
 
 
 
@@ -2525,7 +2523,6 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [string](#string) |  |  |
-| `position` | [int64](#int64) |  |  |
 
 
 

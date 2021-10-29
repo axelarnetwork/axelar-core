@@ -63,7 +63,17 @@ func setup() *testSetup {
 	voter := &tssMock.VoterMock{
 		InitializePollWithSnapshotFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
 	}
-	snapshotter := &snapMock.SnapshotterMock{}
+	snapshotter := &snapMock.SnapshotterMock{
+		GetValidatorIllegibilityFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
+			return snapshot.None, nil
+		},
+		GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) {
+			if seqNo == snap.Counter {
+				return snap, true
+			}
+			return snapshot.Snapshot{}, false
+		},
+	}
 
 	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
@@ -123,6 +133,7 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 		GetConsensusPowerFunc: func(sdk.Int) int64 { return power },
 		GetConsAddrFunc:       func() (sdk.ConsAddress, error) { return address.Bytes(), nil },
 		IsJailedFunc:          func() bool { return false },
+		StringFunc:            func() string { return address.String() },
 	}, power)
 }
 
