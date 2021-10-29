@@ -22,13 +22,13 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
-	requestHeartbeat(ctx, keeper, nexus)
+	emitHeartbeatEvent(ctx, keeper, nexus)
 	sequentialSign(ctx, keeper.GetSignQueue(ctx), keeper, snapshotter, voter)
 
 	return nil
 }
 
-func requestHeartbeat(ctx sdk.Context, keeper keeper.Keeper, nexus types.Nexus) {
+func emitHeartbeatEvent(ctx sdk.Context, keeper keeper.Keeper, nexus types.Nexus) {
 	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetAckPeriodInBlocks(ctx)) == 0 {
 		var keyIDs []exported.KeyID
 		for _, chain := range nexus.GetChains(ctx) {
@@ -81,8 +81,10 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 			if signShares > maxSignShares {
 				return
 			}
-			requestSign(ctx, k, voter, signInfo, snap)
-			ctx.Logger().Debug(fmt.Sprintf("scheduling sign %s", signInfo.SigID))
+			emitSignStartEvent(ctx, k, voter, signInfo, snap)
+			k.SetInfoForSig(ctx, signInfo.SigID, signInfo)
+			k.SetSigStatus(ctx, signInfo.SigID, exported.SigStatus_Signing)
+			ctx.Logger().Debug(fmt.Sprintf("starting sign %s", signInfo.SigID))
 			i++
 		case exported.SigStatus_Signing:
 			signShares += snap.CorruptionThreshold + 1
@@ -98,7 +100,7 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 }
 
 // request proxies to initiate a tss signing protocol using the specified signing metadata
-func requestSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
+func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, info exported.SignInfo, snap snapshot.Snapshot) {
 	var nonParticipantShareCounts []int64
 	var nonParticipants []string
 
@@ -136,9 +138,6 @@ func requestSign(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoller, inf
 		sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)),
 		sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
 	))
-
-	k.SetInfoForSig(ctx, info.SigID, info)
-	k.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signing)
 
 	k.Logger(ctx).Info(fmt.Sprintf("next sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)),
 		types.AttributeKeySigID, info.SigID,
