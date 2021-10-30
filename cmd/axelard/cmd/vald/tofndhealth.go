@@ -111,7 +111,7 @@ func checkTofnd(_ context.Context, clientCtx client.Context, serverCtx *server.C
 		return err
 	}
 
-	nopeLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
+	nopLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 	gg20client, err := tss.CreateTOFNDClient(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, nopeLogger)
 	if err != nil {
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
