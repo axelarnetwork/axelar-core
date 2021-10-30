@@ -30,13 +30,13 @@ const (
 	tokenDenom = "uaxl"
 	minBalance = 5000000
 
-	flagCheckTofnd       = "check-tofnd"
-	flagCheckBroadcaster = "check-broadcaster"
-	flagCheckOperator    = "check-operator"
-	flagBroadcasterAddr  = "broadcaster-addr"
-	flagContextTimeout   = "context-timeout"
-	flagTofndHost        = "tofnd-host"
-	flagTofndPort        = "tofnd-port"
+	flagSkipTofnd       = "skip-tofnd"
+	flagSkipBroadcaster = "skip-broadcaster"
+	flagSkipOperator    = "skip-operator"
+	flagBroadcasterAddr = "broadcaster-addr"
+	flagContextTimeout  = "context-timeout"
+	flagTofndHost       = "tofnd-host"
+	flagTofndPort       = "tofnd-port"
 
 	defaultTimeout time.Duration = 2 * time.Hour
 )
@@ -52,21 +52,21 @@ func GetHealthCheckCommand() *cobra.Command {
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			if serverCtx.Viper.GetBool(flagCheckTofnd) {
+			if !serverCtx.Viper.GetBool(flagSkipTofnd) {
 				err = checkTofnd(clientCtx, serverCtx)
 				if err != nil {
 					return err
 				}
 			}
 
-			if serverCtx.Viper.GetBool(flagCheckBroadcaster) {
+			if !serverCtx.Viper.GetBool(flagSkipBroadcaster) {
 				err = checkBroadcaster(cmd.Context(), clientCtx, serverCtx)
 				if err != nil {
 					return err
 				}
 			}
 
-			if serverCtx.Viper.GetBool(flagCheckOperator) {
+			if !serverCtx.Viper.GetBool(flagSkipOperator) {
 				err = checkOperator(cmd.Context(), clientCtx, serverCtx)
 				if err != nil {
 					return err
@@ -83,9 +83,9 @@ func GetHealthCheckCommand() *cobra.Command {
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String(flagContextTimeout, defaultTimeout.String(), "context timeout for the grpc")
 	cmd.PersistentFlags().String(flagBroadcasterAddr, "", "broadcaster address")
-	cmd.PersistentFlags().Bool(flagCheckTofnd, true, "perform simple tofnd ping")
-	cmd.PersistentFlags().Bool(flagCheckBroadcaster, true, fmt.Sprintf("assert that broadcaster has funds (requires --%s)", flagBroadcasterAddr))
-	cmd.PersistentFlags().Bool(flagCheckOperator, true, fmt.Sprintf("perform healthcheck upon the operator address (requires --%s)", flagBroadcasterAddr))
+	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
+	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
+	cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
