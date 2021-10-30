@@ -49,6 +49,7 @@ type Keeper struct {
 	params   params.Subspace
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
+	router   types.Router
 }
 
 // AssertMatchesRequirements checks if the properties of the given key match the requirements for the given role
@@ -124,6 +125,28 @@ func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.S
 // Logger returns a module-specific logger
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// SetRouter sets the tss router. It will panic if called more than once
+func (k *Keeper) SetRouter(router types.Router) {
+	if k.router != nil {
+		panic("router already set")
+	}
+
+	k.router = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additionals handlers from being registered after the keeper is initialized.
+	k.router.Seal()
+}
+
+// GetRouter returns the tss router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetRouter() types.Router {
+	if k.router == nil {
+		k.SetRouter(types.NewRouter())
+	}
+
+	return k.router
 }
 
 // SetParams sets the tss module's parameters
