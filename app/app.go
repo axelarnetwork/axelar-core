@@ -359,6 +359,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK,
 	)
+
 	snapK := snapKeeper.NewKeeper(
 		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK,
 		slashingK, tssK,
@@ -372,6 +373,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey],
 	)
+
+	tssRouter := tssTypes.NewRouter()
+	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK)).
+		AddRoute(btcTypes.ModuleName, btcKeeper.NewTssHandler(btcK, tssK))
+	tssK.SetRouter(tssRouter)
 
 	/****  Module Options ****/
 

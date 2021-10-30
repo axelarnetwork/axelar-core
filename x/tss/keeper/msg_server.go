@@ -530,6 +530,14 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
+			r := s.GetRouter()
+			if r.HasRoute(info.RequestModule) {
+				handler := r.GetRoute(info.RequestModule)
+				err := handler(ctx, info)
+				if err != nil {
+					s.Logger(ctx).Error(fmt.Sprintf("error while routing signature to module %s: %s", info.RequestModule, err))
+				}
+			}
 			return &types.VoteSigResponse{}, nil
 		}
 

@@ -68,6 +68,7 @@ type TSSKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) (params Params)
+	GetRouter() Router
 	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte)
 	HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool
 	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte
