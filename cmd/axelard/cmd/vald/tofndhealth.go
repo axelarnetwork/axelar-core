@@ -28,6 +28,7 @@ import (
 const (
 	keyID      = "testkey"
 	tokenDenom = "uaxl"
+	minBalance = 5000000
 
 	flagCheckTofnd       = "check-tofnd"
 	flagCheckBroadcaster = "check-broadcaster"
@@ -147,7 +148,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 		return err
 	}
 
-	if res.Balance.Amount.LTE(sdk.ZeroInt()) {
+	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
 		return fmt.Errorf("broadcaster has no funds")
 	}
 
