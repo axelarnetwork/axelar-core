@@ -87,7 +87,7 @@ type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *ser
 func execCmd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, name string, cmd checkCmd) {
 	fmt.Printf("%s check: ", name)
 	if !serverCtx.Viper.GetBool(flagSkipTofnd) {
-		err := cmd(nil, clientCtx, serverCtx)
+		err := cmd(ctx, clientCtx, serverCtx)
 		if err != nil {
 			fmt.Printf("failed (%s)\n", err.Error())
 			allGood = false
