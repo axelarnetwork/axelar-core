@@ -149,13 +149,18 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
-		return fmt.Errorf("broadcaster hdoes not have enough funds (minimum blance is %d%s)", minBalance, tokenDenom)
+		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, tokenDenom)
 	}
 
 	return nil
 }
 
 func checkOperator(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
+	addr := serverCtx.Viper.GetString(flagBroadcasterAddr)
+	if addr == "" {
+		return fmt.Errorf("no broadcaster address specified")
+	}
+
 	bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", snapshotTypes.QuerierRoute, keeper.QValidators))
 	if err != nil {
 		return err
@@ -163,11 +168,6 @@ func checkOperator(ctx context.Context, clientCtx client.Context, serverCtx *ser
 
 	var resValidators types.QueryValidatorsResponse
 	types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &resValidators)
-
-	addr := serverCtx.Viper.GetString(flagBroadcasterAddr)
-	if addr == "" {
-		return fmt.Errorf("no broadcaster address specified")
-	}
 
 	bz, _, err = clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", snapshotTypes.QuerierRoute, keeper.QOperator, addr))
 	if err != nil {
