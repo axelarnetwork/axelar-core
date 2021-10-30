@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -55,9 +56,9 @@ func GetHealthCheckCommand() *cobra.Command {
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			execCmd(nil, clientCtx, serverCtx, "tofnd", checkTofnd)
-			execCmd(cmd.Context(), clientCtx, serverCtx, "broadcaster", checkBroadcaster)
-			execCmd(cmd.Context(), clientCtx, serverCtx, "operator", checkOperator)
+			execCmd(nil, clientCtx, serverCtx, flagSkipTofnd, checkTofnd)
+			execCmd(cmd.Context(), clientCtx, serverCtx, flagSkipBroadcaster, checkBroadcaster)
+			execCmd(cmd.Context(), clientCtx, serverCtx, flagSkipOperator, checkOperator)
 
 			// enforce a non-zero exiting code in case health checks fail
 			// without printing cobra output
@@ -84,9 +85,9 @@ func GetHealthCheckCommand() *cobra.Command {
 
 type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error
 
-func execCmd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, name string, cmd checkCmd) {
-	fmt.Printf("%s check: ", name)
-	if !serverCtx.Viper.GetBool(flagSkipTofnd) {
+func execCmd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, flag string, cmd checkCmd) {
+	fmt.Printf("%s check: ", strings.TrimPrefix(flag, "skip-"))
+	if !serverCtx.Viper.GetBool(flag) {
 		err := cmd(ctx, clientCtx, serverCtx)
 		if err != nil {
 			fmt.Printf("failed (%s)\n", err.Error())
