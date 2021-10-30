@@ -188,8 +188,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	// add vald after the overwrite so it can set its own defaults
 	rootCmd.AddCommand(vald.GetValdCommand())
 
-	// add tofnd ping command
-	rootCmd.AddCommand(vald.GetTofndPingCommand())
+	// add health check command
+	rootCmd.AddCommand(vald.GetHealthCheckCommand())
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
