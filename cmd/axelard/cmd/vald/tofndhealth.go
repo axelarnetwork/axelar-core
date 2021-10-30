@@ -42,6 +42,8 @@ const (
 	defaultTimeout time.Duration = 2 * time.Hour
 )
 
+var allGood bool = true
+
 // GetHealthCheckCommand returns the command to execute a node health check
 func GetHealthCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -52,46 +54,10 @@ func GetHealthCheckCommand() *cobra.Command {
 				panic(err)
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			allGood := true
 
-			fmt.Printf("tofnd check: ")
-			if !serverCtx.Viper.GetBool(flagSkipTofnd) {
-				err = checkTofnd(clientCtx, serverCtx)
-				if err != nil {
-					fmt.Printf("failed (%s)\n", err.Error())
-					allGood = false
-				} else {
-					fmt.Println("passed")
-				}
-			} else {
-				fmt.Println("skipped")
-			}
-
-			fmt.Printf("broadcaster check: ")
-			if !serverCtx.Viper.GetBool(flagSkipBroadcaster) {
-				err = checkBroadcaster(cmd.Context(), clientCtx, serverCtx)
-				if err != nil {
-					fmt.Printf("failed (%s)\n", err.Error())
-					allGood = false
-				} else {
-					fmt.Println("passed")
-				}
-			} else {
-				fmt.Println("skipped")
-			}
-
-			fmt.Printf("operator check: ")
-			if !serverCtx.Viper.GetBool(flagSkipOperator) {
-				err = checkOperator(cmd.Context(), clientCtx, serverCtx)
-				if err != nil {
-					fmt.Printf("failed (%s)\n", err.Error())
-					allGood = false
-				} else {
-					fmt.Println("passed")
-				}
-			} else {
-				fmt.Println("skipped")
-			}
+			execCmd(nil, clientCtx, serverCtx, "tofnd", checkTofnd)
+			execCmd(cmd.Context(), clientCtx, serverCtx, "broadcaster", checkBroadcaster)
+			execCmd(cmd.Context(), clientCtx, serverCtx, "operator", checkOperator)
 
 			// enforce a non-zero exiting code in case health checks fail
 			// without printing cobra output
@@ -116,7 +82,24 @@ func GetHealthCheckCommand() *cobra.Command {
 	return cmd
 }
 
-func checkTofnd(clientCtx client.Context, serverCtx *server.Context) error {
+type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error
+
+func execCmd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, name string, cmd checkCmd) {
+	fmt.Printf("%s check: ", name)
+	if !serverCtx.Viper.GetBool(flagSkipTofnd) {
+		err := cmd(nil, clientCtx, serverCtx)
+		if err != nil {
+			fmt.Printf("failed (%s)\n", err.Error())
+			allGood = false
+		} else {
+			fmt.Println("passed")
+		}
+	} else {
+		fmt.Println("skipped")
+	}
+}
+
+func checkTofnd(_ context.Context, clientCtx client.Context, serverCtx *server.Context) error {
 	valdCfg := config.DefaultValdConfig()
 	if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 		panic(err)
