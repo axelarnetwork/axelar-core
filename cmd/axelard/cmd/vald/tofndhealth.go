@@ -44,7 +44,10 @@ const (
 	defaultTimeout time.Duration = 2 * time.Hour
 )
 
-var allGood bool = true
+var (
+	allGood bool = true
+	timeout time.Duration
+)
 
 // GetHealthCheckCommand returns the command to execute a node health check
 func GetHealthCheckCommand() *cobra.Command {
@@ -53,13 +56,18 @@ func GetHealthCheckCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
-				panic(err)
+				return err
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			execCheck(nil, clientCtx, serverCtx, flagSkipTofnd, checkTofnd)
+			timeout, err = time.ParseDuration(serverCtx.Viper.GetString(flagContextTimeout))
+			if err != nil {
+				return err
+			}
+
+			execCheck(context.Background(), clientCtx, serverCtx, flagSkipTofnd, checkTofnd)
 			execCheck(cmd.Context(), clientCtx, serverCtx, flagSkipBroadcaster, checkBroadcaster)
-			execCheck(cmd.Context(), clientCtx, serverCtx, flagSkipOperator, checkOperator)
+			execCheck(nil, clientCtx, serverCtx, flagSkipOperator, checkOperator)
 
 			// enforce a non-zero exiting code in case health checks fail
 			// without printing cobra output
@@ -74,7 +82,7 @@ func GetHealthCheckCommand() *cobra.Command {
 	defaultConf := tssTypes.DefaultConfig()
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
-	cmd.PersistentFlags().String(flagContextTimeout, defaultTimeout.String(), "context timeout for the grpc")
+	cmd.PersistentFlags().String(flagContextTimeout, defaultTimeout.String(), "context timeout for grpcs")
 	cmd.PersistentFlags().String(flagOperatorAddr, "", "broadcaster address")
 	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
 	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
@@ -101,15 +109,10 @@ func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.
 	}
 }
 
-func checkTofnd(_ context.Context, clientCtx client.Context, serverCtx *server.Context) error {
+func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
 	valdCfg := config.DefaultValdConfig()
 	if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 		panic(err)
-	}
-
-	timeout, err := time.ParseDuration(serverCtx.Viper.GetString(flagContextTimeout))
-	if err != nil {
-		return err
 	}
 
 	nopLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
@@ -118,12 +121,13 @@ func checkTofnd(_ context.Context, clientCtx client.Context, serverCtx *server.C
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 	}
 
-	grpcCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	request := &tofnd.KeyPresenceRequest{
 		// we do not need to look for a key ID that exists to obtain a successful healthcheck,
 		// all we need to do is obtain err == nil && response != FAIL
+		// TODO: this kind of check should have its own dedicated GRPC
 		KeyUid: keyID,
 	}
 
@@ -173,7 +177,11 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 
 	queryClient := bankTypes.NewQueryClient(clientCtx)
 	params := bankTypes.NewQueryBalanceRequest(broadcaster, tokenDenom)
-	res, err := queryClient.Balance(ctx, params)
+
+	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	res, err := queryClient.Balance(grpcCtx, params)
 	if err != nil {
 		return err
 	}
@@ -185,7 +193,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	return nil
 }
 
-func checkOperator(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
+func checkOperator(_ context.Context, clientCtx client.Context, serverCtx *server.Context) error {
 	addr := serverCtx.Viper.GetString(flagOperatorAddr)
 	if addr == "" {
 		return fmt.Errorf("no operator address specified")
