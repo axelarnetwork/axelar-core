@@ -96,17 +96,19 @@ type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *ser
 
 func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, flag string, cmd checkCmd) {
 	fmt.Printf("%s check: ", strings.TrimPrefix(flag, "skip-"))
-	if !serverCtx.Viper.GetBool(flag) {
-		err := cmd(ctx, clientCtx, serverCtx)
-		if err != nil {
-			fmt.Printf("failed (%s)\n", err.Error())
-			allGood = false
-		} else {
-			fmt.Println("passed")
-		}
-	} else {
+	if serverCtx.Viper.GetBool(flag) {
 		fmt.Println("skipped")
+		return
 	}
+
+	err := cmd(ctx, clientCtx, serverCtx)
+	if err != nil {
+		fmt.Printf("failed (%s)\n", err.Error())
+		allGood = false
+		return
+	}
+
+	fmt.Println("passed")
 }
 
 func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
