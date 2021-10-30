@@ -53,7 +53,7 @@ func GetHealthCheckCommand() *cobra.Command {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
 			if serverCtx.Viper.GetBool(flagCheckTofnd) {
-				err = tofndPing(clientCtx, serverCtx)
+				err = checkTofnd(clientCtx, serverCtx)
 				if err != nil {
 					return err
 				}
@@ -91,7 +91,7 @@ func GetHealthCheckCommand() *cobra.Command {
 	return cmd
 }
 
-func tofndPing(clientCtx client.Context, serverCtx *server.Context) error {
+func checkTofnd(clientCtx client.Context, serverCtx *server.Context) error {
 	valdCfg := config.DefaultValdConfig()
 	if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 		panic(err)
