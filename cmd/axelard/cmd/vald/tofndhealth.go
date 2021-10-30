@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -51,29 +52,53 @@ func GetHealthCheckCommand() *cobra.Command {
 				panic(err)
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
+			allGood := true
 
+			fmt.Printf("tofnd check: ")
 			if !serverCtx.Viper.GetBool(flagSkipTofnd) {
 				err = checkTofnd(clientCtx, serverCtx)
 				if err != nil {
-					return err
+					fmt.Printf("failed (%s)\n", err.Error())
+					allGood = false
+				} else {
+					fmt.Println("passed")
 				}
+			} else {
+				fmt.Println("skipped")
 			}
 
+			fmt.Printf("broadcaster check: ")
 			if !serverCtx.Viper.GetBool(flagSkipBroadcaster) {
 				err = checkBroadcaster(cmd.Context(), clientCtx, serverCtx)
 				if err != nil {
-					return err
+					fmt.Printf("failed (%s)\n", err.Error())
+					allGood = false
+				} else {
+					fmt.Println("passed")
 				}
+			} else {
+				fmt.Println("skipped")
 			}
 
+			fmt.Printf("operator check: ")
 			if !serverCtx.Viper.GetBool(flagSkipOperator) {
 				err = checkOperator(cmd.Context(), clientCtx, serverCtx)
 				if err != nil {
-					return err
+					fmt.Printf("failed (%s)\n", err.Error())
+					allGood = false
+				} else {
+					fmt.Println("passed")
 				}
+			} else {
+				fmt.Println("skipped")
 			}
 
-			clientCtx.PrintString("All Good!\n")
+			// enforce a non-zero exiting code in case health checks fail
+			// without printing cobra output
+			if !allGood {
+				os.Exit(1)
+			}
+
 			return nil
 		},
 	}
