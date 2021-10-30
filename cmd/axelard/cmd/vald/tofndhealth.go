@@ -149,7 +149,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
-		return fmt.Errorf("broadcaster has no funds")
+		return fmt.Errorf("broadcaster hdoes not have enough funds (minimum blance is %d%s)", minBalance, tokenDenom)
 	}
 
 	return nil
