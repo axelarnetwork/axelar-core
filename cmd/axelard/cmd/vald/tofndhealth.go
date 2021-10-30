@@ -2,6 +2,7 @@ package vald
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -35,7 +36,7 @@ const (
 	flagSkipTofnd       = "skip-tofnd"
 	flagSkipBroadcaster = "skip-broadcaster"
 	flagSkipOperator    = "skip-operator"
-	flagBroadcasterAddr = "broadcaster-addr"
+	flagOperatorAddr    = "operator-addr"
 	flagContextTimeout  = "context-timeout"
 	flagTofndHost       = "tofnd-host"
 	flagTofndPort       = "tofnd-port"
@@ -74,7 +75,7 @@ func GetHealthCheckCommand() *cobra.Command {
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String(flagContextTimeout, defaultTimeout.String(), "context timeout for the grpc")
-	cmd.PersistentFlags().String(flagBroadcasterAddr, "", "broadcaster address")
+	cmd.PersistentFlags().String(flagOperatorAddr, "", "broadcaster address")
 	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
 	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
 	cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
@@ -141,17 +142,37 @@ func checkTofnd(_ context.Context, clientCtx client.Context, serverCtx *server.C
 }
 
 func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
-	str := serverCtx.Viper.GetString(flagBroadcasterAddr)
+	str := serverCtx.Viper.GetString(flagOperatorAddr)
 	if str == "" {
-		return fmt.Errorf("no broadcaster address specified")
+		return fmt.Errorf("no operator address specified")
 	}
-	addr, err := sdk.AccAddressFromBech32(str)
+	operator, err := sdk.ValAddressFromBech32(str)
 	if err != nil {
 		return err
 	}
 
+	bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", snapshotTypes.QuerierRoute, keeper.QProxy, operator.String()))
+	if err != nil {
+		return err
+	}
+
+	reply := struct {
+		Address string `json:"address"`
+		Status  string `json:"status"`
+	}{}
+	json.Unmarshal(bz, &reply)
+
+	broadcaster, err := sdk.AccAddressFromBech32(reply.Address)
+	if err != nil {
+		return err
+	}
+
+	if reply.Status != "active" {
+		return fmt.Errorf("broadcaster for operator %s not active", operator.String())
+	}
+
 	queryClient := bankTypes.NewQueryClient(clientCtx)
-	params := bankTypes.NewQueryBalanceRequest(addr, tokenDenom)
+	params := bankTypes.NewQueryBalanceRequest(broadcaster, tokenDenom)
 	res, err := queryClient.Balance(ctx, params)
 	if err != nil {
 		return err
@@ -165,9 +186,9 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 }
 
 func checkOperator(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
-	addr := serverCtx.Viper.GetString(flagBroadcasterAddr)
+	addr := serverCtx.Viper.GetString(flagOperatorAddr)
 	if addr == "" {
-		return fmt.Errorf("no broadcaster address specified")
+		return fmt.Errorf("no operator address specified")
 	}
 
 	bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", snapshotTypes.QuerierRoute, keeper.QValidators))
@@ -177,12 +198,6 @@ func checkOperator(ctx context.Context, clientCtx client.Context, serverCtx *ser
 
 	var resValidators types.QueryValidatorsResponse
 	types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &resValidators)
-
-	bz, _, err = clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", snapshotTypes.QuerierRoute, keeper.QOperator, addr))
-	if err != nil {
-		return err
-	}
-	addr = string(bz)
 
 	for _, v := range resValidators.Validators {
 		if v.OperatorAddress == addr {
