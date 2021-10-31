@@ -32,21 +32,18 @@ const (
 	keyID      = "testkey"
 	tokenDenom = "uaxl"
 	minBalance = 5000000
+	timeout    = time.Hour
 
 	flagSkipTofnd       = "skip-tofnd"
 	flagSkipBroadcaster = "skip-broadcaster"
 	flagSkipOperator    = "skip-operator"
 	flagOperatorAddr    = "operator-addr"
-	flagContextTimeout  = "context-timeout"
 	flagTofndHost       = "tofnd-host"
 	flagTofndPort       = "tofnd-port"
-
-	defaultTimeout time.Duration = 2 * time.Hour
 )
 
 var (
 	allGood bool = true
-	timeout time.Duration
 )
 
 // GetHealthCheckCommand returns the command to execute a node health check
@@ -59,11 +56,6 @@ func GetHealthCheckCommand() *cobra.Command {
 				return err
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
-
-			timeout, err = time.ParseDuration(serverCtx.Viper.GetString(flagContextTimeout))
-			if err != nil {
-				return err
-			}
 
 			execCheck(context.Background(), clientCtx, serverCtx, flagSkipTofnd, checkTofnd)
 			execCheck(cmd.Context(), clientCtx, serverCtx, flagSkipBroadcaster, checkBroadcaster)
@@ -82,7 +74,6 @@ func GetHealthCheckCommand() *cobra.Command {
 	defaultConf := tssTypes.DefaultConfig()
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
-	cmd.PersistentFlags().String(flagContextTimeout, defaultTimeout.String(), "context timeout for grpcs")
 	cmd.PersistentFlags().String(flagOperatorAddr, "", "broadcaster address")
 	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
 	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
