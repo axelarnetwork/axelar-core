@@ -37,6 +37,7 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 			SendFunc:      func(*tofnd.MessageIn) error { return nil },
 			CloseSendFunc: func() error { return nil },
 		}
+
 		cli := &mock.ClientMock{
 			KeygenFunc: func(context.Context, ...grpc.CallOption) (tofnd.GG20_KeygenClient, error) {
 				return keygenClient, nil

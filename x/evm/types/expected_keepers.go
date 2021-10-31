@@ -87,7 +87,7 @@ type ParamsKeeper interface {
 
 // TSS exposes key functionality
 type TSS interface {
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
+	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
 }
 
 // Voter exposes voting functionality

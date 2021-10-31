@@ -16,6 +16,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestStartSign_EnoughActiveValidators(t *testing.T) {
@@ -93,7 +94,12 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	}
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	keyInfo := types.KeyInfo{
+		KeyID:   keyID,
+		KeyRole: exported.MasterKey,
+		KeyType: exported.Threshold,
+	}
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
 	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
 
@@ -184,7 +190,12 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	keyInfo := types.KeyInfo{
+		KeyID:   keyID,
+		KeyRole: exported.MasterKey,
+		KeyType: exported.Threshold,
+	}
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
 	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
 
@@ -228,8 +239,13 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	}
 
 	// start keygen to record the snapshot for each key
-	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
-	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+	keyInfo := types.KeyInfo{
+		KeyID:   keyID,
+		KeyRole: exported.MasterKey,
+		KeyType: exported.Threshold,
+	}
+	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
+	s.Keeper.SetKey(s.Ctx, keyID, generatePubKey())
 
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, exported.SignInfo{
@@ -247,7 +263,12 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 		s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
 	}
 
-	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyID, exported.MasterKey, snap)
+	keyInfo = types.KeyInfo{
+		KeyID:   keyID,
+		KeyRole: exported.MasterKey,
+		KeyType: exported.Threshold,
+	}
+	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
 
 	assert.NoError(t, err)

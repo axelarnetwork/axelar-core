@@ -111,7 +111,13 @@ func setup() *testSetup {
 func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole) tss.Key {
 	keyID := exported.KeyID(randDistinctStr.Next())
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
-	err := s.Keeper.StartKeygen(ctx, s.Voter, keyID, tss.MasterKey, snap)
+	keyInfo := types.KeyInfo{
+		KeyID:   keyID,
+		KeyRole: keyRole,
+		KeyType: exported.Threshold,
+	}
+
+	err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
 
 	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
@@ -119,7 +125,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRo
 		panic(err)
 	}
 	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
-	s.Keeper.SetKeyRole(ctx, keyID, keyRole)
+	s.Keeper.SetKeyInfo(ctx, keyInfo)
 
 	return tss.Key{
 		ID:    keyID,
@@ -300,7 +306,8 @@ func TestActiveOldKeys(t *testing.T) {
 		s := setup()
 		chain := bitcoin.Bitcoin
 		iterations := int(rand2.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
-		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))))]
+		// exclude KeyRole external
+		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))-1))]
 		var expectedKeys []exported.Key
 
 		for i := 0; i < iterations; i++ {

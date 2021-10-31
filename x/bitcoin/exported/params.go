@@ -1,6 +1,9 @@
 package exported
 
-import "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+import (
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+)
 
 var (
 	// Bitcoin defines properties of the Bitcoin chain
@@ -8,5 +11,6 @@ var (
 		Name:                  "Bitcoin",
 		NativeAsset:           "satoshi",
 		SupportsForeignAssets: false,
+		KeyType:               tss.Threshold,
 	}
 )

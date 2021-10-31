@@ -6,6 +6,7 @@ import (
 
 	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -45,6 +46,7 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 				Name:                  name,
 				NativeAsset:           nativeAsset,
 				SupportsForeignAssets: true,
+				KeyType:               tss.Multisig,
 			}
 
 			if err := chain.Validate(); err != nil {

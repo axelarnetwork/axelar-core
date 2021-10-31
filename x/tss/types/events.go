@@ -14,6 +14,7 @@ const (
 	AttributeChain   = "chain"
 
 	AttributeKeyKeyID     = "keyID"
+	AttributeKeyKeyType   = "keyType"
 	AttributeKeySigID     = "sigID"
 	AttributeKeySigModule = "sigModule"
 	AttributeKeySigData   = "sigData"
@@ -28,6 +29,7 @@ const (
 	AttributeKeyTimeout                   = "timeout"
 	AttributeKeyRole                      = "keyRole"
 	AttributeKeyKeyIDs                    = "keyIDs"
+	AttributeKeyKeyInfos                  = "keyInfos"
 )
 
 // Event attribute values

@@ -104,7 +104,6 @@ type Signer interface {
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (tss.Key, bool)
-	SetKeyRole(ctx sdk.Context, keyID tss.KeyID, keyRole tss.KeyRole)
 	GetRotationCountOfKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
 	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)

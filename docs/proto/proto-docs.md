@@ -10,6 +10,20 @@
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
+  
+- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [PubKeyInfo](#tss.exported.v1beta1.PubKeyInfo)
+    - [SignInfo](#tss.exported.v1beta1.SignInfo)
+  
+    - [AckType](#tss.exported.v1beta1.AckType)
+    - [KeyRole](#tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [KeyType](#tss.exported.v1beta1.KeyType)
+    - [SigStatus](#tss.exported.v1beta1.SigStatus)
+  
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
     - [Chain](#nexus.exported.v1beta1.Chain)
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
@@ -42,19 +56,6 @@
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
-  
-- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
-    - [Threshold](#utils.v1beta1.Threshold)
-  
-- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
-    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
-    - [SignInfo](#tss.exported.v1beta1.SignInfo)
-  
-    - [AckType](#tss.exported.v1beta1.AckType)
-    - [KeyRole](#tss.exported.v1beta1.KeyRole)
-    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
-    - [KeyType](#tss.exported.v1beta1.KeyType)
-    - [SigStatus](#tss.exported.v1beta1.SigStatus)
   
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
@@ -295,6 +296,11 @@
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
+- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [KeyInfo](#tss.v1beta1.KeyInfo)
+    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
+    - [MultisigKeyInfo](#tss.v1beta1.MultisigKeyInfo)
+  
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest)
     - [HeartBeatResponse](#tss.v1beta1.HeartBeatResponse)
@@ -309,6 +315,8 @@
     - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
     - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
+    - [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest)
+    - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -316,10 +324,6 @@
   
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
-  
-- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
-    - [KeygenInfo](#tss.v1beta1.KeygenInfo)
-    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
@@ -394,6 +398,184 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/threshold.proto
+
+
+
+<a name="utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/exported/v1beta1/types.proto
+
+
+
+<a name="tss.exported.v1beta1.KeyRequirement"></a>
+
+### KeyRequirement
+KeyRequirement defines requirements for keys
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `max_total_share_count` | [int64](#int64) |  |  |
+| `min_total_share_count` | [int64](#int64) |  |  |
+| `keygen_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+| `sign_timeout` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.PubKeyInfo"></a>
+
+### PubKeyInfo
+PubKeyInfo holds a pubkey and a signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+| `request_module` | [string](#string) |  |  |
+| `metadata` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.AckType"></a>
+
+### AckType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACK_TYPE_UNSPECIFIED | 0 |  |
+| ACK_TYPE_KEYGEN | 1 |  |
+| ACK_TYPE_SIGN | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyRole"></a>
+
+### KeyRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_ROLE_UNSPECIFIED | 0 |  |
+| KEY_ROLE_MASTER_KEY | 1 |  |
+| KEY_ROLE_SECONDARY_KEY | 2 |  |
+| KEY_ROLE_EXTERNAL_KEY | 3 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+
+### KeyShareDistributionPolicy
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyType"></a>
+
+### KeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_TYPE_UNSPECIFIED | 0 |  |
+| KEY_TYPE_THRESHOLD | 1 |  |
+| KEY_TYPE_MULTISIG | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.SigStatus"></a>
+
+### SigStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_STATUS_UNSPECIFIED | 0 |  |
+| SIG_STATUS_QUEUED | 1 |  |
+| SIG_STATUS_SIGNING | 2 |  |
+| SIG_STATUS_SIGNED | 3 |  |
+| SIG_STATUS_ABORTED | 4 |  |
+| SIG_STATUS_INVALID | 5 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="nexus/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -412,6 +594,7 @@ Chain represents the properties of a registered blockchain
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 
 
 
@@ -804,168 +987,6 @@ Msg defines the axelarnet Msg service.
 
 
  <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="utils/v1beta1/threshold.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## utils/v1beta1/threshold.proto
-
-
-
-<a name="utils.v1beta1.Threshold"></a>
-
-### Threshold
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
-| `denominator` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="tss/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/exported/v1beta1/types.proto
-
-
-
-<a name="tss.exported.v1beta1.KeyRequirement"></a>
-
-### KeyRequirement
-KeyRequirement defines requirements for keys
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
-| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `max_total_share_count` | [int64](#int64) |  |  |
-| `min_total_share_count` | [int64](#int64) |  |  |
-| `keygen_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-| `keygen_timeout` | [int64](#int64) |  |  |
-| `sign_timeout` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="tss.exported.v1beta1.SignInfo"></a>
-
-### SignInfo
-SignInfo holds information about a sign request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `sig_id` | [string](#string) |  |  |
-| `msg` | [bytes](#bytes) |  |  |
-| `snapshot_counter` | [int64](#int64) |  |  |
-| `request_module` | [string](#string) |  |  |
-| `metadata` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="tss.exported.v1beta1.AckType"></a>
-
-### AckType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ACK_TYPE_UNSPECIFIED | 0 |  |
-| ACK_TYPE_KEYGEN | 1 |  |
-| ACK_TYPE_SIGN | 2 |  |
-
-
-
-<a name="tss.exported.v1beta1.KeyRole"></a>
-
-### KeyRole
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_ROLE_UNSPECIFIED | 0 |  |
-| KEY_ROLE_MASTER_KEY | 1 |  |
-| KEY_ROLE_SECONDARY_KEY | 2 |  |
-| KEY_ROLE_EXTERNAL_KEY | 3 |  |
-
-
-
-<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
-
-### KeyShareDistributionPolicy
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
-
-
-
-<a name="tss.exported.v1beta1.KeyType"></a>
-
-### KeyType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_TYPE_UNSPECIFIED | 0 |  |
-| KEY_TYPE_THRESHOLD | 1 |  |
-| KEY_TYPE_MULTISIG | 2 |  |
-
-
-
-<a name="tss.exported.v1beta1.SigStatus"></a>
-
-### SigStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| SIG_STATUS_UNSPECIFIED | 0 |  |
-| SIG_STATUS_QUEUED | 1 |  |
-| SIG_STATUS_SIGNING | 2 |  |
-| SIG_STATUS_SIGNED | 3 |  |
-| SIG_STATUS_ABORTED | 4 |  |
-| SIG_STATUS_INVALID | 5 |  |
-
 
  <!-- end enums -->
 
@@ -4132,6 +4153,74 @@ Params is the parameter set for this module
 
 
 
+<a name="tss/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/types.proto
+
+
+
+<a name="tss.v1beta1.KeyInfo"></a>
+
+### KeyInfo
+KeyInfo holds information about a key
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeygenVoteData"></a>
+
+### KeygenVoteData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `group_recovery_info` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigKeyInfo"></a>
+
+### MultisigKeyInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `timeout` | [int64](#int64) |  |  |
+| `target_key_num` | [int64](#int64) |  |  |
+| `pub_keys` | [bytes](#bytes) | repeated |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="tss/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4305,8 +4394,7 @@ StartKeygenRequest indicate the start of keygen
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_info` | [KeyInfo](#tss.v1beta1.KeyInfo) |  |  |
 
 
 
@@ -4316,6 +4404,33 @@ StartKeygenRequest indicate the start of keygen
 <a name="tss.v1beta1.StartKeygenResponse"></a>
 
 ### StartKeygenResponse
+
+
+
+
+
+
+
+<a name="tss.v1beta1.SubmitMultisigPubKeysRequest"></a>
+
+### SubmitMultisigPubKeysRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_key_infos` | [tss.exported.v1beta1.PubKeyInfo](#tss.exported.v1beta1.PubKeyInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.SubmitMultisigPubKeysResponse"></a>
+
+### SubmitMultisigPubKeysResponse
 
 
 
@@ -4424,55 +4539,7 @@ Msg defines the tss Msg service.
 | `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | ||
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
-
- <!-- end services -->
-
-
-
-<a name="tss/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/v1beta1/types.proto
-
-
-
-<a name="tss.v1beta1.KeygenInfo"></a>
-
-### KeygenInfo
-KeygenInfo holds information about a key
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.KeygenVoteData"></a>
-
-### KeygenVoteData
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pub_key` | [bytes](#bytes) |  |  |
-| `group_recovery_info` | [bytes](#bytes) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
+| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 
  <!-- end services -->
 

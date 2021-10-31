@@ -170,21 +170,6 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 	return grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 }
 
-// CreateMultiSigClient creates a client to communicate with the external tofnd process Multisig service
-func CreateMultiSigClient(host string, port string, timeout time.Duration, logger log.Logger) (rpc.MultiSigClient, error) {
-	tofndServerAddress := host + ":" + port
-	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return nil, err
-	}
-	logger.Debug("successful connection to tofnd gRPC server")
-	multiSigClient := tofnd.NewMultisigClient(conn)
-	return multiSigClient, nil
-}
-
 // NewMgr returns a new tss manager instance
 func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
@@ -264,18 +249,29 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	}
 
 	// check for keys presence according to the IDs included in the event
-	keyIDs := parseHeartBeatParams(mgr.cdc, e.Attributes)
+	keyInfos := parseHeartBeatParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
-	for _, keyID := range keyIDs {
+	for _, keyInfo := range keyInfos {
+
 		grpcCtx, cancel = context.WithTimeout(context.Background(), mgr.Timeout)
 		defer cancel()
 
-		request = &tofnd.KeyPresenceRequest{
-			KeyUid: keyID,
+		switch keyInfo.KeyType {
+		case exported.Threshold:
+			request = &tofnd.KeyPresenceRequest{
+				KeyUid: string(keyInfo.KeyID),
+			}
+			response, err = mgr.client.KeyPresence(grpcCtx, request)
+		case exported.Multisig:
+			request = &tofnd.KeyPresenceRequest{
+				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
+			}
+			response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
+		default:
+			return sdkerrors.Wrapf(err, fmt.Sprintf("unrecognize key type %s", keyInfo.KeyType.SimpleString()))
 		}
 
-		response, err = mgr.client.KeyPresence(grpcCtx, request)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
 		}
@@ -286,7 +282,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 		case tofnd.RESPONSE_ABSENT:
 			// key is absent
 		case tofnd.RESPONSE_PRESENT:
-			present = append(present, exported.KeyID(keyID))
+			present = append(present, keyInfo.KeyID)
 		default:
 			return sdkerrors.Wrap(err, "unknown tofnd response")
 		}
@@ -437,12 +433,12 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 	return broadcastChan, resChan, errChan
 }
 
-func parseHeartBeatParams(cdc *codec.LegacyAmino, attributes map[string]string) []string {
+func parseHeartBeatParams(cdc *codec.LegacyAmino, attributes map[string]string) []tss.KeyInfo {
 	parsers := []*parse.AttributeParser{
-		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
-			var keyIDs []string
-			cdc.MustUnmarshalJSON([]byte(s), &keyIDs)
-			return keyIDs, nil
+		{Key: tss.AttributeKeyKeyInfos, Map: func(s string) (interface{}, error) {
+			var keyInfos []tss.KeyInfo
+			cdc.MustUnmarshalJSON([]byte(s), &keyInfos)
+			return keyInfos, nil
 		}},
 	}
 
@@ -451,7 +447,7 @@ func parseHeartBeatParams(cdc *codec.LegacyAmino, attributes map[string]string) 
 		panic(err)
 	}
 
-	return results[0].([]string)
+	return results[0].([]tss.KeyInfo)
 }
 
 func parseMsgParams(cdc *codec.LegacyAmino, attributes map[string]string) (sessionID string, from string, payload *tofnd.TrafficOut) {

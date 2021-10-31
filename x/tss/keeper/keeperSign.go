@@ -64,9 +64,11 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("key %s not found", info.KeyID)
 	}
 
-	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role)
+	keyType := k.GetKeyType(ctx, info.KeyID)
+
+	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role, keyType)
 	if !ok {
-		return fmt.Errorf("key requirement for key role %s not found", key.Role.SimpleString())
+		return fmt.Errorf("key requirement for key role %s type %s not found", key.Role.SimpleString(), keyType)
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)

@@ -8,11 +8,14 @@ import (
 )
 
 // NewStartKeygenRequest constructor for StartKeygenRequest
-func NewStartKeygenRequest(sender sdk.AccAddress, keyID string, keyRole exported.KeyRole) *StartKeygenRequest {
+func NewStartKeygenRequest(sender sdk.AccAddress, keyID string, keyRole exported.KeyRole, keyType exported.KeyType) *StartKeygenRequest {
 	return &StartKeygenRequest{
-		Sender:  sender,
-		KeyID:   exported.KeyID(keyID),
-		KeyRole: keyRole,
+		Sender: sender,
+		KeyInfo: KeyInfo{
+			KeyID:   exported.KeyID(keyID),
+			KeyRole: keyRole,
+			KeyType: keyType,
+		},
 	}
 }
 
@@ -29,11 +32,15 @@ func (m StartKeygenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.KeyID.Validate(); err != nil {
+	if err := m.KeyInfo.KeyID.Validate(); err != nil {
 		return err
 	}
 
-	if err := m.KeyRole.Validate(); err != nil {
+	if err := m.KeyInfo.KeyRole.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.KeyInfo.KeyType.Validate(); err != nil {
 		return err
 	}
 

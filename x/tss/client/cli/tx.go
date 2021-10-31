@@ -47,6 +47,8 @@ func getCmdKeygenStart() *cobra.Command {
 
 	keyRoleStr := cmd.Flags().String("key-role", exported.MasterKey.SimpleString(), "role of the key to be generated")
 
+	keyTypeStr := cmd.Flags().String("key-type", "", "type of the key to be generated")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientTxContext(cmd)
 		if err != nil {
@@ -58,7 +60,12 @@ func getCmdKeygenStart() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *keyID, keyRole)
+		keyType, err := exported.KeyTypeFromSimpleStr(*keyTypeStr)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *keyID, keyRole, keyType)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

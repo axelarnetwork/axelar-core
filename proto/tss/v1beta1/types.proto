@@ -11,8 +11,8 @@ message KeygenVoteData {
   bytes group_recovery_info = 2;
 }
 
-// KeygenInfo holds information about a key
-message KeygenInfo {
+// KeyInfo holds information about a key
+message KeyInfo {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -20,4 +20,19 @@ message KeygenInfo {
   ];
   tss.exported.v1beta1.KeyRole key_role = 2;
   tss.exported.v1beta1.KeyType key_type = 3;
+}
+
+message MultisigKeyInfo {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  int64 timeout = 2;
+  int64 target_key_num = 3;
+  repeated bytes pub_keys = 4;
+  repeated bytes participants = 5
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  ;
 }

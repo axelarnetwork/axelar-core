@@ -815,7 +815,7 @@ var _ snapshotexported.Tss = &TssMock{}
 //
 // 		// make and configure a mocked snapshotexported.Tss
 // 		mockedTss := &TssMock{
-// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole, keyType tssexported.KeyType) (tssexported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
 // 			GetMaxMissedBlocksPerWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
@@ -838,7 +838,7 @@ var _ snapshotexported.Tss = &TssMock{}
 // 	}
 type TssMock struct {
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
-	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool)
+	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole, keyType tssexported.KeyType) (tssexported.KeyRequirement, bool)
 
 	// GetMaxMissedBlocksPerWindowFunc mocks the GetMaxMissedBlocksPerWindow method.
 	GetMaxMissedBlocksPerWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
@@ -860,6 +860,8 @@ type TssMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyRole is the keyRole argument value.
 			KeyRole tssexported.KeyRole
+			// KeyType is the keyType argument value.
+			KeyType tssexported.KeyType
 		}
 		// GetMaxMissedBlocksPerWindow holds details about calls to the GetMaxMissedBlocksPerWindow method.
 		GetMaxMissedBlocksPerWindow []struct {
@@ -900,21 +902,23 @@ type TssMock struct {
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
-func (mock *TssMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole) (tssexported.KeyRequirement, bool) {
+func (mock *TssMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tssexported.KeyRole, keyType tssexported.KeyType) (tssexported.KeyRequirement, bool) {
 	if mock.GetKeyRequirementFunc == nil {
 		panic("TssMock.GetKeyRequirementFunc: method is nil but Tss.GetKeyRequirement was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		KeyRole tssexported.KeyRole
+		KeyType tssexported.KeyType
 	}{
 		Ctx:     ctx,
 		KeyRole: keyRole,
+		KeyType: keyType,
 	}
 	mock.lockGetKeyRequirement.Lock()
 	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
 	mock.lockGetKeyRequirement.Unlock()
-	return mock.GetKeyRequirementFunc(ctx, keyRole)
+	return mock.GetKeyRequirementFunc(ctx, keyRole, keyType)
 }
 
 // GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
@@ -923,10 +927,12 @@ func (mock *TssMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Co
 func (mock *TssMock) GetKeyRequirementCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	KeyRole tssexported.KeyRole
+	KeyType tssexported.KeyType
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		KeyRole tssexported.KeyRole
+		KeyType tssexported.KeyType
 	}
 	mock.lockGetKeyRequirement.RLock()
 	calls = mock.calls.GetKeyRequirement

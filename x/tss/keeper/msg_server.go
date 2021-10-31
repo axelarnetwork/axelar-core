@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -71,7 +72,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 		}
 
 		s.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
-		s.SetKeyRole(ctx, externalKey.ID, exported.ExternalKey)
+		s.SetKeyInfo(ctx, types.KeyInfo{KeyID: externalKey.ID, KeyRole: exported.ExternalKey})
 		keyIDs[i] = externalKey.ID
 
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
@@ -146,9 +147,9 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	keyRequirement, ok := s.GetKeyRequirement(ctx, req.KeyRole)
+	keyRequirement, ok := s.GetKeyRequirement(ctx, req.KeyInfo.KeyRole, req.KeyInfo.KeyType)
 	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s not found", req.KeyRole.SimpleString())
+		return nil, fmt.Errorf("key requirement for key role %s type %s not found", req.KeyInfo.KeyRole.SimpleString(), req.KeyInfo.KeyType.SimpleString())
 	}
 
 	// record the snapshot of active validators that we'll use for the key
@@ -157,7 +158,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, err
 	}
 
-	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.KeyID, req.KeyRole, snapshot); err != nil {
+	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.KeyInfo, snapshot); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +173,8 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		sdk.NewEvent(types.EventTypeKeygen,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
+			sdk.NewAttribute(types.AttributeKeyKeyType, req.KeyInfo.KeyType.SimpleString()),
+			sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyInfo.KeyID)),
 			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(snapshot.CorruptionThreshold, 10)),
 			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
 			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
@@ -180,12 +182,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		),
 	)
 
-	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
+	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyInfo.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
 
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "corruption", "threshold"},
 		float32(snapshot.CorruptionThreshold),
-		[]metrics.Label{telemetry.NewLabel("keyID", string(req.KeyID))})
+		[]metrics.Label{telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID))})
 
 	minKeygenThreshold := keyRequirement.MinKeygenThreshold
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
@@ -198,7 +200,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 			float32(validator.ShareCount),
 			[]metrics.Label{
 				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
-				telemetry.NewLabel("keyID", string(req.KeyID)),
+				telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID)),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
 			})
 	}
@@ -247,7 +249,8 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	}
 
 	if err := s.TSSKeeper.AssertMatchesRequirements(ctx, s.snapshotter, chain, req.KeyID, req.KeyRole); err != nil {
-		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for chain %s and role %s", req.KeyID, chain.Name, req.KeyRole.SimpleString())
+		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for chain %s key %s type and key role %s",
+			req.KeyID, chain.Name, chain.KeyType.SimpleString(), req.KeyRole.SimpleString())
 	}
 
 	if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
@@ -567,4 +570,77 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 			fmt.Sprintf("unrecognized voting result type: %T", result))
 	}
+}
+
+func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMultisigPubKeysRequest) (*types.SubmitMultisigPubKeysResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	validator := s.snapshotter.GetOperator(ctx, req.Sender)
+	if validator.Empty() {
+		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
+	}
+
+	counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.KeyID)
+	}
+
+	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	}
+
+	val, ok := snapshot.GetValidator(validator)
+	if !ok {
+		return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
+	}
+
+	if s.IsMultisigKeygenCompleted(ctx, req.KeyID) {
+		return nil, fmt.Errorf("multisig keygen %s has completed", req.KeyID)
+	}
+
+	if int64(len(req.PubKeyInfos)) != val.ShareCount {
+		return nil, fmt.Errorf("expect %d pub keys, got %d", val.ShareCount, len(req.PubKeyInfos))
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig pubkeys for operator %s (proxy address %s): %v",
+		req.KeyID, validator.String(), req.Sender, req.PubKeyInfos))
+
+	var pks [][]byte
+	for _, info := range req.PubKeyInfos {
+		pubKey, err := btcec.ParsePubKey(info.PubKey, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
+		}
+
+		sig, err := btcec.ParseDERSignature(info.Signature, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse signature bytes: [%w]", err)
+		}
+
+		d := sha256.Sum256([]byte(validator.String()))
+		if !sig.Verify(d[:], pubKey) {
+			return nil, fmt.Errorf("signature is invalid")
+		}
+
+		pks = append(pks, info.PubKey)
+	}
+
+	ok = s.SubmitPubKeys(ctx, req.KeyID, validator, pks...)
+	if !ok {
+		s.Logger(ctx).Debug(fmt.Sprintf("duplicate multisig pub key detected for validator %s", validator))
+		return &types.SubmitMultisigPubKeysResponse{}, fmt.Errorf("duplicate pub key")
+	}
+
+	if s.IsMultisigKeygenCompleted(ctx, req.KeyID) {
+		s.Logger(ctx).Debug(fmt.Sprintf("multisig keygen %s completed", req.KeyID))
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeKeygen,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
+		)
+	}
+
+	return &types.SubmitMultisigPubKeysResponse{}, nil
 }

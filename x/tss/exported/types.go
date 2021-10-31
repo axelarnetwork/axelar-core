@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -255,4 +256,17 @@ func (x KeyType) Validate() error {
 	default:
 		return fmt.Errorf("invalid key type %d", x)
 	}
+}
+
+// Validate validates the KeyType
+func (p PubKeyInfo) Validate() error {
+	_, err := btcec.ParsePubKey(p.PubKey, btcec.S256())
+	if err != nil {
+		return err
+	}
+	_, err = btcec.ParseDERSignature(p.Signature, btcec.S256())
+	if err != nil {
+		return err
+	}
+	return nil
 }

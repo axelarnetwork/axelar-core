@@ -38,6 +38,9 @@ var (
 	sigStatusPrefix            = utils.KeyFromStr("sig_status")
 	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
 	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")
+	multiSigPrefix             = utils.KeyFromStr("multi_sig")
+	keyTypePrefix              = utils.KeyFromStr("key_type")
+	keyInfoPrefix              = utils.KeyFromStr("key_info")
 )
 
 // Keeper allows access to the broadcast state
@@ -64,6 +67,10 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 
 	if keyRole != k.getKeyRole(ctx, keyID) {
 		return fmt.Errorf("key %s is not a %s key", keyID, keyRole.SimpleString())
+	}
+
+	if chain.KeyType != k.GetKeyType(ctx, keyID) {
+		return fmt.Errorf("chain %s does not accept key type %s", chain.Name, k.GetKeyType(ctx, keyID))
 	}
 
 	currentKeyID, ok := k.GetCurrentKeyID(ctx, chain, keyRole)
@@ -221,13 +228,14 @@ func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID) {
 }
 
 func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	k.getStore(ctx).Set(keyRequirementPrefix.AppendStr(keyRequirement.KeyRole.SimpleString()), &keyRequirement)
+	key := keyRequirementPrefix.AppendStr(keyRequirement.KeyRole.SimpleString()).AppendStr(keyRequirement.KeyType.SimpleString())
+	k.getStore(ctx).Set(key, &keyRequirement)
 }
 
 // GetKeyRequirement gets the key requirement for a given chain of a given role
-func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool) {
+func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool) {
 	var keyRequirement exported.KeyRequirement
-	ok := k.getStore(ctx).Get(keyRequirementPrefix.AppendStr(keyRole.SimpleString()), &keyRequirement)
+	ok := k.getStore(ctx).Get(keyRequirementPrefix.AppendStr(keyRole.SimpleString()).AppendStr(keyType.SimpleString()), &keyRequirement)
 
 	return keyRequirement, ok
 }
@@ -385,6 +393,30 @@ func (k Keeper) GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	}
 
 	return activeKeys, nil
+}
+
+// GetOldActiveKeyIDs gets all the old key IDs of given key role that are still active for chain
+func (k Keeper) GetOldActiveKeyIDs(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.KeyID, error) {
+	var activeKeyIDs []exported.KeyID
+
+	currRotationCount := k.GetRotationCount(ctx, chain, keyRole)
+	unbondingLockingKeyRotationCount := k.GetKeyUnbondingLockingKeyRotationCount(ctx)
+
+	rotationCount := currRotationCount - unbondingLockingKeyRotationCount
+	if rotationCount <= 0 {
+		rotationCount = 1
+	}
+
+	for ; rotationCount < currRotationCount; rotationCount++ {
+		keyID, ok := k.getKeyID(ctx, chain, rotationCount, keyRole)
+		if !ok {
+			return nil, fmt.Errorf("%s's %s key of rotation count %d not found", chain.Name, keyRole.SimpleString(), rotationCount)
+		}
+
+		activeKeyIDs = append(activeKeyIDs, keyID)
+	}
+
+	return activeKeyIDs, nil
 }
 
 // SetExternalKeyIDs stores the given list of external key IDs

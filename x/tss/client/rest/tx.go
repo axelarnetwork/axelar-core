@@ -47,6 +47,7 @@ type ReqKeygenStart struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	KeyID   string       `json:"key_id" yaml:"key_id"`
 	KeyRole string       `json:"key_role" yaml:"key_role"`
+	KeyType string       `json:"key_type" yaml:"key_type"`
 }
 
 // ReqKeyRotate represents a request to rotate a key
@@ -101,7 +102,13 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewStartKeygenRequest(sender, req.KeyID, keyRole)
+		keyType, err := exported.KeyTypeFromSimpleStr(req.KeyType)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewStartKeygenRequest(sender, req.KeyID, keyRole, keyType)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

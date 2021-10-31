@@ -29,7 +29,7 @@ var _ types.TSS = &TSSMock{}
 //
 // 		// make and configure a mocked types.TSS
 // 		mockedTSS := &TSSMock{
-// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
+// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
 // 		}
@@ -40,7 +40,7 @@ var _ types.TSS = &TSSMock{}
 // 	}
 type TSSMock struct {
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
-	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
+	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -50,27 +50,31 @@ type TSSMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+			// KeyType is the keyType argument value.
+			KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
 		}
 	}
 	lockGetKeyRequirement sync.RWMutex
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
-func (mock *TSSMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
+func (mock *TSSMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 	if mock.GetKeyRequirementFunc == nil {
 		panic("TSSMock.GetKeyRequirementFunc: method is nil but TSS.GetKeyRequirement was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
 	}{
 		Ctx:     ctx,
 		KeyRole: keyRole,
+		KeyType: keyType,
 	}
 	mock.lockGetKeyRequirement.Lock()
 	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
 	mock.lockGetKeyRequirement.Unlock()
-	return mock.GetKeyRequirementFunc(ctx, keyRole)
+	return mock.GetKeyRequirementFunc(ctx, keyRole, keyType)
 }
 
 // GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
@@ -79,10 +83,12 @@ func (mock *TSSMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Co
 func (mock *TSSMock) GetKeyRequirementCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
 	}
 	mock.lockGetKeyRequirement.RLock()
 	calls = mock.calls.GetKeyRequirement

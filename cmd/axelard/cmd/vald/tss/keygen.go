@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"sort"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -22,7 +24,7 @@ import (
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
-	keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, e.Attributes)
+	keyType, keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return err
 	}
@@ -33,6 +35,17 @@ func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
 		return nil
 	}
 
+	switch keyType {
+	case tssexported.Threshold.SimpleString():
+		return mgr.thresholdKeygenStart(e, keyID, timeout, threshold, myIndex, participants, participantShareCounts)
+	case tssexported.Multisig.SimpleString():
+		return mgr.multiSigKeygenStart(keyID, participantShareCounts[myIndex])
+	default:
+		return fmt.Errorf(fmt.Sprintf("unknown keytype %s", keyType))
+	}
+}
+
+func (mgr *Mgr) thresholdKeygenStart(e tmEvents.Event, keyID string, timeout int64, threshold uint32, myIndex int, participants []string, participantShareCounts []uint32) error {
 	done := false
 	session := mgr.timeoutQueue.Enqueue(keyID, e.Height+timeout)
 
@@ -77,6 +90,50 @@ func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
 	return <-errChan
 }
 
+func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	var pubKeyInfos []tssexported.PubKeyInfo
+	for i := uint32(0); i < shares; i++ {
+		keyUID := fmt.Sprintf("%s_%d", keyID, i)
+		keygenRequest := &tofnd.KeygenRequest{
+			KeyUid:   keyUID,
+			PartyUid: mgr.principalAddr,
+		}
+
+		res, err := mgr.multiSigClient.Keygen(grpcCtx, keygenRequest)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "failed to generate multisig key")
+		}
+
+		switch res.GetKeygenResponse().(type) {
+		case *tofnd.KeygenResponse_PubKey:
+			//  proof validator owns the pub key
+			d := sha256.Sum256([]byte(mgr.principalAddr))
+			sig, err := mgr.MultiSigSign(keyUID, mgr.principalAddr, d[:])
+			if err != nil {
+				return sdkerrors.Wrapf(err, "failed to sign")
+			}
+			pubKeyInfos = append(pubKeyInfos, tssexported.PubKeyInfo{PubKey: res.GetPubKey(), Signature: sig})
+		case *tofnd.KeygenResponse_Error:
+			return sdkerrors.Wrap(err, res.GetError())
+		default:
+			return sdkerrors.Wrap(err, "unknown multisig keygen response")
+		}
+	}
+
+	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
+	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), pubKeyInfos)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+
+	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing multisig keys msg")
+	}
+
+	return nil
+}
+
 // ProcessKeygenMsg forwards blockchain messages to the keygen protocol
 func (mgr *Mgr) ProcessKeygenMsg(e tmEvents.Event) error {
 	keyID, from, payload := parseMsgParams(mgr.cdc, e.Attributes)
@@ -95,9 +152,10 @@ func (mgr *Mgr) ProcessKeygenMsg(e tmEvents.Event) error {
 }
 
 func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	keyID string, threshold uint32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
+	keyType, keyID string, threshold uint32, participants []string, participantShareCounts []uint32, timeout int64, err error) {
 
 	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyType, Map: parse.IdentityMap},
 		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
 		{Key: tss.AttributeKeyThreshold, Map: func(s string) (interface{}, error) {
 			t, err := strconv.ParseInt(s, 10, 32)
@@ -121,10 +179,10 @@ func parseKeygenStartParams(cdc *codec.LegacyAmino, attributes map[string]string
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", 0, nil, nil, 0, err
+		return "", "", 0, nil, nil, 0, err
 	}
 
-	return results[0].(string), results[1].(uint32), results[2].([]string), results[3].([]uint32), results[4].(int64), nil
+	return results[0].(string), results[1].(string), results[2].(uint32), results[3].([]string), results[4].([]uint32), results[5].(int64), nil
 }
 
 func (mgr *Mgr) startKeygen(keyID string, threshold uint32, myIndex uint32, participants []string, participantShareCounts []uint32) (Stream, context.CancelFunc, error) {

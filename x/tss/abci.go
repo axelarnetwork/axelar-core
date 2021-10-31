@@ -7,12 +7,14 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -24,36 +26,38 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
 	emitHeartbeatEvent(ctx, keeper, nexus)
 	sequentialSign(ctx, keeper.GetSignQueue(ctx), keeper, snapshotter, voter)
+	timeoutMultiSigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper)
 
 	return nil
 }
 
 func emitHeartbeatEvent(ctx sdk.Context, keeper keeper.Keeper, nexus types.Nexus) {
 	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetHeartbeatPeriodInBlocks(ctx)) == 0 {
-		var keyIDs []exported.KeyID
+		var keyInfos []types.KeyInfo
 		for _, chain := range nexus.GetChains(ctx) {
+			keyType := chain.KeyType
 			for _, role := range exported.GetKeyRoles() {
 				if currentKey, ok := keeper.GetCurrentKeyID(ctx, chain, role); ok {
-					keyIDs = append(keyIDs, currentKey)
-					keys, err := keeper.GetOldActiveKeys(ctx, chain, role)
+					keyInfos = append(keyInfos, types.KeyInfo{KeyID: currentKey, KeyType: keyType})
+					oldKeyIDs, err := keeper.GetOldActiveKeyIDs(ctx, chain, role)
 					if err != nil {
 						keeper.Logger(ctx).Error(fmt.Sprintf("unable to retrieve old keys for chain %s with role %s: %s",
 							chain.Name, role.SimpleString(), err))
 						continue
 					}
 
-					for _, key := range keys {
-						keyIDs = append(keyIDs, key.ID)
+					for _, keyID := range oldKeyIDs {
+						keyInfos = append(keyInfos, types.KeyInfo{KeyID: keyID, KeyType: keyType})
 					}
 				}
 			}
 		}
 
-		bz := types.ModuleCdc.LegacyAmino.MustMarshalJSON(exported.KeyIDsToStrings(keyIDs))
+		bz := types.ModuleCdc.LegacyAmino.MustMarshalJSON(keyInfos)
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeHeartBeat,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
-			sdk.NewAttribute(types.AttributeKeyKeyIDs, string(bz)),
+			sdk.NewAttribute(types.AttributeKeyKeyInfos, string(bz)),
 		))
 	}
 
@@ -124,7 +128,8 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 
 	// no need to check if these exists again, sanity checks for that passed at this point
 	key, _ := k.GetKey(ctx, info.KeyID)
-	keyRequirement, _ := k.GetKeyRequirement(ctx, key.Role)
+	keyType := k.GetKeyType(ctx, info.KeyID)
+	keyRequirement, _ := k.GetKeyRequirement(ctx, key.Role, keyType)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -147,4 +152,46 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)),
 		types.AttributeKeyPayload, string(info.Msg),
 		types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10))
+}
+
+// timeoutMultiSigKeygen checks timed out multisig keygen and penalize absent participants
+func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKVQueue, k types.TSSKeeper) {
+	var keyIDStr gogoprototypes.StringValue
+
+	for multiSigKeygenQueue.Peek(0, &keyIDStr) {
+		keyID := exported.KeyID(keyIDStr.Value)
+		timeoutHeight, ok := k.GetMultisigPubKeyTimeout(ctx, keyID)
+		if !ok {
+			// should not reach here, the queue is controlled by keeper
+			panic(fmt.Sprintf("timeout block height for multisig key %s not found", keyID))
+		}
+		if timeoutHeight > ctx.BlockHeight() {
+			return
+		}
+
+		// penalize absent validator
+		if !k.IsMultisigKeygenCompleted(ctx, keyID) {
+			participants := k.GetParticipantsInKeygen(ctx, keyID)
+			for _, participant := range participants {
+				if !k.HasValidatorSubmittedMultisigPubKey(ctx, keyID, participant) {
+					ctx.Logger().Debug(fmt.Sprintf("missing pub keys from %s absent for multisig key %s", participant, keyID))
+					k.PenalizeCriminal(ctx, participant, tofnd.CRIME_TYPE_NON_MALICIOUS)
+				}
+			}
+
+			k.DeleteSnapshotCounterForKeyID(ctx, keyID)
+			k.DeleteParticipantsInKeygen(ctx, keyID)
+			k.DeleteMultisigKeygen(ctx, keyID)
+			ctx.Logger().Debug(fmt.Sprintf("multisig keygen %s timed out", keyID))
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeKeygen,
+					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+					sdk.NewAttribute(types.AttributeKeyKeyID, string(keyID)),
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+			)
+		}
+
+		multiSigKeygenQueue.Dequeue(0, &keyIDStr)
+	}
 }
