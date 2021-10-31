@@ -61,8 +61,7 @@ func GetHealthCheckCommand() *cobra.Command {
 			execCheck(cmd.Context(), clientCtx, serverCtx, flagSkipBroadcaster, checkBroadcaster)
 			execCheck(nil, clientCtx, serverCtx, flagSkipOperator, checkOperator)
 
-			// enforce a non-zero exiting code in case health checks fail
-			// without printing cobra output
+			// enforce a non-zero exit code in case health checks fail without printing cobra output
 			if !allGood {
 				os.Exit(1)
 			}
