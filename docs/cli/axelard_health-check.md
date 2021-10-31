@@ -10,7 +10,7 @@ axelard health-check [flags]
       --height int             Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help                   help for health-check
       --node string            <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --operator-addr string   broadcaster address
+      --operator-addr string   operator address
       --skip-broadcaster       skip broadcaster check
       --skip-operator          skip operator check
       --skip-tofnd             skip tofnd check

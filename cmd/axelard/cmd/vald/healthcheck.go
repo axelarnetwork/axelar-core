@@ -73,7 +73,7 @@ func GetHealthCheckCommand() *cobra.Command {
 	defaultConf := tssTypes.DefaultConfig()
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
-	cmd.PersistentFlags().String(flagOperatorAddr, "", "broadcaster address")
+	cmd.PersistentFlags().String(flagOperatorAddr, "", "operator address")
 	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
 	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
 	cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
