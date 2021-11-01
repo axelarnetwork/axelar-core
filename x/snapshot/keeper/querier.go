@@ -137,6 +137,7 @@ func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 				MissedTooManyBlocks: illegibility.Is(exported.MissedTooManyBlocks),
 				NoProxyRegistered:   illegibility.Is(exported.NoProxyRegistered),
 				TssSuspended:        illegibility.Is(exported.TssSuspended),
+				StaleTssHeartbeat:   !k.tss.IsOperatorAvailable(ctx, v.GetOperator()),
 			},
 		})
 

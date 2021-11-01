@@ -14,6 +14,7 @@ message QueryValidatorsResponse {
     bool missed_too_many_blocks = 3;
     bool no_proxy_registered = 4;
     bool tss_suspended = 5;
+    bool stale_tss_heartbeat = 6;
   }
 
   message Validator {
