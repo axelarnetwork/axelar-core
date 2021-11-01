@@ -10,6 +10,7 @@
     - [raw-bytes \[raw-bytes\]](axelard_debug_raw-bytes.md)	 - Convert raw bytes output (eg. \[10 21 13 255\]) to hex
   - [export](axelard_export.md)	 - Export state to JSON
   - [gentx \[key_name\] \[amount\]](axelard_gentx.md)	 - Generate a genesis tx carrying a self delegation
+  - [health-check](axelard_health-check.md)	 -
   - [init \[moniker\]](axelard_init.md)	 - Initialize private validator, p2p, genesis, and application configuration files
   - [keys](axelard_keys.md)	 - Manage your application's keys
     - [add \<name>](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file
@@ -169,7 +170,6 @@
     - [show-node-id](axelard_tendermint_show-node-id.md)	 - Show this node's ID
     - [show-validator](axelard_tendermint_show-validator.md)	 - Show this node's tendermint validator info
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
-  - [tofnd-ping](axelard_tofnd-ping.md)	 -
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
       - [add-cosmos-based-chain \[name\] \[native asset\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
