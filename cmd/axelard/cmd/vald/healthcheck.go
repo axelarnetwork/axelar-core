@@ -84,19 +84,18 @@ func GetHealthCheckCommand() *cobra.Command {
 type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error
 
 func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, name string, skip bool, check checkCmd) bool {
-	fmt.Printf("%s check: ", name)
 	if skip {
-		fmt.Println("skipped")
+		fmt.Printf("%s check: skipped\n", name)
 		return true
 	}
 
 	err := check(ctx, clientCtx, serverCtx)
 	if err != nil {
-		fmt.Printf("failed (%s)\n", err.Error())
+		fmt.Printf("%s check: failed (%s)\n", name, err.Error())
 		return false
 	}
 
-	fmt.Println("passed")
+	fmt.Printf("%s check: passed\n", name)
 	return true
 }
 
