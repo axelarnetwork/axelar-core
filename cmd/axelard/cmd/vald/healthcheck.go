@@ -205,7 +205,8 @@ func checkOperator(_ context.Context, clientCtx client.Context, serverCtx *serve
 				v.TssIllegibilityInfo.MissedTooManyBlocks ||
 				v.TssIllegibilityInfo.NoProxyRegistered ||
 				v.TssIllegibilityInfo.Tombstoned ||
-				v.TssIllegibilityInfo.TssSuspended {
+				v.TssIllegibilityInfo.TssSuspended ||
+				v.TssIllegibilityInfo.StaleTssHeartbeat {
 				return fmt.Errorf("health check to operator %s failed due to the following issues: %v",
 					addr, string(snapshotTypes.ModuleCdc.MustMarshalJSON(&v.TssIllegibilityInfo)))
 			}
