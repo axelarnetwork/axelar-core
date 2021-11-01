@@ -84,7 +84,7 @@ func GetHealthCheckCommand() *cobra.Command {
 
 type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error
 
-func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, flag string, cmd checkCmd) {
+func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, flag string, check checkCmd) {
 	fmt.Printf("%s check: ", strings.TrimPrefix(flag, "skip-"))
 	if serverCtx.Viper.GetBool(flag) {
 		fmt.Println("skipped")
