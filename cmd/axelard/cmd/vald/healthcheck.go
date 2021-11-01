@@ -91,7 +91,7 @@ func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.
 		return
 	}
 
-	err := cmd(ctx, clientCtx, serverCtx)
+	err := check(ctx, clientCtx, serverCtx)
 	if err != nil {
 		fmt.Printf("failed (%s)\n", err.Error())
 		allGood = false
