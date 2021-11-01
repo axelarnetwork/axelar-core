@@ -208,6 +208,16 @@
 - [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
     - [ChainState](#nexus.v1beta1.ChainState)
   
+- [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
+    - [Params](#reward.v1beta1.Params)
+  
+- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
+    - [GenesisState](#reward.v1beta1.GenesisState)
+  
+- [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
+    - [Pool](#reward.v1beta1.Pool)
+    - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+  
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
@@ -1426,6 +1436,7 @@ vote can have any data type
 | `min_voter_count` | [int64](#int64) |  |  |
 | `voters` | [Voter](#vote.exported.v1beta1.Voter) | repeated |  |
 | `total_voting_power` | [bytes](#bytes) |  |  |
+| `reward_pool_name` | [string](#string) |  |  |
 
 
 
@@ -2992,6 +3003,116 @@ ChainState represents the state of a registered blockchain
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/params.proto
+
+
+
+<a name="reward.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `external_chain_voting_inflation_rate` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/genesis.proto
+
+
+
+<a name="reward.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#reward.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/types.proto
+
+
+
+<a name="reward.v1beta1.Pool"></a>
+
+### Pool
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `rewards` | [Pool.Reward](#reward.v1beta1.Pool.Reward) | repeated |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.Pool.Reward"></a>
+
+### Pool.Reward
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 

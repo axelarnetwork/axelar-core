@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -69,7 +71,8 @@ var _ exported.Poll = &Poll{}
 type Poll struct {
 	exported.PollMetadata
 	Store
-	logger log.Logger
+	logger     log.Logger
+	rewardPool reward.RewardPool
 }
 
 // Store enables a poll to communicate with the keeper
@@ -84,14 +87,18 @@ type Store interface {
 }
 
 // NewPoll creates a new poll
-func NewPoll(meta exported.PollMetadata, currentBlock int64, store Store) *Poll {
+func NewPoll(ctx sdk.Context, meta exported.PollMetadata, store Store, rewarder Rewarder) *Poll {
 	poll := &Poll{
 		PollMetadata: meta,
 		Store:        store,
 		logger:       utils.NewNOPLogger(),
 	}
 
-	poll.updateExpiry(currentBlock)
+	if meta.RewardPoolName != "" {
+		poll.rewardPool = rewarder.GetPool(ctx, meta.RewardPoolName)
+	}
+
+	poll.updateExpiry(ctx.BlockHeight())
 	return poll
 }
 
@@ -148,9 +155,6 @@ func (p Poll) Initialize() error {
 }
 
 func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
-	fmt.Printf("v %#v\n", v)
-	fmt.Printf("p.PollMetadata.Voters %#v\n", p.PollMetadata.Voters)
-
 	for _, voter := range p.PollMetadata.Voters {
 		if v.Equals(voter.Validator) {
 			return voter.VotingPower
@@ -158,6 +162,32 @@ func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
 	}
 
 	return 0
+}
+
+func (p *Poll) handleRewards() error {
+	majorityVote := p.getMajorityVote()
+
+	for _, vote := range p.GetVotes() {
+		data, err := vote.Data.Marshal()
+		if err != nil {
+			panic(err)
+		}
+
+		if bytes.Equal(data, majorityVote.Data.Value) {
+			for _, voter := range vote.Voters {
+				if err := p.rewardPool.ReleaseRewards(voter); err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, voter := range vote.Voters {
+				p.logger.Debug("penalizing voter due to incorrect vote", "voter", voter.String(), "poll", p.PollMetadata.Key.String())
+				p.rewardPool.ClearRewards(voter)
+			}
+		}
+	}
+
+	return nil
 }
 
 // Vote records the given vote
@@ -184,6 +214,10 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 
 	majorityVote := p.getMajorityVote()
 	if p.hasEnoughVotes(majorityVote.Tally) {
+		if p.rewardPool != nil {
+			p.handleRewards()
+		}
+
 		p.Result = majorityVote.Data
 		p.State = exported.Completed
 		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) completed",
@@ -239,6 +273,16 @@ func (p *Poll) GetTotalVotingPower() sdk.Int {
 func (p *Poll) updateExpiry(currentBlockHeight int64) {
 	if p.ExpiresAt != -1 && p.ExpiresAt <= currentBlockHeight && p.Is(exported.Pending) {
 		p.State |= exported.Expired | exported.AllowOverride
+
+		if p.rewardPool != nil {
+			// Penalize voters who failed to vote
+			for _, voter := range p.Voters {
+				if !p.HasVoted(voter.Validator) {
+					p.logger.Debug("penalizing voter due to timeout", "voter", voter.Validator.String(), "poll", p.PollMetadata.Key.String())
+					p.rewardPool.ClearRewards(voter.Validator)
+				}
+			}
+		}
 	}
 }
 

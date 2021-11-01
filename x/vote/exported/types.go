@@ -88,6 +88,14 @@ func MinVoterCount(minVoterCount int64) PollProperty {
 	}}
 }
 
+// RewardPool sets the name of a reward pool for the poll
+func RewardPool(rewardPoolName string) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		metadata.RewardPoolName = rewardPoolName
+		return metadata
+	}}
+}
+
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
 	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error
