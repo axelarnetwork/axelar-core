@@ -12,8 +12,8 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, n, b, t, m, r)
+func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, n, b, t, c, a, m, r)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -42,7 +42,7 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully registered asset %s with path %s", msg.Asset, msg.Path)
+				result.Log = fmt.Sprintf("successfully registered chain %s with path %s", msg.Chain, msg.Path)
 			}
 			return result, err
 		case *types.AddCosmosBasedChainRequest:
@@ -64,6 +64,13 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = res.Log
+			}
+			return result, err
+		case *types.RouteIBCTransfersRequest:
+			res, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully executed pending transfers")
 			}
 			return result, err
 		default:

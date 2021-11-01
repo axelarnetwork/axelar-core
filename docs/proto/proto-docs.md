@@ -32,9 +32,14 @@
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
+    - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
+    - [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
+  
+- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
@@ -203,6 +208,16 @@
 - [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
     - [ChainState](#nexus.v1beta1.ChainState)
   
+- [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
+    - [Params](#reward.v1beta1.Params)
+  
+- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
+    - [GenesisState](#reward.v1beta1.GenesisState)
+  
+- [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
+    - [Pool](#reward.v1beta1.Pool)
+    - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+  
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
@@ -319,6 +334,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `supported_chains` | [string](#string) | repeated |  |
+| `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 
 
 
@@ -631,13 +647,13 @@ based chain
 
 ### RegisterIBCPathRequest
 MSgRegisterIBCPath represents a message to register an IBC tracing path for
-an asset
+a cosmos chain
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
 | `path` | [string](#string) |  |  |
 
 
@@ -648,6 +664,32 @@ an asset
 <a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
 
 ### RegisterIBCPathResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
+
+### RouteIBCTransfersRequest
+RouteIBCTransfersRequest represents a message to route pending transfers to
+cosmos based chains
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
+
+### RouteIBCTransfersResponse
 
 
 
@@ -691,6 +733,40 @@ Msg defines the axelarnet Msg service.
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
+| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/types.proto
+
+
+
+<a name="axelarnet.v1beta1.IBCTransfer"></a>
+
+### IBCTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `receiver` | [string](#string) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 
@@ -1360,6 +1436,7 @@ vote can have any data type
 | `min_voter_count` | [int64](#int64) |  |  |
 | `voters` | [Voter](#vote.exported.v1beta1.Voter) | repeated |  |
 | `total_voting_power` | [bytes](#bytes) |  |  |
+| `reward_pool_name` | [string](#string) |  |  |
 
 
 
@@ -2941,6 +3018,116 @@ ChainState represents the state of a registered blockchain
 
 
 
+<a name="reward/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/params.proto
+
+
+
+<a name="reward.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `external_chain_voting_inflation_rate` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/genesis.proto
+
+
+
+<a name="reward.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#reward.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/types.proto
+
+
+
+<a name="reward.v1beta1.Pool"></a>
+
+### Pool
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `rewards` | [Pool.Reward](#reward.v1beta1.Pool.Reward) | repeated |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.Pool.Reward"></a>
+
+### Pool.Reward
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="snapshot/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3038,6 +3225,7 @@ GenesisState represents the genesis state
 | `missed_too_many_blocks` | [bool](#bool) |  |  |
 | `no_proxy_registered` | [bool](#bool) |  |  |
 | `tss_suspended` | [bool](#bool) |  |  |
+| `stale_tss_heartbeat` | [bool](#bool) |  |  |
 
 
 

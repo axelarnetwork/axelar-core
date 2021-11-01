@@ -169,6 +169,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
+		vote.RewardPool(chain.Name),
 	); err != nil {
 		return nil, err
 	}
@@ -313,6 +314,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
+		vote.RewardPool(chain.Name),
 	); err != nil {
 		return nil, err
 	}
@@ -406,6 +408,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
+		vote.RewardPool(chain.Name),
 	); err != nil {
 		return nil, err
 	}

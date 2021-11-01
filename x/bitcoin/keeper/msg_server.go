@@ -170,6 +170,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
 		vote.Threshold(s.GetVotingThreshold(ctx)),
 		vote.MinVoterCount(s.GetMinVoterCount(ctx)),
+		vote.RewardPool(exported.Bitcoin.Name),
 	); err != nil {
 		return nil, err
 	}

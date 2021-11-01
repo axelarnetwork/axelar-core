@@ -41,6 +41,7 @@ message PollMetadata {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
+  string reward_pool_name = 10;
 }
 
 enum PollState {

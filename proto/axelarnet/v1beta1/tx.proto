@@ -47,11 +47,11 @@ message ExecutePendingTransfersRequest {
 message ExecutePendingTransfersResponse {}
 
 // MSgRegisterIBCPath represents a message to register an IBC tracing path for
-// an asset
+// a cosmos chain
 message RegisterIBCPathRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string asset = 2;
+  string chain = 2;
   string path = 3;
 }
 
@@ -89,3 +89,12 @@ message RefundMsgResponse {
   bytes data = 1;
   string log = 2;
 }
+
+// RouteIBCTransfersRequest represents a message to route pending transfers to
+// cosmos based chains
+message RouteIBCTransfersRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RouteIBCTransfersResponse {}

@@ -28,15 +28,17 @@ type Keeper struct {
 	cdc         codec.BinaryCodec
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
+	rewarder    types.Rewarder
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter, staking types.StakingKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter, staking types.StakingKeeper, rewarder types.Rewarder) Keeper {
 	keeper := Keeper{
 		storeKey:    key,
 		cdc:         cdc,
 		snapshotter: snapshotter,
 		staking:     staking,
+		rewarder:    rewarder,
 	}
 	return keeper
 }
@@ -61,7 +63,7 @@ func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
 
 func (k Keeper) initializePoll(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, totalVotingPower sdk.Int, pollProperties ...exported.PollProperty) error {
 	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), voters, totalVotingPower).With(pollProperties...)
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
+	poll := types.NewPoll(ctx, metadata, k.newPollStore(ctx, metadata.Key), k.rewarder).WithLogger(k.Logger(ctx))
 
 	return poll.Initialize()
 }
@@ -105,7 +107,7 @@ func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
 	}
 
-	poll := types.NewPoll(metadata, ctx.BlockHeight(), k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
+	poll := types.NewPoll(ctx, metadata, k.newPollStore(ctx, metadata.Key), k.rewarder).WithLogger(k.Logger(ctx))
 
 	return poll
 }

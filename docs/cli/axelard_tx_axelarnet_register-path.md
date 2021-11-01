@@ -1,9 +1,9 @@
 ## axelard tx axelarnet register-path
 
-Register an ibc path for an asset
+Register an ibc path for a cosmos chain
 
 ```
-axelard tx axelarnet register-path [asset] [path] [flags]
+axelard tx axelarnet register-path [chain] [path] [flags]
 ```
 
 ### Options

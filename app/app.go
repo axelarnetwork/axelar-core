@@ -39,6 +39,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/reward"
+	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
+	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -150,6 +153,7 @@ var (
 		snapshot.AppModuleBasic{},
 		nexus.AppModuleBasic{},
 		axelarnet.AppModuleBasic{},
+		reward.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -162,6 +166,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		rewardTypes.ModuleName:         {authtypes.Minter},
 	}
 )
 
@@ -244,6 +249,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		tssTypes.StoreKey,
 		nexusTypes.StoreKey,
 		axelarnetTypes.StoreKey,
+		rewardTypes.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -341,13 +347,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 
-	// Create static IBC router, add transfer route, then set and seal it
-	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
-	app.ibcKeeper.SetRouter(ibcRouter)
-
 	// axelar custom keepers
 	btcK := btcKeeper.NewKeeper(
 		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
@@ -367,12 +366,24 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
+	rewardK := rewardKeeper.NewKeeper(
+		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
+	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], snapK, stakingK,
+		appCodec, keys[voteTypes.StoreKey], snapK, stakingK, rewardK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey],
+		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
 	)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, bApp.MsgServiceRouter(), bApp.Router(), transferModule, logger)
+
+	// Create static IBC router, add transfer route, then set and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
+
+	// Setting Router will finalize all routes by sealing router
+	// No more routes can be added
+	app.ibcKeeper.SetRouter(ibcRouter)
 
 	tssRouter := tssTypes.NewRouter()
 	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK)).
@@ -412,16 +423,34 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexus.NewAppModule(nexusK, snapK, stakingK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
-		axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, bApp.MsgServiceRouter(), bApp.Router(), logger),
+		axelarnetModule,
+		reward.NewAppModule(rewardK, nexusK, mintK),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
-	app.mm.SetOrderBeginBlockers(upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName)
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, tssTypes.ModuleName, btcTypes.ModuleName, evmTypes.ModuleName, nexusTypes.ModuleName)
+	app.mm.SetOrderBeginBlockers(
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		minttypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		evidencetypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibchost.ModuleName,
+	)
+	app.mm.SetOrderEndBlockers(
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		tssTypes.ModuleName,
+		btcTypes.ModuleName,
+		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		rewardTypes.ModuleName,
+	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -449,6 +478,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexusTypes.ModuleName,
 		voteTypes.ModuleName,
 		axelarnetTypes.ModuleName,
+		rewardTypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&crisisK)
@@ -521,6 +551,8 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(btcTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
+	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
+	paramsKeeper.Subspace(rewardTypes.ModuleName)
 
 	return paramsKeeper
 }

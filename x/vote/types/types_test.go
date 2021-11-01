@@ -9,9 +9,11 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -71,9 +73,9 @@ func TestPoll_Expiry(t *testing.T) {
 		metadata.State = initialState
 		expiry := rand.PosI64()
 		metadata.ExpiresAt = expiry
-		currBlockHeight := expiry - rand.I64Between(0, expiry)
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(expiry - rand.I64Between(0, expiry))
 
-		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
+		poll := types.NewPoll(ctx, metadata, &mock.StoreMock{}, &mock.RewarderMock{})
 
 		assert.True(t, poll.Is(initialState))
 	}).Repeat(repeats))
@@ -83,9 +85,9 @@ func TestPoll_Expiry(t *testing.T) {
 		metadata.State = exported.Pending
 		expiry := rand.I64Between(0, 1000000)
 		metadata.ExpiresAt = expiry
-		currBlockHeight := expiry + rand.I64Between(1, 1000000)
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(expiry + rand.I64Between(1, 1000000))
 
-		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
+		poll := types.NewPoll(ctx, metadata, &mock.StoreMock{}, &mock.RewarderMock{})
 
 		assert.True(t, poll.Is(exported.Pending))
 		assert.True(t, poll.Is(exported.Expired))
@@ -99,8 +101,8 @@ func TestPoll_Expiry(t *testing.T) {
 		metadata.State = initialState
 		expiry := rand.I64Between(0, 1000000)
 		metadata.ExpiresAt = expiry
-		currBlockHeight := expiry + rand.I64Between(1, 1000000)
-		poll := types.NewPoll(metadata, currBlockHeight, &mock.StoreMock{})
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(expiry + rand.I64Between(1, 1000000))
+		poll := types.NewPoll(ctx, metadata, &mock.StoreMock{}, &mock.RewarderMock{})
 
 		assert.True(t, poll.Is(initialState))
 		assert.False(t, poll.Is(exported.Expired))
@@ -161,8 +163,9 @@ func TestPoll_Vote(t *testing.T) {
 			metadata.Voters = append(metadata.Voters, exported.Voter{Validator: validator, VotingPower: votingPower})
 		}
 		metadata.TotalVotingPower = totalVotingPower
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(currBlockHeight)
 
-		return types.NewPoll(metadata, currBlockHeight, store).WithLogger(log.TestingLogger())
+		return types.NewPoll(ctx, metadata, store, &mock.RewarderMock{}).WithLogger(log.TestingLogger())
 	}
 	repeats := 20
 
@@ -334,7 +337,8 @@ func TestPoll_Initialize(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
 			previousPoll = testCase.previousPoll
-			poll := types.NewPoll(newRandomPollMetadata(), rand.PosI64(), store).WithLogger(log.TestingLogger())
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(rand.PosI64())
+			poll := types.NewPoll(ctx, newRandomPollMetadata(), store, &mock.RewarderMock{}).WithLogger(log.TestingLogger())
 
 			if testCase.expectError {
 				assert.Error(t, poll.Initialize())
@@ -351,7 +355,9 @@ func TestPoll_Delete(t *testing.T) {
 		store = &mock.StoreMock{DeletePollFunc: func() {}}
 		metadata := newRandomPollMetadata()
 		metadata.State = pollState
-		return types.NewPoll(metadata, rand.I64Between(0, metadata.ExpiresAt), store).WithLogger(log.TestingLogger())
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(rand.I64Between(0, metadata.ExpiresAt))
+
+		return types.NewPoll(ctx, metadata, store, &mock.RewarderMock{}).WithLogger(log.TestingLogger())
 	}
 
 	t.Run("nonexistent", func(t *testing.T) {
