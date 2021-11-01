@@ -164,7 +164,7 @@ func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
 	return 0
 }
 
-func (p *Poll) penalizeIncorrectVoters() error {
+func (p *Poll) handleRewards() error {
 	majorityVote := p.getMajorityVote()
 
 	for _, vote := range p.GetVotes() {
@@ -215,7 +215,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 	majorityVote := p.getMajorityVote()
 	if p.hasEnoughVotes(majorityVote.Tally) {
 		if p.rewardPool != nil {
-			p.penalizeIncorrectVoters()
+			p.handleRewards()
 		}
 
 		p.Result = majorityVote.Data
