@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -42,12 +41,12 @@ const (
 	flagTofndPort       = "tofnd-port"
 )
 
-var (
-	allGood bool = true
-)
-
 // GetHealthCheckCommand returns the command to execute a node health check
 func GetHealthCheckCommand() *cobra.Command {
+	var skipTofnd bool
+	var skipBroadcaster bool
+	var skipOperator bool
+
 	cmd := &cobra.Command{
 		Use: "health-check",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -57,20 +56,10 @@ func GetHealthCheckCommand() *cobra.Command {
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-                         ok := true
-                         
-                         if !skipTofnd {
-                             ok = ok && execCheck(context.Background(), clientCtx, serverCtx, checkTofnd)
-                         }
-                         
-                         if !skipBroadcaster {
-                             ok = ok && execCheck(cmd.Context(), clientCtx, serverCtx, checkBroadcaster)
-                         }
-                         
-                         if !skipOperator {
-                             ok = ok && execCheck(nil, clientCtx, serverCtx, checkOperator)
-                         }
-                         
+			ok := execCheck(context.Background(), clientCtx, serverCtx, "tofnd", skipTofnd, checkTofnd) &&
+				execCheck(cmd.Context(), clientCtx, serverCtx, "broadcaster", skipBroadcaster, checkBroadcaster) &&
+				execCheck(context.TODO(), clientCtx, serverCtx, "operator", skipOperator, checkOperator)
+
 			// enforce a non-zero exit code in case health checks fail without printing cobra output
 			if !ok {
 				os.Exit(1)
@@ -84,9 +73,9 @@ func GetHealthCheckCommand() *cobra.Command {
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String(flagOperatorAddr, "", "operator address")
-	skipTofnd := cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
-        skipBroadcaster := cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
-        skipOperator := cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
+	cmd.PersistentFlags().BoolVar(&skipTofnd, flagSkipTofnd, false, "skip tofnd check")
+	cmd.PersistentFlags().BoolVar(&skipBroadcaster, flagSkipBroadcaster, false, "skip broadcaster check")
+	cmd.PersistentFlags().BoolVar(&skipOperator, flagSkipOperator, false, "skip operator check")
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
@@ -94,21 +83,21 @@ func GetHealthCheckCommand() *cobra.Command {
 
 type checkCmd func(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error
 
-func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, flag string, check checkCmd) {
-	fmt.Printf("%s check: ", strings.TrimPrefix(flag, "skip-"))
-	if serverCtx.Viper.GetBool(flag) {
+func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.Context, name string, skip bool, check checkCmd) bool {
+	fmt.Printf("%s check: ", name)
+	if skip {
 		fmt.Println("skipped")
-		return
+		return true
 	}
 
 	err := check(ctx, clientCtx, serverCtx)
 	if err != nil {
 		fmt.Printf("failed (%s)\n", err.Error())
-		allGood = false
-		return
+		return false
 	}
 
 	fmt.Println("passed")
+	return true
 }
 
 func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
