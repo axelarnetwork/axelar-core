@@ -30,6 +30,8 @@
     - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
+    - [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest)
+    - [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
     - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
@@ -643,6 +645,33 @@ based chain
 
 
 
+<a name="axelarnet.v1beta1.RegisterFeeCollectorRequest"></a>
+
+### RegisterFeeCollectorRequest
+RegisterFeeCollectorRequest represents a message to register axelarnet fee
+collector account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `fee_collector` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterFeeCollectorResponse"></a>
+
+### RegisterFeeCollectorResponse
+
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
 ### RegisterIBCPathRequest
@@ -734,6 +763,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
+| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
 
  <!-- end services -->
 

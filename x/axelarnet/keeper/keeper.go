@@ -21,6 +21,7 @@ var (
 	pendingRefundPrefix = utils.KeyFromStr("refund")
 	cosmosChainPrefix   = utils.KeyFromStr("cosmos_chain")
 	ibcAssetPrefix      = utils.KeyFromStr("ibc_asset")
+	feeCollector        = utils.KeyFromStr("fee_collector")
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -169,6 +170,21 @@ func (k Keeper) GetCosmosChain(ctx sdk.Context, asset string) (string, bool) {
 		return "", false
 	}
 	return string(bz), true
+}
+
+// SetFeeCollector sets axelarnet fee collector
+func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
+	k.getStore(ctx).SetRaw(feeCollector, address)
+}
+
+// GetFeeCollector gets axelarnet fee collector
+func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
+	bz := k.getStore(ctx).GetRaw(feeCollector)
+	if bz == nil {
+		return sdk.AccAddress{}, false
+	}
+
+	return bz, true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

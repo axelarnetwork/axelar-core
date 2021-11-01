@@ -98,3 +98,15 @@ message RouteIBCTransfersRequest {
 }
 
 message RouteIBCTransfersResponse {}
+
+// RegisterFeeCollectorRequest represents a message to register axelarnet fee
+// collector account
+message RegisterFeeCollectorRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes fee_collector = 2
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RegisterFeeCollectorResponse {}

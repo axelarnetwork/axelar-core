@@ -332,6 +332,14 @@ func IBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper,
 	return err
 }
 
+// RegisterFeeCollector handles register axelar fee collector account
+func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFeeCollectorRequest) (*types.RegisterFeeCollectorResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.BaseKeeper.SetFeeCollector(ctx, req.FeeCollector)
+	return &types.RegisterFeeCollectorResponse{}, nil
+}
+
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})
 func isIBCDenom(denom string) bool {
 	if err := sdk.ValidateDenom(denom); err != nil {
