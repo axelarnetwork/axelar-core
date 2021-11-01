@@ -44,10 +44,10 @@ type ReqExecutePendingTransfers struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 }
 
-// ReqRegisterIBCPath represents a request to register an IBC tracing path for an asset
+// ReqRegisterIBCPath represents a request to register an IBC tracing path for a cosmos chain
 type ReqRegisterIBCPath struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Asset   string       `json:"asset" yaml:"asset"`
+	Chain   string       `json:"chain" yaml:"chain"`
 	Path    string       `json:"path" yaml:"path"`
 }
 
@@ -169,7 +169,7 @@ func TxHandlerExecutePendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// TxHandlerRegisterIBCPath returns the handler to register an IBC tracing path for an asset
+// TxHandlerRegisterIBCPath returns the handler to register an IBC tracing path for a cosmos chain
 func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqRegisterIBCPath
@@ -186,7 +186,7 @@ func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Asset, req.Path)
+		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Chain, req.Path)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -1,14 +1,17 @@
 package types
 
 import (
+	"fmt"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
+// Parameter keys
 var (
-	// KeyAssets represents the key for the supported assets
-	KeyAssets = []byte("assetInfo")
+	KeyAssets             = []byte("assetInfo")
+	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -19,7 +22,8 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedChains: []string{"Bitcoin", "Ethereum"},
+		SupportedChains:    []string{"Bitcoin", "Ethereum"},
+		RouteTimeoutWindow: 100,
 	}
 }
 
@@ -34,6 +38,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
+		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validateUint64("RouteTimeoutWindow")),
 	}
 }
 
@@ -55,4 +60,15 @@ func validateSupportedChains(infos interface{}) error {
 	}
 
 	return nil
+}
+
+func validateUint64(field string) func(value interface{}) error {
+	return func(value interface{}) error {
+		_, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("invalid parameter type for %s: %T", field, value)
+		}
+
+		return nil
+	}
 }

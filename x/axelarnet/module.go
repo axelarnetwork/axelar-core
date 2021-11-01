@@ -2,6 +2,11 @@ package axelarnet
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -9,9 +14,10 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	"github.com/cosmos/ibc-go/modules/apps/transfer"
+	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/modules/core/exported"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -78,13 +84,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger       log.Logger
-	keeper       keeper.Keeper
-	nexus        types.Nexus
-	bank         types.BankKeeper
-	transfer     types.IBCTransferKeeper
-	msgSvcRouter *baseapp.MsgServiceRouter
-	router       sdk.Router
+	logger         log.Logger
+	keeper         keeper.Keeper
+	nexus          types.Nexus
+	bank           types.BankKeeper
+	transfer       types.IBCTransferKeeper
+	channel        types.ChannelKeeper
+	account        types.AccountKeeper
+	msgSvcRouter   *baseapp.MsgServiceRouter
+	router         sdk.Router
+	transferModule transfer.AppModule
 }
 
 // NewAppModule creates a new AppModule object
@@ -93,8 +102,11 @@ func NewAppModule(
 	nexus types.Nexus,
 	bank types.BankKeeper,
 	transfer types.IBCTransferKeeper,
+	channel types.ChannelKeeper,
+	account types.AccountKeeper,
 	msgSvcRouter *baseapp.MsgServiceRouter,
 	router sdk.Router,
+	transferModule transfer.AppModule,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -103,8 +115,11 @@ func NewAppModule(
 		nexus:          nexus,
 		bank:           bank,
 		transfer:       transfer,
+		channel:        channel,
+		account:        account,
 		msgSvcRouter:   msgSvcRouter,
 		router:         router,
+		transferModule: transferModule,
 	}
 }
 
@@ -119,7 +134,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.nexus, genState)
+	InitGenesis(ctx, am.keeper, am.nexus, genState)
 
 	return []abci.ValidatorUpdate{}
 }
@@ -131,7 +146,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.msgSvcRouter, am.router))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account, am.msgSvcRouter, am.router))
 }
 
 // QuerierRoute returns this module's query route
@@ -161,3 +176,130 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+// OnChanOpenInit implements the IBCModule interface
+func (am AppModule) OnChanOpenInit(
+	ctx sdk.Context,
+	order channeltypes.Order,
+	connectionHops []string,
+	portID string,
+	channelID string,
+	chanCap *capabilitytypes.Capability,
+	counterparty channeltypes.Counterparty,
+	version string,
+) error {
+	return am.transferModule.OnChanOpenInit(ctx, order, connectionHops, portID, channelID, chanCap, counterparty, version)
+}
+
+// OnChanOpenTry implements the IBCModule interface
+func (am AppModule) OnChanOpenTry(
+	ctx sdk.Context,
+	order channeltypes.Order,
+	connectionHops []string,
+	portID,
+	channelID string,
+	chanCap *capabilitytypes.Capability,
+	counterparty channeltypes.Counterparty,
+	version,
+	counterpartyVersion string,
+) error {
+	return am.transferModule.OnChanOpenTry(ctx, order, connectionHops, portID, channelID, chanCap, counterparty, version, counterpartyVersion)
+}
+
+// OnChanOpenAck implements the IBCModule interface
+func (am AppModule) OnChanOpenAck(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+	counterpartyVersion string,
+) error {
+	return am.transferModule.OnChanOpenAck(ctx, portID, channelID, counterpartyVersion)
+}
+
+// OnChanOpenConfirm implements the IBCModule interface
+func (am AppModule) OnChanOpenConfirm(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	return am.transferModule.OnChanOpenConfirm(ctx, portID, channelID)
+}
+
+// OnChanCloseInit implements the IBCModule interface
+func (am AppModule) OnChanCloseInit(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	return am.transferModule.OnChanCloseInit(ctx, portID, channelID)
+}
+
+// OnChanCloseConfirm implements the IBCModule interface
+func (am AppModule) OnChanCloseConfirm(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	return am.transferModule.OnChanCloseConfirm(ctx, portID, channelID)
+}
+
+// OnRecvPacket implements the IBCModule interface. A successful acknowledgement
+// is returned if the packet data is succesfully decoded and the receive application
+// logic returns without error.
+func (am AppModule) OnRecvPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
+) ibcexported.Acknowledgement {
+	return am.transferModule.OnRecvPacket(ctx, packet, relayer)
+}
+
+// OnAcknowledgementPacket implements the IBCModule interface
+func (am AppModule) OnAcknowledgementPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	acknowledgement []byte,
+	relayer sdk.AccAddress,
+) (*sdk.Result, error) {
+	result, err := am.transferModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
+	if err == nil {
+		var ack channeltypes.Acknowledgement
+		_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+		switch ack.Response.(type) {
+		case *channeltypes.Acknowledgement_Error:
+			err = resendTransferRoutedByAxelar(ctx, am.keeper, am.transfer, am.channel, packet)
+		default:
+			// the acknowledgement succeeded on the receiving chain, delete the pending ibc transfer if it routed by axelarnet
+			am.keeper.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+		}
+	}
+	return result, err
+}
+
+// OnTimeoutPacket implements the IBCModule interface
+func (am AppModule) OnTimeoutPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
+) (*sdk.Result, error) {
+	result, err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
+	if err == nil {
+		err = resendTransferRoutedByAxelar(ctx, am.keeper, am.transfer, am.channel, packet)
+	}
+	return result, err
+}
+
+func resendTransferRoutedByAxelar(ctx sdk.Context, k keeper.Keeper, t types.IBCTransferKeeper, c types.ChannelKeeper, packet channeltypes.Packet) error {
+	// resend pending IBC transfer routed by axelarnet
+	p, ok := k.GetPendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+	if !ok {
+		return nil
+	}
+	path := fmt.Sprintf("%s/%s", packet.GetSourcePort(), packet.GetSourceChannel())
+	err := keeper.IBCTransfer(ctx, k, t, c, p.Token, p.Sender, p.Receiver, path)
+	// delete the timed out transfer
+	if err != nil {
+		k.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+	}
+	return err
+}

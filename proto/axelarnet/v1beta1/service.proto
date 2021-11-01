@@ -56,4 +56,11 @@ service MsgService {
       body : "*"
     };
   }
+  rpc RouteIBCTransfers(RouteIBCTransfersRequest)
+      returns (RouteIBCTransfersResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/route-ibc-transfers"
+      body : "*"
+    };
+  }
 }
