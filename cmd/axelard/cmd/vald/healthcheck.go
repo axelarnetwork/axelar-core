@@ -57,12 +57,22 @@ func GetHealthCheckCommand() *cobra.Command {
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			execCheck(context.Background(), clientCtx, serverCtx, flagSkipTofnd, checkTofnd)
-			execCheck(cmd.Context(), clientCtx, serverCtx, flagSkipBroadcaster, checkBroadcaster)
-			execCheck(nil, clientCtx, serverCtx, flagSkipOperator, checkOperator)
-
+                         ok := true
+                         
+                         if !skipTofnd {
+                             ok = ok && execCheck(context.Background(), clientCtx, serverCtx, checkTofnd)
+                         }
+                         
+                         if !skipBroadcaster {
+                             ok = ok && execCheck(cmd.Context(), clientCtx, serverCtx, checkBroadcaster)
+                         }
+                         
+                         if !skipOperator {
+                             ok = ok && execCheck(nil, clientCtx, serverCtx, checkOperator)
+                         }
+                         
 			// enforce a non-zero exit code in case health checks fail without printing cobra output
-			if !allGood {
+			if !ok {
 				os.Exit(1)
 			}
 
@@ -74,9 +84,9 @@ func GetHealthCheckCommand() *cobra.Command {
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String(flagOperatorAddr, "", "operator address")
-	cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
-	cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
-	cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
+	skipTofnd := cmd.PersistentFlags().Bool(flagSkipTofnd, false, "skip tofnd check")
+        skipBroadcaster := cmd.PersistentFlags().Bool(flagSkipBroadcaster, false, "skip broadcaster check")
+        skipOperator := cmd.PersistentFlags().Bool(flagSkipOperator, false, "skip operator check")
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
