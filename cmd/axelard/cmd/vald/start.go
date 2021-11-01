@@ -209,8 +209,8 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
 	}
 
-	queryAck := createNewBlockEventQuery(tssTypes.EventTypeAck, tssTypes.ModuleName, tssTypes.AttributeValueSend)
-	ack, err := tmEvents.Subscribe(eventBus, queryAck)
+	queryHeartBeat := createNewBlockEventQuery(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
+	heartbeat, err := tmEvents.Subscribe(eventBus, queryHeartBeat)
 	if err != nil {
 		panic(fmt.Errorf("unable to subscribe with ack event query: %v", err))
 	}
@@ -254,7 +254,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			tssMgr.ProcessNewBlockHeader(height)
 			return nil
 		})),
-		tmEvents.Consume(ack, tssMgr.ProcessAck),
+		tmEvents.Consume(heartbeat, tssMgr.ProcessHeartBeatEvent),
 		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
 		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),

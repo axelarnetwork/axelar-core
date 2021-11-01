@@ -29,7 +29,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 }
 
 func emitHeartbeatEvent(ctx sdk.Context, keeper keeper.Keeper, nexus types.Nexus) {
-	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetAckPeriodInBlocks(ctx)) == 0 {
+	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetHeartbeatPeriodInBlocks(ctx)) == 0 {
 		var keyIDs []exported.KeyID
 		for _, chain := range nexus.GetChains(ctx) {
 			for _, role := range exported.GetKeyRoles() {
@@ -50,7 +50,7 @@ func emitHeartbeatEvent(ctx sdk.Context, keeper keeper.Keeper, nexus types.Nexus
 		}
 
 		bz := types.ModuleCdc.LegacyAmino.MustMarshalJSON(exported.KeyIDsToStrings(keyIDs))
-		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeAck,
+		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeHeartBeat,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueSend),
 			sdk.NewAttribute(types.AttributeKeyKeyIDs, string(bz)),

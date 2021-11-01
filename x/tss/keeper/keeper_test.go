@@ -150,8 +150,8 @@ func TestAvailableOperator(t *testing.T) {
 		s := setup()
 		keyIDs := randKeyIDs()
 
-		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight + rand.I64Between(1, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+		eventHeight := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+		height := eventHeight + rand.I64Between(1, s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
 
 		for i := 0; i < repeats; i++ {
@@ -164,7 +164,7 @@ func TestAvailableOperator(t *testing.T) {
 
 			// available
 			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator, keyIDs...)
-			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i+1)
 			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
 			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx), availableValidator)
@@ -184,7 +184,7 @@ func TestAvailableOperator(t *testing.T) {
 		s := setup()
 		keyIDs := randKeyIDs()
 
-		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+		eventHeight := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		height := eventHeight
 		repeats := int(rand.I64Between(5, 20))
 
@@ -198,7 +198,7 @@ func TestAvailableOperator(t *testing.T) {
 
 			// available
 			s.Keeper.SetAvailableOperator(s.Ctx, availableValidator, keyIDs...)
-			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+			s.Ctx = s.Ctx.WithBlockHeight(eventHeight + s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 			assert.Len(t, s.Keeper.GetAvailableOperators(s.Ctx), i+1)
 			assert.True(t, s.Keeper.IsOperatorAvailable(s.Ctx, availableValidator))
 			assert.Contains(t, s.Keeper.GetAvailableOperators(s.Ctx), availableValidator)
@@ -218,7 +218,7 @@ func TestAvailableOperator(t *testing.T) {
 		s := setup()
 		keyIDs := randKeyIDs()
 
-		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+		eventHeight := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
 		repeats := int(rand.I64Between(5, 20))
 
 		for i := 0; i < repeats; i++ {
@@ -251,8 +251,8 @@ func TestAvailableOperator(t *testing.T) {
 		s := setup()
 		keyIDs := randKeyIDs()
 
-		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight - (rand.I64Between(1, 100) + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+		eventHeight := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+		height := eventHeight - (rand.I64Between(1, 100) + s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
 
 		t.Logf("next event height %d, current height %d", eventHeight, height)
@@ -275,8 +275,8 @@ func TestAvailableOperator(t *testing.T) {
 		s := setup()
 		keyIDs := randKeyIDs()
 
-		eventHeight := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-		height := eventHeight - (1 + s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+		eventHeight := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+		height := eventHeight - (1 + s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 		repeats := int(rand.I64Between(5, 20))
 
 		for i := 0; i < repeats; i++ {

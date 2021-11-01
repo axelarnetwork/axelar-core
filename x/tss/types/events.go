@@ -2,10 +2,10 @@ package types
 
 // Event types
 const (
-	EventTypeKeygen = "keygen"
-	EventTypeSign   = "sign"
-	EventTypeAck    = "ack"
-	EventTypeKey    = "key"
+	EventTypeKeygen    = "keygen"
+	EventTypeSign      = "sign"
+	EventTypeHeartBeat = "heartbeat"
+	EventTypeKey       = "key"
 )
 
 // Event attribute keys

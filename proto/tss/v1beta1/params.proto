@@ -17,9 +17,9 @@ message Params {
   // validator is disallowed to participate in any TSS ceremony after
   // committing a malicious behaviour during signing
   int64 suspend_duration_in_blocks = 3;
-  // AckPeriodInBlocks defines the time period in blocks for tss to
-  // emit the event asking validators to send acknowledgments for keygen/sign
-  int64 ack_period_in_blocks = 4;
+  // HeartBeatPeriodInBlocks defines the time period in blocks for tss to
+  // emit the event asking validators to send their heartbeats
+  int64 heartbeat_period_in_blocks = 4;
   utils.v1beta1.Threshold max_missed_blocks_per_window = 5
       [ (gogoproto.nullable) = false ];
   int64 unbonding_locking_key_rotation_count = 6;

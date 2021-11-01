@@ -109,9 +109,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher)
 
-	// set the acknowledgment window just enough for all nodes to be able to submit their acks in time
-	tssParams := tssTypes.DefaultParams()
-	signer.SetParams(ctx, tssParams)
+	signer.SetParams(ctx, tssTypes.DefaultParams())
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
 	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace)
@@ -219,9 +217,6 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		},
 		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 		IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tssExported.KeyID) bool {
-
-			// we cannot evaluate the counter number, but for the context of the unit tests,
-			// we can assume the validators always send their acknowledgments
 			for _, validator := range validators {
 				if validator.GetOperator().String() == v.String() {
 					return true
@@ -388,9 +383,9 @@ func randomOutpointInfo(recipient string) btcTypes.OutPointInfo {
 }
 
 func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk.Msg) (result <-chan *fake.Result)) {
-	// register listener for tofnd acknowledgment
+	// register listener for heartbeat event
 	n.Node.RegisterEventListener(func(event abci.Event) bool {
-		if event.Type != tssTypes.EventTypeAck {
+		if event.Type != tssTypes.EventTypeHeartBeat {
 			return false
 		}
 
@@ -410,7 +405,7 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 			}
 		}
 
-		_ = submitMsg(tssTypes.NewAckRequest(n.Proxy, present))
+		_ = submitMsg(tssTypes.NewHeartBeatRequest(n.Proxy, present))
 
 		return true
 	})
@@ -537,7 +532,7 @@ func registerWaitEventListeners(n nodeData) listeners {
 	// register listener for ack request
 	ackRequested := n.Node.RegisterEventListener(func(event abci.Event) bool {
 		attributes := mapifyAttributes(event)
-		return event.Type == tssTypes.EventTypeAck &&
+		return event.Type == tssTypes.EventTypeHeartBeat &&
 			attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
 	})
 
