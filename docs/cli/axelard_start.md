@@ -64,7 +64,7 @@ axelard start [flags]
       --p2p.unconditional_peer_ids string               comma-delimited IDs of unconditional peers
       --p2p.upnp                                        enable/disable UPNP port forwarding
       --priv_validator_laddr string                     socket address to listen on for connections from external priv_validator process
-      --proxy_app string                                proxy app address, or one of: 'kvstore', 'persistent_kvstore', 'counter', 'counter_serial' or 'noop' for local testing. (default "tcp://127.0.0.1:26658")
+      --proxy_app string                                proxy app address, or one of: 'kvstore', 'persistent_kvstore', 'counter', 'e2e' or 'noop' for local testing. (default "tcp://127.0.0.1:26658")
       --pruning string                                  Pruning strategy (default|nothing|everything|custom) (default "default")
       --pruning-interval uint                           Height interval at which pruned heights are removed from disk (ignored if pruning is not 'custom')
       --pruning-keep-every uint                         Offset heights to keep on disk after 'keep-every' (ignored if pruning is not 'custom')
