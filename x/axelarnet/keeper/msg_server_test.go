@@ -433,8 +433,10 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			LoggerFunc:              func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetPendingRefundFunc:    func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) {
+				return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true
+			},
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
 		}
 		bankKeeper = &mock.BankKeeperMock{
@@ -497,7 +499,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		setup()
 		axelarnetKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.Coin{}, false }
 
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.HeartBeatRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -506,7 +508,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.AckRequest{})
+		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.HeartBeatRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -576,7 +578,9 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetNextSequenceSendFunc: func(ctx sdk.Context, portID, channelID string) (uint64, bool) { return uint64(rand.PosI64()), true },
 		}
 		transferKeeper = &mock.IBCTransferKeeperMock{
-			SendTransferFunc: func(ctx sdk.Context, sourcePort, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error { return nil },
+			SendTransferFunc: func(ctx sdk.Context, sourcePort, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
+				return nil
+			},
 		}
 		accountKeeper = &mock.AccountKeeperMock{
 			GetModuleAddressFunc: func(string) sdk.AccAddress { return rand.AccAddr() },

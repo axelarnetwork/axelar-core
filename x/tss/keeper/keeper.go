@@ -174,10 +174,10 @@ func (k Keeper) GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold {
 	return result
 }
 
-// GetAckPeriodInBlocks returns the acknowledgment event period
-func (k Keeper) GetAckPeriodInBlocks(ctx sdk.Context) int64 {
+// GetHeartbeatPeriodInBlocks returns the heartbeat event period
+func (k Keeper) GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64 {
 	var result int64
-	k.params.Get(ctx, types.KeyAckPeriodInBlocks, &result)
+	k.params.Get(ctx, types.KeyHeartbeatPeriodInBlocks, &result)
 
 	return result
 }
@@ -329,10 +329,10 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, k
 	}
 	height := int64(binary.LittleEndian.Uint64(bz))
 
-	return (ctx.BlockHeight()-height) <= k.GetAckPeriodInBlocks(ctx) && k.operatorHasKeys(ctx, validator, keyIDs...)
+	return (ctx.BlockHeight()-height) <= k.GetHeartbeatPeriodInBlocks(ctx) && k.operatorHasKeys(ctx, validator, keyIDs...)
 }
 
-// GetAvailableOperators gets all operators that still have a non-stale acknowledgment
+// GetAvailableOperators gets all operators that still have a non-stale heartbeat
 func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress {
 	iter := k.getStore(ctx).Iterator(availablePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -347,8 +347,8 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID)
 		}
 
 		height := int64(binary.LittleEndian.Uint64(iter.Value()))
-		if (ctx.BlockHeight() - height) > k.GetAckPeriodInBlocks(ctx) {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale acknowledgement "+
+		if (ctx.BlockHeight() - height) > k.GetHeartbeatPeriodInBlocks(ctx) {
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale heartbeat "+
 				"[current height %d, event height %d]", validator, ctx.BlockHeight(), height))
 			continue
 		}

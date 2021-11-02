@@ -19,8 +19,8 @@ func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Vot
 		case *types.RegisterExternalKeysRequest:
 			res, err := server.RegisterExternalKeys(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.AckRequest:
-			res, err := server.Ack(sdk.WrapSDKContext(ctx), msg)
+		case *types.HeartBeatRequest:
+			res, err := server.HeartBeat(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		case *types.ProcessKeygenTrafficRequest:

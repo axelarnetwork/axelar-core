@@ -77,7 +77,7 @@ message VoteSigRequest {
 
 message VoteSigResponse { string log = 1; }
 
-message AckRequest {
+message HeartBeatRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 
@@ -88,7 +88,7 @@ message AckRequest {
   ];
 }
 
-message AckResponse {
+message HeartBeatResponse {
   int32 keygen_illegibility = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/snapshot/"
