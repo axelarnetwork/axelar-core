@@ -42,3 +42,7 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
+
+// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
+// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
+replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
