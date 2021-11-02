@@ -41,6 +41,7 @@ import (
 	utils2 "github.com/axelarnetwork/axelar-core/utils"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -296,11 +297,17 @@ func createBroadcaster(txf tx.Factory, axelarCfg config.ValdConfig, logger log.L
 
 func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
-		gg20client, err := tss.CreateTOFNDClient(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
+		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
 			return nil, err
 		}
-		tssMgr := tss.NewMgr(gg20client, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
+		logger.Debug("successful connection to tofnd gRPC server")
+
+		// creates clients to communicate with the external tofnd process service
+		gg20client := tofnd.NewGG20Client(conn)
+		multiSigClient := tofnd.NewMultisigClient(conn)
+
+		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}

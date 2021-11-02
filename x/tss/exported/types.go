@@ -143,6 +143,10 @@ func (m KeyRequirement) Validate() error {
 		return err
 	}
 
+	if err := m.KeyType.Validate(); err != nil {
+		return err
+	}
+
 	if m.MinKeygenThreshold.Validate() != nil || m.MinKeygenThreshold.GT(utils.OneThreshold) || m.MinKeygenThreshold.LT(utils.ZeroThreshold) {
 		return fmt.Errorf("MinKeygenThreshold must be <=1 and >0")
 	}
@@ -209,4 +213,46 @@ func (m KeyRequirement) Validate() error {
 // (threshold + 1) shares are required to sign
 func ComputeAbsCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
 	return sdk.NewDec(totalShareCount.Int64()).MulInt64(safetyThreshold.Numerator).QuoInt64(safetyThreshold.Denominator).Ceil().TruncateInt().Int64() - 1
+}
+
+// MultisigKey contains the public key value and corresponding ID
+type MultisigKey struct {
+	ID        KeyID
+	Values    []ecdsa.PublicKey
+	Role      KeyRole
+	RotatedAt *time.Time
+}
+
+// KeyTypeFromSimpleStr creates a KeyType from string
+func KeyTypeFromSimpleStr(str string) (KeyType, error) {
+	switch strings.ToLower(str) {
+	case Threshold.SimpleString():
+		return Threshold, nil
+	case Multisig.SimpleString():
+		return Multisig, nil
+	default:
+		return -1, fmt.Errorf("invalid key type %s", str)
+	}
+}
+
+// SimpleString returns a human-readable string
+func (x KeyType) SimpleString() string {
+	switch x {
+	case Threshold:
+		return "threshold"
+	case Multisig:
+		return "multisig"
+	default:
+		return "unknown"
+	}
+}
+
+// Validate validates the KeyType
+func (x KeyType) Validate() error {
+	switch x {
+	case Threshold, Multisig:
+		return nil
+	default:
+		return fmt.Errorf("invalid key type %d", x)
+	}
 }

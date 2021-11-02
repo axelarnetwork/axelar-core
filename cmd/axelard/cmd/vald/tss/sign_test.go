@@ -41,9 +41,15 @@ func TestMgr_ProcessSignStart(t *testing.T) {
 				return signClient, nil
 			},
 		}
+		multiSigCli := &mock.MultiSigClientMock{
+			KeygenFunc: func(ctx context.Context, in *tofnd.KeygenRequest, opts ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
+				return &tofnd.KeygenResponse{KeygenResponse: &tofnd.KeygenResponse_PubKey{PubKey: rand.Bytes(33)}}, nil
+			},
+		}
 
 		mgr = NewMgr(
 			cli,
+			multiSigCli,
 			client.Context{},
 			1*time.Second,
 			principalAddr,
