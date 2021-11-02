@@ -106,10 +106,15 @@ func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server
 	}
 
 	nopLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
-	gg20client, err := tss.CreateTOFNDClient(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, nopLogger)
+
+	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, nopLogger)
 	if err != nil {
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 	}
+	nopLogger.Debug("successful connection to tofnd gRPC server")
+
+	// creates client to communicate with the external tofnd process gg20 service
+	gg20client := tofnd.NewGG20Client(conn)
 
 	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()

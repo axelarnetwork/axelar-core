@@ -37,6 +37,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []string {
 // 				panic("mock out the GetCosmosChains method")
 // 			},
+// 			GetFeeCollectorFunc: func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
+// 				panic("mock out the GetFeeCollector method")
+// 			},
 // 			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain string) (string, bool) {
 // 				panic("mock out the GetIBCPath method")
 // 			},
@@ -57,6 +60,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
 // 				panic("mock out the RegisterIBCPath method")
+// 			},
+// 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
+// 				panic("mock out the SetFeeCollector method")
 // 			},
 // 			SetParamsFunc: func(ctx cosmossdktypes.Context, n axelarnettypes.Nexus, p axelarnettypes.Params)  {
 // 				panic("mock out the SetParams method")
@@ -83,6 +89,9 @@ type BaseKeeperMock struct {
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []string
 
+	// GetFeeCollectorFunc mocks the GetFeeCollector method.
+	GetFeeCollectorFunc func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool)
+
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain string) (string, bool)
 
@@ -103,6 +112,9 @@ type BaseKeeperMock struct {
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
+
+	// SetFeeCollectorFunc mocks the SetFeeCollector method.
+	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, n axelarnettypes.Nexus, p axelarnettypes.Params)
@@ -139,6 +151,11 @@ type BaseKeeperMock struct {
 		}
 		// GetCosmosChains holds details about calls to the GetCosmosChains method.
 		GetCosmosChains []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+		// GetFeeCollector holds details about calls to the GetFeeCollector method.
+		GetFeeCollector []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
@@ -195,6 +212,13 @@ type BaseKeeperMock struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// SetFeeCollector holds details about calls to the SetFeeCollector method.
+		SetFeeCollector []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Address is the address argument value.
+			Address cosmossdktypes.AccAddress
+		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
 			// Ctx is the ctx argument value.
@@ -222,6 +246,7 @@ type BaseKeeperMock struct {
 	lockDeletePendingRefund        sync.RWMutex
 	lockGetCosmosChain             sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
+	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
 	lockGetPendingIBCTransfer      sync.RWMutex
 	lockGetPendingRefund           sync.RWMutex
@@ -229,6 +254,7 @@ type BaseKeeperMock struct {
 	lockLogger                     sync.RWMutex
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
+	lockSetFeeCollector            sync.RWMutex
 	lockSetParams                  sync.RWMutex
 	lockSetPendingIBCTransfer      sync.RWMutex
 }
@@ -374,6 +400,37 @@ func (mock *BaseKeeperMock) GetCosmosChainsCalls() []struct {
 	mock.lockGetCosmosChains.RLock()
 	calls = mock.calls.GetCosmosChains
 	mock.lockGetCosmosChains.RUnlock()
+	return calls
+}
+
+// GetFeeCollector calls GetFeeCollectorFunc.
+func (mock *BaseKeeperMock) GetFeeCollector(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
+	if mock.GetFeeCollectorFunc == nil {
+		panic("BaseKeeperMock.GetFeeCollectorFunc: method is nil but BaseKeeper.GetFeeCollector was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetFeeCollector.Lock()
+	mock.calls.GetFeeCollector = append(mock.calls.GetFeeCollector, callInfo)
+	mock.lockGetFeeCollector.Unlock()
+	return mock.GetFeeCollectorFunc(ctx)
+}
+
+// GetFeeCollectorCalls gets all the calls that were made to GetFeeCollector.
+// Check the length with:
+//     len(mockedBaseKeeper.GetFeeCollectorCalls())
+func (mock *BaseKeeperMock) GetFeeCollectorCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetFeeCollector.RLock()
+	calls = mock.calls.GetFeeCollector
+	mock.lockGetFeeCollector.RUnlock()
 	return calls
 }
 
@@ -627,6 +684,41 @@ func (mock *BaseKeeperMock) RegisterIBCPathCalls() []struct {
 	mock.lockRegisterIBCPath.RLock()
 	calls = mock.calls.RegisterIBCPath
 	mock.lockRegisterIBCPath.RUnlock()
+	return calls
+}
+
+// SetFeeCollector calls SetFeeCollectorFunc.
+func (mock *BaseKeeperMock) SetFeeCollector(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) {
+	if mock.SetFeeCollectorFunc == nil {
+		panic("BaseKeeperMock.SetFeeCollectorFunc: method is nil but BaseKeeper.SetFeeCollector was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		Address cosmossdktypes.AccAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockSetFeeCollector.Lock()
+	mock.calls.SetFeeCollector = append(mock.calls.SetFeeCollector, callInfo)
+	mock.lockSetFeeCollector.Unlock()
+	mock.SetFeeCollectorFunc(ctx, address)
+}
+
+// SetFeeCollectorCalls gets all the calls that were made to SetFeeCollector.
+// Check the length with:
+//     len(mockedBaseKeeper.SetFeeCollectorCalls())
+func (mock *BaseKeeperMock) SetFeeCollectorCalls() []struct {
+	Ctx     cosmossdktypes.Context
+	Address cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		Address cosmossdktypes.AccAddress
+	}
+	mock.lockSetFeeCollector.RLock()
+	calls = mock.calls.SetFeeCollector
+	mock.lockSetFeeCollector.RUnlock()
 	return calls
 }
 

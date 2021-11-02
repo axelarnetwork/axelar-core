@@ -145,50 +145,47 @@ func (l *LockableStream) CloseSend() error {
 
 // Mgr represents an object that manages all communication with the external tss process
 type Mgr struct {
-	client        rpc.Client
-	cliCtx        sdkClient.Context
-	keygen        *sync.RWMutex
-	sign          *sync.RWMutex
-	keygenStreams map[string]*LockableStream
-	signStreams   map[string]*LockableStream
-	timeoutQueue  *TimeoutQueue
-	Timeout       time.Duration
-	principalAddr string
-	Logger        log.Logger
-	broadcaster   broadcasterTypes.Broadcaster
-	cdc           *codec.LegacyAmino
+	client         rpc.Client
+	multiSigClient rpc.MultiSigClient
+	cliCtx         sdkClient.Context
+	keygen         *sync.RWMutex
+	sign           *sync.RWMutex
+	keygenStreams  map[string]*LockableStream
+	signStreams    map[string]*LockableStream
+	timeoutQueue   *TimeoutQueue
+	Timeout        time.Duration
+	principalAddr  string
+	Logger         log.Logger
+	broadcaster    broadcasterTypes.Broadcaster
+	cdc            *codec.LegacyAmino
 }
 
-// CreateTOFNDClient creates a client to communicate with the external tofnd process
-func CreateTOFNDClient(host string, port string, timeout time.Duration, logger log.Logger) (rpc.Client, error) {
+// Connect connects to tofnd gRPC Server
+func Connect(host string, port string, timeout time.Duration, logger log.Logger) (*grpc.ClientConn, error) {
 	tofndServerAddress := host + ":" + port
 	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return nil, err
-	}
-	logger.Debug("successful connection to tofnd gRPC server")
-	gg20client := tofnd.NewGG20Client(conn)
-	return gg20client, nil
+
+	return grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
-		client:        client,
-		cliCtx:        cliCtx,
-		keygen:        &sync.RWMutex{},
-		sign:          &sync.RWMutex{},
-		keygenStreams: make(map[string]*LockableStream),
-		signStreams:   make(map[string]*LockableStream),
-		timeoutQueue:  NewTimeoutQueue(),
-		Timeout:       timeout,
-		principalAddr: principalAddr,
-		Logger:        logger.With("listener", "tss"),
-		broadcaster:   broadcaster,
-		cdc:           cdc,
+		client:         client,
+		multiSigClient: multiSigClient,
+		cliCtx:         cliCtx,
+		keygen:         &sync.RWMutex{},
+		sign:           &sync.RWMutex{},
+		keygenStreams:  make(map[string]*LockableStream),
+		signStreams:    make(map[string]*LockableStream),
+		timeoutQueue:   NewTimeoutQueue(),
+		Timeout:        timeout,
+		principalAddr:  principalAddr,
+		Logger:         logger.With("listener", "tss"),
+		broadcaster:    broadcaster,
+		cdc:            cdc,
 	}
 }
 

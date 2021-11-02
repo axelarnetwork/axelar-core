@@ -30,6 +30,8 @@
     - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
+    - [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest)
+    - [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse)
     - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
     - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
@@ -51,6 +53,7 @@
     - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [KeyType](#tss.exported.v1beta1.KeyType)
     - [SigStatus](#tss.exported.v1beta1.SigStatus)
   
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
@@ -240,9 +243,19 @@
 - [snapshot/v1beta1/service.proto](#snapshot/v1beta1/service.proto)
     - [MsgService](#snapshot.v1beta1.MsgService)
   
-- [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
+- [tss/tofnd/v1beta1/common.proto](#tss/tofnd/v1beta1/common.proto)
     - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
     - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
+  
+    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
+  
+- [tss/tofnd/v1beta1/multisig.proto](#tss/tofnd/v1beta1/multisig.proto)
+    - [KeygenRequest](#tss.tofnd.v1beta1.KeygenRequest)
+    - [KeygenResponse](#tss.tofnd.v1beta1.KeygenResponse)
+    - [SignRequest](#tss.tofnd.v1beta1.SignRequest)
+    - [SignResponse](#tss.tofnd.v1beta1.SignResponse)
+  
+- [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
     - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
     - [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput)
     - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
@@ -257,7 +270,6 @@
     - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
     - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
   
-    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
     - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
     - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
   
@@ -306,6 +318,7 @@
     - [MsgService](#tss.v1beta1.MsgService)
   
 - [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [KeygenInfo](#tss.v1beta1.KeygenInfo)
     - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
@@ -643,6 +656,33 @@ based chain
 
 
 
+<a name="axelarnet.v1beta1.RegisterFeeCollectorRequest"></a>
+
+### RegisterFeeCollectorRequest
+RegisterFeeCollectorRequest represents a message to register axelarnet fee
+collector account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `fee_collector` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.RegisterFeeCollectorResponse"></a>
+
+### RegisterFeeCollectorResponse
+
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
 ### RegisterIBCPathRequest
@@ -734,6 +774,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
+| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
 
  <!-- end services -->
 
@@ -820,6 +861,7 @@ KeyRequirement defines requirements for keys
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
@@ -894,6 +936,19 @@ SignInfo holds information about a sign request
 | KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
 | KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
 | KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyType"></a>
+
+### KeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_TYPE_UNSPECIFIED | 0 |  |
+| KEY_TYPE_THRESHOLD | 1 |  |
+| KEY_TYPE_MULTISIG | 2 |  |
 
 
 
@@ -3380,10 +3435,10 @@ Msg defines the snapshot Msg service.
 
 
 
-<a name="tss/tofnd/v1beta1/tofnd.proto"></a>
+<a name="tss/tofnd/v1beta1/common.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## tss/tofnd/v1beta1/tofnd.proto
+## tss/tofnd/v1beta1/common.proto
 File copied from golang tofnd with minor tweaks
 
 
@@ -3415,6 +3470,117 @@ Key presence check types
 
 
 
+
+ <!-- end messages -->
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
+
+### KeyPresenceResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_PRESENT | 1 |  |
+| RESPONSE_ABSENT | 2 |  |
+| RESPONSE_FAIL | 3 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/tofnd/v1beta1/multisig.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/tofnd/v1beta1/multisig.proto
+File copied from golang tofnd with minor tweaks
+
+
+<a name="tss.tofnd.v1beta1.KeygenRequest"></a>
+
+### KeygenRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+| `party_uid` | [string](#string) |  | used only for logging |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeygenResponse"></a>
+
+### KeygenResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed curve point |
+| `error` | [string](#string) |  | reply with an error message if keygen fails |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.SignRequest"></a>
+
+### SignRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+| `msg_to_sign` | [bytes](#bytes) |  | 32-byte pre-hashed message digest |
+| `party_uid` | [string](#string) |  | used only for logging |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.SignResponse"></a>
+
+### SignResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `signature` | [bytes](#bytes) |  | ASN.1 DER-encoded ECDSA signature |
+| `error` | [string](#string) |  | reply with an error message if sign fails |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/tofnd/v1beta1/tofnd.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/tofnd/v1beta1/tofnd.proto
+File copied from golang tofnd with minor tweaks
 
 
 <a name="tss.tofnd.v1beta1.KeygenInit"></a>
@@ -3635,20 +3801,6 @@ Sign's response types
 
 
  <!-- end messages -->
-
-
-<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
-
-### KeyPresenceResponse.Response
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| RESPONSE_UNSPECIFIED | 0 |  |
-| RESPONSE_PRESENT | 1 |  |
-| RESPONSE_ABSENT | 2 |  |
-| RESPONSE_FAIL | 3 |  |
-
 
 
 <a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
@@ -4281,6 +4433,23 @@ Msg defines the tss Msg service.
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/v1beta1/types.proto
+
+
+
+<a name="tss.v1beta1.KeygenInfo"></a>
+
+### KeygenInfo
+KeygenInfo holds information about a key
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+
+
+
 
 
 

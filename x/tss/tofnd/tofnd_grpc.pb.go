@@ -3,15 +3,15 @@
 package tofnd
 
 import (
-	"context"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	context "context"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GG20Client is the client API for GG20 service.
@@ -41,17 +41,8 @@ func (c *gG20Client) Recover(ctx context.Context, in *RecoverRequest, opts ...gr
 	return out, nil
 }
 
-func (c *gG20Client) KeyPresence(ctx context.Context, in *KeyPresenceRequest, opts ...grpc.CallOption) (*KeyPresenceResponse, error) {
-	out := new(KeyPresenceResponse)
-	err := c.cc.Invoke(ctx, "/tofnd.GG20/KeyPresence", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *gG20Client) Keygen(ctx context.Context, opts ...grpc.CallOption) (GG20_KeygenClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GG20_serviceDesc.Streams[0], "/tofnd.GG20/Keygen", opts...)
+	stream, err := c.cc.NewStream(ctx, &GG20_ServiceDesc.Streams[0], "/tofnd.GG20/Keygen", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +73,7 @@ func (x *gG20KeygenClient) Recv() (*MessageOut, error) {
 }
 
 func (c *gG20Client) Sign(ctx context.Context, opts ...grpc.CallOption) (GG20_SignClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GG20_serviceDesc.Streams[1], "/tofnd.GG20/Sign", opts...)
+	stream, err := c.cc.NewStream(ctx, &GG20_ServiceDesc.Streams[1], "/tofnd.GG20/Sign", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +103,23 @@ func (x *gG20SignClient) Recv() (*MessageOut, error) {
 	return m, nil
 }
 
+func (c *gG20Client) KeyPresence(ctx context.Context, in *KeyPresenceRequest, opts ...grpc.CallOption) (*KeyPresenceResponse, error) {
+	out := new(KeyPresenceResponse)
+	err := c.cc.Invoke(ctx, "/tofnd.GG20/KeyPresence", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GG20Server is the server API for GG20 service.
 // All implementations must embed UnimplementedGG20Server
 // for forward compatibility
 type GG20Server interface {
+	Recover(context.Context, *RecoverRequest) (*RecoverResponse, error)
 	Keygen(GG20_KeygenServer) error
 	Sign(GG20_SignServer) error
+	KeyPresence(context.Context, *KeyPresenceRequest) (*KeyPresenceResponse, error)
 	mustEmbedUnimplementedGG20Server()
 }
 
@@ -125,11 +127,17 @@ type GG20Server interface {
 type UnimplementedGG20Server struct {
 }
 
+func (UnimplementedGG20Server) Recover(context.Context, *RecoverRequest) (*RecoverResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Recover not implemented")
+}
 func (UnimplementedGG20Server) Keygen(GG20_KeygenServer) error {
 	return status.Errorf(codes.Unimplemented, "method Keygen not implemented")
 }
 func (UnimplementedGG20Server) Sign(GG20_SignServer) error {
 	return status.Errorf(codes.Unimplemented, "method Sign not implemented")
+}
+func (UnimplementedGG20Server) KeyPresence(context.Context, *KeyPresenceRequest) (*KeyPresenceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method KeyPresence not implemented")
 }
 func (UnimplementedGG20Server) mustEmbedUnimplementedGG20Server() {}
 
@@ -141,7 +149,25 @@ type UnsafeGG20Server interface {
 }
 
 func RegisterGG20Server(s grpc.ServiceRegistrar, srv GG20Server) {
-	s.RegisterService(&_GG20_serviceDesc, srv)
+	s.RegisterService(&GG20_ServiceDesc, srv)
+}
+
+func _GG20_Recover_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecoverRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GG20Server).Recover(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tofnd.GG20/Recover",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GG20Server).Recover(ctx, req.(*RecoverRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GG20_Keygen_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -196,10 +222,40 @@ func (x *gG20SignServer) Recv() (*MessageIn, error) {
 	return m, nil
 }
 
-var _GG20_serviceDesc = grpc.ServiceDesc{
+func _GG20_KeyPresence_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KeyPresenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GG20Server).KeyPresence(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tofnd.GG20/KeyPresence",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GG20Server).KeyPresence(ctx, req.(*KeyPresenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// GG20_ServiceDesc is the grpc.ServiceDesc for GG20 service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GG20_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "tofnd.GG20",
 	HandlerType: (*GG20Server)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Recover",
+			Handler:    _GG20_Recover_Handler,
+		},
+		{
+			MethodName: "KeyPresence",
+			Handler:    _GG20_KeyPresence_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Keygen",
@@ -214,5 +270,5 @@ var _GG20_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "third_party/proto/tofnd/tofnd.proto",
+	Metadata: "tss/tofnd/tofnd.proto",
 }

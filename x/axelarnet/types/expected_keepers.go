@@ -18,17 +18,20 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	SetParams(ctx sdk.Context, n Nexus, p Params)
+	GetRouteTimeoutWindow(ctx sdk.Context) uint64
+
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, chain string) (string, bool)
 	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (sdk.Coin, bool)
 	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
+	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
+	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress)
 	SetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64, value IBCTransfer)
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []string
 	RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string)
 	GetCosmosChain(ctx sdk.Context, asset string) (string, bool)
-	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 }
 
 // Nexus provides functionality to manage cross-chain transfers
