@@ -37,6 +37,7 @@ func DefaultParams() Params {
 		KeyRequirements: []exported.KeyRequirement{
 			{
 				KeyRole:                    exported.MasterKey,
+				KeyType:                    exported.Threshold,
 				MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
 				SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
 				KeyShareDistributionPolicy: exported.WeightedByStake,
@@ -49,6 +50,7 @@ func DefaultParams() Params {
 			},
 			{
 				KeyRole:                    exported.SecondaryKey,
+				KeyType:                    exported.Threshold,
 				MinKeygenThreshold:         utils.Threshold{Numerator: 15, Denominator: 20},
 				SafetyThreshold:            utils.Threshold{Numerator: 11, Denominator: 20},
 				KeyShareDistributionPolicy: exported.OnePerValidator,
@@ -58,6 +60,32 @@ func DefaultParams() Params {
 				SignVotingThreshold:        utils.Threshold{Numerator: 11, Denominator: 20},
 				KeygenTimeout:              150,
 				SignTimeout:                150,
+			},
+			{
+				KeyRole:                    exported.MasterKey,
+				KeyType:                    exported.Multisig,
+				MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
+				SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
+				KeyShareDistributionPolicy: exported.WeightedByStake,
+				MaxTotalShareCount:         50,
+				MinTotalShareCount:         4,
+				KeygenVotingThreshold:      utils.Threshold{Numerator: 5, Denominator: 6},
+				SignVotingThreshold:        utils.Threshold{Numerator: 2, Denominator: 3},
+				KeygenTimeout:              50,
+				SignTimeout:                50,
+			},
+			{
+				KeyRole:                    exported.SecondaryKey,
+				KeyType:                    exported.Multisig,
+				MinKeygenThreshold:         utils.Threshold{Numerator: 15, Denominator: 20},
+				SafetyThreshold:            utils.Threshold{Numerator: 11, Denominator: 20},
+				KeyShareDistributionPolicy: exported.OnePerValidator,
+				MaxTotalShareCount:         20,
+				MinTotalShareCount:         4,
+				KeygenVotingThreshold:      utils.Threshold{Numerator: 15, Denominator: 20},
+				SignVotingThreshold:        utils.Threshold{Numerator: 11, Denominator: 20},
+				KeygenTimeout:              50,
+				SignTimeout:                50,
 			},
 		},
 		SuspendDurationInBlocks:          2000,
@@ -136,15 +164,16 @@ func validateKeyRequirements(keyRequirements interface{}) error {
 
 	keyRoleSeen := map[string]bool{}
 	for _, keyRequirement := range val {
-		if keyRoleSeen[keyRequirement.KeyRole.SimpleString()] {
-			return fmt.Errorf("duplicate key role found in KeyRequirements")
+		key := fmt.Sprintf("%s_%s", keyRequirement.KeyRole.SimpleString(), keyRequirement.KeyType.SimpleString())
+		if keyRoleSeen[key] {
+			return fmt.Errorf("duplicate key role and key type found in KeyRequirements")
 		}
 
 		if err := keyRequirement.Validate(); err != nil {
 			return err
 		}
 
-		keyRoleSeen[keyRequirement.KeyRole.SimpleString()] = true
+		keyRoleSeen[key] = true
 	}
 
 	return nil

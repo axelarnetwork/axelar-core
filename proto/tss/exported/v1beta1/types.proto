@@ -9,18 +9,19 @@ import "gogoproto/gogo.proto";
 // KeyRequirement defines requirements for keys
 message KeyRequirement {
   KeyRole key_role = 1;
-  utils.v1beta1.Threshold min_keygen_threshold = 2
+  KeyType key_type = 2;
+  utils.v1beta1.Threshold min_keygen_threshold = 3
       [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold safety_threshold = 3 [ (gogoproto.nullable) = false ];
-  KeyShareDistributionPolicy key_share_distribution_policy = 4;
-  int64 max_total_share_count = 5;
-  int64 min_total_share_count = 6;
-  utils.v1beta1.Threshold keygen_voting_threshold = 7
+  utils.v1beta1.Threshold safety_threshold = 4 [ (gogoproto.nullable) = false ];
+  KeyShareDistributionPolicy key_share_distribution_policy = 5;
+  int64 max_total_share_count = 6;
+  int64 min_total_share_count = 7;
+  utils.v1beta1.Threshold keygen_voting_threshold = 8
       [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold sign_voting_threshold = 8
+  utils.v1beta1.Threshold sign_voting_threshold = 9
       [ (gogoproto.nullable) = false ];
-  int64 keygen_timeout = 9;
-  int64 sign_timeout = 10;
+  int64 keygen_timeout = 10;
+  int64 sign_timeout = 11;
 }
 
 enum KeyRole {
@@ -78,4 +79,13 @@ enum SigStatus {
   SIG_STATUS_SIGNED = 3 [ (gogoproto.enumvalue_customname) = "Signed" ];
   SIG_STATUS_ABORTED = 4 [ (gogoproto.enumvalue_customname) = "Aborted" ];
   SIG_STATUS_INVALID = 5 [ (gogoproto.enumvalue_customname) = "Invalid" ];
+}
+
+enum KeyType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_TYPE_UNSPECIFIED = 0;
+  KEY_TYPE_THRESHOLD = 1 [ (gogoproto.enumvalue_customname) = "Threshold" ];
+  KEY_TYPE_MULTISIG = 2 [ (gogoproto.enumvalue_customname) = "Multisig" ];
 }
