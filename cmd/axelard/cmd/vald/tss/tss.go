@@ -226,8 +226,8 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 	return nil
 }
 
-// ProcessAck broadcasts an acknowledgment
-func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
+// ProcessHeartBeatEvent broadcasts the heartbeat
+func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
@@ -252,7 +252,7 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 	}
 
 	// check for keys presence according to the IDs included in the event
-	keyIDs := parseAckParams(mgr.cdc, e.Attributes)
+	keyIDs := parseHeartBeatParams(mgr.cdc, e.Attributes)
 	var present []exported.KeyID
 
 	for _, keyID := range keyIDs {
@@ -280,13 +280,13 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		}
 	}
 
-	tssMsg := tss.NewAckRequest(mgr.cliCtx.FromAddress, present)
+	tssMsg := tss.NewHeartBeatRequest(mgr.cliCtx.FromAddress, present)
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
-	mgr.Logger.Info(fmt.Sprintf("operator %s sending acknowledgment for keys: %s", mgr.principalAddr, present))
+	mgr.Logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
 	txRes, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	if err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing ack msg")
+		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}
 
 	refundRes, err := mgr.extractRefundMsgResponse(txRes)
@@ -294,21 +294,21 @@ func (mgr *Mgr) ProcessAck(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve refund reply")
 	}
 
-	var ackRes tss.AckResponse
-	err = ackRes.Unmarshal(refundRes.Data)
+	var heartbeatRes tss.HeartBeatResponse
+	err = heartbeatRes.Unmarshal(refundRes.Data)
 	if err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve ack reply")
+		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve heartbeat reply")
 	}
 
 	allGood := true
-	if !ackRes.KeygenIllegibility.Is(snapshot.None) {
+	if !heartbeatRes.KeygenIllegibility.Is(snapshot.None) {
 		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in keygen due to: %s",
-			mgr.principalAddr, ackRes.KeygenIllegibility.String()))
+			mgr.principalAddr, heartbeatRes.KeygenIllegibility.String()))
 		allGood = false
 	}
-	if !ackRes.SigningIllegibility.Is(snapshot.None) {
+	if !heartbeatRes.SigningIllegibility.Is(snapshot.None) {
 		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in signing due to: %s",
-			mgr.principalAddr, ackRes.SigningIllegibility.String()))
+			mgr.principalAddr, heartbeatRes.SigningIllegibility.String()))
 		allGood = false
 	}
 
@@ -425,7 +425,7 @@ func handleStream(stream Stream, cancel context.CancelFunc, logger log.Logger) (
 	return broadcastChan, resChan, errChan
 }
 
-func parseAckParams(cdc *codec.LegacyAmino, attributes map[string]string) []string {
+func parseHeartBeatParams(cdc *codec.LegacyAmino, attributes map[string]string) []string {
 	parsers := []*parse.AttributeParser{
 		{Key: tss.AttributeKeyKeyIDs, Map: func(s string) (interface{}, error) {
 			var keyIDs []string

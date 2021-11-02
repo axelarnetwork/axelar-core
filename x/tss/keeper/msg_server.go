@@ -88,7 +88,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 	return &types.RegisterExternalKeysResponse{}, nil
 }
 
-func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResponse, error) {
+func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*types.HeartBeatResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
@@ -106,16 +106,16 @@ func (s msgServer) Ack(c context.Context, req *types.AckRequest) (*types.AckResp
 	validator, ok := s.staker.Validator(ctx, valAddr).(stakingtypes.Validator)
 	if !ok {
 		s.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
-		return &types.AckResponse{}, nil
+		return &types.HeartBeatResponse{}, nil
 	}
 
 	illegibility, err := s.snapshotter.GetValidatorIllegibility(ctx, &validator)
 	if err != nil {
 		s.Logger(ctx).Error(err.Error())
-		return &types.AckResponse{}, nil
+		return &types.HeartBeatResponse{}, nil
 	}
 
-	response := &types.AckResponse{
+	response := &types.HeartBeatResponse{
 		KeygenIllegibility:  illegibility.FilterIllegibilityForNewKey(),
 		SigningIllegibility: illegibility.FilterIllegibilityForSigning(),
 	}

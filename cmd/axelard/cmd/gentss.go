@@ -17,17 +17,17 @@ import (
 )
 
 const (
-	flagKeygen       = "keygen"
-	flagCorruption   = "corruption"
-	flagAckPeriod    = "ack-period"
-	flagBondFraction = "bond-fraction"
+	flagKeygen          = "keygen"
+	flagCorruption      = "corruption"
+	flagHeartbeatPeriod = "heartbeat-period"
+	flagBondFraction    = "bond-fraction"
 )
 
 // SetGenesisTSSCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		ackPeriod int64
+		heartbeatPeriod int64
 	)
 
 	cmd := &cobra.Command{
@@ -51,8 +51,8 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 			}
 			genesisTSS := tssTypes.GetGenesisStateFromAppState(cdc, appState)
 
-			if ackPeriod > 0 {
-				genesisTSS.Params.AckPeriodInBlocks = ackPeriod
+			if heartbeatPeriod > 0 {
+				genesisTSS.Params.HeartbeatPeriodInBlocks = heartbeatPeriod
 			}
 
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
@@ -73,6 +73,6 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 	}
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
-	cmd.Flags().Int64Var(&ackPeriod, flagAckPeriod, 0, "time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign")
+	cmd.Flags().Int64Var(&heartbeatPeriod, flagHeartbeatPeriod, 0, "time period in blocks for tss to emit the event asking validators to send their heartbeats")
 	return cmd
 }

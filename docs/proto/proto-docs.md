@@ -284,8 +284,8 @@
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
-    - [AckRequest](#tss.v1beta1.AckRequest)
-    - [AckResponse](#tss.v1beta1.AckResponse)
+    - [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest)
+    - [HeartBeatResponse](#tss.v1beta1.HeartBeatResponse)
     - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
@@ -3701,7 +3701,7 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
-| `ack_period_in_blocks` | [int64](#int64) |  | AckPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign |
+| `heartbeat_period_in_blocks` | [int64](#int64) |  | HeartBeatPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send their heartbeats |
 | `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
@@ -3987,9 +3987,9 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.AckRequest"></a>
+<a name="tss.v1beta1.HeartBeatRequest"></a>
 
-### AckRequest
+### HeartBeatRequest
 
 
 
@@ -4003,9 +4003,9 @@ Params is the parameter set for this module
 
 
 
-<a name="tss.v1beta1.AckResponse"></a>
+<a name="tss.v1beta1.HeartBeatResponse"></a>
 
-### AckResponse
+### HeartBeatResponse
 
 
 
@@ -4265,7 +4265,7 @@ Msg defines the tss Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterExternalKeys` | [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register-external-key|
-| `Ack` | [AckRequest](#tss.v1beta1.AckRequest) | [AckResponse](#tss.v1beta1.AckResponse) |  | POST|/axelar/tss/ack|
+| `HeartBeat` | [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
 | `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
 | `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
 | `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|

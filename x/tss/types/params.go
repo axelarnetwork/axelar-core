@@ -18,7 +18,7 @@ const (
 var (
 	KeyKeyRequirements                  = []byte("keyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
-	KeyAckPeriodInBlocks                = []byte("AckPeriodInBlocks")
+	KeyHeartbeatPeriodInBlocks          = []byte("HeartbeatPeriodInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
@@ -61,7 +61,7 @@ func DefaultParams() Params {
 			},
 		},
 		SuspendDurationInBlocks:          2000,
-		AckPeriodInBlocks:                50,
+		HeartbeatPeriodInBlocks:          50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 8,
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 3, Denominator: 6},
@@ -82,7 +82,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyKeyRequirements, &m.KeyRequirements, validateKeyRequirements),
 		params.NewParamSetPair(KeySuspendDurationInBlocks, &m.SuspendDurationInBlocks, validateSuspendDurationInBlocks),
-		params.NewParamSetPair(KeyAckPeriodInBlocks, &m.AckPeriodInBlocks, validatePosInt64("AckPeriodInBlocks")),
+		params.NewParamSetPair(KeyHeartbeatPeriodInBlocks, &m.HeartbeatPeriodInBlocks, validatePosInt64("HeartbeatPeriodInBlocks")),
 		params.NewParamSetPair(KeyMaxMissedBlocksPerWindow, &m.MaxMissedBlocksPerWindow, validateMaxMissedBlocksPerWindow),
 		params.NewParamSetPair(KeyUnbondingLockingKeyRotationCount, &m.UnbondingLockingKeyRotationCount, validatePosInt64("UnbondingLockingKeyRotationCount")),
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
@@ -101,7 +101,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validatePosInt64("AckPeriodInBlocks")(m.AckPeriodInBlocks); err != nil {
+	if err := validatePosInt64("HeartbeatPeriodInBlocks")(m.HeartbeatPeriodInBlocks); err != nil {
 		return err
 	}
 
