@@ -31,6 +31,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdAddCosmosBasedChain(),
 		GetCmdRegisterAsset(),
 		GetCmdRouteIBCTransfersTx(),
+		GetCmdRegisterFeeCollector(),
 	)
 
 	return axelarTxCmd
@@ -209,6 +210,33 @@ func GetCmdRouteIBCTransfersTx() *cobra.Command {
 			}
 
 			msg := types.NewRouteIBCTransfersRequest(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterFeeCollector returns the cli command to register axelarnet fee collector account
+func GetCmdRegisterFeeCollector() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-fee-collector [fee collector]",
+		Short: "Register axelarnet fee collector account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			feeCollector, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+			msg := types.NewRegisterFeeCollectorRequest(cliCtx.GetFromAddress(), feeCollector)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

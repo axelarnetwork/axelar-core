@@ -21,6 +21,7 @@ const (
 	TxRegisterIBCPath         = "register-path"
 	TxAddCosmosBasedChain     = "add-cosmos-based-chain"
 	TxRegisterAsset           = "register-asset"
+	TXRegisterFeeCollector    = "register-fee-collector"
 )
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
@@ -65,6 +66,12 @@ type ReqRegisterAsset struct {
 	Denom   string       `json:"denom" yaml:"denom"`
 }
 
+// ReqRegisterFeeCollector represents a request to register axelarnet fee collector account
+type ReqRegisterFeeCollector struct {
+	BaseReq      rest.BaseReq `json:"base_req" yaml:"base_req"`
+	FeeCollector string       `json:"fee_collector" yaml:"fee_collector"`
+}
+
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
@@ -74,6 +81,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerRegisterIBCPath(cliCtx), TxRegisterIBCPath)
 	registerTx(TxHandlerAddCosmosBasedChain(cliCtx), TxAddCosmosBasedChain)
 	registerTx(TxHandlerRegisterAsset(cliCtx), TxRegisterAsset)
+	registerTx(TxHandlerRegisterFeeCollector(cliCtx), TXRegisterFeeCollector)
 }
 
 // TxHandlerLink returns the handler to link an Axelar address to a cross-chain address
@@ -246,6 +254,38 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// TxHandlerRegisterFeeCollector returns the handler to register fee collector account
+func TxHandlerRegisterFeeCollector(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRegisterFeeCollector
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		feeCollector, err := sdk.AccAddressFromBech32(req.FeeCollector)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewRegisterFeeCollectorRequest(fromAddr, feeCollector)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
