@@ -354,9 +354,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	evmK := evmKeeper.NewKeeper(
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
-
+	rewardK := rewardKeeper.NewKeeper(
+		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
+	)
 	tssK := tssKeeper.NewKeeper(
-		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK,
+		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
 
 	snapK := snapKeeper.NewKeeper(
@@ -365,9 +367,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
-	)
-	rewardK := rewardKeeper.NewKeeper(
-		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
 	)
 	votingK := voteKeeper.NewKeeper(
 		appCodec, keys[voteTypes.StoreKey], snapK, stakingK, rewardK,
@@ -418,13 +417,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		transferModule,
 
 		snapshot.NewAppModule(snapK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, stakingK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnetModule,
-		reward.NewAppModule(rewardK, nexusK, mintK),
+		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

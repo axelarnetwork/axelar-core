@@ -41,6 +41,8 @@ func (p rewardPool) getRewards(validator sdk.ValAddress) (sdk.Coins, bool) {
 
 func (p *rewardPool) AddReward(validator sdk.ValAddress, coin sdk.Coin) {
 	defer func() {
+		p.k.Logger(p.ctx).Debug("adding rewards in pool", "pool", p.Name, "validator", validator.String(), "coin", coin.String())
+
 		p.k.setPool(p.ctx, p.Pool)
 	}()
 
@@ -64,8 +66,6 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 		return nil
 	}
 
-	p.k.Logger(p.ctx).Info("releasing rewards in pool", "pool", p.Name, "validator", validator.String())
-
 	if err := p.banker.MintCoins(p.ctx, types.ModuleName, rewards); err != nil {
 		return err
 	}
@@ -73,6 +73,8 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 	if err := p.banker.SendCoinsFromModuleToModule(p.ctx, types.ModuleName, distrtypes.ModuleName, rewards); err != nil {
 		return err
 	}
+
+	p.k.Logger(p.ctx).Info("releasing rewards in pool", "pool", p.Name, "validator", validator.String())
 
 	p.distributor.AllocateTokensToValidator(
 		p.ctx,
@@ -87,6 +89,8 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 func (p *rewardPool) ClearRewards(validator sdk.ValAddress) {
 	for i, reward := range p.Rewards {
 		if reward.Validator.Equals(validator) {
+			p.k.Logger(p.ctx).Info("clearing rewards in pool", "pool", p.Name, "validator", validator.String())
+
 			p.Rewards = append(p.Rewards[:i], p.Rewards[i+1:]...)
 			p.k.setPool(p.ctx, p.Pool)
 

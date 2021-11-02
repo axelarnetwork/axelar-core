@@ -3088,7 +3088,8 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `external_chain_voting_inflation_rate` | [string](#string) |  |  |
+| `external_chain_voting_inflation_rate` | [bytes](#bytes) |  |  |
+| `tss_relative_inflation_rate` | [bytes](#bytes) |  |  |
 
 
 

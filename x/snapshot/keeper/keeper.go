@@ -378,7 +378,6 @@ func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddres
 // GetProxy returns the proxy address for a given principal address. Returns nil if not set.
 // The bool value denotes wether or not the proxy is active and to be included in the next snapshot
 func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool) {
-
 	bz := ctx.KVStore(k.storeKey).Get(principal)
 	if bz == nil {
 		return nil, active

@@ -292,6 +292,7 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 	switch crimeType {
 	// currently we do not distinguish between malicious and non-malicious faults
 	case tofnd.CRIME_TYPE_MALICIOUS, tofnd.CRIME_TYPE_NON_MALICIOUS:
+		k.rewarder.GetPool(ctx, types.ModuleName).ClearRewards(criminal)
 		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
 	default:
 		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
