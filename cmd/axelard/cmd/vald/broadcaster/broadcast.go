@@ -38,7 +38,7 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 	// serialize concurrent calls to broadcast
 	err := b.pipeline.Push(func() error {
 
-		txf, err := b.txFactory.Prepare(ctx)
+		txf, err := prepareFactory(ctx, b.txFactory)
 		if err != nil {
 			return err
 		}
@@ -63,6 +63,36 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 	return response, err
 }
 
+// prepareFactory ensures the account defined by ctx.GetFromAddress() exists and
+// if the account number and/or the account sequence number are zero (not set),
+// they will be queried for and set on the provided Factory. A new Factory with
+// the updated fields will be returned.
+func prepareFactory(clientCtx sdkClient.Context, txf tx.Factory) (tx.Factory, error) {
+	from := clientCtx.GetFromAddress()
+
+	if err := txf.AccountRetriever().EnsureExists(clientCtx, from); err != nil {
+		return txf, err
+	}
+
+	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
+	if initNum == 0 || initSeq == 0 {
+		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(clientCtx, from)
+		if err != nil {
+			return txf, err
+		}
+
+		if initNum == 0 {
+			txf = txf.WithAccountNumber(num)
+		}
+
+		if initSeq == 0 {
+			txf = txf.WithSequence(seq)
+		}
+	}
+
+	return txf, nil
+}
+
 // Broadcast bundles the given messages into a single transaction and submits it to the blockchain.
 // If there are more than one message, all messages must have the single same signer
 func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxResponse, error) {
@@ -84,11 +114,12 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 		txf = txf.WithGas(adjusted)
 	}
 
-	txBuilder, err := txf.BuildUnsignedTx(msgs...)
+	txBuilder, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
 		return nil, err
 	}
 
+	txBuilder.SetFeeGranter(ctx.GetFeeGranterAddress())
 	err = tx.Sign(txf, ctx.GetFromName(), txBuilder, true)
 	if err != nil {
 		return nil, err
