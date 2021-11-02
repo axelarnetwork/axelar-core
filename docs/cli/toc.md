@@ -191,6 +191,7 @@
       - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
       - [sign-tx \[keyRole\]](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role
       - [submit-external-signature \[keyID\] \[signatureHex\] \[sigHashHex\]](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash
+    - [broadcast \[file_path\]](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
     - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode a binary encoded transaction string
@@ -238,6 +239,7 @@
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
+    - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
       - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
       - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains

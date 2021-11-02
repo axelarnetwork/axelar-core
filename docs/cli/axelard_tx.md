@@ -29,6 +29,7 @@ axelard tx [flags]
 - [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
 - [axelard tx bank](axelard_tx_bank.md)	 - Bank transaction subcommands
 - [axelard tx bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
+- [axelard tx broadcast](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
 - [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
 - [axelard tx decode](axelard_tx_decode.md)	 - Decode a binary encoded transaction string
 - [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
@@ -40,6 +41,7 @@ axelard tx [flags]
 - [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
 - [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
 - [axelard tx multisign](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
+- [axelard tx multisign-batch](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
 - [axelard tx nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
 - [axelard tx sign](axelard_tx_sign.md)	 - Sign a transaction generated offline
 - [axelard tx sign-batch](axelard_tx_sign-batch.md)	 - Sign transaction batch files
