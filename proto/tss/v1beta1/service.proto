@@ -20,9 +20,10 @@ service MsgService {
     };
   }
 
-  rpc Ack(tss.v1beta1.AckRequest) returns (tss.v1beta1.AckResponse) {
+  rpc HeartBeat(tss.v1beta1.HeartBeatRequest)
+      returns (tss.v1beta1.HeartBeatResponse) {
     option (google.api.http) = {
-      post : "/axelar/tss/ack"
+      post : "/axelar/tss/heartbeat"
       body : "*"
     };
   }

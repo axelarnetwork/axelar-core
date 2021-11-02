@@ -9,8 +9,8 @@ axelard set-genesis-tss [flags]
 ### Options
 
 ```
-      --ack-period int   time period in blocks for tss to emit the event asking validators to send acknowledgments for keygen/sign
-  -h, --help             help for set-genesis-tss
+      --heartbeat-period int   time period in blocks for tss to emit the event asking validators to send their heartbeats
+  -h, --help                   help for set-genesis-tss
 ```
 
 ### Options inherited from parent commands

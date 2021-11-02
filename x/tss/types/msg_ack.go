@@ -6,20 +6,20 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewAckRequest constructor for AckRequest
-func NewAckRequest(sender sdk.AccAddress, keyIDs []exported.KeyID) *AckRequest {
-	return &AckRequest{Sender: sender, KeyIDs: keyIDs}
+// NewHeartBeatRequest constructor for AckRequest
+func NewHeartBeatRequest(sender sdk.AccAddress, keyIDs []exported.KeyID) *HeartBeatRequest {
+	return &HeartBeatRequest{Sender: sender, KeyIDs: keyIDs}
 }
 
 // Route implements the sdk.Msg interface.
-func (m AckRequest) Route() string { return RouterKey }
+func (m HeartBeatRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m AckRequest) Type() string { return "Ack" }
+func (m HeartBeatRequest) Type() string { return "Ack" }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (m AckRequest) ValidateBasic() error {
+func (m HeartBeatRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -28,11 +28,11 @@ func (m AckRequest) ValidateBasic() error {
 }
 
 // GetSignBytes implements the sdk.Msg interface
-func (m AckRequest) GetSignBytes() []byte {
+func (m HeartBeatRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners implements the sdk.Msg interface
-func (m AckRequest) GetSigners() []sdk.AccAddress {
+func (m HeartBeatRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

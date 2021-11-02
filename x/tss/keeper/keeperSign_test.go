@@ -84,8 +84,8 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 		return snapshot.Snapshot{}, false
 	}
 
-	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+	height := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+	height += rand.I64Between(0, s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
@@ -175,8 +175,8 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 		return snapshot.Snapshot{}, false
 	}
 
-	height := s.Keeper.GetAckPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
-	height += rand.I64Between(0, s.Keeper.GetAckPeriodInBlocks(s.Ctx))
+	height := s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx) * rand.I64Between(1, 10)
+	height += rand.I64Between(0, s.Keeper.GetHeartbeatPeriodInBlocks(s.Ctx))
 	s.Ctx = s.Ctx.WithBlockHeight(height)
 
 	for _, val := range snap.Validators {
