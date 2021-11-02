@@ -30,17 +30,19 @@ type msgServer struct {
 	staker      types.StakingKeeper
 	voter       types.Voter
 	nexus       types.Nexus
+	rewarder    types.Rewarder
 }
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus, rewarder types.Rewarder) types.MsgServiceServer {
 	return msgServer{
 		TSSKeeper:   keeper,
 		snapshotter: s,
 		staker:      staker,
 		voter:       v,
 		nexus:       n,
+		rewarder:    rewarder,
 	}
 }
 
@@ -97,6 +99,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
 		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
 	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
+	s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr)
 
 	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 	// and it is not exposed in the ValidatorI interface

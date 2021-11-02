@@ -45,7 +45,8 @@ func TestMsgServer_RotateKey(t *testing.T) {
 				}, true
 			},
 		}
-		server = NewMsgServerImpl(tssKeeper, snapshotter, staker, voter, nexusKeeper)
+		rewarder := &mock.RewarderMock{}
+		server = NewMsgServerImpl(tssKeeper, snapshotter, staker, voter, nexusKeeper, rewarder)
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	}
 	repeats := 20
