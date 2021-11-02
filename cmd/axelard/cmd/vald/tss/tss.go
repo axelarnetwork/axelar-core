@@ -170,6 +170,21 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 	return grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 }
 
+// CreateMultiSigClient creates a client to communicate with the external tofnd process Multisig service
+func CreateMultiSigClient(host string, port string, timeout time.Duration, logger log.Logger) (rpc.MultiSigClient, error) {
+	tofndServerAddress := host + ":" + port
+	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, tofndServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug("successful connection to tofnd gRPC server")
+	multiSigClient := tofnd.NewMultisigClient(conn)
+	return multiSigClient, nil
+}
+
 // NewMgr returns a new tss manager instance
 func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
