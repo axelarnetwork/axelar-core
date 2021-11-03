@@ -67,4 +67,10 @@ service MsgService {
     option (google.api.http) = {
     };
   }
+
+  rpc SubmitMultisigPubKeys(tss.v1beta1.SubmitMultisigPubKeysRequest)
+      returns (tss.v1beta1.SubmitMultisigPubKeysResponse) {
+    option (google.api.http) = {
+    };
+  }
 }

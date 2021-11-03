@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/exported";
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -13,6 +14,7 @@ message Chain {
   string name = 1;
   string native_asset = 2;
   bool supports_foreign_assets = 3;
+  tss.exported.v1beta1.KeyType key_type = 4;
 }
 
 // CrossChainAddress represents a generalized address on any registered chain

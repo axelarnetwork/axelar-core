@@ -205,3 +205,27 @@ func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 
 	mgr.signStreams[sigID] = NewLockableStream(stream)
 }
+
+// MultiSigSign send sign request to Tofnd Multisig service
+func (mgr *Mgr) MultiSigSign(keyUID string, partyUID string, msgToSign []byte) ([]byte, error) {
+	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
+	defer cancel()
+
+	signRequest := &tofnd.SignRequest{
+		KeyUid:    keyUID,
+		MsgToSign: msgToSign,
+		PartyUid:  partyUID,
+	}
+	res, err := mgr.multiSigClient.Sign(grpcCtx, signRequest)
+	if err != nil {
+		return nil, err
+	}
+	switch res.GetSignResponse().(type) {
+	case *tofnd.SignResponse_Signature:
+		return res.GetSignature(), nil
+	case *tofnd.SignResponse_Error:
+		return nil, sdkerrors.Wrap(err, res.GetError())
+	default:
+		return nil, sdkerrors.Wrap(err, "unknown multisig sign response")
+	}
+}

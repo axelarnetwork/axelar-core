@@ -280,9 +280,6 @@ var _ types.Signer = &SignerMock{}
 // 			SetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
-// 			SetKeyRoleFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole)  {
-// 				panic("mock out the SetKeyRole method")
-// 			},
 // 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
 // 				panic("mock out the SetSig method")
 // 			},
@@ -355,9 +352,6 @@ type SignerMock struct {
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)
-
-	// SetKeyRoleFunc mocks the SetKeyRole method.
-	SetKeyRoleFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole)
 
 	// SetSigFunc mocks the SetSig method.
 	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
@@ -531,15 +525,6 @@ type SignerMock struct {
 			// Key is the key argument value.
 			Key ecdsa.PublicKey
 		}
-		// SetKeyRole holds details about calls to the SetKeyRole method.
-		SetKeyRole []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-			// KeyRole is the keyRole argument value.
-			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-		}
 		// SetSig holds details about calls to the SetSig method.
 		SetSig []struct {
 			// Ctx is the ctx argument value.
@@ -591,7 +576,6 @@ type SignerMock struct {
 	lockRotateKey                              sync.RWMutex
 	lockSetInfoForSig                          sync.RWMutex
 	lockSetKey                                 sync.RWMutex
-	lockSetKeyRole                             sync.RWMutex
 	lockSetSig                                 sync.RWMutex
 	lockSetSigStatus                           sync.RWMutex
 	lockStartSign                              sync.RWMutex
@@ -1311,45 +1295,6 @@ func (mock *SignerMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
-	return calls
-}
-
-// SetKeyRole calls SetKeyRoleFunc.
-func (mock *SignerMock) SetKeyRole(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) {
-	if mock.SetKeyRoleFunc == nil {
-		panic("SignerMock.SetKeyRoleFunc: method is nil but Signer.SetKeyRole was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-	}{
-		Ctx:     ctx,
-		KeyID:   keyID,
-		KeyRole: keyRole,
-	}
-	mock.lockSetKeyRole.Lock()
-	mock.calls.SetKeyRole = append(mock.calls.SetKeyRole, callInfo)
-	mock.lockSetKeyRole.Unlock()
-	mock.SetKeyRoleFunc(ctx, keyID, keyRole)
-}
-
-// SetKeyRoleCalls gets all the calls that were made to SetKeyRole.
-// Check the length with:
-//     len(mockedSigner.SetKeyRoleCalls())
-func (mock *SignerMock) SetKeyRoleCalls() []struct {
-	Ctx     sdk.Context
-	KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
-	}
-	mock.lockSetKeyRole.RLock()
-	calls = mock.calls.SetKeyRole
-	mock.lockSetKeyRole.RUnlock()
 	return calls
 }
 

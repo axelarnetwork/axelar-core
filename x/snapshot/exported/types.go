@@ -110,7 +110,7 @@ type Tss interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
 	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole) (tss.KeyRequirement, bool)
+	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot

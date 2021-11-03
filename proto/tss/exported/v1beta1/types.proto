@@ -89,3 +89,9 @@ enum KeyType {
   KEY_TYPE_THRESHOLD = 1 [ (gogoproto.enumvalue_customname) = "Threshold" ];
   KEY_TYPE_MULTISIG = 2 [ (gogoproto.enumvalue_customname) = "Multisig" ];
 }
+
+// PubKeyInfo holds a pubkey and a signature
+message PubKeyInfo {
+  bytes pub_key = 1;
+  bytes signature = 2;
+}

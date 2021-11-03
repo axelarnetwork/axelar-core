@@ -395,13 +395,13 @@ func registerTSSEventListeners(n nodeData, t *fake.Tofnd, submitMsg func(msg sdk
 			return false
 		}
 
-		var keyIDs []string
-		_ = json.Unmarshal([]byte(m[tssTypes.AttributeKeyKeyIDs]), &keyIDs)
+		var keyInfos []tssTypes.KeyInfo
+		_ = json.Unmarshal([]byte(m[tssTypes.AttributeKeyKeyInfos]), &keyInfos)
 
 		var present []tssExported.KeyID
-		for _, keyID := range keyIDs {
-			if t.HasKey(keyID) {
-				present = append(present, tssExported.KeyID(keyID))
+		for _, keyInfo := range keyInfos {
+			if t.HasKey(string(keyInfo.KeyID)) {
+				present = append(present, keyInfo.KeyID)
 			}
 		}
 

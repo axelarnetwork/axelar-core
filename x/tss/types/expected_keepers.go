@@ -76,7 +76,7 @@ type TSSKeeper interface {
 	SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte)
 	GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte
 	DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID)
-	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole) (exported.KeyRequirement, bool)
+	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
 	SetSig(ctx sdk.Context, sigID string, signature []byte)
@@ -84,7 +84,7 @@ type TSSKeeper interface {
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
 	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
-	StartKeygen(ctx sdk.Context, voter Voter, keyID exported.KeyID, keyRole exported.KeyRole, snapshot snapshot.Snapshot) error
+	StartKeygen(ctx sdk.Context, voter Voter, keyInfo KeyInfo, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
 	GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
@@ -111,11 +111,20 @@ type TSSKeeper interface {
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID exported.KeyID, keyRole exported.KeyRole) error
 	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool)
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
-	SetKeyRole(ctx sdk.Context, keyID exported.KeyID, keyRole exported.KeyRole)
+	SetKeyInfo(ctx sdk.Context, info KeyInfo)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
+
+	SubmitPubKeys(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress, pubKeys ...[]byte) bool
+	GetMultisigPubKeyCount(ctx sdk.Context, keyID exported.KeyID) int64
+	IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID) bool
+	GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyType
+	GetMultisigPubKeyTimeout(ctx sdk.Context, keyID exported.KeyID) (int64, bool)
+	HasValidatorSubmittedMultisigPubKey(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool
+	GetParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID) []sdk.ValAddress
+	DeleteMultisigKeygen(ctx sdk.Context, keyID exported.KeyID)
 }
 
 // Rewarder provides reward functionality
