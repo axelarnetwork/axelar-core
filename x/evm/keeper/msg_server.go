@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -1013,34 +1014,89 @@ func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s keys for chain %s found", tss.ExternalKey.SimpleString(), chain.Name))
 	}
 
-	externalKeyAddresses := make([]common.Address, 0)
-	for _, externalKeyID := range externalKeyIDs {
+	externalPubKeys := make([]ecdsa.PublicKey, len(externalKeyIDs))
+	for i, externalKeyID := range externalKeyIDs {
 		externalKey, ok := s.GetKey(ctx, externalKeyID)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s key %s for chain %s not found", tss.ExternalKey.SimpleString(), externalKeyID, chain.Name))
 		}
 
-		externalKeyAddresses = append(externalKeyAddresses, crypto.PubkeyToAddress(externalKey.Value))
+		externalPubKeys[i] = externalKey.Value
 	}
-
-	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
-	}
-
-	secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
-	}
+	externalKeyAddresses := types.KeysToAddresses(externalPubKeys)
 
 	bz, _ := k.GetGatewayByteCodes(ctx)
-	return types.GetGatewayDeploymentBytecode(
-		bz,
-		externalKeyAddresses,
-		uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
-		crypto.PubkeyToAddress(masterKey.Value),
-		crypto.PubkeyToAddress(secondaryKey.Value),
-	)
+
+	switch chain.KeyType {
+	case tss.Threshold:
+		masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+		}
+
+		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+		}
+
+		return types.GetSinglesigGatewayDeploymentBytecode(
+			bz,
+			externalKeyAddresses,
+			uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
+			crypto.PubkeyToAddress(masterKey.Value),
+			crypto.PubkeyToAddress(secondaryKey.Value),
+		)
+	case tss.Multisig:
+		currMasterKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+		}
+
+		currMasterMultisigKey, ok := s.GetMultisigPubKey(ctx, currMasterKeyID)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+		}
+
+		masterMultisigKeyRequirement, ok := s.GetKeyRequirement(ctx, tss.MasterKey, tss.Multisig)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no key requirement found for chain %s, key role %s and key type %s", chain.Name, tss.MasterKey.SimpleString(), tss.Multisig.SimpleString()))
+		}
+
+		masterMultisigKeyThreshold := len(currMasterMultisigKey.Values) *
+			int(masterMultisigKeyRequirement.SafetyThreshold.Numerator) /
+			int(masterMultisigKeyRequirement.SafetyThreshold.Denominator)
+
+		currSecondaryKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+		}
+
+		currSecondaryMultisigKey, ok := s.GetMultisigPubKey(ctx, currSecondaryKeyID)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+		}
+
+		secondaryMultisigKeyRequirement, ok := s.GetKeyRequirement(ctx, tss.SecondaryKey, tss.Multisig)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no key requirement found for chain %s, key role %s and key type %s", chain.Name, tss.SecondaryKey.SimpleString(), tss.Multisig.SimpleString()))
+		}
+
+		secondaryMultisigKeyThreshold := len(currSecondaryMultisigKey.Values) *
+			int(secondaryMultisigKeyRequirement.SafetyThreshold.Numerator) /
+			int(secondaryMultisigKeyRequirement.SafetyThreshold.Denominator)
+
+		return types.GetMultisigGatewayDeploymentBytecode(
+			bz,
+			externalKeyAddresses,
+			uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
+			types.KeysToAddresses(currMasterMultisigKey.Values),
+			uint8(masterMultisigKeyThreshold),
+			types.KeysToAddresses(currSecondaryMultisigKey.Values),
+			uint8(secondaryMultisigKeyThreshold),
+		)
+	default:
+		return nil, fmt.Errorf("unknown key type set for chain %s", chain.Name)
+	}
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
@@ -1284,7 +1340,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, err
 	}
 
-	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true})
+	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType})
 	s.SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(

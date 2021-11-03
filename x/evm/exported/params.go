@@ -11,6 +11,6 @@ var (
 		Name:                  "Ethereum",
 		NativeAsset:           "wei",
 		SupportsForeignAssets: true,
-		KeyType:               tss.Threshold,
+		KeyType:               tss.Multisig,
 	}
 )

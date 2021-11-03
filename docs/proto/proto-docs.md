@@ -2318,6 +2318,7 @@ deposit address
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
 | `native_asset` | [string](#string) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 
