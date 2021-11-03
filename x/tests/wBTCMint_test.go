@@ -40,6 +40,12 @@ import (
 // 7. Submit the minting command from an externally controlled address to AxelarGateway
 
 func Test_wBTC_mint(t *testing.T) {
+	for _, c := range []nexus.Chain{btc.Bitcoin, evm.Ethereum} {
+		if !contains(nexusTypes.DefaultParams().Chains, c) {
+			t.Skipf("skipping Test_wBTC_mint due to chain '%s' being disabled", c.Name)
+		}
+	}
+
 	randStrings := rand.Strings(5, 50)
 	cdc := app.MakeEncodingConfig().Amino
 

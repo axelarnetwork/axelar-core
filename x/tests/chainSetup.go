@@ -29,8 +29,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	"github.com/axelarnetwork/axelar-core/x/nexus"
+	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+
 	"github.com/axelarnetwork/axelar-core/x/snapshot"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
@@ -574,4 +576,13 @@ func mapifyAttributes(event abci.Event) map[string]string {
 		m[attribute.Key] = attribute.Value
 	}
 	return m
+}
+
+func contains(s []nexusExported.Chain, c nexusExported.Chain) bool {
+	for _, a := range s {
+		if a == c {
+			return true
+		}
+	}
+	return false
 }

@@ -56,6 +56,12 @@ import (
 // 17. Wait for vote
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
+	for _, c := range []nexus.Chain{btc.Bitcoin, evm.Ethereum} {
+		if !contains(nexusTypes.DefaultParams().Chains, c) {
+			t.Skipf("skipping TestBitcoinKeyRotation due to chain '%s' being disabled", c.Name)
+		}
+	}
+
 	randStrings := rand.Strings(5, 20)
 	cdc := app.MakeEncodingConfig().Amino
 
