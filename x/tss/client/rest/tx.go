@@ -102,10 +102,13 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyType, err := exported.KeyTypeFromSimpleStr(req.KeyType)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+		keyType := exported.Multisig
+		if !types.TSSEnabled {
+			keyType, err = exported.KeyTypeFromSimpleStr(req.KeyType)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
 
 		msg := types.NewStartKeygenRequest(sender, req.KeyID, keyRole, keyType)

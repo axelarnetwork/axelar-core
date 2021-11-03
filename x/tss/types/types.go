@@ -8,6 +8,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	// TSSEnabled indicates if threshold signing is permitted
+	TSSEnabled bool = false
+)
+
 // HasKey checks duplicate pub keys
 func (m MultisigKeyInfo) HasKey(k []byte) bool {
 	for _, pubKey := range m.PubKeys {

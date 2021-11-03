@@ -145,6 +145,10 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
+	if !types.TSSEnabled && req.KeyInfo.KeyType == exported.Threshold {
+		return nil, fmt.Errorf("threshold signing is disabled")
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 
 	keyRequirement, ok := s.GetKeyRequirement(ctx, req.KeyInfo.KeyRole, req.KeyInfo.KeyType)
