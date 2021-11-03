@@ -114,7 +114,7 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRo
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: keyRole,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 
 	err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
@@ -306,6 +306,10 @@ func TestActiveOldKeys(t *testing.T) {
 		s := setup()
 		chain := bitcoin.Bitcoin
 		iterations := int(rand2.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
+		params := types.DefaultParams()
+		params.MaxSignQueueSize = int64(iterations)
+		s.Keeper.SetParams(s.Ctx, params)
+
 		// exclude KeyRole external
 		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))-1))]
 		var expectedKeys []exported.Key
