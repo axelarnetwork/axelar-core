@@ -1186,16 +1186,18 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
+	_, ok = s.signer.GetKey(ctx, nextKeyID)
+	if chain.KeyType == tss.Multisig {
+		_, ok = s.signer.GetMultisigPubKey(ctx, nextKeyID)
+	}
 	if !ok {
 		return types.Command{}, fmt.Errorf("unkown key %s", nextKeyID)
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKey.ID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKey.ID, keyRole.SimpleString())
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
+		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
 	}
 
-	newAddress := crypto.PubkeyToAddress(nextKey.Value)
 	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
@@ -1211,18 +1213,18 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	if chain.KeyType == tss.Multisig {
 		keyType = tss.Multisig
 
-		key, ok := s.signer.GetMultisigPubKey(ctx, nextKey.ID)
+		key, ok := s.signer.GetMultisigPubKey(ctx, nextKeyID)
 		if !ok {
-			return command, fmt.Errorf("could not find multisig key '%s'", nextKey.ID)
+			return command, fmt.Errorf("could not find multisig key '%s'", nextKeyID)
 		}
 		for _, pk := range key.Values {
 			pks = append(pks, pk)
 		}
 
-		keyReq, ok = s.signer.GetKeyRequirement(ctx, nextKey.Role, tss.Multisig)
+		keyReq, ok = s.signer.GetKeyRequirement(ctx, keyRole, tss.Multisig)
 		if !ok {
 			return command, fmt.Errorf("could not find key requirements for role %s and type %s",
-				nextKey.Role.SimpleString(), tss.Multisig.SimpleString())
+				keyRole.SimpleString(), tss.Multisig.SimpleString())
 		}
 	}
 
@@ -1233,11 +1235,11 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
 
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKey.ID); err != nil {
+	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKeyID); err != nil {
 		return types.Command{}, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", keyRole.SimpleString(), chain.Name)
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, newAddress.Hex()))
+	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to key ID %s", transferKeyType.SimpleString(), chain.Name, nextKeyID))
 
 	return command, nil
 }
