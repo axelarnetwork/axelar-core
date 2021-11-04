@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
@@ -54,7 +53,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Ownership), TxConfirmTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Operatorship), TxConfirmTransferOperatorship, clientUtils.PathVarChain)
-	registerTx(GetHandlerSignTx(cliCtx), TxSignTx, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreatePendingTransfers(cliCtx), TxCreatePendingTransfers, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateDeployToken(cliCtx), TxCreateDeployToken, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateBurnTokens(cliCtx), TxCreateBurnTokens, clientUtils.PathVarChain)
@@ -111,12 +109,6 @@ type ReqConfirmTransferKey struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
 	KeyID   string       `json:"key_id" yaml:"key_id"`
-}
-
-// ReqSignTx represents a request to sign a transaction
-type ReqSignTx struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxJSON  string       `json:"tx_json" yaml:"tx_json"`
 }
 
 // ReqCreatePendingTransfers represents a request to create commands for all pending transfers
@@ -302,40 +294,6 @@ func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.T
 		txID := common.HexToHash(req.TxID)
 
 		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, transferKeyType, req.KeyID)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// GetHandlerSignTx returns a handler to sign a transaction
-func GetHandlerSignTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqSignTx
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		txJSON := []byte(req.TxJSON)
-		var evmtx *evmTypes.Transaction
-		err := cliCtx.LegacyAmino.UnmarshalJSON(txJSON, &evmtx)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		msg := types.NewSignTxRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txJSON)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

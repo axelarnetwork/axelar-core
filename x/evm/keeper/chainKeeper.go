@@ -134,17 +134,6 @@ func (k chainKeeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 	return minVoterCount, true
 }
 
-// SetGatewayAddress sets the contract address for Axelar Gateway
-func (k chainKeeper) SetGatewayAddress(ctx sdk.Context, addr common.Address) {
-	k.getStore(ctx, k.chain).SetRaw(gatewayKey, addr.Bytes())
-}
-
-// GetGatewayAddress gets the contract address for Axelar Gateway
-func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
-	bz := k.getStore(ctx, k.chain).GetRaw(gatewayKey)
-	return common.BytesToAddress(bz), bz != nil
-}
-
 // SetBurnerInfo saves the burner info for a given address
 func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
 	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
@@ -678,4 +667,51 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 	}
 	k.setTokenMetadata(ctx, asset, meta)
 	return meta, nil
+}
+
+func (k chainKeeper) SetPendingGateway(ctx sdk.Context, address common.Address) {
+	gateway := types.Gateway{Address: types.Address(address), Status: types.GatewayStatusPending}
+	k.getStore(ctx, k.chain).Set(gatewayKey, &gateway)
+}
+
+func (k chainKeeper) ConfirmPendingGateway(ctx sdk.Context) error {
+	var gateway types.Gateway
+	if k.getStore(ctx, k.chain).Get(gatewayKey, &gateway) && gateway.Status == types.GatewayStatusPending {
+		gateway.Status = types.GatewayStatusConfirmed
+		k.getStore(ctx, k.chain).Set(gatewayKey, &gateway)
+
+		return nil
+	}
+
+	return fmt.Errorf("no pending gateway found for chain %s", k.chain)
+}
+
+func (k chainKeeper) DeletePendingGateway(ctx sdk.Context) error {
+	var gateway types.Gateway
+	if k.getStore(ctx, k.chain).Get(gatewayKey, &gateway) && gateway.Status == types.GatewayStatusPending {
+		k.getStore(ctx, k.chain).Delete(gatewayKey)
+
+		return nil
+	}
+
+	return fmt.Errorf("no pending gateway found for chain %s", k.chain)
+}
+
+func (k chainKeeper) GetPendingGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	var gateway types.Gateway
+	if k.getStore(ctx, k.chain).Get(gatewayKey, &gateway) && gateway.Status == types.GatewayStatusPending {
+		return common.Address(gateway.Address), true
+	}
+
+	return common.Address{}, false
+}
+
+// GetGatewayAddress gets the contract address for Axelar Gateway
+func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	var gateway types.Gateway
+	if k.getStore(ctx, k.chain).Get(gatewayKey, &gateway) && gateway.Status == types.GatewayStatusConfirmed {
+		return common.Address(gateway.Address), true
+	}
+
+	return common.Address{}, false
 }

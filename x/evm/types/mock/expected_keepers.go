@@ -2474,6 +2474,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			AssembleTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
 // 				panic("mock out the AssembleTx method")
 // 			},
+// 			ConfirmPendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
+// 				panic("mock out the ConfirmPendingGateway method")
+// 			},
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
@@ -2485,6 +2488,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			DeletePendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)  {
 // 				panic("mock out the DeletePendingDeposit method")
+// 			},
+// 			DeletePendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
+// 				panic("mock out the DeletePendingGateway method")
 // 			},
 // 			DeletePendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)  {
 // 				panic("mock out the DeletePendingTransferKey method")
@@ -2546,6 +2552,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
 // 			},
+// 			GetPendingGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
+// 				panic("mock out the GetPendingGatewayAddress method")
+// 			},
 // 			GetPendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool) {
 // 				panic("mock out the GetPendingTransferKey method")
 // 			},
@@ -2570,11 +2579,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)  {
 // 				panic("mock out the SetDeposit method")
 // 			},
-// 			SetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address)  {
-// 				panic("mock out the SetGatewayAddress method")
-// 			},
 // 			SetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
+// 			},
+// 			SetPendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address)  {
+// 				panic("mock out the SetPendingGateway method")
 // 			},
 // 			SetPendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, transferOwnership *types.TransferKey)  {
 // 				panic("mock out the SetPendingTransferKey method")
@@ -2595,6 +2604,9 @@ type ChainKeeperMock struct {
 	// AssembleTxFunc mocks the AssembleTx method.
 	AssembleTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error)
 
+	// ConfirmPendingGatewayFunc mocks the ConfirmPendingGateway method.
+	ConfirmPendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) error
+
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
 
@@ -2606,6 +2618,9 @@ type ChainKeeperMock struct {
 
 	// DeletePendingDepositFunc mocks the DeletePendingDeposit method.
 	DeletePendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)
+
+	// DeletePendingGatewayFunc mocks the DeletePendingGateway method.
+	DeletePendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) error
 
 	// DeletePendingTransferKeyFunc mocks the DeletePendingTransferKey method.
 	DeletePendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)
@@ -2667,6 +2682,9 @@ type ChainKeeperMock struct {
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool)
 
+	// GetPendingGatewayAddressFunc mocks the GetPendingGatewayAddress method.
+	GetPendingGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool)
+
 	// GetPendingTransferKeyFunc mocks the GetPendingTransferKey method.
 	GetPendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool)
 
@@ -2691,11 +2709,11 @@ type ChainKeeperMock struct {
 	// SetDepositFunc mocks the SetDeposit method.
 	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)
 
-	// SetGatewayAddressFunc mocks the SetGatewayAddress method.
-	SetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address)
-
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, deposit *types.ERC20Deposit)
+
+	// SetPendingGatewayFunc mocks the SetPendingGateway method.
+	SetPendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address)
 
 	// SetPendingTransferKeyFunc mocks the SetPendingTransferKey method.
 	SetPendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, transferOwnership *types.TransferKey)
@@ -2720,6 +2738,11 @@ type ChainKeeperMock struct {
 			TxID string
 			// Sig is the sig argument value.
 			Sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
+		}
+		// ConfirmPendingGateway holds details about calls to the ConfirmPendingGateway method.
+		ConfirmPendingGateway []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// CreateERC20Token holds details about calls to the CreateERC20Token method.
 		CreateERC20Token []struct {
@@ -2748,6 +2771,11 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key vote.PollKey
+		}
+		// DeletePendingGateway holds details about calls to the DeletePendingGateway method.
+		DeletePendingGateway []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// DeletePendingTransferKey holds details about calls to the DeletePendingTransferKey method.
 		DeletePendingTransferKey []struct {
@@ -2877,6 +2905,11 @@ type ChainKeeperMock struct {
 			// Key is the key argument value.
 			Key vote.PollKey
 		}
+		// GetPendingGatewayAddress holds details about calls to the GetPendingGatewayAddress method.
+		GetPendingGatewayAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetPendingTransferKey holds details about calls to the GetPendingTransferKey method.
 		GetPendingTransferKey []struct {
 			// Ctx is the ctx argument value.
@@ -2927,13 +2960,6 @@ type ChainKeeperMock struct {
 			// State is the state argument value.
 			State types.DepositState
 		}
-		// SetGatewayAddress holds details about calls to the SetGatewayAddress method.
-		SetGatewayAddress []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Addr is the addr argument value.
-			Addr common.Address
-		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -2942,6 +2968,13 @@ type ChainKeeperMock struct {
 			Key vote.PollKey
 			// Deposit is the deposit argument value.
 			Deposit *types.ERC20Deposit
+		}
+		// SetPendingGateway holds details about calls to the SetPendingGateway method.
+		SetPendingGateway []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address common.Address
 		}
 		// SetPendingTransferKey holds details about calls to the SetPendingTransferKey method.
 		SetPendingTransferKey []struct {
@@ -2966,10 +2999,12 @@ type ChainKeeperMock struct {
 	}
 	lockArchiveTransferKey            sync.RWMutex
 	lockAssembleTx                    sync.RWMutex
+	lockConfirmPendingGateway         sync.RWMutex
 	lockCreateERC20Token              sync.RWMutex
 	lockCreateNewBatchToSign          sync.RWMutex
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeletePendingDeposit          sync.RWMutex
+	lockDeletePendingGateway          sync.RWMutex
 	lockDeletePendingTransferKey      sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
 	lockGetArchivedTransferKey        sync.RWMutex
@@ -2990,6 +3025,7 @@ type ChainKeeperMock struct {
 	lockGetNetwork                    sync.RWMutex
 	lockGetNetworkByID                sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
+	lockGetPendingGatewayAddress      sync.RWMutex
 	lockGetPendingTransferKey         sync.RWMutex
 	lockGetRequiredConfirmationHeight sync.RWMutex
 	lockGetRevoteLockingPeriod        sync.RWMutex
@@ -2998,8 +3034,8 @@ type ChainKeeperMock struct {
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
-	lockSetGatewayAddress             sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
+	lockSetPendingGateway             sync.RWMutex
 	lockSetPendingTransferKey         sync.RWMutex
 	lockSetUnsignedTx                 sync.RWMutex
 }
@@ -3075,6 +3111,37 @@ func (mock *ChainKeeperMock) AssembleTxCalls() []struct {
 	mock.lockAssembleTx.RLock()
 	calls = mock.calls.AssembleTx
 	mock.lockAssembleTx.RUnlock()
+	return calls
+}
+
+// ConfirmPendingGateway calls ConfirmPendingGatewayFunc.
+func (mock *ChainKeeperMock) ConfirmPendingGateway(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
+	if mock.ConfirmPendingGatewayFunc == nil {
+		panic("ChainKeeperMock.ConfirmPendingGatewayFunc: method is nil but ChainKeeper.ConfirmPendingGateway was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockConfirmPendingGateway.Lock()
+	mock.calls.ConfirmPendingGateway = append(mock.calls.ConfirmPendingGateway, callInfo)
+	mock.lockConfirmPendingGateway.Unlock()
+	return mock.ConfirmPendingGatewayFunc(ctx)
+}
+
+// ConfirmPendingGatewayCalls gets all the calls that were made to ConfirmPendingGateway.
+// Check the length with:
+//     len(mockedChainKeeper.ConfirmPendingGatewayCalls())
+func (mock *ChainKeeperMock) ConfirmPendingGatewayCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockConfirmPendingGateway.RLock()
+	calls = mock.calls.ConfirmPendingGateway
+	mock.lockConfirmPendingGateway.RUnlock()
 	return calls
 }
 
@@ -3215,6 +3282,37 @@ func (mock *ChainKeeperMock) DeletePendingDepositCalls() []struct {
 	mock.lockDeletePendingDeposit.RLock()
 	calls = mock.calls.DeletePendingDeposit
 	mock.lockDeletePendingDeposit.RUnlock()
+	return calls
+}
+
+// DeletePendingGateway calls DeletePendingGatewayFunc.
+func (mock *ChainKeeperMock) DeletePendingGateway(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
+	if mock.DeletePendingGatewayFunc == nil {
+		panic("ChainKeeperMock.DeletePendingGatewayFunc: method is nil but ChainKeeper.DeletePendingGateway was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDeletePendingGateway.Lock()
+	mock.calls.DeletePendingGateway = append(mock.calls.DeletePendingGateway, callInfo)
+	mock.lockDeletePendingGateway.Unlock()
+	return mock.DeletePendingGatewayFunc(ctx)
+}
+
+// DeletePendingGatewayCalls gets all the calls that were made to DeletePendingGateway.
+// Check the length with:
+//     len(mockedChainKeeper.DeletePendingGatewayCalls())
+func (mock *ChainKeeperMock) DeletePendingGatewayCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockDeletePendingGateway.RLock()
+	calls = mock.calls.DeletePendingGateway
+	mock.lockDeletePendingGateway.RUnlock()
 	return calls
 }
 
@@ -3893,6 +3991,37 @@ func (mock *ChainKeeperMock) GetPendingDepositCalls() []struct {
 	return calls
 }
 
+// GetPendingGatewayAddress calls GetPendingGatewayAddressFunc.
+func (mock *ChainKeeperMock) GetPendingGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
+	if mock.GetPendingGatewayAddressFunc == nil {
+		panic("ChainKeeperMock.GetPendingGatewayAddressFunc: method is nil but ChainKeeper.GetPendingGatewayAddress was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPendingGatewayAddress.Lock()
+	mock.calls.GetPendingGatewayAddress = append(mock.calls.GetPendingGatewayAddress, callInfo)
+	mock.lockGetPendingGatewayAddress.Unlock()
+	return mock.GetPendingGatewayAddressFunc(ctx)
+}
+
+// GetPendingGatewayAddressCalls gets all the calls that were made to GetPendingGatewayAddress.
+// Check the length with:
+//     len(mockedChainKeeper.GetPendingGatewayAddressCalls())
+func (mock *ChainKeeperMock) GetPendingGatewayAddressCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetPendingGatewayAddress.RLock()
+	calls = mock.calls.GetPendingGatewayAddress
+	mock.lockGetPendingGatewayAddress.RUnlock()
+	return calls
+}
+
 // GetPendingTransferKey calls GetPendingTransferKeyFunc.
 func (mock *ChainKeeperMock) GetPendingTransferKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.TransferKey, bool) {
 	if mock.GetPendingTransferKeyFunc == nil {
@@ -4161,41 +4290,6 @@ func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 	return calls
 }
 
-// SetGatewayAddress calls SetGatewayAddressFunc.
-func (mock *ChainKeeperMock) SetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, addr common.Address) {
-	if mock.SetGatewayAddressFunc == nil {
-		panic("ChainKeeperMock.SetGatewayAddressFunc: method is nil but ChainKeeper.SetGatewayAddress was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Addr common.Address
-	}{
-		Ctx:  ctx,
-		Addr: addr,
-	}
-	mock.lockSetGatewayAddress.Lock()
-	mock.calls.SetGatewayAddress = append(mock.calls.SetGatewayAddress, callInfo)
-	mock.lockSetGatewayAddress.Unlock()
-	mock.SetGatewayAddressFunc(ctx, addr)
-}
-
-// SetGatewayAddressCalls gets all the calls that were made to SetGatewayAddress.
-// Check the length with:
-//     len(mockedChainKeeper.SetGatewayAddressCalls())
-func (mock *ChainKeeperMock) SetGatewayAddressCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Addr common.Address
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Addr common.Address
-	}
-	mock.lockSetGatewayAddress.RLock()
-	calls = mock.calls.SetGatewayAddress
-	mock.lockSetGatewayAddress.RUnlock()
-	return calls
-}
-
 // SetPendingDeposit calls SetPendingDepositFunc.
 func (mock *ChainKeeperMock) SetPendingDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, deposit *types.ERC20Deposit) {
 	if mock.SetPendingDepositFunc == nil {
@@ -4232,6 +4326,41 @@ func (mock *ChainKeeperMock) SetPendingDepositCalls() []struct {
 	mock.lockSetPendingDeposit.RLock()
 	calls = mock.calls.SetPendingDeposit
 	mock.lockSetPendingDeposit.RUnlock()
+	return calls
+}
+
+// SetPendingGateway calls SetPendingGatewayFunc.
+func (mock *ChainKeeperMock) SetPendingGateway(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) {
+	if mock.SetPendingGatewayFunc == nil {
+		panic("ChainKeeperMock.SetPendingGatewayFunc: method is nil but ChainKeeper.SetPendingGateway was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address common.Address
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockSetPendingGateway.Lock()
+	mock.calls.SetPendingGateway = append(mock.calls.SetPendingGateway, callInfo)
+	mock.lockSetPendingGateway.Unlock()
+	mock.SetPendingGatewayFunc(ctx, address)
+}
+
+// SetPendingGatewayCalls gets all the calls that were made to SetPendingGateway.
+// Check the length with:
+//     len(mockedChainKeeper.SetPendingGatewayCalls())
+func (mock *ChainKeeperMock) SetPendingGatewayCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address common.Address
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address common.Address
+	}
+	mock.lockSetPendingGateway.RLock()
+	calls = mock.calls.SetPendingGateway
+	mock.lockSetPendingGateway.RUnlock()
 	return calls
 }
 

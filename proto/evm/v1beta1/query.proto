@@ -32,12 +32,22 @@ message QueryBatchedCommandsResponse {
 }
 
 message QueryAddressResponse {
-  string address = 1;
-  string key_id = 2 [
+  message MultisigAddresses {
+    repeated string addresses = 1;
+    uint32 threshold = 2;
+  }
+
+  message ThresholdAddress { string address = 1; }
+
+  string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
+  oneof address {
+    MultisigAddresses multisig_addresses = 2;
+    ThresholdAddress threshold_address = 3;
+  }
 }
 
 message QueryDepositStateParams {

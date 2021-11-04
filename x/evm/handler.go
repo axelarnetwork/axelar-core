@@ -86,13 +86,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 		case *types.CreateBurnTokensRequest:
 			res, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.SignTxRequest:
-			res, err := server.SignTx(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = fmt.Sprintf("successfully started signing protocol for transaction with ID %s.", res.TxID)
-			}
-			return result, err
 		case *types.CreatePendingTransfersRequest:
 			res, err := server.CreatePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

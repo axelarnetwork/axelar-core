@@ -213,7 +213,6 @@
       - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\]  \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
       - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
-      - [sign \[chain\] \[tx json file path\]](axelard_tx_evm_sign.md)	 - sign a raw EVM chain transaction
       - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
       - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
       - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract

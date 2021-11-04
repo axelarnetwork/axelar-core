@@ -2,12 +2,13 @@ package types
 
 // Event types
 const (
-	EventTypeNewChain                = "newChain"
-	EventTypeChainConfirmation       = "chainConfirmation"
-	EventTypeDepositConfirmation     = "depositConfirmation"
-	EventTypeTokenConfirmation       = "tokenConfirmation"
-	EventTypeTransferKeyConfirmation = "transferKeyConfirmation"
-	EventTypeLink                    = "link"
+	EventTypeNewChain                      = "newChain"
+	EventTypeGatewayDeploymentConfirmation = "gatewayDeploymentConfirmation"
+	EventTypeChainConfirmation             = "chainConfirmation"
+	EventTypeDepositConfirmation           = "depositConfirmation"
+	EventTypeTokenConfirmation             = "tokenConfirmation"
+	EventTypeTransferKeyConfirmation       = "transferKeyConfirmation"
+	EventTypeLink                          = "link"
 )
 
 // Event attribute keys
@@ -22,6 +23,7 @@ const (
 	AttributeKeyBurnAddress        = "burnAddress"
 	AttributeKeyTokenAddress       = "tokenAddress"
 	AttributeKeyGatewayAddress     = "gatewayAddress"
+	AttributeKeyBytecodeHash       = "bytecodeHash"
 	AttributeKeyConfHeight         = "confHeight"
 	AttributeKeyAsset              = "asset"
 	AttributeKeySymbol             = "symbol"

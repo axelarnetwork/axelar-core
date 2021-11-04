@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -31,7 +30,6 @@ func GetTxCmd() *cobra.Command {
 
 	evmTxCmd.AddCommand(
 		GetCmdLink(),
-		GetCmdSignTx(),
 		GetCmdConfirmChain(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
@@ -69,40 +67,6 @@ func GetCmdLink() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
 	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdSignTx returns the cli command to sign the given transaction
-func GetCmdSignTx() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "sign [chain] [tx json file path]",
-		Short: "sign a raw EVM chain transaction",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			json, err := ioutil.ReadFile(args[1])
-			if err != nil {
-				return err
-			}
-			var evmtx *evmTypes.Transaction
-			cliCtx.LegacyAmino.MustUnmarshalJSON(json, &evmtx)
-
-			msg := types.NewSignTxRequest(cliCtx.GetFromAddress(), chain, json)
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

@@ -161,32 +161,68 @@ func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chain
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
-	address, key, err := getAddressAndKeyForRole(ctx, s, n, chainName, keyRole)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	chain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
 	}
 
-	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
+	keyID, ok := s.GetCurrentKeyID(ctx, chain, keyRole)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s key not found", keyRole.SimpleString())
+	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	return QueryAddressByKeyID(ctx, s, n, chainName, keyID)
 }
 
 // QueryAddressByKeyID returns the address of the given key ID
 func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID tss.KeyID) ([]byte, error) {
-	_, ok := n.GetChain(ctx, chainName)
+	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
 	}
 
-	key, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("key %s not found", keyID))
+	switch chain.KeyType {
+	case tss.Multisig:
+		key, ok := s.GetMultisigPubKey(ctx, keyID)
+		if !ok {
+			return nil, sdkerrors.Wrapf(types.ErrEVM, "multisig key %s not found", keyID)
+		}
+
+		addresses := make([]string, len(key.Values))
+		for i, addr := range types.KeysToAddresses(key.Values) {
+			addresses[i] = addr.Hex()
+		}
+
+		keyRequirement, ok := s.GetKeyRequirement(ctx, key.Role, chain.KeyType)
+		if !ok {
+			return nil, sdkerrors.Wrapf(types.ErrEVM, "no key requirement found for chain %s, key role %s and key type %s", chain.Name, key.Role.SimpleString(), chain.KeyType.SimpleString())
+		}
+
+		threshold := len(addresses) *
+			int(keyRequirement.SafetyThreshold.Numerator) /
+			int(keyRequirement.SafetyThreshold.Denominator)
+		resp := types.QueryAddressResponse{
+			Address: &types.QueryAddressResponse_MultisigAddresses_{MultisigAddresses: &types.QueryAddressResponse_MultisigAddresses{Addresses: addresses, Threshold: uint32(threshold)}},
+			KeyID:   key.ID,
+		}
+
+		return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	case tss.Threshold:
+		key, ok := s.GetKey(ctx, keyID)
+		if !ok {
+			return nil, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+		}
+
+		address := crypto.PubkeyToAddress(key.Value)
+		resp := types.QueryAddressResponse{
+			Address: &types.QueryAddressResponse_ThresholdAddress_{ThresholdAddress: &types.QueryAddressResponse_ThresholdAddress{Address: address.Hex()}},
+			KeyID:   key.ID,
+		}
+
+		return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	default:
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
 	}
-
-	address := crypto.PubkeyToAddress(key.Value)
-	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
@@ -197,12 +233,12 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 	}
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse the recipient"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "could not parse the recipient")
 	}
 
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway address not set"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway address not set")
 	}
 
 	token := k.GetERC20Token(ctx, params.Asset)
@@ -217,7 +253,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 
 	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit address is not linked with recipient address"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit address is not linked with recipient address")
 	}
 
 	return depositAddr.Bytes(), nil
@@ -281,7 +317,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 
 	var params types.QueryDepositStateParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not unmarshal parameters"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "could not unmarshal parameters")
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
@@ -299,7 +335,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	case state == types.BURNED:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
 	default:
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit is in an unexpected state")
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&depositState)
@@ -326,9 +362,7 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 		bz, _ = k.GetTokenByteCodes(ctx)
 	case BCBurner:
 		bz, _ = k.GetBurnerByteCodes(ctx)
-	}
-
-	if bz == nil {
+	default:
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", k.GetName()))
 	}
 
@@ -386,18 +420,4 @@ func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.
 	}
 
 	return types.CommandBatch{}, false
-}
-
-func getAddressAndKeyForRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRole tss.KeyRole) (common.Address, tss.Key, error) {
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return common.Address{}, tss.Key{}, fmt.Errorf("%s is not a registered chain", chainName)
-	}
-
-	key, ok := s.GetCurrentKey(ctx, chain, keyRole)
-	if !ok {
-		return common.Address{}, tss.Key{}, fmt.Errorf("%s key not found", keyRole.SimpleString())
-	}
-
-	return crypto.PubkeyToAddress(key.Value), key, nil
 }
