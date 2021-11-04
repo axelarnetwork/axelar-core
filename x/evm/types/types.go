@@ -450,58 +450,48 @@ func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, sym
 	}, nil
 }
 
-// CreateTransferCommand creates a command to transfer ownership/operator of the contract
-func CreateTransferCommand(
+// CreateThresholdTransferCommand creates a command to transfer ownership/operator of the contract
+func CreateThresholdTransferCommand(
 	transferType TransferKeyType,
 	chainID *big.Int,
 	keyID tss.KeyID,
-	keyType tss.KeyType,
-	keyReq tss.KeyRequirement,
-	newOwnerKey ...ecdsa.PublicKey) (Command, error) {
-
-	if len(newOwnerKey) <= 0 {
-		return Command{}, fmt.Errorf("transfer ownership command requires at least one key (received %d)", len(newOwnerKey))
+	newAddress common.Address) (Command, error) {
+	id := NewCommandID(newAddress.Bytes(), chainID)
+	params, err := createTransferSinglesigParams(newAddress)
+	if err != nil {
+		return Command{}, err
 	}
 
-	var id CommandID
-	var params []byte
-	var err error
+	return createTransferCmd(id, params, keyID, transferType)
+}
 
-	switch keyType {
-	case tss.Threshold:
-		if len(newOwnerKey) != 1 {
-			return Command{}, fmt.Errorf("key type '%s' requires exactly one key (received %d)", tss.Threshold.SimpleString(), len(newOwnerKey))
-		}
+// CreateMultisigTransferCommand creates a command to transfer ownership/operator of the contract
+func CreateMultisigTransferCommand(
+	transferType TransferKeyType,
+	chainID *big.Int,
+	keyID tss.KeyID,
+	threshold uint8,
+	newAddresses ...common.Address) (Command, error) {
 
-		addr := crypto.PubkeyToAddress(newOwnerKey[0])
-		id = NewCommandID(addr.Bytes(), chainID)
-		params, err = createTransferSinglesigParams(addr)
-		if err != nil {
-			return Command{}, err
-		}
-
-	case tss.Multisig:
-		addrs := KeysToAddresses(newOwnerKey)
-
-		var concat []byte
-		for _, addr := range addrs {
-			concat = append(concat, addr.Bytes()...)
-		}
-		id = NewCommandID(concat, chainID)
-
-		threshold := len(newOwnerKey) *
-			int(keyReq.SafetyThreshold.Numerator) /
-			int(keyReq.SafetyThreshold.Denominator)
-
-		params, err = createTransferMultisigParams(addrs, uint8(threshold))
-		if err != nil {
-			return Command{}, err
-		}
-
-	default:
-		return Command{}, fmt.Errorf("invalid key type '%s'", keyType.SimpleString())
+	if len(newAddresses) <= 0 {
+		return Command{}, fmt.Errorf("transfer ownership command requires at least one key (received %d)", len(newAddresses))
 	}
 
+	var concat []byte
+	for _, addr := range newAddresses {
+		concat = append(concat, addr.Bytes()...)
+	}
+	id := NewCommandID(concat, chainID)
+
+	params, err := createTransferMultisigParams(newAddresses, uint8(threshold))
+	if err != nil {
+		return Command{}, err
+	}
+
+	return createTransferCmd(id, params, keyID, transferType)
+}
+
+func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferType TransferKeyType) (Command, error) {
 	switch transferType {
 	case Ownership:
 		return Command{

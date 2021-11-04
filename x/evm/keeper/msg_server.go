@@ -1205,42 +1205,47 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	}
 
 	var command types.Command
-	var keyType tss.KeyType
-	var keyReq tss.KeyRequirement
-	var pks []ecdsa.PublicKey
 	var err error
 
 	switch chain.KeyType {
 	case tss.Threshold:
-		keyType = tss.Threshold
-
 		key, ok := s.signer.GetKey(ctx, nextKeyID)
 		if !ok {
 			return command, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
 		}
-		pks = append(pks, key.Value)
+
+		newAddress := crypto.PubkeyToAddress(key.Value)
+		command, err = types.CreateThresholdTransferCommand(transferKeyType, chainID, currMasterKeyID, newAddress)
+		if err != nil {
+			return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		}
 
 	case tss.Multisig:
-		keyType = tss.Multisig
-
 		key, ok := s.signer.GetMultisigPubKey(ctx, nextKeyID)
 		if !ok {
 			return command, fmt.Errorf("could not find multisig key '%s'", nextKeyID)
 		}
+
+		var pks []ecdsa.PublicKey
 		for _, pk := range key.Values {
 			pks = append(pks, pk)
 		}
+		addrs := types.KeysToAddresses(pks)
 
-		keyReq, ok = s.signer.GetKeyRequirement(ctx, keyRole, tss.Multisig)
+		keyReq, ok := s.signer.GetKeyRequirement(ctx, keyRole, tss.Multisig)
 		if !ok {
 			return command, fmt.Errorf("could not find key requirements for role %s and type %s",
 				keyRole.SimpleString(), tss.Multisig.SimpleString())
 		}
-	}
 
-	command, err = types.CreateTransferCommand(transferKeyType, chainID, currMasterKeyID, keyType, keyReq, pks...)
-	if err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		threshold := len(key.Values) *
+			int(keyReq.SafetyThreshold.Numerator) /
+			int(keyReq.SafetyThreshold.Denominator)
+
+		command, err = types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, uint8(threshold), addrs...)
+		if err != nil {
+			return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		}
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
