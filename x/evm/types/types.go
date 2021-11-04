@@ -450,36 +450,78 @@ func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, sym
 	}, nil
 }
 
-// CreateTransferOwnershipCommand creates a command to transfer ownership of the contract
-func CreateTransferOwnershipCommand(chainID *big.Int, keyID tss.KeyID, newOwnerAddr common.Address) (Command, error) {
-	params, err := createTransferOwnershipParams(newOwnerAddr)
-	if err != nil {
-		return Command{}, err
+// CreateTransferCommand creates a command to transfer ownership/operator of the contract
+func CreateTransferCommand(
+	transferType TransferKeyType,
+	chainID *big.Int,
+	keyID tss.KeyID,
+	keyType tss.KeyType,
+	keyReq tss.KeyRequirement,
+	newOwnerKey ...ecdsa.PublicKey) (Command, error) {
+
+	if len(newOwnerKey) <= 0 {
+		return Command{}, fmt.Errorf("transfer ownership command requires at least one key (received %d)", len(newOwnerKey))
 	}
 
-	return Command{
-		ID:         NewCommandID(newOwnerAddr.Bytes(), chainID),
-		Command:    axelarGatewayCommandTransferOwnership,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: transferOwnershipMaxGasCost,
-	}, nil
-}
+	var id CommandID
+	var params []byte
+	var err error
 
-// CreateTransferOperatorshipCommand creates a command to transfer operatorship of the contract
-func CreateTransferOperatorshipCommand(chainID *big.Int, keyID tss.KeyID, newOperatorAddr common.Address) (Command, error) {
-	params, err := createTransferOperatorshipParams(newOperatorAddr)
-	if err != nil {
-		return Command{}, err
+	switch keyType {
+	case tss.Threshold:
+		if len(newOwnerKey) != 1 {
+			return Command{}, fmt.Errorf("key type '%s' requires exactly one key (received %d)", tss.Threshold.SimpleString(), len(newOwnerKey))
+		}
+
+		addr := crypto.PubkeyToAddress(newOwnerKey[0])
+		id = NewCommandID(addr.Bytes(), chainID)
+		params, err = createTransferSinglesigParams(addr)
+		if err != nil {
+			return Command{}, err
+		}
+
+	case tss.Multisig:
+		addrs := KeysToAddresses(newOwnerKey)
+
+		var concat []byte
+		for _, addr := range addrs {
+			concat = append(concat, addr.Bytes()...)
+		}
+		id = NewCommandID(concat, chainID)
+
+		threshold := len(newOwnerKey) *
+			int(keyReq.SafetyThreshold.Numerator) /
+			int(keyReq.SafetyThreshold.Denominator)
+
+		params, err = createTransferMultisigParams(addrs, uint8(threshold))
+		if err != nil {
+			return Command{}, err
+		}
+
+	default:
+		return Command{}, fmt.Errorf("invalid key type '%s'", keyType.SimpleString())
 	}
 
-	return Command{
-		ID:         NewCommandID(newOperatorAddr.Bytes(), chainID),
-		Command:    axelarGatewayCommandTransferOperatorship,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: transferOperatorshipMaxGasCost,
-	}, nil
+	switch transferType {
+	case Ownership:
+		return Command{
+			ID:         id,
+			Command:    axelarGatewayCommandTransferOwnership,
+			Params:     params,
+			KeyID:      keyID,
+			MaxGasCost: transferOwnershipMaxGasCost,
+		}, nil
+	case Operatorship:
+		return Command{
+			ID:         id,
+			Command:    axelarGatewayCommandTransferOperatorship,
+			Params:     params,
+			KeyID:      keyID,
+			MaxGasCost: transferOperatorshipMaxGasCost,
+		}, nil
+	default:
+		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
+	}
 }
 
 // GetSinglesigGatewayDeploymentBytecode returns the deployment bytecode for the singlesig gateway contract
@@ -912,14 +954,14 @@ func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	return result, nil
 }
 
-func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) {
+func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return nil, err
 	}
 
 	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(newOwnerAddr)
+	result, err := arguments.Pack(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -927,14 +969,19 @@ func createTransferOwnershipParams(newOwnerAddr common.Address) ([]byte, error) 
 	return result, nil
 }
 
-func createTransferOperatorshipParams(newOperatorAddr common.Address) ([]byte, error) {
-	addressType, err := abi.NewType("address", "address", nil)
+func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(newOperatorAddr)
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint8Type}}
+	result, err := arguments.Pack(addrs, threshold)
 	if err != nil {
 		return nil, err
 	}

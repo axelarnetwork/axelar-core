@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"crypto/ecdsa"
+	rand2 "crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -8,11 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -23,6 +27,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
@@ -81,13 +86,21 @@ func TestCreateBurnTokenCommand_CorrectParams(t *testing.T) {
 func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
-	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	sk, err := ecdsa.GenerateKey(btcec.S256(), rand2.Reader)
+	if err != nil {
+		panic(err)
+	}
+
+	newOwnerAddr := crypto.PubkeyToAddress(sk.PublicKey)
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
-	actual, err := types.CreateTransferOwnershipCommand(
+	actual, err := types.CreateTransferCommand(
+		types.Ownership,
 		chainID,
 		keyID,
-		newOwnerAddr,
+		tss.Threshold,
+		tss.KeyRequirement{},
+		sk.PublicKey,
 	)
 
 	assert.NoError(t, err)
@@ -97,13 +110,21 @@ func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
-	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
+	sk, err := ecdsa.GenerateKey(btcec.S256(), rand2.Reader)
+	if err != nil {
+		panic(err)
+	}
+
+	newOperatorAddr := crypto.PubkeyToAddress(sk.PublicKey)
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
-	actual, err := types.CreateTransferOperatorshipCommand(
+	actual, err := types.CreateTransferCommand(
+		types.Operatorship,
 		chainID,
 		keyID,
-		newOperatorAddr,
+		tss.Threshold,
+		tss.KeyRequirement{},
+		sk.PublicKey,
 	)
 
 	assert.NoError(t, err)

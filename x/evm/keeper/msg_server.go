@@ -1202,17 +1202,31 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	}
 
 	var command types.Command
+	var keyType tss.KeyType
+	var keyReq tss.KeyRequirement
+	var pks []ecdsa.PublicKey
 	var err error
 
-	switch transferKeyType {
-	case types.Ownership:
-		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
-	case types.Operatorship:
-		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
-	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
+	keyType = tss.Threshold
+	if chain.KeyType == tss.Multisig {
+		keyType = tss.Multisig
+
+		key, ok := s.signer.GetMultisigPubKey(ctx, nextKey.ID)
+		if !ok {
+			return command, fmt.Errorf("could not find multisig key '%s'", nextKey.ID)
+		}
+		for _, pk := range key.Values {
+			pks = append(pks, pk)
+		}
+
+		keyReq, ok = s.signer.GetKeyRequirement(ctx, nextKey.Role, tss.Multisig)
+		if !ok {
+			return command, fmt.Errorf("could not find key requirements for role %s and type %s",
+				nextKey.Role.SimpleString(), tss.Multisig.SimpleString())
+		}
 	}
 
+	command, err = types.CreateTransferCommand(transferKeyType, chainID, currMasterKeyID, keyType, keyReq, pks...)
 	if err != nil {
 		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
 	}
