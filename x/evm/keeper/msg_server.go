@@ -1186,8 +1186,9 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	_, ok = s.signer.GetKey(ctx, nextKeyID)
-	if chain.KeyType == tss.Multisig {
+	if chain.KeyType == tss.Threshold {
+		_, ok = s.signer.GetKey(ctx, nextKeyID)
+	} else {
 		_, ok = s.signer.GetMultisigPubKey(ctx, nextKeyID)
 	}
 	if !ok {
