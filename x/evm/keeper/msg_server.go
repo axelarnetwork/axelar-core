@@ -1209,8 +1209,17 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	var pks []ecdsa.PublicKey
 	var err error
 
-	keyType = tss.Threshold
-	if chain.KeyType == tss.Multisig {
+	switch chain.KeyType {
+	case tss.Threshold:
+		keyType = tss.Threshold
+
+		key, ok := s.signer.GetKey(ctx, nextKeyID)
+		if !ok {
+			return command, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+		}
+		pks = append(pks, key.Value)
+
+	case tss.Multisig:
 		keyType = tss.Multisig
 
 		key, ok := s.signer.GetMultisigPubKey(ctx, nextKeyID)
