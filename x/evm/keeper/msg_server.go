@@ -1186,16 +1186,10 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
-	if !ok {
-		return types.Command{}, fmt.Errorf("unkown key %s", nextKeyID)
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
+		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKey.ID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKey.ID, keyRole.SimpleString())
-	}
-
-	newAddress := crypto.PubkeyToAddress(nextKey.Value)
 	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
@@ -1204,26 +1198,57 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	var command types.Command
 	var err error
 
-	switch transferKeyType {
-	case types.Ownership:
-		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
-	case types.Operatorship:
-		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
-	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
-	}
+	switch chain.KeyType {
+	case tss.Threshold:
+		key, ok := s.signer.GetKey(ctx, nextKeyID)
+		if !ok {
+			return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+		}
 
-	if err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		newAddress := crypto.PubkeyToAddress(key.Value)
+		command, err = types.CreateThresholdTransferCommand(transferKeyType, chainID, currMasterKeyID, newAddress)
+		if err != nil {
+			return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		}
+
+	case tss.Multisig:
+		key, ok := s.signer.GetMultisigPubKey(ctx, nextKeyID)
+		if !ok {
+			return types.Command{}, fmt.Errorf("could not find multisig key '%s'", nextKeyID)
+		}
+
+		var pks []ecdsa.PublicKey
+		for _, pk := range key.Values {
+			pks = append(pks, pk)
+		}
+		addrs := types.KeysToAddresses(pks)
+
+		keyReq, ok := s.signer.GetKeyRequirement(ctx, keyRole, tss.Multisig)
+		if !ok {
+			return types.Command{}, fmt.Errorf("could not find key requirements for role %s and type %s",
+				keyRole.SimpleString(), tss.Multisig.SimpleString())
+		}
+
+		threshold := len(key.Values) *
+			int(keyReq.SafetyThreshold.Numerator) /
+			int(keyReq.SafetyThreshold.Denominator)
+
+		command, err = types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, uint8(threshold), addrs...)
+		if err != nil {
+			return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
+		}
+
+	default:
+		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
 
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKey.ID); err != nil {
+	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKeyID); err != nil {
 		return types.Command{}, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", keyRole.SimpleString(), chain.Name)
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, newAddress.Hex()))
+	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to key ID %s", transferKeyType.SimpleString(), chain.Name, nextKeyID))
 
 	return command, nil
 }

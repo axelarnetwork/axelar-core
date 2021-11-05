@@ -84,7 +84,8 @@ func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
-	actual, err := types.CreateTransferOwnershipCommand(
+	actual, err := types.CreateThresholdTransferCommand(
+		types.Ownership,
 		chainID,
 		keyID,
 		newOwnerAddr,
@@ -100,7 +101,8 @@ func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
-	actual, err := types.CreateTransferOperatorshipCommand(
+	actual, err := types.CreateThresholdTransferCommand(
+		types.Operatorship,
 		chainID,
 		keyID,
 		newOperatorAddr,
