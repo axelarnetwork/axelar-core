@@ -1,6 +1,6 @@
 ## axelard tx tss start-keygen
 
-Initiate threshold key generation protocol
+Initiate key generation protocol
 
 ```
 axelard tx tss start-keygen [flags]

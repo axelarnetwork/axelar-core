@@ -261,7 +261,7 @@
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
       - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
-      - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate threshold key generation protocol
+      - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
