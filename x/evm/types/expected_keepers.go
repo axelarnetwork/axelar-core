@@ -44,6 +44,10 @@ type ChainKeeper interface {
 	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool)
 	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
+	SetPendingGateway(ctx sdk.Context, address common.Address)
+	ConfirmPendingGateway(ctx sdk.Context) error
+	DeletePendingGateway(ctx sdk.Context) error
+	GetPendingGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
@@ -55,7 +59,6 @@ type ChainKeeper interface {
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	SetGatewayAddress(ctx sdk.Context, addr common.Address)
 	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
 	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
 	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)

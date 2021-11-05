@@ -25,6 +25,14 @@ service MsgService {
     };
   }
 
+  rpc ConfirmGatewayDeployment(ConfirmGatewayDeploymentRequest)
+      returns (ConfirmGatewayDeploymentResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm-gateway-deployment"
+      body : "*"
+    };
+  }
+
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm-erc20-deploy"
@@ -51,6 +59,14 @@ service MsgService {
       returns (VoteConfirmChainResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/vote-confirm-chain",
+      body : "*"
+    };
+  }
+
+  rpc VoteConfirmGatewayDeployment(VoteConfirmGatewayDeploymentRequest)
+      returns (VoteConfirmGatewayDeploymentResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-gateway-deployment",
       body : "*"
     };
   }
@@ -91,13 +107,6 @@ service MsgService {
       returns (CreateBurnTokensResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/sign-burn"
-      body : "*"
-    };
-  }
-
-  rpc SignTx(SignTxRequest) returns (SignTxResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/sign-tx"
       body : "*"
     };
   }

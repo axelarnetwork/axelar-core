@@ -231,6 +231,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmGatewayDeploymentConf := subscribe(evmTypes.EventTypeGatewayDeploymentConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -263,6 +264,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),
 		tmEvents.Consume(evmNewChain, evmMgr.ProcessNewChain),
 		tmEvents.Consume(evmChainConf, evmMgr.ProcessChainConfirmation),
+		tmEvents.Consume(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation),
 		tmEvents.Consume(evmDepConf, evmMgr.ProcessDepositConfirmation),
 		tmEvents.Consume(evmTokConf, evmMgr.ProcessTokenConfirmation),
 		tmEvents.Consume(evmTraConf, evmMgr.ProcessTransferOwnershipConfirmation),

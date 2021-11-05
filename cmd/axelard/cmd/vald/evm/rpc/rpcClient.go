@@ -13,6 +13,7 @@ import (
 // Client provides calls to an EVM RPC endpoint
 type Client interface {
 	BlockNumber(ctx context.Context) (uint64, error)
+	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }
 

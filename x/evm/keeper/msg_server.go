@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -54,6 +52,166 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	}
 
 	return nil
+}
+
+func (s msgServer) ConfirmGatewayDeployment(c context.Context, req *types.ConfirmGatewayDeploymentRequest) (*types.ConfirmGatewayDeploymentResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+
+	if _, ok := keeper.GetPendingGatewayAddress(ctx); ok {
+		return nil, fmt.Errorf("gateway is in the process of confirmation")
+	}
+
+	if _, ok := keeper.GetGatewayAddress(ctx); ok {
+		return nil, fmt.Errorf("gateway is already confirmed")
+	}
+
+	keeper.SetPendingGateway(ctx, common.Address(req.Address))
+
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not retrieve revote locking period")
+	}
+
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold not found")
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count not found")
+	}
+
+	pollKey := types.GetConfirmGatewayDeploymentPollKey(chain, req.TxID, req.Address)
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+		vote.RewardPool(chain.Name),
+	); err != nil {
+		return nil, err
+	}
+
+	deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, keeper, s.signer, chain)
+	if err != nil {
+		return nil, err
+	}
+
+	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeGatewayDeploymentConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
+			sdk.NewAttribute(types.AttributeKeyBytecodeHash, hex.EncodeToString(crypto.Keccak256(deploymentBytecode))),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+		),
+	)
+
+	return nil, nil
+}
+
+func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.VoteConfirmGatewayDeploymentRequest) (*types.VoteConfirmGatewayDeploymentResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+
+	if _, ok := keeper.GetGatewayAddress(ctx); ok {
+		return &types.VoteConfirmGatewayDeploymentResponse{Log: "gateway is already confirmed"}, nil
+	}
+
+	address, ok := keeper.GetPendingGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no pending gateway found")
+	}
+
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	if err := poll.Vote(voter, voteValue); err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeGatewayDeploymentConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	))
+
+	if poll.Is(vote.Pending) {
+		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("not enough votes to confirm gateway for chain %s yet", chain.Name)}, nil
+	}
+
+	if poll.Is(vote.Failed) {
+		if err := keeper.DeletePendingGateway(ctx); err != nil {
+			return nil, err
+		}
+
+		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+	}
+
+	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("%s gateway confirmation result is %t", chain.Name, confirmed.Value))
+
+	// handle poll result
+	event := sdk.NewEvent(
+		types.EventTypeGatewayDeploymentConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyAddress, address.Hex()),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+	defer func() { ctx.EventManager().EmitEvent(event) }()
+
+	if !confirmed.Value {
+		poll.AllowOverride()
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+
+		if err := keeper.DeletePendingGateway(ctx); err != nil {
+			return nil, err
+		}
+
+		return &types.VoteConfirmGatewayDeploymentResponse{
+			Log: fmt.Sprintf("%s gateway was discarded", chain.Name),
+		}, nil
+	}
+
+	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
+	keeper.ConfirmPendingGateway(ctx)
+
+	return &types.VoteConfirmGatewayDeploymentResponse{}, nil
 }
 
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
@@ -920,93 +1078,6 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	return &types.CreateBurnTokensResponse{}, nil
 }
 
-func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	tx := req.UnmarshaledTx()
-	keeper := s.ForChain(chain.Name)
-
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("storing raw tx %s", req.Tx))
-	// if we retrieved a key ID, the key itself must exist
-	key, _ := s.signer.GetKey(ctx, keyID)
-	hash := keeper.GetHashToSign(ctx, tx)
-	err := keeper.SetUnsignedTx(ctx, hash.Hex(), tx, key.Value)
-	if err != nil {
-		return nil, err
-	}
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", keyID)
-	}
-
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("no snapshot found for counter num %d", counter)
-	}
-
-	sigMetadata := types.SigMetadata{
-		Type:  types.SigTx,
-		Chain: chain.Name,
-	}
-
-	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           keyID,
-		SigID:           hash.Hex(),
-		Msg:             hash.Bytes(),
-		SnapshotCounter: snapshot.Counter,
-		RequestModule:   types.ModuleName,
-		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
-	}, s.snapshotter, s.voter)
-	if err != nil {
-		return nil, err
-	}
-
-	deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, keeper, s.signer, chain)
-	if err != nil {
-		return nil, err
-	}
-
-	// if this is the transaction that is deploying Axelar Gateway, calculate and save address
-	// TODO: this is something that should be done after the signature has been successfully confirmed
-	if tx.To() == nil && bytes.Equal(tx.Data(), deploymentBytecode) {
-		pub, ok := s.signer.GetCurrentKey(ctx, chain, tss.MasterKey)
-		if !ok {
-			return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-		}
-
-		addr := crypto.CreateAddress(crypto.PubkeyToAddress(pub.Value), tx.Nonce())
-		keeper.SetGatewayAddress(ctx, addr)
-
-		telemetry.NewLabel("eth_factory_addr", addr.String())
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, hash.Hex()),
-		),
-	)
-
-	return &types.SignTxResponse{TxID: hash.Hex()}, nil
-}
-
 func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
 	externalKeyIDs, ok := s.GetExternalKeyIDs(ctx, chain)
 	if !ok {
@@ -1153,6 +1224,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
 	case types.Operatorship:
 		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
+
 	default:
 		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
 	}
