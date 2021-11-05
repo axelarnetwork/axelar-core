@@ -59,9 +59,13 @@ func getCmdKeygenStart() *cobra.Command {
 			return err
 		}
 
-		keyType, err := exported.KeyTypeFromSimpleStr(keyTypeStr)
+		keyType, err := exported.KeyTypeFromSimpleStr(*keyTypeStr)
 		if err != nil {
 			return err
+		}
+
+		if !types.TSSEnabled && keyType == exported.Threshold {
+			return fmt.Errorf("threshold signing is disable")
 		}
 
 		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *keyID, keyRole, keyType)
