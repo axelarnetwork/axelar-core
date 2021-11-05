@@ -1202,7 +1202,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	case tss.Threshold:
 		key, ok := s.signer.GetKey(ctx, nextKeyID)
 		if !ok {
-			return command, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+			return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
 		}
 
 		newAddress := crypto.PubkeyToAddress(key.Value)
@@ -1214,7 +1214,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 	case tss.Multisig:
 		key, ok := s.signer.GetMultisigPubKey(ctx, nextKeyID)
 		if !ok {
-			return command, fmt.Errorf("could not find multisig key '%s'", nextKeyID)
+			return types.Command{}, fmt.Errorf("could not find multisig key '%s'", nextKeyID)
 		}
 
 		var pks []ecdsa.PublicKey
@@ -1225,7 +1225,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 
 		keyReq, ok := s.signer.GetKeyRequirement(ctx, keyRole, tss.Multisig)
 		if !ok {
-			return command, fmt.Errorf("could not find key requirements for role %s and type %s",
+			return types.Command{}, fmt.Errorf("could not find key requirements for role %s and type %s",
 				keyRole.SimpleString(), tss.Multisig.SimpleString())
 		}
 
