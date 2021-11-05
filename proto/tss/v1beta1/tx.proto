@@ -126,3 +126,13 @@ message SubmitMultisigPubKeysRequest {
 }
 
 message SubmitMultisigPubKeysResponse {}
+
+message SubmitMultisigSignaturesRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+
+  repeated bytes signatures = 3;
+}
+
+message SubmitMultisigSignaturesResponse {}

@@ -57,12 +57,12 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 		}
 	case exported.Multisig:
 		// init multisig key info
-		multisigKeyInfo := types.MultisigKeyInfo{
-			KeyID:        keyInfo.KeyID,
+		multisigKeyInfo := types.MultisigInfo{
+			ID:           string(keyInfo.KeyID),
 			Timeout:      ctx.BlockHeight() + keyRequirement.KeygenTimeout,
-			TargetKeyNum: snapshot.TotalShareCount.Int64(),
+			TargetNum: snapshot.TotalShareCount.Int64(),
 		}
-		k.SetMultisigKeyInfo(ctx, multisigKeyInfo)
+		k.SetMultisigKeygenInfo(ctx, multisigKeyInfo)
 		// enqueue ongoing multisig keygen
 		q := k.GetMultisigKeygenQueue(ctx)
 		if err := q.Enqueue(&gogoprototypes.StringValue{Value: string(keyInfo.KeyID)}); err != nil {
@@ -338,96 +338,86 @@ func (k Keeper) GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyTy
 	return keyInfo.KeyType
 }
 
+// GetKeyInfo returns the key info of the given keyID
+func (k Keeper) GetKeyInfo(ctx sdk.Context, keyID exported.KeyID) (types.KeyInfo, bool) {
+	var keyInfo types.KeyInfo
+	ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo)
+
+	return keyInfo, ok
+}
+
 // SubmitPubKeys stores public keys a validator has under the given multisig key ID
 func (k Keeper) SubmitPubKeys(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress, pubKeys ...[]byte) bool {
-	keyInfo, ok := k.getMultisigKeyInfo(ctx, keyID)
+	var info types.MultisigInfo
+	ok := k.getStore(ctx).Get(multiSigKeyPrefix.AppendStr(string(keyID)), &info)
 	if !ok {
 		// the setter is controlled by keeper
-		panic(fmt.Sprintf("MultisigKeyInfo %s not found", keyID))
+		panic(fmt.Sprintf("MultisigKeygenInfo %s not found", keyID))
 	}
 
 	for _, pk := range pubKeys {
-		if keyInfo.HasKey(pk) {
+		if info.HasData(pk) {
 			return false
 		}
-		keyInfo.AddKey(pk)
+
 	}
-	keyInfo.AddParticipant(validator)
-	k.SetMultisigKeyInfo(ctx, keyInfo)
+	info.AddData(validator, pubKeys)
+	k.SetMultisigKeygenInfo(ctx, info)
 
 	return true
 }
 
-func (k Keeper) getMultisigKeyInfo(ctx sdk.Context, keyID exported.KeyID) (types.MultisigKeyInfo, bool) {
-	var info types.MultisigKeyInfo
-	ok := k.getStore(ctx).Get(multiSigPrefix.AppendStr(string(keyID)), &info)
+// GetMultisigKeygenInfo returns the MultisigKeygenInfo
+func (k Keeper) GetMultisigKeygenInfo(ctx sdk.Context, keyID exported.KeyID) (types.MultisigKeygenInfo, bool) {
+	var info types.MultisigInfo
+	ok := k.getStore(ctx).Get(multiSigKeyPrefix.AppendStr(string(keyID)), &info)
 
-	return info, ok
+	return &info, ok
 }
 
-// SetMultisigKeyInfo store the MultisigKeyInfo
-func (k Keeper) SetMultisigKeyInfo(ctx sdk.Context, info types.MultisigKeyInfo) {
-	k.getStore(ctx).Set(multiSigPrefix.AppendStr(string(info.KeyID)), &info)
+// SetMultisigKeygenInfo store the MultisigKeygenInfo
+func (k Keeper) SetMultisigKeygenInfo(ctx sdk.Context, info types.MultisigInfo) {
+	k.getStore(ctx).Set(multiSigKeyPrefix.AppendStr(info.ID), &info)
 }
 
 // GetMultisigPubKey returns the pub keys for a given keyID, if it exists
 func (k Keeper) GetMultisigPubKey(ctx sdk.Context, keyID exported.KeyID) (exported.MultisigKey, bool) {
-	var keyInfo types.MultisigKeyInfo
-	k.getStore(ctx).Get(multiSigPrefix.AppendStr(string(keyID)), &keyInfo)
+	keygenInfo, ok := k.GetMultisigKeygenInfo(ctx, keyID)
+	if !ok {
+		return exported.MultisigKey{}, false
+	}
 
 	role := k.getKeyRole(ctx, keyID)
 	rotatedAt := k.getRotatedAt(ctx, keyID)
 
-	return exported.MultisigKey{ID: keyID, Values: keyInfo.GetKeys(), Role: role, RotatedAt: rotatedAt}, true
+	return exported.MultisigKey{ID: keyID, Values: keygenInfo.GetKeys(), Role: role, RotatedAt: rotatedAt}, true
 }
 
-// IsMultisigKeygenCompleted returns true if the multisig keygen process completed for the given key ID
-func (k Keeper) IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID) bool {
-	var info types.MultisigKeyInfo
-	info, ok := k.getMultisigKeyInfo(ctx, keyID)
-	if !ok {
-		return false
-	}
-
-	return info.IsCompleted()
-}
-
-// GetMultisigPubKeyCount returns the number of multisig pub keys for the given key ID
-func (k Keeper) GetMultisigPubKeyCount(ctx sdk.Context, keyID exported.KeyID) int64 {
-	var info types.MultisigKeyInfo
-	info, ok := k.getMultisigKeyInfo(ctx, keyID)
-	if !ok {
-		return 0
-	}
-
-	return info.KeyCount()
-}
-
-// HasValidatorSubmittedMultisigPubKey returns true if given validator has multisig pub key for the given key ID; otherwise, false
-func (k Keeper) HasValidatorSubmittedMultisigPubKey(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool {
-	var info types.MultisigKeyInfo
-	info, ok := k.getMultisigKeyInfo(ctx, keyID)
-	if !ok {
-		return false
-	}
-	return info.DoesParticipate(validator)
-}
-
-// DeleteMultisigKeygen deletes the multisig pub key info for the given key ID
+// DeleteMultisigKeygen deletes the multisig keygen info for the given key ID
 func (k Keeper) DeleteMultisigKeygen(ctx sdk.Context, keyID exported.KeyID) {
-	k.getStore(ctx).Delete(multiSigPrefix.AppendStr(string(keyID)))
+	k.getStore(ctx).Delete(multiSigKeyPrefix.AppendStr(string(keyID)))
 }
 
-// GetMultisigPubKeyTimeout returns the multisig keygen timeout block height for the given keyID
-func (k Keeper) GetMultisigPubKeyTimeout(ctx sdk.Context, keyID exported.KeyID) (int64, bool) {
-	var info types.MultisigKeyInfo
-	ok := k.getStore(ctx).Get(multiSigPrefix.AppendStr(string(keyID)), &info)
+// IsMultisigKeygenCompleted returns true if multisig keygen completed for the given key ID
+func (k Keeper) IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID) bool {
+	keygenInfo, ok := k.GetMultisigKeygenInfo(ctx, keyID)
+	if !ok {
+		return false
+	}
+	return keygenInfo.IsCompleted()
+}
 
-	return info.Timeout, ok
+// GetMultisigPubKeysByValidator returns the pub keys a validator has for the given keyID
+func (k Keeper) GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.KeyID, val sdk.ValAddress) ([]ecdsa.PublicKey, bool) {
+	info, ok := k.GetMultisigKeygenInfo(ctx, keyID)
+	if !ok {
+		return []ecdsa.PublicKey{}, false
+	}
+	return info.GetPubKeysByValidator(val), ok
 }
 
 // GetMultisigKeygenQueue returns the multisig keygen timeout queue
 func (k Keeper) GetMultisigKeygenQueue(ctx sdk.Context) utils.SequenceKVQueue {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte("multisig"))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(multisigKeygenQueue))
 	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.getMaxSignQueueSize(ctx)), k.Logger(ctx))
 }

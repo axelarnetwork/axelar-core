@@ -21,6 +21,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VotePubKeyRequest{}, "tss/VotePubKey", nil)
 	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "tss/RegisterExternalKey", nil)
 	cdc.RegisterConcrete(&SubmitMultisigPubKeysRequest{}, "tss/SubmitMultisigPubKeys", nil)
+	cdc.RegisterConcrete(&SubmitMultisigSignaturesRequest{}, "tss/SubmitMultisigSignatures", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -35,6 +36,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VotePubKeyRequest{},
 		&RegisterExternalKeysRequest{},
 		&SubmitMultisigPubKeysRequest{},
+		&SubmitMultisigSignaturesRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&tofnd.MessageOut_SignResult{},
@@ -51,6 +53,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&ProcessSignTrafficRequest{},
 		&VoteSigRequest{},
 		&SubmitMultisigPubKeysRequest{},
+		&SubmitMultisigSignaturesRequest{},
 	)
 }
 

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"testing"
 
@@ -120,8 +121,8 @@ func TestMsgServer_SubmitMultisigPubKey(t *testing.T) {
 			LoggerFunc:                     func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, exported.KeyID) (int64, bool) { return rand.PosI64(), true },
 			SubmitPubKeysFunc:              func(sdk.Context, exported.KeyID, sdk.ValAddress, ...[]byte) bool { return true },
-			GetMultisigPubKeyCountFunc:     func(sdk.Context, exported.KeyID) int64 { return randSnap.TotalShareCount.Int64() },
 			IsMultisigKeygenCompletedFunc:  func(sdk.Context, exported.KeyID) bool { return false },
+			GetMultisigKeygenInfoFunc:      func(sdk.Context, exported.KeyID) (types.MultisigKeygenInfo, bool) { return &types.MultisigInfo{}, true },
 		}
 		snapshotter := &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return randSnap.Validators[0].GetSDKValidator().GetOperator() },
@@ -194,6 +195,125 @@ func TestMsgServer_SubmitMultisigPubKey(t *testing.T) {
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
+
+	t.Run("should submit pub keys when signature is valid", func(t *testing.T) {
+		setup()
+		pubKeyInfos := newPubKeyInfo(randSnap.Validators[0])
+
+		_, err := server.SubmitMultisigPubKeys(sdk.WrapSDKContext(ctx), &types.SubmitMultisigPubKeysRequest{
+			Sender:      rand.AccAddr(),
+			KeyID:       tssTestUtils.RandKeyID(),
+			PubKeyInfos: pubKeyInfos,
+		})
+
+		assert.NoError(t, err)
+
+	})
+}
+
+func TestMsgServer_SubmitMultisigSignatures(t *testing.T) {
+	var (
+		server    types.MsgServiceServer
+		ctx       sdk.Context
+		tssKeeper *mock.TSSKeeperMock
+		randSnap  snapshot.Snapshot
+	)
+	setup := func() {
+		randSnap = randSnapshot()
+		signInfo := randSignInfo(randSnap)
+		tssKeeper = &mock.TSSKeeperMock{
+			LoggerFunc:                        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			GetMultisigFunc:                   func(sdk.Context, string) ([]exported.Signature, exported.SigStatus) { return []exported.Signature{}, exported.SigStatus_Signing },
+			GetInfoForSigFunc:                 func(sdk.Context, string) (exported.SignInfo, bool) { return signInfo, true },
+			GetMultisigPubKeysByValidatorFunc: func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return []ecdsa.PublicKey{}, true },
+			SubmitSignaturesFunc:              func(sdk.Context, string, sdk.ValAddress, ...[]byte) bool { return true },
+			IsMultisigKeygenCompletedFunc:     func(sdk.Context, exported.KeyID) bool { return false },
+			GetMultisigSignInfoFunc:           func(sdk.Context, string) (types.MultisigSignInfo, bool) { return &types.MultisigInfo{TargetNum: rand.PosI64()}, true },
+		}
+		snapshotter := &mock.SnapshotterMock{
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return randSnap.Validators[0].GetSDKValidator().GetOperator() },
+			GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) { return randSnap, true },
+		}
+		staker := &mock.StakingKeeperMock{}
+		voter := &mock.VoterMock{}
+		nexusKeeper := &mock.NexusMock{}
+		rewarder := &mock.RewarderMock{}
+		server = NewMsgServerImpl(tssKeeper, snapshotter, staker, voter, nexusKeeper, rewarder)
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	}
+	repeats := 20
+	t.Run("should return error when cannot find pub keys", testutils.Func(func(t *testing.T) {
+		setup()
+		tssKeeper.GetMultisigPubKeysByValidatorFunc = func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return []ecdsa.PublicKey{}, false }
+
+		sigs := randSignatures(randSnap.Validators[0])
+		_, err := server.SubmitMultisigSignatures(sdk.WrapSDKContext(ctx), &types.SubmitMultisigSignaturesRequest{
+			Sender:     rand.AccAddr(),
+			SigID:      rand.StrBetween(5, 20),
+			Signatures: sigs,
+		})
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when a validator submits incorrect number of signatures", testutils.Func(func(t *testing.T) {
+		setup()
+
+		sigs := randSignatures(randSnap.Validators[0])
+		_, err := server.SubmitMultisigSignatures(sdk.WrapSDKContext(ctx), &types.SubmitMultisigSignaturesRequest{
+			Sender:     rand.AccAddr(),
+			SigID:      rand.StrBetween(5, 20),
+			Signatures: sigs,
+		})
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should return error when fail to verify signature ", testutils.Func(func(t *testing.T) {
+		setup()
+
+		sigs := randSignatures(randSnap.Validators[0])
+
+		var randPubs []ecdsa.PublicKey
+		for i := 0; i < len(sigs); i++ {
+			privKey, _ := btcec.NewPrivateKey(btcec.S256())
+			pk := btcec.PublicKey(privKey.PublicKey)
+			pubkey := pk.ToECDSA()
+			randPubs = append(randPubs, *pubkey)
+		}
+		tssKeeper.GetMultisigPubKeysByValidatorFunc = func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return randPubs, true }
+
+		_, err := server.SubmitMultisigSignatures(sdk.WrapSDKContext(ctx), &types.SubmitMultisigSignaturesRequest{
+			Sender:     rand.AccAddr(),
+			SigID:      rand.StrBetween(5, 20),
+			Signatures: sigs,
+		})
+		assert.Error(t, err)
+	}).Repeat(repeats))
+
+	t.Run("should submit valid signatures", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var randPubs []ecdsa.PublicKey
+		var sigs [][]byte
+		for i := 0; i < len(sigs); i++ {
+			privKey, _ := btcec.NewPrivateKey(btcec.S256())
+			pk := btcec.PublicKey(privKey.PublicKey)
+			pubkey := pk.ToECDSA()
+			randPubs = append(randPubs, *pubkey)
+
+			d := sha256.Sum256([]byte("message"))
+			sig, _ := privKey.Sign(d[:])
+			sigs = append(sigs, sig.Serialize())
+		}
+		tssKeeper.GetMultisigPubKeysByValidatorFunc = func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return randPubs, true }
+
+		_, err := server.SubmitMultisigSignatures(sdk.WrapSDKContext(ctx), &types.SubmitMultisigSignaturesRequest{
+			Sender:     rand.AccAddr(),
+			SigID:      rand.StrBetween(5, 20),
+			Signatures: sigs,
+		})
+		assert.NoError(t, err)
+	}).Repeat(repeats))
+
 }
 
 func newPubKeyInfo(validator snapshot.Validator) []exported.PubKeyInfo {
@@ -201,10 +321,22 @@ func newPubKeyInfo(validator snapshot.Validator) []exported.PubKeyInfo {
 	for i := int64(0); i < validator.ShareCount; i++ {
 		privKey, _ := btcec.NewPrivateKey(btcec.S256())
 		pk := btcec.PublicKey(privKey.PublicKey)
-		d := sha256.Sum256([]byte(snap.Validators[0].GetSDKValidator().GetOperator().String()))
+		d := sha256.Sum256([]byte(validator.GetSDKValidator().GetOperator().String()))
 		sig, _ := privKey.Sign(d[:])
 		pubKeyInfos = append(pubKeyInfos, exported.PubKeyInfo{PubKey: pk.SerializeCompressed(), Signature: sig.Serialize()})
 
 	}
 	return pubKeyInfos
+}
+
+func randSignatures(validator snapshot.Validator) [][]byte {
+	var sigs [][]byte
+	for i := int64(0); i < validator.ShareCount; i++ {
+		privKey, _ := btcec.NewPrivateKey(btcec.S256())
+		d := sha256.Sum256([]byte("message"))
+		sig, _ := privKey.Sign(d[:])
+		sigs = append(sigs, sig.Serialize())
+
+	}
+	return sigs
 }

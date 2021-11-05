@@ -3,6 +3,7 @@ package keeper
 import (
 	"crypto/ecdsa"
 	rand3 "crypto/rand"
+	"crypto/sha256"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -97,7 +99,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Multisig,
+		KeyType: exported.Threshold,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
@@ -112,7 +114,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
 	assert.NoError(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -208,7 +210,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
 	assert.Error(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap)
+	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -281,10 +283,140 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	assert.EqualError(t, err, "sig ID 'sigID' has been used before")
 }
 
+func TestMultisigSign(t *testing.T) {
+	repeats := 1
+	t.Run("should set sign timeout when start multisig sign", testutils.Func(func(t *testing.T) {
+		s := setup()
+		sigID := "sigID"
+		keyID := exported.KeyID(rand2.StrBetween(5, 20))
+		msgToSign := []byte("message")
+
+		signInfo := exported.SignInfo{
+			KeyID:           keyID,
+			SigID:           sigID,
+			Msg:             msgToSign,
+			SnapshotCounter: snap.Counter,
+		}
+
+		for _, val := range snap.Validators {
+			s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
+		}
+
+		// start keygen to record the snapshot for each key
+		keyInfo := types.KeyInfo{
+			KeyID:   keyID,
+			KeyRole: exported.MasterKey,
+			KeyType: exported.Multisig,
+		}
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
+		assert.NoError(t, err)
+
+		for _, v := range snap.Validators {
+			// random pub keys
+			var pubKeys [][]byte
+			for i := int64(0); i < v.ShareCount; i++ {
+				pk := btcec.PublicKey(generatePubKey())
+				pubKeys = append(pubKeys, pk.SerializeCompressed())
+			}
+			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
+		}
+
+		err = s.Keeper.StartSign(s.Ctx, signInfo, s.Snapshotter, s.Voter)
+		assert.NoError(t, err)
+		multisigSign, ok := s.Keeper.GetMultisigSignInfo(s.Ctx, sigID)
+		assert.True(t, ok)
+		assert.Equal(t, int64(0), multisigSign.Count())
+		assert.Len(t, multisigSign.GetSigs(), 0)
+		assert.False(t, multisigSign.IsCompleted())
+		keyRequirement, _ := s.Keeper.GetKeyRequirement(s.Ctx, exported.MasterKey, exported.Multisig)
+		expectedTimeoutBlock := s.Ctx.BlockHeight() + keyRequirement.SignTimeout
+		assert.Equal(t, expectedTimeoutBlock, multisigSign.GetTimeoutBlock())
+
+	}).Repeat(repeats))
+
+	t.Run("should update sig count and save signatures when validator submits signatures", testutils.Func(func(t *testing.T) {
+		s := setup()
+		sigID := "sigID"
+		keyID := exported.KeyID(rand2.StrBetween(5, 20))
+		msgToSign := []byte("message")
+		snap = randSnapshot()
+		signInfo := exported.SignInfo{
+			KeyID:           keyID,
+			SigID:           sigID,
+			Msg:             msgToSign,
+			SnapshotCounter: snap.Counter,
+		}
+
+		for _, val := range snap.Validators {
+			s.Keeper.SetAvailableOperator(s.Ctx, val.GetSDKValidator().GetOperator(), keyID)
+		}
+
+		keyInfo := types.KeyInfo{
+			KeyID:   keyID,
+			KeyRole: exported.MasterKey,
+			KeyType: exported.Multisig,
+		}
+
+		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
+		assert.NoError(t, err)
+
+		for _, v := range snap.Validators {
+			// random pub keys
+			var pubKeys [][]byte
+			for i := int64(0); i < v.ShareCount; i++ {
+				pk := btcec.PublicKey(generatePubKey())
+				pubKeys = append(pubKeys, pk.SerializeCompressed())
+			}
+			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
+		}
+
+		err = s.Keeper.StartSign(s.Ctx, signInfo, s.Snapshotter, s.Voter)
+		assert.NoError(t, err)
+
+		sigCount := int64(0)
+		var expectedSigs []exported.Signature
+		for _, v := range snap.Validators {
+			// random sigs
+			var sigs [][]byte
+			for i := int64(0); i < v.ShareCount; i++ {
+				privKey, _ := btcec.NewPrivateKey(btcec.S256())
+				d := sha256.Sum256(msgToSign)
+				sig, _ := privKey.Sign(d[:])
+				sigs = append(sigs, sig.Serialize())
+				expectedSigs = append(expectedSigs, exported.Signature{R: sig.R, S: sig.S})
+			}
+			ok := s.Keeper.SubmitSignatures(s.Ctx, sigID, v.GetSDKValidator().GetOperator(), sigs...)
+			sigCount += v.ShareCount
+			assert.True(t, ok)
+
+			multisigSign, ok := s.Keeper.GetMultisigSignInfo(s.Ctx, sigID)
+			assert.True(t, ok)
+			assert.Equal(t, sigCount, multisigSign.Count())
+			assert.True(t, multisigSign.DoesParticipate(v.GetSDKValidator().GetOperator()))
+			assert.Equal(t, expectedSigs, multisigSign.GetSigs())
+		}
+
+	}).Repeat(repeats))
+}
+
 func generatePubKey() ecdsa.PublicKey {
 	sk, err := ecdsa.GenerateKey(btcec.S256(), rand3.Reader)
 	if err != nil {
 		panic(err)
 	}
 	return sk.PublicKey
+}
+
+func randSignInfo(snap snapshot.Snapshot) exported.SignInfo {
+	sigID := rand2.StrBetween(5, 20)
+	keyID := exported.KeyID(rand2.StrBetween(5, 20))
+	msgToSign := []byte("message")
+	snap = randSnapshot()
+	return exported.SignInfo{
+		KeyID:           keyID,
+		SigID:           sigID,
+		Msg:             msgToSign,
+		SnapshotCounter: snap.Counter,
+	}
+
 }

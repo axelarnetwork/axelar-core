@@ -139,26 +139,25 @@ func (m *KeyInfo) GetKeyType() exported.KeyType {
 	return exported.KEY_TYPE_UNSPECIFIED
 }
 
-type MultisigKeyInfo struct {
-	KeyID        github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
-	Timeout      int64                                                     `protobuf:"varint,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	TargetKeyNum int64                                                     `protobuf:"varint,3,opt,name=target_key_num,json=targetKeyNum,proto3" json:"target_key_num,omitempty"`
-	PubKeys      [][]byte                                                  `protobuf:"bytes,4,rep,name=pub_keys,json=pubKeys,proto3" json:"pub_keys,omitempty"`
-	Participants []github_com_cosmos_cosmos_sdk_types.ValAddress           `protobuf:"bytes,5,rep,name=participants,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"participants,omitempty"`
+type MultisigInfo struct {
+	ID        string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Timeout   int64                `protobuf:"varint,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	TargetNum int64                `protobuf:"varint,3,opt,name=target_num,json=targetNum,proto3" json:"target_num,omitempty"`
+	Infos     []*MultisigInfo_Info `protobuf:"bytes,4,rep,name=infos,proto3" json:"infos,omitempty"`
 }
 
-func (m *MultisigKeyInfo) Reset()         { *m = MultisigKeyInfo{} }
-func (m *MultisigKeyInfo) String() string { return proto.CompactTextString(m) }
-func (*MultisigKeyInfo) ProtoMessage()    {}
-func (*MultisigKeyInfo) Descriptor() ([]byte, []int) {
+func (m *MultisigInfo) Reset()         { *m = MultisigInfo{} }
+func (m *MultisigInfo) String() string { return proto.CompactTextString(m) }
+func (*MultisigInfo) ProtoMessage()    {}
+func (*MultisigInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_757d526ec8821445, []int{2}
 }
-func (m *MultisigKeyInfo) XXX_Unmarshal(b []byte) error {
+func (m *MultisigInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MultisigKeyInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MultisigInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_MultisigKeyInfo.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MultisigInfo.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -168,49 +167,94 @@ func (m *MultisigKeyInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return b[:n], nil
 	}
 }
-func (m *MultisigKeyInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MultisigKeyInfo.Merge(m, src)
+func (m *MultisigInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultisigInfo.Merge(m, src)
 }
-func (m *MultisigKeyInfo) XXX_Size() int {
+func (m *MultisigInfo) XXX_Size() int {
 	return m.Size()
 }
-func (m *MultisigKeyInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_MultisigKeyInfo.DiscardUnknown(m)
+func (m *MultisigInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_MultisigInfo.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MultisigKeyInfo proto.InternalMessageInfo
+var xxx_messageInfo_MultisigInfo proto.InternalMessageInfo
 
-func (m *MultisigKeyInfo) GetKeyID() github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+func (m *MultisigInfo) GetID() string {
 	if m != nil {
-		return m.KeyID
+		return m.ID
 	}
 	return ""
 }
 
-func (m *MultisigKeyInfo) GetTimeout() int64 {
+func (m *MultisigInfo) GetTimeout() int64 {
 	if m != nil {
 		return m.Timeout
 	}
 	return 0
 }
 
-func (m *MultisigKeyInfo) GetTargetKeyNum() int64 {
+func (m *MultisigInfo) GetTargetNum() int64 {
 	if m != nil {
-		return m.TargetKeyNum
+		return m.TargetNum
 	}
 	return 0
 }
 
-func (m *MultisigKeyInfo) GetPubKeys() [][]byte {
+func (m *MultisigInfo) GetInfos() []*MultisigInfo_Info {
 	if m != nil {
-		return m.PubKeys
+		return m.Infos
 	}
 	return nil
 }
 
-func (m *MultisigKeyInfo) GetParticipants() []github_com_cosmos_cosmos_sdk_types.ValAddress {
+type MultisigInfo_Info struct {
+	Participant github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=participant,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"participant,omitempty"`
+	Data        [][]byte                                      `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *MultisigInfo_Info) Reset()         { *m = MultisigInfo_Info{} }
+func (m *MultisigInfo_Info) String() string { return proto.CompactTextString(m) }
+func (*MultisigInfo_Info) ProtoMessage()    {}
+func (*MultisigInfo_Info) Descriptor() ([]byte, []int) {
+	return fileDescriptor_757d526ec8821445, []int{2, 0}
+}
+func (m *MultisigInfo_Info) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MultisigInfo_Info) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MultisigInfo_Info.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MultisigInfo_Info) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultisigInfo_Info.Merge(m, src)
+}
+func (m *MultisigInfo_Info) XXX_Size() int {
+	return m.Size()
+}
+func (m *MultisigInfo_Info) XXX_DiscardUnknown() {
+	xxx_messageInfo_MultisigInfo_Info.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MultisigInfo_Info proto.InternalMessageInfo
+
+func (m *MultisigInfo_Info) GetParticipant() github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if m != nil {
-		return m.Participants
+		return m.Participant
+	}
+	return nil
+}
+
+func (m *MultisigInfo_Info) GetData() [][]byte {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
@@ -218,42 +262,44 @@ func (m *MultisigKeyInfo) GetParticipants() []github_com_cosmos_cosmos_sdk_types
 func init() {
 	proto.RegisterType((*KeygenVoteData)(nil), "tss.v1beta1.KeygenVoteData")
 	proto.RegisterType((*KeyInfo)(nil), "tss.v1beta1.KeyInfo")
-	proto.RegisterType((*MultisigKeyInfo)(nil), "tss.v1beta1.MultisigKeyInfo")
+	proto.RegisterType((*MultisigInfo)(nil), "tss.v1beta1.MultisigInfo")
+	proto.RegisterType((*MultisigInfo_Info)(nil), "tss.v1beta1.MultisigInfo.Info")
 }
 
 func init() { proto.RegisterFile("tss/v1beta1/types.proto", fileDescriptor_757d526ec8821445) }
 
 var fileDescriptor_757d526ec8821445 = []byte{
-	// 450 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x52, 0xcf, 0x8b, 0xd3, 0x40,
-	0x14, 0x6e, 0xb6, 0xb6, 0x59, 0xc7, 0x52, 0x31, 0x0a, 0x1b, 0x17, 0x4c, 0x4b, 0xf1, 0xb0, 0x97,
-	0x26, 0x56, 0x2f, 0x7a, 0xb4, 0x2c, 0xc2, 0x5a, 0xf4, 0x10, 0x74, 0x41, 0x41, 0xc2, 0x24, 0x79,
-	0x1b, 0x43, 0x7e, 0xbc, 0x61, 0x66, 0xb2, 0x76, 0xfe, 0x0b, 0xff, 0x06, 0xff, 0x1a, 0x8f, 0x7b,
-	0xf4, 0x20, 0x45, 0xda, 0xff, 0x62, 0x4f, 0x32, 0x93, 0xac, 0xac, 0x20, 0x88, 0x17, 0x4f, 0xf9,
-	0x66, 0xbe, 0xf7, 0x7d, 0x99, 0xef, 0xbd, 0x47, 0x0e, 0xa4, 0x10, 0xc1, 0xf9, 0x22, 0x06, 0x49,
-	0x17, 0x81, 0x54, 0x0c, 0x84, 0xcf, 0x38, 0x4a, 0x74, 0x6e, 0x49, 0x21, 0xfc, 0x8e, 0x38, 0xbc,
-	0x97, 0x61, 0x86, 0xe6, 0x3e, 0xd0, 0xa8, 0x2d, 0x39, 0x9c, 0x6a, 0x2d, 0xac, 0x19, 0x72, 0x09,
-	0xe9, 0x9f, 0x4c, 0x66, 0xef, 0xc8, 0x78, 0x05, 0x2a, 0x83, 0xfa, 0x14, 0x25, 0x1c, 0x53, 0x49,
-	0x9d, 0x03, 0x62, 0xb3, 0x26, 0x8e, 0x0a, 0x50, 0xae, 0x35, 0xb5, 0x8e, 0x46, 0xe1, 0x90, 0x35,
-	0xf1, 0x0a, 0x94, 0xe3, 0x93, 0xbb, 0x19, 0xc7, 0x86, 0x45, 0x1c, 0x12, 0x3c, 0x07, 0xae, 0xa2,
-	0xbc, 0x3e, 0x43, 0x77, 0xcf, 0x14, 0xdd, 0x31, 0x54, 0xd8, 0x31, 0x27, 0xf5, 0x19, 0xce, 0xbe,
-	0x5b, 0xc4, 0x5e, 0x81, 0xc1, 0xce, 0x07, 0x32, 0x2c, 0x40, 0x45, 0x79, 0x6a, 0x3c, 0x6f, 0x2e,
-	0x5f, 0x6c, 0x37, 0x93, 0x81, 0x26, 0x8f, 0x2f, 0x37, 0x93, 0x67, 0x59, 0x2e, 0x3f, 0x36, 0xb1,
-	0x9f, 0x60, 0x15, 0xd0, 0x35, 0x94, 0x94, 0xd7, 0x20, 0x3f, 0x21, 0x2f, 0xba, 0xd3, 0x3c, 0x41,
-	0x0e, 0xc1, 0x3a, 0xb8, 0x1e, 0xc6, 0x37, 0xe2, 0x70, 0x50, 0x80, 0x3a, 0x49, 0x9d, 0xa7, 0x64,
-	0x5f, 0xdb, 0x73, 0x2c, 0xc1, 0xbc, 0x67, 0xfc, 0xf8, 0x81, 0xaf, 0xbb, 0xf3, 0xab, 0xba, 0x8b,
-	0xae, 0x55, 0x21, 0x96, 0x10, 0xda, 0x45, 0x0b, 0xae, 0x94, 0xba, 0x25, 0x6e, 0xff, 0x2f, 0xca,
-	0x37, 0x8a, 0xb5, 0x4a, 0x0d, 0x66, 0x5f, 0xf6, 0xc8, 0xed, 0x57, 0x4d, 0x29, 0x73, 0x91, 0x67,
-	0xff, 0x29, 0xa6, 0x4b, 0x6c, 0x99, 0x57, 0x80, 0x8d, 0x34, 0x29, 0xfb, 0xe1, 0xd5, 0xd1, 0x79,
-	0x48, 0xc6, 0x92, 0xf2, 0x0c, 0xa4, 0x9e, 0x5b, 0x54, 0x37, 0x95, 0x09, 0xd3, 0x0f, 0x47, 0xed,
-	0xed, 0x0a, 0xd4, 0xeb, 0xa6, 0x72, 0xee, 0x93, 0xfd, 0x6e, 0xb4, 0xc2, 0xbd, 0x31, 0xed, 0x1f,
-	0x8d, 0x42, 0xbb, 0x9d, 0xad, 0x70, 0xde, 0x92, 0x11, 0xa3, 0x5c, 0xe6, 0x49, 0xce, 0x68, 0x2d,
-	0x85, 0x3b, 0xd0, 0xf4, 0x72, 0x71, 0xb9, 0x99, 0xcc, 0xaf, 0x3d, 0x3b, 0x41, 0x51, 0xa1, 0xe8,
-	0x3e, 0x73, 0x91, 0x16, 0xdd, 0x2e, 0x9d, 0xd2, 0xf2, 0x79, 0x9a, 0x72, 0x10, 0x22, 0xfc, 0xcd,
-	0x66, 0xf9, 0xf2, 0xeb, 0xd6, 0xb3, 0x2e, 0xb6, 0x9e, 0xf5, 0x63, 0xeb, 0x59, 0x9f, 0x77, 0x5e,
-	0xef, 0x62, 0xe7, 0xf5, 0xbe, 0xed, 0xbc, 0xde, 0xfb, 0x47, 0xff, 0xd0, 0x0d, 0xf3, 0x93, 0x78,
-	0x68, 0x36, 0xf6, 0xc9, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3e, 0x20, 0x74, 0x68, 0x11, 0x03,
-	0x00, 0x00,
+	// 480 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xcf, 0x8b, 0xd3, 0x40,
+	0x14, 0x6e, 0xd2, 0x5f, 0xee, 0xb4, 0x2c, 0x38, 0x8a, 0x1b, 0x0a, 0x9b, 0x96, 0x9e, 0x7a, 0x69,
+	0x62, 0x57, 0x0f, 0x7a, 0xb4, 0x14, 0xa1, 0x16, 0x3d, 0x8c, 0xb2, 0xa0, 0x20, 0x65, 0x9a, 0xbc,
+	0x8d, 0x21, 0x3f, 0x26, 0xcc, 0x4c, 0xd6, 0xe6, 0x1f, 0xf0, 0xec, 0x9f, 0xe5, 0x71, 0x8f, 0x1e,
+	0xa4, 0x48, 0xfa, 0x5f, 0xec, 0x49, 0x66, 0x92, 0x5d, 0x72, 0x10, 0xc4, 0x4b, 0xf2, 0xcd, 0xbc,
+	0xf7, 0xbd, 0xf7, 0xbe, 0xef, 0x0d, 0x3a, 0x93, 0x42, 0xb8, 0xd7, 0x8b, 0x1d, 0x48, 0xba, 0x70,
+	0x65, 0x91, 0x81, 0x70, 0x32, 0xce, 0x24, 0xc3, 0x03, 0x29, 0x84, 0x53, 0x07, 0x46, 0x8f, 0x03,
+	0x16, 0x30, 0x7d, 0xef, 0x2a, 0x54, 0xa5, 0x8c, 0x26, 0x8a, 0x0b, 0xfb, 0x8c, 0x71, 0x09, 0xfe,
+	0xdf, 0x8a, 0x4c, 0x3f, 0xa2, 0xd3, 0x0d, 0x14, 0x01, 0xa4, 0x97, 0x4c, 0xc2, 0x8a, 0x4a, 0x8a,
+	0xcf, 0x50, 0x3f, 0xcb, 0x77, 0xdb, 0x08, 0x0a, 0xcb, 0x98, 0x18, 0xb3, 0x21, 0xe9, 0x65, 0xf9,
+	0x6e, 0x03, 0x05, 0x76, 0xd0, 0xa3, 0x80, 0xb3, 0x3c, 0xdb, 0x72, 0xf0, 0xd8, 0x35, 0xf0, 0x62,
+	0x1b, 0xa6, 0x57, 0xcc, 0x32, 0x75, 0xd2, 0x43, 0x1d, 0x22, 0x75, 0x64, 0x9d, 0x5e, 0xb1, 0xe9,
+	0x2f, 0x03, 0xf5, 0x37, 0xa0, 0x31, 0xfe, 0x8c, 0x7a, 0x11, 0x14, 0xdb, 0xd0, 0xd7, 0x35, 0x4f,
+	0x96, 0xaf, 0xcb, 0xc3, 0xb8, 0xab, 0x82, 0xab, 0xdb, 0xc3, 0xf8, 0x65, 0x10, 0xca, 0x2f, 0xf9,
+	0xce, 0xf1, 0x58, 0xe2, 0xd2, 0x3d, 0xc4, 0x94, 0xa7, 0x20, 0xbf, 0x32, 0x1e, 0xd5, 0xa7, 0xb9,
+	0xc7, 0x38, 0xb8, 0x7b, 0xb7, 0x29, 0xc6, 0xd1, 0x64, 0xd2, 0x8d, 0xa0, 0x58, 0xfb, 0xf8, 0x05,
+	0x7a, 0xa0, 0xca, 0x73, 0x16, 0x83, 0x9e, 0xe7, 0xf4, 0xe2, 0xdc, 0x51, 0xee, 0xdc, 0x67, 0xd7,
+	0xd2, 0x15, 0x8b, 0xb0, 0x18, 0x48, 0x3f, 0xaa, 0xc0, 0x1d, 0x53, 0x59, 0x62, 0xb5, 0xff, 0xc1,
+	0xfc, 0x50, 0x64, 0x15, 0x53, 0x81, 0xe9, 0x37, 0x13, 0x0d, 0xdf, 0xe6, 0xb1, 0x0c, 0x45, 0x18,
+	0x68, 0x8d, 0x4f, 0x90, 0x79, 0xaf, 0xaf, 0x57, 0x1e, 0xc6, 0xe6, 0x7a, 0x45, 0xcc, 0xd0, 0xc7,
+	0x16, 0xea, 0xcb, 0x30, 0x01, 0x96, 0x4b, 0x3d, 0x5b, 0x9b, 0xdc, 0x1d, 0xf1, 0x39, 0x42, 0x92,
+	0xf2, 0x00, 0xe4, 0x36, 0xcd, 0x13, 0xdd, 0xbe, 0x4d, 0x4e, 0xaa, 0x9b, 0x77, 0x79, 0x82, 0x9f,
+	0xa3, 0xae, 0x72, 0x58, 0x58, 0x9d, 0x49, 0x7b, 0x36, 0xb8, 0xb0, 0x9d, 0xc6, 0xc2, 0x9d, 0x66,
+	0x6b, 0x47, 0x7d, 0x48, 0x95, 0x3c, 0x62, 0xa8, 0xa3, 0xc7, 0x79, 0x8f, 0x06, 0x19, 0xe5, 0x32,
+	0xf4, 0xc2, 0x8c, 0xa6, 0xb2, 0xda, 0xe5, 0x72, 0x71, 0x7b, 0x18, 0xcf, 0x1b, 0x76, 0x7b, 0x4c,
+	0x24, 0x4c, 0xd4, 0xbf, 0xb9, 0xf0, 0xa3, 0xfa, 0x71, 0x5c, 0xd2, 0xf8, 0x95, 0xef, 0x73, 0x10,
+	0x82, 0x34, 0xab, 0x60, 0x8c, 0x3a, 0x3e, 0x95, 0xd4, 0x32, 0x27, 0xed, 0xd9, 0x90, 0x68, 0xbc,
+	0x7c, 0xf3, 0xa3, 0xb4, 0x8d, 0x9b, 0xd2, 0x36, 0x7e, 0x97, 0xb6, 0xf1, 0xfd, 0x68, 0xb7, 0x6e,
+	0x8e, 0x76, 0xeb, 0xe7, 0xd1, 0x6e, 0x7d, 0x7a, 0xfa, 0x1f, 0x8b, 0xd5, 0x7d, 0x77, 0x3d, 0xfd,
+	0x2a, 0x9f, 0xfd, 0x09, 0x00, 0x00, 0xff, 0xff, 0x44, 0x38, 0x4a, 0xec, 0xf5, 0x02, 0x00, 0x00,
 }
 
 func (m *KeygenVoteData) Marshal() (dAtA []byte, err error) {
@@ -333,7 +379,7 @@ func (m *KeyInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MultisigKeyInfo) Marshal() (dAtA []byte, err error) {
+func (m *MultisigInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -343,36 +389,32 @@ func (m *MultisigKeyInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MultisigKeyInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *MultisigInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MultisigKeyInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MultisigInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Participants) > 0 {
-		for iNdEx := len(m.Participants) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Participants[iNdEx])
-			copy(dAtA[i:], m.Participants[iNdEx])
-			i = encodeVarintTypes(dAtA, i, uint64(len(m.Participants[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.PubKeys) > 0 {
-		for iNdEx := len(m.PubKeys) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.PubKeys[iNdEx])
-			copy(dAtA[i:], m.PubKeys[iNdEx])
-			i = encodeVarintTypes(dAtA, i, uint64(len(m.PubKeys[iNdEx])))
+	if len(m.Infos) > 0 {
+		for iNdEx := len(m.Infos) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Infos[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x22
 		}
 	}
-	if m.TargetKeyNum != 0 {
-		i = encodeVarintTypes(dAtA, i, uint64(m.TargetKeyNum))
+	if m.TargetNum != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.TargetNum))
 		i--
 		dAtA[i] = 0x18
 	}
@@ -381,10 +423,49 @@ func (m *MultisigKeyInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.KeyID) > 0 {
-		i -= len(m.KeyID)
-		copy(dAtA[i:], m.KeyID)
-		i = encodeVarintTypes(dAtA, i, uint64(len(m.KeyID)))
+	if len(m.ID) > 0 {
+		i -= len(m.ID)
+		copy(dAtA[i:], m.ID)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.ID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MultisigInfo_Info) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MultisigInfo_Info) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MultisigInfo_Info) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Data) > 0 {
+		for iNdEx := len(m.Data) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Data[iNdEx])
+			copy(dAtA[i:], m.Data[iNdEx])
+			i = encodeVarintTypes(dAtA, i, uint64(len(m.Data[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Participant) > 0 {
+		i -= len(m.Participant)
+		copy(dAtA[i:], m.Participant)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Participant)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -438,30 +519,43 @@ func (m *KeyInfo) Size() (n int) {
 	return n
 }
 
-func (m *MultisigKeyInfo) Size() (n int) {
+func (m *MultisigInfo) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.KeyID)
+	l = len(m.ID)
 	if l > 0 {
 		n += 1 + l + sovTypes(uint64(l))
 	}
 	if m.Timeout != 0 {
 		n += 1 + sovTypes(uint64(m.Timeout))
 	}
-	if m.TargetKeyNum != 0 {
-		n += 1 + sovTypes(uint64(m.TargetKeyNum))
+	if m.TargetNum != 0 {
+		n += 1 + sovTypes(uint64(m.TargetNum))
 	}
-	if len(m.PubKeys) > 0 {
-		for _, b := range m.PubKeys {
-			l = len(b)
+	if len(m.Infos) > 0 {
+		for _, e := range m.Infos {
+			l = e.Size()
 			n += 1 + l + sovTypes(uint64(l))
 		}
 	}
-	if len(m.Participants) > 0 {
-		for _, b := range m.Participants {
+	return n
+}
+
+func (m *MultisigInfo_Info) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Participant)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.Data) > 0 {
+		for _, b := range m.Data {
 			l = len(b)
 			n += 1 + l + sovTypes(uint64(l))
 		}
@@ -713,7 +807,7 @@ func (m *KeyInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
+func (m *MultisigInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -736,15 +830,15 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MultisigKeyInfo: wiretype end group for non-group")
+			return fmt.Errorf("proto: MultisigInfo: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MultisigKeyInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MultisigInfo: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -772,7 +866,7 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.KeyID = github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID(dAtA[iNdEx:postIndex])
+			m.ID = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
@@ -795,9 +889,9 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TargetKeyNum", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TargetNum", wireType)
 			}
-			m.TargetKeyNum = 0
+			m.TargetNum = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTypes
@@ -807,16 +901,16 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TargetKeyNum |= int64(b&0x7F) << shift
+				m.TargetNum |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PubKeys", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Infos", wireType)
 			}
-			var byteLen int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTypes
@@ -826,27 +920,79 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthTypes
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthTypes
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PubKeys = append(m.PubKeys, make([]byte, postIndex-iNdEx))
-			copy(m.PubKeys[len(m.PubKeys)-1], dAtA[iNdEx:postIndex])
+			m.Infos = append(m.Infos, &MultisigInfo_Info{})
+			if err := m.Infos[len(m.Infos)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
-		case 5:
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MultisigInfo_Info) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Info: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Info: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Participants", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Participant", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -873,8 +1019,42 @@ func (m *MultisigKeyInfo) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Participants = append(m.Participants, make([]byte, postIndex-iNdEx))
-			copy(m.Participants[len(m.Participants)-1], dAtA[iNdEx:postIndex])
+			m.Participant = append(m.Participant[:0], dAtA[iNdEx:postIndex]...)
+			if m.Participant == nil {
+				m.Participant = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Data = append(m.Data, make([]byte, postIndex-iNdEx))
+			copy(m.Data[len(m.Data)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

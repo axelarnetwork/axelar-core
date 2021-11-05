@@ -13,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -64,33 +63,33 @@ func TestMultisigKeyInfo(t *testing.T) {
 			validatorLst = append(validatorLst, rand.ValAddr())
 		}
 
-		multisigKeyInfo := tss.MultisigKeyInfo{
-			KeyID:        tssexported.KeyID(rand.StrBetween(5, 20)),
+		multisigKeygenInfo := tss.MultisigInfo{
+			ID:           rand.StrBetween(5, 20),
 			Timeout:      rand.I64Between(1, 20000),
-			TargetKeyNum: totalShareCount,
+			TargetNum: totalShareCount,
 		}
-		assert.False(t, multisigKeyInfo.IsCompleted())
-		assert.Equal(t, int64(0), multisigKeyInfo.KeyCount())
+		assert.False(t, multisigKeygenInfo.IsCompleted())
+		assert.Equal(t, int64(0), multisigKeygenInfo.Count())
 
 		var expectedPubKeys []ecdsa.PublicKey
 		var expectedParticipant []sdk.ValAddress
 		currKeys := int64(0)
 		for i, val := range validatorLst {
 			expectedParticipant = append(expectedParticipant, val)
-			multisigKeyInfo.AddParticipant(val)
+			var pks [][]byte
 			for j := int64(0); j < validatorShares[i]; j++ {
 				pk := btcec.PublicKey(generatePubKey())
-
-				multisigKeyInfo.AddKey(pk.SerializeCompressed())
+				pks = append(pks, pk.SerializeCompressed())
 				expectedPubKeys = append(expectedPubKeys, *pk.ToECDSA())
 			}
+			multisigKeygenInfo.AddData(val, pks)
 			currKeys += validatorShares[i]
-			assert.Equal(t, currKeys, multisigKeyInfo.KeyCount())
+			assert.Equal(t, currKeys, multisigKeygenInfo.Count())
 		}
-		assert.True(t, multisigKeyInfo.IsCompleted())
-		assert.Equal(t, expectedPubKeys, multisigKeyInfo.GetKeys())
+		assert.True(t, multisigKeygenInfo.IsCompleted())
+		assert.Equal(t, expectedPubKeys, multisigKeygenInfo.GetKeys())
 		for _, p := range expectedParticipant {
-			assert.True(t, multisigKeyInfo.DoesParticipate(p))
+			assert.True(t, multisigKeygenInfo.DoesParticipate(p))
 		}
 	}).Repeat(20))
 }

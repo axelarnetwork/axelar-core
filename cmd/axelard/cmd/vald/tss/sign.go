@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -21,16 +22,79 @@ import (
 
 // ProcessSignStart starts the communication with the sign protocol
 func (mgr *Mgr) ProcessSignStart(e tmEvents.Event) error {
-	keyID, sigID, participants, payload, timeout, err := parseSignStartParams(mgr.cdc, e.Attributes)
+	keyID, keyType, sigID, participants, participantShareCounts, payload, timeout, err := parseSignStartParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return err
 	}
 
-	if utils.IndexOf(participants, mgr.principalAddr) == -1 {
+	myIndex := utils.IndexOf(participants, mgr.principalAddr)
+	if myIndex == -1 {
 		// do not participate
 		return nil
 	}
 
+	switch keyType {
+	case tssexported.Threshold.SimpleString():
+		return mgr.thresholdSignStart(e, keyID, timeout, sigID, payload, participants)
+	case tssexported.Multisig.SimpleString():
+		return mgr.multiSigSignStart(keyID, sigID, participantShareCounts[myIndex], payload)
+	default:
+		return fmt.Errorf(fmt.Sprintf("unknown keytype %s", keyType))
+	}
+
+}
+
+// ProcessSignMsg forwards blockchain messages to the sign protocol
+func (mgr *Mgr) ProcessSignMsg(e tmEvents.Event) error {
+	sigID, from, payload := parseMsgParams(mgr.cdc, e.Attributes)
+	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
+	// this message is not meant for this tofnd instance
+	if msgIn == nil {
+		return nil
+	}
+
+	stream, ok := mgr.getSignStream(sigID)
+	if !ok {
+		mgr.Logger.Info(fmt.Sprintf("no sign session with id %s. This process does not participate", sigID))
+		return nil
+	}
+
+	if err := stream.Send(msgIn); err != nil {
+		return sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
+	}
+	return nil
+}
+
+func parseSignStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (keyID string, keyType, sigID string, participants []string, participantShareCounts []uint32, payload []byte, timeout int64, err error) {
+	parsers := []*parse.AttributeParser{
+		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyKeyType, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeySigID, Map: parse.IdentityMap},
+		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &participants)
+			return participants, nil
+		}},
+		{Key: tss.AttributeKeyParticipantShareCounts, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &participantShareCounts)
+			return participantShareCounts, nil
+		}},
+		{Key: tss.AttributeKeyPayload, Map: func(s string) (interface{}, error) {
+			return []byte(s), nil
+		}},
+		{Key: tss.AttributeKeyTimeout, Map: func(s string) (interface{}, error) {
+			return strconv.ParseInt(s, 10, 64)
+		}},
+	}
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", "", "", nil, nil, nil, 0, err
+	}
+
+	return results[0].(string), results[1].(string), results[2].(string), results[3].([]string), results[4].([]uint32), results[5].([]byte), results[6].(int64), nil
+}
+
+func (mgr *Mgr) thresholdSignStart(e tmEvents.Event, keyID string, timeout int64, sigID string, payload []byte, participants []string) error {
 	done := false
 	session := mgr.timeoutQueue.Enqueue(sigID, e.Height+timeout)
 
@@ -73,51 +137,6 @@ func (mgr *Mgr) ProcessSignStart(e tmEvents.Event) error {
 	}()
 
 	return <-errChan
-}
-
-// ProcessSignMsg forwards blockchain messages to the sign protocol
-func (mgr *Mgr) ProcessSignMsg(e tmEvents.Event) error {
-	sigID, from, payload := parseMsgParams(mgr.cdc, e.Attributes)
-	msgIn := prepareTrafficIn(mgr.principalAddr, from, sigID, payload, mgr.Logger)
-	// this message is not meant for this tofnd instance
-	if msgIn == nil {
-		return nil
-	}
-
-	stream, ok := mgr.getSignStream(sigID)
-	if !ok {
-		mgr.Logger.Info(fmt.Sprintf("no sign session with id %s. This process does not participate", sigID))
-		return nil
-	}
-
-	if err := stream.Send(msgIn); err != nil {
-		return sdkerrors.Wrap(err, "failure to send incoming msg to gRPC server")
-	}
-	return nil
-}
-
-func parseSignStartParams(cdc *codec.LegacyAmino, attributes map[string]string) (keyID string, sigID string, participants []string, payload []byte, timeout int64, err error) {
-	parsers := []*parse.AttributeParser{
-		{Key: tss.AttributeKeyKeyID, Map: parse.IdentityMap},
-		{Key: tss.AttributeKeySigID, Map: parse.IdentityMap},
-		{Key: tss.AttributeKeyParticipants, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &participants)
-			return participants, nil
-		}},
-		{Key: tss.AttributeKeyPayload, Map: func(s string) (interface{}, error) {
-			return []byte(s), nil
-		}},
-		{Key: tss.AttributeKeyTimeout, Map: func(s string) (interface{}, error) {
-			return strconv.ParseInt(s, 10, 64)
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", "", nil, nil, 0, err
-	}
-
-	return results[0].(string), results[1].(string), results[2].([]string), results[3].([]byte), results[4].(int64), nil
 }
 
 func (mgr *Mgr) startSign(keyID string, sigID string, participants []string, payload []byte) (Stream, context.CancelFunc, error) {
@@ -206,15 +225,37 @@ func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 	mgr.signStreams[sigID] = NewLockableStream(stream)
 }
 
-// MultiSigSign send sign request to Tofnd Multisig service
-func (mgr *Mgr) MultiSigSign(keyUID string, partyUID string, msgToSign []byte) ([]byte, error) {
+func (mgr *Mgr) multiSigSignStart(keyID string, sigID string, shares uint32, payload []byte) error {
+	var signatures [][]byte
+	for i := uint32(0); i < shares; i++ {
+		keyUID := fmt.Sprintf("%s_%d", keyID, i)
+		signature, err := mgr.multiSigSign(keyUID, payload)
+		if err != nil {
+			return err
+		}
+		signatures = append(signatures, signature)
+	}
+
+	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig signatures for sig %s", mgr.principalAddr, sigID))
+	tssMsg := tss.NewSubmitMultisigSignaturesRequest(mgr.cliCtx.FromAddress, sigID, signatures)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+
+	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing multisig keys msg")
+	}
+
+	return nil
+}
+
+// multiSigSign send sign request to Tofnd Multisig service
+func (mgr *Mgr) multiSigSign(keyUID string, msgToSign []byte) ([]byte, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
 	signRequest := &tofnd.SignRequest{
 		KeyUid:    keyUID,
 		MsgToSign: msgToSign,
-		PartyUid:  partyUID,
+		PartyUid:  mgr.principalAddr,
 	}
 	res, err := mgr.multiSigClient.Sign(grpcCtx, signRequest)
 	if err != nil {

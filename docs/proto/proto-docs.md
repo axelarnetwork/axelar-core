@@ -305,7 +305,8 @@
 - [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
     - [KeyInfo](#tss.v1beta1.KeyInfo)
     - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
-    - [MultisigKeyInfo](#tss.v1beta1.MultisigKeyInfo)
+    - [MultisigInfo](#tss.v1beta1.MultisigInfo)
+    - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest)
@@ -323,6 +324,8 @@
     - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
     - [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest)
     - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
+    - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
+    - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -4294,19 +4297,34 @@ KeyInfo holds information about a key
 
 
 
-<a name="tss.v1beta1.MultisigKeyInfo"></a>
+<a name="tss.v1beta1.MultisigInfo"></a>
 
-### MultisigKeyInfo
+### MultisigInfo
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
 | `timeout` | [int64](#int64) |  |  |
-| `target_key_num` | [int64](#int64) |  |  |
-| `pub_keys` | [bytes](#bytes) | repeated |  |
-| `participants` | [bytes](#bytes) | repeated |  |
+| `target_num` | [int64](#int64) |  |  |
+| `infos` | [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigInfo.Info"></a>
+
+### MultisigInfo.Info
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+| `data` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -4539,6 +4557,33 @@ StartKeygenRequest indicate the start of keygen
 
 
 
+<a name="tss.v1beta1.SubmitMultisigSignaturesRequest"></a>
+
+### SubmitMultisigSignaturesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `signatures` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.SubmitMultisigSignaturesResponse"></a>
+
+### SubmitMultisigSignaturesResponse
+
+
+
+
+
+
+
 <a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
@@ -4641,6 +4686,7 @@ Msg defines the tss Msg service.
 | `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | ||
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
+| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
 
  <!-- end services -->
 
