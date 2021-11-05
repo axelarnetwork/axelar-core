@@ -22,6 +22,7 @@ axelard tx tss start-keygen [flags]
   -h, --help                     help for start-keygen
       --id string                unique ID for new key (required)
       --key-role string          role of the key to be generated (default "master")
+      --key-type string          type of the key to be generated (default "multisig")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
