@@ -22,10 +22,6 @@ import (
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.KeyInfo, snapshot snapshot.Snapshot) error {
-	if !types.TSSEnabled && keyInfo.KeyType == exported.Threshold {
-		return fmt.Errorf("threshold signing is disabled")
-	}
-
 	if k.hasKeygenStarted(ctx, keyInfo.KeyID) {
 		return fmt.Errorf("keyID %s is already in use", keyInfo.KeyID)
 	}
