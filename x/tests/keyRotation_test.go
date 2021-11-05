@@ -56,10 +56,6 @@ import (
 // 17. Wait for vote
 // 18. Rotate to the new master key
 func TestBitcoinKeyRotation(t *testing.T) {
-	if !tssTypes.TSSEnabled {
-		t.Skipf("skipping TestBitcoinKeyRotation due to tss signing being disabled")
-	}
-
 	randStrings := rand.Strings(5, 20)
 	cdc := app.MakeEncodingConfig().Amino
 
