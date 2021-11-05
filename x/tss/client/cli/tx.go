@@ -46,10 +46,7 @@ func getCmdKeygenStart() *cobra.Command {
 	}
 
 	keyRoleStr := cmd.Flags().String("key-role", exported.MasterKey.SimpleString(), "role of the key to be generated")
-	keyTypeStr := exported.Multisig.SimpleString()
-	if types.TSSEnabled {
-		cmd.Flags().StringVar(&keyTypeStr, "key-type", exported.Multisig.SimpleString(), "type of the key to be generated")
-	}
+	keyTypeStr := cmd.Flags().String("key-type", exported.Multisig.SimpleString(), "type of the key to be generated")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientTxContext(cmd)
