@@ -1186,15 +1186,6 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	if chain.KeyType == tss.Threshold {
-		_, ok = s.signer.GetKey(ctx, nextKeyID)
-	} else {
-		_, ok = s.signer.GetMultisigPubKey(ctx, nextKeyID)
-	}
-	if !ok {
-		return types.Command{}, fmt.Errorf("unkown key %s", nextKeyID)
-	}
-
 	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
 		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
 	}
@@ -1246,6 +1237,9 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		if err != nil {
 			return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
 		}
+
+	default:
+		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
