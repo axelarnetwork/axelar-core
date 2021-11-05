@@ -97,7 +97,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
@@ -193,7 +193,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
@@ -242,7 +242,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	s.Keeper.SetKey(s.Ctx, keyID, generatePubKey())
@@ -266,7 +266,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 	keyInfo = types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())

@@ -25,7 +25,7 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 		keyInfo := types.KeyInfo{
 			KeyID:   exported.KeyID(keyID),
 			KeyRole: exported.MasterKey,
-			KeyType: exported.Threshold,
+			KeyType: exported.Multisig,
 		}
 		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 		assert.NoError(t, err)
@@ -49,7 +49,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		keyInfo := types.KeyInfo{
 			KeyID:   exported.KeyID(keyID),
 			KeyRole: exported.MasterKey,
-			KeyType: exported.Threshold,
+			KeyType: exported.Multisig,
 		}
 		err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
 		assert.NoError(t, err)
@@ -165,7 +165,7 @@ func TestGetKeygenParticipants(t *testing.T) {
 		keyInfo := types.KeyInfo{
 			KeyID:   exported.KeyID(keyID),
 			KeyRole: exported.MasterKey,
-			KeyType: exported.Threshold,
+			KeyType: exported.Multisig,
 		}
 
 		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
@@ -175,7 +175,7 @@ func TestGetKeygenParticipants(t *testing.T) {
 		assert.Equal(t, len(snap.Validators), len(participants))
 
 		for _, v := range snap.Validators {
-			assert.Contains(t,participants,v.GetSDKValidator().GetOperator())
+			assert.Contains(t, participants, v.GetSDKValidator().GetOperator())
 		}
 	}).Repeat(repeats))
 
@@ -186,7 +186,7 @@ func TestGetKeygenParticipants(t *testing.T) {
 		keyInfo := types.KeyInfo{
 			KeyID:   exported.KeyID(keyIDs[0]),
 			KeyRole: exported.MasterKey,
-			KeyType: exported.Threshold,
+			KeyType: exported.Multisig,
 		}
 
 		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)

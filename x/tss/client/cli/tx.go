@@ -36,7 +36,7 @@ func GetTxCmd() *cobra.Command {
 func getCmdKeygenStart() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start-keygen",
-		Short: "Initiate threshold key generation protocol",
+		Short: "Initiate key generation protocol",
 		Args:  cobra.NoArgs,
 	}
 
@@ -46,8 +46,7 @@ func getCmdKeygenStart() *cobra.Command {
 	}
 
 	keyRoleStr := cmd.Flags().String("key-role", exported.MasterKey.SimpleString(), "role of the key to be generated")
-
-	keyTypeStr := cmd.Flags().String("key-type", "", "type of the key to be generated")
+	keyTypeStr := cmd.Flags().String("key-type", exported.Multisig.SimpleString(), "type of the key to be generated")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientTxContext(cmd)
@@ -63,6 +62,10 @@ func getCmdKeygenStart() *cobra.Command {
 		keyType, err := exported.KeyTypeFromSimpleStr(*keyTypeStr)
 		if err != nil {
 			return err
+		}
+
+		if !types.TSSEnabled && keyType == exported.Threshold {
+			return fmt.Errorf("threshold signing is disable")
 		}
 
 		msg := types.NewStartKeygenRequest(clientCtx.FromAddress, *keyID, keyRole, keyType)

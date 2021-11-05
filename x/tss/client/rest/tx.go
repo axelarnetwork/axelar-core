@@ -108,6 +108,11 @@ func GetHandlerKeygenStart(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		if !types.TSSEnabled && keyType == exported.Multisig {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "threshold signing is disabled")
+			return
+		}
+
 		msg := types.NewStartKeygenRequest(sender, req.KeyID, keyRole, keyType)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
