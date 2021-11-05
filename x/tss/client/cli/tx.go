@@ -36,7 +36,7 @@ func GetTxCmd() *cobra.Command {
 func getCmdKeygenStart() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start-keygen",
-		Short: "Initiate threshold key generation protocol",
+		Short: "Initiate key generation protocol",
 		Args:  cobra.NoArgs,
 	}
 
