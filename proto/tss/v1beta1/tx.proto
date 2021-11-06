@@ -121,7 +121,7 @@ message SubmitMultisigPubKeysRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
-  repeated exported.v1beta1.PubKeyInfo pub_key_infos = 3
+  repeated tss.exported.v1beta1.PubKeyInfo pub_key_infos = 3
       [ (gogoproto.nullable) = false ];
 }
 

@@ -15,11 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
-// ReqProxyReady defines the properties of a tx request's body
-type ReqProxyReady struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-}
-
 // ReqRegisterProxy defines the properties of a tx request's body
 type ReqRegisterProxy struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
@@ -32,7 +27,6 @@ type ReqDeactivateProxy struct {
 
 // RegisterRoutes registers rest routes for this module
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/tx/%s/proxyReady/{operator}", types.ModuleName), proxyReadHandlerFn(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/tx/%s/registerProxy/{voter}", types.ModuleName), registerProxyHandlerFn(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/tx/%s/deactivateProxy", types.ModuleName), deactivateProxyHandlerFn(cliCtx)).Methods("POST")
 
@@ -40,36 +34,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryProxy(cliCtx), keeper.QProxy, clientUtils.PathVarCosmosAddress)
 	registerQuery(GetHandlerQueryOperator(cliCtx), keeper.QOperator, clientUtils.PathVarCosmosAddress)
 	registerQuery(GetHandlerQuerySnapshot(cliCtx), keeper.QInfo, clientUtils.PathVarCounter)
-}
-
-func proxyReadHandlerFn(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// extract voter address path variable
-		vars := mux.Vars(r)
-		bech32Addr := vars["operator"]
-		operator, err := sdk.ValAddressFromBech32(bech32Addr)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		var req ReqProxyReady
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
-			return
-		}
-		baseReq := req.BaseReq.Sanitize()
-		if !baseReq.ValidateBasic(w) {
-			return
-		}
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		msg := types.NewProxyReadyRequest(fromAddr, operator)
-		tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
-	}
 }
 
 func registerProxyHandlerFn(cliCtx client.Context) http.HandlerFunc {

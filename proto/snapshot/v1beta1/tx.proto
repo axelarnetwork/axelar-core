@@ -8,16 +8,6 @@ import "google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message ProxyReadyRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes operator_addr = 2
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-}
-
-message ProxyReadyResponse {}
-
 message RegisterProxyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
