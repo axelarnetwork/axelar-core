@@ -16,6 +16,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -63,6 +64,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		}
 		s.Keeper.SetKey(ctx, exported.KeyID(keyID), sk.PublicKey)
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 
 		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, exported.KeyID(keyID)))
 	}
@@ -77,6 +79,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 		s := setup()
 		time := time.Unix(time.Now().Unix(), 0)
 		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
@@ -127,6 +130,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 		s := setup()
 		ctx := s.Ctx
 		keys := make([]exported.Key, 10)
