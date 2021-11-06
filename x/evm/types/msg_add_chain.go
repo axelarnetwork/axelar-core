@@ -5,16 +5,18 @@ import (
 	"strings"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, params Params) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, keyType tss.KeyType, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
 		Name:        name,
 		NativeAsset: nativeAsset,
+		KeyType:     keyType,
 		Params:      params,
 	}
 }

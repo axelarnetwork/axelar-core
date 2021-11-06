@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -404,10 +406,10 @@ func GetCmdSignCommands() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [native asset] [chain config]",
+		Use:   "add-chain [name] [native asset] [key type] [chain config]",
 		Short: "Add a new EVM chain",
 		Long:  "Add a new EVM chain. The chain config parameter should be the path to a json file containing the key requirements and the evm module parameters",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -415,7 +417,17 @@ func GetCmdAddChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
-			jsonFile := args[2]
+			keyTypeStr := args[2]
+			jsonFile := args[3]
+
+			keyType, err := tss.KeyTypeFromSimpleStr(keyTypeStr)
+			if err != nil {
+				return err
+			}
+
+			if !tsstypes.TSSEnabled && keyType == tss.Threshold {
+				return fmt.Errorf("TSS is disabled")
+			}
 
 			byteValue, err := ioutil.ReadFile(jsonFile)
 			if err != nil {
@@ -429,7 +441,7 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, chainConf.Params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, keyType, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -15,6 +15,8 @@ import (
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // rest routes
@@ -163,6 +165,7 @@ type ReqAddChain struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
+	KeyType     string       `json:"key_type" yaml:"key_type"`
 	Params      types.Params `json:"params" yaml:"params"`
 }
 
@@ -507,16 +510,29 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
 			return
 		}
+
 		req.BaseReq = req.BaseReq.Sanitize()
 		if !req.BaseReq.ValidateBasic(w) {
 			return
 		}
+
 		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
 		if !ok {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, req.Params)
+		keyType, err := tss.KeyTypeFromSimpleStr(req.KeyType)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if !tsstypes.TSSEnabled && keyType == tss.Threshold {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "TSS is disabled")
+			return
+		}
+
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, keyType, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
