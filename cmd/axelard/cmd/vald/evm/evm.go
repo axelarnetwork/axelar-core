@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/big"
@@ -83,6 +84,39 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 	return err
 }
 
+// ProcessGatewayDeploymentConfirmation votes on an EVM chain's gateway deployment
+func (mgr Mgr) ProcessGatewayDeploymentConfirmation(e tmEvents.Event) error {
+	chain, txID, address, bytecodeHash, confHeight, pollKey, err := parseGatewayDeploymentParams(mgr.cdc, e.Attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "EVM gateway deployment confirmation failed")
+	}
+
+	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	if !found {
+		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+	}
+
+	confirmed := mgr.validate(rpc, txID, confHeight, func(tx *geth.Transaction, txReceipt *geth.Receipt) bool {
+		if !bytes.Equal(crypto.Keccak256(tx.Data()), bytecodeHash.Bytes()) {
+			return false
+		}
+
+		if !bytes.Equal(txReceipt.ContractAddress.Bytes(), address.Bytes()) {
+			return false
+		}
+
+		return true
+	})
+
+	msg := evmTypes.NewVoteConfirmGatewayDeploymentRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
+	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+
+	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
+	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+
+	return err
+}
+
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
@@ -95,7 +129,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
+	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		err = confirmERC20Deposit(txReceipt, amount, burnAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "deposit confirmation failed").Error())
@@ -123,7 +157,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
+	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		err = confirmERC20TokenDeployment(txReceipt, symbol, gatewayAddr, tokenAddr)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "token confirmation failed").Error())
@@ -151,7 +185,7 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	confirmed := mgr.validate(rpc, txID, confHeight, func(txReceipt *geth.Receipt) bool {
+	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		if err = confirmTransferKey(txReceipt, transferKeyType, gatewayAddr, newOwnerAddr); err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "transfer ownership confirmation failed").Error())
 			return false
@@ -200,6 +234,47 @@ func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	}
 
 	return results[0].(string), results[1].(vote.PollKey), nil
+}
+
+func parseGatewayDeploymentParams(cdc *codec.LegacyAmino, attributes map[string]string) (
+	chain string,
+	txID common.Hash,
+	address common.Address,
+	bytecodeHash common.Hash,
+	confHeight uint64,
+	pollKey vote.PollKey,
+	err error,
+) {
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyBytecodeHash, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+			return pollKey, nil
+		}},
+	}
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", common.Hash{}, common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
+	}
+
+	return results[0].(string),
+		results[1].(common.Hash),
+		results[2].(common.Address),
+		results[3].(common.Hash),
+		results[4].(uint64),
+		results[5].(vote.PollKey),
+		nil
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
@@ -336,13 +411,20 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		nil
 }
 
-func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateLogs func(txReceipt *geth.Receipt) bool) bool {
+func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
 	blockNumber, err := rpc.BlockNumber(context.Background())
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "checking block number failed").Error())
 		// TODO: this error is not the caller's fault, so we should implement a retry here instead of voting against
 		return false
 	}
+
+	tx, _, err := rpc.TransactionByHash(context.Background(), txID)
+	if err != nil {
+		mgr.logger.Debug(sdkerrors.Wrap(err, "transaction by hash call failed").Error())
+		return false
+	}
+
 	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "transaction receipt call failed").Error())
@@ -353,11 +435,13 @@ func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, val
 		mgr.logger.Debug(fmt.Sprintf("transaction %s does not have enough confirmations yet", txReceipt.TxHash.String()))
 		return false
 	}
+
 	if !isTxSuccessful(txReceipt) {
 		mgr.logger.Debug(fmt.Sprintf("transaction %s failed", txReceipt.TxHash.String()))
 		return false
 	}
-	return validateLogs(txReceipt)
+
+	return validateTx(tx, txReceipt)
 }
 
 func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr common.Address, tokenAddr common.Address) error {

@@ -118,17 +118,6 @@ message CreatePendingTransfersRequest {
 
 message CreatePendingTransfersResponse {}
 
-message SignTxRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  // Tx is stored in serialized form because the amino codec cannot properly
-  // deserialize MsgSignTx otherwise
-  string chain = 2;
-  bytes tx = 3;
-}
-
-message SignTxResponse { string tx_id = 1 [ (gogoproto.customname) = "TxID" ]; }
-
 // MsgVoteConfirmChain represents a message that votes on a new EVM chain
 message VoteConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -238,3 +227,29 @@ message AddChainRequest {
 }
 
 message AddChainResponse {}
+
+message ConfirmGatewayDeploymentRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  string chain = 2;
+  bytes tx_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes address = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message ConfirmGatewayDeploymentResponse {}
+
+message VoteConfirmGatewayDeploymentRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
+  string chain = 3;
+  bool confirmed = 4;
+}
+
+message VoteConfirmGatewayDeploymentResponse { string log = 1; }

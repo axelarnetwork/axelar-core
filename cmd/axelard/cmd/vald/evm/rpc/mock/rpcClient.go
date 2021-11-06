@@ -24,6 +24,9 @@ var _ rpc.Client = &ClientMock{}
 // 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 				panic("mock out the BlockNumber method")
 // 			},
+// 			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+// 				panic("mock out the TransactionByHash method")
+// 			},
 // 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 // 				panic("mock out the TransactionReceipt method")
 // 			},
@@ -37,6 +40,9 @@ type ClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
 
+	// TransactionByHashFunc mocks the TransactionByHash method.
+	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error)
+
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 
@@ -47,6 +53,13 @@ type ClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// TransactionByHash holds details about calls to the TransactionByHash method.
+		TransactionByHash []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash common.Hash
+		}
 		// TransactionReceipt holds details about calls to the TransactionReceipt method.
 		TransactionReceipt []struct {
 			// Ctx is the ctx argument value.
@@ -56,6 +69,7 @@ type ClientMock struct {
 		}
 	}
 	lockBlockNumber        sync.RWMutex
+	lockTransactionByHash  sync.RWMutex
 	lockTransactionReceipt sync.RWMutex
 }
 
@@ -87,6 +101,41 @@ func (mock *ClientMock) BlockNumberCalls() []struct {
 	mock.lockBlockNumber.RLock()
 	calls = mock.calls.BlockNumber
 	mock.lockBlockNumber.RUnlock()
+	return calls
+}
+
+// TransactionByHash calls TransactionByHashFunc.
+func (mock *ClientMock) TransactionByHash(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+	if mock.TransactionByHashFunc == nil {
+		panic("ClientMock.TransactionByHashFunc: method is nil but Client.TransactionByHash was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockTransactionByHash.Lock()
+	mock.calls.TransactionByHash = append(mock.calls.TransactionByHash, callInfo)
+	mock.lockTransactionByHash.Unlock()
+	return mock.TransactionByHashFunc(ctx, hash)
+}
+
+// TransactionByHashCalls gets all the calls that were made to TransactionByHash.
+// Check the length with:
+//     len(mockedClient.TransactionByHashCalls())
+func (mock *ClientMock) TransactionByHashCalls() []struct {
+	Ctx  context.Context
+	Hash common.Hash
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}
+	mock.lockTransactionByHash.RLock()
+	calls = mock.calls.TransactionByHash
+	mock.lockTransactionByHash.RUnlock()
 	return calls
 }
 

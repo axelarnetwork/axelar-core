@@ -414,7 +414,8 @@ func TestLink_Success(t *testing.T) {
 	tokenDetails := createDetails()
 	msg := createMsgSignDeploy(tokenDetails)
 
-	k.ForChain(chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
+	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
+	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
 	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails)
 	if err != nil {
@@ -1394,7 +1395,8 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
 	})
-	k.ForChain(chain).SetGatewayAddress(ctx, common.HexToAddress(gateway))
+	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
+	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
 	return k
 }

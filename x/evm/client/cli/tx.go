@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -30,8 +29,8 @@ func GetTxCmd() *cobra.Command {
 
 	evmTxCmd.AddCommand(
 		GetCmdLink(),
-		GetCmdSignTx(),
 		GetCmdConfirmChain(),
+		GetCmdConfirmGatewayDeployment(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
@@ -72,41 +71,7 @@ func GetCmdLink() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSignTx returns the cli command to sign the given transaction
-func GetCmdSignTx() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "sign [chain] [tx json file path]",
-		Short: "sign a raw EVM chain transaction",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			json, err := ioutil.ReadFile(args[1])
-			if err != nil {
-				return err
-			}
-			var evmtx *evmTypes.Transaction
-			cliCtx.LegacyAmino.MustUnmarshalJSON(json, &evmtx)
-
-			msg := types.NewSignTxRequest(cliCtx.GetFromAddress(), chain, json)
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdConfirmChain returns the cli command to confirm a ERC20 token deployment
+// GetCmdConfirmChain returns the cli command to confirm a new chain
 func GetCmdConfirmChain() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-chain [chain]",
@@ -119,6 +84,35 @@ func GetCmdConfirmChain() *cobra.Command {
 			}
 
 			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCmdConfirmGatewayDeployment returns the cli command to confirm the gateway deployment
+func GetCmdConfirmGatewayDeployment() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-gateway-deployment [chain] [txID] [address]",
+		Short: "Confirm that the gateway contract was deploy for the given chain in the given transaction at the given address",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			txID := common.HexToHash(args[1])
+			address := common.HexToAddress(args[2])
+
+			msg := types.NewConfirmGatewayDeploymentRequest(cliCtx.GetFromAddress(), chain, txID, address)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -146,6 +146,9 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
+			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
+				return &geth.Transaction{}, false, nil
+			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				receipt := &geth.Receipt{
 					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
@@ -295,6 +298,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
+			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
+				return &geth.Transaction{}, false, nil
+			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				receipt := &geth.Receipt{
 					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
@@ -403,7 +409,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
-		assert.False(t,msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 }
 
@@ -438,6 +444,9 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		rpc = &mock.ClientMock{
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
+			},
+			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
+				return &geth.Transaction{}, false, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				receipt := &geth.Receipt{
@@ -643,4 +652,3 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
 	return msg.(*axelarnetTypes.RefundMsgRequest).GetInnerMessage()
 }
-

@@ -149,7 +149,8 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 
 	k.SetParams(ctx, types.DefaultParams()...)
 	keeper := k.ForChain(chain)
-	keeper.SetGatewayAddress(ctx, axelarGateway)
+	keeper.SetPendingGateway(ctx, axelarGateway)
+	keeper.ConfirmPendingGateway(ctx)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
 	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails)
 	assert.NoError(t, err)

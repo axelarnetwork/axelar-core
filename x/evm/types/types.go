@@ -206,6 +206,11 @@ func (t *ERC20Token) ConfirmDeployment() error {
 // NilToken is a nil erc20 token
 var NilToken = ERC20Token{}
 
+// GetConfirmGatewayDeploymentPollKey creates a poll key for the gateway deployment
+func GetConfirmGatewayDeploymentPollKey(chain nexus.Chain, txID Hash, address Address) vote.PollKey {
+	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s_%s", chain.Name, txID.Hex(), address.Hex()))
+}
+
 // GetConfirmTokenKey creates a poll key for token confirmation
 func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
 	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))

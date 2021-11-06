@@ -16,12 +16,13 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteConfirmTokenRequest{}, "evm/VoteConfirmToken", nil)
 	cdc.RegisterConcrete(&VoteConfirmDepositRequest{}, "evm/VoteConfirmDeposit", nil)
 	cdc.RegisterConcrete(&VoteConfirmChainRequest{}, "evm/VoteConfirmChain", nil)
+	cdc.RegisterConcrete(&VoteConfirmGatewayDeploymentRequest{}, "evm/VoteConfirmGatewayDeployment", nil)
 	cdc.RegisterConcrete(&VoteConfirmTransferKeyRequest{}, "evm/VoteConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "evm/ConfirmToken", nil)
 	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "evm/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
+	cdc.RegisterConcrete(&ConfirmGatewayDeploymentRequest{}, "evm/ConfirmGatewayDeployment", nil)
 	cdc.RegisterConcrete(&ConfirmTransferKeyRequest{}, "evm/ConfirmTransferKey", nil)
-	cdc.RegisterConcrete(&SignTxRequest{}, "evm/SignTx", nil)
 	cdc.RegisterConcrete(&CreatePendingTransfersRequest{}, "evm/CreatePendingTransfers", nil)
 	cdc.RegisterConcrete(&CreateDeployTokenRequest{}, "evm/CreateDeployToken", nil)
 	cdc.RegisterConcrete(&CreateBurnTokensRequest{}, "evm/CreateBurnTokens", nil)
@@ -38,12 +39,13 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmTokenRequest{},
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
+		&VoteConfirmGatewayDeploymentRequest{},
 		&VoteConfirmTransferKeyRequest{},
 		&ConfirmTokenRequest{},
 		&ConfirmDepositRequest{},
 		&ConfirmChainRequest{},
+		&ConfirmGatewayDeploymentRequest{},
 		&ConfirmTransferKeyRequest{},
-		&SignTxRequest{},
 		&CreatePendingTransfersRequest{},
 		&CreateDeployTokenRequest{},
 		&CreateBurnTokensRequest{},
@@ -61,6 +63,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
 		&VoteConfirmTransferKeyRequest{},
+		&VoteConfirmGatewayDeploymentRequest{},
 	)
 }
 
