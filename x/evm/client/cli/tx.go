@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -422,6 +423,10 @@ func GetCmdAddChain() *cobra.Command {
 			keyType, err := tss.KeyTypeFromSimpleStr(keyTypeStr)
 			if err != nil {
 				return err
+			}
+
+			if !tsstypes.TSSEnabled && keyType == tss.Threshold {
+				return fmt.Errorf("TSS is disabled")
 			}
 
 			byteValue, err := ioutil.ReadFile(jsonFile)

@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // rest routes
@@ -523,6 +524,11 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 		keyType, err := tss.KeyTypeFromSimpleStr(req.KeyType)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if !tsstypes.TSSEnabled && keyType == tss.Threshold {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "TSS is disabled")
 			return
 		}
 
