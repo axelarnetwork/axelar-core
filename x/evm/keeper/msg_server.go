@@ -1272,47 +1272,43 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
-	if !ok {
-		return types.Command{}, fmt.Errorf("unkown key %s", nextKeyID)
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
+		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKey.ID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKey.ID, keyRole.SimpleString())
-	}
-
-	newAddress := crypto.PubkeyToAddress(nextKey.Value)
 	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
 	}
 
-	var command types.Command
-	var err error
+	switch chain.KeyType {
+	case tss.Threshold:
+		key, ok := s.signer.GetKey(ctx, nextKeyID)
+		if !ok {
+			return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+		}
 
-	switch transferKeyType {
-	case types.Ownership:
-		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
-	case types.Operatorship:
-		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
+		address := crypto.PubkeyToAddress(key.Value)
+		s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
 
+		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(key.Value))
+	case tss.Multisig:
+		addresses, threshold, err := getMultisigAddresses(ctx, s.signer, chain, nextKeyID)
+		if err != nil {
+			return types.Command{}, err
+		}
+
+		addressStrs := make([]string, len(addresses))
+		for i, address := range addresses {
+			addressStrs[i] = address.Hex()
+		}
+
+		s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to addresses %s", transferKeyType.SimpleString(), chain.Name, strings.Join(addressStrs, ",")))
+
+		return types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, threshold, addresses...)
 	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
+		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}
-
-	if err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
-
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKey.ID); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", keyRole.SimpleString(), chain.Name)
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, newAddress.Hex()))
-
-	return command, nil
 }
 
 func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateTransferOwnershipRequest) (*types.CreateTransferOwnershipResponse, error) {
