@@ -65,7 +65,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// IsProxyReady returns true if a proxy has issued a readiness message for the given operator address
+// IsProxyReady returns true if a register-proxy message has already been issue for the given operator address
 func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
 	return ctx.KVStore(k.storeKey).Has(operator)
 
