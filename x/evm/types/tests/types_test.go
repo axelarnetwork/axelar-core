@@ -26,7 +26,7 @@ import (
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
-func TestCreateMintTokenCommand_CorrectParams(t *testing.T) {
+func TestCreateMintTokenCommand(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	commandID := types.NewCommandID(rand.Bytes(32), chainID)
@@ -56,7 +56,7 @@ func TestCreateMintTokenCommand_CorrectParams(t *testing.T) {
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 }
 
-func TestCreateBurnTokenCommand_CorrectParams(t *testing.T) {
+func TestCreateBurnTokenCommand(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	symbol := rand.Str(3)
@@ -78,13 +78,14 @@ func TestCreateBurnTokenCommand_CorrectParams(t *testing.T) {
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 }
 
-func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
+func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOwnerAddr.Bytes()))
-	actual, err := types.CreateTransferOwnershipCommand(
+	actual, err := types.CreateSinglesigTransferCommand(
+		types.Ownership,
 		chainID,
 		keyID,
 		newOwnerAddr,
@@ -94,13 +95,14 @@ func TestCreateTransferOwnershipCommand_CorrectParams(t *testing.T) {
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 }
 
-func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
+func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
-	actual, err := types.CreateTransferOperatorshipCommand(
+	actual, err := types.CreateSinglesigTransferCommand(
+		types.Operatorship,
 		chainID,
 		keyID,
 		newOperatorAddr,
@@ -110,7 +112,54 @@ func TestCreateTransferOperatorshipCommand_CorrectParams(t *testing.T) {
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 }
 
-func TestGetSignHash_CorrectSignHash(t *testing.T) {
+func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
+	chainID := big.NewInt(1)
+	keyID := tssTestUtils.RandKeyID()
+
+	addresses := []common.Address{
+		common.HexToAddress("0xd59ca627Af68D29C547B91066297a7c469a7bF72"),
+		common.HexToAddress("0xc2FCc7Bcf743153C58Efd44E6E723E9819E9A10A"),
+		common.HexToAddress("0x2ad611e02E4F7063F515C8f190E5728719937205"),
+	}
+	threshold := uint8(2)
+
+	expectedParams := "000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003000000000000000000000000d59ca627af68d29c547b91066297a7c469a7bf72000000000000000000000000c2fcc7bcf743153c58efd44e6e723e9819e9a10a0000000000000000000000002ad611e02e4f7063f515c8f190e5728719937205"
+	actual, err := types.CreateMultisigTransferCommand(
+		types.Ownership,
+		chainID,
+		keyID,
+		threshold,
+		addresses...,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+}
+func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
+	chainID := big.NewInt(1)
+	keyID := tssTestUtils.RandKeyID()
+
+	addresses := []common.Address{
+		common.HexToAddress("0xd59ca627Af68D29C547B91066297a7c469a7bF72"),
+		common.HexToAddress("0xc2FCc7Bcf743153C58Efd44E6E723E9819E9A10A"),
+		common.HexToAddress("0x2ad611e02E4F7063F515C8f190E5728719937205"),
+	}
+	threshold := uint8(2)
+
+	expectedParams := "000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003000000000000000000000000d59ca627af68d29c547b91066297a7c469a7bf72000000000000000000000000c2fcc7bcf743153c58efd44e6e723e9819e9a10a0000000000000000000000002ad611e02e4f7063f515c8f190e5728719937205"
+	actual, err := types.CreateMultisigTransferCommand(
+		types.Ownership,
+		chainID,
+		keyID,
+		threshold,
+		addresses...,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+}
+
+func TestGetSignHash(t *testing.T) {
 	data := common.FromHex("0000000000000000000000000000000000000000000000000000000000000001ec78d9c22c08bb9f0ecd5d95571ae83e3f22219c5a9278c3270691d50abfd91b000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000096d696e74546f6b656e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000014141540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000063fc2ad3d021a4d7e64323529a55a9442c444da00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000270f")
 
 	expected := "0xe7bce8f57491e71212d930096bacf9288c711e5f27200946edd570e3a93546bf"
@@ -119,7 +168,7 @@ func TestGetSignHash_CorrectSignHash(t *testing.T) {
 	assert.Equal(t, expected, actual.Hex())
 }
 
-func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
+func TestCreateExecuteData(t *testing.T) {
 	commandData := common.FromHex("0000000000000000000000000000000000000000000000000000000000000001ec78d9c22c08bb9f0ecd5d95571ae83e3f22219c5a9278c3270691d50abfd91b000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000096d696e74546f6b656e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000014141540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000063fc2ad3d021a4d7e64323529a55a9442c444da00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000270f")
 	commandSig := types.Signature{}
 	copy(commandSig[:], common.FromHex("42b936b3c37fb7deed86f52154798d0c9abfe5ba838b2488f4a7e5193a9bb60b5d8c521f5c8c64f9442fc745ecd3bc496b04dc03a81b4e89c72342ab5903284d1c"))
@@ -131,7 +180,7 @@ func TestCreateExecuteData_CorrectExecuteData(t *testing.T) {
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
 }
 
-func TestGetTokenAddress_CorrectData(t *testing.T) {
+func TestGetTokenAddress(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
@@ -157,7 +206,7 @@ func TestGetTokenAddress_CorrectData(t *testing.T) {
 	assert.Equal(t, expected, token.GetAddress())
 }
 
-func TestGetBurnerAddressAndSalt_CorrectData(t *testing.T) {
+func TestGetBurnerAddressAndSalt(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
