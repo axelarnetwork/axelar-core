@@ -1289,7 +1289,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		}
 
 		address := crypto.PubkeyToAddress(key.Value)
-		s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
+		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
 
 		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(key.Value))
 	case tss.Multisig:
@@ -1303,7 +1303,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 			addressStrs[i] = address.Hex()
 		}
 
-		s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to addresses %s", transferKeyType.SimpleString(), chain.Name, strings.Join(addressStrs, ",")))
+		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to addresses %s", transferKeyType.SimpleString(), chain.Name, strings.Join(addressStrs, ",")))
 
 		return types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, threshold, addresses...)
 	default:
