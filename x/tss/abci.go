@@ -27,6 +27,7 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper,
 	emitHeartbeatEvent(ctx, keeper, nexus)
 	sequentialSign(ctx, keeper.GetSignQueue(ctx), keeper, snapshotter, voter)
 	timeoutMultiSigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper)
+	timeoutMultiSigSign(ctx, keeper.GetMultisigSignQueue(ctx), keeper)
 
 	return nil
 }
@@ -135,6 +136,7 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyKeyID, string(info.KeyID)),
+		sdk.NewAttribute(types.AttributeKeyKeyType, keyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeySigID, info.SigID),
 		sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID))),
 		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID))),
@@ -160,21 +162,22 @@ func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 
 	for multiSigKeygenQueue.Peek(0, &keyIDStr) {
 		keyID := exported.KeyID(keyIDStr.Value)
-		timeoutHeight, ok := k.GetMultisigPubKeyTimeout(ctx, keyID)
+		multisigKeyInfo, ok := k.GetMultisigKeygenInfo(ctx, keyID)
 		if !ok {
 			// should not reach here, the queue is controlled by keeper
-			panic(fmt.Sprintf("timeout block height for multisig key %s not found", keyID))
+			panic(fmt.Sprintf("timeout block height for multisig keyken %s not found", keyID))
 		}
-		if timeoutHeight > ctx.BlockHeight() {
+
+		if multisigKeyInfo.GetTimeoutBlock() > ctx.BlockHeight() {
 			return
 		}
 
 		// penalize absent validator
-		if !k.IsMultisigKeygenCompleted(ctx, keyID) {
+		if !multisigKeyInfo.IsCompleted() {
 			participants := k.GetParticipantsInKeygen(ctx, keyID)
 			for _, participant := range participants {
-				if !k.HasValidatorSubmittedMultisigPubKey(ctx, keyID, participant) {
-					ctx.Logger().Debug(fmt.Sprintf("missing pub keys from %s absent for multisig key %s", participant, keyID))
+				if !multisigKeyInfo.DoesParticipate(participant) {
+					ctx.Logger().Debug(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
 					k.PenalizeCriminal(ctx, participant, tofnd.CRIME_TYPE_NON_MALICIOUS)
 				}
 			}
@@ -193,5 +196,59 @@ func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 		}
 
 		multiSigKeygenQueue.Dequeue(0, &keyIDStr)
+	}
+}
+func timeoutMultiSigSign(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k types.TSSKeeper) {
+	var sigIDStr gogoprototypes.StringValue
+
+	for sequenceQueue.Peek(0, &sigIDStr) {
+		sigID := sigIDStr.Value
+
+		multisigSignInfo, ok := k.GetMultisigSignInfo(ctx, sigID)
+		if !ok {
+			// should not reach here, the queue is controlled by keeper
+			panic(fmt.Sprintf("timeout block height for multisig sign %s not found", sigID))
+		}
+
+		if multisigSignInfo.GetTimeoutBlock() > ctx.BlockHeight() {
+			return
+		}
+
+		// penalize absent validator
+		if !multisigSignInfo.IsCompleted() {
+			participants := k.GetSignParticipants(ctx, sigID)
+
+			for _, participant := range participants {
+				val, _ := sdk.ValAddressFromBech32(participant)
+				if !multisigSignInfo.DoesParticipate(val) {
+					ctx.Logger().Debug(fmt.Sprintf("signatures from %s absent for multisig sign %s", participant, sigID))
+					k.PenalizeCriminal(ctx, val, tofnd.CRIME_TYPE_NON_MALICIOUS)
+				}
+			}
+
+			info, ok := k.GetInfoForSig(ctx, sigID)
+			if !ok {
+				// should not reach here,
+				panic(fmt.Sprintf("sig ifno %s info does not exist", sigID))
+			}
+
+			k.SetSigStatus(ctx, sigID, exported.SigStatus_Aborted)
+			k.DeleteInfoForSig(ctx, sigID)
+			k.DeleteMultisigSign(ctx, sigID)
+
+			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s timed out", sigID))
+
+			ctx.EventManager().EmitEvent(sdk.NewEvent(
+				types.EventTypeSign,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeySigID, sigID),
+				sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
+				sdk.NewAttribute(types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, sigID))),
+				sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, sigID))),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject),
+			))
+		}
+
+		sequenceQueue.Dequeue(0, &sigIDStr)
 	}
 }

@@ -22,17 +22,15 @@ message KeyInfo {
   tss.exported.v1beta1.KeyType key_type = 3;
 }
 
-message MultisigKeyInfo {
-  string key_id = 1 [
-    (gogoproto.customname) = "KeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-  ];
+message MultisigInfo {
+  message Info {
+    bytes participant = 1
+        [ (gogoproto.casttype) =
+              "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+    repeated bytes data = 2;
+  }
+  string id = 1 [ (gogoproto.customname) = "ID" ];
   int64 timeout = 2;
-  int64 target_key_num = 3;
-  repeated bytes pub_keys = 4;
-  repeated bytes participants = 5
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  ;
+  int64 target_num = 3;
+  repeated Info infos = 4;
 }

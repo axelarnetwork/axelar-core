@@ -435,22 +435,6 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	}
 }
 
-func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
-	criminalFound := false
-	for _, voter := range poll.GetVoters() {
-		if criminal.Equals(voter.Validator) {
-			criminalFound = true
-			break
-		}
-	}
-
-	if !criminalFound {
-		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetKey().String())
-	}
-
-	return nil
-}
-
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -540,14 +524,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
-			r := s.GetRouter()
-			if r.HasRoute(info.RequestModule) {
-				handler := r.GetRoute(info.RequestModule)
-				err := handler(ctx, info)
-				if err != nil {
-					s.Logger(ctx).Error(fmt.Sprintf("error while routing signature to module %s: %s", info.RequestModule, err))
-				}
-			}
+			s.route(ctx, info)
+
 			return &types.VoteSigResponse{}, nil
 		}
 
@@ -635,7 +613,9 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 		return &types.SubmitMultisigPubKeysResponse{}, fmt.Errorf("duplicate pub key")
 	}
 
-	if s.IsMultisigKeygenCompleted(ctx, req.KeyID) {
+	// existence is checked before
+	keygenInfo, _ := s.GetMultisigKeygenInfo(ctx, req.KeyID)
+	if keygenInfo.IsCompleted() {
 		s.Logger(ctx).Debug(fmt.Sprintf("multisig keygen %s completed", req.KeyID))
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
@@ -647,4 +627,103 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 	}
 
 	return &types.SubmitMultisigPubKeysResponse{}, nil
+}
+
+func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.SubmitMultisigSignaturesRequest) (*types.SubmitMultisigSignaturesResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if _, status := s.GetMultisig(ctx, req.SigID); status == exported.SigStatus_Signed {
+		// the signature is already set, no need for further processing of the vote
+		s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.SigID))
+		return &types.SubmitMultisigSignaturesResponse{}, nil
+	}
+
+	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
+	if valAddr == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	info, ok := s.GetInfoForSig(ctx, req.SigID)
+	if !ok {
+		return nil, fmt.Errorf("sig info does not exist")
+	}
+
+	pubKeys, ok := s.GetMultisigPubKeysByValidator(ctx, info.KeyID, valAddr)
+	if !ok {
+		return nil, fmt.Errorf("could not find multisig key info %s", info.KeyID)
+	}
+
+	if len(req.Signatures) != len(pubKeys) {
+		return nil, fmt.Errorf("expect %d signatures, got %d", len(pubKeys), len(req.Signatures))
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig signatures for operator %s (proxy address %s): %v",
+		req.SigID, valAddr, req.Sender, req.Signatures))
+
+	var sigs [][]byte
+	for i, signature := range req.Signatures {
+		sig, err := btcec.ParseDERSignature(signature, btcec.S256())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse signature bytes: [%w]", err)
+		}
+
+		p := btcec.PublicKey(pubKeys[i])
+		if !sig.Verify(info.Msg, &p) {
+			return nil, fmt.Errorf("signature is invalid")
+		}
+
+		sigs = append(sigs, signature)
+	}
+
+	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigs...)
+	if !ok {
+		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
+		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
+	}
+
+	// existence is checked before
+	multisigSignInfo, _ := s.GetMultisigSignInfo(ctx, info.SigID)
+
+	if multisigSignInfo.IsCompleted() {
+		s.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signed)
+		s.route(ctx, info)
+
+		s.Logger(ctx).Debug(fmt.Sprintf("multisig sign %s completed", req.SigID))
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeSign,
+				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+				sdk.NewAttribute(types.AttributeKeyKeyID, req.SigID),
+				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
+		)
+	}
+
+	return &types.SubmitMultisigSignaturesResponse{}, nil
+}
+
+func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
+	criminalFound := false
+	for _, voter := range poll.GetVoters() {
+		if criminal.Equals(voter.Validator) {
+			criminalFound = true
+			break
+		}
+	}
+
+	if !criminalFound {
+		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetKey().String())
+	}
+
+	return nil
+}
+
+func (s msgServer) route(ctx sdk.Context, sigInfo exported.SignInfo) {
+	r := s.GetRouter()
+	if r.HasRoute(sigInfo.RequestModule) {
+		handler := r.GetRoute(sigInfo.RequestModule)
+		err := handler(ctx, sigInfo)
+		if err != nil {
+			s.Logger(ctx).Error(fmt.Sprintf("error while routing signature to module %s: %s", sigInfo.RequestModule, err))
+		}
+	}
 }

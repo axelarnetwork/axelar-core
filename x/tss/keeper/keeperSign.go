@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -31,12 +32,17 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
 
+	keyInfo, ok := k.GetKeyInfo(ctx, info.KeyID)
+	if !ok {
+		return fmt.Errorf("key info %s not found", info.KeyID)
+	}
+
 	snap, ok := snapshotter.GetSnapshot(ctx, info.SnapshotCounter)
 	if !ok {
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap)
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap, keyInfo.KeyType)
 	if err != nil {
 		return err
 	}
@@ -59,28 +65,45 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		))
 	}
 
-	key, ok := k.GetKey(ctx, info.KeyID)
+	keyRequirement, ok := k.GetKeyRequirement(ctx, keyInfo.KeyRole, keyInfo.KeyType)
 	if !ok {
-		return fmt.Errorf("key %s not found", info.KeyID)
+		return fmt.Errorf("key requirement for key role %s type %s not found", keyInfo.KeyRole.SimpleString(), keyInfo.KeyType)
 	}
 
-	keyType := k.GetKeyType(ctx, info.KeyID)
+	switch keyInfo.KeyType {
+	case exported.Threshold:
+		_, ok := k.GetKey(ctx, info.KeyID)
+		if !ok {
+			return fmt.Errorf("key %s not found", info.KeyID)
+		}
 
-	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role, keyType)
-	if !ok {
-		return fmt.Errorf("key requirement for key role %s type %s not found", key.Role.SimpleString(), keyType)
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
-	//TODO: method is deprecated, must be replaced with voter.InitializePoll
-	if err := voter.InitializePollWithSnapshot(
-		ctx,
-		pollKey,
-		snap.Counter,
-		vote.ExpiryAt(0),
-		vote.Threshold(keyRequirement.SignVotingThreshold),
-	); err != nil {
-		return err
+		pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
+		//TODO: method is deprecated, must be replaced with voter.InitializePoll
+		if err := voter.InitializePollWithSnapshot(
+			ctx,
+			pollKey,
+			snap.Counter,
+			vote.ExpiryAt(0),
+			vote.Threshold(keyRequirement.SignVotingThreshold),
+		); err != nil {
+			return err
+		}
+	case exported.Multisig:
+		// init multisig key info
+		multisigSignInfo := types.MultisigInfo{
+			ID:           info.SigID,
+			Timeout:      ctx.BlockHeight() + keyRequirement.SignTimeout,
+			TargetNum: snap.CorruptionThreshold + 1,
+		}
+		k.SetMultisigSignInfo(ctx, multisigSignInfo)
+		// enqueue ongoing multisig sign
+		q := k.GetMultisigSignQueue(ctx)
+		// TODO: the sign will be queued and may not start right away, it might affect the sign timeout
+		if err := q.Enqueue(&gogoprototypes.StringValue{Value: info.SigID}); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid key type %s", keyInfo.KeyType.SimpleString())
 	}
 
 	q := k.GetSignQueue(ctx)
@@ -169,7 +192,7 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
 // the active share count and excluded validators if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, info exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error) {
+func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, info exported.SignInfo, snap snapshot.Snapshot, keyType exported.KeyType) ([]snapshot.Validator, []snapshot.Validator, error) {
 	var activeValidators, excludedValidators []snapshot.Validator
 	available := k.GetAvailableOperators(ctx, info.KeyID)
 	validatorAvailable := make(map[string]bool)
@@ -205,7 +228,11 @@ func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		activeValidators = append(activeValidators, validator)
 	}
 
-	selectedSigners := k.optimizedSigningSet(activeValidators, snap.CorruptionThreshold)
+	selectedSigners := activeValidators
+	if keyType == exported.Threshold {
+		// optimize signing set for threshold
+		selectedSigners = k.optimizedSigningSet(activeValidators, snap.CorruptionThreshold)
+	}
 
 	for _, signer := range selectedSigners {
 		k.setParticipateInSign(ctx, info.SigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
@@ -304,5 +331,59 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 // GetSignQueue returns the sign queue
 func (k Keeper) GetSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(signQueueName))
+	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.getMaxSignQueueSize(ctx)), k.Logger(ctx))
+}
+
+// SetMultisigSignInfo stores the MultisigInfo for a multisig sign info
+func (k Keeper) SetMultisigSignInfo(ctx sdk.Context, info types.MultisigInfo) {
+	k.getStore(ctx).Set(multiSigSignPrefix.AppendStr(info.ID), &info)
+}
+
+// GetMultisigSignInfo returns the MultisigSignInfo
+func (k Keeper) GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.MultisigSignInfo, bool) {
+	var info types.MultisigInfo
+	ok := k.getStore(ctx).Get(multiSigSignPrefix.AppendStr(sigID), &info)
+
+	return &info, ok
+}
+
+// SubmitSignatures stores signatures a validator has under the given multisig sigID
+func (k Keeper) SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool {
+	var signInfo types.MultisigInfo
+	ok := k.getStore(ctx).Get(multiSigSignPrefix.AppendStr(sigID), &signInfo)
+	if !ok {
+		// the setter is controlled by keeper
+		panic(fmt.Sprintf("MultisigSignInfo %s not found", sigID))
+	}
+
+	signInfo.AddData(validator, sigs)
+	k.SetMultisigSignInfo(ctx, signInfo)
+
+	return true
+}
+
+// GetMultisig returns the list of signatures associated with sigID
+// or nil if no such signature exists
+func (k Keeper) GetMultisig(ctx sdk.Context, sigID string) ([]exported.Signature, exported.SigStatus) {
+	status := k.getSigStatus(ctx, sigID)
+	if status != exported.SigStatus_Signed {
+		return nil, status
+	}
+
+	multiSigSignInfo, ok := k.GetMultisigSignInfo(ctx, sigID)
+	if !ok {
+		return nil, exported.SigStatus_Invalid
+	}
+	return multiSigSignInfo.GetSigs(), exported.SigStatus_Signed
+}
+
+// DeleteMultisigSign deletes the multisig sign info for the given sig ID
+func (k Keeper) DeleteMultisigSign(ctx sdk.Context, signID string) {
+	k.getStore(ctx).Delete(multiSigSignPrefix.AppendStr(signID))
+}
+
+// GetMultisigSignQueue returns the multisig sign timeout queue
+func (k Keeper) GetMultisigSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(multisigSignQueue))
 	return utils.NewSequenceKVQueue(utils.NewNormalizedStore(store, k.cdc), uint64(k.getMaxSignQueueSize(ctx)), k.Logger(ctx))
 }
