@@ -37,7 +37,7 @@ func KeyTable() params.KeyTable {
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() []Params {
-	bzGateway, err := hex.DecodeString(gateway)
+	bzGateway, err := hex.DecodeString(multisigGateway)
 	if err != nil {
 		panic(err)
 	}

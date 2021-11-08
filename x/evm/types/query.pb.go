@@ -109,8 +109,11 @@ func (m *QueryBatchedCommandsResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_QueryBatchedCommandsResponse proto.InternalMessageInfo
 
 type QueryAddressResponse struct {
-	Address string                                                    `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	// Types that are valid to be assigned to Address:
+	//	*QueryAddressResponse_MultisigAddresses_
+	//	*QueryAddressResponse_ThresholdAddress_
+	Address isQueryAddressResponse_Address `protobuf_oneof:"address"`
 }
 
 func (m *QueryAddressResponse) Reset()         { *m = QueryAddressResponse{} }
@@ -145,6 +148,128 @@ func (m *QueryAddressResponse) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_QueryAddressResponse proto.InternalMessageInfo
+
+type isQueryAddressResponse_Address interface {
+	isQueryAddressResponse_Address()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type QueryAddressResponse_MultisigAddresses_ struct {
+	MultisigAddresses *QueryAddressResponse_MultisigAddresses `protobuf:"bytes,2,opt,name=multisig_addresses,json=multisigAddresses,proto3,oneof" json:"multisig_addresses,omitempty"`
+}
+type QueryAddressResponse_ThresholdAddress_ struct {
+	ThresholdAddress *QueryAddressResponse_ThresholdAddress `protobuf:"bytes,3,opt,name=threshold_address,json=thresholdAddress,proto3,oneof" json:"threshold_address,omitempty"`
+}
+
+func (*QueryAddressResponse_MultisigAddresses_) isQueryAddressResponse_Address() {}
+func (*QueryAddressResponse_ThresholdAddress_) isQueryAddressResponse_Address()  {}
+
+func (m *QueryAddressResponse) GetAddress() isQueryAddressResponse_Address {
+	if m != nil {
+		return m.Address
+	}
+	return nil
+}
+
+func (m *QueryAddressResponse) GetMultisigAddresses() *QueryAddressResponse_MultisigAddresses {
+	if x, ok := m.GetAddress().(*QueryAddressResponse_MultisigAddresses_); ok {
+		return x.MultisigAddresses
+	}
+	return nil
+}
+
+func (m *QueryAddressResponse) GetThresholdAddress() *QueryAddressResponse_ThresholdAddress {
+	if x, ok := m.GetAddress().(*QueryAddressResponse_ThresholdAddress_); ok {
+		return x.ThresholdAddress
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*QueryAddressResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*QueryAddressResponse_MultisigAddresses_)(nil),
+		(*QueryAddressResponse_ThresholdAddress_)(nil),
+	}
+}
+
+type QueryAddressResponse_MultisigAddresses struct {
+	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	Threshold uint32   `protobuf:"varint,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
+}
+
+func (m *QueryAddressResponse_MultisigAddresses) Reset() {
+	*m = QueryAddressResponse_MultisigAddresses{}
+}
+func (m *QueryAddressResponse_MultisigAddresses) String() string { return proto.CompactTextString(m) }
+func (*QueryAddressResponse_MultisigAddresses) ProtoMessage()    {}
+func (*QueryAddressResponse_MultisigAddresses) Descriptor() ([]byte, []int) {
+	return fileDescriptor_78a1f61c7ae3396c, []int{2, 0}
+}
+func (m *QueryAddressResponse_MultisigAddresses) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryAddressResponse_MultisigAddresses) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryAddressResponse_MultisigAddresses.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryAddressResponse_MultisigAddresses) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryAddressResponse_MultisigAddresses.Merge(m, src)
+}
+func (m *QueryAddressResponse_MultisigAddresses) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryAddressResponse_MultisigAddresses) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryAddressResponse_MultisigAddresses.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryAddressResponse_MultisigAddresses proto.InternalMessageInfo
+
+type QueryAddressResponse_ThresholdAddress struct {
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+}
+
+func (m *QueryAddressResponse_ThresholdAddress) Reset()         { *m = QueryAddressResponse_ThresholdAddress{} }
+func (m *QueryAddressResponse_ThresholdAddress) String() string { return proto.CompactTextString(m) }
+func (*QueryAddressResponse_ThresholdAddress) ProtoMessage()    {}
+func (*QueryAddressResponse_ThresholdAddress) Descriptor() ([]byte, []int) {
+	return fileDescriptor_78a1f61c7ae3396c, []int{2, 1}
+}
+func (m *QueryAddressResponse_ThresholdAddress) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryAddressResponse_ThresholdAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryAddressResponse_ThresholdAddress.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryAddressResponse_ThresholdAddress) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryAddressResponse_ThresholdAddress.Merge(m, src)
+}
+func (m *QueryAddressResponse_ThresholdAddress) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryAddressResponse_ThresholdAddress) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryAddressResponse_ThresholdAddress.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryAddressResponse_ThresholdAddress proto.InternalMessageInfo
 
 type QueryDepositStateParams struct {
 	TxID          Hash    `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
@@ -227,6 +352,8 @@ func init() {
 	proto.RegisterType((*DepositQueryParams)(nil), "evm.v1beta1.DepositQueryParams")
 	proto.RegisterType((*QueryBatchedCommandsResponse)(nil), "evm.v1beta1.QueryBatchedCommandsResponse")
 	proto.RegisterType((*QueryAddressResponse)(nil), "evm.v1beta1.QueryAddressResponse")
+	proto.RegisterType((*QueryAddressResponse_MultisigAddresses)(nil), "evm.v1beta1.QueryAddressResponse.MultisigAddresses")
+	proto.RegisterType((*QueryAddressResponse_ThresholdAddress)(nil), "evm.v1beta1.QueryAddressResponse.ThresholdAddress")
 	proto.RegisterType((*QueryDepositStateParams)(nil), "evm.v1beta1.QueryDepositStateParams")
 	proto.RegisterType((*QueryDepositStateResponse)(nil), "evm.v1beta1.QueryDepositStateResponse")
 }
@@ -234,43 +361,49 @@ func init() {
 func init() { proto.RegisterFile("evm/v1beta1/query.proto", fileDescriptor_78a1f61c7ae3396c) }
 
 var fileDescriptor_78a1f61c7ae3396c = []byte{
-	// 563 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x53, 0xc1, 0x6e, 0xd4, 0x30,
-	0x10, 0xdd, 0xa4, 0xbb, 0x5b, 0xd5, 0x2d, 0x05, 0x59, 0xdb, 0x36, 0xad, 0xaa, 0x04, 0xf6, 0x04,
-	0x07, 0x12, 0x5a, 0x24, 0x24, 0xb8, 0xb1, 0x44, 0x88, 0x08, 0x09, 0x95, 0xc0, 0xa9, 0x12, 0x8a,
-	0xbc, 0xf1, 0x68, 0x37, 0x6a, 0x13, 0x07, 0xdb, 0x59, 0xb2, 0x5f, 0x01, 0x07, 0x3e, 0xaa, 0xc7,
-	0x1e, 0x11, 0x87, 0x08, 0xd2, 0xbf, 0xe8, 0x09, 0xc5, 0x71, 0xbb, 0x6d, 0x01, 0x89, 0x0b, 0x37,
-	0xcf, 0xf3, 0x8c, 0x67, 0xde, 0xf3, 0x1b, 0xb4, 0x05, 0xb3, 0xd4, 0x9b, 0xed, 0x8d, 0x41, 0x92,
-	0x3d, 0xef, 0x63, 0x01, 0x7c, 0xee, 0xe6, 0x9c, 0x49, 0x86, 0x57, 0x61, 0x96, 0xba, 0xfa, 0x62,
-	0x67, 0x30, 0x61, 0x13, 0xa6, 0x70, 0xaf, 0x39, 0xb5, 0x29, 0x3b, 0xd7, 0x6a, 0xe5, 0x3c, 0x07,
-	0xd1, 0x5e, 0x0c, 0x0f, 0x11, 0xf6, 0x21, 0x67, 0x22, 0x91, 0x6f, 0x9b, 0x17, 0x0f, 0x08, 0x27,
-	0xa9, 0xc0, 0x16, 0x5a, 0x26, 0x94, 0x72, 0x10, 0xc2, 0x32, 0xee, 0x1a, 0xf7, 0x57, 0xc2, 0x8b,
-	0x10, 0x0f, 0x50, 0x8f, 0x08, 0x01, 0xd2, 0x32, 0x15, 0xde, 0x06, 0x0d, 0x1a, 0x4f, 0x49, 0x92,
-	0x59, 0x4b, 0x2d, 0xaa, 0x82, 0xe1, 0xb9, 0x89, 0x76, 0xd5, 0xab, 0x23, 0x22, 0xe3, 0x29, 0xd0,
-	0x17, 0x2c, 0x4d, 0x49, 0x46, 0x45, 0x08, 0x22, 0x67, 0x99, 0x00, 0xbc, 0x89, 0xcc, 0x84, 0xb6,
-	0x1d, 0x46, 0xfd, 0xba, 0x72, 0xcc, 0xc0, 0x0f, 0xcd, 0x84, 0x62, 0x8c, 0xba, 0x94, 0x48, 0xa2,
-	0x7b, 0xa8, 0x33, 0x7e, 0x86, 0xfa, 0x42, 0x12, 0x59, 0x08, 0xd5, 0x63, 0x7d, 0x7f, 0xe8, 0x5e,
-	0x61, 0xed, 0xde, 0xe8, 0xf0, 0x4e, 0x65, 0x86, 0xba, 0x02, 0x7f, 0x40, 0xfd, 0x23, 0x98, 0x47,
-	0x09, 0xb5, 0xba, 0xaa, 0xd7, 0xcb, 0xba, 0x72, 0x7a, 0xaf, 0x61, 0x1e, 0xf8, 0xe7, 0x95, 0xf3,
-	0x74, 0x92, 0xc8, 0x69, 0x31, 0x76, 0x63, 0x96, 0x7a, 0xa4, 0x84, 0x63, 0xc2, 0x33, 0x90, 0x9f,
-	0x18, 0x3f, 0xd2, 0xd1, 0xc3, 0x98, 0x71, 0xf0, 0x4a, 0x4f, 0x0a, 0xe1, 0x41, 0x99, 0x33, 0x2e,
-	0x81, 0xba, 0xaa, 0x38, 0xec, 0x1d, 0xc1, 0x3c, 0xa0, 0x78, 0x17, 0xad, 0x88, 0x64, 0x92, 0x11,
-	0x59, 0x70, 0xb0, 0x7a, 0x6a, 0xe6, 0x05, 0x80, 0xef, 0xa1, 0x35, 0x28, 0x21, 0x2e, 0x24, 0x44,
-	0x8a, 0x54, 0x5f, 0x25, 0xac, 0x6a, 0xcc, 0x6f, 0xb8, 0x85, 0xc8, 0xca, 0x39, 0xcc, 0xa2, 0x71,
-	0xcb, 0x22, 0x8a, 0x35, 0x8d, 0x66, 0xe2, 0x65, 0x35, 0xf1, 0x76, 0x5d, 0x39, 0x1b, 0x07, 0x1c,
-	0x66, 0x37, 0x88, 0x06, 0x7e, 0xb8, 0x91, 0xff, 0x01, 0xa6, 0xc3, 0xcf, 0x06, 0x1a, 0x28, 0xf1,
-	0x9f, 0xb7, 0x3f, 0x77, 0x29, 0xfa, 0xdf, 0xff, 0x76, 0x21, 0x93, 0xf9, 0x1f, 0x64, 0x1a, 0x7e,
-	0x35, 0xd0, 0x96, 0x9a, 0x48, 0x1b, 0xae, 0xf9, 0x24, 0xd0, 0x86, 0x7b, 0x80, 0x7a, 0xb2, 0x8c,
-	0xb4, 0x19, 0xd6, 0x46, 0x83, 0x93, 0xca, 0xe9, 0x7c, 0xaf, 0x9c, 0xee, 0x2b, 0x22, 0xa6, 0x75,
-	0xe5, 0x74, 0xdf, 0x97, 0x81, 0x1f, 0x76, 0x65, 0x19, 0x50, 0xfc, 0x04, 0xad, 0x8f, 0x0b, 0x9e,
-	0x01, 0x8f, 0x2e, 0x68, 0x98, 0xaa, 0xe6, 0xb6, 0xae, 0x59, 0xbe, 0x20, 0x7c, 0xab, 0x4d, 0xd3,
-	0x21, 0xde, 0x44, 0x7d, 0x92, 0xb2, 0x22, 0x93, 0xca, 0x40, 0xdd, 0x50, 0x47, 0x43, 0x82, 0xb6,
-	0x7f, 0x9b, 0xea, 0x52, 0xac, 0x3b, 0x68, 0xe9, 0x98, 0x4d, 0xb4, 0x50, 0xcd, 0x11, 0xef, 0x5f,
-	0xfa, 0xd0, 0x54, 0x3e, 0xdc, 0xb9, 0xe6, 0xc3, 0x2b, 0x8f, 0x2c, 0xfc, 0x37, 0x7a, 0x73, 0xf2,
-	0xd3, 0xee, 0x9c, 0xd4, 0xb6, 0x71, 0x5a, 0xdb, 0xc6, 0x8f, 0xda, 0x36, 0xbe, 0x9c, 0xd9, 0x9d,
-	0xd3, 0x33, 0xbb, 0xf3, 0xed, 0xcc, 0xee, 0x1c, 0x3e, 0xfa, 0x47, 0x65, 0x9b, 0x15, 0x56, 0xab,
-	0x3b, 0xee, 0xab, 0xdd, 0x7d, 0xfc, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x07, 0xa0, 0x9f, 0x40, 0x12,
-	0x04, 0x00, 0x00,
+	// 664 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0x4f, 0x4f, 0x13, 0x41,
+	0x14, 0xef, 0xf6, 0x1f, 0x61, 0x0a, 0x08, 0x93, 0x02, 0xa5, 0x21, 0x2d, 0xf6, 0xa4, 0x89, 0x76,
+	0xa5, 0x24, 0x26, 0x7a, 0xa3, 0x36, 0x86, 0xc6, 0xa8, 0xb8, 0x72, 0x22, 0x31, 0xcd, 0xb4, 0xf3,
+	0xd2, 0x6e, 0xe8, 0xee, 0xac, 0x33, 0xb3, 0x75, 0xfb, 0x2d, 0x3c, 0xf8, 0xa1, 0x7a, 0xe4, 0x68,
+	0x3c, 0x6c, 0x74, 0xf9, 0x16, 0x9c, 0xcc, 0xce, 0xce, 0xb6, 0x50, 0x30, 0x7a, 0xf1, 0x36, 0xef,
+	0xf7, 0xe6, 0xcd, 0xef, 0xfd, 0xde, 0x9f, 0x41, 0xbb, 0x30, 0x71, 0xcc, 0xc9, 0x61, 0x1f, 0x24,
+	0x39, 0x34, 0x3f, 0xfb, 0xc0, 0xa7, 0x4d, 0x8f, 0x33, 0xc9, 0x70, 0x09, 0x26, 0x4e, 0x53, 0x3b,
+	0xaa, 0xe5, 0x21, 0x1b, 0x32, 0x85, 0x9b, 0xf1, 0x29, 0xb9, 0x52, 0xbd, 0x15, 0x2b, 0xa7, 0x1e,
+	0x88, 0xc4, 0xd1, 0x38, 0x47, 0xb8, 0x03, 0x1e, 0x13, 0xb6, 0xfc, 0x10, 0xbf, 0x78, 0x4a, 0x38,
+	0x71, 0x04, 0xae, 0xa0, 0x15, 0x42, 0x29, 0x07, 0x21, 0x2a, 0xc6, 0x81, 0xf1, 0x68, 0xd5, 0x4a,
+	0x4d, 0x5c, 0x46, 0x05, 0x22, 0x04, 0xc8, 0x4a, 0x56, 0xe1, 0x89, 0x11, 0xa3, 0x83, 0x11, 0xb1,
+	0xdd, 0x4a, 0x2e, 0x41, 0x95, 0xd1, 0xb8, 0xce, 0xa2, 0x7d, 0xf5, 0x6a, 0x9b, 0xc8, 0xc1, 0x08,
+	0xe8, 0x2b, 0xe6, 0x38, 0xc4, 0xa5, 0xc2, 0x02, 0xe1, 0x31, 0x57, 0x00, 0xde, 0x41, 0x59, 0x9b,
+	0x26, 0x0c, 0xed, 0x62, 0x14, 0xd6, 0xb3, 0xdd, 0x8e, 0x95, 0xb5, 0x29, 0xc6, 0x28, 0x4f, 0x89,
+	0x24, 0x9a, 0x43, 0x9d, 0xf1, 0x4b, 0x54, 0x14, 0x92, 0x48, 0x5f, 0x28, 0x8e, 0x8d, 0x56, 0xa3,
+	0x79, 0x43, 0x75, 0x73, 0x89, 0xe1, 0xa3, 0xba, 0x69, 0xe9, 0x08, 0xfc, 0x09, 0x15, 0x2f, 0x60,
+	0xda, 0xb3, 0x69, 0x25, 0xaf, 0xb8, 0x5e, 0x47, 0x61, 0xbd, 0xf0, 0x06, 0xa6, 0xdd, 0xce, 0x75,
+	0x58, 0x7f, 0x31, 0xb4, 0xe5, 0xc8, 0xef, 0x37, 0x07, 0xcc, 0x31, 0x49, 0x00, 0x63, 0xc2, 0x5d,
+	0x90, 0x5f, 0x18, 0xbf, 0xd0, 0xd6, 0xd3, 0x01, 0xe3, 0x60, 0x06, 0xa6, 0x14, 0xc2, 0x84, 0xc0,
+	0x63, 0x5c, 0x02, 0x6d, 0xaa, 0x60, 0xab, 0x70, 0x01, 0xd3, 0x2e, 0xc5, 0xfb, 0x68, 0x55, 0xd8,
+	0x43, 0x97, 0x48, 0x9f, 0x43, 0xa5, 0xa0, 0x72, 0x5e, 0x00, 0xf8, 0x21, 0x5a, 0x83, 0x00, 0x06,
+	0xbe, 0x84, 0x9e, 0x12, 0x55, 0x54, 0x17, 0x4a, 0x1a, 0xeb, 0xc4, 0xda, 0x2c, 0x54, 0xf1, 0x38,
+	0x4c, 0x7a, 0xfd, 0x44, 0x45, 0x6f, 0xa0, 0x65, 0xc4, 0x19, 0xaf, 0xa8, 0x8c, 0xf7, 0xa2, 0xb0,
+	0xbe, 0x7d, 0xca, 0x61, 0xb2, 0x24, 0xb4, 0xdb, 0xb1, 0xb6, 0xbd, 0x7b, 0x60, 0xda, 0x98, 0xe5,
+	0x50, 0x59, 0x15, 0xff, 0x38, 0xe9, 0xdc, 0xbc, 0xe8, 0x8b, 0x62, 0x18, 0xff, 0xa3, 0x18, 0x14,
+	0x61, 0xc7, 0x1f, 0x4b, 0x5b, 0xd8, 0xc3, 0x9e, 0x1e, 0x1a, 0x10, 0xaa, 0x93, 0xa5, 0xd6, 0xd1,
+	0xad, 0x9e, 0xdd, 0x97, 0x5d, 0xf3, 0xad, 0x8e, 0x3d, 0x4e, 0x43, 0x4f, 0x32, 0xd6, 0x96, 0xb3,
+	0x0c, 0x62, 0x82, 0xb6, 0xe4, 0x88, 0x83, 0x18, 0xb1, 0x31, 0x4d, 0x69, 0xd4, 0x60, 0x94, 0x5a,
+	0xad, 0xbf, 0x93, 0x9c, 0xa5, 0xa1, 0xda, 0x71, 0x92, 0xb1, 0x36, 0xe5, 0x12, 0x56, 0x7d, 0x8f,
+	0xb6, 0xee, 0x24, 0x13, 0xb7, 0x7a, 0x21, 0xca, 0x38, 0xc8, 0xc5, 0xad, 0x26, 0x37, 0xbd, 0xf3,
+	0x67, 0x94, 0xe4, 0x75, 0x6b, 0x01, 0x54, 0x9f, 0xa0, 0xcd, 0x65, 0xe2, 0x3f, 0x2f, 0x5a, 0x7b,
+	0x75, 0xee, 0x69, 0x7c, 0x33, 0xd0, 0xae, 0xd2, 0xa1, 0x37, 0x35, 0x9e, 0x6e, 0xd0, 0x9b, 0xfa,
+	0x18, 0x15, 0x64, 0x90, 0x36, 0x73, 0xad, 0x5d, 0x9e, 0x85, 0xf5, 0xcc, 0x8f, 0xb0, 0x9e, 0x3f,
+	0x21, 0x62, 0x14, 0x85, 0xf5, 0xfc, 0x59, 0xd0, 0xed, 0x58, 0x79, 0x19, 0x74, 0x29, 0x7e, 0x8e,
+	0x36, 0xfa, 0x3e, 0x77, 0x81, 0xcf, 0x0b, 0x96, 0x55, 0x31, 0x0f, 0x74, 0xcc, 0x4a, 0x5a, 0xa6,
+	0xf5, 0xe4, 0x5a, 0x9a, 0xe3, 0x0e, 0x2a, 0x12, 0x87, 0xf9, 0xae, 0x54, 0x05, 0xce, 0x5b, 0xda,
+	0x6a, 0x10, 0xb4, 0x77, 0x27, 0xab, 0xf9, 0x94, 0x6d, 0xa2, 0xdc, 0x98, 0x0d, 0xb5, 0xa8, 0xf8,
+	0x88, 0x5b, 0xf3, 0x05, 0xce, 0xaa, 0x05, 0xae, 0xde, 0xea, 0xd3, 0x8d, 0x47, 0x16, 0x8b, 0xdb,
+	0x7e, 0x37, 0xfb, 0x55, 0xcb, 0xcc, 0xa2, 0x9a, 0x71, 0x19, 0xd5, 0x8c, 0x9f, 0x51, 0xcd, 0xf8,
+	0x7a, 0x55, 0xcb, 0x5c, 0x5e, 0xd5, 0x32, 0xdf, 0xaf, 0x6a, 0x99, 0xf3, 0x67, 0xff, 0x38, 0xac,
+	0xf1, 0xdf, 0xa7, 0xfe, 0xbc, 0x7e, 0x51, 0x7d, 0x7a, 0x47, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff,
+	0x56, 0x5a, 0x3a, 0x40, 0x4b, 0x05, 0x00, 0x00,
 }
 
 func (m *DepositQueryParams) Marshal() (dAtA []byte, err error) {
@@ -407,13 +540,124 @@ func (m *QueryAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Address != nil {
+		{
+			size := m.Address.Size()
+			i -= size
+			if _, err := m.Address.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
 	if len(m.KeyID) > 0 {
 		i -= len(m.KeyID)
 		copy(dAtA[i:], m.KeyID)
 		i = encodeVarintQuery(dAtA, i, uint64(len(m.KeyID)))
 		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryAddressResponse_MultisigAddresses_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryAddressResponse_MultisigAddresses_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.MultisigAddresses != nil {
+		{
+			size, err := m.MultisigAddresses.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
 		dAtA[i] = 0x12
 	}
+	return len(dAtA) - i, nil
+}
+func (m *QueryAddressResponse_ThresholdAddress_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryAddressResponse_ThresholdAddress_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ThresholdAddress != nil {
+		{
+			size, err := m.ThresholdAddress.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *QueryAddressResponse_MultisigAddresses) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryAddressResponse_MultisigAddresses) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryAddressResponse_MultisigAddresses) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Threshold != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.Threshold))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Addresses) > 0 {
+		for iNdEx := len(m.Addresses) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Addresses[iNdEx])
+			copy(dAtA[i:], m.Addresses[iNdEx])
+			i = encodeVarintQuery(dAtA, i, uint64(len(m.Addresses[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryAddressResponse_ThresholdAddress) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryAddressResponse_ThresholdAddress) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryAddressResponse_ThresholdAddress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	if len(m.Address) > 0 {
 		i -= len(m.Address)
 		copy(dAtA[i:], m.Address)
@@ -581,11 +825,65 @@ func (m *QueryAddressResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Address)
+	l = len(m.KeyID)
 	if l > 0 {
 		n += 1 + l + sovQuery(uint64(l))
 	}
-	l = len(m.KeyID)
+	if m.Address != nil {
+		n += m.Address.Size()
+	}
+	return n
+}
+
+func (m *QueryAddressResponse_MultisigAddresses_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MultisigAddresses != nil {
+		l = m.MultisigAddresses.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+func (m *QueryAddressResponse_ThresholdAddress_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ThresholdAddress != nil {
+		l = m.ThresholdAddress.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+func (m *QueryAddressResponse_MultisigAddresses) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Addresses) > 0 {
+		for _, s := range m.Addresses {
+			l = len(s)
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.Threshold != 0 {
+		n += 1 + sovQuery(uint64(m.Threshold))
+	}
+	return n
+}
+
+func (m *QueryAddressResponse_ThresholdAddress) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
 	if l > 0 {
 		n += 1 + l + sovQuery(uint64(l))
 	}
@@ -1068,38 +1366,6 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowQuery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthQuery
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthQuery
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Address = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
 			}
 			var stringLen uint64
@@ -1129,6 +1395,259 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.KeyID = github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MultisigAddresses", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &QueryAddressResponse_MultisigAddresses{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Address = &QueryAddressResponse_MultisigAddresses_{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ThresholdAddress", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &QueryAddressResponse_ThresholdAddress{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Address = &QueryAddressResponse_ThresholdAddress_{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryAddressResponse_MultisigAddresses) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MultisigAddresses: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MultisigAddresses: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Addresses = append(m.Addresses, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Threshold", wireType)
+			}
+			m.Threshold = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Threshold |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryAddressResponse_ThresholdAddress) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ThresholdAddress: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ThresholdAddress: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

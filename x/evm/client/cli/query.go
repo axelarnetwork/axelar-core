@@ -103,7 +103,9 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 		}
 
 		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		if err := res.Unmarshal(bz); err != nil {
+			return sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
 
 		return clientCtx.PrintProto(&res)
 	}

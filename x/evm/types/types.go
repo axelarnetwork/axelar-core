@@ -345,6 +345,17 @@ const (
 	BURNED
 )
 
+// KeysToAddresses converts a slice of ECDSA public keys to evm addresses
+func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
+	addresses := make([]common.Address, len(keys))
+
+	for i, key := range keys {
+		addresses[i] = crypto.PubkeyToAddress(key)
+	}
+
+	return addresses
+}
+
 // CreateExecuteData wraps the specific command data and includes the command signature.
 // Returns the data that goes into the data field of an EVM transaction
 func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {
@@ -476,8 +487,20 @@ func CreateTransferOperatorshipCommand(chainID *big.Int, keyID tss.KeyID, newOpe
 	}, nil
 }
 
-// GetGatewayDeploymentBytecode returns the deployment bytecode for the gateway contract
-func GetGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, threshold uint8, owner common.Address, operator common.Address) ([]byte, error) {
+// GetSinglesigGatewayDeploymentBytecode returns the deployment bytecode for the singlesig gateway contract
+func GetSinglesigGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, threshold uint8, owner common.Address, operator common.Address) ([]byte, error) {
+	if len(contractBytecode) == 0 {
+		return nil, fmt.Errorf("contract bytecode cannot be empty bytes")
+	}
+
+	if threshold == 0 {
+		return nil, fmt.Errorf("admin threshold must be >0")
+	}
+
+	if len(admins) < int(threshold) {
+		return nil, fmt.Errorf("not enought admins")
+	}
+
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
 		return nil, err
@@ -493,8 +516,77 @@ func GetGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Addre
 		return nil, err
 	}
 
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	args := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressType}, {Type: addressType}}
 	argBytes, err := args.Pack(admins, threshold, owner, operator)
+	if err != nil {
+		return nil, err
+	}
+
+	argBytes, err = abi.Arguments{{Type: bytesType}}.Pack(argBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(contractBytecode, argBytes...), nil
+}
+
+// GetMultisigGatewayDeploymentBytecode returns the deployment bytecode for the multisig gateway contract
+func GetMultisigGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, adminThreshold uint8, owners []common.Address, ownerThreshold uint8, operators []common.Address, operatorThreshold uint8) ([]byte, error) {
+	if len(contractBytecode) == 0 {
+		return nil, fmt.Errorf("contract bytecode cannot be empty bytes")
+	}
+
+	if adminThreshold == 0 {
+		return nil, fmt.Errorf("admin threshold must be >0")
+	}
+
+	if len(admins) < int(adminThreshold) {
+		return nil, fmt.Errorf("not enought admins")
+	}
+
+	if ownerThreshold == 0 {
+		return nil, fmt.Errorf("owner threshold must be >0")
+	}
+
+	if len(owners) < int(ownerThreshold) {
+		return nil, fmt.Errorf("not enought owners")
+	}
+
+	if operatorThreshold == 0 {
+		return nil, fmt.Errorf("operator threshold must be >0")
+	}
+
+	if len(operators) < int(operatorThreshold) {
+		return nil, fmt.Errorf("not enought operators")
+	}
+
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}}
+	argBytes, err := args.Pack(admins, adminThreshold, owners, ownerThreshold, operators, operatorThreshold)
+	if err != nil {
+		return nil, err
+	}
+
+	argBytes, err = abi.Arguments{{Type: bytesType}}.Pack(argBytes)
 	if err != nil {
 		return nil, err
 	}

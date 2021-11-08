@@ -161,32 +161,60 @@ func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chain
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
-	address, key, err := getAddressAndKeyForRole(ctx, s, n, chainName, keyRole)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	chain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
 	}
 
-	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
+	keyID, ok := s.GetCurrentKeyID(ctx, chain, keyRole)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s key not found", keyRole.SimpleString())
+	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	return QueryAddressByKeyID(ctx, s, n, chainName, keyID)
 }
 
 // QueryAddressByKeyID returns the address of the given key ID
 func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID tss.KeyID) ([]byte, error) {
-	_, ok := n.GetChain(ctx, chainName)
+	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
 	}
 
-	key, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("key %s not found", keyID))
+	switch chain.KeyType {
+	case tss.Multisig:
+		addresses, threshold, err := getMultisigAddresses(ctx, s, chain, keyID)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		addressStrs := make([]string, len(addresses))
+		for i, address := range addresses {
+			addressStrs[i] = address.Hex()
+		}
+
+		resp := types.QueryAddressResponse{
+			Address: &types.QueryAddressResponse_MultisigAddresses_{MultisigAddresses: &types.QueryAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: uint32(threshold)}},
+			KeyID:   keyID,
+		}
+
+		return resp.Marshal()
+	case tss.Threshold:
+		key, ok := s.GetKey(ctx, keyID)
+		if !ok {
+			return nil, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+		}
+
+		address := crypto.PubkeyToAddress(key.Value)
+		resp := types.QueryAddressResponse{
+			Address: &types.QueryAddressResponse_ThresholdAddress_{ThresholdAddress: &types.QueryAddressResponse_ThresholdAddress{Address: address.Hex()}},
+			KeyID:   key.ID,
+		}
+
+		return resp.Marshal()
+	default:
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
 	}
-
-	address := crypto.PubkeyToAddress(key.Value)
-	resp := types.QueryAddressResponse{Address: address.Hex(), KeyID: key.ID}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
@@ -386,18 +414,4 @@ func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.
 	}
 
 	return types.CommandBatch{}, false
-}
-
-func getAddressAndKeyForRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRole tss.KeyRole) (common.Address, tss.Key, error) {
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return common.Address{}, tss.Key{}, fmt.Errorf("%s is not a registered chain", chainName)
-	}
-
-	key, ok := s.GetCurrentKey(ctx, chain, keyRole)
-	if !ok {
-		return common.Address{}, tss.Key{}, fmt.Errorf("%s key not found", keyRole.SimpleString())
-	}
-
-	return crypto.PubkeyToAddress(key.Value), key, nil
 }
