@@ -104,6 +104,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	setup := func() {
 		ibcPath := randomIBCPath()
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
@@ -120,7 +121,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, string, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
 			AddToChainTotalFunc:    func(_ sdk.Context, _ nexus.Chain, _ sdk.Coin) {},
 		}
 		bankKeeper = &mock.BankKeeperMock{
@@ -160,7 +161,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgConfirmDeposit()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error {
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error {
 			return fmt.Errorf("failed")
 		}
 
@@ -316,7 +317,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, string, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },

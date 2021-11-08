@@ -52,6 +52,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetRouteTimeoutWindow method")
 // 			},
+// 			GetTransactionFeeRateFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Dec {
+// 				panic("mock out the GetTransactionFeeRate method")
+// 			},
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -103,6 +106,9 @@ type BaseKeeperMock struct {
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
+
+	// GetTransactionFeeRateFunc mocks the GetTransactionFeeRate method.
+	GetTransactionFeeRateFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Dec
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -189,6 +195,11 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// GetTransactionFeeRate holds details about calls to the GetTransactionFeeRate method.
+		GetTransactionFeeRate []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -251,6 +262,7 @@ type BaseKeeperMock struct {
 	lockGetPendingIBCTransfer      sync.RWMutex
 	lockGetPendingRefund           sync.RWMutex
 	lockGetRouteTimeoutWindow      sync.RWMutex
+	lockGetTransactionFeeRate      sync.RWMutex
 	lockLogger                     sync.RWMutex
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
@@ -578,6 +590,37 @@ func (mock *BaseKeeperMock) GetRouteTimeoutWindowCalls() []struct {
 	return calls
 }
 
+// GetTransactionFeeRate calls GetTransactionFeeRateFunc.
+func (mock *BaseKeeperMock) GetTransactionFeeRate(ctx cosmossdktypes.Context) cosmossdktypes.Dec {
+	if mock.GetTransactionFeeRateFunc == nil {
+		panic("BaseKeeperMock.GetTransactionFeeRateFunc: method is nil but BaseKeeper.GetTransactionFeeRate was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetTransactionFeeRate.Lock()
+	mock.calls.GetTransactionFeeRate = append(mock.calls.GetTransactionFeeRate, callInfo)
+	mock.lockGetTransactionFeeRate.Unlock()
+	return mock.GetTransactionFeeRateFunc(ctx)
+}
+
+// GetTransactionFeeRateCalls gets all the calls that were made to GetTransactionFeeRate.
+// Check the length with:
+//     len(mockedBaseKeeper.GetTransactionFeeRateCalls())
+func (mock *BaseKeeperMock) GetTransactionFeeRateCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetTransactionFeeRate.RLock()
+	calls = mock.calls.GetTransactionFeeRate
+	mock.lockGetTransactionFeeRate.RUnlock()
+	return calls
+}
+
 // Logger calls LoggerFunc.
 func (mock *BaseKeeperMock) Logger(ctx cosmossdktypes.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -824,7 +867,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			ArchivePendingTransferFunc: func(ctx cosmossdktypes.Context, transfer exported.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin) error {
+// 			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
 // 			GetChainFunc: func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool) {
@@ -862,7 +905,7 @@ type NexusMock struct {
 	ArchivePendingTransferFunc func(ctx cosmossdktypes.Context, transfer exported.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin) error
+	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool)
@@ -911,6 +954,8 @@ type NexusMock struct {
 			Sender exported.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount cosmossdktypes.Coin
+			// FeeRate is the feeRate argument value.
+			FeeRate cosmossdktypes.Dec
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
@@ -1057,37 +1102,41 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Sender exported.CrossChainAddress
-		Amount cosmossdktypes.Coin
+		Ctx     cosmossdktypes.Context
+		Sender  exported.CrossChainAddress
+		Amount  cosmossdktypes.Coin
+		FeeRate cosmossdktypes.Dec
 	}{
-		Ctx:    ctx,
-		Sender: sender,
-		Amount: amount,
+		Ctx:     ctx,
+		Sender:  sender,
+		Amount:  amount,
+		FeeRate: feeRate,
 	}
 	mock.lockEnqueueForTransfer.Lock()
 	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
 	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount)
+	return mock.EnqueueForTransferFunc(ctx, sender, amount, feeRate)
 }
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Sender exported.CrossChainAddress
-	Amount cosmossdktypes.Coin
+	Ctx     cosmossdktypes.Context
+	Sender  exported.CrossChainAddress
+	Amount  cosmossdktypes.Coin
+	FeeRate cosmossdktypes.Dec
 } {
 	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Sender exported.CrossChainAddress
-		Amount cosmossdktypes.Coin
+		Ctx     cosmossdktypes.Context
+		Sender  exported.CrossChainAddress
+		Amount  cosmossdktypes.Coin
+		FeeRate cosmossdktypes.Dec
 	}
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer

@@ -11,4 +11,8 @@ message Params {
   repeated string supported_chains = 1;
   // IBC packet route timeout window
   uint64 route_timeout_window = 2;
+  string transaction_fee_rate = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
 }
