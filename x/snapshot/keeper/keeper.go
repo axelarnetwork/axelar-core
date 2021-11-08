@@ -317,9 +317,9 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 
 	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
 	if storedProxy != nil {
-		if !bytes.Equal(storedProxy, proxy) {
+		if !bytes.Equal(storedProxy[1:], proxy) {
 			return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
-				operator.String(), sdk.AccAddress(storedProxy).String(), proxy.String())
+				operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
 		}
 
 		ctx.KVStore(k.storeKey).Delete(storedProxy)
