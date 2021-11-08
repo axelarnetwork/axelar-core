@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -1085,40 +1087,102 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	return &types.CreateBurnTokensResponse{}, nil
 }
 
+func getMultisigThreshold(keyCount int, threshold utils.Threshold) uint8 {
+	return uint8(
+		sdk.NewDec(int64(keyCount)).
+			MulInt64(threshold.Numerator).
+			QuoInt64(threshold.Denominator).
+			Ceil().
+			RoundInt64(),
+	)
+}
+
+func getMultisigAddresses(ctx sdk.Context, s types.Signer, chain nexus.Chain, keyID tss.KeyID) ([]common.Address, uint8, error) {
+	multisigKey, ok := s.GetMultisigPubKey(ctx, keyID)
+	if !ok {
+		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, "key %s not found", keyID)
+	}
+
+	keyRequirement, ok := s.GetKeyRequirement(ctx, multisigKey.Role, tss.Multisig)
+	if !ok {
+		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, "no key requirement found for chain %s, key role %s and key type %s", chain.Name, multisigKey.Role.SimpleString(), tss.Multisig.SimpleString())
+	}
+
+	return types.KeysToAddresses(multisigKey.Values...), getMultisigThreshold(len(multisigKey.Values), keyRequirement.SafetyThreshold), nil
+}
+
 func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
 	externalKeyIDs, ok := s.GetExternalKeyIDs(ctx, chain)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s keys for chain %s found", tss.ExternalKey.SimpleString(), chain.Name))
 	}
 
-	externalKeyAddresses := make([]common.Address, 0)
-	for _, externalKeyID := range externalKeyIDs {
+	externalPubKeys := make([]ecdsa.PublicKey, len(externalKeyIDs))
+	for i, externalKeyID := range externalKeyIDs {
 		externalKey, ok := s.GetKey(ctx, externalKeyID)
 		if !ok {
 			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s key %s for chain %s not found", tss.ExternalKey.SimpleString(), externalKeyID, chain.Name))
 		}
 
-		externalKeyAddresses = append(externalKeyAddresses, crypto.PubkeyToAddress(externalKey.Value))
+		externalPubKeys[i] = externalKey.Value
 	}
-
-	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
-	}
-
-	secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
-	}
+	externalKeyAddresses := types.KeysToAddresses(externalPubKeys...)
+	externalKeyThreshold := getMultisigThreshold(len(externalKeyAddresses), s.GetExternalMultisigThreshold(ctx))
 
 	bz, _ := k.GetGatewayByteCodes(ctx)
-	return types.GetGatewayDeploymentBytecode(
-		bz,
-		externalKeyAddresses,
-		uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
-		crypto.PubkeyToAddress(masterKey.Value),
-		crypto.PubkeyToAddress(secondaryKey.Value),
-	)
+
+	switch chain.KeyType {
+	case tss.Threshold:
+		masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+		}
+
+		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+		}
+
+		return types.GetSinglesigGatewayDeploymentBytecode(
+			bz,
+			externalKeyAddresses,
+			uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
+			crypto.PubkeyToAddress(masterKey.Value),
+			crypto.PubkeyToAddress(secondaryKey.Value),
+		)
+	case tss.Multisig:
+		masterKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+		if !ok {
+			return nil, fmt.Errorf("no current %s key ID found for chain %s", tss.MasterKey.SimpleString(), chain.Name)
+		}
+
+		masterMultisigAddresses, masterMultisigThreshold, err := getMultisigAddresses(ctx, s, chain, masterKeyID)
+		if err != nil {
+			return nil, err
+		}
+
+		secondaryKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
+		if !ok {
+			return nil, fmt.Errorf("no current %s key ID found for chain %s", tss.SecondaryKey.SimpleString(), chain.Name)
+		}
+
+		secondaryMultisigAddresses, secondaryMultisigThreshold, err := getMultisigAddresses(ctx, s, chain, secondaryKeyID)
+		if err != nil {
+			return nil, err
+		}
+
+		return types.GetMultisigGatewayDeploymentBytecode(
+			bz,
+			externalKeyAddresses,
+			externalKeyThreshold,
+			masterMultisigAddresses,
+			masterMultisigThreshold,
+			secondaryMultisigAddresses,
+			secondaryMultisigThreshold,
+		)
+	default:
+		return nil, fmt.Errorf("unknown key type set for chain %s", chain.Name)
+	}
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
@@ -1208,47 +1272,43 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
-	if !ok {
-		return types.Command{}, fmt.Errorf("unkown key %s", nextKeyID)
+	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
+		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKey.ID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKey.ID, keyRole.SimpleString())
-	}
-
-	newAddress := crypto.PubkeyToAddress(nextKey.Value)
 	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
 	}
 
-	var command types.Command
-	var err error
+	switch chain.KeyType {
+	case tss.Threshold:
+		key, ok := s.signer.GetKey(ctx, nextKeyID)
+		if !ok {
+			return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+		}
 
-	switch transferKeyType {
-	case types.Ownership:
-		command, err = types.CreateTransferOwnershipCommand(chainID, currMasterKeyID, newAddress)
-	case types.Operatorship:
-		command, err = types.CreateTransferOperatorshipCommand(chainID, currMasterKeyID, newAddress)
+		address := crypto.PubkeyToAddress(key.Value)
+		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
 
+		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(key.Value))
+	case tss.Multisig:
+		addresses, threshold, err := getMultisigAddresses(ctx, s.signer, chain, nextKeyID)
+		if err != nil {
+			return types.Command{}, err
+		}
+
+		addressStrs := make([]string, len(addresses))
+		for i, address := range addresses {
+			addressStrs[i] = address.Hex()
+		}
+
+		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to addresses %s", transferKeyType.SimpleString(), chain.Name, strings.Join(addressStrs, ",")))
+
+		return types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, threshold, addresses...)
 	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
+		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}
-
-	if err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed create %s command", transferKeyType.SimpleString())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("storing data for %s command %s", transferKeyType.SimpleString(), command.ID.Hex()))
-
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKey.ID); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "failed assigning the next %s key for chain %s", keyRole.SimpleString(), chain.Name)
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("created command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, newAddress.Hex()))
-
-	return command, nil
 }
 
 func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateTransferOwnershipRequest) (*types.CreateTransferOwnershipResponse, error) {

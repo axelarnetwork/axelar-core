@@ -103,7 +103,7 @@ type TSSKeeper interface {
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID)
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, info exported.SignInfo, snap snapshot.Snapshot) ([]snapshot.Validator, []snapshot.Validator, error)
+	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, info exported.SignInfo, snap snapshot.Snapshot, keyType exported.KeyType) ([]snapshot.Validator, []snapshot.Validator, error)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
@@ -118,13 +118,16 @@ type TSSKeeper interface {
 	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
 
 	SubmitPubKeys(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress, pubKeys ...[]byte) bool
-	GetMultisigPubKeyCount(ctx sdk.Context, keyID exported.KeyID) int64
+	GetMultisigKeygenInfo(ctx sdk.Context, keyID exported.KeyID) (MultisigKeygenInfo, bool)
 	IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID) bool
 	GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyType
-	GetMultisigPubKeyTimeout(ctx sdk.Context, keyID exported.KeyID) (int64, bool)
-	HasValidatorSubmittedMultisigPubKey(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool
 	GetParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID) []sdk.ValAddress
 	DeleteMultisigKeygen(ctx sdk.Context, keyID exported.KeyID)
+	GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.KeyID, val sdk.ValAddress) ([]ecdsa.PublicKey, bool)
+	SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool
+	GetMultisigSignInfo(ctx sdk.Context, sigID string) (MultisigSignInfo, bool)
+	DeleteMultisigSign(ctx sdk.Context, signID string)
+	GetMultisig(ctx sdk.Context, sigID string) ([]exported.Signature, exported.SigStatus)
 }
 
 // Rewarder provides reward functionality

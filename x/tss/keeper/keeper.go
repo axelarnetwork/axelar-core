@@ -38,9 +38,12 @@ var (
 	sigStatusPrefix            = utils.KeyFromStr("sig_status")
 	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
 	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")
-	multiSigPrefix             = utils.KeyFromStr("multi_sig")
-	keyTypePrefix              = utils.KeyFromStr("key_type")
+	multiSigKeyPrefix          = utils.KeyFromStr("multi_sig_keygen")
+	multiSigSignPrefix         = utils.KeyFromStr("multi_sig_sign")
 	keyInfoPrefix              = utils.KeyFromStr("key_info")
+
+	multisigKeygenQueue = "multisig_keygen"
+	multisigSignQueue   = "multisig_sign"
 )
 
 // Keeper allows access to the broadcast state

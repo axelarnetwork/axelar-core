@@ -16,6 +16,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -63,6 +64,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		}
 		s.Keeper.SetKey(ctx, exported.KeyID(keyID), sk.PublicKey)
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 
 		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, exported.KeyID(keyID)))
 	}
@@ -77,6 +79,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 		s := setup()
 		time := time.Unix(time.Now().Unix(), 0)
 		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
@@ -127,6 +130,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
+		chain.KeyType = tss.Threshold
 		s := setup()
 		ctx := s.Ctx
 		keys := make([]exported.Key, 10)
@@ -200,7 +204,7 @@ func TestGetKeygenParticipants(t *testing.T) {
 
 func TestMultisigKeygen(t *testing.T) {
 	repeats := 20
-	t.Run("should set keygen timeout when start multisig keygen", testutils.Func(func(t *testing.T) {
+	t.Run("should set multisig keygen info when start multisig keygen", testutils.Func(func(t *testing.T) {
 		s := setup()
 		keyID := rand2.StrBetween(5, 20)
 		keyInfo := types.KeyInfo{
@@ -213,10 +217,12 @@ func TestMultisigKeygen(t *testing.T) {
 		assert.NoError(t, err)
 		keyRequirement, _ := s.Keeper.GetKeyRequirement(s.Ctx, exported.MasterKey, exported.Multisig)
 		expectedTimeoutBlock := s.Ctx.BlockHeight() + keyRequirement.KeygenTimeout
-		timeout, ok := s.Keeper.GetMultisigPubKeyTimeout(s.Ctx, exported.KeyID(keyID))
 
+		keygenInfo, ok := s.Keeper.GetMultisigKeygenInfo(s.Ctx, exported.KeyID(keyID))
 		assert.True(t, ok)
-		assert.Equal(t, expectedTimeoutBlock, timeout)
+		assert.Equal(t, expectedTimeoutBlock, keygenInfo.GetTimeoutBlock())
+		assert.Equal(t, 0, len(keygenInfo.GetKeys()))
+		assert.Equal(t, int64(0), keygenInfo.Count())
 		assert.False(t, s.Keeper.IsMultisigKeygenCompleted(s.Ctx, exported.KeyID(keyID)))
 
 	}).Repeat(repeats))
@@ -243,8 +249,10 @@ func TestMultisigKeygen(t *testing.T) {
 			}
 			pubKeysCount += int64(len(pubKeys))
 			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
-			assert.Equal(t, pubKeysCount, s.Keeper.GetMultisigPubKeyCount(s.Ctx, keyID))
-			assert.True(t, s.Keeper.HasValidatorSubmittedMultisigPubKey(s.Ctx, keyID, v.GetSDKValidator().GetOperator()))
+			keygenInfo, ok := s.Keeper.GetMultisigKeygenInfo(s.Ctx, keyID)
+			assert.True(t, ok)
+			assert.Equal(t, pubKeysCount, keygenInfo.Count())
+			assert.True(t, keygenInfo.DoesParticipate(v.GetSDKValidator().GetOperator()))
 		}
 	}).Repeat(repeats))
 }

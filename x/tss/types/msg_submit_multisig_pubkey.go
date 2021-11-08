@@ -9,7 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-// NewSubmitMultiSigPubKeysRequest constructor for SetMultisigPubKeyRequest
+// NewSubmitMultiSigPubKeysRequest constructor for SubmitMultiSigPubKeysRequest
 func NewSubmitMultiSigPubKeysRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKeyInfos []exported.PubKeyInfo) *SubmitMultisigPubKeysRequest {
 	return &SubmitMultisigPubKeysRequest{Sender: sender, KeyID: keyID, PubKeyInfos: pubKeyInfos}
 }
@@ -19,7 +19,7 @@ func (m SubmitMultisigPubKeysRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m SubmitMultisigPubKeysRequest) Type() string { return "SubmitPubKeys" }
+func (m SubmitMultisigPubKeysRequest) Type() string { return "SubmitMultisigPubKeys" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {

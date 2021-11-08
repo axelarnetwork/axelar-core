@@ -111,7 +111,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 		case *tofnd.KeygenResponse_PubKey:
 			//  proof validator owns the pub key
 			d := sha256.Sum256([]byte(mgr.principalAddr))
-			sig, err := mgr.MultiSigSign(keyUID, mgr.principalAddr, d[:])
+			sig, err := mgr.multiSigSign(keyUID, d[:])
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to sign")
 			}

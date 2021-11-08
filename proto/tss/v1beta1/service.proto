@@ -73,4 +73,10 @@ service MsgService {
     option (google.api.http) = {
     };
   }
+
+  rpc SubmitMultisigSignatures(tss.v1beta1.SubmitMultisigSignaturesRequest)
+      returns (tss.v1beta1.SubmitMultisigSignaturesResponse) {
+    option (google.api.http) = {
+    };
+  }
 }
