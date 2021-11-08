@@ -66,6 +66,14 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
+// GetTransactionFeeRate returns the transaction fee rate for axelarnet and cosmos chains
+func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
+	var result sdk.Dec
+	k.params.Get(ctx, types.KeyTransactionFeeRate, &result)
+
+	return result
+}
+
 // RegisterIBCPath registers an IBC path for a cosmos chain
 func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain, path string) error {
 	bz := k.getStore(ctx).GetRaw(pathPrefix.Append(utils.LowerCaseKey(chain)))

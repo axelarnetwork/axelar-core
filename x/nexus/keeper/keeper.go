@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -31,11 +32,13 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
+
+	axelarnetKeeper types.AxelarnetKeeper
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, ak types.AxelarnetKeeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), axelarnetKeeper: ak}
 }
 
 // Logger returns a module-specific logger.
@@ -119,7 +122,7 @@ func (k Keeper) GetRecipient(ctx sdk.Context, sender exported.CrossChainAddress)
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) error {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) error {
 	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
 		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
@@ -135,6 +138,16 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
+	}
+
+	// collect fee
+	feeCollector, ok := k.axelarnetKeeper.GetFeeCollector(ctx)
+	feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
+	if ok && feeDue.IsPositive() {
+		asset.Amount = asset.Amount.Sub(feeDue)
+		fee := sdk.NewCoin(asset.Denom, feeDue)
+		feeRecipient := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: feeCollector.String()}
+		k.setPendingTransfer(ctx, feeRecipient, fee)
 	}
 
 	if sender.Chain.NativeAsset != asset.Denom {
