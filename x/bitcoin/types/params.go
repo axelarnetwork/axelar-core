@@ -51,7 +51,7 @@ func DefaultParams() Params {
 		MasterKeyRetentionPeriod:             8,
 		MasterAddressInternalKeyLockDuration: 14 * 24 * time.Hour, // 14 days
 		MasterAddressExternalKeyLockDuration: 28 * 24 * time.Hour, // 28 days
-		VotingThreshold:                      utils.Threshold{Numerator: 15, Denominator: 100},
+		VotingThreshold:                      utils.Threshold{Numerator: 33, Denominator: 100},
 		MinVoterCount:                        1,
 		MaxTxSize:                            1024 * 1024 / 3,                // 1/3 MiB
 		TransactionFeeRate:                   sdktypes.NewDecWithPrec(25, 5), // 0.025%
