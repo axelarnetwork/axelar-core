@@ -54,4 +54,6 @@ enum ValidatorIllegibility {
       [ (gogoproto.enumvalue_customname) = "NoProxyRegistered" ];
   VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED = 16
       [ (gogoproto.enumvalue_customname) = "TssSuspended" ];
+  VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS = 32
+      [ (gogoproto.enumvalue_customname) = "ProxyInsuficientFunds" ];
 }

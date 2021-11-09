@@ -398,7 +398,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 
 	signedBlocksWindow := k.slasher.SignedBlocksWindow(ctx)
 	signingInfo, signingInfoFound := k.slasher.GetValidatorSigningInfo(ctx, consAddr)
-	_, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
+	proxy, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
 
 	illegibility := exported.None
 
@@ -421,6 +421,12 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 
 	if k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight() {
 		illegibility |= exported.TssSuspended
+	}
+
+	minBalance := k.GetMinProxyBalance(ctx)
+	denom := k.staking.BondDenom(ctx)
+	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
+		illegibility |= exported.ProxyInsuficientFunds
 	}
 
 	return illegibility, nil
