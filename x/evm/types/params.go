@@ -80,7 +80,7 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
-		VotingThreshold:    utils.Threshold{Numerator: 15, Denominator: 100},
+		VotingThreshold:    utils.Threshold{Numerator: 33, Denominator: 100},
 		MinVoterCount:      1,
 		CommandsGasLimit:   5000000,
 		TransactionFeeRate: sdk.NewDecWithPrec(25, 5), // 0.025%
@@ -248,7 +248,6 @@ func validateTransactionFeeRate(i interface{}) error {
 
 	return nil
 }
-
 
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {

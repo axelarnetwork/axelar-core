@@ -21,8 +21,8 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams - the module's default parameters
 func DefaultParams() Params {
 	return Params{
-		ExternalChainVotingInflationRate: sdk.NewDecWithPrec(5, 3),
-		TssRelativeInflationRate:         sdk.NewDecWithPrec(67, 2),
+		ExternalChainVotingInflationRate: sdk.ZeroDec(),
+		TssRelativeInflationRate:         sdk.ZeroDec(),
 	}
 }
 
