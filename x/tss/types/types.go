@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"crypto/ecdsa"
+
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"

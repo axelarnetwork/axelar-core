@@ -125,7 +125,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 		}
 
-		executeData, err := types.CreateExecuteData(batchedCommands.GetData(), batchedCommandsSig)
+		executeData, err := types.CreateExecuteDataSinglesig(batchedCommands.GetData(), batchedCommandsSig)
 		if err != nil {
 			return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
 		}

@@ -356,23 +356,25 @@ func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	return addresses
 }
 
-// CreateExecuteData wraps the specific command data and includes the command signature.
-// Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error) {
-	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
-	if err != nil {
-		return nil, err
-	}
-
-	var homesteadCommandSig []byte
-	homesteadCommandSig = append(homesteadCommandSig, commandSig[:]...)
-
+func toHomesteadSig(sig Signature) []byte {
 	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
 	requiring that. Consider copying and modifying it to require v to be just 0 or 1
 	instead.
 	*/
-	if homesteadCommandSig[64] == 0 || homesteadCommandSig[64] == 1 {
-		homesteadCommandSig[64] += 27
+	bz := sig[:]
+	if bz[crypto.SignatureLength-1] == 0 || bz[crypto.SignatureLength-1] == 1 {
+		bz[crypto.SignatureLength-1] += 27
+	}
+
+	return bz
+}
+
+// CreateExecuteDataSinglesig wraps the specific command data and includes the command signature.
+// Returns the data that goes into the data field of an EVM transaction
+func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
+	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
+	if err != nil {
+		return nil, err
 	}
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
@@ -381,7 +383,44 @@ func CreateExecuteData(commandData []byte, commandSig Signature) ([]byte, error)
 	}
 
 	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesType}}
-	executeData, err := arguments.Pack(commandData, homesteadCommandSig)
+	executeData, err := arguments.Pack(data, toHomesteadSig(sig))
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
+// Returns the data that goes into the data field of an EVM transaction
+func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
+	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
+	if err != nil {
+		return nil, err
+	}
+
+	var homesteadSigs [][]byte
+	for _, sig := range sigs {
+		homesteadSigs = append(homesteadSigs, toHomesteadSig(sig))
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytesArrayType, err := abi.NewType("bytes[]", "bytes[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesArrayType}}
+	executeData, err := arguments.Pack(data, homesteadSigs)
 	if err != nil {
 		return nil, err
 	}
