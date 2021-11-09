@@ -30,7 +30,7 @@ func KeyTable() params.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		Chains:                   []exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
-		ChainActivationThreshold: utils.NewThreshold(25, 100),
+		ChainActivationThreshold: utils.NewThreshold(40, 100),
 	}
 }
 
