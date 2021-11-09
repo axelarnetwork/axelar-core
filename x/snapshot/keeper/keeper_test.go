@@ -234,7 +234,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 	}).Repeat(20))
 
-	t.Run("unsufficient funds in proxy", testutils.Func(func(t *testing.T) {
+	t.Run("insufficient funds in proxy", testutils.Func(func(t *testing.T) {
 		setup()
 
 		bank.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
