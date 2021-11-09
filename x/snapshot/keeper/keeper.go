@@ -19,8 +19,6 @@ import (
 )
 
 const (
-	minBalance = 5000000
-
 	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
@@ -136,8 +134,9 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 }
 
 // GetMinProxyBalance returns the minimum balance proxies must hold
-func (k Keeper) GetMinProxyBalance(_ sdk.Context) sdk.Int {
-	//TODO: this should be a genesis param rather than a constant
+func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
+	var minBalance int64
+	k.params.Get(ctx, types.KeyMinProxyBalance, &minBalance)
 	return sdk.NewInt(minBalance)
 }
 

@@ -3323,6 +3323,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `locking_period` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `min_proxy_balance` | [int64](#int64) |  |  |
 
 
 
