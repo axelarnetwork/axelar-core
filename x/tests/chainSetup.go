@@ -91,7 +91,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	rewardKeeper := rewardKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(rewardTypes.StoreKey), rewardSubspace, mocks.Banker, mocks.Distributor, mocks.Staker)
 
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, mocks.Slasher, mocks.Tss)
+	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, &snapshotTypesMock.BankKeeperMock{}, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
 	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, mocks.Staker, rewardKeeper)
 

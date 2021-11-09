@@ -31,6 +31,7 @@ var _ exported.Snapshotter = Keeper{}
 type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  types.StakingKeeper
+	bank     types.BankKeeper
 	slasher  exported.Slasher
 	tss      exported.Tss
 	cdc      codec.BinaryCodec
@@ -38,11 +39,12 @@ type Keeper struct {
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
 		staking:  staking,
+		bank:     bank,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		slasher:  slasher,
 		tss:      tss,
@@ -314,6 +316,22 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 	if storedProxy := ctx.KVStore(k.storeKey).Get(operator); storedProxy != nil && !bytes.Equal(storedProxy[1:], proxy) {
 		return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
 			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
+	}
+
+	minBalance := sdk.NewInt(5000000)
+	denom := k.staking.BondDenom(ctx)
+	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
+		return fmt.Errorf("account %s does not have sufficient funds to become a proxy (minimum %s%s, actual %s)",
+			proxy.String(), minBalance.String(), denom, balance.String())
+	}
+
+	key := []byte(proxyPrefix + operator.String())
+	bz := ctx.KVStore(k.storeKey).Get(key)
+	if bz == nil {
+		return fmt.Errorf("no readiness notification found addressed to operator %s", operator.String())
+	}
+	if !bytes.Equal(bz, proxy.Bytes()) {
+		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", proxy.String(), sdk.AccAddress(bz))
 	}
 
 	bz := append([]byte{1}, proxy...)
