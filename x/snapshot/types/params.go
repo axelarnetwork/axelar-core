@@ -14,7 +14,7 @@ var (
 	KeyLockingPeriod = []byte("locking")
 
 	// KeyMinProxyBalance is the key for the minimum proxy balance
-	KeyMinProxyBalance = []byte("min-proxy-balance")
+	KeyMinProxyBalance = []byte("minproxybalance")
 )
 
 // KeyTable retrieves a subspace table for the module

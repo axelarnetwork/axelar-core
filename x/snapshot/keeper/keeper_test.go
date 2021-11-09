@@ -199,6 +199,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 		}
 
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
@@ -278,6 +279,8 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		}
 
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper.SetParams(ctx, types.DefaultParams())
+
 		snapshotKeeper.SetProxyReady(ctx, principalAddress, expectedProxy)
 		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
