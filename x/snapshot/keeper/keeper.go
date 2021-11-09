@@ -19,6 +19,9 @@ import (
 )
 
 const (
+	minBalance = 5000000
+
+	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
@@ -130,6 +133,12 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	}
 
 	return int64(binary.LittleEndian.Uint64(bz))
+}
+
+// GetMinProxyBalance returns the minimum balance proxies must hold
+func (k Keeper) GetMinProxyBalance(_ sdk.Context) sdk.Int {
+	//TODO: this should be a genesis param rather than a constant
+	return sdk.NewInt(minBalance)
 }
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
@@ -318,7 +327,7 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
 	}
 
-	minBalance := sdk.NewInt(5000000)
+	minBalance := k.GetMinProxyBalance(ctx)
 	denom := k.staking.BondDenom(ctx)
 	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
 		return fmt.Errorf("account %s does not have sufficient funds to become a proxy (minimum %s%s, actual %s)",
