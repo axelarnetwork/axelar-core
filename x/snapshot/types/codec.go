@@ -13,7 +13,6 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&ProxyReadyRequest{}, "snapshot/ProxyReady", nil)
 	cdc.RegisterConcrete(&RegisterProxyRequest{}, "snapshot/RegisterProxy", nil)
 	cdc.RegisterConcrete(&DeactivateProxyRequest{}, "snapshot/DeactivateProxy", nil)
 }
@@ -24,7 +23,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		(*exported.SDKValidator)(nil),
 		&stakingtypes.Validator{},
 	)
-	registry.RegisterImplementations((*sdk.Msg)(nil), &ProxyReadyRequest{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &RegisterProxyRequest{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &DeactivateProxyRequest{})
 

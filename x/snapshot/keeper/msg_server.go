@@ -25,15 +25,6 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
 	return msgServer{Keeper: keeper}
 }
 
-func (s msgServer) ProxyReady(c context.Context, req *types.ProxyReadyRequest) (*types.ProxyReadyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	s.SetProxyReady(ctx, req.OperatorAddr, req.Sender)
-	s.Keeper.Logger(ctx).Info(fmt.Sprintf("proxy %s announced readiness, expecting operator %s",
-		req.Sender.String(), req.OperatorAddr.String()))
-	return &types.ProxyReadyResponse{}, nil
-}
-
 func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequest) (*types.RegisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

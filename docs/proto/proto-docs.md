@@ -242,8 +242,6 @@
 - [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
     - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
     - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
-    - [ProxyReadyRequest](#snapshot.v1beta1.ProxyReadyRequest)
-    - [ProxyReadyResponse](#snapshot.v1beta1.ProxyReadyResponse)
     - [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest)
     - [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse)
   
@@ -3471,32 +3469,6 @@ GenesisState represents the genesis state
 
 
 
-<a name="snapshot.v1beta1.ProxyReadyRequest"></a>
-
-### ProxyReadyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `operator_addr` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="snapshot.v1beta1.ProxyReadyResponse"></a>
-
-### ProxyReadyResponse
-
-
-
-
-
-
-
 <a name="snapshot.v1beta1.RegisterProxyRequest"></a>
 
 ### RegisterProxyRequest
@@ -3552,7 +3524,6 @@ Msg defines the snapshot Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `ProxyReady` | [ProxyReadyRequest](#snapshot.v1beta1.ProxyReadyRequest) | [ProxyReadyResponse](#snapshot.v1beta1.ProxyReadyResponse) | ProxyReady defines a method for establishing that a proxy is ready to be registered in a validator account's stead. | POST|/axelar/snapshot/proxyReady|
 | `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
 | `DeactivateProxy` | [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivateProxy|
 

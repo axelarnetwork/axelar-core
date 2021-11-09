@@ -250,7 +250,6 @@
       - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
     - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
       - [deactivate-proxy](axelard_tx_snapshot_deactivate-proxy.md)	 - Deactivate the proxy account of the sender
-      - [proxy-ready \[operator address\]](axelard_tx_snapshot_proxy-ready.md)	 - Establish a proxy as ready to be registered by the specified operator address
       - [register-proxy \[proxy address\]](axelard_tx_snapshot_register-proxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
       - [send-tokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_send-tokens.md)	 - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands

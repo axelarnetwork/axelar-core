@@ -19,11 +19,9 @@ import (
 )
 
 const (
-	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
-	proxyPrefix   = "vald_"
 )
 
 // Make sure the keeper implements the Snapshotter interface
@@ -67,16 +65,10 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// SetProxyReady establishes that the specified proxy is ready to be registered
-func (k Keeper) SetProxyReady(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) {
-	key := []byte(proxyPrefix + operator.String())
-	ctx.KVStore(k.storeKey).Set(key, proxy.Bytes())
-}
-
-// IsProxyReady returns true if a proxy has issued a readiness message for the given operator address
+// IsProxyReady returns true if a register-proxy message has already been issue for the given operator address
 func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
-	key := []byte(proxyPrefix + operator.String())
-	return ctx.KVStore(k.storeKey).Has(key)
+	return ctx.KVStore(k.storeKey).Has(operator)
+
 }
 
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
@@ -315,36 +307,20 @@ func counterKey(counter int64) []byte {
 // RegisterProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
 // The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
-	if val := k.staking.Validator(ctx, operator); val == nil {
-		return fmt.Errorf("validator %s is unknown", operator.String())
+	if storedOperator := ctx.KVStore(k.storeKey).Get(proxy); storedOperator != nil && !bytes.Equal(operator, storedOperator) {
+		return fmt.Errorf("address %s already registered as a proxy to another operator", proxy.String())
 	}
 
-	key := []byte(proxyPrefix + operator.String())
-	bz := ctx.KVStore(k.storeKey).Get(key)
-	if bz == nil {
-		return fmt.Errorf("no readiness notification found addressed to operator %s", operator.String())
-	}
-	if !bytes.Equal(bz, proxy.Bytes()) {
-		return fmt.Errorf("proxy address mismatch (expected %s, actual %s)", proxy.String(), sdk.AccAddress(bz))
+	if storedProxy := ctx.KVStore(k.storeKey).Get(operator); storedProxy != nil && !bytes.Equal(storedProxy[1:], proxy) {
+		return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
+			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
 	}
 
-	k.Logger(ctx).Debug("getting proxy count")
-	count := k.getProxyCount(ctx)
-
-	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
-	if storedProxy != nil {
-		ctx.KVStore(k.storeKey).Delete(storedProxy)
-		count--
-	}
-	k.Logger(ctx).Debug("setting proxy")
-	ctx.KVStore(k.storeKey).Set(proxy, operator)
-	// Creating a reverse lookup
-	bz = append([]byte{1}, proxy...)
+	bz := append([]byte{1}, proxy...)
 	ctx.KVStore(k.storeKey).Set(operator, bz)
-	count++
-	k.Logger(ctx).Debug("setting proxy count")
-	k.setProxyCount(ctx, count)
-	k.Logger(ctx).Debug("done")
+
+	// Reverse lookup
+	ctx.KVStore(k.storeKey).Set(proxy, operator)
 	return nil
 }
 
@@ -360,7 +336,6 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error 
 		return fmt.Errorf("validator %s has no proxy registered", operator.String())
 	}
 
-	k.Logger(ctx).Debug(fmt.Sprintf("deactivating proxy %s", sdk.AccAddress(storedProxy[1:]).String()))
 	bz := append([]byte{0}, storedProxy[1:]...)
 	ctx.KVStore(k.storeKey).Set(operator, bz)
 
@@ -386,24 +361,6 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.Ac
 	addr = bz[1:]
 	active = bz[0] == 1
 	return addr, active
-}
-
-func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
-	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(count))
-
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
-
-}
-
-func (k Keeper) getProxyCount(ctx sdk.Context) int {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
-	if bz == nil {
-		return 0
-	}
-
-	return int(binary.LittleEndian.Uint64(bz))
 }
 
 // GetValidatorIllegibility returns the illegibility of the given validator
