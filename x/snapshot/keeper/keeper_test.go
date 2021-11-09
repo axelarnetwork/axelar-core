@@ -204,7 +204,6 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		snapshotKeeper.SetProxyReady(ctx, principalAddress, expectedProxy)
 		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
@@ -214,21 +213,11 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 	}).Repeat(20))
 
-	t.Run("proxy not ready", testutils.Func(func(t *testing.T) {
-		setup()
-
-		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
-
-		assert.Error(t, err)
-
-	}).Repeat(20))
-
 	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
 		setup()
 
 		address := rand.ValAddr()
 		proxy := rand.AccAddr()
-		snapshotKeeper.SetProxyReady(ctx, address, proxy)
 		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
 
 		assert.Error(t, err)
@@ -245,7 +234,6 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			return sdk.NewCoin("uaxl", sdk.ZeroInt())
 		}
 
-		snapshotKeeper.SetProxyReady(ctx, principalAddress, expectedProxy)
 		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
 
 		assert.Error(t, err)
@@ -281,7 +269,6 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
-		snapshotKeeper.SetProxyReady(ctx, principalAddress, expectedProxy)
 		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
