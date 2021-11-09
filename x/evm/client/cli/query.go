@@ -133,9 +133,9 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 		var res []byte
 		switch *lookupBy {
 		case keeper.ByAsset:
-			res, _, err = cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], args[1]), nil)
+			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], args[1]))
 		case keeper.BySymbol:
-			res, _, err = cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], args[1]), nil)
+			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], args[1]))
 		default:
 			return fmt.Errorf("unknown lookup type: %s", *lookupBy)
 		}
