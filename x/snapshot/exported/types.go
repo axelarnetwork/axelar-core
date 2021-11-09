@@ -50,25 +50,28 @@ func (v ValidatorIllegibility) Is(illegibility ValidatorIllegibility) bool {
 func (v ValidatorIllegibility) String() string {
 	var illegibilityStrs []string
 
-	switch {
-	case v.Is(Tombstoned):
+	if v.Is(Tombstoned) {
 		illegibilityStrs = append(illegibilityStrs, "tombstoned")
-		fallthrough
-	case v.Is(Jailed):
+	}
+	if v.Is(Jailed) {
 		illegibilityStrs = append(illegibilityStrs, "jailed")
-		fallthrough
-	case v.Is(MissedTooManyBlocks):
+	}
+	if v.Is(MissedTooManyBlocks) {
 		illegibilityStrs = append(illegibilityStrs, "missed-too-many-blocks")
-		fallthrough
-	case v.Is(NoProxyRegistered):
+	}
+	if v.Is(NoProxyRegistered) {
 		illegibilityStrs = append(illegibilityStrs, "no-proxy-registered")
-		fallthrough
-	case v.Is(TssSuspended):
+	}
+	if v.Is(TssSuspended) {
 		illegibilityStrs = append(illegibilityStrs, "tss-suspended")
-	default:
-		illegibilityStrs = append(illegibilityStrs, "none")
+	}
+	if v.Is(ProxyInsuficientFunds) {
+		illegibilityStrs = append(illegibilityStrs, "proxy-insuficient-funds")
 	}
 
+	if len(illegibilityStrs) == 0 {
+		illegibilityStrs = append(illegibilityStrs, "none")
+	}
 	return strings.Join(illegibilityStrs, ",")
 }
 

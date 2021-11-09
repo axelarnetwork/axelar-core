@@ -20,6 +20,9 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 // 		// make and configure a mocked types.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
+// 			BondDenomFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
+// 				panic("mock out the BondDenom method")
+// 			},
 // 			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetLastTotalPower method")
 // 			},
@@ -39,6 +42,9 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 // 	}
 type StakingKeeperMock struct {
+	// BondDenomFunc mocks the BondDenom method.
+	BondDenomFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) string
+
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
 	GetLastTotalPowerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
 
@@ -53,6 +59,11 @@ type StakingKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BondDenom holds details about calls to the BondDenom method.
+		BondDenom []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
 		GetLastTotalPower []struct {
 			// Ctx is the ctx argument value.
@@ -78,10 +89,42 @@ type StakingKeeperMock struct {
 			Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
+	lockBondDenom                      sync.RWMutex
 	lockGetLastTotalPower              sync.RWMutex
 	lockIterateBondedValidatorsByPower sync.RWMutex
 	lockPowerReduction                 sync.RWMutex
 	lockValidator                      sync.RWMutex
+}
+
+// BondDenom calls BondDenomFunc.
+func (mock *StakingKeeperMock) BondDenom(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
+	if mock.BondDenomFunc == nil {
+		panic("StakingKeeperMock.BondDenomFunc: method is nil but StakingKeeper.BondDenom was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBondDenom.Lock()
+	mock.calls.BondDenom = append(mock.calls.BondDenom, callInfo)
+	mock.lockBondDenom.Unlock()
+	return mock.BondDenomFunc(ctx)
+}
+
+// BondDenomCalls gets all the calls that were made to BondDenom.
+// Check the length with:
+//     len(mockedStakingKeeper.BondDenomCalls())
+func (mock *StakingKeeperMock) BondDenomCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockBondDenom.RLock()
+	calls = mock.calls.BondDenom
+	mock.lockBondDenom.RUnlock()
+	return calls
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
@@ -213,5 +256,82 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator
 	mock.lockValidator.RUnlock()
+	return calls
+}
+
+// Ensure, that BankKeeperMock does implement types.BankKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.BankKeeper = &BankKeeperMock{}
+
+// BankKeeperMock is a mock implementation of types.BankKeeper.
+//
+// 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.BankKeeper
+// 		mockedBankKeeper := &BankKeeperMock{
+// 			GetBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
+// 				panic("mock out the GetBalance method")
+// 			},
+// 		}
+//
+// 		// use mockedBankKeeper in code that requires types.BankKeeper
+// 		// and then make assertions.
+//
+// 	}
+type BankKeeperMock struct {
+	// GetBalanceFunc mocks the GetBalance method.
+	GetBalanceFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetBalance holds details about calls to the GetBalance method.
+		GetBalance []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Addr is the addr argument value.
+			Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+			// Denom is the denom argument value.
+			Denom string
+		}
+	}
+	lockGetBalance sync.RWMutex
+}
+
+// GetBalance calls GetBalanceFunc.
+func (mock *BankKeeperMock) GetBalance(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
+	if mock.GetBalanceFunc == nil {
+		panic("BankKeeperMock.GetBalanceFunc: method is nil but BankKeeper.GetBalance was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
+		Denom string
+	}{
+		Ctx:   ctx,
+		Addr:  addr,
+		Denom: denom,
+	}
+	mock.lockGetBalance.Lock()
+	mock.calls.GetBalance = append(mock.calls.GetBalance, callInfo)
+	mock.lockGetBalance.Unlock()
+	return mock.GetBalanceFunc(ctx, addr, denom)
+}
+
+// GetBalanceCalls gets all the calls that were made to GetBalance.
+// Check the length with:
+//     len(mockedBankKeeper.GetBalanceCalls())
+func (mock *BankKeeperMock) GetBalanceCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
+	Denom string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
+		Denom string
+	}
+	mock.lockGetBalance.RLock()
+	calls = mock.calls.GetBalance
+	mock.lockGetBalance.RUnlock()
 	return calls
 }

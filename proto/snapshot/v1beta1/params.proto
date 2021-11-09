@@ -11,4 +11,5 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   google.protobuf.Duration locking_period = 1
       [ (gogoproto.nullable) = false, (gogoproto.stdduration) = true ];
+  int64 min_proxy_balance = 2;
 }

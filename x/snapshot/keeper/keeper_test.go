@@ -21,6 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -116,7 +117,13 @@ func TestSnapshots(t *testing.T) {
 				},
 			}
 
-			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, slashingKeeper, tssMock)
+			bank := &mock.BankKeeperMock{
+				GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+					return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
+				},
+			}
+
+			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, slashingKeeper, tssMock)
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
 				addr := rand.AccAddr()
@@ -163,6 +170,77 @@ func TestSnapshots(t *testing.T) {
 	}
 }
 
+func TestKeeper_RegisterProxy(t *testing.T) {
+	var (
+		ctx              sdk.Context
+		snapshotKeeper   keeper.Keeper
+		principalAddress sdk.ValAddress
+		expectedProxy    sdk.AccAddress
+		staker           *mockStaker
+		bank             *mock.BankKeeperMock
+		validators       []staking.ValidatorI
+	)
+
+	setup := func() {
+		encCfg := appParams.MakeEncodingConfig()
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		validators = genValidators(t, 10, 100)
+		staker = newMockStaker(validators...)
+		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
+		expectedProxy = rand.AccAddr()
+		bank = &mock.BankKeeperMock{
+			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+				if addr.Equals(expectedProxy) {
+					return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
+				}
+				return sdk.NewCoin("uaxl", sdk.ZeroInt())
+			},
+		}
+
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper.SetParams(ctx, types.DefaultParams())
+	}
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+
+		assert.NoError(t, err)
+		proxy, active := snapshotKeeper.GetProxy(ctx, principalAddress)
+		assert.True(t, active)
+		assert.Equal(t, expectedProxy, proxy)
+
+	}).Repeat(20))
+
+	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
+		setup()
+
+		address := rand.ValAddr()
+		proxy := rand.AccAddr()
+		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
+
+		assert.Error(t, err)
+
+	}).Repeat(20))
+
+	t.Run("insufficient funds in proxy", testutils.Func(func(t *testing.T) {
+		setup()
+
+		bank.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			if addr.Equals(expectedProxy) {
+				return sdk.NewCoin("uaxl", sdk.NewInt(4999999))
+			}
+			return sdk.NewCoin("uaxl", sdk.ZeroInt())
+		}
+
+		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+
+		assert.Error(t, err)
+
+	}).Repeat(20))
+}
+
 func TestKeeper_DeregisterProxy(t *testing.T) {
 	var (
 		ctx              sdk.Context
@@ -182,7 +260,15 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
 		expectedProxy = rand.AccAddr()
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		bank := &mock.BankKeeperMock{
+			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+				return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
+			},
+		}
+
+		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper.SetParams(ctx, types.DefaultParams())
+
 		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
@@ -282,6 +368,10 @@ func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
 	}
 
 	return staker
+}
+
+func (k mockStaker) BondDenom(ctx sdk.Context) string {
+	return "uaxl"
 }
 
 func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {

@@ -132,12 +132,13 @@ func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
 			OperatorAddress: v.OperatorAddress,
 			Moniker:         v.GetMoniker(),
 			TssIllegibilityInfo: types.QueryValidatorsResponse_TssIllegibilityInfo{
-				Tombstoned:          illegibility.Is(exported.Tombstoned),
-				Jailed:              illegibility.Is(exported.Jailed),
-				MissedTooManyBlocks: illegibility.Is(exported.MissedTooManyBlocks),
-				NoProxyRegistered:   illegibility.Is(exported.NoProxyRegistered),
-				TssSuspended:        illegibility.Is(exported.TssSuspended),
-				StaleTssHeartbeat:   !k.tss.IsOperatorAvailable(ctx, v.GetOperator()),
+				Tombstoned:            illegibility.Is(exported.Tombstoned),
+				Jailed:                illegibility.Is(exported.Jailed),
+				MissedTooManyBlocks:   illegibility.Is(exported.MissedTooManyBlocks),
+				NoProxyRegistered:     illegibility.Is(exported.NoProxyRegistered),
+				TssSuspended:          illegibility.Is(exported.TssSuspended),
+				ProxyInsuficientFunds: illegibility.Is(exported.ProxyInsuficientFunds),
+				StaleTssHeartbeat:     !k.tss.IsOperatorAvailable(ctx, v.GetOperator()),
 			},
 		})
 

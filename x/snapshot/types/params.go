@@ -12,6 +12,9 @@ import (
 var (
 	// KeyLockingPeriod is the key for the locking period
 	KeyLockingPeriod = []byte("locking")
+
+	// KeyMinProxyBalance is the key for the minimum proxy balance
+	KeyMinProxyBalance = []byte("minproxybalance")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -22,7 +25,8 @@ func KeyTable() params.KeyTable {
 // DefaultParams - the module's default parameters
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod: 1 * time.Nanosecond,
+		LockingPeriod:   1 * time.Nanosecond,
+		MinProxyBalance: 5000000,
 	}
 }
 
@@ -37,6 +41,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
+		params.NewParamSetPair(KeyMinProxyBalance, &m.MinProxyBalance, validateProxyBalance),
 	}
 }
 
@@ -51,10 +56,26 @@ func validateLockingPeriod(period interface{}) error {
 	return nil
 }
 
+func validateProxyBalance(balance interface{}) error {
+	value, ok := balance.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for minimum proxy balance: %T", value)
+	}
+	if value < 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "minimum proxy balance must be greater than 0")
+	}
+	return nil
+}
+
 // Validate performs a validation check on the parameters
 func (m Params) Validate() error {
 	if err := validateLockingPeriod(m.LockingPeriod); err != nil {
 		return err
 	}
+
+	if err := validateProxyBalance(m.MinProxyBalance); err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
@@ -31,6 +32,7 @@ var _ exported.Snapshotter = Keeper{}
 type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  types.StakingKeeper
+	bank     types.BankKeeper
 	slasher  exported.Slasher
 	tss      exported.Tss
 	cdc      codec.BinaryCodec
@@ -38,11 +40,12 @@ type Keeper struct {
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
 		staking:  staking,
+		bank:     bank,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),
 		slasher:  slasher,
 		tss:      tss,
@@ -128,6 +131,13 @@ func (k Keeper) GetLatestCounter(ctx sdk.Context) int64 {
 	}
 
 	return int64(binary.LittleEndian.Uint64(bz))
+}
+
+// GetMinProxyBalance returns the minimum balance proxies must hold
+func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
+	var minBalance int64
+	k.params.Get(ctx, types.KeyMinProxyBalance, &minBalance)
+	return sdk.NewInt(minBalance)
 }
 
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
@@ -316,6 +326,13 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
 	}
 
+	minBalance := k.GetMinProxyBalance(ctx)
+	denom := k.staking.BondDenom(ctx)
+	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
+		return fmt.Errorf("account %s does not have sufficient funds to become a proxy (minimum %s%s, actual %s)",
+			proxy.String(), minBalance.String(), denom, balance.String())
+	}
+
 	bz := append([]byte{1}, proxy...)
 	ctx.KVStore(k.storeKey).Set(operator, bz)
 
@@ -372,7 +389,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 
 	signedBlocksWindow := k.slasher.SignedBlocksWindow(ctx)
 	signingInfo, signingInfoFound := k.slasher.GetValidatorSigningInfo(ctx, consAddr)
-	_, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
+	proxy, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
 
 	illegibility := exported.None
 
@@ -395,6 +412,12 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 
 	if k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight() {
 		illegibility |= exported.TssSuspended
+	}
+
+	minBalance := k.GetMinProxyBalance(ctx)
+	denom := k.staking.BondDenom(ctx)
+	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
+		illegibility |= exported.ProxyInsuficientFunds
 	}
 
 	return illegibility, nil

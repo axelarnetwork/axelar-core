@@ -1471,6 +1471,7 @@ deposit address
 | VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
 | VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
 | VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
+| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
 
 
  <!-- end enums -->
@@ -3323,6 +3324,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `locking_period` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `min_proxy_balance` | [int64](#int64) |  |  |
 
 
 
@@ -3404,6 +3406,7 @@ GenesisState represents the genesis state
 | `missed_too_many_blocks` | [bool](#bool) |  |  |
 | `no_proxy_registered` | [bool](#bool) |  |  |
 | `tss_suspended` | [bool](#bool) |  |  |
+| `proxy_insuficient_funds` | [bool](#bool) |  |  |
 | `stale_tss_heartbeat` | [bool](#bool) |  |  |
 
 
