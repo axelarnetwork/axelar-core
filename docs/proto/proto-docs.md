@@ -3406,6 +3406,7 @@ GenesisState represents the genesis state
 | `missed_too_many_blocks` | [bool](#bool) |  |  |
 | `no_proxy_registered` | [bool](#bool) |  |  |
 | `tss_suspended` | [bool](#bool) |  |  |
+| `proxy_insuficient_funds` | [bool](#bool) |  |  |
 | `stale_tss_heartbeat` | [bool](#bool) |  |  |
 
 
