@@ -20,7 +20,8 @@ import (
 
 // Query labels
 const (
-	QTokenAddress          = "token-address"
+	QTokenAddressBySymbol  = "token-address-symbol"
+	QTokenAddressByAsset   = "token-address-asset"
 	QDepositState          = "deposit-state"
 	QAddressByKeyRole      = "address-by-key-role"
 	QAddressByKeyID        = "address-by-key-id"
@@ -39,6 +40,12 @@ const (
 	BCGatewayDeployment = "gateway-deployment"
 	BCToken             = "token"
 	BCBurner            = "burner"
+)
+
+//Token address labels
+const (
+	BySymbol = "symbol"
+	ByAsset  = "asset"
 )
 
 // NewQuerier returns a new querier for the evm module
@@ -63,8 +70,10 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return queryNextMasterAddress(ctx, s, n, path[1])
 		case QAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, chainKeeper, n)
-		case QTokenAddress:
-			return QueryTokenAddress(ctx, chainKeeper, n, path[2])
+		case QTokenAddressByAsset:
+			return QueryTokenAddressByAsset(ctx, chainKeeper, n, path[2])
+		case QTokenAddressBySymbol:
+			return QueryTokenAddressBySymbol(ctx, chainKeeper, n, path[2])
 		case QDepositState:
 			return QueryDepositState(ctx, chainKeeper, n, req.Data)
 		case QBatchedCommands:
@@ -252,7 +261,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway address not set"))
 	}
 
-	token := k.GetERC20Token(ctx, params.Asset)
+	token := k.GetERC20TokenByAsset(ctx, params.Asset)
 	if !token.Is(types.Confirmed) {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
 	}
@@ -304,16 +313,31 @@ func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]
 	return addr.Bytes(), nil
 }
 
-// QueryTokenAddress returns the address of the token contract with the given parameters
-func QueryTokenAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
+// QueryTokenAddressByAsset returns the address of the token contract by asset
+func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
-	token := k.GetERC20Token(ctx, asset)
+	token := k.GetERC20TokenByAsset(ctx, asset)
 	if token.Is(types.NonExistent) {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
+	}
+
+	return token.GetAddress().Bytes(), nil
+}
+
+// QueryTokenAddressBySymbol returns the address of the token contract by symbol
+func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
+
+	token := k.GetERC20TokenBySymbol(ctx, symbol)
+	if token.Is(types.NonExistent) {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for symbol '%s' non-existent", symbol))
 	}
 
 	return token.GetAddress().Bytes(), nil

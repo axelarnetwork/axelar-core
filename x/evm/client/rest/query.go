@@ -18,8 +18,9 @@ import (
 
 // query parameters
 const (
-	QueryParamKeyRole = "key_role"
-	QueryParamKeyID   = "key_id"
+	QueryParamKeyRole  = "key_role"
+	QueryParamKeyID    = "key_id"
+	QueryParamLookupBy = "lookup_by"
 )
 
 // GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
@@ -97,6 +98,58 @@ func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, query, chain, param)
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
+			return
+		}
+
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryTokenAddressByAsset returns a handler to query an EVM token address
+func GetHandlerQueryTokenAddressByAsset(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		asset := mux.Vars(r)[utils.PathVarAsset]
+
+		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, asset)
+
+		bz, _, err := cliCtx.Query(path)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
+			return
+		}
+
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryTokenAddressBySymbol returns a handler to query an EVM token address
+func GetHandlerQueryTokenAddressBySymbol(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		symbol := mux.Vars(r)[utils.PathvarSymbol]
+
+		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, symbol)
 
 		bz, _, err := cliCtx.Query(path)
 		if err != nil {
