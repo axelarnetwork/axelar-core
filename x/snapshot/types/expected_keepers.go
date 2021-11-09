@@ -17,7 +17,7 @@ type StakingKeeper interface {
 	BondDenom(ctx sdk.Context) string
 }
 
-// BankKeeper adops the GetBalance function of the bank keeper that is used by this module
+// BankKeeper adopts the GetBalance function of the bank keeper that is used by this module
 type BankKeeper interface {
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 }
