@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
 	counterPrefix = "counter_"
@@ -312,28 +311,16 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 		return fmt.Errorf("address %s already registered as a proxy to another operator", proxy.String())
 	}
 
-	k.Logger(ctx).Debug("getting proxy count")
-	count := k.getProxyCount(ctx)
-
-	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
-	if storedProxy != nil {
-		if !bytes.Equal(storedProxy[1:], proxy) {
-			return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
-				operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
-		}
-
-		ctx.KVStore(k.storeKey).Delete(storedProxy)
-		count--
+	if storedProxy := ctx.KVStore(k.storeKey).Get(operator); storedProxy != nil && !bytes.Equal(storedProxy[1:], proxy) {
+		return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
+			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
 	}
-	k.Logger(ctx).Debug("setting proxy")
-	ctx.KVStore(k.storeKey).Set(proxy, operator)
-	// Creating a reverse lookup
+
 	bz := append([]byte{1}, proxy...)
 	ctx.KVStore(k.storeKey).Set(operator, bz)
-	count++
-	k.Logger(ctx).Debug("setting proxy count")
-	k.setProxyCount(ctx, count)
-	k.Logger(ctx).Debug("done")
+
+	// Reverse lookup
+	ctx.KVStore(k.storeKey).Set(proxy, operator)
 	return nil
 }
 
@@ -375,24 +362,6 @@ func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.Ac
 	addr = bz[1:]
 	active = bz[0] == 1
 	return addr, active
-}
-
-func (k Keeper) setProxyCount(ctx sdk.Context, count int) {
-	k.Logger(ctx).Debug(fmt.Sprintf("number of known proxies: %v", count))
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(count))
-
-	ctx.KVStore(k.storeKey).Set([]byte(proxyCountKey), bz)
-
-}
-
-func (k Keeper) getProxyCount(ctx sdk.Context) int {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(proxyCountKey))
-	if bz == nil {
-		return 0
-	}
-
-	return int(binary.LittleEndian.Uint64(bz))
 }
 
 // GetValidatorIllegibility returns the illegibility of the given validator
