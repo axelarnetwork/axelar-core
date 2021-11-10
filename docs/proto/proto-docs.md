@@ -297,6 +297,8 @@
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
+    - [QueryNextKeyIDRequest](#tss.v1beta1.QueryNextKeyIDRequest)
+    - [QueryNextKeyIDResponse](#tss.v1beta1.QueryNextKeyIDResponse)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
@@ -4205,6 +4207,37 @@ Params is the parameter set for this module
 | `validator_address` | [string](#string) |  |  |
 | `num_validator_shares` | [int64](#int64) |  |  |
 | `num_total_shares` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryNextKeyIDRequest"></a>
+
+### QueryNextKeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryNextKeyIDResponse"></a>
+
+### QueryNextKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
 
 
 

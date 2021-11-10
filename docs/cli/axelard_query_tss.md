@@ -34,5 +34,6 @@ axelard query tss [flags]
 - [axelard query tss key-id](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
 - [axelard query tss key-shares-by-key-id](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
 - [axelard query tss key-shares-by-validator](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
+- [axelard query tss next-key-id](axelard_query_tss_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
 - [axelard query tss recover](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
 - [axelard query tss signature](axelard_query_tss_signature.md)	 - Query a signature by sig ID
