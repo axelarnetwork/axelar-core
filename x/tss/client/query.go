@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+// QueryNextKeyID returns a response that contains the next assigned key ID for the given chain and role
 func QueryNextKeyID(queryRoute string, clientCtx client.Context, chain string, roleStr string) (types.QueryNextKeyIDResponse, error) {
 	request, err := types.NewQueryNextKeyIDRequest(chain, roleStr)
 	if err != nil {
