@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,9 +19,10 @@ import (
 
 // query parameters
 const (
-	QueryParamKeyRole  = "key_role"
-	QueryParamKeyID    = "key_id"
-	QueryParamLookupBy = "lookup_by"
+	QueryParamKeyRole = "key_role"
+	QueryParamKeyID   = "key_id"
+	QueryParamSymbol  = keeper.BySymbol
+	QueryParamAsset   = keeper.ByAsset
 )
 
 // GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
@@ -111,8 +113,8 @@ func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryTokenAddressByAsset returns a handler to query an EVM token address
-func GetHandlerQueryTokenAddressByAsset(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryTokenAddress returns a handler to query an EVM chain address
+func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -121,45 +123,47 @@ func GetHandlerQueryTokenAddressByAsset(cliCtx client.Context) http.HandlerFunc 
 		}
 
 		chain := mux.Vars(r)[utils.PathVarChain]
-		asset := mux.Vars(r)[utils.PathVarAsset]
+		designation := mux.Vars(r)[utils.PathVarDesignation]
 
-		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, asset)
+		var symbol bool
+		var asset bool
+		var err error
+		symbolStr := r.URL.Query().Get(QueryParamSymbol)
+		if symbolStr != "" {
+			symbol, err = strconv.ParseBool(symbolStr)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
+				return
+			}
+		}
 
-		bz, _, err := cliCtx.Query(path)
+		assetStr := r.URL.Query().Get(QueryParamAsset)
+		if assetStr != "" {
+			asset, err = strconv.ParseBool(assetStr)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
+				return
+			}
+		}
+
+		var res []byte
+		switch {
+		case symbol && !asset:
+			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, designation))
+		case !symbol && asset:
+			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, designation))
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "lookup must be either by asset name or symbol")
+			return
+		}
+
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
 			return
 		}
 
-		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
-// GetHandlerQueryTokenAddressBySymbol returns a handler to query an EVM token address
-func GetHandlerQueryTokenAddressBySymbol(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		symbol := mux.Vars(r)[utils.PathvarSymbol]
-
-		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, symbol)
-
-		bz, _, err := cliCtx.Query(path)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
-			return
-		}
-
-		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		rest.PostProcessResponse(w, cliCtx, res)
+		out := common.BytesToAddress(res)
+		rest.PostProcessResponse(w, cliCtx, out)
 	}
 }
 

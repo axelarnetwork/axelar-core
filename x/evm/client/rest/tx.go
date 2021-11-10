@@ -39,8 +39,7 @@ const (
 
 	QueryAddress              = "query-address"
 	QueryBatchedCommands      = "batched-commands"
-	QueryTokenAddressByAsset  = keeper.QTokenAddressByAsset
-	QueryTokenAddressBySymbol = keeper.QTokenAddressBySymbol
+	QueryTokenAddress         = "token-address"
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryBytecode             = keeper.QBytecode
@@ -71,8 +70,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryBatchedCommands(cliCtx), QueryBatchedCommands, clientUtils.PathVarChain, clientUtils.PathVarBatchedCommandsID)
 	registerQuery(GetHandlerQueryLatestBatchedCommands(cliCtx), QueryBatchedCommands, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAddress(cliCtx), QueryAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryTokenAddressByAsset(cliCtx), QueryTokenAddressByAsset, clientUtils.PathVarChain, clientUtils.PathVarAsset)
-	registerQuery(GetHandlerQueryTokenAddressBySymbol(cliCtx), QueryTokenAddressBySymbol, clientUtils.PathVarChain, clientUtils.PathvarSymbol)
+	registerQuery(GetHandlerQueryTokenAddress(cliCtx), QueryTokenAddress, clientUtils.PathVarChain, clientUtils.PathVarDesignation)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
