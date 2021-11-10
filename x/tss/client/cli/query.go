@@ -396,7 +396,7 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 
 			chain := args[0]
 			role := args[1]
-			res, err := tssclient.QueryNextKeyID(queryRoute, clientCtx, chain, role)
+			res, err := tssclient.QueryNextKeyID(clientCtx, chain, role)
 			if err != nil {
 				return err
 			}

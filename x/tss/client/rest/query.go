@@ -173,7 +173,7 @@ func QueryHandlerNextKeyID(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		role := mux.Vars(r)[utils.PathVarKeyRole]
 
-		res, err := tssclient.QueryNextKeyID(types.QuerierRoute, cliCtx, chain, role)
+		res, err := tssclient.QueryNextKeyID(cliCtx, chain, role)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

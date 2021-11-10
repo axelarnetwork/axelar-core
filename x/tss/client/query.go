@@ -10,12 +10,12 @@ import (
 )
 
 // QueryNextKeyID returns a response that contains the next assigned key ID for the given chain and role
-func QueryNextKeyID(queryRoute string, clientCtx client.Context, chain string, roleStr string) (types.QueryNextKeyIDResponse, error) {
+func QueryNextKeyID(clientCtx client.Context, chain string, roleStr string) (types.QueryNextKeyIDResponse, error) {
 	request, err := types.NewQueryNextKeyIDRequest(chain, roleStr)
 	if err != nil {
 		return types.QueryNextKeyIDResponse{}, err
 	}
-	path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryNextKeyID)
+	path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryNextKeyID)
 	bz, err := request.Marshal()
 	if err != nil {
 		return types.QueryNextKeyIDResponse{}, err
