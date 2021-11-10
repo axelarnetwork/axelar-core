@@ -94,7 +94,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
 	defer cancel()
 
-	var pubKeyInfos []tssexported.PubKeyInfo
+	var sigKeyPairs []tssexported.SigKeyPair
 	for i := uint32(0); i < shares; i++ {
 		keyUID := fmt.Sprintf("%s_%d", keyID, i)
 		keygenRequest := &tofnd.KeygenRequest{
@@ -115,7 +115,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to sign")
 			}
-			pubKeyInfos = append(pubKeyInfos, tssexported.PubKeyInfo{PubKey: res.GetPubKey(), Signature: sig})
+			sigKeyPairs = append(sigKeyPairs, tssexported.SigKeyPair{PubKey: res.GetPubKey(), Signature: sig})
 		case *tofnd.KeygenResponse_Error:
 			return sdkerrors.Wrap(err, res.GetError())
 		default:
@@ -124,7 +124,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 	}
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
-	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), pubKeyInfos)
+	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {

@@ -1291,9 +1291,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetMaxSimultaneousSignSharesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetMaxSimultaneousSignShares method")
 // 			},
-// 			GetMultisigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
-// 				panic("mock out the GetMultisig method")
-// 			},
 // 			GetMultisigKeygenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (types.MultisigKeygenInfo, bool) {
 // 				panic("mock out the GetMultisigKeygenInfo method")
 // 			},
@@ -1384,7 +1381,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)  {
 // 				panic("mock out the SetPrivateRecoveryInfo method")
 // 			},
-// 			SetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, signature []byte)  {
+// 			SetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)  {
 // 				panic("mock out the SetSig method")
 // 			},
 // 			SetSigStatusFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
@@ -1481,9 +1478,6 @@ type TSSKeeperMock struct {
 	// GetMaxSimultaneousSignSharesFunc mocks the GetMaxSimultaneousSignShares method.
 	GetMaxSimultaneousSignSharesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
-	// GetMultisigFunc mocks the GetMultisig method.
-	GetMultisigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
-
 	// GetMultisigKeygenInfoFunc mocks the GetMultisigKeygenInfo method.
 	GetMultisigKeygenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (types.MultisigKeygenInfo, bool)
 
@@ -1575,7 +1569,7 @@ type TSSKeeperMock struct {
 	SetPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)
 
 	// SetSigFunc mocks the SetSig method.
-	SetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, signature []byte)
+	SetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)
 
 	// SetSigStatusFunc mocks the SetSigStatus method.
 	SetSigStatusFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -1777,13 +1771,6 @@ type TSSKeeperMock struct {
 		GetMaxSimultaneousSignShares []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// GetMultisig holds details about calls to the GetMultisig method.
-		GetMultisig []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SigID is the sigID argument value.
-			SigID string
 		}
 		// GetMultisigKeygenInfo holds details about calls to the GetMultisigKeygenInfo method.
 		GetMultisigKeygenInfo []struct {
@@ -2027,10 +2014,8 @@ type TSSKeeperMock struct {
 		SetSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SigID is the sigID argument value.
-			SigID string
 			// Signature is the signature argument value.
-			Signature []byte
+			Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 		}
 		// SetSigStatus holds details about calls to the SetSigStatus method.
 		SetSigStatus []struct {
@@ -2112,7 +2097,6 @@ type TSSKeeperMock struct {
 	lockGetKeyRequirement                sync.RWMutex
 	lockGetKeyType                       sync.RWMutex
 	lockGetMaxSimultaneousSignShares     sync.RWMutex
-	lockGetMultisig                      sync.RWMutex
 	lockGetMultisigKeygenInfo            sync.RWMutex
 	lockGetMultisigPubKeysByValidator    sync.RWMutex
 	lockGetMultisigSignInfo              sync.RWMutex
@@ -3016,41 +3000,6 @@ func (mock *TSSKeeperMock) GetMaxSimultaneousSignSharesCalls() []struct {
 	mock.lockGetMaxSimultaneousSignShares.RLock()
 	calls = mock.calls.GetMaxSimultaneousSignShares
 	mock.lockGetMaxSimultaneousSignShares.RUnlock()
-	return calls
-}
-
-// GetMultisig calls GetMultisigFunc.
-func (mock *TSSKeeperMock) GetMultisig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
-	if mock.GetMultisigFunc == nil {
-		panic("TSSKeeperMock.GetMultisigFunc: method is nil but TSSKeeper.GetMultisig was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetMultisig.Lock()
-	mock.calls.GetMultisig = append(mock.calls.GetMultisig, callInfo)
-	mock.lockGetMultisig.Unlock()
-	return mock.GetMultisigFunc(ctx, sigID)
-}
-
-// GetMultisigCalls gets all the calls that were made to GetMultisig.
-// Check the length with:
-//     len(mockedTSSKeeper.GetMultisigCalls())
-func (mock *TSSKeeperMock) GetMultisigCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}
-	mock.lockGetMultisig.RLock()
-	calls = mock.calls.GetMultisig
-	mock.lockGetMultisig.RUnlock()
 	return calls
 }
 
@@ -4160,23 +4109,21 @@ func (mock *TSSKeeperMock) SetPrivateRecoveryInfoCalls() []struct {
 }
 
 // SetSig calls SetSigFunc.
-func (mock *TSSKeeperMock) SetSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, signature []byte) {
+func (mock *TSSKeeperMock) SetSig(ctx github_com_cosmos_cosmos_sdk_types.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) {
 	if mock.SetSigFunc == nil {
 		panic("TSSKeeperMock.SetSigFunc: method is nil but TSSKeeper.SetSig was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		SigID     string
-		Signature []byte
+		Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 	}{
 		Ctx:       ctx,
-		SigID:     sigID,
 		Signature: signature,
 	}
 	mock.lockSetSig.Lock()
 	mock.calls.SetSig = append(mock.calls.SetSig, callInfo)
 	mock.lockSetSig.Unlock()
-	mock.SetSigFunc(ctx, sigID, signature)
+	mock.SetSigFunc(ctx, signature)
 }
 
 // SetSigCalls gets all the calls that were made to SetSig.
@@ -4184,13 +4131,11 @@ func (mock *TSSKeeperMock) SetSig(ctx github_com_cosmos_cosmos_sdk_types.Context
 //     len(mockedTSSKeeper.SetSigCalls())
 func (mock *TSSKeeperMock) SetSigCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	SigID     string
-	Signature []byte
+	Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		SigID     string
-		Signature []byte
+		Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 	}
 	mock.lockSetSig.RLock()
 	calls = mock.calls.SetSig

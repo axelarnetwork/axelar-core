@@ -62,7 +62,7 @@ func GetCmdGetSig(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QuerySignatureResponse
-			if err := types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res); err != nil {
+			if err := res.Unmarshal(bz); err != nil {
 				return sdkerrors.Wrapf(err, "failed to get signature")
 			}
 

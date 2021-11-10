@@ -10,8 +10,8 @@ import (
 )
 
 // NewSubmitMultiSigPubKeysRequest constructor for SubmitMultiSigPubKeysRequest
-func NewSubmitMultiSigPubKeysRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKeyInfos []exported.PubKeyInfo) *SubmitMultisigPubKeysRequest {
-	return &SubmitMultisigPubKeysRequest{Sender: sender, KeyID: keyID, PubKeyInfos: pubKeyInfos}
+func NewSubmitMultiSigPubKeysRequest(sender sdk.AccAddress, keyID exported.KeyID, sigKeyPairs []exported.SigKeyPair) *SubmitMultisigPubKeysRequest {
+	return &SubmitMultisigPubKeysRequest{Sender: sender, KeyID: keyID, SigKeyPairs: sigKeyPairs}
 }
 
 // Route implements the sdk.Msg interface.
@@ -33,7 +33,7 @@ func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
 
 	// check uniqueness
 	seen := map[string]bool{}
-	for _, info := range m.PubKeyInfos {
+	for _, info := range m.SigKeyPairs {
 		if err := info.Validate(); err != nil {
 			return nil
 		}

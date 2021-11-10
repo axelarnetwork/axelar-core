@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -91,8 +90,8 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 	case exported.Multisig:
 		// init multisig key info
 		multisigSignInfo := types.MultisigInfo{
-			ID:           info.SigID,
-			Timeout:      ctx.BlockHeight() + keyRequirement.SignTimeout,
+			ID:        info.SigID,
+			Timeout:   ctx.BlockHeight() + keyRequirement.SignTimeout,
 			TargetNum: snap.CorruptionThreshold + 1,
 		}
 		k.SetMultisigSignInfo(ctx, multisigSignInfo)
@@ -132,23 +131,20 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, expor
 		return exported.Signature{}, status
 	}
 
-	bz := k.getStore(ctx).GetRaw(sigPrefix.AppendStr(sigID))
-	if bz == nil {
+	var signature exported.Signature
+	ok := k.getStore(ctx).Get(sigPrefix.AppendStr(sigID), &signature)
+	if !ok {
 		return exported.Signature{}, exported.SigStatus_Invalid
 	}
 
-	btcecSig, err := btcec.ParseDERSignature(bz, btcec.S256())
-	if err != nil {
-		return exported.Signature{}, exported.SigStatus_Invalid
-	}
-
-	return exported.Signature{R: btcecSig.R, S: btcecSig.S}, exported.SigStatus_Signed
+	return signature, exported.SigStatus_Signed
 }
 
-// SetSig stores the given signature by its ID
-func (k Keeper) SetSig(ctx sdk.Context, sigID string, signature []byte) {
-	k.getStore(ctx).SetRaw(sigPrefix.AppendStr(sigID), signature)
+// SetSig stores the given signature
+func (k Keeper) SetSig(ctx sdk.Context,  signature exported.Signature) {
+	k.getStore(ctx).Set(sigPrefix.AppendStr(signature.SigID), &signature)
 }
+
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
@@ -360,21 +356,6 @@ func (k Keeper) SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.Va
 	k.SetMultisigSignInfo(ctx, signInfo)
 
 	return true
-}
-
-// GetMultisig returns the list of signatures associated with sigID
-// or nil if no such signature exists
-func (k Keeper) GetMultisig(ctx sdk.Context, sigID string) ([]exported.Signature, exported.SigStatus) {
-	status := k.getSigStatus(ctx, sigID)
-	if status != exported.SigStatus_Signed {
-		return nil, status
-	}
-
-	multiSigSignInfo, ok := k.GetMultisigSignInfo(ctx, sigID)
-	if !ok {
-		return nil, exported.SigStatus_Invalid
-	}
-	return multiSigSignInfo.GetSigs(), exported.SigStatus_Signed
 }
 
 // DeleteMultisigSign deletes the multisig sign info for the given sig ID

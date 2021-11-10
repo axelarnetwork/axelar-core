@@ -378,8 +378,15 @@ func (k chainKeeper) AssembleTx(ctx sdk.Context, txID string, sig tss.Signature)
 	}
 
 	signer := k.getSigner(ctx)
-
-	recoverableSig, err := types.ToSignature(sig, signer.Hash(&rawTx), *pk)
+	//TODO: Do we still need AssembleTx
+	if sig.GetSingleSig() == nil {
+		return nil, fmt.Errorf("expect threshold signature")
+	}
+	signature, err := sig.GetSingleSig().SigKeyPair.GetSig()
+	if err != nil {
+		return nil, err
+	}
+	recoverableSig, err := types.ToSignature(signature, signer.Hash(&rawTx), *pk)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}

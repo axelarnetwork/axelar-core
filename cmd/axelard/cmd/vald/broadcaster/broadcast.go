@@ -105,6 +105,9 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 		return nil, fmt.Errorf("messages must have at least one signer")
 	}
 
+	//TODO: proper way to handle gas adjustment
+	txf = txf.WithGasAdjustment(4)
+
 	if txf.SimulateAndExecute() || ctx.Simulate {
 		_, adjusted, err := tx.CalculateGas(ctx, txf, msgs...)
 		if err != nil {

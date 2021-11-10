@@ -25,7 +25,7 @@ message QueryBatchedCommandsResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
-  string signature = 5;
+  repeated string signature = 5;
   string execute_data = 6;
   string prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];

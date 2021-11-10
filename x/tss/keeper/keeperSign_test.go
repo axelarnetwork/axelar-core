@@ -326,7 +326,7 @@ func TestMultisigSign(t *testing.T) {
 		multisigSign, ok := s.Keeper.GetMultisigSignInfo(s.Ctx, sigID)
 		assert.True(t, ok)
 		assert.Equal(t, int64(0), multisigSign.Count())
-		assert.Len(t, multisigSign.GetSigs(), 0)
+		assert.Len(t, multisigSign.GetSigKeyPairs(), 0)
 		assert.False(t, multisigSign.IsCompleted())
 		keyRequirement, _ := s.Keeper.GetKeyRequirement(s.Ctx, exported.MasterKey, exported.Multisig)
 		expectedTimeoutBlock := s.Ctx.BlockHeight() + keyRequirement.SignTimeout
@@ -374,18 +374,21 @@ func TestMultisigSign(t *testing.T) {
 		assert.NoError(t, err)
 
 		sigCount := int64(0)
-		var expectedSigs []exported.Signature
+		var expectedPairs []exported.SigKeyPair
 		for _, v := range snap.Validators {
 			// random sigs
-			var sigs [][]byte
+			var pairs [][]byte
 			for i := int64(0); i < v.ShareCount; i++ {
 				privKey, _ := btcec.NewPrivateKey(btcec.S256())
+				pk := privKey.PubKey()
 				d := sha256.Sum256(msgToSign)
 				sig, _ := privKey.Sign(d[:])
-				sigs = append(sigs, sig.Serialize())
-				expectedSigs = append(expectedSigs, exported.Signature{R: sig.R, S: sig.S})
+				pair := exported.SigKeyPair{PubKey: pk.SerializeCompressed(), Signature: sig.Serialize()}
+				bz, _ := pair.Marshal()
+				pairs = append(pairs, bz)
+				expectedPairs = append(expectedPairs, exported.SigKeyPair{PubKey: pk.SerializeCompressed(), Signature: sig.Serialize()})
 			}
-			ok := s.Keeper.SubmitSignatures(s.Ctx, sigID, v.GetSDKValidator().GetOperator(), sigs...)
+			ok := s.Keeper.SubmitSignatures(s.Ctx, sigID, v.GetSDKValidator().GetOperator(), pairs...)
 			sigCount += v.ShareCount
 			assert.True(t, ok)
 
@@ -393,7 +396,7 @@ func TestMultisigSign(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, sigCount, multisigSign.Count())
 			assert.True(t, multisigSign.DoesParticipate(v.GetSDKValidator().GetOperator()))
-			assert.Equal(t, expectedSigs, multisigSign.GetSigs())
+			assert.Equal(t, expectedPairs, multisigSign.GetSigKeyPairs())
 		}
 
 	}).Repeat(repeats))

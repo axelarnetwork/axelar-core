@@ -515,8 +515,21 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	case *tofnd.MessageOut_SignResult:
 
 		if signature := signResult.GetSignature(); signature != nil {
-			s.SetSig(ctx, req.PollKey.ID, signature)
-			s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Signed)
+			key, _ := s.GetKey(ctx, info.KeyID)
+			btcecPK := btcec.PublicKey(key.Value)
+
+			s.SetSig(ctx, exported.Signature{
+				SigID: req.PollKey.ID,
+				Sig: &exported.Signature_SingleSig_{
+					SingleSig: &exported.Signature_SingleSig{
+						SigKeyPair: exported.SigKeyPair{
+							PubKey:    btcecPK.SerializeCompressed(),
+							Signature: signature,
+						},
+					},
+				},
+				SigStatus: exported.SigStatus_Signed,
+			})
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
 			event = event.AppendAttributes(
@@ -580,21 +593,21 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 		return nil, fmt.Errorf("multisig keygen %s has completed", req.KeyID)
 	}
 
-	if int64(len(req.PubKeyInfos)) != val.ShareCount {
-		return nil, fmt.Errorf("expect %d pub keys, got %d", val.ShareCount, len(req.PubKeyInfos))
+	if int64(len(req.SigKeyPairs)) != val.ShareCount {
+		return nil, fmt.Errorf("expect %d pub keys, got %d", val.ShareCount, len(req.SigKeyPairs))
 	}
 
 	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig pubkeys for operator %s (proxy address %s): %v",
-		req.KeyID, validator.String(), req.Sender, req.PubKeyInfos))
+		req.KeyID, validator.String(), req.Sender, req.SigKeyPairs))
 
 	var pks [][]byte
-	for _, info := range req.PubKeyInfos {
-		pubKey, err := btcec.ParsePubKey(info.PubKey, btcec.S256())
+	for _, pair := range req.SigKeyPairs {
+		pubKey, err := btcec.ParsePubKey(pair.PubKey, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
-		sig, err := btcec.ParseDERSignature(info.Signature, btcec.S256())
+		sig, err := btcec.ParseDERSignature(pair.Signature, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse signature bytes: [%w]", err)
 		}
@@ -604,7 +617,7 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 			return nil, fmt.Errorf("signature is invalid")
 		}
 
-		pks = append(pks, info.PubKey)
+		pks = append(pks, pair.PubKey)
 	}
 
 	ok = s.SubmitPubKeys(ctx, req.KeyID, validator, pks...)
@@ -632,7 +645,7 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.SubmitMultisigSignaturesRequest) (*types.SubmitMultisigSignaturesResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, status := s.GetMultisig(ctx, req.SigID); status == exported.SigStatus_Signed {
+	if _, status := s.GetSig(ctx, req.SigID); status == exported.SigStatus_Signed {
 		// the signature is already set, no need for further processing of the vote
 		s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.SigID))
 		return &types.SubmitMultisigSignaturesResponse{}, nil
@@ -660,7 +673,7 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig signatures for operator %s (proxy address %s): %v",
 		req.SigID, valAddr, req.Sender, req.Signatures))
 
-	var sigs [][]byte
+	var sigKeyPairs [][]byte
 	for i, signature := range req.Signatures {
 		sig, err := btcec.ParseDERSignature(signature, btcec.S256())
 		if err != nil {
@@ -672,10 +685,15 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 			return nil, fmt.Errorf("signature is invalid")
 		}
 
-		sigs = append(sigs, signature)
+		sigKeyPair := exported.SigKeyPair{PubKey: p.SerializeCompressed(), Signature: signature}
+		bz, err := sigKeyPair.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		sigKeyPairs = append(sigKeyPairs, bz)
 	}
 
-	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigs...)
+	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...)
 	if !ok {
 		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
 		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
@@ -686,6 +704,15 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 
 	if multisigSignInfo.IsCompleted() {
 		s.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signed)
+		s.SetSig(ctx, exported.Signature{
+			SigID: info.SigID,
+			Sig: &exported.Signature_MultiSig_{
+				MultiSig: &exported.Signature_MultiSig{
+					SigKeyPairs: multisigSignInfo.GetSigKeyPairs(),
+				},
+			},
+			SigStatus: exported.SigStatus_Signed,
+		})
 		s.route(ctx, info)
 
 		s.Logger(ctx).Debug(fmt.Sprintf("multisig sign %s completed", req.SigID))

@@ -16,8 +16,20 @@ message QuerySignatureResponse {
     string s = 2;
   }
 
-  VoteStatus vote_status = 1;
-  Signature signature = 2;
+  message ThresholdSignature {
+    VoteStatus vote_status = 1;
+    Signature signature = 2;
+  }
+
+  message MultisigSignature {
+    exported.v1beta1.SigStatus sig_status = 1;
+    repeated Signature signatures = 2 [ (gogoproto.nullable) = false ];
+  }
+
+  oneof sig {
+    ThresholdSignature threshold_signature = 1;
+    MultisigSignature multisig_signature = 2;
+  }
 }
 
 message QueryKeyResponse {
