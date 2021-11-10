@@ -115,3 +115,16 @@ message QueryExternalKeyIDResponse {
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
+
+message QueryNextKeyIDRequest {
+  string chain = 1;
+  tss.exported.v1beta1.KeyRole key_role = 2;
+}
+
+message QueryNextKeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}

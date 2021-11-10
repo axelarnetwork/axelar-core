@@ -147,6 +147,7 @@
       - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
       - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
       - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
+      - [next-key-id \[chain\] \[role\]](axelard_query_tss_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
       - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
       - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block

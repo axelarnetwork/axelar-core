@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	tssclient "github.com/axelarnetwork/axelar-core/x/tss/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -32,6 +33,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetKey(queryRoute),
 		GetCmdRecovery(queryRoute),
 		GetCmdGetKeyID(queryRoute),
+		GetCmdNextKeyID(queryRoute),
 		GetCmdGetKeySharesByKeyID(queryRoute),
 		GetCmdGetKeySharesByValidator(queryRoute),
 		GetCmdGetActiveOldKeys(queryRoute),
@@ -372,6 +374,32 @@ func GetCmdExternalKeyID(queryRoute string) *cobra.Command {
 			var res types.QueryExternalKeyIDResponse
 			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
+			return clientCtx.PrintProto(&res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdNextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role
+func GetCmdNextKeyID(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "next-key-id [chain] [role]",
+		Short: "Returns the key ID assigned for the next rotation on a given chain and for the given key role",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			role := args[1]
+			res, err := tssclient.QueryNextKeyID(queryRoute, clientCtx, chain, role)
+			if err != nil {
+				return err
+			}
 			return clientCtx.PrintProto(&res)
 		},
 	}
