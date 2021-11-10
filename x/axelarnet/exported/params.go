@@ -11,6 +11,6 @@ var (
 		Name:                  "Axelarnet",
 		NativeAsset:           "uaxl",
 		SupportsForeignAssets: true,
-		KeyType:               tss.Multisig,
+		KeyType:               tss.None,
 	}
 )

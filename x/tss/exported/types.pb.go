@@ -152,20 +152,23 @@ type KeyType int32
 
 const (
 	KEY_TYPE_UNSPECIFIED KeyType = 0
-	Threshold            KeyType = 1
-	Multisig             KeyType = 2
+	None                 KeyType = 1
+	Threshold            KeyType = 2
+	Multisig             KeyType = 3
 )
 
 var KeyType_name = map[int32]string{
 	0: "KEY_TYPE_UNSPECIFIED",
-	1: "KEY_TYPE_THRESHOLD",
-	2: "KEY_TYPE_MULTISIG",
+	1: "KEY_TYPE_NONE",
+	2: "KEY_TYPE_THRESHOLD",
+	3: "KEY_TYPE_MULTISIG",
 }
 
 var KeyType_value = map[string]int32{
 	"KEY_TYPE_UNSPECIFIED": 0,
-	"KEY_TYPE_THRESHOLD":   1,
-	"KEY_TYPE_MULTISIG":    2,
+	"KEY_TYPE_NONE":        1,
+	"KEY_TYPE_THRESHOLD":   2,
+	"KEY_TYPE_MULTISIG":    3,
 }
 
 func (x KeyType) String() string {
