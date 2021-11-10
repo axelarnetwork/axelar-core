@@ -91,7 +91,23 @@ enum KeyType {
 }
 
 // PubKeyInfo holds a pubkey and a signature
-message PubKeyInfo {
+message SigKeyPair {
   bytes pub_key = 1;
   bytes signature = 2;
+}
+
+// Signature holds public key and ECDSA signature
+message Signature {
+  message SingleSig {
+    SigKeyPair sig_key_pair = 1 [ (gogoproto.nullable) = false ];
+  }
+  message MultiSig {
+    repeated SigKeyPair sig_key_pairs = 1 [ (gogoproto.nullable) = false ];
+  }
+  string sig_id = 1 [ (gogoproto.customname) = "SigID" ];
+  oneof sig {
+    SingleSig single_sig = 2;
+    MultiSig multi_sig = 3;
+  }
+  SigStatus sig_status = 4;
 }

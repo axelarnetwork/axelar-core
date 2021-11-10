@@ -15,8 +15,11 @@
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
-    - [PubKeyInfo](#tss.exported.v1beta1.PubKeyInfo)
+    - [SigKeyPair](#tss.exported.v1beta1.SigKeyPair)
     - [SignInfo](#tss.exported.v1beta1.SignInfo)
+    - [Signature](#tss.exported.v1beta1.Signature)
+    - [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig)
+    - [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig)
   
     - [AckType](#tss.exported.v1beta1.AckType)
     - [KeyRole](#tss.exported.v1beta1.KeyRole)
@@ -296,7 +299,9 @@
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
+    - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
+    - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -470,9 +475,9 @@ KeyRequirement defines requirements for keys
 
 
 
-<a name="tss.exported.v1beta1.PubKeyInfo"></a>
+<a name="tss.exported.v1beta1.SigKeyPair"></a>
 
-### PubKeyInfo
+### SigKeyPair
 PubKeyInfo holds a pubkey and a signature
 
 
@@ -500,6 +505,54 @@ SignInfo holds information about a sign request
 | `snapshot_counter` | [int64](#int64) |  |  |
 | `request_module` | [string](#string) |  |  |
 | `metadata` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature"></a>
+
+### Signature
+Signature holds public key and ECDSA signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_id` | [string](#string) |  |  |
+| `single_sig` | [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig) |  |  |
+| `multi_sig` | [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig) |  |  |
+| `sig_status` | [SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature.MultiSig"></a>
+
+### Signature.MultiSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pairs` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) | repeated |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature.SingleSig"></a>
+
+### Signature.SingleSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pair` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) |  |  |
 
 
 
@@ -2321,7 +2374,7 @@ deposit address
 | `data` | [string](#string) |  |  |
 | `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `signature` | [string](#string) |  |  |
+| `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
 
@@ -4184,8 +4237,24 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
-| `signature` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
+| `threshold_signature` | [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature) |  |  |
+| `multisig_signature` | [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse.MultisigSignature"></a>
+
+### QuerySignatureResponse.MultisigSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_status` | [tss.exported.v1beta1.SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
+| `signatures` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) | repeated |  |
 
 
 
@@ -4202,6 +4271,22 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `r` | [string](#string) |  |  |
 | `s` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse.ThresholdSignature"></a>
+
+### QuerySignatureResponse.ThresholdSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `signature` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
 
 
 
@@ -4514,7 +4599,7 @@ StartKeygenRequest indicate the start of keygen
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `pub_key_infos` | [tss.exported.v1beta1.PubKeyInfo](#tss.exported.v1beta1.PubKeyInfo) | repeated |  |
+| `sig_key_pairs` | [tss.exported.v1beta1.SigKeyPair](#tss.exported.v1beta1.SigKeyPair) | repeated |  |
 
 
 

@@ -145,27 +145,66 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sigID string) ([]byte, error) {
 	if sig, status := k.GetSig(ctx, sigID); status == exported.SigStatus_Signed {
 		// poll was successful
-		res := types.QuerySignatureResponse{
-			VoteStatus: types.Decided,
-			Signature: &types.QuerySignatureResponse_Signature{
-				R: hex.EncodeToString(sig.R.Bytes()),
-				S: hex.EncodeToString(sig.S.Bytes()),
-			},
+		switch signature := sig.GetSig().(type) {
+		case *exported.Signature_SingleSig_:
+			btcecSig, _ := signature.GetSignature()
+			res := types.QuerySignatureResponse{
+				Sig: &types.QuerySignatureResponse_ThresholdSignature_{
+					ThresholdSignature: &types.QuerySignatureResponse_ThresholdSignature{
+						VoteStatus: types.Decided,
+						Signature: &types.QuerySignatureResponse_Signature{
+							R: hex.EncodeToString(btcecSig.R.Bytes()),
+							S: hex.EncodeToString(btcecSig.S.Bytes()),
+						},
+					},
+				},
+			}
+			return res.Marshal()
+		case *exported.Signature_MultiSig_:
+			btcecSigs, err := signature.GetSignature()
+			if err != nil {
+				return nil, err
+			}
+			var signatures []types.QuerySignatureResponse_Signature
+			for _, btcecSig := range btcecSigs {
+				signatures = append(signatures, types.QuerySignatureResponse_Signature{
+					R: hex.EncodeToString(btcecSig.R.Bytes()),
+					S: hex.EncodeToString(btcecSig.S.Bytes()),
+				})
+			}
+			res := types.QuerySignatureResponse{
+				Sig: &types.QuerySignatureResponse_MultisigSignature_{
+					MultisigSignature: &types.QuerySignatureResponse_MultisigSignature{
+						SigStatus:  sig.SigStatus,
+						Signatures: signatures,
+					},
+				},
+			}
+			return res.Marshal()
+		default:
+			return nil, fmt.Errorf("unexpected signature type %T", signature)
 		}
 
-		return types.ModuleCdc.MarshalLengthPrefixed(&res)
 	}
 
-	var res types.QuerySignatureResponse
+	//TODO: signature might be in progress, should get sig type by sigID
 	pollMeta := voting.NewPollKey(types.ModuleName, sigID)
-
+	var voteStatue types.VoteStatus
 	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
-		res.VoteStatus = types.NotFound
+		voteStatue = types.NotFound
 	} else {
-		res.VoteStatus = types.Pending
+		voteStatue = types.Pending
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&res)
+	res := types.QuerySignatureResponse{
+		Sig: &types.QuerySignatureResponse_ThresholdSignature_{
+			ThresholdSignature: &types.QuerySignatureResponse_ThresholdSignature{
+				VoteStatus: voteStatue,
+			},
+		},
+	}
+
+	return res.Marshal()
 }
 
 func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {

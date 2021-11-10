@@ -89,7 +89,7 @@ type InitPoller = interface {
 // Signer provides keygen and signing functionality
 type Signer interface {
 	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
-	SetSig(ctx sdk.Context, sigID string, signature []byte)
+	SetSig(ctx sdk.Context,  signature tss.Signature)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
 	SetInfoForSig(ctx sdk.Context, sigID string, info tss.SignInfo)

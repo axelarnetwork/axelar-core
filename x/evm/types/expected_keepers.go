@@ -144,7 +144,6 @@ type Signer interface {
 	GetMultisigPubKey(ctx sdk.Context, keyID tss.KeyID) (tss.MultisigKey, bool)
 	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
 	GetKeyType(ctx sdk.Context, keyID tss.KeyID) tss.KeyType
-	GetMultisig(ctx sdk.Context, sigID string) ([]tss.Signature, tss.SigStatus)
 }
 
 // Snapshotter provides access to the snapshot functionality

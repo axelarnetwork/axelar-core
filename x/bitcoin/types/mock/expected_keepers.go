@@ -280,7 +280,7 @@ var _ types.Signer = &SignerMock{}
 // 			SetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)  {
 // 				panic("mock out the SetKey method")
 // 			},
-// 			SetSigFunc: func(ctx sdk.Context, sigID string, signature []byte)  {
+// 			SetSigFunc: func(ctx sdk.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)  {
 // 				panic("mock out the SetSig method")
 // 			},
 // 			SetSigStatusFunc: func(ctx sdk.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
@@ -354,7 +354,7 @@ type SignerMock struct {
 	SetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)
 
 	// SetSigFunc mocks the SetSig method.
-	SetSigFunc func(ctx sdk.Context, sigID string, signature []byte)
+	SetSigFunc func(ctx sdk.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)
 
 	// SetSigStatusFunc mocks the SetSigStatus method.
 	SetSigStatusFunc func(ctx sdk.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -529,10 +529,8 @@ type SignerMock struct {
 		SetSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
 			// Signature is the signature argument value.
-			Signature []byte
+			Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 		}
 		// SetSigStatus holds details about calls to the SetSigStatus method.
 		SetSigStatus []struct {
@@ -1299,23 +1297,21 @@ func (mock *SignerMock) SetKeyCalls() []struct {
 }
 
 // SetSig calls SetSigFunc.
-func (mock *SignerMock) SetSig(ctx sdk.Context, sigID string, signature []byte) {
+func (mock *SignerMock) SetSig(ctx sdk.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) {
 	if mock.SetSigFunc == nil {
 		panic("SignerMock.SetSigFunc: method is nil but Signer.SetSig was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
-		SigID     string
-		Signature []byte
+		Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 	}{
 		Ctx:       ctx,
-		SigID:     sigID,
 		Signature: signature,
 	}
 	mock.lockSetSig.Lock()
 	mock.calls.SetSig = append(mock.calls.SetSig, callInfo)
 	mock.lockSetSig.Unlock()
-	mock.SetSigFunc(ctx, sigID, signature)
+	mock.SetSigFunc(ctx, signature)
 }
 
 // SetSigCalls gets all the calls that were made to SetSig.
@@ -1323,13 +1319,11 @@ func (mock *SignerMock) SetSig(ctx sdk.Context, sigID string, signature []byte) 
 //     len(mockedSigner.SetSigCalls())
 func (mock *SignerMock) SetSigCalls() []struct {
 	Ctx       sdk.Context
-	SigID     string
-	Signature []byte
+	Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 } {
 	var calls []struct {
 		Ctx       sdk.Context
-		SigID     string
-		Signature []byte
+		Signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 	}
 	mock.lockSetSig.RLock()
 	calls = mock.calls.SetSig

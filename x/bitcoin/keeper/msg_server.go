@@ -70,8 +70,19 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 	}
 
 	sigID := getSigID(req.SigHash, req.KeyID)
-	s.signer.SetSig(ctx, sigID, req.Signature)
-	s.signer.SetSigStatus(ctx, sigID, tss.SigStatus_Signed)
+	btcecPK := btcec.PublicKey(externalKey.Value)
+	s.signer.SetSig(ctx, tss.Signature{
+		SigID: sigID,
+		Sig: &tss.Signature_SingleSig_{
+			SingleSig: &tss.Signature_SingleSig{
+				SigKeyPair: tss.SigKeyPair{
+					PubKey:    btcecPK.SerializeCompressed(),
+					Signature: req.Signature,
+				},
+			},
+		},
+		SigStatus: tss.SigStatus_Signed,
+	})
 
 	info := tss.SignInfo{
 		KeyID: req.KeyID,

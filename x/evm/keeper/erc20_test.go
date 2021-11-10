@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
@@ -108,7 +108,7 @@ func TestSig(t *testing.T) {
 
 		hash := signer.Hash(tx1)
 
-		sig, err := types.ToSignature(tss.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
+		sig, err := types.ToSignature(btcec.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
 		assert.NoError(t, err)
 
 		recoveredPK, err := crypto.SigToPub(hash.Bytes(), sig[:])

@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -308,7 +309,7 @@ func (h Hash) Size() int {
 type Signature [crypto.SignatureLength]byte
 
 // ToSignature transforms an Axelar generated signature into a recoverable signature
-func ToSignature(sig tss.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
+func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
 	copy(s[:32], common.LeftPadBytes(sig.R.Bytes(), 32))
 	copy(s[32:], common.LeftPadBytes(sig.S.Bytes(), 32))

@@ -34,7 +34,7 @@ type MultisigKeygenInfo interface {
 // MultisigSignInfo is an interface for multisig sign info
 type MultisigSignInfo interface {
 	MultisigBaseInfo
-	GetSigs() []exported.Signature
+	GetSigKeyPairs() []exported.SigKeyPair
 }
 
 // HasData checks duplicate data
@@ -129,20 +129,20 @@ func (m MultisigInfo) GetPubKeysByValidator(val sdk.ValAddress) []ecdsa.PublicKe
 	return pubKeys
 }
 
-// GetSigs returns list of all signatures
-func (m MultisigInfo) GetSigs() []exported.Signature {
-	var signatures []exported.Signature
+// GetSigKeyPairs returns list of pub key and signature pairs
+func (m MultisigInfo) GetSigKeyPairs() []exported.SigKeyPair {
+	var pairs []exported.SigKeyPair
 	for _, info := range m.Infos {
-		for _, sig := range info.Data {
-			btcecSig, err := btcec.ParseDERSignature(sig, btcec.S256())
-			// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
+		for _, sigKeyPair := range info.Data {
+			var pair exported.SigKeyPair
+
+			err := pair.Unmarshal(sigKeyPair)
 			if err != nil {
 				panic(err)
 			}
-
-			signatures = append(signatures, exported.Signature{R: btcecSig.R, S: btcecSig.S})
+			pairs = append(pairs, pair)
 		}
 	}
 
-	return signatures
+	return pairs
 }

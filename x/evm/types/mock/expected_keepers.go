@@ -329,9 +329,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyTypeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType {
 // 				panic("mock out the GetKeyType method")
 // 			},
-// 			GetMultisigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
-// 				panic("mock out the GetMultisig method")
-// 			},
 // 			GetMultisigPubKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.MultisigKey, bool) {
 // 				panic("mock out the GetMultisigPubKey method")
 // 			},
@@ -386,9 +383,6 @@ type SignerMock struct {
 
 	// GetKeyTypeFunc mocks the GetKeyType method.
 	GetKeyTypeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-
-	// GetMultisigFunc mocks the GetMultisig method.
-	GetMultisigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
 
 	// GetMultisigPubKeyFunc mocks the GetMultisigPubKey method.
 	GetMultisigPubKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.MultisigKey, bool)
@@ -496,13 +490,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetMultisig holds details about calls to the GetMultisig method.
-		GetMultisig []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetMultisigPubKey holds details about calls to the GetMultisigPubKey method.
 		GetMultisigPubKey []struct {
 			// Ctx is the ctx argument value.
@@ -566,7 +553,6 @@ type SignerMock struct {
 	lockGetKeyForSigID               sync.RWMutex
 	lockGetKeyRequirement            sync.RWMutex
 	lockGetKeyType                   sync.RWMutex
-	lockGetMultisig                  sync.RWMutex
 	lockGetMultisigPubKey            sync.RWMutex
 	lockGetNextKey                   sync.RWMutex
 	lockGetSig                       sync.RWMutex
@@ -950,41 +936,6 @@ func (mock *SignerMock) GetKeyTypeCalls() []struct {
 	mock.lockGetKeyType.RLock()
 	calls = mock.calls.GetKeyType
 	mock.lockGetKeyType.RUnlock()
-	return calls
-}
-
-// GetMultisig calls GetMultisigFunc.
-func (mock *SignerMock) GetMultisig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
-	if mock.GetMultisigFunc == nil {
-		panic("SignerMock.GetMultisigFunc: method is nil but Signer.GetMultisig was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetMultisig.Lock()
-	mock.calls.GetMultisig = append(mock.calls.GetMultisig, callInfo)
-	mock.lockGetMultisig.Unlock()
-	return mock.GetMultisigFunc(ctx, sigID)
-}
-
-// GetMultisigCalls gets all the calls that were made to GetMultisig.
-// Check the length with:
-//     len(mockedSigner.GetMultisigCalls())
-func (mock *SignerMock) GetMultisigCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}
-	mock.lockGetMultisig.RLock()
-	calls = mock.calls.GetMultisig
-	mock.lockGetMultisig.RUnlock()
 	return calls
 }
 

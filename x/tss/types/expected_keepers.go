@@ -79,7 +79,7 @@ type TSSKeeper interface {
 	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
-	SetSig(ctx sdk.Context, sigID string, signature []byte)
+	SetSig(ctx sdk.Context, signature exported.Signature)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
 	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
@@ -127,7 +127,6 @@ type TSSKeeper interface {
 	SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool
 	GetMultisigSignInfo(ctx sdk.Context, sigID string) (MultisigSignInfo, bool)
 	DeleteMultisigSign(ctx sdk.Context, signID string)
-	GetMultisig(ctx sdk.Context, sigID string) ([]exported.Signature, exported.SigStatus)
 }
 
 // Rewarder provides reward functionality

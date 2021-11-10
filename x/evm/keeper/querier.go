@@ -115,19 +115,38 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
 		}
 
-		key, ok := s.GetKey(ctx, batchedCommands.GetKeyID())
-		if !ok {
-			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding key for batched commands with ID %s", batchedCommandsIDHex))
-		}
+		var executeData []byte
+		var signatures []string
+		switch signature := sig.GetSig().(type) {
+		case *tss.Signature_SingleSig_:
+			batchedCommandsSig, err := getBatchedCommandsSig(signature.SingleSig.SigKeyPair, batchedCommands.GetSigHash())
+			if err != nil {
+				return resp, err
+			}
 
-		batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands.GetSigHash()), key.Value)
-		if err != nil {
-			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
-		}
+			executeData, err = types.CreateExecuteDataSinglesig(batchedCommands.GetData(), batchedCommandsSig)
+			if err != nil {
+				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+			}
 
-		executeData, err := types.CreateExecuteDataSinglesig(batchedCommands.GetData(), batchedCommandsSig)
-		if err != nil {
-			return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+			signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
+		case *tss.Signature_MultiSig_:
+			var batchedCmdSigs []types.Signature
+			var err error
+			for _, pair := range signature.MultiSig.SigKeyPairs {
+				batchedCommandsSig, err := getBatchedCommandsSig(pair, batchedCommands.GetSigHash())
+				if err != nil {
+					return resp, err
+				}
+
+				batchedCmdSigs = append(batchedCmdSigs, batchedCommandsSig)
+				signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
+			}
+
+			executeData, err = types.CreateExecuteDataMultisig(batchedCommands.GetData(), batchedCmdSigs...)
+			if err != nil {
+				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+			}
 		}
 
 		resp = types.QueryBatchedCommandsResponse{
@@ -135,7 +154,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			Data:                  hex.EncodeToString(batchedCommands.GetData()),
 			Status:                batchedCommands.GetStatus(),
 			KeyID:                 batchedCommands.GetKeyID(),
-			Signature:             hex.EncodeToString(batchedCommandsSig[:]),
+			Signature:             signatures,
 			ExecuteData:           hex.EncodeToString(executeData),
 			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
 		}
@@ -145,7 +164,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			Data:                  hex.EncodeToString(batchedCommands.GetData()),
 			Status:                batchedCommands.GetStatus(),
 			KeyID:                 batchedCommands.GetKeyID(),
-			Signature:             "",
+			Signature:             nil,
 			ExecuteData:           "",
 			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
 		}
@@ -414,4 +433,22 @@ func getBatchedCommands(ctx sdk.Context, k types.ChainKeeper, id []byte) (types.
 	}
 
 	return types.CommandBatch{}, false
+}
+
+func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.Signature, error) {
+	pk, err := pair.GetKey()
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse pub key: %v", err))
+	}
+
+	sig, err := pair.GetSig()
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse signature: %v", err))
+	}
+
+	batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands), pk)
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
+	}
+	return batchedCommandsSig, nil
 }

@@ -149,8 +149,17 @@ func assembleTx(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, unsigne
 
 				return nil, err
 			}
+			switch signature := sig.GetSig().(type) {
+			case *tss.Signature_SingleSig_:
+				btcecSig, err := signature.GetSignature()
+				if err != nil {
+					return nil, err
+				}
+				sigsForOutPoint = append(sigsForOutPoint, btcecSig)
+			default:
+				return nil, fmt.Errorf("unexpected signature type %T", signature)
+			}
 
-			sigsForOutPoint = append(sigsForOutPoint, btcec.Signature{R: sig.R, S: sig.S})
 		}
 
 		sigs = append(sigs, sigsForOutPoint)

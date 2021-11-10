@@ -3,7 +3,6 @@ package exported
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -16,12 +15,6 @@ import (
 // Handler defines a function that handles a signature after it has
 // been generated and voted on
 type Handler func(ctx sdk.Context, info SignInfo) error
-
-// Signature - an ECDSA signature
-type Signature struct {
-	R *big.Int
-	S *big.Int
-}
 
 // Key contains the public key value and corresponding ID
 type Key struct {
@@ -258,15 +251,65 @@ func (x KeyType) Validate() error {
 	}
 }
 
-// Validate validates the KeyType
-func (p PubKeyInfo) Validate() error {
-	_, err := btcec.ParsePubKey(p.PubKey, btcec.S256())
+// Validate validates the SigKeyPair
+func (m SigKeyPair) Validate() error {
+	_, err := btcec.ParsePubKey(m.PubKey, btcec.S256())
 	if err != nil {
 		return err
 	}
-	_, err = btcec.ParseDERSignature(p.Signature, btcec.S256())
+
+	_, err = btcec.ParseDERSignature(m.Signature, btcec.S256())
 	if err != nil {
 		return err
 	}
+
 	return nil
+}
+
+// GetKey returns the public key of the SigKeyPair
+func (m SigKeyPair) GetKey() (ecdsa.PublicKey, error) {
+	btcecKey, err := btcec.ParsePubKey(m.PubKey, btcec.S256())
+	if err != nil {
+		return ecdsa.PublicKey{}, err
+	}
+	pk := btcecKey.ToECDSA()
+
+	return *pk, nil
+}
+
+// GetSig returns the signature of the SigKeyPair
+func (m SigKeyPair) GetSig() (btcec.Signature, error) {
+	sig, err := btcec.ParseDERSignature(m.Signature, btcec.S256())
+	if err != nil {
+		return btcec.Signature{}, err
+	}
+
+	return *sig, nil
+}
+
+// GetSignature returns btcec Signature for single sig
+func (m *Signature_SingleSig_) GetSignature() (btcec.Signature, error) {
+	bz := m.SingleSig.SigKeyPair.Signature
+	sig, err := btcec.ParseDERSignature(bz, btcec.S256())
+	if err != nil {
+		return btcec.Signature{}, err
+	}
+
+	return *sig, nil
+}
+
+// GetSignature returns list of btcec Signatures for multi sig
+func (m *Signature_MultiSig_) GetSignature() ([]btcec.Signature, error) {
+	var sigs []btcec.Signature
+	pairs := m.MultiSig.SigKeyPairs
+	for _, pair := range pairs {
+		sig, err := btcec.ParseDERSignature(pair.Signature, btcec.S256())
+		if err != nil {
+			return sigs, err
+		}
+		sigs = append(sigs, *sig)
+
+	}
+
+	return sigs, nil
 }
