@@ -122,7 +122,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 	}
 
-	symbol := cmd.Flags().Bool(keeper.BySymbol, true, "lookup token by symbol")
+	symbol := cmd.Flags().Bool(keeper.BySymbol, false, "lookup token by symbol")
 	asset := cmd.Flags().Bool(keeper.ByAsset, false, "lookup token by asset name")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
