@@ -2577,8 +2577,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
 // 				panic("mock out the GetDeposit method")
 // 			},
-// 			GetERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
-// 				panic("mock out the GetERC20Token method")
+// 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
+// 				panic("mock out the GetERC20TokenByAsset method")
+// 			},
+// 			GetERC20TokenBySymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
+// 				panic("mock out the GetERC20TokenBySymbol method")
 // 			},
 // 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
 // 				panic("mock out the GetGatewayAddress method")
@@ -2710,8 +2713,11 @@ type ChainKeeperMock struct {
 	// GetDepositFunc mocks the GetDeposit method.
 	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool)
 
-	// GetERC20TokenFunc mocks the GetERC20Token method.
-	GetERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
+	// GetERC20TokenByAssetFunc mocks the GetERC20TokenByAsset method.
+	GetERC20TokenByAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
+
+	// GetERC20TokenBySymbolFunc mocks the GetERC20TokenBySymbol method.
+	GetERC20TokenBySymbolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool)
@@ -2910,12 +2916,19 @@ type ChainKeeperMock struct {
 			// BurnerAddr is the burnerAddr argument value.
 			BurnerAddr common.Address
 		}
-		// GetERC20Token holds details about calls to the GetERC20Token method.
-		GetERC20Token []struct {
+		// GetERC20TokenByAsset holds details about calls to the GetERC20TokenByAsset method.
+		GetERC20TokenByAsset []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Asset is the asset argument value.
 			Asset string
+		}
+		// GetERC20TokenBySymbol holds details about calls to the GetERC20TokenBySymbol method.
+		GetERC20TokenBySymbol []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Symbol is the symbol argument value.
+			Symbol string
 		}
 		// GetGatewayAddress holds details about calls to the GetGatewayAddress method.
 		GetGatewayAddress []struct {
@@ -3081,7 +3094,8 @@ type ChainKeeperMock struct {
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
-	lockGetERC20Token                 sync.RWMutex
+	lockGetERC20TokenByAsset          sync.RWMutex
+	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetGatewayByteCodes           sync.RWMutex
 	lockGetHashToSign                 sync.RWMutex
@@ -3737,10 +3751,10 @@ func (mock *ChainKeeperMock) GetDepositCalls() []struct {
 	return calls
 }
 
-// GetERC20Token calls GetERC20TokenFunc.
-func (mock *ChainKeeperMock) GetERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
-	if mock.GetERC20TokenFunc == nil {
-		panic("ChainKeeperMock.GetERC20TokenFunc: method is nil but ChainKeeper.GetERC20Token was just called")
+// GetERC20TokenByAsset calls GetERC20TokenByAssetFunc.
+func (mock *ChainKeeperMock) GetERC20TokenByAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
+	if mock.GetERC20TokenByAssetFunc == nil {
+		panic("ChainKeeperMock.GetERC20TokenByAssetFunc: method is nil but ChainKeeper.GetERC20TokenByAsset was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
@@ -3749,16 +3763,16 @@ func (mock *ChainKeeperMock) GetERC20Token(ctx github_com_cosmos_cosmos_sdk_type
 		Ctx:   ctx,
 		Asset: asset,
 	}
-	mock.lockGetERC20Token.Lock()
-	mock.calls.GetERC20Token = append(mock.calls.GetERC20Token, callInfo)
-	mock.lockGetERC20Token.Unlock()
-	return mock.GetERC20TokenFunc(ctx, asset)
+	mock.lockGetERC20TokenByAsset.Lock()
+	mock.calls.GetERC20TokenByAsset = append(mock.calls.GetERC20TokenByAsset, callInfo)
+	mock.lockGetERC20TokenByAsset.Unlock()
+	return mock.GetERC20TokenByAssetFunc(ctx, asset)
 }
 
-// GetERC20TokenCalls gets all the calls that were made to GetERC20Token.
+// GetERC20TokenByAssetCalls gets all the calls that were made to GetERC20TokenByAsset.
 // Check the length with:
-//     len(mockedChainKeeper.GetERC20TokenCalls())
-func (mock *ChainKeeperMock) GetERC20TokenCalls() []struct {
+//     len(mockedChainKeeper.GetERC20TokenByAssetCalls())
+func (mock *ChainKeeperMock) GetERC20TokenByAssetCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Asset string
 } {
@@ -3766,9 +3780,44 @@ func (mock *ChainKeeperMock) GetERC20TokenCalls() []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Asset string
 	}
-	mock.lockGetERC20Token.RLock()
-	calls = mock.calls.GetERC20Token
-	mock.lockGetERC20Token.RUnlock()
+	mock.lockGetERC20TokenByAsset.RLock()
+	calls = mock.calls.GetERC20TokenByAsset
+	mock.lockGetERC20TokenByAsset.RUnlock()
+	return calls
+}
+
+// GetERC20TokenBySymbol calls GetERC20TokenBySymbolFunc.
+func (mock *ChainKeeperMock) GetERC20TokenBySymbol(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
+	if mock.GetERC20TokenBySymbolFunc == nil {
+		panic("ChainKeeperMock.GetERC20TokenBySymbolFunc: method is nil but ChainKeeper.GetERC20TokenBySymbol was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Symbol string
+	}{
+		Ctx:    ctx,
+		Symbol: symbol,
+	}
+	mock.lockGetERC20TokenBySymbol.Lock()
+	mock.calls.GetERC20TokenBySymbol = append(mock.calls.GetERC20TokenBySymbol, callInfo)
+	mock.lockGetERC20TokenBySymbol.Unlock()
+	return mock.GetERC20TokenBySymbolFunc(ctx, symbol)
+}
+
+// GetERC20TokenBySymbolCalls gets all the calls that were made to GetERC20TokenBySymbol.
+// Check the length with:
+//     len(mockedChainKeeper.GetERC20TokenBySymbolCalls())
+func (mock *ChainKeeperMock) GetERC20TokenBySymbolCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Symbol string
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Symbol string
+	}
+	mock.lockGetERC20TokenBySymbol.RLock()
+	calls = mock.calls.GetERC20TokenBySymbol
+	mock.lockGetERC20TokenBySymbol.RUnlock()
 	return calls
 }
 

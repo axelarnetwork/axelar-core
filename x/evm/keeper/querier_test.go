@@ -31,6 +31,7 @@ func TestQueryTokenAddress(t *testing.T) {
 		ctx             sdk.Context
 		evmChain        string
 		asset           string
+		symbol          string
 		expectedAddress common.Address
 	)
 
@@ -38,13 +39,20 @@ func TestQueryTokenAddress(t *testing.T) {
 		evmChain = rand.StrBetween(5, 10)
 		expectedAddress = randomAddress()
 		asset = btc.Bitcoin.NativeAsset
+		symbol = "axelarBTC"
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc:           func() string { return evmChain },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
-			GetERC20TokenFunc: func(ctx sdk.Context, a string) types.ERC20Token {
+			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, s string) types.ERC20Token {
+				if symbol == s {
+					return createMockConfirmedERC20Token(asset, types.Address(expectedAddress), createDetails(asset, symbol))
+				}
+				return types.NilToken
+			},
+			GetERC20TokenByAssetFunc: func(ctx sdk.Context, a string) types.ERC20Token {
 				if asset == a {
-					return createMockConfirmedERC20Token(asset, types.Address(expectedAddress), createDetails())
+					return createMockConfirmedERC20Token(asset, types.Address(expectedAddress), createDetails(asset, symbol))
 				}
 				return types.NilToken
 			},
@@ -70,22 +78,44 @@ func TestQueryTokenAddress(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := evmKeeper.QueryTokenAddress(ctx, chainKeeper, nexusKeeper, asset)
+		var res types.QueryTokenAddressResponse
+		bz, err := evmKeeper.QueryTokenAddressByAsset(ctx, chainKeeper, nexusKeeper, asset)
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 
 		assert := assert.New(t)
 		assert.NoError(err)
-		assert.Len(chainKeeper.GetERC20TokenCalls(), 1)
-		assert.Equal(expectedAddress.Bytes(), res)
+		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
+		assert.Equal(expectedAddress.Hex(), res.Address)
+
+		bz, err = evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, symbol)
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+
+		assert.NoError(err)
+		assert.Len(chainKeeper.GetERC20TokenBySymbolCalls(), 1)
+		assert.Equal(expectedAddress.Hex(), res.Address)
+
+	}).Repeat(repeatCount))
+
+	t.Run("token not found", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := evmKeeper.QueryTokenAddressByAsset(ctx, chainKeeper, nexusKeeper, rand.Str(10))
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+		_, err = evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, rand.Str(3))
+		assert.Error(err)
 
 	}).Repeat(repeatCount))
 
 	t.Run("token not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetERC20TokenFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+		chainKeeper.GetERC20TokenBySymbolFunc = func(sdk.Context, string) types.ERC20Token {
 			return types.NilToken
 		}
 
-		_, err := evmKeeper.QueryTokenAddress(ctx, chainKeeper, nexusKeeper, asset)
+		_, err := evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, symbol)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -273,9 +303,9 @@ func TestQueryDepositAddress(t *testing.T) {
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc:           func() string { return evmChain },
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
-			GetERC20TokenFunc: func(ctx sdk.Context, a string) types.ERC20Token {
+			GetERC20TokenByAssetFunc: func(ctx sdk.Context, a string) types.ERC20Token {
 				if btc.Bitcoin.NativeAsset == a {
-					return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails())
+					return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails(rand.Str(10), rand.Str(3)))
 				}
 				return types.NilToken
 			},
@@ -334,9 +364,9 @@ func TestQueryDepositAddress(t *testing.T) {
 			Asset:   rand.StrBetween(3, 8),
 		}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
-		chainKeeper.GetERC20TokenFunc = func(ctx sdk.Context, a string) types.ERC20Token {
+		chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, a string) types.ERC20Token {
 			if dataStr.Asset == a {
-				return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails())
+				return createMockConfirmedERC20Token(a, types.Address(expectedAddress), createDetails(rand.Str(10), rand.Str(3)))
 			}
 			return types.NilToken
 		}
@@ -364,7 +394,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetERC20TokenFunc = func(ctx sdk.Context, a string) types.ERC20Token {
+		chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, a string) types.ERC20Token {
 			return types.NilToken
 		}
 
