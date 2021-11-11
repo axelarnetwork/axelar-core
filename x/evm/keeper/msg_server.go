@@ -705,9 +705,9 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	case depositFound:
 		switch state {
 		case types.CONFIRMED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex())}, nil
+			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
 		case types.BURNED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex())}, nil
+			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
 		}
 	case !pollFound:
 		return nil, fmt.Errorf("no deposit found for poll %s", req.PollKey.String())
