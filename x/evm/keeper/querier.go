@@ -325,7 +325,8 @@ func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexu
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
-	return token.GetAddress().Bytes(), nil
+	resp := types.QueryTokenAddressResponse{Address: token.GetAddress()}
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryTokenAddressBySymbol returns the address of the token contract by symbol
@@ -340,7 +341,8 @@ func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nex
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for symbol '%s' non-existent", symbol))
 	}
 
-	return token.GetAddress().Bytes(), nil
+	resp := types.QueryTokenAddressResponse{Address: token.GetAddress()}
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 // QueryDepositState returns the state of an ERC20 deposit confirmation

@@ -78,18 +78,21 @@ func TestQueryTokenAddress(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := evmKeeper.QueryTokenAddressByAsset(ctx, chainKeeper, nexusKeeper, asset)
+		var res types.QueryTokenAddressResponse
+		bz, err := evmKeeper.QueryTokenAddressByAsset(ctx, chainKeeper, nexusKeeper, asset)
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
-		assert.Equal(expectedAddress.Bytes(), res)
+		assert.Equal(expectedAddress.Bytes(), res.Address.Bytes())
 
-		res, err = evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, symbol)
+		bz, err = evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, symbol)
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetERC20TokenBySymbolCalls(), 1)
-		assert.Equal(expectedAddress.Bytes(), res)
+		assert.Equal(expectedAddress.Bytes(), res.Address.Bytes())
 
 	}).Repeat(repeatCount))
 
