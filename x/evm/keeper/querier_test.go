@@ -85,14 +85,14 @@ func TestQueryTokenAddress(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
-		assert.Equal(expectedAddress.Bytes(), res.Address.Bytes())
+		assert.Equal(expectedAddress.Hex(), res.Address)
 
 		bz, err = evmKeeper.QueryTokenAddressBySymbol(ctx, chainKeeper, nexusKeeper, symbol)
 		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetERC20TokenBySymbolCalls(), 1)
-		assert.Equal(expectedAddress.Bytes(), res.Address.Bytes())
+		assert.Equal(expectedAddress.Hex(), res.Address)
 
 	}).Repeat(repeatCount))
 

@@ -2427,7 +2427,7 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
+| `address` | [string](#string) |  |  |
 
 
 

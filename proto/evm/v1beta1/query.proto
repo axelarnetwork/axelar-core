@@ -50,10 +50,7 @@ message QueryAddressResponse {
   }
 }
 
-message QueryTokenAddressResponse {
-  bytes address = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-}
+message QueryTokenAddressResponse { string address = 1; }
 
 message QueryDepositStateParams {
   bytes tx_id = 1 [

@@ -325,7 +325,7 @@ func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexu
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
-	resp := types.QueryTokenAddressResponse{Address: token.GetAddress()}
+	resp := types.QueryTokenAddressResponse{Address: token.GetAddress().Hex()}
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
@@ -341,7 +341,7 @@ func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nex
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for symbol '%s' non-existent", symbol))
 	}
 
-	resp := types.QueryTokenAddressResponse{Address: token.GetAddress()}
+	resp := types.QueryTokenAddressResponse{Address: token.GetAddress().Hex()}
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
