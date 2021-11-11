@@ -686,9 +686,11 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
 
-	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
-	if !ok {
-		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
+	if pollFound { // needs to be checked so that we don't pass an empty string to `nexus.GetChain`
+		_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+		if !ok {
+			return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
+		}
 	}
 
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
