@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -123,35 +122,17 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		chain := mux.Vars(r)[utils.PathVarChain]
-		designation := mux.Vars(r)[utils.PathVarDesignation]
 
-		var symbol bool
-		var asset bool
-		var err error
-		symbolStr := r.URL.Query().Get(QueryParamSymbol)
-		if symbolStr != "" {
-			symbol, err = strconv.ParseBool(symbolStr)
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
-				return
-			}
-		}
-
-		assetStr := r.URL.Query().Get(QueryParamAsset)
-		if assetStr != "" {
-			asset, err = strconv.ParseBool(assetStr)
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
-				return
-			}
-		}
+		symbol := r.URL.Query().Get(QueryParamSymbol)
+		asset := r.URL.Query().Get(QueryParamAsset)
 
 		var bz []byte
+		var err error
 		switch {
-		case symbol && !asset:
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, designation))
-		case !symbol && asset:
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, designation))
+		case symbol != "" && asset == "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, symbol))
+		case symbol == "" && asset != "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, asset))
 		default:
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "lookup must be either by asset name or symbol")
 			return

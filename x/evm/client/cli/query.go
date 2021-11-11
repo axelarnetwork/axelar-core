@@ -117,13 +117,13 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 // GetCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
 func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "token-address [chain] [designation]",
+		Use:   "token-address [chain]",
 		Short: fmt.Sprintf("Query a token address by by either %s or %s", keeper.BySymbol, keeper.ByAsset),
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 	}
 
-	symbol := cmd.Flags().Bool(keeper.BySymbol, false, "lookup token by symbol")
-	asset := cmd.Flags().Bool(keeper.ByAsset, false, "lookup token by asset name")
+	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
+	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, err := client.GetClientQueryContext(cmd)
@@ -133,10 +133,10 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 
 		var bz []byte
 		switch {
-		case *symbol && !*asset:
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], args[1]))
-		case !*symbol && *asset:
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], args[1]))
+		case *symbol != "" && *asset == "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], *symbol))
+		case *symbol == "" && *asset != "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], *asset))
 		default:
 			return fmt.Errorf("lookup must be either by asset name or symbol")
 		}

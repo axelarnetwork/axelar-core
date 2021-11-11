@@ -30,7 +30,6 @@ const (
 	PathVarOutpoint          = "Outpoint"
 	PathvarSymbol            = "Symbol"
 	PathVarAsset             = "Asset"
-	PathVarDesignation       = "Designation"
 )
 
 // ExtractReqSender extracts the sender address from an SDK base request
