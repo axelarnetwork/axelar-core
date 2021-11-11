@@ -131,24 +131,24 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 			return err
 		}
 
-		var res []byte
+		var bz []byte
 		switch {
 		case *symbol && !*asset:
-			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], args[1]))
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], args[1]))
 		case !*symbol && *asset:
-			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], args[1]))
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], args[1]))
 		default:
 			return fmt.Errorf("lookup must be either by asset name or symbol")
 		}
 
 		if err != nil {
-			fmt.Printf(types.ErrFTokenAddress, err.Error())
-
-			return nil
+			return err
 		}
 
-		out := common.BytesToAddress(res)
-		return cliCtx.PrintObjectLegacy(out.Hex())
+		var res types.QueryTokenAddressResponse
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+
+		return cliCtx.PrintProto(&res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)

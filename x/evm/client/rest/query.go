@@ -146,12 +146,12 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 			}
 		}
 
-		var res []byte
+		var bz []byte
 		switch {
 		case symbol && !asset:
-			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, designation))
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, designation))
 		case !symbol && asset:
-			res, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, designation))
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, designation))
 		default:
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "lookup must be either by asset name or symbol")
 			return
@@ -162,8 +162,10 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		out := common.BytesToAddress(res)
-		rest.PostProcessResponse(w, cliCtx, out)
+		var res types.QueryTokenAddressResponse
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
