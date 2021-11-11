@@ -137,8 +137,14 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 			telemetry.NewLabel("address", valAddr.String()),
 			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
 			telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
-			telemetry.NewLabel("keygen_ineligibilities", response.KeygenIllegibility.String()),
-			telemetry.NewLabel("sign_ineligibilities", response.SigningIllegibility.String()),
+
+			//illegibilities
+			telemetry.NewLabel("tombstoned", strconv.FormatBool(illegibility.Is(snapshot.Tombstoned))),
+			telemetry.NewLabel("jailed", strconv.FormatBool(illegibility.Is(snapshot.Jailed))),
+			telemetry.NewLabel("missed-too-many-blocks", strconv.FormatBool(illegibility.Is(snapshot.MissedTooManyBlocks))),
+			telemetry.NewLabel("no-proxy-registered", strconv.FormatBool(illegibility.Is(snapshot.NoProxyRegistered))),
+			telemetry.NewLabel("tss-suspended", strconv.FormatBool(illegibility.Is(snapshot.TssSuspended))),
+			telemetry.NewLabel("proxy-insuficient-funds", strconv.FormatBool(illegibility.Is(snapshot.ProxyInsuficientFunds))),
 		})
 
 	return response, nil
