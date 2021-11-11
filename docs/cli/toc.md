@@ -59,7 +59,7 @@
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [signed-tx \[chain\] \[txID\]](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
-      - [token-address \[chain\] \[designation\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
+      - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
       - [grants \[grantee\]](axelard_query_feegrant_grants.md)	 - Query all grants of a grantee

@@ -3,17 +3,17 @@
 Query a token address by by either symbol or asset
 
 ```
-axelard query evm token-address [chain] [designation] [flags]
+axelard query evm token-address [chain] [flags]
 ```
 
 ### Options
 
 ```
-      --asset         lookup token by asset name
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for token-address
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --symbol        lookup token by symbol
+      --asset string    lookup token by asset name
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for token-address
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --symbol string   lookup token by symbol
 ```
 
 ### Options inherited from parent commands
