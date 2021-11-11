@@ -413,7 +413,7 @@ func TestLink_Success(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	chain := "Ethereum"
 	k := newKeeper(ctx, chain, minConfHeight)
-	tokenDetails := createDetails()
+	tokenDetails := createDetails(rand.Str(10), rand.Str(3))
 	msg := createMsgSignDeploy(tokenDetails)
 
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
@@ -780,7 +780,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
-			GetERC20TokenFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
+			GetERC20TokenByAssetFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
 				if asset == msg.Asset.Name {
 					return token
 				}
@@ -820,7 +820,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails())
+		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(rand.Str(10), rand.Str(3)))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
@@ -891,7 +891,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("token unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		chaink.GetERC20TokenFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+		chaink.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
 			return types.NilToken
 		}
 
@@ -1269,7 +1269,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return tss.Key{}, false
 			},
 		}
-		msg = createMsgSignDeploy(createDetails())
+		msg = createMsgSignDeploy(createDetails(rand.Str(10), rand.Str(3)))
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
@@ -1411,9 +1411,7 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details}
 }
 
-func createDetails() types.TokenDetails {
-	symbol := rand.Str(3)
-	name := rand.Str(10)
+func createDetails(name, symbol string) types.TokenDetails {
 	decimals := rand.Bytes(1)[0]
 	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
 

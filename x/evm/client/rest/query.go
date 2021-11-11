@@ -20,6 +20,8 @@ import (
 const (
 	QueryParamKeyRole = "key_role"
 	QueryParamKeyID   = "key_id"
+	QueryParamSymbol  = keeper.BySymbol
+	QueryParamAsset   = keeper.ByAsset
 )
 
 // GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
@@ -106,6 +108,44 @@ func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
 
 		var res types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryTokenAddress returns a handler to query an EVM chain address
+func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+
+		symbol := r.URL.Query().Get(QueryParamSymbol)
+		asset := r.URL.Query().Get(QueryParamAsset)
+
+		var bz []byte
+		var err error
+		switch {
+		case symbol != "" && asset == "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressBySymbol, chain, symbol))
+		case symbol == "" && asset != "":
+			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QTokenAddressByAsset, chain, asset))
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "lookup must be either by asset name or symbol")
+			return
+		}
+
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFTokenAddress).Error())
+			return
+		}
+
+		var res types.QueryTokenAddressResponse
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
