@@ -2969,9 +2969,6 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
-| `new_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 

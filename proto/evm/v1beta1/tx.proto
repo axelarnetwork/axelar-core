@@ -168,15 +168,7 @@ message VoteConfirmTransferKeyRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   vote.exported.v1beta1.PollKey poll_key = 3 [ (gogoproto.nullable) = false ];
-  bytes tx_id = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
-  evm.v1beta1.TransferKeyType transfer_type = 5;
-  bytes new_address = 6
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bool confirmed = 7;
+  bool confirmed = 6;
 }
 message VoteConfirmTransferKeyResponse { string log = 1; }
 

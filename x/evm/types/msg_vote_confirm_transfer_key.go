@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -15,18 +14,12 @@ func NewVoteConfirmTransferKeyRequest(
 	sender sdk.AccAddress,
 	chain string,
 	key vote.PollKey,
-	txID common.Hash,
-	transferType TransferKeyType,
-	newAddr Address,
 	confirmed bool) *VoteConfirmTransferKeyRequest {
 	return &VoteConfirmTransferKeyRequest{
-		Sender:       sender,
-		Chain:        chain,
-		PollKey:      key,
-		TxID:         Hash(txID),
-		TransferType: transferType,
-		NewAddress:   newAddr,
-		Confirmed:    confirmed,
+		Sender:    sender,
+		Chain:     chain,
+		PollKey:   key,
+		Confirmed: confirmed,
 	}
 }
 
@@ -51,10 +44,6 @@ func (m VoteConfirmTransferKeyRequest) ValidateBasic() error {
 	}
 
 	if err := m.PollKey.Validate(); err != nil {
-		return err
-	}
-
-	if err := m.TransferType.Validate(); err != nil {
 		return err
 	}
 
