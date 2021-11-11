@@ -13,7 +13,7 @@ axelard query evm token-address [chain] [designation] [flags]
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help          help for token-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --symbol        lookup token by symbol (default true)
+      --symbol        lookup token by symbol
 ```
 
 ### Options inherited from parent commands
