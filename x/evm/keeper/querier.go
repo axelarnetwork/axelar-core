@@ -253,12 +253,12 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 	}
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse the recipient"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "could not parse the recipient")
 	}
 
 	gatewayAddr, ok := k.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway address not set"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway address not set")
 	}
 
 	token := k.GetERC20TokenByAsset(ctx, params.Asset)
@@ -273,29 +273,24 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 
 	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit address is not linked with recipient address"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit address is not linked with recipient address")
 	}
 
 	return depositAddr.Bytes(), nil
 }
 
 func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
-
 	chain, ok := n.GetChain(ctx, chainName)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
 	}
 
-	pk, ok := s.GetNextKey(ctx, chain, tss.MasterKey)
+	keyID, ok := s.GetNextKeyID(ctx, chain, tss.MasterKey)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "next key not found")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("next key ID for chain %s not set", chainName))
 	}
 
-	fromAddress := crypto.PubkeyToAddress(pk.Value)
-
-	bz := fromAddress.Bytes()
-
-	return bz, nil
+	return QueryAddressByKeyID(ctx, s, n, chain.Name, keyID)
 }
 
 func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]byte, error) {
@@ -354,7 +349,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 
 	var params types.QueryDepositStateParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not unmarshal parameters"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "could not unmarshal parameters")
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
@@ -372,7 +367,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	case state == types.BURNED:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
 	default:
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit is in an unexpected state")
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&depositState)
