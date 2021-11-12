@@ -129,7 +129,6 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	}
 
 	// metrics for heartbeat
-	// metrics for heartbeat
 	labels := []metrics.Label{
 		telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 		telemetry.NewLabel("address", valAddr.String()),
