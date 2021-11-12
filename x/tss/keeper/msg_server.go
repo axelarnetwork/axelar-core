@@ -129,23 +129,20 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	}
 
 	// metrics for heartbeat
-	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, "heartbeat"},
-		1,
-		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-			telemetry.NewLabel("address", valAddr.String()),
-			telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
-			telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
+	// metrics for heartbeat
+	labels := []metrics.Label{
+		telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
+		telemetry.NewLabel("address", valAddr.String()),
+		telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
+		telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
+	}
 
-			//illegibilities
-			telemetry.NewLabel("tombstoned", strconv.FormatBool(illegibility.Is(snapshot.Tombstoned))),
-			telemetry.NewLabel("jailed", strconv.FormatBool(illegibility.Is(snapshot.Jailed))),
-			telemetry.NewLabel("missed-too-many-blocks", strconv.FormatBool(illegibility.Is(snapshot.MissedTooManyBlocks))),
-			telemetry.NewLabel("no-proxy-registered", strconv.FormatBool(illegibility.Is(snapshot.NoProxyRegistered))),
-			telemetry.NewLabel("tss-suspended", strconv.FormatBool(illegibility.Is(snapshot.TssSuspended))),
-			telemetry.NewLabel("proxy-insuficient-funds", strconv.FormatBool(illegibility.Is(snapshot.ProxyInsuficientFunds))),
-		})
+	//illegibilities
+	for _, ill := range snapshot.GetValidatorIllegibilities() {
+		labels = append(labels, telemetry.NewLabel(ill.String(), strconv.FormatBool(illegibility.Is(ill))))
+	}
+
+	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "heartbeat"}, 1, labels)
 
 	return response, nil
 }
