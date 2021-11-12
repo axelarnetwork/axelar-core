@@ -29,16 +29,17 @@ var (
 	unsignedBatchIDKey     = utils.KeyFromStr("unsigned_command_batch_id")
 	latestSignedBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
 
-	unsignedTxPrefix          = utils.KeyFromStr("unsigned_tx")
-	tokenMetadataPrefix       = utils.KeyFromStr("token_deployment")
-	pendingDepositPrefix      = utils.KeyFromStr("pending_deposit")
-	confirmedDepositPrefix    = utils.KeyFromStr("confirmed_deposit")
-	burnedDepositPrefix       = utils.KeyFromStr("burned_deposit")
-	commandBatchPrefix        = utils.KeyFromStr("command_batch")
-	commandPrefix             = utils.KeyFromStr("command")
-	burnerAddrPrefix          = utils.KeyFromStr("burnerAddr")
-	pendingTransferKeyPrefix  = utils.KeyFromStr("pending_transfer_key")
-	archivedTransferKeyPrefix = utils.KeyFromStr("archived_transfer_key")
+	unsignedTxPrefix            = utils.KeyFromStr("unsigned_tx")
+	tokenMetadataByAssetPrefix  = utils.KeyFromStr("token_deployment_by_asset")
+	tokenMetadataBySymbolPrefix = utils.KeyFromStr("token_deployment_by_symbol")
+	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
+	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
+	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
+	commandBatchPrefix          = utils.KeyFromStr("command_batch")
+	commandPrefix               = utils.KeyFromStr("command")
+	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
+	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
+	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 
 	commandQueueName = "command_queue"
 )
@@ -280,14 +281,25 @@ func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details typ
 	}, metadata), nil
 }
 
-func (k chainKeeper) GetERC20Token(ctx sdk.Context, asset string) types.ERC20Token {
-	metadata, ok := k.getTokenMetadata(ctx, asset)
+func (k chainKeeper) GetERC20TokenByAsset(ctx sdk.Context, asset string) types.ERC20Token {
+	metadata, ok := k.getTokenMetadataByAsset(ctx, asset)
 	if !ok {
 		return types.NilToken
 	}
 
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
 		k.setTokenMetadata(ctx, asset, m)
+	}, metadata)
+}
+
+func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types.ERC20Token {
+	metadata, ok := k.getTokenMetadataBySymbol(ctx, symbol)
+	if !ok {
+		return types.NilToken
+	}
+
+	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+		k.setTokenMetadata(ctx, symbol, m)
 	}, metadata)
 }
 
@@ -639,13 +651,26 @@ func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.KVQueue {
 }
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, asset string, meta types.ERC20TokenMetadata) {
-	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
+	// lookup by asset
+	key := tokenMetadataByAssetPrefix.Append(utils.LowerCaseKey(asset))
+	k.getStore(ctx, k.chain).Set(key, &meta)
+
+	// lookup by symbol
+	key = tokenMetadataBySymbolPrefix.Append(utils.LowerCaseKey(meta.Details.Symbol))
 	k.getStore(ctx, k.chain).Set(key, &meta)
 }
 
-func (k chainKeeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
+func (k chainKeeper) getTokenMetadataByAsset(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
 	var result types.ERC20TokenMetadata
-	key := tokenMetadataPrefix.Append(utils.LowerCaseKey(asset))
+	key := tokenMetadataByAssetPrefix.Append(utils.LowerCaseKey(asset))
+	found := k.getStore(ctx, k.chain).Get(key, &result)
+
+	return result, found
+}
+
+func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (types.ERC20TokenMetadata, bool) {
+	var result types.ERC20TokenMetadata
+	key := tokenMetadataBySymbolPrefix.Append(utils.LowerCaseKey(symbol))
 	found := k.getStore(ctx, k.chain).Get(key, &result)
 
 	return result, found
@@ -653,8 +678,12 @@ func (k chainKeeper) getTokenMetadata(ctx sdk.Context, asset string) (types.ERC2
 
 func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
 	// perform a few checks now, so that it is impossible to get errors later
-	if token := k.GetERC20Token(ctx, asset); !token.Is(types.NonExistent) {
-		return types.ERC20TokenMetadata{}, fmt.Errorf("token '%s' already set", asset)
+	if token := k.GetERC20TokenByAsset(ctx, asset); !token.Is(types.NonExistent) {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("token for asset '%s' already set", asset)
+	}
+
+	if token := k.GetERC20TokenBySymbol(ctx, details.Symbol); !token.Is(types.NonExistent) {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("token with symbol '%s' already set", details.Symbol)
 	}
 
 	gatewayAddr, found := k.GetGatewayAddress(ctx)

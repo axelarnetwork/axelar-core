@@ -240,7 +240,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	token := keeper.GetERC20Token(ctx, req.Asset)
+	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
 	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
 	if !found || !token.Is(types.Confirmed) {
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
@@ -301,7 +301,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	keeper := s.ForChain(chain.Name)
-	token := keeper.GetERC20Token(ctx, req.Asset.Name)
+	token := keeper.GetERC20TokenByAsset(ctx, req.Asset.Name)
 
 	err := token.RecordDeployment(req.TxID)
 	if err != nil {
@@ -804,7 +804,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	}
 
 	keeper := s.ForChain(chain.Name)
-	token := keeper.GetERC20Token(ctx, req.Asset)
+	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
 	switch {
 	case token.Is(types.Confirmed):
 		return &types.VoteConfirmTokenResponse{
@@ -1220,7 +1220,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	transfers := nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset)
 
 	for _, transfer := range transfers {
-		token := keeper.GetERC20Token(ctx, transfer.Asset.Denom)
+		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
 		if err != nil {

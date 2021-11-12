@@ -158,6 +158,7 @@
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
+    - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
     - [AddChainRequest](#evm.v1beta1.AddChainRequest)
@@ -2412,6 +2413,21 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
 | `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryTokenAddressResponse"></a>
+
+### QueryTokenAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
 
 
 

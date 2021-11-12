@@ -75,7 +75,8 @@ type ChainKeeper interface {
 	AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails) (ERC20Token, error)
-	GetERC20Token(ctx sdk.Context, asset string) ERC20Token
+	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token
+	GetERC20TokenBySymbol(ctx sdk.Context, symbol string) ERC20Token
 
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	CreateNewBatchToSign(ctx sdk.Context) ([]byte, error)
