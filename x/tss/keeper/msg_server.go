@@ -66,12 +66,19 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
 		}
 
-		pubKey, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
+		_, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("invalid external key received")
 		}
 
-		s.SetKey(ctx, externalKey.ID, *pubKey.ToECDSA())
+		s.SetKey(ctx, exported.Key{
+			ID: externalKey.ID,
+			PublicKey: &exported.Key_ECDSAKey_{
+				ECDSAKey: &exported.Key_ECDSAKey{
+					Value: externalKey.PubKey,
+				},
+			},
+		})
 		s.SetKeyInfo(ctx, types.KeyInfo{KeyID: externalKey.ID, KeyRole: exported.ExternalKey})
 		keyIDs[i] = externalKey.ID
 
@@ -385,13 +392,19 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *types.KeygenVoteData:
 		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", keyID))
 
-		btcecPK, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
+		_, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
 		}
 
-		pubKey := btcecPK.ToECDSA()
-		s.SetKey(ctx, keyID, *pubKey)
+		s.SetKey(ctx, exported.Key{
+			ID: keyID,
+			PublicKey: &exported.Key_ECDSAKey_{
+				ECDSAKey: &exported.Key_ECDSAKey{
+					Value: keygenResult.PubKey,
+				},
+			},
+		})
 
 		s.SetGroupRecoveryInfo(ctx, keyID, keygenResult.GroupRecoveryInfo)
 
@@ -518,7 +531,11 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 
 		if signature := signResult.GetSignature(); signature != nil {
 			key, _ := s.GetKey(ctx, info.KeyID)
-			btcecPK := btcec.PublicKey(key.Value)
+			pk, err := key.GetECDSAPubKey()
+			if err != nil {
+				return nil, err
+			}
+			btcecPK := btcec.PublicKey(pk)
 
 			s.SetSig(ctx, exported.Signature{
 				SigID: req.PollKey.ID,
@@ -631,6 +648,16 @@ func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMul
 	// existence is checked before
 	keygenInfo, _ := s.GetMultisigKeygenInfo(ctx, req.KeyID)
 	if keygenInfo.IsCompleted() {
+		s.SetKey(ctx, exported.Key{
+			ID: req.KeyID,
+			PublicKey: &exported.Key_MultisigKey_{
+				MultisigKey: &exported.Key_MultisigKey{
+					Values:    keygenInfo.GetData(),
+					Threshold: snapshot.CorruptionThreshold + 1,
+				},
+			},
+		})
+
 		s.Logger(ctx).Debug(fmt.Sprintf("multisig keygen %s completed", req.KeyID))
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(

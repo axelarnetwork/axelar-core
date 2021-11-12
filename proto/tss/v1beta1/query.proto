@@ -37,10 +37,21 @@ message QueryKeyResponse {
     string x = 1;
     string y = 2;
   }
+  message ECDSAKey {
+    VoteStatus vote_status = 1;
+    Key key = 2 [ (gogoproto.nullable) = false ];
+  }
+  message MultisigKey {
+    int64 threshold = 1;
+    repeated Key key = 2 [ (gogoproto.nullable) = false ];
+  }
+  oneof public_key {
+    ECDSAKey ecdsa_key = 1 [ (gogoproto.customname) = "ECDSAKey" ];
+    MultisigKey multisig_key = 2;
+  }
 
-  VoteStatus vote_status = 1;
-  tss.exported.v1beta1.KeyRole role = 2;
-  Key key = 3;
+  tss.exported.v1beta1.KeyRole role = 3;
+
   google.protobuf.Timestamp rotated_at = 4
       [ (gogoproto.nullable) = true, (gogoproto.stdtime) = true ];
 }

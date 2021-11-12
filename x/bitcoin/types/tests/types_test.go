@@ -74,8 +74,8 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	internalPubKey1 := tss.Key{ID: tssTestUtils.RandKeyID(), Value: internalPrivKey1.PublicKey, Role: tss.MasterKey}
-	internalPubKey2 := tss.Key{ID: tssTestUtils.RandKeyID(), Value: internalPrivKey2.PublicKey, Role: tss.MasterKey}
+	internalPubKey1 := tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: internalPrivKey1.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
+	internalPubKey2 := tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: internalPrivKey2.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
 
 	externalKeyCount := 6
 	externalKeyThreshold := 3
@@ -90,7 +90,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		}
 
 		externalPrivKeys = append(externalPrivKeys, externalPrivKey)
-		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: externalPrivKey.PubKey().SerializeCompressed()}}, Role: tss.ExternalKey})
 	}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
@@ -119,7 +119,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -184,7 +184,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -221,7 +221,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -255,7 +255,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -295,7 +295,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -332,7 +332,7 @@ func TestNewMasterConsolidationAddress(t *testing.T) {
 		internalKeyLockTime := time.Now()
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
+		address, _ := types.NewMasterConsolidationAddress(internalPubKey1, internalPubKey2, int64(externalKeyThreshold), externalKeys, internalKeyLockTime, externalKeyLockTime, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -370,7 +370,7 @@ func TestNewDepositAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
+	secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: secondaryPrivKey.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
 
 	externalKeyCount := 6
 	externalKeyThreshold := 3
@@ -385,7 +385,8 @@ func TestNewDepositAddress(t *testing.T) {
 		}
 
 		externalPrivKeys = append(externalPrivKeys, externalPrivKey)
-		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+		externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: externalPrivKey.PubKey().SerializeCompressed()}}, Role: tss.ExternalKey})
+
 	}
 
 	inputAmount := btcutil.Amount(100000000) // 1btc
@@ -413,8 +414,8 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should return different addresses with different recipients", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address1 := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
-		address2 := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
+		address1, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
+		address2, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
 
 		assert.NotEqual(t, address1, address2)
 	}).Repeat(repeat))
@@ -422,7 +423,7 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should be spendable by the secondary key anytime", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -454,7 +455,7 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should not be spendable by the external keys before the external timelock elapses", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -487,7 +488,7 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should be spendable by the external keys after the external timelock elapses", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -568,7 +569,7 @@ func TestEstimateTxSize(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), Value: secondaryPrivKey.PublicKey, Role: tss.MasterKey}
+		secondaryPubKey := tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: secondaryPrivKey.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
 
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 		externalKeyCount := 6
@@ -581,7 +582,8 @@ func TestEstimateTxSize(t *testing.T) {
 				panic(err)
 			}
 
-			externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), Value: externalPrivKey.PublicKey, Role: tss.ExternalKey})
+			externalKeys = append(externalKeys, tss.Key{ID: tssTestUtils.RandKeyID(), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: externalPrivKey.PubKey().SerializeCompressed()}}, Role: tss.ExternalKey})
+
 		}
 
 		inputCount := rand.I64Between(11, 20)
@@ -589,7 +591,7 @@ func TestEstimateTxSize(t *testing.T) {
 		var inputs []types.OutPointToSign
 
 		for i := 0; i < int(inputCount); i++ {
-			addressInfo := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+			addressInfo, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
 			outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:%d", rand.HexStr(64), rand.I64Between(0, 100)))
 			if err != nil {
 				panic(err)
@@ -611,7 +613,7 @@ func TestEstimateTxSize(t *testing.T) {
 			assert.NoError(t, types.AddInput(tx, input.OutPointInfo.OutPoint))
 		}
 		for i := 0; i < int(outputCount); i++ {
-			addressInfo := types.NewSecondaryConsolidationAddress(secondaryPubKey, types.Testnet3)
+			addressInfo, _ := types.NewSecondaryConsolidationAddress(secondaryPubKey, types.Testnet3)
 			outputAmount := btcutil.Amount(rand.I64Between(1, 100))
 
 			types.AddOutput(tx, addressInfo.GetAddress(), outputAmount)

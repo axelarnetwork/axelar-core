@@ -123,6 +123,7 @@ func TestMsgServer_SubmitMultisigPubKey(t *testing.T) {
 			SubmitPubKeysFunc:              func(sdk.Context, exported.KeyID, sdk.ValAddress, ...[]byte) bool { return true },
 			IsMultisigKeygenCompletedFunc:  func(sdk.Context, exported.KeyID) bool { return false },
 			GetMultisigKeygenInfoFunc:      func(sdk.Context, exported.KeyID) (types.MultisigKeygenInfo, bool) { return &types.MultisigInfo{}, true },
+			SetKeyFunc:                     func(ctx sdk.Context, key exported.Key) {},
 		}
 		snapshotter := &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return randSnap.Validators[0].GetSDKValidator().GetOperator() },

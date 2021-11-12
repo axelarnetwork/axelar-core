@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/exported";
 
 import "utils/v1beta1/threshold.proto";
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 
 // KeyRequirement defines requirements for keys
 message KeyRequirement {
@@ -111,4 +112,21 @@ message Signature {
     MultiSig multi_sig = 3;
   }
   SigStatus sig_status = 4;
+}
+
+message Key {
+  message ECDSAKey { bytes value = 1; }
+  message MultisigKey {
+    repeated bytes values = 1;
+    int64 threshold = 2;
+  }
+  string id = 1
+      [ (gogoproto.customname) = "ID", (gogoproto.casttype) = "KeyID" ];
+  tss.exported.v1beta1.KeyRole role = 2;
+  tss.exported.v1beta1.KeyType type = 3;
+  oneof public_key {
+    ECDSAKey ecdsa_key = 4 [ (gogoproto.customname) = "ECDSAKey" ];
+    MultisigKey multisig_key = 5;
+  }
+  google.protobuf.Timestamp rotated_at = 6 [ (gogoproto.stdtime) = true ];
 }

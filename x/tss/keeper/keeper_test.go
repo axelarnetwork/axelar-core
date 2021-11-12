@@ -2,11 +2,9 @@ package keeper
 
 import (
 	"crypto/ecdsa"
-	cryptoRand "crypto/rand"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -108,30 +106,32 @@ func setup() *testSetup {
 	return setup
 }
 
-func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole) tss.Key {
+func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) tss.Key {
 	keyID := exported.KeyID(randDistinctStr.Next())
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: keyRole,
-		KeyType: exported.Multisig,
+		KeyType: keyType,
 	}
 
 	err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
 
-	sk, err := ecdsa.GenerateKey(btcec.S256(), cryptoRand.Reader)
-	if err != nil {
-		panic(err)
+	var key exported.Key
+	switch keyType {
+	case exported.Threshold:
+		key = generateECDSAKey(keyID)
+	case exported.Multisig:
+		key = generateMultisigKey(keyID)
 	}
-	s.Keeper.SetKey(ctx, keyID, sk.PublicKey)
-	s.Keeper.SetKeyInfo(ctx, keyInfo)
 
-	return tss.Key{
-		ID:    keyID,
-		Value: sk.PublicKey,
-		Role:  keyRole,
-	}
+	key.Role = keyRole
+	key.Type = keyType
+
+	s.Keeper.SetKey(ctx, key)
+	s.Keeper.SetKeyInfo(ctx, keyInfo)
+	return key
 }
 
 func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
@@ -315,7 +315,7 @@ func TestActiveOldKeys(t *testing.T) {
 		var expectedKeys []exported.Key
 
 		for i := 0; i < iterations; i++ {
-			expectedMasterKey := s.SetKey(t, s.Ctx, role)
+			expectedMasterKey := s.SetKey(t, s.Ctx, role, exported.Threshold)
 			assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, role, expectedMasterKey.ID))
 			assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, role))
 			expectedKeys = append(expectedKeys, expectedMasterKey)

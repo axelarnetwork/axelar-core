@@ -31,7 +31,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
 
-	keyInfo, ok := k.GetKeyInfo(ctx, info.KeyID)
+	keyInfo, ok := k.getKeyInfo(ctx, info.KeyID)
 	if !ok {
 		return fmt.Errorf("key info %s not found", info.KeyID)
 	}
@@ -141,10 +141,9 @@ func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, expor
 }
 
 // SetSig stores the given signature
-func (k Keeper) SetSig(ctx sdk.Context,  signature exported.Signature) {
+func (k Keeper) SetSig(ctx sdk.Context, signature exported.Signature) {
 	k.getStore(ctx).Set(sigPrefix.AppendStr(signature.SigID), &signature)
 }
-
 
 // GetKeyForSigID returns the key that produced the signature corresponding to the given ID
 func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {

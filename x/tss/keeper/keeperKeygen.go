@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -77,28 +76,27 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 
 // GetKey returns the key for a given ID, if it exists
 func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool) {
-	bz := k.getStore(ctx).GetRaw(pkPrefix.AppendStr(string(keyID)))
-	if bz == nil {
+	var key exported.Key
+	ok := k.getStore(ctx).Get(pkPrefix.AppendStr(string(keyID)), &key)
+	if !ok {
 		return exported.Key{}, false
 	}
 
-	btcecPK, err := btcec.ParsePubKey(bz, btcec.S256())
-	// the setter is controlled by the keeper alone, so an error here should be a catastrophic failure
-	if err != nil {
-		panic(err)
+	keyInfo, ok := k.getKeyInfo(ctx, keyID)
+	if !ok {
+		return exported.Key{}, false
 	}
 
-	pk := btcecPK.ToECDSA()
-	role := k.GetKeyRole(ctx, keyID)
-	rotatedAt := k.getRotatedAt(ctx, keyID)
+	key.Role = keyInfo.KeyRole
+	key.Type = keyInfo.KeyType
+	key.RotatedAt = k.getRotatedAt(ctx, keyID)
 
-	return exported.Key{ID: keyID, Value: *pk, Role: role, RotatedAt: rotatedAt}, true
+	return key, ok
 }
 
 // SetKey stores the given public key under the given key ID
-func (k Keeper) SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey) {
-	btcecPK := btcec.PublicKey(key)
-	k.getStore(ctx).SetRaw(pkPrefix.AppendStr(string(keyID)), btcecPK.SerializeCompressed())
+func (k Keeper) SetKey(ctx sdk.Context, key exported.Key) {
+	k.getStore(ctx).Set(pkPrefix.AppendStr(string(key.ID)), &key)
 }
 
 // GetCurrentKeyID returns the current key ID for given chain and role
@@ -165,17 +163,8 @@ func (k Keeper) getRotatedAt(ctx sdk.Context, keyID exported.KeyID) *time.Time {
 
 // AssignNextKey stores a new key for a given chain which will become the default once RotateKey is called
 func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID exported.KeyID) error {
-	switch chain.KeyType {
-	case exported.Threshold:
-		if _, ok := k.GetKey(ctx, keyID); !ok {
-			return fmt.Errorf("key %s does not exist (yet)", keyID)
-		}
-	case exported.Multisig:
-		if !k.IsMultisigKeygenCompleted(ctx, keyID) {
-			return fmt.Errorf("key %s does not exist (yet)", keyID)
-		}
-	default:
-		panic(fmt.Sprintf("unrecognized key type %s", chain.KeyType.SimpleString()))
+	if _, ok := k.GetKey(ctx, keyID); !ok {
+		return fmt.Errorf("key %s does not exist (yet)", keyID)
 	}
 
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
@@ -339,8 +328,8 @@ func (k Keeper) GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyTy
 	return keyInfo.KeyType
 }
 
-// GetKeyInfo returns the key info of the given keyID
-func (k Keeper) GetKeyInfo(ctx sdk.Context, keyID exported.KeyID) (types.KeyInfo, bool) {
+// getKeyInfo returns the key info of the given keyID
+func (k Keeper) getKeyInfo(ctx sdk.Context, keyID exported.KeyID) (types.KeyInfo, bool) {
 	var keyInfo types.KeyInfo
 	ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo)
 

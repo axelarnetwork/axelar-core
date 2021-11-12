@@ -44,9 +44,9 @@ func TestQueryDepositAddress(t *testing.T) {
 			panic(err)
 		}
 		externalKeys[i] = tss.Key{
-			ID:    tssTestUtils.RandKeyID(),
-			Value: externalPrivKey.PublicKey,
-			Role:  tss.ExternalKey,
+			ID:        tssTestUtils.RandKeyID(),
+			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: externalPrivKey.PubKey().SerializeCompressed()}},
+			Role:      tss.ExternalKey,
 		}
 	}
 
@@ -108,7 +108,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		now := time.Now()
 		secondaryKey := tss.Key{
 			ID:        tssTestUtils.RandKeyID(),
-			Value:     secondaryPrivKey.PublicKey,
+			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: secondaryPrivKey.PubKey().SerializeCompressed()}},
 			Role:      tss.SecondaryKey,
 			RotatedAt: &now,
 		}
@@ -203,8 +203,11 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.CrossChainAddress{}, true
 		}
 
+		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}, types.DefaultParams().Network)
+		assert.NoError(t, err)
+
 		expected := types.QueryAddressResponse{
-			Address: types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}, types.DefaultParams().Network).Address,
+			Address: depositAddress.Address,
 			KeyID:   secondaryKey.ID,
 		}
 		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
@@ -261,14 +264,15 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		}
 		masterKey := tss.Key{
 			ID:        keyID,
-			Value:     masterPrivKey.PublicKey,
+			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: masterPrivKey.PubKey().SerializeCompressed()}},
 			Role:      tss.MasterKey,
 			RotatedAt: &now,
 		}
+
 		oldMasterKey := tss.Key{
-			ID:    tssTestUtils.RandKeyID(),
-			Value: oldMasterPrivKey.PublicKey,
-			Role:  tss.MasterKey,
+			ID:        tssTestUtils.RandKeyID(),
+			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: oldMasterPrivKey.PubKey().SerializeCompressed()}},
+			Role:      tss.MasterKey,
 		}
 
 		externalKeyCount := tsstypes.DefaultParams().ExternalMultisigThreshold.Denominator
@@ -279,9 +283,9 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 				panic(err)
 			}
 			externalKeys[i] = tss.Key{
-				ID:    tssTestUtils.RandKeyID(),
-				Value: externalPrivKey.PublicKey,
-				Role:  tss.ExternalKey,
+				ID:        tssTestUtils.RandKeyID(),
+				PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: externalPrivKey.PubKey().SerializeCompressed()}},
+				Role:      tss.ExternalKey,
 			}
 		}
 
@@ -329,8 +333,11 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			return tss.Key{}, false
 		}
 
+		masterConsolidationAddress, err := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network)
+		assert.NoError(t, err)
+
 		expected := types.QueryAddressResponse{
-			Address: types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network).Address,
+			Address: masterConsolidationAddress.Address,
 			KeyID:   masterKey.ID,
 		}
 
@@ -350,9 +357,9 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			panic(err)
 		}
 		secondaryKey := tss.Key{
-			ID:    keyID,
-			Value: secondaryPrivKey.PublicKey,
-			Role:  tss.SecondaryKey,
+			ID:        keyID,
+			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: secondaryPrivKey.PubKey().SerializeCompressed()}},
+			Role:      tss.SecondaryKey,
 		}
 
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
@@ -364,8 +371,11 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 			return tss.Key{}, false
 		}
 
+		secondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, types.DefaultParams().Network)
+		assert.NoError(t, err)
+
 		expected := types.QueryAddressResponse{
-			Address: types.NewSecondaryConsolidationAddress(secondaryKey, types.DefaultParams().Network).Address,
+			Address: secondaryConsolidationAddress.Address,
 			KeyID:   secondaryKey.ID,
 		}
 

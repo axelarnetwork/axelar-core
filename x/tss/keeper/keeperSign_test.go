@@ -103,7 +103,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
-	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+	s.Keeper.SetKey(s.Ctx, generateECDSAKey(keyID))
 
 	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
@@ -199,7 +199,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
-	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+	s.Keeper.SetKey(s.Ctx, generateECDSAKey(keyID))
 
 	sigInfo := exported.SignInfo{
 		KeyID:           keyID,
@@ -247,7 +247,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 		KeyType: exported.Multisig,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
-	s.Keeper.SetKey(s.Ctx, keyID, generatePubKey())
+	s.Keeper.SetKey(s.Ctx, generateECDSAKey(keyID))
 
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, exported.SignInfo{
@@ -271,7 +271,7 @@ func TestKeeper_StartSign_IdAlreadyInUse_ReturnError(t *testing.T) {
 		KeyType: exported.Multisig,
 	}
 	err = s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
-	s.Keeper.SetKey(s.Ctx, exported.KeyID(keyID), generatePubKey())
+	s.Keeper.SetKey(s.Ctx, generateECDSAKey(keyID))
 
 	assert.NoError(t, err)
 	err = s.Keeper.StartSign(s.Ctx, exported.SignInfo{
@@ -421,5 +421,33 @@ func randSignInfo(snap snapshot.Snapshot) exported.SignInfo {
 		Msg:             msgToSign,
 		SnapshotCounter: snap.Counter,
 	}
+}
 
+func generateECDSAKey(keyID exported.KeyID) exported.Key {
+	sk, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+
+	return exported.Key{
+		ID:        keyID,
+		PublicKey: &exported.Key_ECDSAKey_{ECDSAKey: &exported.Key_ECDSAKey{Value: sk.PubKey().SerializeCompressed()}},
+	}
+}
+
+func generateMultisigKey(keyID exported.KeyID) exported.Key {
+	keyNum := rand.I64Between(5, 15)
+	var pks [][]byte
+	for i := int64(0); i <= keyNum; i++ {
+		sk, err := btcec.NewPrivateKey(btcec.S256())
+		if err != nil {
+			panic(err)
+		}
+		pks = append(pks, sk.PubKey().SerializeCompressed())
+	}
+
+	return exported.Key{
+		ID:        keyID,
+		PublicKey: &exported.Key_MultisigKey_{MultisigKey: &exported.Key_MultisigKey{Values: pks, Threshold: keyNum / 2}},
+	}
 }
