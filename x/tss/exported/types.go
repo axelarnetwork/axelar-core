@@ -244,7 +244,7 @@ func (x KeyType) SimpleString() string {
 // Validate validates the KeyType
 func (x KeyType) Validate() error {
 	switch x {
-	case Threshold, Multisig, Native:
+	case Threshold, Multisig, None:
 		return nil
 	default:
 		return fmt.Errorf("invalid key type %d", x)
