@@ -612,8 +612,9 @@ Signature holds public key and ECDSA signature
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | KEY_TYPE_UNSPECIFIED | 0 |  |
-| KEY_TYPE_THRESHOLD | 1 |  |
-| KEY_TYPE_MULTISIG | 2 |  |
+| KEY_TYPE_NONE | 1 |  |
+| KEY_TYPE_THRESHOLD | 2 |  |
+| KEY_TYPE_MULTISIG | 3 |  |
 
 
 
@@ -2969,9 +2970,6 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
-| `new_address` | [bytes](#bytes) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
 

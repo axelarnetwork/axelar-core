@@ -107,8 +107,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			},
 		}
 		signerKeeper = &mock.SignerMock{
-			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-				return tss.Key{}, false
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return "", false
 			},
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return secondaryKeyID, true
@@ -135,12 +135,12 @@ func TestCreateBurnTokens(t *testing.T) {
 		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
 			return []types.ERC20Deposit{{}}
 		}
-		signerKeeper.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
+		signerKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 			if chain.Name == exported.Ethereum.Name && keyRole == tss.SecondaryKey {
-				return tss.Key{}, true
+				return "", true
 			}
 
-			return tss.Key{}, false
+			return "", false
 		}
 
 		_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), req)
@@ -1265,8 +1265,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return tssTestUtils.RandKeyID(), true
 			},
-			GetNextKeyFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-				return tss.Key{}, false
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return "", false
 			},
 		}
 		msg = createMsgSignDeploy(createDetails(rand.Str(10), rand.Str(3)))
@@ -1321,8 +1321,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when next master key is set", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetNextKeyFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			return tss.Key{}, true
+		s.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return "", true
 		}
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)

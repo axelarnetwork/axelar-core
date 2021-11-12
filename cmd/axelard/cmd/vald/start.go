@@ -268,7 +268,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		tmEvents.Consume(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation),
 		tmEvents.Consume(evmDepConf, evmMgr.ProcessDepositConfirmation),
 		tmEvents.Consume(evmTokConf, evmMgr.ProcessTokenConfirmation),
-		tmEvents.Consume(evmTraConf, evmMgr.ProcessTransferOwnershipConfirmation),
+		tmEvents.Consume(evmTraConf, evmMgr.ProcessTransferKeyConfirmation),
 	}
 
 	// errGroup runs async processes and cancels their context if ANY of them returns an error.

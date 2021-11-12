@@ -58,8 +58,8 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 	case exported.Multisig:
 		// init multisig key info
 		multisigKeyInfo := types.MultisigInfo{
-			ID:           string(keyInfo.KeyID),
-			Timeout:      ctx.BlockHeight() + keyRequirement.KeygenTimeout,
+			ID:        string(keyInfo.KeyID),
+			Timeout:   ctx.BlockHeight() + keyRequirement.KeygenTimeout,
 			TargetNum: snapshot.TotalShareCount.Int64(),
 		}
 		k.SetMultisigKeygenInfo(ctx, multisigKeyInfo)
@@ -89,7 +89,7 @@ func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, boo
 	}
 
 	pk := btcecPK.ToECDSA()
-	role := k.getKeyRole(ctx, keyID)
+	role := k.GetKeyRole(ctx, keyID)
 	rotatedAt := k.getRotatedAt(ctx, keyID)
 
 	return exported.Key{ID: keyID, Value: *pk, Role: role, RotatedAt: rotatedAt}, true
@@ -136,7 +136,8 @@ func (k Keeper) SetKeyInfo(ctx sdk.Context, keyInfo types.KeyInfo) {
 	k.getStore(ctx).Set(keyInfoPrefix.AppendStr(string(keyInfo.KeyID)), &keyInfo)
 }
 
-func (k Keeper) getKeyRole(ctx sdk.Context, keyID exported.KeyID) exported.KeyRole {
+// GetKeyRole returns the role of the given key
+func (k Keeper) GetKeyRole(ctx sdk.Context, keyID exported.KeyID) exported.KeyRole {
 	var keyInfo types.KeyInfo
 	if ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo); !ok {
 		return exported.Unknown
@@ -387,7 +388,7 @@ func (k Keeper) GetMultisigPubKey(ctx sdk.Context, keyID exported.KeyID) (export
 		return exported.MultisigKey{}, false
 	}
 
-	role := k.getKeyRole(ctx, keyID)
+	role := k.GetKeyRole(ctx, keyID)
 	rotatedAt := k.getRotatedAt(ctx, keyID)
 
 	return exported.MultisigKey{ID: keyID, Values: keygenInfo.GetKeys(), Role: role, RotatedAt: rotatedAt}, true

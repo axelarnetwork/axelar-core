@@ -160,18 +160,15 @@ func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		chain := mux.Vars(r)[utils.PathVarChain]
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain), nil)
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
 			return
 		}
 
-		if len(res) == 0 {
-			rest.PostProcessResponse(w, cliCtx, "")
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, common.BytesToAddress(res).Hex())
+		var res types.QueryAddressResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 

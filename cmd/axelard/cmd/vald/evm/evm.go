@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -26,15 +27,18 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Smart contract event signatures
 var (
-	ERC20TransferSig        = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-	ERC20TokenDeploymentSig = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
-	TransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
-	TransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
+	ERC20TransferSig                 = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	ERC20TokenDeploymentSig          = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
+	SinglesigTransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
+	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
+	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint8,address[],uint8)"))
+	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint8,address[],uint8)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -173,11 +177,11 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	return err
 }
 
-// ProcessTransferOwnershipConfirmation votes on the correctness of an EVM chain transfer ownership
-func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, transferKeyType, gatewayAddr, newOwnerAddr, confHeight, pollKey, err := parseTransferOwnershipConfirmationParams(mgr.cdc, e.Attributes)
+// ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
+func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
+	chain, txID, transferKeyType, keyType, gatewayAddr, newAddrs, threshold, confHeight, pollKey, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
+		return sdkerrors.Wrap(err, "EVM key transfer confirmation failed")
 	}
 
 	rpc, found := mgr.rpcs[strings.ToLower(chain)]
@@ -186,15 +190,26 @@ func (mgr Mgr) ProcessTransferOwnershipConfirmation(e tmEvents.Event) (err error
 	}
 
 	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		if err = confirmTransferKey(txReceipt, transferKeyType, gatewayAddr, newOwnerAddr); err != nil {
-			mgr.logger.Debug(sdkerrors.Wrap(err, "transfer ownership confirmation failed").Error())
+		switch keyType {
+		case tss.Threshold:
+			if err = confirmSinglesigTransferKey(txReceipt, transferKeyType, gatewayAddr, newAddrs[0]); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
+				return false
+			}
+		case tss.Multisig:
+			if err = confirmMultisigTransferKey(txReceipt, transferKeyType, gatewayAddr, newAddrs, threshold); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
+				return false
+			}
+		default:
+			mgr.logger.Error(fmt.Sprintf("unknown key type %s", keyType.SimpleString()))
 			return false
 		}
 
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, transferKeyType, evmTypes.Address(newOwnerAddr), confirmed)
+	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
 	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
@@ -366,11 +381,14 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		nil
 }
 
-func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
+func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
 	transferKeyType evmTypes.TransferKeyType,
-	gatewayAddr, newOwnerAddr common.Address,
+	keyType tss.KeyType,
+	gatewayAddr common.Address,
+	newAddrs []common.Address,
+	threshold uint8,
 	confHeight uint64,
 	pollKey vote.PollKey,
 	err error,
@@ -383,11 +401,33 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 		{Key: evmTypes.AttributeKeyTransferKeyType, Map: func(s string) (interface{}, error) {
 			return evmTypes.TransferKeyTypeFromSimpleStr(s)
 		}},
+		{Key: evmTypes.AttributeKeyKeyType, Map: func(s string) (interface{}, error) {
+			return tss.KeyTypeFromSimpleStr(s)
+		}},
 		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
 			return common.HexToAddress(s), nil
 		}},
 		{Key: evmTypes.AttributeKeyAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
+			addressStrs := strings.Split(s, ",")
+			addresses := make([]common.Address, len(addressStrs))
+
+			for i, addressStr := range addressStrs {
+				addresses[i] = common.HexToAddress(addressStr)
+			}
+
+			return addresses, nil
+		}},
+		{Key: evmTypes.AttributeKeyThreshold, Map: func(s string) (interface{}, error) {
+			if s == "" {
+				return uint8(0), nil
+			}
+
+			threshold, err := strconv.ParseInt(s, 10, 8)
+			if err != nil {
+				return 0, err
+			}
+
+			return uint8(threshold), nil
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
@@ -398,16 +438,18 @@ func parseTransferOwnershipConfirmationParams(cdc *codec.LegacyAmino, attributes
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, 0, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
+		return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, nil, 0, 0, vote.PollKey{}, err
 	}
 
 	return results[0].(string),
 		results[1].(common.Hash),
 		results[2].(evmTypes.TransferKeyType),
-		results[3].(common.Address),
+		results[3].(tss.KeyType),
 		results[4].(common.Address),
-		results[5].(uint64),
-		results[6].(vote.PollKey),
+		results[5].([]common.Address),
+		results[6].(uint8),
+		results[7].(uint64),
+		results[8].(vote.PollKey),
 		nil
 }
 
@@ -504,7 +546,7 @@ func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string,
 	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
 }
 
-func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr, expectedNewAddr common.Address) (err error) {
+func confirmSinglesigTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr common.Address, expectedNewAddr common.Address) (err error) {
 	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		log := txReceipt.Logs[i]
 		// Event is not emitted by the axelar gateway
@@ -512,24 +554,15 @@ func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.Transf
 			continue
 		}
 
-		var actualNewAddr common.Address
 		// There might be several transfer ownership/operatorship event. Only interest in the last one.
-		switch transferKeyType {
-		case evmTypes.Ownership:
-			actualNewAddr, err = decodeTransferOwnershipEvent(log)
-		case evmTypes.Operatorship:
-			actualNewAddr, err = decodeTransferOperatorshipEvent(log)
-		default:
-			return fmt.Errorf("invalid transfer key type")
-		}
-
+		actualNewAddr, err := decodeSinglesigKeyTransferEvent(log, transferKeyType)
 		if err != nil {
 			continue
 		}
 
 		// New addr does not match
 		if actualNewAddr != expectedNewAddr {
-			return fmt.Errorf("failed to confirm %s for new address '%s' at contract address '%s'", transferKeyType.SimpleString(), expectedNewAddr.String(), gatewayAddr.String())
+			break
 		}
 
 		// if we reach this point, it means that the log matches what we want to verify,
@@ -537,7 +570,62 @@ func confirmTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.Transf
 		return nil
 	}
 
-	return fmt.Errorf("failed to confirm %s for new address '%s' at contract address '%s'", transferKeyType.SimpleString(), expectedNewAddr.String(), gatewayAddr.String())
+	return fmt.Errorf("failed to confirm %s transfer for new address '%s' at contract address '%s'", transferKeyType.SimpleString(), expectedNewAddr.String(), gatewayAddr.String())
+}
+
+func addressesToHexes(addresses []common.Address) []string {
+	hexes := make([]string, len(addresses))
+	for i, address := range addresses {
+		hexes[i] = address.Hex()
+	}
+
+	return hexes
+}
+
+func areAddressesEqual(addressesA, addressesB []common.Address) bool {
+	if len(addressesA) != len(addressesB) {
+		return false
+	}
+
+	hexesA := addressesToHexes(addressesA)
+	sort.Strings(hexesA)
+	hexesB := addressesToHexes(addressesB)
+	sort.Strings(hexesB)
+
+	for i, hexA := range hexesA {
+		if hexA != hexesB[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func confirmMultisigTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr common.Address, expectedNewAddrs []common.Address, expectedNewThreshold uint8) (err error) {
+	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
+		log := txReceipt.Logs[i]
+		// Event is not emitted by the axelar gateway
+		if log.Address != gatewayAddr {
+			continue
+		}
+
+		// There might be several transfer ownership/operatorship event. Only interest in the last one.
+		actualNewAddrs, actualNewThreshold, err := decodeMultisigKeyTransferEvent(log, transferKeyType)
+		if err != nil {
+			continue
+		}
+
+		// New addrs or threshold does not match
+		if !areAddressesEqual(actualNewAddrs, expectedNewAddrs) || actualNewThreshold != expectedNewThreshold {
+			break
+		}
+
+		// if we reach this point, it means that the log matches what we want to verify,
+		// so the function can return with no error
+		return nil
+	}
+
+	return fmt.Errorf("failed to confirm %s transfer for new addresses '%s' and threshold '%d' at contract address '%s'", transferKeyType.SimpleString(), strings.Join(addressesToHexes(expectedNewAddrs), ","), expectedNewThreshold, gatewayAddr.String())
 }
 
 func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
@@ -584,22 +672,68 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (string, common.Address, err
 	return args[0].(string), args[1].(common.Address), nil
 }
 
-func decodeTransferOwnershipEvent(log *geth.Log) (common.Address, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != TransferOwnershipSig {
-		return common.Address{}, fmt.Errorf("event is not for a transfer owernship")
+func decodeSinglesigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.TransferKeyType) (common.Address, error) {
+	var topic common.Hash
+	switch transferKeyType {
+	case evmTypes.Ownership:
+		topic = SinglesigTransferOwnershipSig
+	case evmTypes.Operatorship:
+		topic = SinglesigTransferOperatorshipSig
+	default:
+		return common.Address{}, fmt.Errorf("unknown transfer key type %s", transferKeyType.SimpleString())
 	}
 
-	newOwnerAddr := common.BytesToAddress(log.Topics[2][:])
+	if len(log.Topics) != 3 || log.Topics[0] != topic {
+		return common.Address{}, fmt.Errorf("event is not for a transfer singlesig key")
+	}
 
-	return newOwnerAddr, nil
+	return common.BytesToAddress(log.Topics[2][:]), nil
 }
 
-func decodeTransferOperatorshipEvent(log *geth.Log) (common.Address, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != TransferOperatorshipSig {
-		return common.Address{}, fmt.Errorf("event is not for a transfer operatorship")
+func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.TransferKeyType) ([]common.Address, uint8, error) {
+	var topic common.Hash
+	switch transferKeyType {
+	case evmTypes.Ownership:
+		topic = MultisigTransferOwnershipSig
+	case evmTypes.Operatorship:
+		topic = MultisigTransferOperatorshipSig
+	default:
+		return []common.Address{}, 0, fmt.Errorf("unknown transfer key type %s", transferKeyType.SimpleString())
 	}
 
-	newOperatorAddr := common.BytesToAddress(log.Topics[2][:])
+	if len(log.Topics) != 1 || log.Topics[0] != topic {
+		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
+	}
 
-	return newOperatorAddr, nil
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}}
+	results, err := arguments.Unpack(log.Data)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	if len(results) != 4 {
+		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
+	}
+
+	addresses, ok := results[2].([]common.Address)
+	if !ok {
+		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
+	}
+
+	threshold, ok := results[3].(uint8)
+	if !ok {
+		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
+	}
+
+	return addresses, threshold, nil
 }
