@@ -138,7 +138,7 @@ func GetValdCommand() *cobra.Command {
 		flags.FlagKeyringBackend: "test",
 		flags.FlagGasAdjustment:  "4",
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
-		flags.FlagGasPrices:      "0.005uaxl",
+		flags.FlagGasPrices:      "0.05uaxl",
 	}
 	utils.OverwriteFlagDefaults(cmd, values, true)
 
