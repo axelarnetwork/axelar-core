@@ -166,22 +166,31 @@ func (p *Poll) getVotingPower(v sdk.ValAddress) int64 {
 
 func (p *Poll) handleRewards() error {
 	majorityVote := p.getMajorityVote()
+	expected, err := majorityVote.Data.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
 
 	for _, vote := range p.GetVotes() {
-		data, err := vote.Data.Marshal()
-		if err != nil {
-			panic(err)
-		}
-
-		if bytes.Equal(data, majorityVote.Data.Value) {
+		if bytes.Equal(vote.Data.Value, majorityVote.Data.Value) {
 			for _, voter := range vote.Voters {
 				if err := p.rewardPool.ReleaseRewards(voter); err != nil {
 					return err
 				}
 			}
 		} else {
+			actual, err := vote.Data.MarshalJSON()
+			if err != nil {
+				panic(err)
+			}
+
 			for _, voter := range vote.Voters {
-				p.logger.Debug("penalizing voter due to incorrect vote", "voter", voter.String(), "poll", p.PollMetadata.Key.String())
+
+				p.logger.Debug("penalizing voter due to incorrect vote",
+					"voter", voter.String(),
+					"poll", p.PollMetadata.Key.String(),
+					"expected", string(expected),
+					"actual", string(actual))
 				p.rewardPool.ClearRewards(voter)
 			}
 		}
