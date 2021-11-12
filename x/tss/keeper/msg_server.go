@@ -722,7 +722,9 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 			sdk.NewEvent(
 				types.EventTypeSign,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyKeyID, req.SigID),
+				sdk.NewAttribute(types.AttributeKeySigID, req.SigID),
+				sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
+				sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
 		)
 	}
