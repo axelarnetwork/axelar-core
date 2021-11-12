@@ -2,9 +2,12 @@ package types
 
 import (
 	"fmt"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
@@ -15,6 +18,7 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset stri
 			Name:                  name,
 			NativeAsset:           nativeAsset,
 			SupportsForeignAssets: true,
+			KeyType:               tss.None,
 		},
 	}
 }
