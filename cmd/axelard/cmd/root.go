@@ -179,6 +179,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		flags.FlagKeyringBackend:   "test",
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
 		flags.FlagSkipConfirmation: "true",
+		flags.FlagGasPrices:        "0.005uaxl",
 	}
 	utils.OverwriteFlagDefaults(rootCmd, defaults, true)
 	// Only set default, not actual value of chain ID, so it can be overwritten by env variable
