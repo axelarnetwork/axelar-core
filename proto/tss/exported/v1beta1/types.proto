@@ -86,7 +86,7 @@ enum KeyType {
   option (gogoproto.goproto_enum_stringer) = true;
 
   KEY_TYPE_UNSPECIFIED = 0;
-  KEY_TYPE_NONE = 1 [ (gogoproto.enumvalue_customname) = "None" ];
+  KEY_TYPE_NATIVE = 1 [ (gogoproto.enumvalue_customname) = "Native" ];
   KEY_TYPE_THRESHOLD = 2 [ (gogoproto.enumvalue_customname) = "Threshold" ];
   KEY_TYPE_MULTISIG = 3 [ (gogoproto.enumvalue_customname) = "Multisig" ];
 }
