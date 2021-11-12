@@ -683,14 +683,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	keeper := s.ForChain(chain.Name)
-
 	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
-
-	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
-	if !ok {
-		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
-	}
-
 	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
 
 	switch {
@@ -703,9 +696,9 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	case depositFound:
 		switch state {
 		case types.CONFIRMED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex())}, nil
+			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
 		case types.BURNED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex())}, nil
+			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
 		}
 	case !pollFound:
 		return nil, fmt.Errorf("no deposit found for poll %s", req.PollKey.String())
@@ -713,6 +706,11 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
 	default:
 		// assert: the deposit is known and has not been confirmed before
+	}
+
+	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
+	if !ok {
+		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
 	}
 
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
