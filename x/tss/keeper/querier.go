@@ -136,8 +136,13 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 		return nil, fmt.Errorf("could not obtain pubkey for key ID %s", keyID)
 	}
 
+	pk, err := pubKey.GetECDSAPubKey()
+	if err != nil {
+		return nil, err
+	}
+
 	// convert ecdsa pub key to bytes
-	ecdsaPK := btcec.PublicKey(pubKey.Value)
+	ecdsaPK := btcec.PublicKey(pk)
 	pubKeyBytes := ecdsaPK.SerializeCompressed()
 
 	// get voted group recover info
@@ -232,30 +237,75 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 
 func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
 	if key, ok := k.GetKey(ctx, keyID); ok {
+		switch pubKey := key.GetPublicKey().(type) {
 		// poll was successful
-		res := types.QueryKeyResponse{
-			VoteStatus: types.Decided,
-			Role:       key.Role,
-			Key: &types.QueryKeyResponse_Key{
-				X: hex.EncodeToString(key.Value.X.Bytes()),
-				Y: hex.EncodeToString(key.Value.Y.Bytes()),
-			},
-			RotatedAt: key.RotatedAt,
+		case *exported.Key_ECDSAKey_:
+			pk, err := pubKey.ECDSAKey.GetPubKey()
+			if err != nil {
+				return nil, err
+			}
+
+			res := types.QueryKeyResponse{
+				PublicKey: &types.QueryKeyResponse_ECDSAKey_{
+					ECDSAKey: &types.QueryKeyResponse_ECDSAKey{
+						VoteStatus: types.Decided,
+						Key: types.QueryKeyResponse_Key{
+							X: hex.EncodeToString(pk.X.Bytes()),
+							Y: hex.EncodeToString(pk.Y.Bytes()),
+						},
+					},
+				},
+				Role:      key.Role,
+				RotatedAt: key.RotatedAt,
+			}
+			return res.Marshal()
+		case *exported.Key_MultisigKey_:
+			pks, err := pubKey.MultisigKey.GetPubKey()
+			if err != nil {
+				return nil, err
+			}
+
+			var keys []types.QueryKeyResponse_Key
+			for _, pk := range pks {
+				keys = append(keys, types.QueryKeyResponse_Key{
+					X: hex.EncodeToString(pk.X.Bytes()),
+					Y: hex.EncodeToString(pk.Y.Bytes()),
+				})
+			}
+
+			res := types.QueryKeyResponse{
+				PublicKey: &types.QueryKeyResponse_MultisigKey_{
+					MultisigKey: &types.QueryKeyResponse_MultisigKey{
+						Threshold: pubKey.MultisigKey.Threshold,
+						Key:       keys,
+					},
+				},
+				Role:      key.Role,
+				RotatedAt: key.RotatedAt,
+			}
+			return res.Marshal()
+		default:
+			return nil, fmt.Errorf("unexpected key type %T", key)
 		}
-
-		return types.ModuleCdc.MarshalLengthPrefixed(&res)
 	}
 
-	var res types.QueryKeyResponse
 	pollMeta := voting.NewPollKey(types.ModuleName, string(keyID))
-
+	var voteStatue types.VoteStatus
 	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
-		res.VoteStatus = types.NotFound
+		voteStatue = types.NotFound
 	} else {
-		res.VoteStatus = types.Pending
+		voteStatue = types.Pending
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&res)
+	res := types.QueryKeyResponse{
+		PublicKey: &types.QueryKeyResponse_ECDSAKey_{
+			ECDSAKey: &types.QueryKeyResponse_ECDSAKey{
+				VoteStatus: voteStatue,
+			},
+		},
+	}
+
+	return res.Marshal()
 }
 
 // queryKeyID returns the keyID of the most recent key for a provided keyChain and keyRole

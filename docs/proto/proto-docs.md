@@ -14,6 +14,9 @@
     - [Threshold](#utils.v1beta1.Threshold)
   
 - [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [Key](#tss.exported.v1beta1.Key)
+    - [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey)
+    - [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey)
     - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
     - [SigKeyPair](#tss.exported.v1beta1.SigKeyPair)
     - [SignInfo](#tss.exported.v1beta1.SignInfo)
@@ -295,7 +298,9 @@
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
+    - [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
     - [QueryNextKeyIDRequest](#tss.v1beta1.QueryNextKeyIDRequest)
@@ -450,6 +455,57 @@ Params represent the genesis parameters for the module
 <p align="right"><a href="#top">Top</a></p>
 
 ## tss/exported/v1beta1/types.proto
+
+
+
+<a name="tss.exported.v1beta1.Key"></a>
+
+### Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `ecdsa_key` | [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey) |  |  |
+| `multisig_key` | [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Key.ECDSAKey"></a>
+
+### Key.ECDSAKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Key.MultisigKey"></a>
+
+### Key.MultisigKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `values` | [bytes](#bytes) | repeated |  |
+| `threshold` | [int64](#int64) |  |  |
+
+
+
 
 
 
@@ -4165,10 +4221,26 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `ecdsa_key` | [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey) |  |  |
+| `multisig_key` | [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey) |  |  |
 | `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
 | `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.ECDSAKey"></a>
+
+### QueryKeyResponse.ECDSAKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
 
 
 
@@ -4185,6 +4257,22 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `x` | [string](#string) |  |  |
 | `y` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.MultisigKey"></a>
+
+### QueryKeyResponse.MultisigKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `threshold` | [int64](#int64) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) | repeated |  |
 
 
 

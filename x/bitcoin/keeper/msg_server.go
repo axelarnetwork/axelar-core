@@ -60,17 +60,21 @@ func (s msgServer) SubmitExternalSignature(c context.Context, req *types.SubmitE
 		return nil, fmt.Errorf("external key %s not found", req.KeyID)
 	}
 
-	sig, err := btcec.ParseDERSignature(req.Signature, btcec.S256())
+	pk, err := externalKey.GetECDSAPubKey()
 	if err != nil {
 		return nil, err
 	}
 
-	if !ecdsa.Verify(&externalKey.Value, req.SigHash, sig.R, sig.S) {
+	sig, err := btcec.ParseDERSignature(req.Signature, btcec.S256())
+	if err != nil {
+		return nil, err
+	}
+	if !ecdsa.Verify(&pk, req.SigHash, sig.R, sig.S) {
 		return nil, fmt.Errorf("invalid signature for external key %s received", req.KeyID)
 	}
 
 	sigID := getSigID(req.SigHash, req.KeyID)
-	btcecPK := btcec.PublicKey(externalKey.Value)
+	btcecPK := btcec.PublicKey(pk)
 	s.signer.SetSig(ctx, tss.Signature{
 		SigID: sigID,
 		Sig: &tss.Signature_SingleSig_{
@@ -1114,7 +1118,7 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 		externalKeyLockTime,
 		recipient,
 		k.GetNetwork(ctx),
-	), nil
+	)
 }
 
 func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, key tss.Key) (types.AddressInfo, error) {
@@ -1125,7 +1129,7 @@ func getSecondaryConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, key ts
 	return types.NewSecondaryConsolidationAddress(
 		key,
 		k.GetNetwork(ctx),
-	), nil
+	)
 }
 
 func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key) (types.AddressInfo, error) {
@@ -1163,7 +1167,7 @@ func getMasterConsolidationAddress(ctx sdk.Context, k types.BTCKeeper, s types.S
 		internalKeyLockTime,
 		externalKeyLockTime,
 		k.GetNetwork(ctx),
-	), nil
+	)
 }
 
 func getOldMasterKey(ctx sdk.Context, k types.BTCKeeper, signer types.Signer) (tss.Key, bool) {

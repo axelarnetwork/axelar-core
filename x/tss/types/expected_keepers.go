@@ -88,7 +88,7 @@ type TSSKeeper interface {
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
 	GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID) []sdk.ValAddress
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
-	SetKey(ctx sdk.Context, keyID exported.KeyID, key ecdsa.PublicKey)
+	SetKey(ctx sdk.Context, key exported.Key)
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.Key, bool)
 	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool)

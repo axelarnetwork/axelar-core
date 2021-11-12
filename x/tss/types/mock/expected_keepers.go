@@ -1369,7 +1369,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetInfoForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo)  {
 // 				panic("mock out the SetInfoForSig method")
 // 			},
-// 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)  {
+// 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)  {
 // 				panic("mock out the SetKey method")
 // 			},
 // 			SetKeyInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info types.KeyInfo)  {
@@ -1557,7 +1557,7 @@ type TSSKeeperMock struct {
 	SetInfoForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo)
 
 	// SetKeyFunc mocks the SetKey method.
-	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)
+	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)
 
 	// SetKeyInfoFunc mocks the SetKeyInfo method.
 	SetKeyInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info types.KeyInfo)
@@ -1980,10 +1980,8 @@ type TSSKeeperMock struct {
 		SetKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 			// Key is the key argument value.
-			Key ecdsa.PublicKey
+			Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 		}
 		// SetKeyInfo holds details about calls to the SetKeyInfo method.
 		SetKeyInfo []struct {
@@ -3957,37 +3955,33 @@ func (mock *TSSKeeperMock) SetInfoForSigCalls() []struct {
 }
 
 // SetKey calls SetKeyFunc.
-func (mock *TSSKeeperMock) SetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey) {
+func (mock *TSSKeeperMock) SetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key) {
 	if mock.SetKeyFunc == nil {
 		panic("TSSKeeperMock.SetKeyFunc: method is nil but TSSKeeper.SetKey was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Key   ecdsa.PublicKey
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-		Key:   key,
+		Ctx: ctx,
+		Key: key,
 	}
 	mock.lockSetKey.Lock()
 	mock.calls.SetKey = append(mock.calls.SetKey, callInfo)
 	mock.lockSetKey.Unlock()
-	mock.SetKeyFunc(ctx, keyID, key)
+	mock.SetKeyFunc(ctx, key)
 }
 
 // SetKeyCalls gets all the calls that were made to SetKey.
 // Check the length with:
 //     len(mockedTSSKeeper.SetKeyCalls())
 func (mock *TSSKeeperMock) SetKeyCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	Key   ecdsa.PublicKey
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Key   ecdsa.PublicKey
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 	}
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey

@@ -16,14 +16,6 @@ import (
 // been generated and voted on
 type Handler func(ctx sdk.Context, info SignInfo) error
 
-// Key contains the public key value and corresponding ID
-type Key struct {
-	ID        KeyID
-	Value     ecdsa.PublicKey
-	Role      KeyRole
-	RotatedAt *time.Time
-}
-
 // key id length range bounds dictated by tofnd
 const (
 	KeyIDLengthMin = 4
@@ -316,4 +308,62 @@ func (m *Signature_MultiSig_) GetSignature() ([]btcec.Signature, error) {
 	}
 
 	return sigs, nil
+}
+
+// GetPubKey returns the ECDSA public Key
+func (m *Key_ECDSAKey) GetPubKey() (*ecdsa.PublicKey, error) {
+	pk, err := btcec.ParsePubKey(m.Value, btcec.S256())
+	if err != nil {
+		return nil, err
+	}
+
+	return pk.ToECDSA(), nil
+}
+
+// GetPubKey returns the ECDSA public Key
+func (m *Key_MultisigKey) GetPubKey() ([]*ecdsa.PublicKey, error) {
+	var pks []*ecdsa.PublicKey
+	for _, v := range m.Values {
+		pk, err := btcec.ParsePubKey(v, btcec.S256())
+		if err != nil {
+			return nil, err
+		}
+		pks = append(pks, pk.ToECDSA())
+	}
+
+	return pks, nil
+}
+
+// GetECDSAPubKey returns public key for ECDSAKey
+func (m *Key) GetECDSAPubKey() (ecdsa.PublicKey, error) {
+	key := m.GetECDSAKey()
+	if key == nil {
+		return ecdsa.PublicKey{}, fmt.Errorf("unexpected key type %T", m.PublicKey)
+	}
+
+	pk, err := btcec.ParsePubKey(key.Value, btcec.S256())
+	if err != nil {
+		return ecdsa.PublicKey{}, err
+	}
+
+	return *pk.ToECDSA(), nil
+}
+
+// GetMultisigPubKey returns public keys for MultisigKey
+func (m *Key) GetMultisigPubKey() ([]ecdsa.PublicKey, error) {
+	key := m.GetMultisigKey()
+	if key == nil {
+		return nil, fmt.Errorf("unexpected key type %T", m.PublicKey)
+	}
+
+	var pks []ecdsa.PublicKey
+	for _, v := range key.Values {
+		pk, err := btcec.ParsePubKey(v, btcec.S256())
+		if err != nil {
+			return nil, err
+		}
+		pks = append(pks, *pk.ToECDSA())
+	}
+
+	return pks, nil
 }

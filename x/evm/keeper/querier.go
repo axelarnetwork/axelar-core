@@ -209,31 +209,38 @@ func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainNa
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
 	}
 
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+	}
+
 	switch chain.KeyType {
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(ctx, s, chain, keyID)
+		multisigPubKey, err := key.GetMultisigPubKey()
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		addressStrs := make([]string, len(addresses))
-		for i, address := range addresses {
+		addressStrs := make([]string, len(multisigPubKey))
+		for i, address := range types.KeysToAddresses(multisigPubKey...) {
 			addressStrs[i] = address.Hex()
 		}
 
+		threshold := uint32(key.GetMultisigKey().Threshold)
+
 		resp := types.QueryAddressResponse{
-			Address: &types.QueryAddressResponse_MultisigAddresses_{MultisigAddresses: &types.QueryAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: uint32(threshold)}},
+			Address: &types.QueryAddressResponse_MultisigAddresses_{MultisigAddresses: &types.QueryAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
 			KeyID:   keyID,
 		}
 
 		return resp.Marshal()
 	case tss.Threshold:
-		key, ok := s.GetKey(ctx, keyID)
-		if !ok {
-			return nil, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+		pk, err := key.GetECDSAPubKey()
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		address := crypto.PubkeyToAddress(key.Value)
+		address := crypto.PubkeyToAddress(pk)
 		resp := types.QueryAddressResponse{
 			Address: &types.QueryAddressResponse_ThresholdAddress_{ThresholdAddress: &types.QueryAddressResponse_ThresholdAddress{Address: address.Hex()}},
 			KeyID:   key.ID,

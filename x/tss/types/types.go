@@ -18,6 +18,7 @@ const (
 type MultisigBaseInfo interface {
 	HasData(k []byte) bool
 	AddData(val sdk.ValAddress, data [][]byte)
+	GetData() [][]byte
 	IsCompleted() bool
 	Count() int64
 	DoesParticipate(val sdk.ValAddress) bool
@@ -59,6 +60,18 @@ func (m *MultisigInfo) AddData(val sdk.ValAddress, data [][]byte) {
 		}
 	}
 	m.Infos = append(m.Infos, &MultisigInfo_Info{Participant: val, Data: data})
+}
+
+// GetData returns list of data
+func (m *MultisigInfo) GetData() [][]byte {
+	var data [][]byte
+	for _, info := range m.Infos {
+		for _, d := range info.Data {
+			data = append(data, d)
+		}
+	}
+
+	return data
 }
 
 // IsCompleted returns true if number of data reaches target

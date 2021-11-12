@@ -409,12 +409,27 @@ func createP2wshAddress(script RedeemScript, network Network) *btcutil.AddressWi
 // NewMasterConsolidationAddress returns a p2wsh-wrapped address that is
 // 1) spendable by the ((currMasterKey or oldMasterKey) and externalMultiSigThreshold/len(externalKeys) externalKeys) before the timelock elapses
 // 2) spendable by the (currMasterKey or oldMasterKey) after the timelock elapses
-func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time, network Network) AddressInfo {
+func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, internalKeysOnlyLockTime time.Time, externalKeysOnlyLockTime time.Time, network Network) (AddressInfo, error) {
 	externalPubKeys := make([]btcec.PublicKey, len(externalKeys))
 	for i, externalKey := range externalKeys {
-		externalPubKeys[i] = btcec.PublicKey(externalKey.Value)
+		pk, err := externalKey.GetECDSAPubKey()
+		if err != nil {
+			return AddressInfo{}, err
+		}
+		externalPubKeys[i] = btcec.PublicKey(pk)
 	}
-	script := createMasterAddressScript(btcec.PublicKey(currMasterKey.Value), btcec.PublicKey(oldMasterKey.Value), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
+
+	currMasterPk, err := currMasterKey.GetECDSAPubKey()
+	if err != nil {
+		return AddressInfo{}, err
+	}
+
+	oldMasterPk, err := oldMasterKey.GetECDSAPubKey()
+	if err != nil {
+		return AddressInfo{}, err
+	}
+
+	script := createMasterAddressScript(btcec.PublicKey(currMasterPk), btcec.PublicKey(oldMasterPk), externalMultiSigThreshold, externalPubKeys, internalKeysOnlyLockTime, externalKeysOnlyLockTime)
 	address := createP2wshAddress(script, network)
 
 	externalKeyIDs := make([]tss.KeyID, len(externalKeys))
@@ -434,12 +449,16 @@ func NewMasterConsolidationAddress(currMasterKey tss.Key, oldMasterKey tss.Key, 
 			ExternalMultisigThreshold: externalMultiSigThreshold,
 			LockTime:                  &internalKeysOnlyLockTime,
 		},
-	}
+	}, nil
 }
 
 // NewSecondaryConsolidationAddress returns a p2wsh-wrapped p2pk address for the secondary key
-func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) AddressInfo {
-	script := createP2pkScript(btcec.PublicKey(secondaryKey.Value))
+func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) (AddressInfo, error) {
+	secondaryPk, err := secondaryKey.GetECDSAPubKey()
+	if err != nil {
+		return AddressInfo{}, err
+	}
+	script := createP2pkScript(btcec.PublicKey(secondaryPk))
 	address := createP2wshAddress(script, network)
 
 	return AddressInfo{
@@ -454,19 +473,28 @@ func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) Add
 			ExternalMultisigThreshold: 0,
 			LockTime:                  nil,
 		},
-	}
+	}, nil
 }
 
 // NewDepositAddress returns a p2wsh-wrapped 1-of-2 multisig address that is spendable by the secondary or master key
 // with a recipient cross chain address to provide uniqueness
-func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, externalKeysOnlyLockTime time.Time, recipient nexus.CrossChainAddress, network Network) AddressInfo {
+func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, externalKeysOnlyLockTime time.Time, recipient nexus.CrossChainAddress, network Network) (AddressInfo, error) {
 	externalPubKeys := make([]btcec.PublicKey, len(externalKeys))
 	for i, externalKey := range externalKeys {
-		externalPubKeys[i] = btcec.PublicKey(externalKey.Value)
+		pk, err := externalKey.GetECDSAPubKey()
+		if err != nil {
+			return AddressInfo{}, err
+		}
+		externalPubKeys[i] = btcec.PublicKey(pk)
+	}
+
+	secondaryPubKey, err := secondaryKey.GetECDSAPubKey()
+	if err != nil {
+		return AddressInfo{}, err
 	}
 
 	script := createDepositAddressScript(
-		btcec.PublicKey(secondaryKey.Value),
+		btcec.PublicKey(secondaryPubKey),
 		externalMultiSigThreshold,
 		externalPubKeys,
 		externalKeysOnlyLockTime,
@@ -486,7 +514,7 @@ func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, ex
 			ExternalMultisigThreshold: 0,
 			LockTime:                  nil,
 		},
-	}
+	}, nil
 }
 
 // NewAnyoneCanSpendAddress returns a p2wsh-wrapped anyone-can-spend address

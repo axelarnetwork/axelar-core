@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/ecdsa"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -89,7 +88,7 @@ type InitPoller = interface {
 // Signer provides keygen and signing functionality
 type Signer interface {
 	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
-	SetSig(ctx sdk.Context,  signature tss.Signature)
+	SetSig(ctx sdk.Context, signature tss.Signature)
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	SetSigStatus(ctx sdk.Context, sigID string, status tss.SigStatus)
 	SetInfoForSig(ctx sdk.Context, sigID string, info tss.SignInfo)
@@ -97,7 +96,7 @@ type Signer interface {
 	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
-	SetKey(ctx sdk.Context, keyID tss.KeyID, key ecdsa.PublicKey)
+	SetKey(ctx sdk.Context, key tss.Key)
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
 	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error

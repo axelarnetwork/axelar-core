@@ -592,19 +592,24 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
+	key, ok := s.signer.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("key %s does not exist", req.KeyID)
+	}
+
 	switch chain.KeyType {
 	case tss.Threshold:
-		key, ok := s.signer.GetKey(ctx, req.KeyID)
-		if !ok {
-			return nil, fmt.Errorf("key %s does not exist", req.KeyID)
+		pk, err := key.GetECDSAPubKey()
+		if err != nil {
+			return nil, err
 		}
 
 		event = event.AppendAttributes(
-			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(key.Value).Hex()),
+			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk).Hex()),
 			sdk.NewAttribute(types.AttributeKeyThreshold, ""),
 		)
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(ctx, s.signer, chain, req.KeyID)
+		addresses, threshold, err := getMultisigAddresses(key)
 		if err != nil {
 			return nil, err
 		}
@@ -1116,18 +1121,14 @@ func getMultisigThreshold(keyCount int, threshold utils.Threshold) uint8 {
 	)
 }
 
-func getMultisigAddresses(ctx sdk.Context, s types.Signer, chain nexus.Chain, keyID tss.KeyID) ([]common.Address, uint8, error) {
-	multisigKey, ok := s.GetMultisigPubKey(ctx, keyID)
-	if !ok {
-		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, "key %s not found", keyID)
+func getMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
+	multisigPubKeys, err := key.GetMultisigPubKey()
+	if err != nil {
+		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, err.Error())
 	}
 
-	keyRequirement, ok := s.GetKeyRequirement(ctx, multisigKey.Role, tss.Multisig)
-	if !ok {
-		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, "no key requirement found for chain %s, key role %s and key type %s", chain.Name, multisigKey.Role.SimpleString(), tss.Multisig.SimpleString())
-	}
-
-	return types.KeysToAddresses(multisigKey.Values...), getMultisigThreshold(len(multisigKey.Values), keyRequirement.SafetyThreshold), nil
+	threshold := uint8(key.GetMultisigKey().Threshold)
+	return types.KeysToAddresses(multisigPubKeys...), threshold, nil
 }
 
 func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
@@ -1143,49 +1144,54 @@ func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.
 			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s key %s for chain %s not found", tss.ExternalKey.SimpleString(), externalKeyID, chain.Name))
 		}
 
-		externalPubKeys[i] = externalKey.Value
+		pk, err := externalKey.GetECDSAPubKey()
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		externalPubKeys[i] = pk
 	}
 	externalKeyAddresses := types.KeysToAddresses(externalPubKeys...)
 	externalKeyThreshold := getMultisigThreshold(len(externalKeyAddresses), s.GetExternalMultisigThreshold(ctx))
 
 	bz, _ := k.GetGatewayByteCodes(ctx)
 
+	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+	}
+
+	secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+	}
+
 	switch chain.KeyType {
 	case tss.Threshold:
-		masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
+		masterPubKey, err := masterKey.GetECDSAPubKey()
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
+		secondaryPubKey, err := secondaryKey.GetECDSAPubKey()
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
 		return types.GetSinglesigGatewayDeploymentBytecode(
 			bz,
 			externalKeyAddresses,
 			uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
-			crypto.PubkeyToAddress(masterKey.Value),
-			crypto.PubkeyToAddress(secondaryKey.Value),
+			crypto.PubkeyToAddress(masterPubKey),
+			crypto.PubkeyToAddress(secondaryPubKey),
 		)
 	case tss.Multisig:
-		masterKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.MasterKey)
-		if !ok {
-			return nil, fmt.Errorf("no current %s key ID found for chain %s", tss.MasterKey.SimpleString(), chain.Name)
-		}
-
-		masterMultisigAddresses, masterMultisigThreshold, err := getMultisigAddresses(ctx, s, chain, masterKeyID)
+		masterMultisigAddresses, masterMultisigThreshold, err := getMultisigAddresses(masterKey)
 		if err != nil {
 			return nil, err
 		}
 
-		secondaryKeyID, ok := s.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
-		if !ok {
-			return nil, fmt.Errorf("no current %s key ID found for chain %s", tss.SecondaryKey.SimpleString(), chain.Name)
-		}
-
-		secondaryMultisigAddresses, secondaryMultisigThreshold, err := getMultisigAddresses(ctx, s, chain, secondaryKeyID)
+		secondaryMultisigAddresses, secondaryMultisigThreshold, err := getMultisigAddresses(secondaryKey)
 		if err != nil {
 			return nil, err
 		}
@@ -1304,19 +1310,24 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
 	}
 
+	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
+	if !ok {
+		return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+	}
+
 	switch chain.KeyType {
 	case tss.Threshold:
-		key, ok := s.signer.GetKey(ctx, nextKeyID)
-		if !ok {
-			return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+		pk, err := nextKey.GetECDSAPubKey()
+		if err != nil {
+			return types.Command{}, err
 		}
 
-		address := crypto.PubkeyToAddress(key.Value)
+		address := crypto.PubkeyToAddress(pk)
 		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
 
-		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(key.Value))
+		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(ctx, s.signer, chain, nextKeyID)
+		addresses, threshold, err := getMultisigAddresses(nextKey)
 		if err != nil {
 			return types.Command{}, err
 		}

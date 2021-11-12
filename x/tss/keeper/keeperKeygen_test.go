@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"testing"
 	"time"
 
@@ -50,7 +48,7 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		keyInfo := types.KeyInfo{
 			KeyID:   exported.KeyID(keyID),
 			KeyRole: exported.MasterKey,
-			KeyType: exported.Multisig,
+			KeyType: exported.Threshold,
 		}
 		err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
 		assert.NoError(t, err)
@@ -58,11 +56,12 @@ func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *te
 		// time passes
 		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand2.I64Between(0, 2*lockingPeriod))
 
-		sk, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+		sk, err := btcec.NewPrivateKey(btcec.S256())
 		if err != nil {
 			panic(err)
 		}
-		s.Keeper.SetKey(ctx, exported.KeyID(keyID), sk.PublicKey)
+		key := tss.Key{ID: exported.KeyID(keyID), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: sk.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
+		s.Keeper.SetKey(ctx, key)
 		chain := evm.Ethereum
 		chain.KeyType = tss.Threshold
 
@@ -79,12 +78,11 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
-		chain.KeyType = tss.Threshold
 		s := setup()
 		time := time.Unix(time.Now().Unix(), 0)
 		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 		s.Ctx = s.Ctx.WithBlockTime(time)
-		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey)
+		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
 		expectedKey.RotatedAt = &time
 
 		assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedKey.ID))
@@ -104,8 +102,8 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	time := time.Unix(time.Now().Unix(), 0)
 	s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 	s.Ctx = s.Ctx.WithBlockTime(time)
-	expectedMasterKey := s.SetKey(t, s.Ctx, exported.MasterKey)
-	expectedSecondaryKey := s.SetKey(t, s.Ctx, exported.SecondaryKey)
+	expectedMasterKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
+	expectedSecondaryKey := s.SetKey(t, s.Ctx, exported.SecondaryKey, chain.KeyType)
 
 	assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedMasterKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
@@ -130,7 +128,6 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		chain := evm.Ethereum
-		chain.KeyType = tss.Threshold
 		s := setup()
 		ctx := s.Ctx
 		keys := make([]exported.Key, 10)
@@ -139,7 +136,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 			snapshotHeight := ctx.BlockHeight() + rand2.I64Between(0, 100)
 			ctx = ctx.WithBlockHeight(snapshotHeight + rand2.I64Between(0, 100))
 
-			key := s.SetKey(t, ctx, exported.MasterKey)
+			key := s.SetKey(t, ctx, exported.MasterKey, chain.KeyType)
 			keys[i] = key
 
 			assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, key.ID))
@@ -149,13 +146,16 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 		// sanity check that the latest key is the last that was set
 		actualKey, ok := s.Keeper.GetCurrentKey(ctx, chain, exported.MasterKey)
 		assert.True(t, ok)
-		assert.Equal(t, keys[len(keys)-1].Value, actualKey.Value)
+
+		actualPubKey, _ := actualKey.GetECDSAPubKey()
+		expectedPubKey, _ := keys[len(keys)-1].GetECDSAPubKey()
+		assert.Equal(t, expectedPubKey, actualPubKey)
 
 		for _, key := range keys {
 			actualKey, ok = s.Keeper.GetKey(ctx, key.ID)
-
+			pubKey, _ := key.GetECDSAPubKey()
 			assert.True(t, ok)
-			assert.Equal(t, key.Value, actualKey.Value)
+			assert.Equal(t, pubKey, actualPubKey)
 		}
 	}
 }

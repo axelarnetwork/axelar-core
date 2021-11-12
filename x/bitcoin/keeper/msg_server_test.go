@@ -744,7 +744,10 @@ func TestCreateRescueTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -754,7 +757,7 @@ func TestCreateRescueTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.Rescue, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -768,7 +771,7 @@ func TestCreateRescueTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -842,7 +845,10 @@ func TestCreateRescueTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -852,7 +858,7 @@ func TestCreateRescueTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.Rescue, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -866,7 +872,7 @@ func TestCreateRescueTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1089,7 +1095,10 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1099,7 +1108,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1113,7 +1122,7 @@ func TestCreateMasterTx(t *testing.T) {
 				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 			},
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1131,7 +1140,10 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1141,7 +1153,7 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1155,7 +1167,7 @@ func TestCreateMasterTx(t *testing.T) {
 				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 			},
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1186,8 +1198,13 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(nextSecondaryKey, network)
+		assert.NoError(t, err)
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1197,8 +1214,8 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1208,7 +1225,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 		assertTxOutputs(t, actualUnsignedTx.GetTx(),
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 				Amount:    secondaryKeyAmount,
 			},
 			types.Output{
@@ -1216,7 +1233,7 @@ func TestCreateMasterTx(t *testing.T) {
 				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 			},
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1239,8 +1256,12 @@ func TestCreateMasterTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, network)
+		assert.NoError(t, err)
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(consolidationKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1250,8 +1271,8 @@ func TestCreateMasterTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.MasterConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1261,7 +1282,7 @@ func TestCreateMasterTx(t *testing.T) {
 		}
 		assertTxOutputs(t, actualUnsignedTx.GetTx(),
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 				Amount:    secondaryKeyAmount,
 			},
 			types.Output{
@@ -1269,7 +1290,7 @@ func TestCreateMasterTx(t *testing.T) {
 				Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 			},
 			types.Output{
-				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+				Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			},
 		)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1578,7 +1599,10 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(secondaryKey, network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1588,7 +1612,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1608,7 +1632,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1626,7 +1650,10 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(consolidationKey, network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1636,7 +1663,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 1)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
@@ -1657,7 +1684,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1689,8 +1716,13 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(nextMasterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(consolidationKey, network)
+		assert.NoError(t, err)
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(nextMasterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1700,8 +1732,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[1].Address.Address)
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
 		assert.Len(t, actualUnsignedTx.GetTx().TxIn, len(inputs))
@@ -1721,11 +1753,11 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			Amount:    masterKeyAmount,
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1749,8 +1781,13 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 		network := types.DefaultParams().Network
 		expectedAnyoneCanSpendAddress := types.NewAnyoneCanSpendAddress(network).Address
-		expectedSecondaryConsolidationAddress := types.NewSecondaryConsolidationAddress(consolidationKey, network).Address
-		expectedMasterConsolidationAddress := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network).Address
+
+		expectedSecondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(consolidationKey, network)
+		assert.NoError(t, err)
+
+		expectedMasterConsolidationAddress, err := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), masterKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), network)
+		assert.NoError(t, err)
+
 		minOutputAmount, err := types.ToSatoshiCoin(types.DefaultParams().MinOutputAmount)
 		if err != nil {
 			panic(err)
@@ -1760,8 +1797,8 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 		assert.Len(t, btcKeeper.DeleteOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetSpentOutpointInfoCalls(), len(inputs))
 		assert.Len(t, btcKeeper.SetAddressCalls(), 2)
-		assert.Equal(t, expectedMasterConsolidationAddress, btcKeeper.SetAddressCalls()[0].Address.Address)
-		assert.Equal(t, expectedSecondaryConsolidationAddress, btcKeeper.SetAddressCalls()[1].Address.Address)
+		assert.Equal(t, expectedMasterConsolidationAddress.Address, btcKeeper.SetAddressCalls()[0].Address.Address)
+		assert.Equal(t, expectedSecondaryConsolidationAddress.Address, btcKeeper.SetAddressCalls()[1].Address.Address)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		actualUnsignedTx := btcKeeper.SetUnsignedTxCalls()[0].Tx
 		assert.Equal(t, types.SecondaryConsolidation, actualUnsignedTx.Type)
@@ -1782,11 +1819,11 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 			Amount:    btcutil.Amount(minOutputAmount.Amount.Int64()),
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedMasterConsolidationAddress.Address, network),
 			Amount:    masterKeyAmount,
 		})
 		expectedOutputs = append(expectedOutputs, types.Output{
-			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress, network),
+			Recipient: types.MustDecodeAddress(expectedSecondaryConsolidationAddress.Address, network),
 		})
 		assertTxOutputs(t, actualUnsignedTx.GetTx(), expectedOutputs...)
 		assert.Equal(t, uint32(0), actualUnsignedTx.GetTx().LockTime)
@@ -1899,8 +1936,12 @@ func createRandomKey(keyRole tss.KeyRole, rotatedAt ...time.Time) tss.Key {
 	}
 
 	key := tss.Key{
-		ID:        tssTestUtils.RandKeyID(),
-		Value:     privKey.PublicKey,
+		ID: tssTestUtils.RandKeyID(),
+		PublicKey: &tss.Key_ECDSAKey_{
+			ECDSAKey: &tss.Key_ECDSAKey{
+				Value: privKey.PubKey().SerializeCompressed(),
+			},
+		},
 		Role:      keyRole,
 		RotatedAt: nil,
 	}
@@ -1965,12 +2006,14 @@ func randomCrossChainTransfer(maxAmount int64) nexus.CrossChainTransfer {
 	asset := types.DefaultParams().MinOutputAmount
 	asset.Amount = asset.Amount.Add(sdk.NewDec(rand.I64Between(minOutputAmount.Amount.Int64(), maxAmount)))
 
+	secondaryConsolidationAddress, _ := types.NewSecondaryConsolidationAddress(createRandomKey(tss.SecondaryKey), types.DefaultParams().Network)
+
 	return nexus.CrossChainTransfer{
 		ID:    uint64(rand.PosI64()),
 		Asset: sdk.NewCoin(asset.Denom, asset.Amount.TruncateInt()),
 		Recipient: nexus.CrossChainAddress{
 			Chain:   exported.Bitcoin,
-			Address: types.NewSecondaryConsolidationAddress(createRandomKey(tss.SecondaryKey), types.DefaultParams().Network).Address,
+			Address: secondaryConsolidationAddress.Address,
 		},
 	}
 }

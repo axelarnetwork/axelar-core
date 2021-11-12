@@ -4,7 +4,6 @@
 package mock
 
 import (
-	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -277,7 +276,7 @@ var _ types.Signer = &SignerMock{}
 // 			SetInfoForSigFunc: func(ctx sdk.Context, sigID string, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo)  {
 // 				panic("mock out the SetInfoForSig method")
 // 			},
-// 			SetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)  {
+// 			SetKeyFunc: func(ctx sdk.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)  {
 // 				panic("mock out the SetKey method")
 // 			},
 // 			SetSigFunc: func(ctx sdk.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)  {
@@ -351,7 +350,7 @@ type SignerMock struct {
 	SetInfoForSigFunc func(ctx sdk.Context, sigID string, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo)
 
 	// SetKeyFunc mocks the SetKey method.
-	SetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey)
+	SetKeyFunc func(ctx sdk.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)
 
 	// SetSigFunc mocks the SetSig method.
 	SetSigFunc func(ctx sdk.Context, signature github_com_axelarnetwork_axelar_core_x_tss_exported.Signature)
@@ -520,10 +519,8 @@ type SignerMock struct {
 		SetKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 			// Key is the key argument value.
-			Key ecdsa.PublicKey
+			Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 		}
 		// SetSig holds details about calls to the SetSig method.
 		SetSig []struct {
@@ -1258,37 +1255,33 @@ func (mock *SignerMock) SetInfoForSigCalls() []struct {
 }
 
 // SetKey calls SetKeyFunc.
-func (mock *SignerMock) SetKey(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, key ecdsa.PublicKey) {
+func (mock *SignerMock) SetKey(ctx sdk.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key) {
 	if mock.SetKeyFunc == nil {
 		panic("SignerMock.SetKeyFunc: method is nil but Signer.SetKey was just called")
 	}
 	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Key   ecdsa.PublicKey
+		Ctx sdk.Context
+		Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-		Key:   key,
+		Ctx: ctx,
+		Key: key,
 	}
 	mock.lockSetKey.Lock()
 	mock.calls.SetKey = append(mock.calls.SetKey, callInfo)
 	mock.lockSetKey.Unlock()
-	mock.SetKeyFunc(ctx, keyID, key)
+	mock.SetKeyFunc(ctx, key)
 }
 
 // SetKeyCalls gets all the calls that were made to SetKey.
 // Check the length with:
 //     len(mockedSigner.SetKeyCalls())
 func (mock *SignerMock) SetKeyCalls() []struct {
-	Ctx   sdk.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	Key   ecdsa.PublicKey
+	Ctx sdk.Context
+	Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 } {
 	var calls []struct {
-		Ctx   sdk.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Key   ecdsa.PublicKey
+		Ctx sdk.Context
+		Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 	}
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
