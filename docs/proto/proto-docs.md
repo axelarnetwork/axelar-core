@@ -612,8 +612,9 @@ Signature holds public key and ECDSA signature
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | KEY_TYPE_UNSPECIFIED | 0 |  |
-| KEY_TYPE_THRESHOLD | 1 |  |
-| KEY_TYPE_MULTISIG | 2 |  |
+| KEY_TYPE_NONE | 1 |  |
+| KEY_TYPE_THRESHOLD | 2 |  |
+| KEY_TYPE_MULTISIG | 3 |  |
 
 
 

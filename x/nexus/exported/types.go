@@ -11,9 +11,15 @@ func (m Chain) Validate() error {
 	if m.Name == "" {
 		return fmt.Errorf("missing chain name")
 	}
+
 	if m.NativeAsset == "" {
 		return fmt.Errorf("missing native asset name")
 	}
+
+	if err := m.KeyType.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

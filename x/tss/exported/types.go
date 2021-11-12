@@ -224,6 +224,8 @@ func KeyTypeFromSimpleStr(str string) (KeyType, error) {
 		return Threshold, nil
 	case Multisig.SimpleString():
 		return Multisig, nil
+	case None.SimpleString():
+		return None, nil
 	default:
 		return -1, fmt.Errorf("invalid key type %s", str)
 	}
@@ -236,6 +238,8 @@ func (x KeyType) SimpleString() string {
 		return "threshold"
 	case Multisig:
 		return "multisig"
+	case None:
+		return "none"
 	default:
 		return "unknown"
 	}
@@ -244,7 +248,7 @@ func (x KeyType) SimpleString() string {
 // Validate validates the KeyType
 func (x KeyType) Validate() error {
 	switch x {
-	case Threshold, Multisig:
+	case Threshold, Multisig, None:
 		return nil
 	default:
 		return fmt.Errorf("invalid key type %d", x)
