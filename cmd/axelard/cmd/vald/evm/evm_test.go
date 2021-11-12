@@ -25,6 +25,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -110,10 +111,68 @@ func TestDecodeTransferOwnershipEvent_CorrectData(t *testing.T) {
 		Data: nil,
 	}
 
-	actualNewOwner, err := decodeTransferOwnershipEvent(&l)
+	actualNewOwner, err := decodeSinglesigKeyTransferEvent(&l, evmTypes.Ownership)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedNewOwner, actualNewOwner)
+}
+
+func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
+	t.Run("should decode the new multisig addresses and threshold", testutils.Func(func(t *testing.T) {
+		log := geth.Log{
+			Topics: []common.Hash{
+				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+			},
+			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
+		}
+
+		expectedAddresses := []common.Address{
+			common.HexToAddress("4b379b1aec479cae840b0c921c3c48c2c44c08e9"),
+			common.HexToAddress("d5403824cbdea1288e2ade9cb782ada6aa0c7466"),
+			common.HexToAddress("ea69ec886a7d763f933f7d442a6d437538008cb5"),
+			common.HexToAddress("2b7f57804a9e60c25852c825e8400562efa69065"),
+			common.HexToAddress("3b94e9fad488db2e57a701522a034311f0e7b1db"),
+		}
+		expectedThreshold := uint8(3)
+		actualAddresses, actualThreshold, err := decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedAddresses, actualAddresses)
+		assert.Equal(t, expectedThreshold, actualThreshold)
+	}))
+
+	t.Run("should return error when event is not about transfer of the correct multisig keys", testutils.Func(func(t *testing.T) {
+		// wrong number of topics
+		log := geth.Log{
+			Topics: []common.Hash{
+				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+			},
+			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
+		}
+		_, _, err := decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+		assert.Error(t, err)
+
+		// wrong topics[0]
+		log = geth.Log{
+			Topics: []common.Hash{
+				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+			},
+			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
+		}
+		_, _, err = decodeMultisigKeyTransferEvent(&log, evmTypes.Operatorship)
+		assert.Error(t, err)
+
+		// wrong data
+		log = geth.Log{
+			Topics: []common.Hash{
+				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+			},
+			Data: common.Hex2Bytes("ea69ec886a7d763f933f7d442a6d437538008cb5"),
+		}
+		_, _, err = decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+		assert.Error(t, err)
+	}))
 }
 
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
@@ -413,7 +472,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	}).Repeat(repeats))
 }
 
-func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
+func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	var (
 		mgr                   *Mgr
 		attributes            map[string]string
@@ -435,8 +494,10 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyChain:           "Ethereum",
 			evmTypes.AttributeKeyTxID:            common.Bytes2Hex(rand.Bytes(common.HashLength)),
 			evmTypes.AttributeKeyTransferKeyType: evmTypes.Ownership.SimpleString(),
+			evmTypes.AttributeKeyKeyType:         tss.Threshold.SimpleString(),
 			evmTypes.AttributeKeyGatewayAddress:  common.Bytes2Hex(gatewayAddrBytes),
 			evmTypes.AttributeKeyAddress:         common.Bytes2Hex(newOwnerAddrBytes),
+			evmTypes.AttributeKeyThreshold:       "",
 			evmTypes.AttributeKeyConfHeight:      strconv.FormatUint(uint64(confHeight), 10),
 			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
 		}
@@ -456,7 +517,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(gatewayAddrBytes),
 							Topics: []common.Hash{
-								TransferOwnershipSig,
+								SinglesigTransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
 							},
@@ -466,7 +527,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(gatewayAddrBytes),
 							Topics: []common.Hash{
-								TransferOwnershipSig,
+								SinglesigTransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
 							},
@@ -476,7 +537,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(gatewayAddrBytes),
 							Topics: []common.Hash{
-								TransferOwnershipSig,
+								SinglesigTransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 							},
 							Data: nil,
@@ -495,7 +556,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 						{
 							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
 							Topics: []common.Hash{
-								TransferOwnershipSig,
+								SinglesigTransferOwnershipSig,
 								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
 							},
@@ -517,7 +578,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -530,7 +591,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		for key := range attributes {
 			delete(attributes, key)
 
-			err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+			err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 			assert.Error(t, err)
 			assert.Len(t, broadcaster.BroadcastCalls(), 0)
 		}
@@ -540,7 +601,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -554,7 +615,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -567,7 +628,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()
 
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -585,7 +646,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 			}
 			return receipt, nil
 		}
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -598,7 +659,7 @@ func TestMgr_ProccessTransferOwnershipConfirmation(t *testing.T) {
 
 		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
 
-		err := mgr.ProcessTransferOwnershipConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)

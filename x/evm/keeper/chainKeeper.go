@@ -475,7 +475,7 @@ func (k chainKeeper) DeletePendingTransferKey(ctx sdk.Context, key exported.Poll
 // ArchiveTransferKey archives an ownership transfer so it is no longer pending but can still be queried
 func (k chainKeeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
 	var transferKey types.TransferKey
-	if !k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
+	if k.getStore(ctx, k.chain).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
 		k.DeletePendingTransferKey(ctx, key)
 		k.getStore(ctx, k.chain).Set(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
 	}

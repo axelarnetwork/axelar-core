@@ -68,7 +68,7 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 		return fmt.Errorf("could not find snapshot for given key ID %s", keyID)
 	}
 
-	if keyRole != k.getKeyRole(ctx, keyID) {
+	if keyRole != k.GetKeyRole(ctx, keyID) {
 		return fmt.Errorf("key %s is not a %s key", keyID, keyRole.SimpleString())
 	}
 
