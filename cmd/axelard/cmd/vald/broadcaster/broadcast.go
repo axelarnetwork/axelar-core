@@ -43,7 +43,9 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 			return err
 		}
 
-		response, err = Broadcast(ctx, txf, msgs)
+		b.logger.Debug("prepared tx factory for broadcast")
+
+		response, err = Broadcast(ctx, txf, msgs...)
 		if err != nil {
 			// reset account and sequence number in case they were the issue
 			b.txFactory = b.txFactory.
@@ -95,7 +97,7 @@ func prepareFactory(clientCtx sdkClient.Context, txf tx.Factory) (tx.Factory, er
 
 // Broadcast bundles the given messages into a single transaction and submits it to the blockchain.
 // If there are more than one message, all messages must have the single same signer
-func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxResponse, error) {
+func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	if len(msgs) == 0 {
 		return nil, fmt.Errorf("call broadcast with at least one message")
 	}
