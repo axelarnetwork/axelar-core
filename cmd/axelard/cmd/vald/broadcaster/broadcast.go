@@ -36,6 +36,8 @@ func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) 
 func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	var response *sdk.TxResponse
 	// serialize concurrent calls to broadcast
+	b.logger.Debug("pushing msgs into broadcast pipeline")
+
 	err := b.pipeline.Push(func() error {
 
 		txf, err := prepareFactory(ctx, b.txFactory)
