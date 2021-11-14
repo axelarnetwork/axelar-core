@@ -69,7 +69,7 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 				return false
 			}
 			validator := d.staking.Validator(ctx, validatorAddr)
-			if !validator.IsBonded() {
+			if validator == nil || !validator.IsBonded() {
 				return false
 			}
 		}
