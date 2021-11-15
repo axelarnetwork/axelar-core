@@ -1339,6 +1339,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetTssSuspendedUntil method")
 // 			},
+// 			HasKeygenStartedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
+// 				panic("mock out the HasKeygenStarted method")
+// 			},
 // 			HasPrivateRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the HasPrivateRecoveryInfos method")
 // 			},
@@ -1525,6 +1528,9 @@ type TSSKeeperMock struct {
 
 	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
 	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
+
+	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
+	HasKeygenStartedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
 
 	// HasPrivateRecoveryInfosFunc mocks the HasPrivateRecoveryInfos method.
 	HasPrivateRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
@@ -1888,6 +1894,13 @@ type TSSKeeperMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// HasKeygenStarted holds details about calls to the HasKeygenStarted method.
+		HasKeygenStarted []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		}
 		// HasPrivateRecoveryInfos holds details about calls to the HasPrivateRecoveryInfos method.
 		HasPrivateRecoveryInfos []struct {
 			// Ctx is the ctx argument value.
@@ -2111,6 +2124,7 @@ type TSSKeeperMock struct {
 	lockGetSignParticipantsSharesAsJSON  sync.RWMutex
 	lockGetSnapshotCounterForKeyID       sync.RWMutex
 	lockGetTssSuspendedUntil             sync.RWMutex
+	lockHasKeygenStarted                 sync.RWMutex
 	lockHasPrivateRecoveryInfos          sync.RWMutex
 	lockIsMultisigKeygenCompleted        sync.RWMutex
 	lockLogger                           sync.RWMutex
@@ -3565,6 +3579,41 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 	mock.lockGetTssSuspendedUntil.RLock()
 	calls = mock.calls.GetTssSuspendedUntil
 	mock.lockGetTssSuspendedUntil.RUnlock()
+	return calls
+}
+
+// HasKeygenStarted calls HasKeygenStartedFunc.
+func (mock *TSSKeeperMock) HasKeygenStarted(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
+	if mock.HasKeygenStartedFunc == nil {
+		panic("TSSKeeperMock.HasKeygenStartedFunc: method is nil but TSSKeeper.HasKeygenStarted was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockHasKeygenStarted.Lock()
+	mock.calls.HasKeygenStarted = append(mock.calls.HasKeygenStarted, callInfo)
+	mock.lockHasKeygenStarted.Unlock()
+	return mock.HasKeygenStartedFunc(ctx, keyID)
+}
+
+// HasKeygenStartedCalls gets all the calls that were made to HasKeygenStarted.
+// Check the length with:
+//     len(mockedTSSKeeper.HasKeygenStartedCalls())
+func (mock *TSSKeeperMock) HasKeygenStartedCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}
+	mock.lockHasKeygenStarted.RLock()
+	calls = mock.calls.HasKeygenStarted
+	mock.lockHasKeygenStarted.RUnlock()
 	return calls
 }
 
