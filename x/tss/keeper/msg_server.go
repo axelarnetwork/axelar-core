@@ -145,7 +145,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 
 	//illegibilities
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
-		labels = append(labels, telemetry.NewLabel(ill.String(), strconv.FormatBool(illegibility.Is(ill))))
+		labels = append(labels, telemetry.NewLabel(strings.ReplaceAll(ill.String(), "-", "_"), strconv.FormatBool(illegibility.Is(ill))))
 	}
 
 	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "heartbeat"}, 1, labels)
