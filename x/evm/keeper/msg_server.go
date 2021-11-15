@@ -968,8 +968,6 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s transfer %s key confirmation result is %s", chain.Name, keyRole.SimpleString(), poll.GetResult()))
-
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -995,6 +993,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
+	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name))
 	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 
