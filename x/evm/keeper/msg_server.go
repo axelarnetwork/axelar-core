@@ -968,8 +968,6 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s transfer %s key confirmation result is %s", chain.Name, keyRole.SimpleString(), poll.GetResult()))
-
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -982,9 +980,10 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
-		return &types.VoteConfirmTransferKeyResponse{
-			Log: fmt.Sprintf("transfer key in poll %s was discarded", req.PollKey.String()),
-		}, nil
+		msg := fmt.Sprintf("failed to confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name)
+		s.Logger(ctx).Error(msg)
+		return &types.VoteConfirmTransferKeyResponse{Log: msg}, nil
+
 	}
 
 	keeper.ArchiveTransferKey(ctx, req.PollKey)
@@ -995,6 +994,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
+	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name))
 	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 
