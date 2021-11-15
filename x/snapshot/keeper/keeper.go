@@ -68,12 +68,6 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// IsProxyReady returns true if a register-proxy message has already been issue for the given operator address
-func (k Keeper) IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool {
-	return ctx.KVStore(k.storeKey).Has(operator)
-
-}
-
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
 func (k Keeper) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
 	s, ok := k.GetLatestSnapshot(ctx)
