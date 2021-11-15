@@ -21,7 +21,11 @@ import (
 
 // StartKeygen starts a keygen protocol with the specified parameters
 func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.KeyInfo, snapshot snapshot.Snapshot) error {
-	if k.hasKeygenStarted(ctx, keyInfo.KeyID) {
+	if _, ok := k.GetKey(ctx, keyInfo.KeyID); ok {
+		return fmt.Errorf("key ID %s is already used", keyInfo.KeyID)
+	}
+
+	if k.HasKeygenStarted(ctx, keyInfo.KeyID) {
 		return fmt.Errorf("keyID %s is already in use", keyInfo.KeyID)
 	}
 
@@ -192,7 +196,8 @@ func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.K
 	return nil
 }
 
-func (k Keeper) hasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool {
+// HasKeygenStarted returns true if a key session for the given key ID exists; false otherwise
+func (k Keeper) HasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool {
 	return k.getStore(ctx).Has(keygenStartPrefix.AppendStr(string(keyID)))
 }
 
