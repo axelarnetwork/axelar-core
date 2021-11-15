@@ -968,10 +968,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	// TODO: handle rejected case
-
 	s.Logger(ctx).Info(fmt.Sprintf("%s transfer %s key confirmation result is %s", chain.Name, keyRole.SimpleString(), poll.GetResult()))
-	keeper.ArchiveTransferKey(ctx, req.PollKey)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
@@ -990,6 +987,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		}, nil
 	}
 
+	keeper.ArchiveTransferKey(ctx, req.PollKey)
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
