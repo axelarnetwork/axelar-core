@@ -571,7 +571,7 @@ func GetSinglesigGatewayDeploymentBytecode(contractBytecode []byte, admins []com
 		return nil, fmt.Errorf("not enought admins")
 	}
 
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -591,8 +591,8 @@ func GetSinglesigGatewayDeploymentBytecode(contractBytecode []byte, admins []com
 		return nil, err
 	}
 
-	args := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressType}, {Type: addressType}}
-	argBytes, err := args.Pack(admins, threshold, owner, operator)
+	args := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressType}, {Type: addressType}}
+	argBytes, err := args.Pack(admins, big.NewInt(int64(threshold)), owner, operator)
 	if err != nil {
 		return nil, err
 	}
@@ -635,7 +635,7 @@ func GetMultisigGatewayDeploymentBytecode(contractBytecode []byte, admins []comm
 		return nil, fmt.Errorf("not enought operators")
 	}
 
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -650,8 +650,8 @@ func GetMultisigGatewayDeploymentBytecode(contractBytecode []byte, admins []comm
 		return nil, err
 	}
 
-	args := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}}
-	argBytes, err := args.Pack(admins, adminThreshold, owners, ownerThreshold, operators, operatorThreshold)
+	args := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
+	argBytes, err := args.Pack(admins, big.NewInt(int64(adminThreshold)), owners, big.NewInt(int64(ownerThreshold)), operators, big.NewInt(int64(operatorThreshold)))
 	if err != nil {
 		return nil, err
 	}
@@ -1028,13 +1028,13 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 		return nil, err
 	}
 
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint8Type}}
-	result, err := arguments.Pack(addrs, threshold)
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
+	result, err := arguments.Pack(addrs, big.NewInt(int64(threshold)))
 	if err != nil {
 		return nil, err
 	}
