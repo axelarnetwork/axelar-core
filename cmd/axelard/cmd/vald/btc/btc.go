@@ -43,6 +43,11 @@ func NewMgr(rpc rpc3.Client, cliCtx sdkClient.Context, broadcaster types.Broadca
 
 // ProcessConfirmation votes on the correctness of a Bitcoin deposit
 func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
+	if mgr.rpc == nil {
+		mgr.logger.Error("no bitcoin rpc endpoint was provided during start-up, ignoring confirmation event")
+		return nil
+	}
+
 	outPointInfo, confHeight, pollKey, err := parseConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "Bitcoin transaction confirmation failed")
