@@ -323,15 +323,20 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 }
 
 func createBTCMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
-	rpc, err := btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
-	}
-	// clean up btcRPC connection on process shutdown
-	cleanupCommands = append(cleanupCommands, rpc.Shutdown)
+	var rpc *btcRPC.ClientImpl
+	var err error
 
-	logger.Info("Successfully connected to Bitcoin bridge ")
+	if axelarCfg.BtcConfig.RPCAddr != "" {
+		rpc, err = btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
+		if err != nil {
+			logger.Error(err.Error())
+			panic(err)
+		}
+
+		// clean up btcRPC connection on process shutdown
+		cleanupCommands = append(cleanupCommands, rpc.Shutdown)
+		logger.Info("Successfully connected to Bitcoin bridge ")
+	}
 
 	btcMgr := btc.NewMgr(rpc, cliCtx, b, logger, cdc)
 	return btcMgr
