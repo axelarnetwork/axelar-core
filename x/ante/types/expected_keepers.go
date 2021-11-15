@@ -31,7 +31,7 @@ type Nexus interface {
 type Snapshotter interface {
 	GetSnapshot(ctx sdk.Context, counter int64) (snapshot.Snapshot, bool)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
-	IsProxyReady(ctx sdk.Context, operator sdk.ValAddress) bool
+	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (sdk.AccAddress, bool)
 }
 
 // Staking adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
