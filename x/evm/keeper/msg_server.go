@@ -980,9 +980,10 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 
-		return &types.VoteConfirmTransferKeyResponse{
-			Log: fmt.Sprintf("transfer key in poll %s was discarded", req.PollKey.String()),
-		}, nil
+		msg := fmt.Sprintf("failed to confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name)
+		s.Logger(ctx).Error(msg)
+		return &types.VoteConfirmTransferKeyResponse{Log: msg}, nil
+
 	}
 
 	keeper.ArchiveTransferKey(ctx, req.PollKey)
