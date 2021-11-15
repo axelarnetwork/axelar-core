@@ -62,8 +62,8 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 
 	keyIDs := make([]exported.KeyID, len(req.ExternalKeys))
 	for i, externalKey := range req.ExternalKeys {
-		if _, ok := s.GetKey(ctx, externalKey.ID); ok {
-			return nil, fmt.Errorf("external key ID %s is already used", externalKey.ID)
+		if _, ok := s.GetKey(ctx, externalKey.ID); ok || s.HasKeygenStarted(ctx, externalKey.ID) {
+			return nil, fmt.Errorf("key ID %s is already used", externalKey.ID)
 		}
 
 		_, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())

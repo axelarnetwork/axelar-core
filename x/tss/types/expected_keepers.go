@@ -97,6 +97,7 @@ type TSSKeeper interface {
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID) (int64, bool)
 	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool
+	HasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID exported.KeyID)
 	DeleteInfoForSig(ctx sdk.Context, sigID string)
 	DeleteParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID)
