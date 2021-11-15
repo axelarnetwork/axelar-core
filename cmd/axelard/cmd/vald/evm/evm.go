@@ -37,8 +37,8 @@ var (
 	ERC20TokenDeploymentSig          = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 	SinglesigTransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
-	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint8,address[],uint8)"))
-	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint8,address[],uint8)"))
+	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
+	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -710,12 +710,12 @@ func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.Tran
 		return []common.Address{}, 0, err
 	}
 
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
 		return []common.Address{}, 0, err
 	}
 
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint8Type}, {Type: addressesType}, {Type: uint8Type}}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
 	results, err := arguments.Unpack(log.Data)
 	if err != nil {
 		return []common.Address{}, 0, err
@@ -730,10 +730,10 @@ func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.Tran
 		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
 	}
 
-	threshold, ok := results[3].(uint8)
+	threshold, ok := results[3].(*big.Int)
 	if !ok {
 		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
 	}
 
-	return addresses, threshold, nil
+	return addresses, uint8(threshold.Uint64()), nil
 }
