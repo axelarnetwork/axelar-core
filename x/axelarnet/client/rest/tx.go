@@ -21,7 +21,8 @@ const (
 	TxRegisterIBCPath         = "register-path"
 	TxAddCosmosBasedChain     = "add-cosmos-based-chain"
 	TxRegisterAsset           = "register-asset"
-	TXRegisterFeeCollector    = "register-fee-collector"
+	TxRegisterFeeCollector    = "register-fee-collector"
+	TxRouteIBCTransfers       = "route-ibc-transfers"
 )
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
@@ -72,6 +73,11 @@ type ReqRegisterFeeCollector struct {
 	FeeCollector string       `json:"fee_collector" yaml:"fee_collector"`
 }
 
+// ReqRouteIBCTransfers represents a request to route IBC transfers
+type ReqRouteIBCTransfers struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+}
+
 // RegisterRoutes registers this module's REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
@@ -81,7 +87,8 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerRegisterIBCPath(cliCtx), TxRegisterIBCPath)
 	registerTx(TxHandlerAddCosmosBasedChain(cliCtx), TxAddCosmosBasedChain)
 	registerTx(TxHandlerRegisterAsset(cliCtx), TxRegisterAsset)
-	registerTx(TxHandlerRegisterFeeCollector(cliCtx), TXRegisterFeeCollector)
+	registerTx(TxHandlerRegisterFeeCollector(cliCtx), TxRegisterFeeCollector)
+	registerTx(TxHandlerRouteIBCTransfers(cliCtx), TxRouteIBCTransfers)
 }
 
 // TxHandlerLink returns the handler to link an Axelar address to a cross-chain address
@@ -286,6 +293,33 @@ func TxHandlerRegisterFeeCollector(cliCtx client.Context) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// TxHandlerRouteIBCTransfers returns the handler to route IBC transfers to cosmos chains
+func TxHandlerRouteIBCTransfers(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRouteIBCTransfers
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		msg := types.NewRouteIBCTransfersRequest(fromAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
