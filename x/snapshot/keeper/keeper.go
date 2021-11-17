@@ -312,6 +312,10 @@ func counterKey(counter int64) []byte {
 // RegisterProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
 // The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
+	if bytes.Equal(operator, proxy) {
+		return fmt.Errorf("proxy address cannot be the same as the operator address")
+	}
+
 	if storedOperator := k.GetOperator(ctx, proxy); !storedOperator.Empty() && !bytes.Equal(operator, storedOperator) {
 		return fmt.Errorf("address %s already registered as a proxy to another operator", proxy.String())
 	}
