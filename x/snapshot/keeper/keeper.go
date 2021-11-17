@@ -348,7 +348,7 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error 
 		return fmt.Errorf("validator %s has no proxy registered", operator.String())
 	}
 
-	bz := append([]byte{0}, storedProxy[1:]...)
+	bz := append([]byte{0}, storedProxy...)
 	ctx.KVStore(k.storeKey).Set([]byte(operatorPrefix+operator.String()), bz)
 
 	return nil
