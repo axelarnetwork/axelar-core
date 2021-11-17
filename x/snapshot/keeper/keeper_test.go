@@ -213,6 +213,14 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 	}).Repeat(20))
 
+	t.Run("same addresses", testutils.Func(func(t *testing.T) {
+		setup()
+
+		err := snapshotKeeper.RegisterProxy(ctx, expectedProxy.Bytes(), expectedProxy)
+
+		assert.Error(t, err)
+	}).Repeat(20))
+
 	t.Run("unknown validator", testutils.Func(func(t *testing.T) {
 		setup()
 
