@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	proxyCountKey  = "proxyCount"
 	lastCounterKey = "lastcounter"
 
-	counterPrefix = "counter_"
+	counterPrefix  = "counter_"
+	operatorPrefix = "operator_"
+	proxyPrefix    = "proxy_"
 )
 
 // Make sure the keeper implements the Snapshotter interface
@@ -311,13 +312,13 @@ func counterKey(counter int64) []byte {
 // RegisterProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
 // The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
-	if storedOperator := ctx.KVStore(k.storeKey).Get(proxy); storedOperator != nil && !bytes.Equal(operator, storedOperator) {
+	if storedOperator := k.GetOperator(ctx, proxy); !storedOperator.Empty() && !bytes.Equal(operator, storedOperator) {
 		return fmt.Errorf("address %s already registered as a proxy to another operator", proxy.String())
 	}
 
-	if storedProxy := ctx.KVStore(k.storeKey).Get(operator); storedProxy != nil && !bytes.Equal(storedProxy[1:], proxy) {
+	if storedProxy, _ := k.GetProxy(ctx, operator); !storedProxy.Empty() && !bytes.Equal(storedProxy, proxy) {
 		return fmt.Errorf("proxy mismatch (operator %s registered proxy %s, received %s)",
-			operator.String(), sdk.AccAddress(storedProxy[1:]).String(), proxy.String())
+			operator.String(), sdk.AccAddress(storedProxy).String(), proxy.String())
 	}
 
 	minBalance := k.GetMinProxyBalance(ctx)
@@ -328,10 +329,10 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 	}
 
 	bz := append([]byte{1}, proxy...)
-	ctx.KVStore(k.storeKey).Set(operator, bz)
+	ctx.KVStore(k.storeKey).Set([]byte(operatorPrefix+operator.String()), bz)
 
 	// Reverse lookup
-	ctx.KVStore(k.storeKey).Set(proxy, operator)
+	ctx.KVStore(k.storeKey).Set([]byte(proxyPrefix+proxy.String()), operator)
 	return nil
 }
 
@@ -342,29 +343,26 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error 
 		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
 
-	storedProxy := ctx.KVStore(k.storeKey).Get(operator)
-	if storedProxy == nil {
+	storedProxy, _ := k.GetProxy(ctx, operator)
+	if storedProxy.Empty() {
 		return fmt.Errorf("validator %s has no proxy registered", operator.String())
 	}
 
 	bz := append([]byte{0}, storedProxy[1:]...)
-	ctx.KVStore(k.storeKey).Set(operator, bz)
+	ctx.KVStore(k.storeKey).Set([]byte(operatorPrefix+operator.String()), bz)
 
 	return nil
 }
 
 // GetOperator returns the proxy address for a given principal address. Returns nil if not set.
 func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-	if proxy == nil {
-		return nil
-	}
-	return ctx.KVStore(k.storeKey).Get(proxy)
+	return ctx.KVStore(k.storeKey).Get([]byte(proxyPrefix + proxy.String()))
 }
 
-// GetProxy returns the proxy address for a given principal address. Returns nil if not set.
+// GetProxy returns the proxy address for a given operator address. Returns nil if not set.
 // The bool value denotes wether or not the proxy is active and to be included in the next snapshot
-func (k Keeper) GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool) {
-	bz := ctx.KVStore(k.storeKey).Get(principal)
+func (k Keeper) GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool) {
+	bz := ctx.KVStore(k.storeKey).Get([]byte(operatorPrefix + operator.String()))
 	if bz == nil {
 		return nil, active
 	}
