@@ -2282,8 +2282,8 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			DeleteUnsignedTxFunc: func(ctx sdk.Context, txType types.TxType)  {
 // 				panic("mock out the DeleteUnsignedTx method")
 // 			},
-// 			GetAddressFunc: func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
-// 				panic("mock out the GetAddress method")
+// 			GetAddressInfoFunc: func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
+// 				panic("mock out the GetAddressInfo method")
 // 			},
 // 			GetAnyoneCanSpendAddressFunc: func(ctx sdk.Context) types.AddressInfo {
 // 				panic("mock out the GetAnyoneCanSpendAddress method")
@@ -2363,8 +2363,8 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetAddressFunc: func(ctx sdk.Context, address types.AddressInfo)  {
-// 				panic("mock out the SetAddress method")
+// 			SetAddressInfoFunc: func(ctx sdk.Context, address types.AddressInfo)  {
+// 				panic("mock out the SetAddressInfo method")
 // 			},
 // 			SetConfirmedOutpointInfoFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, info types.OutPointInfo)  {
 // 				panic("mock out the SetConfirmedOutpointInfo method")
@@ -2415,8 +2415,8 @@ type BTCKeeperMock struct {
 	// DeleteUnsignedTxFunc mocks the DeleteUnsignedTx method.
 	DeleteUnsignedTxFunc func(ctx sdk.Context, txType types.TxType)
 
-	// GetAddressFunc mocks the GetAddress method.
-	GetAddressFunc func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool)
+	// GetAddressInfoFunc mocks the GetAddressInfo method.
+	GetAddressInfoFunc func(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool)
 
 	// GetAnyoneCanSpendAddressFunc mocks the GetAnyoneCanSpendAddress method.
 	GetAnyoneCanSpendAddressFunc func(ctx sdk.Context) types.AddressInfo
@@ -2496,8 +2496,8 @@ type BTCKeeperMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
-	// SetAddressFunc mocks the SetAddress method.
-	SetAddressFunc func(ctx sdk.Context, address types.AddressInfo)
+	// SetAddressInfoFunc mocks the SetAddressInfo method.
+	SetAddressInfoFunc func(ctx sdk.Context, address types.AddressInfo)
 
 	// SetConfirmedOutpointInfoFunc mocks the SetConfirmedOutpointInfo method.
 	SetConfirmedOutpointInfoFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, info types.OutPointInfo)
@@ -2559,8 +2559,8 @@ type BTCKeeperMock struct {
 			// TxType is the txType argument value.
 			TxType types.TxType
 		}
-		// GetAddress holds details about calls to the GetAddress method.
-		GetAddress []struct {
+		// GetAddressInfo holds details about calls to the GetAddressInfo method.
+		GetAddressInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// EncodedAddress is the encodedAddress argument value.
@@ -2714,8 +2714,8 @@ type BTCKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// SetAddress holds details about calls to the SetAddress method.
-		SetAddress []struct {
+		// SetAddressInfo holds details about calls to the SetAddressInfo method.
+		SetAddressInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Address is the address argument value.
@@ -2808,7 +2808,7 @@ type BTCKeeperMock struct {
 	lockDeleteOutpointInfo                      sync.RWMutex
 	lockDeletePendingOutPointInfo               sync.RWMutex
 	lockDeleteUnsignedTx                        sync.RWMutex
-	lockGetAddress                              sync.RWMutex
+	lockGetAddressInfo                          sync.RWMutex
 	lockGetAnyoneCanSpendAddress                sync.RWMutex
 	lockGetConfirmedOutpointInfoQueueForKey     sync.RWMutex
 	lockGetDepositAddresses                     sync.RWMutex
@@ -2835,7 +2835,7 @@ type BTCKeeperMock struct {
 	lockGetUnsignedTx                           sync.RWMutex
 	lockGetVotingThreshold                      sync.RWMutex
 	lockLogger                                  sync.RWMutex
-	lockSetAddress                              sync.RWMutex
+	lockSetAddressInfo                          sync.RWMutex
 	lockSetConfirmedOutpointInfo                sync.RWMutex
 	lockSetDepositAddress                       sync.RWMutex
 	lockSetDustAmount                           sync.RWMutex
@@ -2988,10 +2988,10 @@ func (mock *BTCKeeperMock) DeleteUnsignedTxCalls() []struct {
 	return calls
 }
 
-// GetAddress calls GetAddressFunc.
-func (mock *BTCKeeperMock) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
-	if mock.GetAddressFunc == nil {
-		panic("BTCKeeperMock.GetAddressFunc: method is nil but BTCKeeper.GetAddress was just called")
+// GetAddressInfo calls GetAddressInfoFunc.
+func (mock *BTCKeeperMock) GetAddressInfo(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
+	if mock.GetAddressInfoFunc == nil {
+		panic("BTCKeeperMock.GetAddressInfoFunc: method is nil but BTCKeeper.GetAddressInfo was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
@@ -3000,16 +3000,16 @@ func (mock *BTCKeeperMock) GetAddress(ctx sdk.Context, encodedAddress string) (t
 		Ctx:            ctx,
 		EncodedAddress: encodedAddress,
 	}
-	mock.lockGetAddress.Lock()
-	mock.calls.GetAddress = append(mock.calls.GetAddress, callInfo)
-	mock.lockGetAddress.Unlock()
-	return mock.GetAddressFunc(ctx, encodedAddress)
+	mock.lockGetAddressInfo.Lock()
+	mock.calls.GetAddressInfo = append(mock.calls.GetAddressInfo, callInfo)
+	mock.lockGetAddressInfo.Unlock()
+	return mock.GetAddressInfoFunc(ctx, encodedAddress)
 }
 
-// GetAddressCalls gets all the calls that were made to GetAddress.
+// GetAddressInfoCalls gets all the calls that were made to GetAddressInfo.
 // Check the length with:
-//     len(mockedBTCKeeper.GetAddressCalls())
-func (mock *BTCKeeperMock) GetAddressCalls() []struct {
+//     len(mockedBTCKeeper.GetAddressInfoCalls())
+func (mock *BTCKeeperMock) GetAddressInfoCalls() []struct {
 	Ctx            sdk.Context
 	EncodedAddress string
 } {
@@ -3017,9 +3017,9 @@ func (mock *BTCKeeperMock) GetAddressCalls() []struct {
 		Ctx            sdk.Context
 		EncodedAddress string
 	}
-	mock.lockGetAddress.RLock()
-	calls = mock.calls.GetAddress
-	mock.lockGetAddress.RUnlock()
+	mock.lockGetAddressInfo.RLock()
+	calls = mock.calls.GetAddressInfo
+	mock.lockGetAddressInfo.RUnlock()
 	return calls
 }
 
@@ -3865,10 +3865,10 @@ func (mock *BTCKeeperMock) LoggerCalls() []struct {
 	return calls
 }
 
-// SetAddress calls SetAddressFunc.
-func (mock *BTCKeeperMock) SetAddress(ctx sdk.Context, address types.AddressInfo) {
-	if mock.SetAddressFunc == nil {
-		panic("BTCKeeperMock.SetAddressFunc: method is nil but BTCKeeper.SetAddress was just called")
+// SetAddressInfo calls SetAddressInfoFunc.
+func (mock *BTCKeeperMock) SetAddressInfo(ctx sdk.Context, address types.AddressInfo) {
+	if mock.SetAddressInfoFunc == nil {
+		panic("BTCKeeperMock.SetAddressInfoFunc: method is nil but BTCKeeper.SetAddressInfo was just called")
 	}
 	callInfo := struct {
 		Ctx     sdk.Context
@@ -3877,16 +3877,16 @@ func (mock *BTCKeeperMock) SetAddress(ctx sdk.Context, address types.AddressInfo
 		Ctx:     ctx,
 		Address: address,
 	}
-	mock.lockSetAddress.Lock()
-	mock.calls.SetAddress = append(mock.calls.SetAddress, callInfo)
-	mock.lockSetAddress.Unlock()
-	mock.SetAddressFunc(ctx, address)
+	mock.lockSetAddressInfo.Lock()
+	mock.calls.SetAddressInfo = append(mock.calls.SetAddressInfo, callInfo)
+	mock.lockSetAddressInfo.Unlock()
+	mock.SetAddressInfoFunc(ctx, address)
 }
 
-// SetAddressCalls gets all the calls that were made to SetAddress.
+// SetAddressInfoCalls gets all the calls that were made to SetAddressInfo.
 // Check the length with:
-//     len(mockedBTCKeeper.SetAddressCalls())
-func (mock *BTCKeeperMock) SetAddressCalls() []struct {
+//     len(mockedBTCKeeper.SetAddressInfoCalls())
+func (mock *BTCKeeperMock) SetAddressInfoCalls() []struct {
 	Ctx     sdk.Context
 	Address types.AddressInfo
 } {
@@ -3894,9 +3894,9 @@ func (mock *BTCKeeperMock) SetAddressCalls() []struct {
 		Ctx     sdk.Context
 		Address types.AddressInfo
 	}
-	mock.lockSetAddress.RLock()
-	calls = mock.calls.SetAddress
-	mock.lockSetAddress.RUnlock()
+	mock.lockSetAddressInfo.RLock()
+	calls = mock.calls.SetAddressInfo
+	mock.lockSetAddressInfo.RUnlock()
 	return calls
 }
 

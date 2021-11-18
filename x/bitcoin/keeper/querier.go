@@ -115,7 +115,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data
 	var infos []types.QueryAddressesResponse_AddressInfo
 
 	for _, address := range addresses {
-		info, ok := k.GetAddress(ctx, address)
+		info, ok := k.GetAddressInfo(ctx, address)
 		if !ok { // the address info must be available
 			panic("could not retrive address info")
 		}
@@ -225,7 +225,7 @@ func QueryLatestTxByTxType(ctx sdk.Context, k types.BTCKeeper, txTypeStr string)
 				return nil, fmt.Errorf("out point info %s is not found or not spent", outPointStr)
 			}
 
-			addressInfo, ok := k.GetAddress(ctx, outPointInfo.Address)
+			addressInfo, ok := k.GetAddressInfo(ctx, outPointInfo.Address)
 			if !ok {
 				return nil, fmt.Errorf("unknown outpoint address %s", outPointInfo.Address)
 			}

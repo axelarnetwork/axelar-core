@@ -58,8 +58,8 @@ type BTCKeeper interface {
 	SetLatestSignedTxHash(ctx sdk.Context, txType TxType, txHash chainhash.Hash)
 	GetLatestSignedTxHash(ctx sdk.Context, txType TxType) (*chainhash.Hash, bool)
 
-	SetAddress(ctx sdk.Context, address AddressInfo)
-	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+	SetAddressInfo(ctx sdk.Context, address AddressInfo)
+	GetAddressInfo(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
 
 	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
 	GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string

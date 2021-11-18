@@ -104,7 +104,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			return []string{}
 		}
 
-		btcKeeper.GetAddressFunc = func(_ sdk.Context, a string) (types.AddressInfo, bool) {
+		btcKeeper.GetAddressInfoFunc = func(_ sdk.Context, a string) (types.AddressInfo, bool) {
 			if a == depositAddress.Address {
 				return depositAddress, true
 			}

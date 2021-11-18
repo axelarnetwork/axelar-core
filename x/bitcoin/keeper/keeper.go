@@ -204,14 +204,14 @@ func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 	return result
 }
 
-// SetAddress stores the given address information
-func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
+// SetAddressInfo stores the given address information
+func (k Keeper) SetAddressInfo(ctx sdk.Context, address types.AddressInfo) {
 	key := depositAddrPrefix.Append(utils.LowerCaseKey(address.Address))
 	k.getStore(ctx).Set(key, &address)
 }
 
-// GetAddress returns the address information for the given encoded address
-func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
+// GetAddressInfo returns the address information for the given encoded address
+func (k Keeper) GetAddressInfo(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 	var address types.AddressInfo
 	ok := k.getStore(ctx).Get(depositAddrPrefix.Append(utils.LowerCaseKey(encodedAddress)), &address)
 	return address, ok
