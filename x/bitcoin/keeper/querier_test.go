@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -28,7 +29,6 @@ import (
 func TestQueryDepositAddress(t *testing.T) {
 	var (
 		btcKeeper   *mock.BTCKeeperMock
-		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 
@@ -51,11 +51,9 @@ func TestQueryDepositAddress(t *testing.T) {
 	}
 
 	setup := func() {
-		btcKeeper = &mock.BTCKeeperMock{}
-		signer = &mock.SignerMock{}
 		nexusKeeper = &mock.NexusMock{}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-
+		btcKeeper = &mock.BTCKeeperMock{}
+		ctx = generateContext()
 		address = fmt.Sprintf("0x%s", hex.EncodeToString(rand.Bytes(20)))
 	}
 
@@ -68,94 +66,10 @@ func TestQueryDepositAddress(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 
-		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
+		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "recipient chain not found")
-	}))
-
-	t.Run("should return error if the secondary key for given chain is not available", testutils.Func(func(t *testing.T) {
-		setup()
-
-		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
-
-		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-			if chain == params.Chain {
-				return evm.Ethereum, true
-			}
-			return nexus.Chain{}, false
-		}
-		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.MasterKey {
-				return tss.Key{}, true
-			}
-			return tss.Key{}, false
-		}
-
-		_, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "secondary key not set")
-	}))
-
-	t.Run("should return error if the deposit address is not linked yet", testutils.Func(func(t *testing.T) {
-		setup()
-
-		secondaryPrivKey, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
-		now := time.Now()
-		secondaryKey := tss.Key{
-			ID:        tssTestUtils.RandKeyID(),
-			PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: secondaryPrivKey.PubKey().SerializeCompressed()}},
-			Role:      tss.SecondaryKey,
-			RotatedAt: &now,
-		}
-		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
-
-		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-			if chain == params.Chain {
-				return evm.Ethereum, true
-			}
-			return nexus.Chain{}, false
-		}
-		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.SecondaryKey {
-				return secondaryKey, true
-			}
-			return tss.Key{}, false
-		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
-			for _, externalKey := range externalKeys {
-				if keyID == externalKey.ID {
-					return externalKey, true
-				}
-			}
-
-			return tss.Key{}, false
-		}
-		signer.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
-			return tsstypes.DefaultParams().ExternalMultisigThreshold
-		}
-		signer.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
-			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
-			for i := 0; i < len(externalKeyIDs); i++ {
-				externalKeyIDs[i] = externalKeys[i].ID
-			}
-
-			return externalKeyIDs, true
-		}
-		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressInternalKeyLockDuration }
-		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-			return nexus.CrossChainAddress{}, false
-		}
-
-		_, err = keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "deposit address is not linked with recipient address")
 	}))
 
 	t.Run("should return the deposit address", testutils.Func(func(t *testing.T) {
@@ -170,54 +84,48 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return nexus.Chain{}, false
 		}
-		signer.GetCurrentKeyFunc = func(_ sdk.Context, _ nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-			if keyRole == tss.SecondaryKey {
-				return secondaryKey, true
-			}
 
-			return tss.Key{}, false
-		}
-		signer.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
-			for _, externalKey := range externalKeys {
-				if keyID == externalKey.ID {
-					return externalKey, true
-				}
-			}
-
-			return tss.Key{}, false
-		}
 		btcKeeper.GetMasterAddressExternalKeyLockDurationFunc = func(ctx sdk.Context) time.Duration { return types.DefaultParams().MasterAddressExternalKeyLockDuration }
 		btcKeeper.GetNetworkFunc = func(ctx sdk.Context) types.Network { return types.DefaultParams().Network }
-		signer.GetExternalMultisigThresholdFunc = func(ctx sdk.Context) utils.Threshold {
-			return tsstypes.DefaultParams().ExternalMultisigThreshold
-		}
-		signer.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) {
-			externalKeyIDs := make([]tss.KeyID, len(externalKeys))
-			for i := 0; i < len(externalKeyIDs); i++ {
-				externalKeyIDs[i] = externalKeys[i].ID
-			}
-
-			return externalKeyIDs, true
-		}
 		nexusKeeper.GetRecipientFunc = func(_ sdk.Context, _ nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 			return nexus.CrossChainAddress{}, true
 		}
 
-		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}, types.DefaultParams().Network)
+		recipientAddress := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}
+		nonce := utils.Nonce(ctx)
+		scriptNonce := btcutil.Hash160([]byte(recipientAddress.String() + hex.EncodeToString(nonce[:])))
+		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), scriptNonce, types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		expected := types.QueryAddressResponse{
-			Address: depositAddress.Address,
-			KeyID:   secondaryKey.ID,
+		btcKeeper.GetDepositAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []string {
+			if r == recipientAddress {
+				return []string{depositAddress.Address}
+			}
+			return []string{}
 		}
-		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, signer, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
-		var actual types.QueryAddressResponse
+		btcKeeper.GetAddressFunc = func(_ sdk.Context, a string) (types.AddressInfo, bool) {
+			if a == depositAddress.Address {
+				return depositAddress, true
+			}
+			return types.AddressInfo{}, false
+		}
+
+		expected := types.QueryAddressesResponse{
+			Addresses: []types.QueryAddressesResponse_AddressInfo{{
+				Address: depositAddress.Address,
+				KeyID:   secondaryKey.ID,
+			}}}
+
+		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
+
+		var actual types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	}))
+
 }
 
 func TestQueryConsolidationAddressByKeyID(t *testing.T) {
@@ -336,15 +244,16 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		masterConsolidationAddress, err := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		expected := types.QueryAddressResponse{
-			Address: masterConsolidationAddress.Address,
-			KeyID:   masterKey.ID,
-		}
+		expected := types.QueryAddressesResponse{
+			Addresses: []types.QueryAddressesResponse_AddressInfo{{
+				Address: masterConsolidationAddress.Address,
+				KeyID:   masterKey.ID,
+			}}}
 
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 		assert.NoError(t, err)
 
-		var actual types.QueryAddressResponse
+		var actual types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 		assert.Equal(t, expected, actual)
 	}))
@@ -374,14 +283,15 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		secondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		expected := types.QueryAddressResponse{
-			Address: secondaryConsolidationAddress.Address,
-			KeyID:   secondaryKey.ID,
-		}
+		expected := types.QueryAddressesResponse{
+			Addresses: []types.QueryAddressesResponse_AddressInfo{{
+				Address: secondaryConsolidationAddress.Address,
+				KeyID:   secondaryKey.ID,
+			}}}
 
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
-		var actual types.QueryAddressResponse
+		var actual types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)

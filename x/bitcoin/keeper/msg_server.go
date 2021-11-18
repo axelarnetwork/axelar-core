@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -132,13 +133,16 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient)
+	nonce := utils.Nonce(ctx)
+
+	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient, nonce)
 	if err != nil {
 		return nil, err
 	}
 
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
 	s.SetAddress(ctx, depositAddressInfo)
+	s.SetDepositAddress(ctx, recipient, depositAddressInfo.Address)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -1092,7 +1096,7 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 	return nil
 }
 
-func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key, recipient nexus.CrossChainAddress) (types.AddressInfo, error) {
+func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key, recipient nexus.CrossChainAddress, nonce [sha256.Size]byte) (types.AddressInfo, error) {
 	if key.Role != tss.SecondaryKey {
 		return types.AddressInfo{}, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
 	}
@@ -1109,14 +1113,16 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 	if key.RotatedAt == nil {
 		return types.AddressInfo{}, fmt.Errorf("cannot get deposit address of key %s which is not rotated yet", key.ID)
 	}
+
 	externalKeyLockTime := key.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
+	scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
 
 	return types.NewDepositAddress(
 		key,
 		externalMultisigThreshold.Numerator,
 		externalKeys,
 		externalKeyLockTime,
-		recipient,
+		scriptNonce,
 		k.GetNetwork(ctx),
 	)
 }

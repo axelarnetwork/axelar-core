@@ -36,7 +36,7 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		var err error
 		switch path[0] {
 		case QDepositAddress:
-			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
+			res, err = QueryDepositAddress(ctx, k, n, req.Data)
 		case QDepositStatus:
 			res, err = QueryDepositStatus(ctx, k, path[1])
 		case QConsolidationAddressByKeyRole:
@@ -99,7 +99,7 @@ func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) 
 }
 
 // QueryDepositAddress returns deposit address
-func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalLengthPrefixed(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -110,25 +110,24 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		return nil, fmt.Errorf("recipient chain not found")
 	}
 
-	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
-	if !ok {
-		return nil, fmt.Errorf("secondary key not set")
-	}
-
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
-	depositAddr, err := getDepositAddress(ctx, k, s, secondaryKey, recipient)
-	if err != nil {
-		return nil, err
+	addresses := k.GetDepositAddresses(ctx, recipient)
+	var infos []types.QueryAddressesResponse_AddressInfo
+
+	for _, address := range addresses {
+		info, ok := k.GetAddress(ctx, address)
+		if !ok { // the address info must be available
+			panic("could not retrive address info")
+		}
+
+		infos = append(infos, types.QueryAddressesResponse_AddressInfo{
+			Address: info.Address,
+			KeyID:   info.KeyID,
+		})
 	}
 
-	_, ok = n.GetRecipient(ctx, depositAddr.ToCrossChainAddr())
-	if !ok {
-		return nil, fmt.Errorf("deposit address is not linked with recipient address")
-	}
-
-	resp := types.QueryAddressResponse{
-		Address: depositAddr.Address,
-		KeyID:   depositAddr.KeyID,
+	resp := types.QueryAddressesResponse{
+		Addresses: infos,
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
@@ -173,7 +172,7 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 		return nil, err
 	}
 
-	resp := types.QueryAddressResponse{Address: addressInfo.Address, KeyID: addressInfo.KeyID}
+	resp := types.QueryAddressesResponse{Addresses: []types.QueryAddressesResponse_AddressInfo{{Address: addressInfo.Address, KeyID: addressInfo.KeyID}}}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

@@ -15,13 +15,17 @@ message DepositQueryParams {
   string chain = 2;
 }
 
-message QueryAddressResponse {
-  string address = 1;
-  string key_id = 2 [
-    (gogoproto.customname) = "KeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-  ];
+message QueryAddressesResponse {
+  repeated AddressInfo addresses = 1 [ (gogoproto.nullable) = false ];
+
+  message AddressInfo {
+    string address = 1;
+    string key_id = 2 [
+      (gogoproto.customname) = "KeyID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+  }
 }
 
 message QueryDepositStatusResponse {

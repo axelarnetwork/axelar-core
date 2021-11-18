@@ -58,7 +58,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrap(err, types.ErrDepositAddr)
 			}
 
-			var res types.QueryAddressResponse
+			var res types.QueryAddressesResponse
 			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 			return clientCtx.PrintProto(&res)
@@ -138,7 +138,7 @@ func GetCmdConsolidationAddress(queryRoute string) *cobra.Command {
 			return sdkerrors.Wrap(err, types.ErrConsolidationAddr)
 		}
 
-		var res types.QueryAddressResponse
+		var res types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return clientCtx.PrintProto(&res)

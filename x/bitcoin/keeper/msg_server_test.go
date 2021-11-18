@@ -57,9 +57,10 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 
 		btcKeeper = &mock.BTCKeeperMock{
-			GetNetworkFunc: func(ctx sdk.Context) types.Network { return types.Mainnet },
-			SetAddressFunc: func(sdk.Context, types.AddressInfo) {},
-			LoggerFunc:     func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetNetworkFunc:        func(ctx sdk.Context) types.Network { return types.Mainnet },
+			SetAddressFunc:        func(sdk.Context, types.AddressInfo) {},
+			SetDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, string) {},
+			LoggerFunc:            func(sdk.Context) log.Logger { return log.TestingLogger() },
 			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
 				return types.DefaultParams().MasterAddressExternalKeyLockDuration
 			},
@@ -101,7 +102,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = generateContext()
 		msg = randomMsgLink()
 		server = bitcoinKeeper.NewMsgServerImpl(btcKeeper, signer, nexusKeeper, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	}
@@ -2024,4 +2025,12 @@ func randomAddress() *btcutil.AddressWitnessScriptHash {
 		panic(err)
 	}
 	return addr
+}
+
+func generateContext() sdk.Context {
+	ctx := sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	ctx = ctx.WithTxBytes(rand.BytesBetween(1024, 101240))
+	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
+	ctx.GasMeter().ConsumeGas(uint64(rand.I64Between(1000, 1000000)), "test")
+	return ctx
 }

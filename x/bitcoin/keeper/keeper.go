@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -24,7 +25,8 @@ var (
 	pendingOutpointPrefix    = utils.KeyFromStr("pend_")
 	confirmedOutPointPrefix  = utils.KeyFromStr("conf_")
 	spentOutPointPrefix      = utils.KeyFromStr("spent_")
-	addrPrefix               = utils.KeyFromStr("addr_")
+	depositAddrPrefix        = utils.KeyFromStr("deposit_addr_")
+	addressesPrefix          = utils.KeyFromStr("addresses_")
 	dustAmtPrefix            = utils.KeyFromStr("dust_")
 	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
 	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
@@ -204,14 +206,34 @@ func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 
 // SetAddress stores the given address information
 func (k Keeper) SetAddress(ctx sdk.Context, address types.AddressInfo) {
-	k.getStore(ctx).Set(addrPrefix.Append(utils.LowerCaseKey(address.Address)), &address)
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(address.Address))
+	k.getStore(ctx).Set(key, &address)
 }
 
 // GetAddress returns the address information for the given encoded address
 func (k Keeper) GetAddress(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 	var address types.AddressInfo
-	ok := k.getStore(ctx).Get(addrPrefix.Append(utils.LowerCaseKey(encodedAddress)), &address)
+	ok := k.getStore(ctx).Get(depositAddrPrefix.Append(utils.LowerCaseKey(encodedAddress)), &address)
 	return address, ok
+}
+
+// SetDepositAddress associates the specified recipient address with the given deposit address
+func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string) {
+	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address))
+	k.getStore(ctx).SetRaw(key, []byte(address))
+}
+
+// GetDepositAddresses returns the list of deposit addresses associated to the given recipient address
+func (k Keeper) GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string {
+	var deposits []string
+	iter := k.getStore(ctx).Iterator(addressesPrefix.Append(utils.LowerCaseKey(recipient.String())))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		deposits = append(deposits, string(iter.Value()))
+	}
+
+	return deposits
 }
 
 // DeleteOutpointInfo deletes a the given outpoint if known
