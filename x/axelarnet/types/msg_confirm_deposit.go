@@ -41,6 +41,10 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return fmt.Errorf("amount cannot be less than or equal to 0")
 	}
 
+	if err := sdk.VerifyAddressFormat(m.DepositAddress); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "deposit address").Error())
+	}
+
 	return nil
 }
 
