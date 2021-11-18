@@ -242,6 +242,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	s.nexus.RegisterAsset(ctx, req.Chain, req.Denom)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Denom)
 	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Denom, req.Chain)
 
 	return &types.RegisterAssetResponse{}, nil
