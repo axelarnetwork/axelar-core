@@ -26,7 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetCmdDepositAddress(queryRoute),
+		GetCmdDepositAddresses(queryRoute),
 		GetCmdDepositStatus(queryRoute),
 		GetCmdConsolidationAddress(queryRoute),
 		GetCmdNextKeyID(queryRoute),
@@ -38,10 +38,10 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdDepositAddress returns a bitcoin deposit address for a recipient address on another blockchain
-func GetCmdDepositAddress(queryRoute string) *cobra.Command {
+// GetCmdDepositAddresses returns a bitcoin deposit address for a recipient address on another blockchain
+func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-address [chain] [recipient address]",
+		Use:   "deposit-addresses [chain] [recipient address]",
 		Short: "Returns a bitcoin deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -50,7 +50,7 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddress)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddresses)
 			params := types.DepositQueryParams{Chain: args[0], Address: args[1]}
 
 			bz, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))

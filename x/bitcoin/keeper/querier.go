@@ -19,7 +19,7 @@ import (
 
 // Query paths
 const (
-	QDepositAddress                = "depositAddr"
+	QDepositAddresses              = "depositAddresses"
 	QConsolidationAddressByKeyRole = "consolidationAddrByKeyRole"
 	QConsolidationAddressByKeyID   = "consolidationAddrByKeyID"
 	QNextKeyID                     = "nextKeyID"
@@ -35,7 +35,7 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		var res []byte
 		var err error
 		switch path[0] {
-		case QDepositAddress:
+		case QDepositAddresses:
 			res, err = QueryDepositAddress(ctx, k, n, req.Data)
 		case QDepositStatus:
 			res, err = QueryDepositStatus(ctx, k, path[1])

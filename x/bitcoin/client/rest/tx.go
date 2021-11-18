@@ -25,7 +25,7 @@ const (
 	TxSignTx                      = "sign-tx"
 	TxSubmitExternalSignature     = "submit-external-signature"
 
-	QueryDepositAddress       = "deposit-address"
+	QueryDepositAddresses     = "deposit-addresses"
 	QueryDepositStatus        = "deposit-status"
 	QueryConsolidationAddress = "consolidation-address"
 	QueryMinOutputAmount      = "min-output-amount"
@@ -46,7 +46,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerSubmitExternalSignature(cliCtx), TxSubmitExternalSignature)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(QueryHandlerDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(QueryHandlerDepositAddresses(cliCtx), QueryDepositAddresses, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(QueryHandlerDepositStatus(cliCtx), QueryDepositStatus, clientUtils.PathVarOutpoint)
 	registerQuery(QueryHandlerConsolidationAddress(cliCtx), QueryConsolidationAddress)
 	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarKeyRole)
