@@ -247,17 +247,18 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	tokenAddr := token.GetAddress()
-
-	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
+	nonce := utils.Nonce(ctx)
+	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr, nonce[:])
 	if err != nil {
 		return nil, err
 	}
 
 	symbol := token.GetDetails().Symbol
+	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
 	s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.String()},
-		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
+		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.Hex()},
+		recipient)
 
 	burnerInfo := types.BurnerInfo{
 		TokenAddress:     types.Address(tokenAddr),
@@ -267,13 +268,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	keeper.SetBurnerAddress(ctx, recipient, burnerAddr.Hex())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.String()),
+			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, req.RecipientChain),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),

@@ -158,6 +158,7 @@
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
+    - [QueryAddressesResponse](#evm.v1beta1.QueryAddressesResponse)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
@@ -2416,6 +2417,21 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryAddressesResponse"></a>
+
+### QueryAddressesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `addresses` | [string](#string) | repeated |  |
 
 
 

@@ -221,21 +221,22 @@ func TestGetTokenAddress(t *testing.T) {
 
 func TestGetBurnerAddressAndSalt(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := rand.Context(fake.NewMultiStore())
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
+	nonce := common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1")
 	tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
-	expectedBurnerAddr := common.HexToAddress("0xC857f4173BdC159B6254504ABd88d144eba6Aa1B")
-	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
+	expectedBurnerAddr := common.HexToAddress("0x0D2AE6C71ea1192dD5E5B8a2b3B9141bEE085Eae")
+	expectedSalt := common.Hex2Bytes("8109897bf6567b0954a70cec46fd0928506398a900beed9c46f17b3e31d319ba")
 
 	k.SetParams(ctx, types.DefaultParams()...)
 
-	actualburnerAddr, actualSalt, err := k.ForChain(exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
+	actualburnerAddr, actualSalt, err := k.ForChain(exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway, nonce)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
-	assert.Equal(t, expectedSalt, actualSalt[:])
+	assert.Equal(t, common.Bytes2Hex(expectedSalt), common.Bytes2Hex(actualSalt[:]))
 }

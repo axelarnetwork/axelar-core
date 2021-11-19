@@ -254,16 +254,17 @@ func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainNa
 
 // QueryDepositAddress returns the deposit address linked to the given recipient address
 func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
-	depositChain, ok := n.GetChain(ctx, k.GetName())
+	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
+
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "could not parse the recipient")
 	}
 
-	gatewayAddr, ok := k.GetGatewayAddress(ctx)
+	_, ok = k.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway address not set")
 	}
@@ -273,17 +274,16 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
 	}
 
-	depositAddr, _, err := k.GetBurnerAddressAndSalt(ctx, token.GetAddress(), params.Address, gatewayAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	_, ok = n.GetRecipient(ctx, nexus.CrossChainAddress{Chain: depositChain, Address: depositAddr.String()})
+	recipientChain, ok := n.GetChain(ctx, params.Chain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit address is not linked with recipient address")
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", params.Chain))
 	}
 
-	return depositAddr.Bytes(), nil
+	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: params.Address}
+	addresses := k.GetBurnerAddresses(ctx, recipient)
+	resp := types.QueryAddressesResponse{Addresses: addresses}
+
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
