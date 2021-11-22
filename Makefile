@@ -40,7 +40,7 @@ build: go.sum
 
 .PHONY: build-binaries
 build-binaries: guard-SEMVER
-	./scripts/build-binaries.sh ${SEMVER} '$(ldflags)'
+	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
 .PHONY: build-binaries-in-docker
 build-binaries-in-docker: guard-SEMVER
