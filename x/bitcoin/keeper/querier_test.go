@@ -96,7 +96,7 @@ func TestQueryDepositAddress(t *testing.T) {
 		}
 
 		recipientAddress := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: params.Address}
-		nonce := utils.GetNonce(ctx)
+		nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 		scriptNonce := btcutil.Hash160([]byte(recipientAddress.String() + hex.EncodeToString(nonce[:])))
 		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), scriptNonce, types.DefaultParams().Network)
 		assert.NoError(t, err)

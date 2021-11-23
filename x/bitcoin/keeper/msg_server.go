@@ -1117,7 +1117,7 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 		return types.AddressInfo{}, fmt.Errorf("cannot get deposit address of key %s which is not rotated yet", key.ID)
 	}
 
-	nonce := utils.GetNonce(ctx)
+	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	externalKeyLockTime := key.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
 	scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
 
