@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -133,9 +132,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	nonce := utils.GetNonce(ctx)
 
-	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient, nonce)
+	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient)
 	if err != nil {
 		return nil, err
 	}
@@ -1096,7 +1094,7 @@ func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Sign
 	return nil
 }
 
-func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key, recipient nexus.CrossChainAddress, nonce [sha256.Size]byte) (types.AddressInfo, error) {
+func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key tss.Key, recipient nexus.CrossChainAddress) (types.AddressInfo, error) {
 	if key.Role != tss.SecondaryKey {
 		return types.AddressInfo{}, fmt.Errorf("given key %s is not for a %s key", key.ID, tss.SecondaryKey.SimpleString())
 	}
@@ -1114,6 +1112,7 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 		return types.AddressInfo{}, fmt.Errorf("cannot get deposit address of key %s which is not rotated yet", key.ID)
 	}
 
+	nonce := utils.GetNonce(ctx)
 	externalKeyLockTime := key.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
 	scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
 
