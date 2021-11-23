@@ -219,7 +219,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 		return common.Address{}, common.Hash{}, err
 	}
 
-	nonce := utils.Nonce(ctx)
+	nonce := utils.GetNonce(ctx)
 	bz := []byte(recipient)
 	bz = append(bz, nonce[:]...)
 	saltBurn := common.BytesToHash(crypto.Keccak256Hash(bz).Bytes())

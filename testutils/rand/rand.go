@@ -293,7 +293,7 @@ func AccAddr() sdk.AccAddress {
 // Context generates a random Context data structure
 func Context(store types.MultiStore) sdk.Context {
 	ctx := sdk.NewContext(store, tmproto.Header{Height: PosI64()}, false, log.TestingLogger())
-	ctx = ctx.WithTxBytes(BytesBetween(1024, 101240))
+	ctx = ctx.WithHeaderHash(BytesBetween(1024, 101240))
 	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
 	ctx.GasMeter().ConsumeGas(uint64(I64Between(1000, 1000000)), "test")
 	return ctx

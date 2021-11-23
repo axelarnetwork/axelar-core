@@ -222,7 +222,7 @@ func TestGetTokenAddress(t *testing.T) {
 func TestGetBurnerAddressAndSalt(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-	ctx = ctx.WithTxBytes(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
 	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
 	ctx.GasMeter().ConsumeGas(1000, "test")
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
