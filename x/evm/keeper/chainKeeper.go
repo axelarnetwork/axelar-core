@@ -241,22 +241,22 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 }
 
 // SetBurnerAddress stores the burner address for the given cross chain recipient
-func (k chainKeeper) SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string) {
-	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address))
-	k.getStore(ctx, k.chain).SetRaw(key, []byte(address))
+func (k chainKeeper) SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address types.Address) {
+	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.KeyFromBz(address.Bytes()))
+	k.getStore(ctx, k.chain).SetRaw(key, address.Bytes())
 }
 
 // GetBurnerAddresses retrieves all the burner addresses for the given cross chain
-func (k chainKeeper) GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string {
-	var deposits []string
+func (k chainKeeper) GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []types.Address {
+	var addresses []types.Address
 	iter := k.getStore(ctx, k.chain).Iterator(addressesPrefix.Append(utils.LowerCaseKey(recipient.String())))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		deposits = append(deposits, string(iter.Value()))
+		addresses = append(addresses, types.Address(common.BytesToAddress(iter.Value())))
 	}
 
-	return deposits
+	return addresses
 }
 
 // GetBurnerByteCodes returns the bytecodes for the burner contract
