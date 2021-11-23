@@ -2611,7 +2611,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, nonce []byte) (common.Address, common.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
 // 			},
-// 			GetBurnerAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []string {
+// 			GetBurnerAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []types.Address {
 // 				panic("mock out the GetBurnerAddresses method")
 // 			},
 // 			GetBurnerByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
@@ -2686,7 +2686,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)  {
+// 			SetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address types.Address)  {
 // 				panic("mock out the SetBurnerAddress method")
 // 			},
 // 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)  {
@@ -2754,7 +2754,7 @@ type ChainKeeperMock struct {
 	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, nonce []byte) (common.Address, common.Hash, error)
 
 	// GetBurnerAddressesFunc mocks the GetBurnerAddresses method.
-	GetBurnerAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []string
+	GetBurnerAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []types.Address
 
 	// GetBurnerByteCodesFunc mocks the GetBurnerByteCodes method.
 	GetBurnerByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -2829,7 +2829,7 @@ type ChainKeeperMock struct {
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// SetBurnerAddressFunc mocks the SetBurnerAddress method.
-	SetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)
+	SetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address types.Address)
 
 	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
 	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)
@@ -3098,7 +3098,7 @@ type ChainKeeperMock struct {
 			// Recipient is the recipient argument value.
 			Recipient nexus.CrossChainAddress
 			// Address is the address argument value.
-			Address string
+			Address types.Address
 		}
 		// SetBurnerInfo holds details about calls to the SetBurnerInfo method.
 		SetBurnerInfo []struct {
@@ -3666,7 +3666,7 @@ func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
 }
 
 // GetBurnerAddresses calls GetBurnerAddressesFunc.
-func (mock *ChainKeeperMock) GetBurnerAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []string {
+func (mock *ChainKeeperMock) GetBurnerAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress) []types.Address {
 	if mock.GetBurnerAddressesFunc == nil {
 		panic("ChainKeeperMock.GetBurnerAddressesFunc: method is nil but ChainKeeper.GetBurnerAddresses was just called")
 	}
@@ -4480,14 +4480,14 @@ func (mock *ChainKeeperMock) LoggerCalls() []struct {
 }
 
 // SetBurnerAddress calls SetBurnerAddressFunc.
-func (mock *ChainKeeperMock) SetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string) {
+func (mock *ChainKeeperMock) SetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address types.Address) {
 	if mock.SetBurnerAddressFunc == nil {
 		panic("ChainKeeperMock.SetBurnerAddressFunc: method is nil but ChainKeeper.SetBurnerAddress was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Recipient nexus.CrossChainAddress
-		Address   string
+		Address   types.Address
 	}{
 		Ctx:       ctx,
 		Recipient: recipient,
@@ -4505,12 +4505,12 @@ func (mock *ChainKeeperMock) SetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_t
 func (mock *ChainKeeperMock) SetBurnerAddressCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Recipient nexus.CrossChainAddress
-	Address   string
+	Address   types.Address
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Recipient nexus.CrossChainAddress
-		Address   string
+		Address   types.Address
 	}
 	mock.lockSetBurnerAddress.RLock()
 	calls = mock.calls.SetBurnerAddress

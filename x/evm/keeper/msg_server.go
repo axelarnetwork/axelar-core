@@ -268,7 +268,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	keeper.SetBurnerAddress(ctx, recipient, burnerAddr.Hex())
+	keeper.SetBurnerAddress(ctx, recipient, types.Address(burnerAddr))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

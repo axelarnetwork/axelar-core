@@ -293,13 +293,13 @@ func TestQueryDepositAddress(t *testing.T) {
 		ctx               sdk.Context
 		evmChain          string
 		data              []byte
-		expectedAddresses []string
+		expectedAddresses []types.Address
 		recipient         string
 	)
 
 	setup := func() {
 		evmChain = rand.StrBetween(5, 10)
-		expectedAddresses = []string{randomAddress().Hex(), randomAddress().Hex(), randomAddress().Hex()}
+		expectedAddresses = []types.Address{types.Address(randomAddress()), types.Address(randomAddress()), types.Address(randomAddress())}
 		recipient = "tb1qg2z5jatp22zg7wyhpthhgwvn0un05mdwmqgjln"
 
 		chainKeeper = &mock.ChainKeeperMock{
@@ -311,11 +311,11 @@ func TestQueryDepositAddress(t *testing.T) {
 				}
 				return types.NilToken
 			},
-			GetBurnerAddressesFunc: func(_ sdk.Context, r nexus.CrossChainAddress) []string {
+			GetBurnerAddressesFunc: func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
 				if r.Address == recipient && r.Chain == btc.Bitcoin {
 					return expectedAddresses
 				}
-				return []string{}
+				return []types.Address{}
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -376,7 +376,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return types.NilToken
 		}
-		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []string {
+		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
 			c := nexus.Chain{
 				Name:                  dataStr.Chain,
 				NativeAsset:           dataStr.Asset,
@@ -385,7 +385,7 @@ func TestQueryDepositAddress(t *testing.T) {
 			if r.Address == dataStr.Address && r.Chain == c {
 				return expectedAddresses
 			}
-			return []string{}
+			return []types.Address{}
 		}
 
 		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
@@ -458,8 +458,8 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("no deposit addresses linked", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []string {
-			return []string{}
+		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
+			return []types.Address{}
 		}
 
 		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)

@@ -70,8 +70,8 @@ type ChainKeeper interface {
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
-	SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
-	GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string
+	SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address Address)
+	GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []Address
 
 	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
