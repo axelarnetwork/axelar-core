@@ -55,13 +55,14 @@ func GetCmdDepositAddress(queryRoute string) *cobra.Command {
 
 			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositAddress, args[0])
 
-			res, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Asset: args[3]}))
+			bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Asset: args[3]}))
 			if err != nil {
 				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
 			}
 
-			out := common.BytesToAddress(res)
-			return cliCtx.PrintObjectLegacy(out.Hex())
+			var res types.QueryAddressesResponse
+			types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+			return cliCtx.PrintProto(&res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

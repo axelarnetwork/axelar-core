@@ -281,7 +281,11 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: params.Address}
 	addresses := k.GetBurnerAddresses(ctx, recipient)
-	resp := types.QueryAddressesResponse{Addresses: addresses}
+
+	var resp types.QueryAddressesResponse
+	for _, addr := range addresses {
+		resp.Addresses = append(resp.Addresses, addr.Hex())
+	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

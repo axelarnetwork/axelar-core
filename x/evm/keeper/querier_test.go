@@ -358,7 +358,12 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.Len(chainKeeper.GetBurnerAddressesCalls(), 1)
 		var res types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		assert.ElementsMatch(expectedAddresses, res.Addresses)
+
+		var actualAddresses []types.Address
+		for _, addr := range res.Addresses {
+			actualAddresses = append(actualAddresses, types.Address(common.HexToAddress(addr)))
+		}
+		assert.ElementsMatch(expectedAddresses, actualAddresses)
 
 	}).Repeat(repeatCount))
 
@@ -416,7 +421,12 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.Len(chainKeeper.GetBurnerAddressesCalls(), 1)
 		var res types.QueryAddressesResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		assert.ElementsMatch(expectedAddresses, res.Addresses)
+
+		var actualAddresses []types.Address
+		for _, addr := range res.Addresses {
+			actualAddresses = append(actualAddresses, types.Address(common.HexToAddress(addr)))
+		}
+		assert.ElementsMatch(expectedAddresses, actualAddresses)
 
 	}).Repeat(repeatCount))
 

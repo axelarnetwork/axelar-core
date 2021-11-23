@@ -266,8 +266,9 @@ func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		out := common.BytesToAddress(bz)
-		rest.PostProcessResponse(w, cliCtx, out.Hex())
+		var res types.QueryAddressesResponse
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 

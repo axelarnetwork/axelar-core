@@ -68,7 +68,4 @@ message QueryDepositStateResponse {
   DepositStatus status = 2;
 }
 
-message QueryAddressesResponse {
-  repeated string addresses = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-}
+message QueryAddressesResponse { repeated string addresses = 1; }
