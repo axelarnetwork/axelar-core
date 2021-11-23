@@ -53,7 +53,7 @@ to populate the documentation. See https://blog.golang.org/godoc for more inform
 
 ### CLI command documentation
 
-For the full list of available CLI commands for `axelard` see [here](docs/toc.md)
+For the full list of available CLI commands for `axelard` see [here](docs/cli/toc.md)
 
 ## Test tools
 
