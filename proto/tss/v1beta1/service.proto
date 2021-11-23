@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "snapshot/v1beta1/tx.proto";
 import "tss/v1beta1/tx.proto";
+import "tss/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -78,5 +79,20 @@ service MsgService {
       returns (tss.v1beta1.SubmitMultisigSignaturesResponse) {
     option (google.api.http) = {
     };
+  }
+
+  rpc UpdateGovernanceKey(tss.v1beta1.UpdateGovernanceKeyRequest)
+      returns (tss.v1beta1.UpdateGovernanceKeyResponse) {
+    option (google.api.http) = {
+    };
+  }
+}
+
+// Query defines the gRPC querier service.
+service Query {
+  // GovernanceKey returns multisig governance key
+  rpc GovernanceKey(QueryGovernanceKeyRequest)
+      returns (QueryGovernanceKeyResponse) {
+    option (google.api.http).get = "/tss/v1beta1/governance_key";
   }
 }

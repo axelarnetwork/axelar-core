@@ -1,11 +1,12 @@
 package types
 
 import (
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -20,6 +21,7 @@ type Tss interface {
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
+	GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool)
 }
 
 // Nexus provides access to the nexus functionality

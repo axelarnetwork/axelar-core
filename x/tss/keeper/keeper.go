@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -41,6 +42,7 @@ var (
 	multiSigKeyPrefix          = utils.KeyFromStr("multi_sig_keygen")
 	multiSigSignPrefix         = utils.KeyFromStr("multi_sig_sign")
 	keyInfoPrefix              = utils.KeyFromStr("key_info")
+	governanceKey              = utils.KeyFromStr("governance")
 
 	multisigKeygenQueue = "multisig_keygen"
 	multisigSignQueue   = "multisig_sign"
@@ -442,6 +444,19 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exporte
 	_ = json.Unmarshal(bz, &keyIDs)
 
 	return keyIDs, true
+}
+
+// SetGovernanceKey sets the multisig governance key
+func (k Keeper) SetGovernanceKey(ctx sdk.Context, key multisig.LegacyAminoPubKey) {
+	k.getStore(ctx).Set(governanceKey, &key)
+}
+
+// GetGovernanceKey gets the multisig governance key
+func (k Keeper) GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool) {
+	var key multisig.LegacyAminoPubKey
+	ok := k.getStore(ctx).Get(governanceKey, &key)
+
+	return key, ok
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
