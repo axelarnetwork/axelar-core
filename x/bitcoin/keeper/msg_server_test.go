@@ -59,7 +59,7 @@ func TestHandleMsgLink(t *testing.T) {
 		btcKeeper = &mock.BTCKeeperMock{
 			GetNetworkFunc:        func(ctx sdk.Context) types.Network { return types.Mainnet },
 			SetAddressInfoFunc:    func(sdk.Context, types.AddressInfo) {},
-			SetDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, string) {},
+			SetDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, btcutil.Address) {},
 			LoggerFunc:            func(sdk.Context) log.Logger { return log.TestingLogger() },
 			GetMasterAddressExternalKeyLockDurationFunc: func(ctx sdk.Context) time.Duration {
 				return types.DefaultParams().MasterAddressExternalKeyLockDuration

@@ -115,7 +115,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data
 	var infos []types.QueryAddressesResponse_AddressInfo
 
 	for _, address := range addresses {
-		info, ok := k.GetAddressInfo(ctx, address)
+		info, ok := k.GetAddressInfo(ctx, address.EncodeAddress())
 		if !ok { // the address info must be available
 			panic("could not retrieve address info")
 		}

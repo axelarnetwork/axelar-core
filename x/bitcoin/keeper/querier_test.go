@@ -52,7 +52,11 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	setup := func() {
 		nexusKeeper = &mock.NexusMock{}
-		btcKeeper = &mock.BTCKeeperMock{}
+		btcKeeper = &mock.BTCKeeperMock{
+			GetNetworkFunc: func(sdk.Context) types.Network {
+				return types.Testnet3
+			},
+		}
 		ctx = generateContext()
 		address = fmt.Sprintf("0x%s", hex.EncodeToString(rand.Bytes(20)))
 	}
@@ -97,11 +101,14 @@ func TestQueryDepositAddress(t *testing.T) {
 		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), scriptNonce, types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		btcKeeper.GetDepositAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []string {
+		btcKeeper.GetDepositAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []btcutil.Address {
 			if r == recipientAddress {
-				return []string{depositAddress.Address}
+				addr, err := btcutil.DecodeAddress(depositAddress.Address, btcKeeper.GetNetwork(ctx).Params())
+				assert.NoError(t, err)
+
+				return []btcutil.Address{addr}
 			}
-			return []string{}
+			return []btcutil.Address{}
 		}
 
 		btcKeeper.GetAddressInfoFunc = func(_ sdk.Context, a string) (types.AddressInfo, bool) {

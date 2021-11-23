@@ -218,19 +218,25 @@ func (k Keeper) GetAddressInfo(ctx sdk.Context, encodedAddress string) (types.Ad
 }
 
 // SetDepositAddress associates the specified recipient address with the given deposit address
-func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string) {
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address))
-	k.getStore(ctx).SetRaw(key, []byte(address))
+func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address btcutil.Address) {
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address.EncodeAddress()))
+	k.getStore(ctx).SetRaw(key, []byte(address.EncodeAddress()))
 }
 
 // GetDepositAddresses returns the list of deposit addresses associated to the given recipient address
-func (k Keeper) GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string {
-	var deposits []string
+func (k Keeper) GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []btcutil.Address {
+	var deposits []btcutil.Address
 	iter := k.getStore(ctx).Iterator(depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		deposits = append(deposits, string(iter.Value()))
+		addr, err := btcutil.DecodeAddress(string(iter.Value()), k.GetNetwork(ctx).Params())
+
+		if err != nil { // the stored value is controlled by the keeper, so an error should not be thrown
+			panic(fmt.Sprintf("critical error while iterating through deposit addresses: %s", err.Error()))
+		}
+
+		deposits = append(deposits, addr)
 	}
 
 	return deposits

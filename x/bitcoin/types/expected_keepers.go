@@ -61,8 +61,8 @@ type BTCKeeper interface {
 	SetAddressInfo(ctx sdk.Context, address AddressInfo)
 	GetAddressInfo(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
 
-	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
-	GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string
+	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address btcutil.Address)
+	GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []btcutil.Address
 
 	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)

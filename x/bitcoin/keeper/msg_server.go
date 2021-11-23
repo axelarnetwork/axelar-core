@@ -138,9 +138,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
+	addr, err := btcutil.DecodeAddress(depositAddressInfo.Address, s.GetNetwork(ctx).Params())
+	if err != nil {
+		return nil, err
+	}
+
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
 	s.SetAddressInfo(ctx, depositAddressInfo)
-	s.SetDepositAddress(ctx, recipient, depositAddressInfo.Address)
+	s.SetDepositAddress(ctx, recipient, addr)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
