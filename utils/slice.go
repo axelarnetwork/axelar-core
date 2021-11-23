@@ -18,10 +18,13 @@ func IndexOf(strs []string, str string) int {
 	return -1
 }
 
-// Nonce calculates a byte slice using the context's tx bytes and gas meter
-func Nonce(ctx sdk.Context) [sha256.Size]byte {
+// Nonce defines a 32 byte array representing a deterministically-generated nonce
+type Nonce [sha256.Size]byte
+
+// GetNonce deterministically calculates a nonce using the context's header hash and gas meter
+func GetNonce(ctx sdk.Context) Nonce {
 	bz := make([]byte, 16)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockGasMeter().GasConsumed()))
-	bz = append(bz, ctx.TxBytes()...)
+	bz = append(bz, ctx.HeaderHash()...)
 	return sha256.Sum256(bz)
 }

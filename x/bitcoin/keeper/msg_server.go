@@ -133,7 +133,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	nonce := utils.Nonce(ctx)
+	nonce := utils.GetNonce(ctx)
 
 	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient, nonce)
 	if err != nil {
