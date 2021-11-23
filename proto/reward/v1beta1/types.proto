@@ -19,5 +19,5 @@ message Pool {
   }
 
   string name = 1;
-  repeated Reward rewards = 2;
+  repeated Reward rewards = 2 [ (gogoproto.nullable) = false ];
 }

@@ -70,6 +70,23 @@ func (k Keeper) GetPool(ctx sdk.Context, name string) exported.RewardPool {
 	return newPool(ctx, k, k.banker, k.distributor, k.staker, pool)
 }
 
+func (k Keeper) getPools(ctx sdk.Context) []types.Pool {
+	var pools []types.Pool
+
+	store := k.getStore(ctx)
+	iter := store.Iterator(poolNamePrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var pool types.Pool
+		iter.UnmarshalValue(&pool)
+
+		pools = append(pools, pool)
+	}
+
+	return pools
+}
+
 func (k Keeper) setPool(ctx sdk.Context, pool types.Pool) {
 	key := poolNamePrefix.Append(utils.LowerCaseKey(pool.Name))
 	k.getStore(ctx).Set(key, &pool)
