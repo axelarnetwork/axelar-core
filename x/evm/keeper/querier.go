@@ -276,7 +276,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 
 	recipientChain, ok := n.GetChain(ctx, params.Chain)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", params.Chain))
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", params.Chain)
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: params.Address}
