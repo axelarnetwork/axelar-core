@@ -25,8 +25,8 @@ var (
 	pendingOutpointPrefix    = utils.KeyFromStr("pend_")
 	confirmedOutPointPrefix  = utils.KeyFromStr("conf_")
 	spentOutPointPrefix      = utils.KeyFromStr("spent_")
+	addrInfoPrefix           = utils.KeyFromStr("addr_info")
 	depositAddrPrefix        = utils.KeyFromStr("deposit_addr_")
-	addressesPrefix          = utils.KeyFromStr("addresses_")
 	dustAmtPrefix            = utils.KeyFromStr("dust_")
 	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
 	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
@@ -206,27 +206,27 @@ func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 
 // SetAddressInfo stores the given address information
 func (k Keeper) SetAddressInfo(ctx sdk.Context, address types.AddressInfo) {
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(address.Address))
+	key := addrInfoPrefix.Append(utils.LowerCaseKey(address.Address))
 	k.getStore(ctx).Set(key, &address)
 }
 
 // GetAddressInfo returns the address information for the given encoded address
 func (k Keeper) GetAddressInfo(ctx sdk.Context, encodedAddress string) (types.AddressInfo, bool) {
 	var address types.AddressInfo
-	ok := k.getStore(ctx).Get(depositAddrPrefix.Append(utils.LowerCaseKey(encodedAddress)), &address)
+	ok := k.getStore(ctx).Get(addrInfoPrefix.Append(utils.LowerCaseKey(encodedAddress)), &address)
 	return address, ok
 }
 
 // SetDepositAddress associates the specified recipient address with the given deposit address
 func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string) {
-	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address))
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(address))
 	k.getStore(ctx).SetRaw(key, []byte(address))
 }
 
 // GetDepositAddresses returns the list of deposit addresses associated to the given recipient address
 func (k Keeper) GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []string {
 	var deposits []string
-	iter := k.getStore(ctx).Iterator(addressesPrefix.Append(utils.LowerCaseKey(recipient.String())))
+	iter := k.getStore(ctx).Iterator(depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
