@@ -247,8 +247,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	tokenAddr := token.GetAddress()
-	nonce := utils.Nonce(ctx)
-	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr, nonce[:])
+	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}

@@ -208,7 +208,7 @@ func (k chainKeeper) getTokenAddress(ctx sdk.Context, assetName string, details 
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, nonce []byte) (common.Address, common.Hash, error) {
+func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return common.Address{}, common.Hash{}, err
@@ -219,8 +219,9 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 		return common.Address{}, common.Hash{}, err
 	}
 
+	nonce := utils.Nonce(ctx)
 	bz := []byte(recipient)
-	bz = append(bz, nonce...)
+	bz = append(bz, nonce[:]...)
 	saltBurn := common.BytesToHash(crypto.Keccak256Hash(bz).Bytes())
 
 	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
