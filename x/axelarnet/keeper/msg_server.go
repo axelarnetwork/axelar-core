@@ -407,7 +407,10 @@ func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, err
 
 // toICS20 converts a cross chain transfer to ICS20 token
 func toICS20(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) sdk.Coin {
-	path, _ := k.GetIBCPath(ctx, transfer.Recipient.Chain.Name)
+	// if chain or path not found, it will create coin with base denom
+	chain, _ := k.GetCosmosChain(ctx, transfer.Asset.GetDenom())
+	path, _ := k.GetIBCPath(ctx, chain)
+
 	prefixedDenom := fmt.Sprintf("%s/%s", path, transfer.Asset.Denom)
 	// construct the denomination trace from the full raw denomination
 	denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
