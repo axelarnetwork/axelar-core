@@ -221,15 +221,18 @@ func TestGetTokenAddress(t *testing.T) {
 
 func TestGetBurnerAddressAndSalt(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
+	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
+	ctx.GasMeter().ConsumeGas(1000, "test")
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
 	tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
-	expectedBurnerAddr := common.HexToAddress("0xC857f4173BdC159B6254504ABd88d144eba6Aa1B")
-	expectedSalt := common.Hex2Bytes("35f28b34202f4e3de20c1710696e3f294ebe4df686b17be00fedf991190f9654")
+	expectedBurnerAddr := common.HexToAddress("0x7516De97ee6B5028B4Aa3349e6391d8bf3De01b4")
+	expectedSalt := common.Hex2Bytes("b365d534cb5d28d511a8baf1125240c97b09cb46710645b30ed64f302c4ae7ff")
 
 	k.SetParams(ctx, types.DefaultParams()...)
 
@@ -237,5 +240,5 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)
-	assert.Equal(t, expectedSalt, actualSalt[:])
+	assert.Equal(t, common.Bytes2Hex(expectedSalt), common.Bytes2Hex(actualSalt[:]))
 }

@@ -20,6 +20,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -35,6 +36,7 @@ var (
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
+	addressesPrefix             = utils.KeyFromStr("addresses_")
 	commandBatchPrefix          = utils.KeyFromStr("command_batch")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
@@ -217,7 +219,10 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 		return common.Address{}, common.Hash{}, err
 	}
 
-	saltBurn := common.BytesToHash(crypto.Keccak256Hash([]byte(recipient)).Bytes())
+	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
+	bz := []byte(recipient)
+	bz = append(bz, nonce[:]...)
+	saltBurn := common.BytesToHash(crypto.Keccak256Hash(bz).Bytes())
 
 	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
 	packed, err := arguments.Pack(tokenAddr, saltBurn)
@@ -234,6 +239,25 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
+}
+
+// SetBurnerAddress stores the burner address for the given cross chain recipient
+func (k chainKeeper) SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address types.Address) {
+	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.KeyFromBz(address.Bytes()))
+	k.getStore(ctx, k.chain).SetRaw(key, address.Bytes())
+}
+
+// GetBurnerAddresses retrieves all the burner addresses for the given cross chain
+func (k chainKeeper) GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []types.Address {
+	var addresses []types.Address
+	iter := k.getStore(ctx, k.chain).Iterator(addressesPrefix.Append(utils.LowerCaseKey(recipient.String())))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		addresses = append(addresses, types.Address(common.BytesToAddress(iter.Value())))
+	}
+
+	return addresses
 }
 
 // GetBurnerByteCodes returns the bytecodes for the burner contract

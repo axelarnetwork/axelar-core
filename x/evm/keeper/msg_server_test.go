@@ -410,7 +410,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 
 func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := rand.Context(fake.NewMultiStore())
 	chain := "Ethereum"
 	k := newKeeper(ctx, chain, minConfHeight)
 	tokenDetails := createDetails(rand.Str(10), rand.Str(3))
@@ -434,7 +434,6 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-
 	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token.GetAddress(), recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
