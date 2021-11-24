@@ -714,29 +714,22 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	keeper := s.ForChain(chain.Name)
-	pendingDeposit, pollFound := keeper.GetPendingDeposit(ctx, req.PollKey)
-	confirmedDeposit, state, depositFound := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnAddress))
+	pendingDeposit, _ := keeper.GetPendingDeposit(ctx, req.PollKey)
+	poll := s.voter.GetPoll(ctx, req.PollKey)
 
 	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed deposit,
-	// so we need to check that it matches the poll before deleting
-	case depositFound && pollFound && confirmedDeposit == pendingDeposit:
-		keeper.DeletePendingDeposit(ctx, req.PollKey)
-		fallthrough
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case depositFound:
-		switch state {
-		case types.CONFIRMED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already confirmed", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
-		case types.BURNED:
-			return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("deposit in %s to address %s already spent", confirmedDeposit.TxID.Hex(), confirmedDeposit.BurnerAddress.Hex())}, nil
-		}
-	case !pollFound:
-		return nil, fmt.Errorf("no deposit found for poll %s", req.PollKey.String())
-	case pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID:
-		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
+	case poll.Is(vote.NonExistent):
+		return nil, fmt.Errorf("no poll found for poll key %s", req.PollKey.String())
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Expired.String())}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		// If the voting threshold has been met and additional votes are received they should not return an error
+		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Completed.String())}, nil
 	default:
-		// assert: the deposit is known and has not been confirmed before
+		// poll is pending
+		if pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID {
+			return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
+		}
 	}
 
 	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
@@ -749,7 +742,6 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
 	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
