@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	mathRand "math/rand"
 	"strings"
@@ -414,8 +416,15 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should return different addresses with different recipients", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address1, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
-		address2, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}, types.Testnet3)
+		recipient := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}
+		nonce := rand.Bytes(sha256.Size)
+		scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+		address1, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
+
+		recipient = nexus.CrossChainAddress{Chain: evm.Ethereum, Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()}
+		nonce = rand.Bytes(sha256.Size)
+		scriptNonce = btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+		address2, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
 
 		assert.NotEqual(t, address1, address2)
 	}).Repeat(repeat))
@@ -423,7 +432,10 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should be spendable by the secondary key anytime", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		recipient := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}
+		nonce := rand.Bytes(sha256.Size)
+		scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -455,7 +467,11 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should not be spendable by the external keys before the external timelock elapses", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		recipient := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}
+		nonce := rand.Bytes(sha256.Size)
+		scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -488,7 +504,11 @@ func TestNewDepositAddress(t *testing.T) {
 	t.Run("should be spendable by the external keys after the external timelock elapses", testutils.Func(func(t *testing.T) {
 		externalKeyLockTime := time.Now().AddDate(0, 0, int(rand.I64Between(1, 100)))
 
-		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+		recipient := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}
+		nonce := rand.Bytes(sha256.Size)
+		scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+
+		address, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
 		inputs := []types.OutPointToSign{
 			{
 				AddressInfo: address,
@@ -591,7 +611,11 @@ func TestEstimateTxSize(t *testing.T) {
 		var inputs []types.OutPointToSign
 
 		for i := 0; i < int(inputCount); i++ {
-			addressInfo, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}, types.Testnet3)
+			recipient := nexus.CrossChainAddress{Chain: evm.Ethereum, Address: ethereumAddress}
+			nonce := rand.Bytes(sha256.Size)
+			scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
+
+			addressInfo, _ := types.NewDepositAddress(secondaryPubKey, int64(externalKeyThreshold), externalKeys, externalKeyLockTime, scriptNonce, types.Testnet3)
 			outPoint, err := types.OutPointFromStr(fmt.Sprintf("%s:%d", rand.HexStr(64), rand.I64Between(0, 100)))
 			if err != nil {
 				panic(err)

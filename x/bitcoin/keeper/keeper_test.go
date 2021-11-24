@@ -51,8 +51,8 @@ func TestKeeper_GetAddress(t *testing.T) {
 			RedeemScript: rand.Bytes(200),
 			KeyID:        tss.KeyID(rand.StrBetween(5, 20)),
 		}
-		keeper.SetAddress(ctx, info)
-		result, ok := keeper.GetAddress(ctx, addrStr2)
+		keeper.SetAddressInfo(ctx, info)
+		result, ok := keeper.GetAddressInfo(ctx, addrStr2)
 		assert.True(t, ok)
 		assert.Equal(t, info, result)
 	}).Repeat(20))

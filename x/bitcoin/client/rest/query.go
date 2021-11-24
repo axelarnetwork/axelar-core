@@ -22,8 +22,8 @@ const (
 	QueryParamKeyID   = "key_id"
 )
 
-// QueryHandlerDepositAddress returns a handler to query the deposit address for a recipient address on another blockchain
-func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
+// QueryHandlerDepositAddresses returns a handler to query the deposit address for a recipient address on another blockchain
+func QueryHandlerDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -33,7 +33,7 @@ func QueryHandlerDepositAddress(cliCtx client.Context) http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		params := types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]}
-		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress)
+		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddresses)
 
 		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 		if err != nil {

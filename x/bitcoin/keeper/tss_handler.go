@@ -73,7 +73,7 @@ func handleUnsignedTxForTxType(ctx sdk.Context, keeper types.BTCKeeper, signer t
 
 	for _, outPoint := range knownOutPoints {
 		// Ignore error here because out point here must be known
-		addressInfo, _ := keeper.GetAddress(ctx, outPoint.Address)
+		addressInfo, _ := keeper.GetAddressInfo(ctx, outPoint.Address)
 
 		if unsignedTx.ConfirmationRequired {
 			unconfirmedAmount := keeper.GetUnconfirmedAmount(ctx, addressInfo.KeyID)
@@ -194,7 +194,7 @@ func getKnownOutPoints(ctx sdk.Context, k types.BTCKeeper, signedTx *wire.MsgTx)
 			continue
 		}
 
-		addressInfo, ok := k.GetAddress(ctx, addresses[0].EncodeAddress())
+		addressInfo, ok := k.GetAddressInfo(ctx, addresses[0].EncodeAddress())
 		if !ok {
 			continue
 		}
@@ -218,7 +218,7 @@ func getOutPointsToSign(ctx sdk.Context, tx *wire.MsgTx, k types.BTCKeeper) ([]t
 			return nil, fmt.Errorf("outpoint %s is not set as spent", in.PreviousOutPoint.String())
 		}
 
-		addr, ok := k.GetAddress(ctx, prevOutInfo.Address)
+		addr, ok := k.GetAddressInfo(ctx, prevOutInfo.Address)
 		if !ok {
 			return nil, fmt.Errorf("address %s not found", prevOutInfo.Address)
 		}
