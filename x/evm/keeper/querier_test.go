@@ -285,21 +285,21 @@ func TestQueryDepositState(t *testing.T) {
 	}).Repeat(repeatCount))
 }
 
-func TestQueryDepositAddress(t *testing.T) {
+func TestQueryBurnerAddress(t *testing.T) {
 
 	var (
-		chainKeeper       *mock.ChainKeeperMock
-		nexusKeeper       *mock.NexusMock
-		ctx               sdk.Context
-		evmChain          string
-		data              []byte
-		expectedAddresses []types.Address
-		recipient         string
+		chainKeeper     *mock.ChainKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		evmChain        string
+		data            []byte
+		expectedAddress types.Address
+		recipient       string
 	)
 
 	setup := func() {
 		evmChain = rand.StrBetween(5, 10)
-		expectedAddresses = []types.Address{types.Address(randomAddress()), types.Address(randomAddress()), types.Address(randomAddress())}
+		expectedAddress = types.Address(randomAddress())
 		recipient = "tb1qg2z5jatp22zg7wyhpthhgwvn0un05mdwmqgjln"
 
 		chainKeeper = &mock.ChainKeeperMock{
@@ -311,11 +311,11 @@ func TestQueryDepositAddress(t *testing.T) {
 				}
 				return types.NilToken
 			},
-			GetBurnerAddressesFunc: func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
+			GetBurnerAddressFunc: func(_ sdk.Context, r nexus.CrossChainAddress) (types.Address, bool) {
 				if r.Address == recipient && r.Chain == btc.Bitcoin {
-					return expectedAddresses
+					return expectedAddress, true
 				}
-				return []types.Address{}
+				return types.Address{}, false
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -355,15 +355,11 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 2)
 		assert.Len(chainKeeper.GetGatewayAddressCalls(), 1)
 		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
-		assert.Len(chainKeeper.GetBurnerAddressesCalls(), 1)
-		var res types.QueryAddressesResponse
+		assert.Len(chainKeeper.GetBurnerAddressCalls(), 1)
+		var res types.QueryBurnerAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
-		var actualAddresses []types.Address
-		for _, addr := range res.Addresses {
-			actualAddresses = append(actualAddresses, types.Address(common.HexToAddress(addr)))
-		}
-		assert.ElementsMatch(expectedAddresses, actualAddresses)
+		assert.Equal(expectedAddress.Hex(), res.Address)
 
 	}).Repeat(repeatCount))
 
@@ -381,16 +377,16 @@ func TestQueryDepositAddress(t *testing.T) {
 			}
 			return types.NilToken
 		}
-		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
+		chainKeeper.GetBurnerAddressFunc = func(_ sdk.Context, r nexus.CrossChainAddress) (types.Address, bool) {
 			c := nexus.Chain{
 				Name:                  dataStr.Chain,
 				NativeAsset:           dataStr.Asset,
 				SupportsForeignAssets: true,
 			}
 			if r.Address == dataStr.Address && r.Chain == c {
-				return expectedAddresses
+				return expectedAddress, true
 			}
-			return []types.Address{}
+			return types.Address{}, false
 		}
 
 		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
@@ -418,15 +414,11 @@ func TestQueryDepositAddress(t *testing.T) {
 		assert.Len(nexusKeeper.GetChainCalls(), 2)
 		assert.Len(chainKeeper.GetGatewayAddressCalls(), 1)
 		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
-		assert.Len(chainKeeper.GetBurnerAddressesCalls(), 1)
-		var res types.QueryAddressesResponse
+		assert.Len(chainKeeper.GetBurnerAddressCalls(), 1)
+		var res types.QueryBurnerAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
-		var actualAddresses []types.Address
-		for _, addr := range res.Addresses {
-			actualAddresses = append(actualAddresses, types.Address(common.HexToAddress(addr)))
-		}
-		assert.ElementsMatch(expectedAddresses, actualAddresses)
+		assert.Equal(expectedAddress.Hex(), res.Address)
 
 	}).Repeat(repeatCount))
 
@@ -468,14 +460,14 @@ func TestQueryDepositAddress(t *testing.T) {
 
 	t.Run("no deposit addresses linked", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetBurnerAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []types.Address {
-			return []types.Address{}
+		chainKeeper.GetBurnerAddressFunc = func(_ sdk.Context, r nexus.CrossChainAddress) (types.Address, bool) {
+			return types.Address{}, false
 		}
 
 		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
-		assert.NoError(err)
+		assert.Error(err)
 
 	}).Repeat(repeatCount))
 

@@ -280,11 +280,13 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: params.Address}
-	addresses := k.GetBurnerAddresses(ctx, recipient)
+	address, ok := k.GetBurnerAddress(ctx, recipient)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrEVM, "no burner address found for %s", recipient.String())
+	}
 
-	var resp types.QueryAddressesResponse
-	for _, addr := range addresses {
-		resp.Addresses = append(resp.Addresses, addr.Hex())
+	resp := types.QueryBurnerAddressResponse{
+		Address: address.Hex(),
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)

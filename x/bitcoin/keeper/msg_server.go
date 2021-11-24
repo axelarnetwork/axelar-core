@@ -132,13 +132,20 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
+
 	depositAddressInfo, err := getDepositAddress(ctx, s.BTCKeeper, s.signer, secondaryKey, recipient)
 	if err != nil {
 		return nil, err
 	}
 
+	addr, err := btcutil.DecodeAddress(depositAddressInfo.Address, s.GetNetwork(ctx).Params())
+	if err != nil {
+		return nil, err
+	}
+
 	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
-	s.SetAddress(ctx, depositAddressInfo)
+	s.SetAddressInfo(ctx, depositAddressInfo)
+	s.SetDepositAddress(ctx, recipient, addr)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -173,7 +180,7 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		return nil, fmt.Errorf("already spent")
 	}
 
-	if _, ok := s.GetAddress(ctx, req.OutPointInfo.Address); !ok {
+	if _, ok := s.GetAddressInfo(ctx, req.OutPointInfo.Address); !ok {
 		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
 	}
 
@@ -294,7 +301,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	s.Logger(ctx).Info(fmt.Sprintf("outpoint %s was confirmed ", req.OutPoint))
 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
-	addr, ok := s.GetAddress(ctx, pendingOutPointInfo.Address)
+	addr, ok := s.GetAddressInfo(ctx, pendingOutPointInfo.Address)
 	if !ok {
 		return nil, fmt.Errorf("cannot confirm outpoint of unknown address")
 	}
@@ -381,7 +388,7 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 			return nil, fmt.Errorf("out point info %s is not found or not spent", outPointStr)
 		}
 
-		addressInfo, ok := s.BTCKeeper.GetAddress(ctx, outPointInfo.Address)
+		addressInfo, ok := s.BTCKeeper.GetAddressInfo(ctx, outPointInfo.Address)
 		if !ok {
 			return nil, fmt.Errorf("address for outpoint %s must be known", outPointStr)
 		}
@@ -593,7 +600,7 @@ func (s msgServer) CreateRescueTx(c context.Context, req *types.CreateRescueTxRe
 		return nil, err
 	}
 
-	s.SetAddress(ctx, secondaryAddress)
+	s.SetAddressInfo(ctx, secondaryAddress)
 
 	tx = types.DisableTimelock(tx)
 	unsignedTx := types.NewUnsignedTx(types.Rescue, tx, anyoneCanSpendVout, btcutil.Amount(change.Int64()))
@@ -683,7 +690,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		if err := types.AddOutput(tx, secondaryAddress.GetAddress(), btcutil.Amount(req.SecondaryKeyAmount)); err != nil {
 			return nil, err
 		}
-		s.SetAddress(ctx, secondaryAddress)
+		s.SetAddressInfo(ctx, secondaryAddress)
 	}
 
 	consolidationAddress, err := getMasterConsolidationAddress(ctx, s.BTCKeeper, s.signer, consolidationKey)
@@ -709,7 +716,7 @@ func (s msgServer) CreateMasterTx(c context.Context, req *types.CreateMasterTxRe
 		return nil, err
 	}
 
-	s.SetAddress(ctx, consolidationAddress)
+	s.SetAddressInfo(ctx, consolidationAddress)
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "secondary", "address", "balance"},
 		float32(change.Int64()),
@@ -808,7 +815,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		if err := types.AddOutput(tx, masterAddress.GetAddress(), btcutil.Amount(req.MasterKeyAmount)); err != nil {
 			return nil, err
 		}
-		s.SetAddress(ctx, masterAddress)
+		s.SetAddressInfo(ctx, masterAddress)
 	}
 
 	consolidationAddress, err := getSecondaryConsolidationAddress(ctx, s.BTCKeeper, consolidationKey)
@@ -840,7 +847,7 @@ func (s msgServer) CreatePendingTransfersTx(c context.Context, req *types.Create
 		return nil, err
 	}
 
-	s.SetAddress(ctx, consolidationAddress)
+	s.SetAddressInfo(ctx, consolidationAddress)
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "secondary", "address", "balance"},
 		float32(change.Int64()),
@@ -910,7 +917,7 @@ func estimateTxSizeWithOutputsTo(ctx sdk.Context, k types.BTCKeeper, tx wire.Msg
 			return 0, fmt.Errorf("out point info %s is not found", outPointStr)
 		}
 
-		addressInfo, ok := k.GetAddress(ctx, outPointInfo.Address)
+		addressInfo, ok := k.GetAddressInfo(ctx, outPointInfo.Address)
 		if !ok {
 			return 0, fmt.Errorf("address for outpoint %s must be known", outPointStr)
 		}
@@ -1109,14 +1116,17 @@ func getDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, key t
 	if key.RotatedAt == nil {
 		return types.AddressInfo{}, fmt.Errorf("cannot get deposit address of key %s which is not rotated yet", key.ID)
 	}
+
+	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	externalKeyLockTime := key.RotatedAt.Add(k.GetMasterAddressExternalKeyLockDuration(ctx))
+	scriptNonce := btcutil.Hash160([]byte(recipient.String() + hex.EncodeToString(nonce[:])))
 
 	return types.NewDepositAddress(
 		key,
 		externalMultisigThreshold.Numerator,
 		externalKeys,
 		externalKeyLockTime,
-		recipient,
+		scriptNonce,
 		k.GetNetwork(ctx),
 	)
 }
