@@ -1,7 +1,6 @@
 Dockerfile
 Dockerfile.*
 .gitignore
-.git
 .idea
 .git-hooks
 .gitattributes
