@@ -478,7 +478,7 @@ func NewSecondaryConsolidationAddress(secondaryKey tss.Key, network Network) (Ad
 
 // NewDepositAddress returns a p2wsh-wrapped 1-of-2 multisig address that is spendable by the secondary or master key
 // with a recipient cross chain address to provide uniqueness
-func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, externalKeysOnlyLockTime time.Time, recipient nexus.CrossChainAddress, network Network) (AddressInfo, error) {
+func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, externalKeys []tss.Key, externalKeysOnlyLockTime time.Time, nonce []byte, network Network) (AddressInfo, error) {
 	externalPubKeys := make([]btcec.PublicKey, len(externalKeys))
 	for i, externalKey := range externalKeys {
 		pk, err := externalKey.GetECDSAPubKey()
@@ -498,7 +498,7 @@ func NewDepositAddress(secondaryKey tss.Key, externalMultiSigThreshold int64, ex
 		externalMultiSigThreshold,
 		externalPubKeys,
 		externalKeysOnlyLockTime,
-		btcutil.Hash160([]byte(recipient.String())),
+		nonce,
 	)
 	address := createP2wshAddress(script, network)
 

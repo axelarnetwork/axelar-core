@@ -58,8 +58,11 @@ type BTCKeeper interface {
 	SetLatestSignedTxHash(ctx sdk.Context, txType TxType, txHash chainhash.Hash)
 	GetLatestSignedTxHash(ctx sdk.Context, txType TxType) (*chainhash.Hash, bool)
 
-	SetAddress(ctx sdk.Context, address AddressInfo)
-	GetAddress(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+	SetAddressInfo(ctx sdk.Context, address AddressInfo)
+	GetAddressInfo(ctx sdk.Context, encodedAddress string) (AddressInfo, bool)
+
+	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address btcutil.Address)
+	GetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (btcutil.Address, error)
 
 	GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount
 	SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount)

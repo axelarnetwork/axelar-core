@@ -19,7 +19,7 @@ import (
 
 // Query paths
 const (
-	QDepositAddress                = "depositAddr"
+	QDepositAddresses              = "depositAddresses"
 	QConsolidationAddressByKeyRole = "consolidationAddrByKeyRole"
 	QConsolidationAddressByKeyID   = "consolidationAddrByKeyID"
 	QNextKeyID                     = "nextKeyID"
@@ -35,8 +35,8 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		var res []byte
 		var err error
 		switch path[0] {
-		case QDepositAddress:
-			res, err = QueryDepositAddress(ctx, k, s, n, req.Data)
+		case QDepositAddresses:
+			res, err = QueryDepositAddress(ctx, k, n, req.Data)
 		case QDepositStatus:
 			res, err = QueryDepositStatus(ctx, k, path[1])
 		case QConsolidationAddressByKeyRole:
@@ -99,7 +99,7 @@ func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) 
 }
 
 // QueryDepositAddress returns deposit address
-func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n types.Nexus, data []byte) ([]byte, error) {
+func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	var params types.DepositQueryParams
 	if err := types.ModuleCdc.UnmarshalLengthPrefixed(data, &params); err != nil {
 		return nil, fmt.Errorf("could not parse the recipient")
@@ -110,25 +110,20 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, s types.Signer, n t
 		return nil, fmt.Errorf("recipient chain not found")
 	}
 
-	secondaryKey, ok := s.GetCurrentKey(ctx, exported.Bitcoin, tss.SecondaryKey)
-	if !ok {
-		return nil, fmt.Errorf("secondary key not set")
-	}
-
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
-	depositAddr, err := getDepositAddress(ctx, k, s, secondaryKey, recipient)
+	address, err := k.GetDepositAddress(ctx, recipient)
 	if err != nil {
 		return nil, err
 	}
 
-	_, ok = n.GetRecipient(ctx, depositAddr.ToCrossChainAddr())
-	if !ok {
-		return nil, fmt.Errorf("deposit address is not linked with recipient address")
+	info, ok := k.GetAddressInfo(ctx, address.EncodeAddress())
+	if !ok { // the address info must be available
+		panic(fmt.Sprintf("could not retrieve address info for address %s", address.EncodeAddress()))
 	}
 
 	resp := types.QueryAddressResponse{
-		Address: depositAddr.Address,
-		KeyID:   depositAddr.KeyID,
+		Address: info.Address,
+		KeyID:   info.KeyID,
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
@@ -226,7 +221,7 @@ func QueryLatestTxByTxType(ctx sdk.Context, k types.BTCKeeper, txTypeStr string)
 				return nil, fmt.Errorf("out point info %s is not found or not spent", outPointStr)
 			}
 
-			addressInfo, ok := k.GetAddress(ctx, outPointInfo.Address)
+			addressInfo, ok := k.GetAddressInfo(ctx, outPointInfo.Address)
 			if !ok {
 				return nil, fmt.Errorf("unknown outpoint address %s", outPointInfo.Address)
 			}
