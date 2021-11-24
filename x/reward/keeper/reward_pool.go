@@ -46,6 +46,10 @@ func (p *rewardPool) AddReward(validator sdk.ValAddress, coin sdk.Coin) {
 		p.k.setPool(p.ctx, p.Pool)
 	}()
 
+	if coin.Amount.IsZero() {
+		return
+	}
+
 	for i, reward := range p.Rewards {
 		if reward.Validator.Equals(validator) {
 			p.Rewards[i].Coins = reward.Coins.Add(coin)
@@ -54,7 +58,7 @@ func (p *rewardPool) AddReward(validator sdk.ValAddress, coin sdk.Coin) {
 		}
 	}
 
-	p.Rewards = append(p.Rewards, &types.Pool_Reward{
+	p.Rewards = append(p.Rewards, types.Pool_Reward{
 		Validator: validator,
 		Coins:     sdk.NewCoins(coin),
 	})

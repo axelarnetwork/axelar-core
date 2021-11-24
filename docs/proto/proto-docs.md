@@ -229,12 +229,12 @@
 - [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
     - [Params](#reward.v1beta1.Params)
   
-- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
-    - [GenesisState](#reward.v1beta1.GenesisState)
-  
 - [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
     - [Pool](#reward.v1beta1.Pool)
     - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+  
+- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
+    - [GenesisState](#reward.v1beta1.GenesisState)
   
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
@@ -3370,37 +3370,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="reward/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## reward/v1beta1/genesis.proto
-
-
-
-<a name="reward.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#reward.v1beta1.Params) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="reward/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3434,6 +3403,38 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `validator` | [bytes](#bytes) |  |  |
 | `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/genesis.proto
+
+
+
+<a name="reward.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#reward.v1beta1.Params) |  |  |
+| `pools` | [Pool](#reward.v1beta1.Pool) | repeated |  |
 
 
 
