@@ -60,7 +60,7 @@ func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
 			}
 
-			var res types.QueryAddressesResponse
+			var res types.QueryBurnerAddressResponse
 			types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 			return cliCtx.PrintProto(&res)
 		},

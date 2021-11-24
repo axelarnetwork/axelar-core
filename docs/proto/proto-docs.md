@@ -158,8 +158,8 @@
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
-    - [QueryAddressesResponse](#evm.v1beta1.QueryAddressesResponse)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
+    - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
@@ -2423,21 +2423,6 @@ deposit address
 
 
 
-<a name="evm.v1beta1.QueryAddressesResponse"></a>
-
-### QueryAddressesResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [string](#string) | repeated |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.QueryBatchedCommandsResponse"></a>
 
 ### QueryBatchedCommandsResponse
@@ -2453,6 +2438,21 @@ deposit address
 | `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryBurnerAddressResponse"></a>
+
+### QueryBurnerAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
 
 
 

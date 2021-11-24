@@ -266,7 +266,7 @@ func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var res types.QueryAddressesResponse
+		var res types.QueryBurnerAddressResponse
 		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

@@ -36,7 +36,7 @@ var (
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	addressesPrefix             = utils.KeyFromStr("addresses_")
+	burnerAddressPrefix         = utils.KeyFromStr("burner_addr")
 	commandBatchPrefix          = utils.KeyFromStr("command_batch")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
@@ -243,21 +243,19 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 
 // SetBurnerAddress stores the burner address for the given cross chain recipient
 func (k chainKeeper) SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address types.Address) {
-	key := addressesPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.KeyFromBz(address.Bytes()))
+	key := burnerAddressPrefix.Append(utils.LowerCaseKey(recipient.String()))
 	k.getStore(ctx, k.chain).SetRaw(key, address.Bytes())
 }
 
-// GetBurnerAddresses retrieves all the burner addresses for the given cross chain
-func (k chainKeeper) GetBurnerAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []types.Address {
-	var addresses []types.Address
-	iter := k.getStore(ctx, k.chain).Iterator(addressesPrefix.Append(utils.LowerCaseKey(recipient.String())))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		addresses = append(addresses, types.Address(common.BytesToAddress(iter.Value())))
+// GetBurnerAddress retrieves all the burner addresses for the given cross chain
+func (k chainKeeper) GetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (types.Address, bool) {
+	key := burnerAddressPrefix.Append(utils.LowerCaseKey(recipient.String()))
+	bz := k.getStore(ctx, k.chain).GetRaw(key)
+	if bz == nil {
+		return types.Address{}, false
 	}
 
-	return addresses
+	return types.Address(common.BytesToAddress(bz)), true
 }
 
 // GetBurnerByteCodes returns the bytecodes for the burner contract
