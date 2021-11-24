@@ -78,7 +78,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 
 // GetQueryCmd returns all CLI query commands for this module
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return nil
+	return cli.GetQueryCmd()
 }
 
 // AppModule implements module.AppModule
@@ -161,7 +161,8 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper, am.nexus))
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

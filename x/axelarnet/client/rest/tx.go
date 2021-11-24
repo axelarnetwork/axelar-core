@@ -2,13 +2,14 @@ package rest
 
 import (
 	"encoding/hex"
+	"net/http"
+
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -23,6 +24,7 @@ const (
 	TxRegisterAsset           = "register-asset"
 	TxRegisterFeeCollector    = "register-fee-collector"
 	TxRouteIBCTransfers       = "route-ibc-transfers"
+	QueryDepositAddress       = "deposit-address"
 )
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
@@ -89,6 +91,10 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerRegisterAsset(cliCtx), TxRegisterAsset)
 	registerTx(TxHandlerRegisterFeeCollector(cliCtx), TxRegisterFeeCollector)
 	registerTx(TxHandlerRouteIBCTransfers(cliCtx), TxRouteIBCTransfers)
+
+	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
+	registerQuery(GetHandlerQueryDepositAddress(cliCtx), QueryDepositAddress, clientUtils.PathVarRecipientChain, clientUtils.PathVarLinkedAddress)
+
 }
 
 // TxHandlerLink returns the handler to link an Axelar address to a cross-chain address

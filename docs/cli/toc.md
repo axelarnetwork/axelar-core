@@ -29,6 +29,8 @@
       - [account \[address\]](axelard_query_auth_account.md)	 - Query for account by address
       - [accounts](axelard_query_auth_accounts.md)	 - Query all the accounts
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
+    - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
+      - [deposit-address \[recipient chain\] \[recipient address\]](axelard_query_axelarnet_deposit-address.md)	 - Query for account by address
     - [bank](axelard_query_bank.md)	 - Querying commands for the bank module
       - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations

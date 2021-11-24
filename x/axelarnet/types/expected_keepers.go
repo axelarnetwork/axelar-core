@@ -20,6 +20,8 @@ type BaseKeeper interface {
 	SetParams(ctx sdk.Context, n Nexus, p Params)
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetTransactionFeeRate(ctx sdk.Context) sdk.Dec
+	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address sdk.AccAddress)
+	GetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (sdk.AccAddress, bool)
 
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, chain string) (string, bool)

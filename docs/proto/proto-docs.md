@@ -37,6 +37,10 @@
   
     - [TransferState](#nexus.exported.v1beta1.TransferState)
   
+- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
+    - [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest)
+    - [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse)
+  
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
     - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
@@ -59,6 +63,7 @@
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
+    - [QueryService](#axelarnet.v1beta1.QueryService)
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
@@ -779,6 +784,54 @@ registered blockchain
 
 
 
+<a name="axelarnet/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/query.proto
+
+
+
+<a name="axelarnet.v1beta1.DepositAddressRequest"></a>
+
+### DepositAddressRequest
+MsgLink represents a message to link a cross-chain address to an Axelar
+address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.DepositAddressResponse"></a>
+
+### DepositAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1080,6 +1133,16 @@ Msg defines the axelarnet Msg service.
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
+
+
+<a name="axelarnet.v1beta1.QueryService"></a>
+
+### QueryService
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `DepositAddress` | [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest) | [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse) | DepositAddress queries the a deposit address by recipient | GET|/axelar/axelarnet/v1beta1/deposit_address|
 
  <!-- end services -->
 

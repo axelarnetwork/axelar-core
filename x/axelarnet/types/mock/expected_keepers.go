@@ -37,6 +37,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []string {
 // 				panic("mock out the GetCosmosChains method")
 // 			},
+// 			GetDepositAddressFunc: func(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress) (cosmossdktypes.AccAddress, bool) {
+// 				panic("mock out the GetDepositAddress method")
+// 			},
 // 			GetFeeCollectorFunc: func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
 // 				panic("mock out the GetFeeCollector method")
 // 			},
@@ -63,6 +66,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
 // 				panic("mock out the RegisterIBCPath method")
+// 			},
+// 			SetDepositAddressFunc: func(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress, address cosmossdktypes.AccAddress)  {
+// 				panic("mock out the SetDepositAddress method")
 // 			},
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
 // 				panic("mock out the SetFeeCollector method")
@@ -92,6 +98,9 @@ type BaseKeeperMock struct {
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []string
 
+	// GetDepositAddressFunc mocks the GetDepositAddress method.
+	GetDepositAddressFunc func(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress) (cosmossdktypes.AccAddress, bool)
+
 	// GetFeeCollectorFunc mocks the GetFeeCollector method.
 	GetFeeCollectorFunc func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool)
 
@@ -118,6 +127,9 @@ type BaseKeeperMock struct {
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
+
+	// SetDepositAddressFunc mocks the SetDepositAddress method.
+	SetDepositAddressFunc func(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress, address cosmossdktypes.AccAddress)
 
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
@@ -159,6 +171,13 @@ type BaseKeeperMock struct {
 		GetCosmosChains []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
+		}
+		// GetDepositAddress holds details about calls to the GetDepositAddress method.
+		GetDepositAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Recipient is the recipient argument value.
+			Recipient exported.CrossChainAddress
 		}
 		// GetFeeCollector holds details about calls to the GetFeeCollector method.
 		GetFeeCollector []struct {
@@ -223,6 +242,15 @@ type BaseKeeperMock struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// SetDepositAddress holds details about calls to the SetDepositAddress method.
+		SetDepositAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Recipient is the recipient argument value.
+			Recipient exported.CrossChainAddress
+			// Address is the address argument value.
+			Address cosmossdktypes.AccAddress
+		}
 		// SetFeeCollector holds details about calls to the SetFeeCollector method.
 		SetFeeCollector []struct {
 			// Ctx is the ctx argument value.
@@ -257,6 +285,7 @@ type BaseKeeperMock struct {
 	lockDeletePendingRefund        sync.RWMutex
 	lockGetCosmosChain             sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
+	lockGetDepositAddress          sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
 	lockGetPendingIBCTransfer      sync.RWMutex
@@ -266,6 +295,7 @@ type BaseKeeperMock struct {
 	lockLogger                     sync.RWMutex
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
+	lockSetDepositAddress          sync.RWMutex
 	lockSetFeeCollector            sync.RWMutex
 	lockSetParams                  sync.RWMutex
 	lockSetPendingIBCTransfer      sync.RWMutex
@@ -412,6 +442,41 @@ func (mock *BaseKeeperMock) GetCosmosChainsCalls() []struct {
 	mock.lockGetCosmosChains.RLock()
 	calls = mock.calls.GetCosmosChains
 	mock.lockGetCosmosChains.RUnlock()
+	return calls
+}
+
+// GetDepositAddress calls GetDepositAddressFunc.
+func (mock *BaseKeeperMock) GetDepositAddress(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress) (cosmossdktypes.AccAddress, bool) {
+	if mock.GetDepositAddressFunc == nil {
+		panic("BaseKeeperMock.GetDepositAddressFunc: method is nil but BaseKeeper.GetDepositAddress was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		Recipient exported.CrossChainAddress
+	}{
+		Ctx:       ctx,
+		Recipient: recipient,
+	}
+	mock.lockGetDepositAddress.Lock()
+	mock.calls.GetDepositAddress = append(mock.calls.GetDepositAddress, callInfo)
+	mock.lockGetDepositAddress.Unlock()
+	return mock.GetDepositAddressFunc(ctx, recipient)
+}
+
+// GetDepositAddressCalls gets all the calls that were made to GetDepositAddress.
+// Check the length with:
+//     len(mockedBaseKeeper.GetDepositAddressCalls())
+func (mock *BaseKeeperMock) GetDepositAddressCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	Recipient exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		Recipient exported.CrossChainAddress
+	}
+	mock.lockGetDepositAddress.RLock()
+	calls = mock.calls.GetDepositAddress
+	mock.lockGetDepositAddress.RUnlock()
 	return calls
 }
 
@@ -727,6 +792,45 @@ func (mock *BaseKeeperMock) RegisterIBCPathCalls() []struct {
 	mock.lockRegisterIBCPath.RLock()
 	calls = mock.calls.RegisterIBCPath
 	mock.lockRegisterIBCPath.RUnlock()
+	return calls
+}
+
+// SetDepositAddress calls SetDepositAddressFunc.
+func (mock *BaseKeeperMock) SetDepositAddress(ctx cosmossdktypes.Context, recipient exported.CrossChainAddress, address cosmossdktypes.AccAddress) {
+	if mock.SetDepositAddressFunc == nil {
+		panic("BaseKeeperMock.SetDepositAddressFunc: method is nil but BaseKeeper.SetDepositAddress was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		Recipient exported.CrossChainAddress
+		Address   cosmossdktypes.AccAddress
+	}{
+		Ctx:       ctx,
+		Recipient: recipient,
+		Address:   address,
+	}
+	mock.lockSetDepositAddress.Lock()
+	mock.calls.SetDepositAddress = append(mock.calls.SetDepositAddress, callInfo)
+	mock.lockSetDepositAddress.Unlock()
+	mock.SetDepositAddressFunc(ctx, recipient, address)
+}
+
+// SetDepositAddressCalls gets all the calls that were made to SetDepositAddress.
+// Check the length with:
+//     len(mockedBaseKeeper.SetDepositAddressCalls())
+func (mock *BaseKeeperMock) SetDepositAddressCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	Recipient exported.CrossChainAddress
+	Address   cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		Recipient exported.CrossChainAddress
+		Address   cosmossdktypes.AccAddress
+	}
+	mock.lockSetDepositAddress.RLock()
+	calls = mock.calls.SetDepositAddress
+	mock.lockSetDepositAddress.RUnlock()
 	return calls
 }
 
