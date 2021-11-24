@@ -239,8 +239,8 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryDepositAddress returns a handler to query the state of a deposit address
-func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryDepositAddresses returns a handler to query the state of a deposit address
+func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

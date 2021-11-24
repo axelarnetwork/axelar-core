@@ -26,7 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
-		GetCmdDepositAddress(queryRoute),
+		GetCmdDepositAddresses(queryRoute),
 		GetCmdAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
@@ -41,8 +41,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 }
 
-// GetCmdDepositAddress returns the deposit address command
-func GetCmdDepositAddress(queryRoute string) *cobra.Command {
+// GetCmdDepositAddresses returns the deposit address command
+func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deposit-addresses [evm chain] [recipient chain] [recipient address] [asset]",
 		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
