@@ -57,7 +57,7 @@ func TestQueryDepositAddress(t *testing.T) {
 				return types.Testnet3
 			},
 		}
-		ctx = generateContext()
+		ctx = rand.Context(nil)
 		address = fmt.Sprintf("0x%s", hex.EncodeToString(rand.Bytes(20)))
 	}
 
