@@ -58,7 +58,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = rand.Context(nil)
 		rtr := baseapp.NewRouter()
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
 		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{}, msgServiceRtr, rtr)
