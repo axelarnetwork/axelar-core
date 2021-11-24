@@ -67,3 +67,5 @@ message QueryDepositStateResponse {
   string log = 1;
   DepositStatus status = 2;
 }
+
+message QueryAddressesResponse { repeated string addresses = 1; }

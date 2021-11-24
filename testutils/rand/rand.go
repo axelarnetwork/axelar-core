@@ -4,8 +4,11 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common/math"
 )
@@ -285,4 +288,13 @@ func ValAddr() sdk.ValAddress {
 // AccAddr generates a random cosmos address
 func AccAddr() sdk.AccAddress {
 	return Bytes(address.Len)
+}
+
+// Context generates a random Context data structure
+func Context(store types.MultiStore) sdk.Context {
+	ctx := sdk.NewContext(store, tmproto.Header{Height: PosI64()}, false, log.TestingLogger())
+	ctx = ctx.WithHeaderHash(BytesBetween(1024, 101240))
+	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
+	ctx.GasMeter().ConsumeGas(uint64(I64Between(1000, 1000000)), "test")
+	return ctx
 }

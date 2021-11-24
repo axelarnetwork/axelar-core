@@ -239,8 +239,8 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryDepositAddress returns a handler to query the state of a deposit address
-func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryDepositAddresses returns a handler to query the state of a deposit address
+func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -260,14 +260,15 @@ func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddress, chain), data)
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddresses, chain), data)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
 			return
 		}
 
-		out := common.BytesToAddress(bz)
-		rest.PostProcessResponse(w, cliCtx, out.Hex())
+		var res types.QueryAddressesResponse
+		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
