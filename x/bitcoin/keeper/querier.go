@@ -111,23 +111,19 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: chain, Address: params.Address}
-	addresses := k.GetDepositAddresses(ctx, recipient)
-	var infos []types.QueryAddressesResponse_AddressInfo
-
-	for _, address := range addresses {
-		info, ok := k.GetAddressInfo(ctx, address.EncodeAddress())
-		if !ok { // the address info must be available
-			panic("could not retrieve address info")
-		}
-
-		infos = append(infos, types.QueryAddressesResponse_AddressInfo{
-			Address: info.Address,
-			KeyID:   info.KeyID,
-		})
+	address, err := k.GetDepositAddress(ctx, recipient)
+	if err != nil {
+		return nil, err
 	}
 
-	resp := types.QueryAddressesResponse{
-		Addresses: infos,
+	info, ok := k.GetAddressInfo(ctx, address.EncodeAddress())
+	if !ok { // the address info must be available
+		panic(fmt.Sprintf("could not retrieve address info for address %s", address.EncodeAddress()))
+	}
+
+	resp := types.QueryAddressResponse{
+		Address: info.Address,
+		KeyID:   info.KeyID,
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
@@ -172,7 +168,7 @@ func QueryConsolidationAddressByKeyID(ctx sdk.Context, k types.BTCKeeper, s type
 		return nil, err
 	}
 
-	resp := types.QueryAddressesResponse{Addresses: []types.QueryAddressesResponse_AddressInfo{{Address: addressInfo.Address, KeyID: addressInfo.KeyID}}}
+	resp := types.QueryAddressResponse{Address: addressInfo.Address, KeyID: addressInfo.KeyID}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

@@ -87,8 +87,7 @@
   
 - [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
     - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
-    - [QueryAddressesResponse](#bitcoin.v1beta1.QueryAddressesResponse)
-    - [QueryAddressesResponse.AddressInfo](#bitcoin.v1beta1.QueryAddressesResponse.AddressInfo)
+    - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
     - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
     - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
     - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
@@ -1450,24 +1449,9 @@ deposit address
 
 
 
-<a name="bitcoin.v1beta1.QueryAddressesResponse"></a>
+<a name="bitcoin.v1beta1.QueryAddressResponse"></a>
 
-### QueryAddressesResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [QueryAddressesResponse.AddressInfo](#bitcoin.v1beta1.QueryAddressesResponse.AddressInfo) | repeated |  |
-
-
-
-
-
-
-<a name="bitcoin.v1beta1.QueryAddressesResponse.AddressInfo"></a>
-
-### QueryAddressesResponse.AddressInfo
+### QueryAddressResponse
 
 
 

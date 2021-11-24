@@ -101,14 +101,14 @@ func TestQueryDepositAddress(t *testing.T) {
 		depositAddress, err := types.NewDepositAddress(secondaryKey, externalKeyThreshold, externalKeys, secondaryKey.RotatedAt.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), scriptNonce, types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		btcKeeper.GetDepositAddressesFunc = func(_ sdk.Context, r nexus.CrossChainAddress) []btcutil.Address {
+		btcKeeper.GetDepositAddressFunc = func(_ sdk.Context, r nexus.CrossChainAddress) (btcutil.Address, error) {
 			if r == recipientAddress {
 				addr, err := btcutil.DecodeAddress(depositAddress.Address, btcKeeper.GetNetwork(ctx).Params())
 				assert.NoError(t, err)
 
-				return []btcutil.Address{addr}
+				return addr, nil
 			}
-			return []btcutil.Address{}
+			return nil, fmt.Errorf("not found")
 		}
 
 		btcKeeper.GetAddressInfoFunc = func(_ sdk.Context, a string) (types.AddressInfo, bool) {
@@ -118,15 +118,14 @@ func TestQueryDepositAddress(t *testing.T) {
 			return types.AddressInfo{}, false
 		}
 
-		expected := types.QueryAddressesResponse{
-			Addresses: []types.QueryAddressesResponse_AddressInfo{{
-				Address: depositAddress.Address,
-				KeyID:   secondaryKey.ID,
-			}}}
+		expected := types.QueryAddressResponse{
+			Address: depositAddress.Address,
+			KeyID:   secondaryKey.ID,
+		}
 
 		bz, err := keeper.QueryDepositAddress(ctx, btcKeeper, nexusKeeper, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 
-		var actual types.QueryAddressesResponse
+		var actual types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)
@@ -251,16 +250,15 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		masterConsolidationAddress, err := types.NewMasterConsolidationAddress(masterKey, oldMasterKey, tsstypes.DefaultParams().ExternalMultisigThreshold.Numerator, externalKeys, now.Add(types.DefaultParams().MasterAddressInternalKeyLockDuration), now.Add(types.DefaultParams().MasterAddressExternalKeyLockDuration), types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		expected := types.QueryAddressesResponse{
-			Addresses: []types.QueryAddressesResponse_AddressInfo{{
-				Address: masterConsolidationAddress.Address,
-				KeyID:   masterKey.ID,
-			}}}
+		expected := types.QueryAddressResponse{
+			Address: masterConsolidationAddress.Address,
+			KeyID:   masterKey.ID,
+		}
 
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 		assert.NoError(t, err)
 
-		var actual types.QueryAddressesResponse
+		var actual types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 		assert.Equal(t, expected, actual)
 	}))
@@ -290,15 +288,14 @@ func TestQueryConsolidationAddressByKeyID(t *testing.T) {
 		secondaryConsolidationAddress, err := types.NewSecondaryConsolidationAddress(secondaryKey, types.DefaultParams().Network)
 		assert.NoError(t, err)
 
-		expected := types.QueryAddressesResponse{
-			Addresses: []types.QueryAddressesResponse_AddressInfo{{
-				Address: secondaryConsolidationAddress.Address,
-				KeyID:   secondaryKey.ID,
-			}}}
+		expected := types.QueryAddressResponse{
+			Address: secondaryConsolidationAddress.Address,
+			KeyID:   secondaryKey.ID,
+		}
 
 		bz, err := keeper.QueryConsolidationAddressByKeyID(ctx, btcKeeper, signer, keyID)
 
-		var actual types.QueryAddressesResponse
+		var actual types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
 		assert.NoError(t, err)

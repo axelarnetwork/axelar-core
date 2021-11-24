@@ -2291,8 +2291,8 @@ var _ types.BTCKeeper = &BTCKeeperMock{}
 // 			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) utils.KVQueue {
 // 				panic("mock out the GetConfirmedOutpointInfoQueueForKey method")
 // 			},
-// 			GetDepositAddressesFunc: func(ctx sdk.Context, recipient nexus.CrossChainAddress) []github_com_btcsuite_btcutil.Address {
-// 				panic("mock out the GetDepositAddresses method")
+// 			GetDepositAddressFunc: func(ctx sdk.Context, recipient nexus.CrossChainAddress) (github_com_btcsuite_btcutil.Address, error) {
+// 				panic("mock out the GetDepositAddress method")
 // 			},
 // 			GetDustAmountFunc: func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount {
 // 				panic("mock out the GetDustAmount method")
@@ -2424,8 +2424,8 @@ type BTCKeeperMock struct {
 	// GetConfirmedOutpointInfoQueueForKeyFunc mocks the GetConfirmedOutpointInfoQueueForKey method.
 	GetConfirmedOutpointInfoQueueForKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) utils.KVQueue
 
-	// GetDepositAddressesFunc mocks the GetDepositAddresses method.
-	GetDepositAddressesFunc func(ctx sdk.Context, recipient nexus.CrossChainAddress) []github_com_btcsuite_btcutil.Address
+	// GetDepositAddressFunc mocks the GetDepositAddress method.
+	GetDepositAddressFunc func(ctx sdk.Context, recipient nexus.CrossChainAddress) (github_com_btcsuite_btcutil.Address, error)
 
 	// GetDustAmountFunc mocks the GetDustAmount method.
 	GetDustAmountFunc func(ctx sdk.Context, encodedAddress string) github_com_btcsuite_btcutil.Amount
@@ -2578,8 +2578,8 @@ type BTCKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetDepositAddresses holds details about calls to the GetDepositAddresses method.
-		GetDepositAddresses []struct {
+		// GetDepositAddress holds details about calls to the GetDepositAddress method.
+		GetDepositAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Recipient is the recipient argument value.
@@ -2811,7 +2811,7 @@ type BTCKeeperMock struct {
 	lockGetAddressInfo                          sync.RWMutex
 	lockGetAnyoneCanSpendAddress                sync.RWMutex
 	lockGetConfirmedOutpointInfoQueueForKey     sync.RWMutex
-	lockGetDepositAddresses                     sync.RWMutex
+	lockGetDepositAddress                       sync.RWMutex
 	lockGetDustAmount                           sync.RWMutex
 	lockGetLatestSignedTxHash                   sync.RWMutex
 	lockGetMasterAddressExternalKeyLockDuration sync.RWMutex
@@ -3089,10 +3089,10 @@ func (mock *BTCKeeperMock) GetConfirmedOutpointInfoQueueForKeyCalls() []struct {
 	return calls
 }
 
-// GetDepositAddresses calls GetDepositAddressesFunc.
-func (mock *BTCKeeperMock) GetDepositAddresses(ctx sdk.Context, recipient nexus.CrossChainAddress) []github_com_btcsuite_btcutil.Address {
-	if mock.GetDepositAddressesFunc == nil {
-		panic("BTCKeeperMock.GetDepositAddressesFunc: method is nil but BTCKeeper.GetDepositAddresses was just called")
+// GetDepositAddress calls GetDepositAddressFunc.
+func (mock *BTCKeeperMock) GetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (github_com_btcsuite_btcutil.Address, error) {
+	if mock.GetDepositAddressFunc == nil {
+		panic("BTCKeeperMock.GetDepositAddressFunc: method is nil but BTCKeeper.GetDepositAddress was just called")
 	}
 	callInfo := struct {
 		Ctx       sdk.Context
@@ -3101,16 +3101,16 @@ func (mock *BTCKeeperMock) GetDepositAddresses(ctx sdk.Context, recipient nexus.
 		Ctx:       ctx,
 		Recipient: recipient,
 	}
-	mock.lockGetDepositAddresses.Lock()
-	mock.calls.GetDepositAddresses = append(mock.calls.GetDepositAddresses, callInfo)
-	mock.lockGetDepositAddresses.Unlock()
-	return mock.GetDepositAddressesFunc(ctx, recipient)
+	mock.lockGetDepositAddress.Lock()
+	mock.calls.GetDepositAddress = append(mock.calls.GetDepositAddress, callInfo)
+	mock.lockGetDepositAddress.Unlock()
+	return mock.GetDepositAddressFunc(ctx, recipient)
 }
 
-// GetDepositAddressesCalls gets all the calls that were made to GetDepositAddresses.
+// GetDepositAddressCalls gets all the calls that were made to GetDepositAddress.
 // Check the length with:
-//     len(mockedBTCKeeper.GetDepositAddressesCalls())
-func (mock *BTCKeeperMock) GetDepositAddressesCalls() []struct {
+//     len(mockedBTCKeeper.GetDepositAddressCalls())
+func (mock *BTCKeeperMock) GetDepositAddressCalls() []struct {
 	Ctx       sdk.Context
 	Recipient nexus.CrossChainAddress
 } {
@@ -3118,9 +3118,9 @@ func (mock *BTCKeeperMock) GetDepositAddressesCalls() []struct {
 		Ctx       sdk.Context
 		Recipient nexus.CrossChainAddress
 	}
-	mock.lockGetDepositAddresses.RLock()
-	calls = mock.calls.GetDepositAddresses
-	mock.lockGetDepositAddresses.RUnlock()
+	mock.lockGetDepositAddress.RLock()
+	calls = mock.calls.GetDepositAddress
+	mock.lockGetDepositAddress.RUnlock()
 	return calls
 }
 

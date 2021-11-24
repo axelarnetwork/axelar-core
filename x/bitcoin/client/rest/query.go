@@ -41,7 +41,7 @@ func QueryHandlerDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var res types.QueryAddressesResponse
+		var res types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
@@ -106,7 +106,7 @@ func QueryHandlerConsolidationAddress(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var res types.QueryAddressesResponse
+		var res types.QueryAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
