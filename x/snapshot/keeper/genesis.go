@@ -1,0 +1,29 @@
+package keeper
+
+import (
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+// InitGenesis initializes the reward module's state from a given genesis state.
+func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
+	k.SetParams(ctx, genState.Params)
+
+	k.setSnapshotCount(ctx, int64(len(genState.Snapshots)))
+	for _, snapshot := range genState.Snapshots {
+		k.setSnapshot(ctx, snapshot)
+	}
+
+	for _, validatorProxy := range genState.ValidatorProxies {
+		k.setValidatorProxy(ctx, validatorProxy)
+	}
+}
+
+// ExportGenesis returns the reward module's genesis state.
+func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
+	return types.NewGenesisState(
+		k.GetParams(ctx),
+		k.getSnapshots(ctx),
+		k.getValidatorProxies(ctx),
+	)
+}

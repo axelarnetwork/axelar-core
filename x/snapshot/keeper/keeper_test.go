@@ -81,7 +81,6 @@ func TestSnapshots(t *testing.T) {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
 			staker := newMockStaker(validators...)
-			var counter int64 = 0
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
 			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
@@ -131,37 +130,25 @@ func TestSnapshots(t *testing.T) {
 			}
 
 			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
-
 			assert.False(t, ok)
-			assert.Equal(t, int64(-1), snapshotKeeper.GetLatestCounter(ctx))
 
 			_, ok = snapshotKeeper.GetLatestSnapshot(ctx)
-
 			assert.False(t, ok)
 
 			snapshot, err := snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-
 			assert.NoError(t, err)
-			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
+
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
 			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-			assert.Error(t, err)
-
-			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
-
-			counter++
-			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-
 			assert.NoError(t, err)
 
 			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 1)
 
 			assert.True(t, ok)
-			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
