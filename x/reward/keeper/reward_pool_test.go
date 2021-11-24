@@ -13,14 +13,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
 )
 
 const denom = "test"
 
-func setup() (sdk.Context, exported.RewardPool, Keeper, *mock.BankerMock, *mock.DistributorMock, *mock.StakerMock) {
+func setup() (sdk.Context, Keeper, *mock.BankerMock, *mock.DistributorMock, *mock.StakerMock) {
 	banker := mock.BankerMock{}
 	distributor := mock.DistributorMock{}
 	staker := mock.StakerMock{}
@@ -30,11 +29,12 @@ func setup() (sdk.Context, exported.RewardPool, Keeper, *mock.BankerMock, *mock.
 	subspace := paramstypes.NewSubspace(encodingConfig.Marshaler, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
 	keeper := NewKeeper(encodingConfig.Marshaler, sdk.NewKVStoreKey(types.StoreKey), subspace, &banker, &distributor, &staker)
 
-	return ctx, keeper.GetPool(ctx, rand.Str(10)), keeper, &banker, &distributor, &staker
+	return ctx, keeper, &banker, &distributor, &staker
 }
 
 func TestAddReward(t *testing.T) {
-	ctx, pool, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup()
+	pool := keeper.GetPool(ctx, rand.Str(10))
 	validator := rand.ValAddr()
 	coin1 := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
 
@@ -59,7 +59,8 @@ func TestAddReward(t *testing.T) {
 }
 
 func TestReleaseRewards(t *testing.T) {
-	ctx, pool, keeper, banker, distributor, staker := setup()
+	ctx, keeper, banker, distributor, staker := setup()
+	pool := keeper.GetPool(ctx, rand.Str(10))
 	validator := rand.ValAddr()
 	coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
 
@@ -90,7 +91,8 @@ func TestReleaseRewards(t *testing.T) {
 }
 
 func TestClearRewards(t *testing.T) {
-	ctx, pool, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup()
+	pool := keeper.GetPool(ctx, rand.Str(10))
 	validator := rand.ValAddr()
 	coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
 
