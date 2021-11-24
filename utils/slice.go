@@ -25,7 +25,9 @@ type Nonce [sha256.Size]byte
 // GetNonce deterministically calculates a nonce using a hash and gas meter
 func GetNonce(hash tmbytes.HexBytes, gasMeter sdk.GasMeter) Nonce {
 	bz := make([]byte, 16)
-	binary.LittleEndian.PutUint64(bz, uint64(gasMeter.GasConsumed()))
-	bz = append(bz, hash...)
+	if gasMeter != nil {
+		binary.LittleEndian.PutUint64(bz, uint64(gasMeter.GasConsumed()))
+		bz = append(bz, hash...)
+	}
 	return sha256.Sum256(bz)
 }
