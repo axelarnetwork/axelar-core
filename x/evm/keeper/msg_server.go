@@ -451,7 +451,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnerAddress))
 	if burnerInfo == nil {
-		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress)
+		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
