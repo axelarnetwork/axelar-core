@@ -63,7 +63,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	depositAddress := types.NewLinkedAddress(recipientChain.Name, req.Asset, req.RecipientAddr)
+	depositAddress := types.NewLinkedAddress(ctx, recipientChain.Name, req.Asset, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
 		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
