@@ -260,7 +260,7 @@ func GetHandlerQueryDepositAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddress, chain), data)
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddresses, chain), data)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
 			return

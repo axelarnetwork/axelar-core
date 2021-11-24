@@ -27,7 +27,7 @@ const (
 	QAddressByKeyID        = "address-by-key-id"
 	QNextMasterAddress     = "next-master-address"
 	QAxelarGatewayAddress  = "gateway-address"
-	QDepositAddress        = "deposit-address"
+	QDepositAddresses      = "deposit-addresses"
 	QBytecode              = "bytecode"
 	QSignedTx              = "signed-tx"
 	QLatestBatchedCommands = "latest-batched-commands"
@@ -80,7 +80,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
-		case QDepositAddress:
+		case QDepositAddresses:
 			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
