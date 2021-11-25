@@ -3,7 +3,7 @@
 Returns an evm chain deposit address for a recipient address on another blockchain
 
 ```
-axelard query evm deposit-addresses [evm chain] [recipient chain] [recipient address] [asset] [flags]
+axelard query evm deposit-addresses [evm chain] [recipient chain] [recipient address] [flags]
 ```
 
 ### Options
