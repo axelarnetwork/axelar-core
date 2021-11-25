@@ -239,8 +239,8 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryDepositAddresses returns a handler to query the state of a deposit address
-func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
+// GetHandlerQueryBurnerAddress returns a handler to query the state of a deposit address
+func GetHandlerQueryBurnerAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
@@ -258,7 +258,7 @@ func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddresses, chain), data)
+		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QBurnerAddress, chain), data)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
 			return

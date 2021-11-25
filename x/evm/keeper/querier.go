@@ -27,7 +27,7 @@ const (
 	QAddressByKeyID        = "address-by-key-id"
 	QNextMasterAddress     = "next-master-address"
 	QAxelarGatewayAddress  = "gateway-address"
-	QDepositAddresses      = "deposit-addresses"
+	QBurnerAddress         = "burner-address"
 	QBytecode              = "bytecode"
 	QSignedTx              = "signed-tx"
 	QLatestBatchedCommands = "latest-batched-commands"
@@ -80,8 +80,8 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
-		case QDepositAddresses:
-			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
+		case QBurnerAddress:
+			return QueryBurnerAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QSignedTx:
@@ -252,8 +252,8 @@ func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainNa
 	}
 }
 
-// QueryDepositAddress returns the deposit address linked to the given recipient address
-func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
+// QueryBurnerAddress returns the deposit address linked to the given recipient address
+func QueryBurnerAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))

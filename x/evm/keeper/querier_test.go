@@ -348,7 +348,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 	t.Run("happy path hard coded", testutils.Func(func(t *testing.T) {
 		setup()
 
-		bz, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
+		bz, err := evmKeeper.QueryBurnerAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -400,7 +400,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 
-		bz, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
+		bz, err := evmKeeper.QueryBurnerAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -418,7 +418,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 		setup()
 		chainKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
 
-		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
+		_, err := evmKeeper.QueryBurnerAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -430,7 +430,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
+		_, err := evmKeeper.QueryBurnerAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)
@@ -443,7 +443,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 			return types.Address{}, false
 		}
 
-		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
+		_, err := evmKeeper.QueryBurnerAddress(ctx, chainKeeper, nexusKeeper, data)
 
 		assert := assert.New(t)
 		assert.Error(err)

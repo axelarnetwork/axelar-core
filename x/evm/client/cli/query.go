@@ -44,7 +44,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddresses returns the deposit address command
 func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-addresses [evm chain] [recipient chain] [recipient address]",
+		Use:   "deposit-address [evm chain] [recipient chain] [recipient address]",
 		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,7 +53,7 @@ func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositAddresses, args[0])
+			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QBurnerAddress, args[0])
 
 			bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2]}))
 			if err != nil {
