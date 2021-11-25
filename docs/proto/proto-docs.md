@@ -10,6 +10,10 @@
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
+- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
+    - [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest)
+    - [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse)
+  
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
   
@@ -36,10 +40,6 @@
     - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
   
     - [TransferState](#nexus.exported.v1beta1.TransferState)
-  
-- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
-    - [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest)
-    - [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse)
   
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
     - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
@@ -425,6 +425,54 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelarnet/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/query.proto
+
+
+
+<a name="axelarnet.v1beta1.DepositAddressRequest"></a>
+
+### DepositAddressRequest
+DepositAddressRequest represents a message that queries a deposit address by
+recipient address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.DepositAddressResponse"></a>
+
+### DepositAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="utils/v1beta1/threshold.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -784,54 +832,6 @@ registered blockchain
 
 
 
-<a name="axelarnet/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelarnet/v1beta1/query.proto
-
-
-
-<a name="axelarnet.v1beta1.DepositAddressRequest"></a>
-
-### DepositAddressRequest
-MsgLink represents a message to link a cross-chain address to an Axelar
-address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `recipient_addr` | [string](#string) |  |  |
-| `recipient_chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.DepositAddressResponse"></a>
-
-### DepositAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `deposit_addr` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1138,7 +1138,7 @@ Msg defines the axelarnet Msg service.
 <a name="axelarnet.v1beta1.QueryService"></a>
 
 ### QueryService
-Query defines the gRPC querier service.
+QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
@@ -2430,7 +2430,6 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
 
 
