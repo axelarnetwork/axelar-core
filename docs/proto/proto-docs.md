@@ -2430,6 +2430,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
 
 
