@@ -44,7 +44,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 // GetCmdDepositAddresses returns the deposit address command
 func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-address [evm chain] [recipient chain] [recipient address]",
+		Use:   "burner-address [evm chain] [recipient chain] [recipient address]",
 		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
