@@ -251,12 +251,10 @@ func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		recipientChain := mux.Vars(r)[utils.PathVarRecipientChain]
 		linkedAddress := mux.Vars(r)[utils.PathVarLinkedAddress]
-		asset := mux.Vars(r)[utils.PathVarAsset]
 
 		params := types.DepositQueryParams{
 			Chain:   recipientChain,
 			Address: linkedAddress,
-			Asset:   asset,
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 

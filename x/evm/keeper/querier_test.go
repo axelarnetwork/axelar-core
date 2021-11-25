@@ -292,6 +292,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 		nexusKeeper     *mock.NexusMock
 		ctx             sdk.Context
 		evmChain        string
+		asset           string
 		data            []byte
 		expectedAddress types.Address
 		recipient       string
@@ -338,7 +339,6 @@ func TestQueryBurnerAddress(t *testing.T) {
 		data = types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{
 			Chain:   btc.Bitcoin.Name,
 			Address: recipient,
-			Asset:   btc.Bitcoin.NativeAsset,
 		})
 
 	}
@@ -354,7 +354,6 @@ func TestQueryBurnerAddress(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(nexusKeeper.GetChainCalls(), 2)
 		assert.Len(chainKeeper.GetGatewayAddressCalls(), 1)
-		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
 		assert.Len(chainKeeper.GetBurnerAddressCalls(), 1)
 		var res types.QueryBurnerAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
@@ -368,19 +367,13 @@ func TestQueryBurnerAddress(t *testing.T) {
 		dataStr := &types.DepositQueryParams{
 			Chain:   rand.StrBetween(5, 20),
 			Address: "tb" + rand.HexStr(40),
-			Asset:   rand.StrBetween(3, 8),
 		}
 		data = types.ModuleCdc.MustMarshalJSON(dataStr)
-		chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, a string) types.ERC20Token {
-			if dataStr.Asset == a {
-				return createMockConfirmedERC20Token(a, types.Address(randomAddress()), createDetails(rand.Str(10), rand.Str(3)))
-			}
-			return types.NilToken
-		}
+		asset = rand.StrBetween(3, 8)
 		chainKeeper.GetBurnerAddressFunc = func(_ sdk.Context, r nexus.CrossChainAddress) (types.Address, bool) {
 			c := nexus.Chain{
 				Name:                  dataStr.Chain,
-				NativeAsset:           dataStr.Asset,
+				NativeAsset:           asset,
 				SupportsForeignAssets: true,
 			}
 			if r.Address == dataStr.Address && r.Chain == c {
@@ -400,7 +393,7 @@ func TestQueryBurnerAddress(t *testing.T) {
 			if strings.ToLower(chain) == strings.ToLower(dataStr.Chain) {
 				return nexus.Chain{
 					Name:                  dataStr.Chain,
-					NativeAsset:           dataStr.Asset,
+					NativeAsset:           asset,
 					SupportsForeignAssets: true,
 				}, true
 			}
@@ -413,7 +406,6 @@ func TestQueryBurnerAddress(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(nexusKeeper.GetChainCalls(), 2)
 		assert.Len(chainKeeper.GetGatewayAddressCalls(), 1)
-		assert.Len(chainKeeper.GetERC20TokenByAssetCalls(), 1)
 		assert.Len(chainKeeper.GetBurnerAddressCalls(), 1)
 		var res types.QueryBurnerAddressResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
@@ -425,19 +417,6 @@ func TestQueryBurnerAddress(t *testing.T) {
 	t.Run("gateway not deployed", testutils.Func(func(t *testing.T) {
 		setup()
 		chainKeeper.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
-
-		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
-
-		assert := assert.New(t)
-		assert.Error(err)
-
-	}).Repeat(repeatCount))
-
-	t.Run("token contract not deployed", testutils.Func(func(t *testing.T) {
-		setup()
-		chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, a string) types.ERC20Token {
-			return types.NilToken
-		}
 
 		_, err := evmKeeper.QueryDepositAddress(ctx, chainKeeper, nexusKeeper, data)
 

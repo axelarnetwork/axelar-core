@@ -269,11 +269,6 @@ func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, da
 		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway address not set")
 	}
 
-	token := k.GetERC20TokenByAsset(ctx, params.Asset)
-	if !token.Is(types.Confirmed) {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
-	}
-
 	recipientChain, ok := n.GetChain(ctx, params.Chain)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", params.Chain)
