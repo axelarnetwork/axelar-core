@@ -990,7 +990,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 }
 
 var (
-	pattern_QueryService_DepositAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"axelar", "axelarnet", "v1beta1", "deposit_address", "recipient_chain", "recipient_addr"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_DepositAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"axelarnet", "v1beta1", "deposit_address", "recipient_chain", "recipient_addr"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
