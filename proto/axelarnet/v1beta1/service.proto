@@ -77,6 +77,6 @@ service MsgService {
 service QueryService {
   // DepositAddress queries the a deposit address by recipient
   rpc DepositAddress(DepositAddressRequest) returns (DepositAddressResponse) {
-    option (google.api.http).get = "/axelar/axelarnet/v1beta1/deposit_address";
+    option (google.api.http).get = "/axelar/axelarnet/v1beta1/deposit_address/{recipient_chain}/{recipient_addr}";
   }
 }
