@@ -1142,7 +1142,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `DepositAddress` | [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest) | [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse) | DepositAddress queries the a deposit address by recipient | GET|/axelar/axelarnet/v1beta1/deposit_address|
+| `DepositAddress` | [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest) | [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse) | DepositAddress queries the a deposit address by recipient | GET|/axelar/axelarnet/v1beta1/deposit_address/{recipient_chain}/{recipient_addr}|
 
  <!-- end services -->
 
