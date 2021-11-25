@@ -3,16 +3,12 @@ package axelarnet.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 
-import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
-import "cosmos/base/v1beta1/coin.proto";
-import "cosmos_proto/cosmos.proto";
-import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-// MsgLink represents a message to link a cross-chain address to an Axelar
-// address
+// DepositAddressRequest represents a message that queries a deposit address by
+// recipient address
 message DepositAddressRequest {
   string recipient_addr = 1;
   string recipient_chain = 2;

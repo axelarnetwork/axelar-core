@@ -73,7 +73,7 @@ service MsgService {
   }
 }
 
-// Query defines the gRPC querier service.
+// QueryService defines the gRPC querier service.
 service QueryService {
   // DepositAddress queries the a deposit address by recipient
   rpc DepositAddress(DepositAddressRequest) returns (DepositAddressResponse) {
