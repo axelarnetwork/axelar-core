@@ -267,7 +267,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		Salt:             types.Hash(salt),
 	}
 	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
-	s.nexus.SetDepositAddress(ctx, recipient, burnerAddr.Hex())
+	s.nexus.SetLatestDepositAddress(ctx, recipient, burnerAddr.Hex())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

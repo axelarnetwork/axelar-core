@@ -318,8 +318,8 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-// SetDepositAddress set the deposit address for the given recipient
-func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
+// SetLatestDepositAddress set the deposit address for the given recipient
+func (k Keeper) SetLatestDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
 	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
 	k.getStore(ctx).SetRaw(key, []byte(address))
 }

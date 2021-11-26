@@ -1268,8 +1268,8 @@ var _ types.Nexus = &NexusMock{}
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
 // 				panic("mock out the SetChain method")
 // 			},
-// 			SetDepositAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)  {
-// 				panic("mock out the SetDepositAddress method")
+// 			SetLatestDepositAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)  {
+// 				panic("mock out the SetLatestDepositAddress method")
 // 			},
 // 		}
 //
@@ -1314,8 +1314,8 @@ type NexusMock struct {
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
 
-	// SetDepositAddressFunc mocks the SetDepositAddress method.
-	SetDepositAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)
+	// SetLatestDepositAddressFunc mocks the SetLatestDepositAddress method.
+	SetLatestDepositAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1413,8 +1413,8 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain nexus.Chain
 		}
-		// SetDepositAddress holds details about calls to the SetDepositAddress method.
-		SetDepositAddress []struct {
+		// SetLatestDepositAddress holds details about calls to the SetLatestDepositAddress method.
+		SetLatestDepositAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Recipient is the recipient argument value.
@@ -1423,19 +1423,19 @@ type NexusMock struct {
 			Address string
 		}
 	}
-	lockArchivePendingTransfer sync.RWMutex
-	lockEnqueueForTransfer     sync.RWMutex
-	lockGetChain               sync.RWMutex
-	lockGetChainMaintainers    sync.RWMutex
-	lockGetChains              sync.RWMutex
-	lockGetRecipient           sync.RWMutex
-	lockGetTransfersForChain   sync.RWMutex
-	lockIsAssetRegistered      sync.RWMutex
-	lockIsChainActivated       sync.RWMutex
-	lockLinkAddresses          sync.RWMutex
-	lockRegisterAsset          sync.RWMutex
-	lockSetChain               sync.RWMutex
-	lockSetDepositAddress      sync.RWMutex
+	lockArchivePendingTransfer  sync.RWMutex
+	lockEnqueueForTransfer      sync.RWMutex
+	lockGetChain                sync.RWMutex
+	lockGetChainMaintainers     sync.RWMutex
+	lockGetChains               sync.RWMutex
+	lockGetRecipient            sync.RWMutex
+	lockGetTransfersForChain    sync.RWMutex
+	lockIsAssetRegistered       sync.RWMutex
+	lockIsChainActivated        sync.RWMutex
+	lockLinkAddresses           sync.RWMutex
+	lockRegisterAsset           sync.RWMutex
+	lockSetChain                sync.RWMutex
+	lockSetLatestDepositAddress sync.RWMutex
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -1878,10 +1878,10 @@ func (mock *NexusMock) SetChainCalls() []struct {
 	return calls
 }
 
-// SetDepositAddress calls SetDepositAddressFunc.
-func (mock *NexusMock) SetDepositAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string) {
-	if mock.SetDepositAddressFunc == nil {
-		panic("NexusMock.SetDepositAddressFunc: method is nil but Nexus.SetDepositAddress was just called")
+// SetLatestDepositAddress calls SetLatestDepositAddressFunc.
+func (mock *NexusMock) SetLatestDepositAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient nexus.CrossChainAddress, address string) {
+	if mock.SetLatestDepositAddressFunc == nil {
+		panic("NexusMock.SetLatestDepositAddressFunc: method is nil but Nexus.SetLatestDepositAddress was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
@@ -1892,16 +1892,16 @@ func (mock *NexusMock) SetDepositAddress(ctx github_com_cosmos_cosmos_sdk_types.
 		Recipient: recipient,
 		Address:   address,
 	}
-	mock.lockSetDepositAddress.Lock()
-	mock.calls.SetDepositAddress = append(mock.calls.SetDepositAddress, callInfo)
-	mock.lockSetDepositAddress.Unlock()
-	mock.SetDepositAddressFunc(ctx, recipient, address)
+	mock.lockSetLatestDepositAddress.Lock()
+	mock.calls.SetLatestDepositAddress = append(mock.calls.SetLatestDepositAddress, callInfo)
+	mock.lockSetLatestDepositAddress.Unlock()
+	mock.SetLatestDepositAddressFunc(ctx, recipient, address)
 }
 
-// SetDepositAddressCalls gets all the calls that were made to SetDepositAddress.
+// SetLatestDepositAddressCalls gets all the calls that were made to SetLatestDepositAddress.
 // Check the length with:
-//     len(mockedNexus.SetDepositAddressCalls())
-func (mock *NexusMock) SetDepositAddressCalls() []struct {
+//     len(mockedNexus.SetLatestDepositAddressCalls())
+func (mock *NexusMock) SetLatestDepositAddressCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Recipient nexus.CrossChainAddress
 	Address   string
@@ -1911,9 +1911,9 @@ func (mock *NexusMock) SetDepositAddressCalls() []struct {
 		Recipient nexus.CrossChainAddress
 		Address   string
 	}
-	mock.lockSetDepositAddress.RLock()
-	calls = mock.calls.SetDepositAddress
-	mock.lockSetDepositAddress.RUnlock()
+	mock.lockSetLatestDepositAddress.RLock()
+	calls = mock.calls.SetLatestDepositAddress
+	mock.lockSetLatestDepositAddress.RUnlock()
 	return calls
 }
 
