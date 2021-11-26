@@ -1054,8 +1054,13 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(vote.PollState) bool {
-						return true
+					IsFunc: func(state vote.PollState) bool {
+						switch state {
+						case vote.Pending:
+							return true
+						default:
+							return false
+						}
 					},
 				}
 			},
