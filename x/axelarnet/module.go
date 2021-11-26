@@ -22,6 +22,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -62,11 +63,12 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterRoutes(clientCtx, rtr)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
 }
 
 // GetTxCmd returns all CLI tx commands for this module
