@@ -2,14 +2,13 @@ package rest
 
 import (
 	"encoding/hex"
-	"net/http"
-
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
+	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
