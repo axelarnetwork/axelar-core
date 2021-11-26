@@ -55,9 +55,8 @@ func TestHandleMsgLink(t *testing.T) {
 					SupportsForeignAssets: true,
 				}, true
 			},
-			IsAssetRegisteredFunc:       func(sdk.Context, string, string) bool { return true },
-			LinkAddressesFunc:           func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
-			SetLatestDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, string) {},
+			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
 
 		ctx = rand.Context(nil)

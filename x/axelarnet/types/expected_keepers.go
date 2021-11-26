@@ -47,7 +47,6 @@ type Nexus interface {
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
-	SetLatestDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

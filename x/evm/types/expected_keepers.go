@@ -118,7 +118,6 @@ type Nexus interface {
 	RegisterAsset(ctx sdk.Context, chainName, denom string)
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
-	SetLatestDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

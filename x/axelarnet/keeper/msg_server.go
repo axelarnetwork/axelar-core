@@ -69,7 +69,6 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
 		recipient,
 	)
-	s.nexus.SetLatestDepositAddress(ctx, recipient, depositAddress.String())
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

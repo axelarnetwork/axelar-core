@@ -27,7 +27,6 @@ type Nexus interface {
 	AddChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
-	SetLatestDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string)
 	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 }
 

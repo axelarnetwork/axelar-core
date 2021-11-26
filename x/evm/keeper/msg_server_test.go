@@ -448,8 +448,7 @@ func TestLink_Success(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
-		IsAssetRegisteredFunc:       func(_ sdk.Context, chainName, denom string) bool { return true },
-		SetLatestDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, string) {},
+		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
 	}
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
