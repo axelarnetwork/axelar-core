@@ -28,7 +28,6 @@ axelard query [flags]
 - [axelard](axelard.md)	 - Axelar App
 - [axelard query account](axelard_query_account.md)	 - Query for account by address
 - [axelard query auth](axelard_query_auth.md)	 - Querying commands for the auth module
-- [axelard query axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
 - [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
 - [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
 - [axelard query block](axelard_query_block.md)	 - Get verified data for a the block at given height

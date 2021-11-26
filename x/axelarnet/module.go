@@ -1,7 +1,6 @@
 package axelarnet
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -23,7 +22,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -64,15 +62,11 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(clientCtx, rtr)
+func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
-		panic(err)
-	}
 }
 
 // GetTxCmd returns all CLI tx commands for this module
@@ -82,7 +76,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 
 // GetQueryCmd returns all CLI query commands for this module
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return cli.GetQueryCmd()
+	return nil
 }
 
 // AppModule implements module.AppModule
@@ -165,8 +159,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper, am.nexus))
+func (am AppModule) RegisterServices(module.Configurator) {
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

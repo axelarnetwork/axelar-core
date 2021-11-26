@@ -10,10 +10,6 @@
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
-- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
-    - [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest)
-    - [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse)
-  
 - [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
     - [Threshold](#utils.v1beta1.Threshold)
   
@@ -63,7 +59,6 @@
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
-    - [QueryService](#axelarnet.v1beta1.QueryService)
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
@@ -217,6 +212,8 @@
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
 - [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
+    - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
   
 - [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
@@ -227,6 +224,7 @@
   
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
+    - [QueryService](#nexus.v1beta1.QueryService)
   
 - [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
     - [ChainState](#nexus.v1beta1.ChainState)
@@ -410,54 +408,6 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#axelarnet.v1beta1.Params) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelarnet/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelarnet/v1beta1/query.proto
-
-
-
-<a name="axelarnet.v1beta1.DepositAddressRequest"></a>
-
-### DepositAddressRequest
-DepositAddressRequest represents a message that queries a deposit address by
-recipient address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `recipient_addr` | [string](#string) |  |  |
-| `recipient_chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.DepositAddressResponse"></a>
-
-### DepositAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `deposit_addr` | [string](#string) |  |  |
 
 
 
@@ -1133,16 +1083,6 @@ Msg defines the axelarnet Msg service.
 | `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
-
-
-<a name="axelarnet.v1beta1.QueryService"></a>
-
-### QueryService
-QueryService defines the gRPC querier service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `DepositAddress` | [DepositAddressRequest](#axelarnet.v1beta1.DepositAddressRequest) | [DepositAddressResponse](#axelarnet.v1beta1.DepositAddressResponse) | DepositAddress queries the a deposit address by recipient | GET|/axelarnet/v1beta1/deposit_address/{recipient_chain}/{recipient_addr}|
 
  <!-- end services -->
 
@@ -3249,6 +3189,38 @@ GenesisState represents the genesis state
 
 
 
+<a name="nexus.v1beta1.LatestDepositAddressRequest"></a>
+
+### LatestDepositAddressRequest
+LatestDepositAddressRequest represents a message that queries a deposit
+address by recipient address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LatestDepositAddressResponse"></a>
+
+### LatestDepositAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="nexus.v1beta1.QueryChainMaintainersResponse"></a>
 
 ### QueryChainMaintainersResponse
@@ -3363,6 +3335,16 @@ Msg defines the nexus Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
 | `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
+
+
+<a name="nexus.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/deposit_address/{recipient_chain}/{recipient_addr}|
 
  <!-- end services -->
 

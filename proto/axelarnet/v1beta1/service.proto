@@ -6,7 +6,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "axelarnet/v1beta1/tx.proto";
-import "axelarnet/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -70,14 +69,5 @@ service MsgService {
       post : "/axelar/axelarnet/register-fee-collector"
       body : "*"
     };
-  }
-}
-
-// QueryService defines the gRPC querier service.
-service QueryService {
-  // DepositAddress queries the a deposit address by recipient
-  rpc DepositAddress(DepositAddressRequest) returns (DepositAddressResponse) {
-    option (google.api.http).get = "/axelarnet/v1beta1/deposit_address/"
-                                   "{recipient_chain}/{recipient_addr}";
   }
 }

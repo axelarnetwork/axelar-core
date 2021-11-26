@@ -12,3 +12,12 @@ message QueryChainMaintainersResponse {
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
 }
+
+// LatestDepositAddressRequest represents a message that queries a deposit
+// address by recipient address
+message LatestDepositAddressRequest {
+  string recipient_addr = 1;
+  string recipient_chain = 2;
+}
+
+message LatestDepositAddressResponse { string deposit_addr = 1; };

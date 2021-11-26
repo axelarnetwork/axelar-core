@@ -1,6 +1,7 @@
 package nexus
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/nexus/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -57,11 +59,16 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterRoutes(clientCtx, rtr)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
+		panic(err)
+	}
+}
 
 // GetTxCmd returns all CLI tx commands for this module
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
@@ -98,7 +105,9 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {}
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
+}
 
 // InitGenesis initializes the module's keeper from the given genesis state
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {

@@ -1,6 +1,8 @@
 package types
 
 import (
+	context "context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -25,6 +27,8 @@ type Nexus interface {
 	AddChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
+	SetDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string)
+	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 }
 
 // Snapshotter provides functionality to the snapshot module

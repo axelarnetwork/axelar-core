@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -23,7 +22,6 @@ var (
 	cosmosChainPrefix   = utils.KeyFromStr("cosmos_chain")
 	ibcAssetPrefix      = utils.KeyFromStr("ibc_asset")
 	feeCollector        = utils.KeyFromStr("fee_collector")
-	depositAddrPrefix   = utils.KeyFromStr("deposit_addr")
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -58,23 +56,6 @@ func (k Keeper) SetParams(ctx sdk.Context, n types.Nexus, p types.Params) {
 			n.RegisterAsset(ctx, exported.Axelarnet.Name, chain.NativeAsset)
 		}
 	}
-}
-
-// SetDepositAddress set the deposit address for the given recipient
-func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address sdk.AccAddress) {
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
-	k.getStore(ctx).SetRaw(key, address.Bytes())
-}
-
-// GetDepositAddress gets the deposit address for the given recipient
-func (k Keeper) GetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (sdk.AccAddress, bool) {
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
-	bz := k.getStore(ctx).GetRaw(key)
-	if bz == nil {
-		return sdk.AccAddress{}, false
-	}
-
-	return sdk.AccAddress(bz), true
 }
 
 // GetRouteTimeoutWindow returns the timeout window for IBC transfers routed by axelarnet

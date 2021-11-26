@@ -57,15 +57,13 @@ func TestHandleMsgLink(t *testing.T) {
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
+			SetDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, string) {},
 		}
 
-		baseKeeper := &mock.BaseKeeperMock{
-			SetDepositAddressFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.AccAddress) {},
-		}
 		ctx = rand.Context(nil)
 		rtr := baseapp.NewRouter()
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
-		server = keeper.NewMsgServerImpl(baseKeeper, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{}, msgServiceRtr, rtr)
+		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{}, msgServiceRtr, rtr)
 	}
 
 	repeatCount := 20

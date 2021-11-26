@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	senderPrefix     = utils.KeyFromStr("send")
-	chainPrefix      = utils.KeyFromStr("chain")
-	totalPrefix      = utils.KeyFromStr("total")
-	registeredPrefix = utils.KeyFromStr("registered")
-	chainStatePrefix = utils.KeyFromStr("chain_state")
+	senderPrefix      = utils.KeyFromStr("send")
+	chainPrefix       = utils.KeyFromStr("chain")
+	totalPrefix       = utils.KeyFromStr("total")
+	registeredPrefix  = utils.KeyFromStr("registered")
+	chainStatePrefix  = utils.KeyFromStr("chain_state")
+	depositAddrPrefix = utils.KeyFromStr("deposit_addr")
 
 	sequenceKey = utils.KeyFromStr("nextID")
 	registered  = []byte{0x01}
@@ -315,4 +316,10 @@ func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// SetDepositAddress set the deposit address for the given recipient
+func (k Keeper) SetDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
+	k.getStore(ctx).SetRaw(key, []byte(address))
 }
