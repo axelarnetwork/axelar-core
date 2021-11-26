@@ -331,13 +331,13 @@ func (k Keeper) GetSignQueue(ctx sdk.Context) utils.SequenceKVQueue {
 
 // SetMultisigSignInfo stores the MultisigInfo for a multisig sign info
 func (k Keeper) SetMultisigSignInfo(ctx sdk.Context, info types.MultisigInfo) {
-	k.getStore(ctx).Set(multiSigSignPrefix.AppendStr(info.ID), &info)
+	k.getStore(ctx).Set(multisigSignPrefix.AppendStr(info.ID), &info)
 }
 
 // GetMultisigSignInfo returns the MultisigSignInfo
 func (k Keeper) GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.MultisigSignInfo, bool) {
 	var info types.MultisigInfo
-	ok := k.getStore(ctx).Get(multiSigSignPrefix.AppendStr(sigID), &info)
+	ok := k.getStore(ctx).Get(multisigSignPrefix.AppendStr(sigID), &info)
 
 	return &info, ok
 }
@@ -345,7 +345,7 @@ func (k Keeper) GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.Multis
 // SubmitSignatures stores signatures a validator has under the given multisig sigID
 func (k Keeper) SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool {
 	var signInfo types.MultisigInfo
-	ok := k.getStore(ctx).Get(multiSigSignPrefix.AppendStr(sigID), &signInfo)
+	ok := k.getStore(ctx).Get(multisigSignPrefix.AppendStr(sigID), &signInfo)
 	if !ok {
 		// the setter is controlled by keeper
 		panic(fmt.Sprintf("MultisigSignInfo %s not found", sigID))
@@ -359,7 +359,7 @@ func (k Keeper) SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.Va
 
 // DeleteMultisigSign deletes the multisig sign info for the given sig ID
 func (k Keeper) DeleteMultisigSign(ctx sdk.Context, signID string) {
-	k.getStore(ctx).Delete(multiSigSignPrefix.AppendStr(signID))
+	k.getStore(ctx).Delete(multisigSignPrefix.AppendStr(signID))
 }
 
 // GetMultisigSignQueue returns the multisig sign timeout queue

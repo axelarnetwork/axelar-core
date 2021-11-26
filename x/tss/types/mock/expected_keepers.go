@@ -1226,11 +1226,11 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error {
 // 				panic("mock out the AssignNextKey method")
 // 			},
-// 			DeleteAllRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
-// 				panic("mock out the DeleteAllRecoveryInfos method")
-// 			},
 // 			DeleteInfoForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)  {
 // 				panic("mock out the DeleteInfoForSig method")
+// 			},
+// 			DeleteKeyRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
+// 				panic("mock out the DeleteKeyRecoveryInfo method")
 // 			},
 // 			DeleteKeygenStartFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the DeleteKeygenStart method")
@@ -1241,14 +1241,8 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			DeleteMultisigSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, signID string)  {
 // 				panic("mock out the DeleteMultisigSign method")
 // 			},
-// 			DeleteParticipantsInKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
-// 				panic("mock out the DeleteParticipantsInKeygen method")
-// 			},
 // 			DeleteSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the DeleteSnapshotCounterForKeyID method")
-// 			},
-// 			DoesValidatorParticipateInKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-// 				panic("mock out the DoesValidatorParticipateInKeygen method")
 // 			},
 // 			DoesValidatorParticipateInSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the DoesValidatorParticipateInSign method")
@@ -1316,9 +1310,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			GetParticipantsInKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress {
-// 				panic("mock out the GetParticipantsInKeygen method")
-// 			},
 // 			GetPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 // 				panic("mock out the GetPrivateRecoveryInfo method")
 // 			},
@@ -1346,8 +1337,8 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			HasKeygenStartedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the HasKeygenStarted method")
 // 			},
-// 			HasPrivateRecoveryInfosFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
-// 				panic("mock out the HasPrivateRecoveryInfos method")
+// 			HasPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
+// 				panic("mock out the HasPrivateRecoveryInfo method")
 // 			},
 // 			IsMultisigKeygenCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the IsMultisigKeygenCompleted method")
@@ -1381,9 +1372,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)  {
 // 				panic("mock out the SetKey method")
-// 			},
-// 			SetKeyInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info types.KeyInfo)  {
-// 				panic("mock out the SetKeyInfo method")
 // 			},
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
 // 				panic("mock out the SetParams method")
@@ -1422,11 +1410,11 @@ type TSSKeeperMock struct {
 	// AssignNextKeyFunc mocks the AssignNextKey method.
 	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) error
 
-	// DeleteAllRecoveryInfosFunc mocks the DeleteAllRecoveryInfos method.
-	DeleteAllRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
-
 	// DeleteInfoForSigFunc mocks the DeleteInfoForSig method.
 	DeleteInfoForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string)
+
+	// DeleteKeyRecoveryInfoFunc mocks the DeleteKeyRecoveryInfo method.
+	DeleteKeyRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
 
 	// DeleteKeygenStartFunc mocks the DeleteKeygenStart method.
 	DeleteKeygenStartFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
@@ -1437,14 +1425,8 @@ type TSSKeeperMock struct {
 	// DeleteMultisigSignFunc mocks the DeleteMultisigSign method.
 	DeleteMultisigSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, signID string)
 
-	// DeleteParticipantsInKeygenFunc mocks the DeleteParticipantsInKeygen method.
-	DeleteParticipantsInKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
-
 	// DeleteSnapshotCounterForKeyIDFunc mocks the DeleteSnapshotCounterForKeyID method.
 	DeleteSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
-
-	// DoesValidatorParticipateInKeygenFunc mocks the DoesValidatorParticipateInKeygen method.
-	DoesValidatorParticipateInKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// DoesValidatorParticipateInSignFunc mocks the DoesValidatorParticipateInSign method.
 	DoesValidatorParticipateInSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool
@@ -1512,9 +1494,6 @@ type TSSKeeperMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
 
-	// GetParticipantsInKeygenFunc mocks the GetParticipantsInKeygen method.
-	GetParticipantsInKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress
-
 	// GetPrivateRecoveryInfoFunc mocks the GetPrivateRecoveryInfo method.
 	GetPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte
 
@@ -1542,8 +1521,8 @@ type TSSKeeperMock struct {
 	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
 	HasKeygenStartedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
 
-	// HasPrivateRecoveryInfosFunc mocks the HasPrivateRecoveryInfos method.
-	HasPrivateRecoveryInfosFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
+	// HasPrivateRecoveryInfoFunc mocks the HasPrivateRecoveryInfo method.
+	HasPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
 
 	// IsMultisigKeygenCompletedFunc mocks the IsMultisigKeygenCompleted method.
 	IsMultisigKeygenCompletedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
@@ -1577,9 +1556,6 @@ type TSSKeeperMock struct {
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)
-
-	// SetKeyInfoFunc mocks the SetKeyInfo method.
-	SetKeyInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info types.KeyInfo)
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
@@ -1633,19 +1609,19 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// DeleteAllRecoveryInfos holds details about calls to the DeleteAllRecoveryInfos method.
-		DeleteAllRecoveryInfos []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// DeleteInfoForSig holds details about calls to the DeleteInfoForSig method.
 		DeleteInfoForSig []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// SigID is the sigID argument value.
 			SigID string
+		}
+		// DeleteKeyRecoveryInfo holds details about calls to the DeleteKeyRecoveryInfo method.
+		DeleteKeyRecoveryInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
 		// DeleteKeygenStart holds details about calls to the DeleteKeygenStart method.
 		DeleteKeygenStart []struct {
@@ -1668,28 +1644,12 @@ type TSSKeeperMock struct {
 			// SignID is the signID argument value.
 			SignID string
 		}
-		// DeleteParticipantsInKeygen holds details about calls to the DeleteParticipantsInKeygen method.
-		DeleteParticipantsInKeygen []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// DeleteSnapshotCounterForKeyID holds details about calls to the DeleteSnapshotCounterForKeyID method.
 		DeleteSnapshotCounterForKeyID []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
-		// DoesValidatorParticipateInKeygen holds details about calls to the DoesValidatorParticipateInKeygen method.
-		DoesValidatorParticipateInKeygen []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-			// Validator is the validator argument value.
-			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// DoesValidatorParticipateInSign holds details about calls to the DoesValidatorParticipateInSign method.
 		DoesValidatorParticipateInSign []struct {
@@ -1851,13 +1811,6 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetParticipantsInKeygen holds details about calls to the GetParticipantsInKeygen method.
-		GetParticipantsInKeygen []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// GetPrivateRecoveryInfo holds details about calls to the GetPrivateRecoveryInfo method.
 		GetPrivateRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
@@ -1919,8 +1872,8 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// HasPrivateRecoveryInfos holds details about calls to the HasPrivateRecoveryInfos method.
-		HasPrivateRecoveryInfos []struct {
+		// HasPrivateRecoveryInfo holds details about calls to the HasPrivateRecoveryInfo method.
+		HasPrivateRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Sender is the sender argument value.
@@ -2021,13 +1974,6 @@ type TSSKeeperMock struct {
 			// Key is the key argument value.
 			Key github_com_axelarnetwork_axelar_core_x_tss_exported.Key
 		}
-		// SetKeyInfo holds details about calls to the SetKeyInfo method.
-		SetKeyInfo []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Info is the info argument value.
-			Info types.KeyInfo
-		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
 			// Ctx is the ctx argument value.
@@ -2109,69 +2055,65 @@ type TSSKeeperMock struct {
 			Sigs [][]byte
 		}
 	}
-	lockAssertMatchesRequirements        sync.RWMutex
-	lockAssignNextKey                    sync.RWMutex
-	lockDeleteAllRecoveryInfos           sync.RWMutex
-	lockDeleteInfoForSig                 sync.RWMutex
-	lockDeleteKeygenStart                sync.RWMutex
-	lockDeleteMultisigKeygen             sync.RWMutex
-	lockDeleteMultisigSign               sync.RWMutex
-	lockDeleteParticipantsInKeygen       sync.RWMutex
-	lockDeleteSnapshotCounterForKeyID    sync.RWMutex
-	lockDoesValidatorParticipateInKeygen sync.RWMutex
-	lockDoesValidatorParticipateInSign   sync.RWMutex
-	lockGetAvailableOperators            sync.RWMutex
-	lockGetCurrentKey                    sync.RWMutex
-	lockGetCurrentKeyID                  sync.RWMutex
-	lockGetExternalKeyIDs                sync.RWMutex
-	lockGetExternalMultisigThreshold     sync.RWMutex
-	lockGetGovernanceKey                 sync.RWMutex
-	lockGetGroupRecoveryInfo             sync.RWMutex
-	lockGetHeartbeatPeriodInBlocks       sync.RWMutex
-	lockGetInfoForSig                    sync.RWMutex
-	lockGetKey                           sync.RWMutex
-	lockGetKeyForSigID                   sync.RWMutex
-	lockGetKeyRequirement                sync.RWMutex
-	lockGetKeyType                       sync.RWMutex
-	lockGetMaxSimultaneousSignShares     sync.RWMutex
-	lockGetMultisigKeygenInfo            sync.RWMutex
-	lockGetMultisigPubKeysByValidator    sync.RWMutex
-	lockGetMultisigSignInfo              sync.RWMutex
-	lockGetNextKey                       sync.RWMutex
-	lockGetNextKeyID                     sync.RWMutex
-	lockGetOldActiveKeys                 sync.RWMutex
-	lockGetParams                        sync.RWMutex
-	lockGetParticipantsInKeygen          sync.RWMutex
-	lockGetPrivateRecoveryInfo           sync.RWMutex
-	lockGetRouter                        sync.RWMutex
-	lockGetSig                           sync.RWMutex
-	lockGetSignParticipants              sync.RWMutex
-	lockGetSignParticipantsAsJSON        sync.RWMutex
-	lockGetSignParticipantsSharesAsJSON  sync.RWMutex
-	lockGetSnapshotCounterForKeyID       sync.RWMutex
-	lockGetTssSuspendedUntil             sync.RWMutex
-	lockHasKeygenStarted                 sync.RWMutex
-	lockHasPrivateRecoveryInfos          sync.RWMutex
-	lockIsMultisigKeygenCompleted        sync.RWMutex
-	lockLogger                           sync.RWMutex
-	lockPenalizeCriminal                 sync.RWMutex
-	lockRotateKey                        sync.RWMutex
-	lockSelectSignParticipants           sync.RWMutex
-	lockSetAvailableOperator             sync.RWMutex
-	lockSetExternalKeyIDs                sync.RWMutex
-	lockSetGovernanceKey                 sync.RWMutex
-	lockSetGroupRecoveryInfo             sync.RWMutex
-	lockSetInfoForSig                    sync.RWMutex
-	lockSetKey                           sync.RWMutex
-	lockSetKeyInfo                       sync.RWMutex
-	lockSetParams                        sync.RWMutex
-	lockSetPrivateRecoveryInfo           sync.RWMutex
-	lockSetSig                           sync.RWMutex
-	lockSetSigStatus                     sync.RWMutex
-	lockStartKeygen                      sync.RWMutex
-	lockStartSign                        sync.RWMutex
-	lockSubmitPubKeys                    sync.RWMutex
-	lockSubmitSignatures                 sync.RWMutex
+	lockAssertMatchesRequirements       sync.RWMutex
+	lockAssignNextKey                   sync.RWMutex
+	lockDeleteInfoForSig                sync.RWMutex
+	lockDeleteKeyRecoveryInfo           sync.RWMutex
+	lockDeleteKeygenStart               sync.RWMutex
+	lockDeleteMultisigKeygen            sync.RWMutex
+	lockDeleteMultisigSign              sync.RWMutex
+	lockDeleteSnapshotCounterForKeyID   sync.RWMutex
+	lockDoesValidatorParticipateInSign  sync.RWMutex
+	lockGetAvailableOperators           sync.RWMutex
+	lockGetCurrentKey                   sync.RWMutex
+	lockGetCurrentKeyID                 sync.RWMutex
+	lockGetExternalKeyIDs               sync.RWMutex
+	lockGetExternalMultisigThreshold    sync.RWMutex
+	lockGetGovernanceKey                sync.RWMutex
+	lockGetGroupRecoveryInfo            sync.RWMutex
+	lockGetHeartbeatPeriodInBlocks      sync.RWMutex
+	lockGetInfoForSig                   sync.RWMutex
+	lockGetKey                          sync.RWMutex
+	lockGetKeyForSigID                  sync.RWMutex
+	lockGetKeyRequirement               sync.RWMutex
+	lockGetKeyType                      sync.RWMutex
+	lockGetMaxSimultaneousSignShares    sync.RWMutex
+	lockGetMultisigKeygenInfo           sync.RWMutex
+	lockGetMultisigPubKeysByValidator   sync.RWMutex
+	lockGetMultisigSignInfo             sync.RWMutex
+	lockGetNextKey                      sync.RWMutex
+	lockGetNextKeyID                    sync.RWMutex
+	lockGetOldActiveKeys                sync.RWMutex
+	lockGetParams                       sync.RWMutex
+	lockGetPrivateRecoveryInfo          sync.RWMutex
+	lockGetRouter                       sync.RWMutex
+	lockGetSig                          sync.RWMutex
+	lockGetSignParticipants             sync.RWMutex
+	lockGetSignParticipantsAsJSON       sync.RWMutex
+	lockGetSignParticipantsSharesAsJSON sync.RWMutex
+	lockGetSnapshotCounterForKeyID      sync.RWMutex
+	lockGetTssSuspendedUntil            sync.RWMutex
+	lockHasKeygenStarted                sync.RWMutex
+	lockHasPrivateRecoveryInfo          sync.RWMutex
+	lockIsMultisigKeygenCompleted       sync.RWMutex
+	lockLogger                          sync.RWMutex
+	lockPenalizeCriminal                sync.RWMutex
+	lockRotateKey                       sync.RWMutex
+	lockSelectSignParticipants          sync.RWMutex
+	lockSetAvailableOperator            sync.RWMutex
+	lockSetExternalKeyIDs               sync.RWMutex
+	lockSetGovernanceKey                sync.RWMutex
+	lockSetGroupRecoveryInfo            sync.RWMutex
+	lockSetInfoForSig                   sync.RWMutex
+	lockSetKey                          sync.RWMutex
+	lockSetParams                       sync.RWMutex
+	lockSetPrivateRecoveryInfo          sync.RWMutex
+	lockSetSig                          sync.RWMutex
+	lockSetSigStatus                    sync.RWMutex
+	lockStartKeygen                     sync.RWMutex
+	lockStartSign                       sync.RWMutex
+	lockSubmitPubKeys                   sync.RWMutex
+	lockSubmitSignatures                sync.RWMutex
 }
 
 // AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
@@ -2264,41 +2206,6 @@ func (mock *TSSKeeperMock) AssignNextKeyCalls() []struct {
 	return calls
 }
 
-// DeleteAllRecoveryInfos calls DeleteAllRecoveryInfosFunc.
-func (mock *TSSKeeperMock) DeleteAllRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
-	if mock.DeleteAllRecoveryInfosFunc == nil {
-		panic("TSSKeeperMock.DeleteAllRecoveryInfosFunc: method is nil but TSSKeeper.DeleteAllRecoveryInfos was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockDeleteAllRecoveryInfos.Lock()
-	mock.calls.DeleteAllRecoveryInfos = append(mock.calls.DeleteAllRecoveryInfos, callInfo)
-	mock.lockDeleteAllRecoveryInfos.Unlock()
-	mock.DeleteAllRecoveryInfosFunc(ctx, keyID)
-}
-
-// DeleteAllRecoveryInfosCalls gets all the calls that were made to DeleteAllRecoveryInfos.
-// Check the length with:
-//     len(mockedTSSKeeper.DeleteAllRecoveryInfosCalls())
-func (mock *TSSKeeperMock) DeleteAllRecoveryInfosCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockDeleteAllRecoveryInfos.RLock()
-	calls = mock.calls.DeleteAllRecoveryInfos
-	mock.lockDeleteAllRecoveryInfos.RUnlock()
-	return calls
-}
-
 // DeleteInfoForSig calls DeleteInfoForSigFunc.
 func (mock *TSSKeeperMock) DeleteInfoForSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) {
 	if mock.DeleteInfoForSigFunc == nil {
@@ -2331,6 +2238,41 @@ func (mock *TSSKeeperMock) DeleteInfoForSigCalls() []struct {
 	mock.lockDeleteInfoForSig.RLock()
 	calls = mock.calls.DeleteInfoForSig
 	mock.lockDeleteInfoForSig.RUnlock()
+	return calls
+}
+
+// DeleteKeyRecoveryInfo calls DeleteKeyRecoveryInfoFunc.
+func (mock *TSSKeeperMock) DeleteKeyRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
+	if mock.DeleteKeyRecoveryInfoFunc == nil {
+		panic("TSSKeeperMock.DeleteKeyRecoveryInfoFunc: method is nil but TSSKeeper.DeleteKeyRecoveryInfo was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockDeleteKeyRecoveryInfo.Lock()
+	mock.calls.DeleteKeyRecoveryInfo = append(mock.calls.DeleteKeyRecoveryInfo, callInfo)
+	mock.lockDeleteKeyRecoveryInfo.Unlock()
+	mock.DeleteKeyRecoveryInfoFunc(ctx, keyID)
+}
+
+// DeleteKeyRecoveryInfoCalls gets all the calls that were made to DeleteKeyRecoveryInfo.
+// Check the length with:
+//     len(mockedTSSKeeper.DeleteKeyRecoveryInfoCalls())
+func (mock *TSSKeeperMock) DeleteKeyRecoveryInfoCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+	}
+	mock.lockDeleteKeyRecoveryInfo.RLock()
+	calls = mock.calls.DeleteKeyRecoveryInfo
+	mock.lockDeleteKeyRecoveryInfo.RUnlock()
 	return calls
 }
 
@@ -2439,41 +2381,6 @@ func (mock *TSSKeeperMock) DeleteMultisigSignCalls() []struct {
 	return calls
 }
 
-// DeleteParticipantsInKeygen calls DeleteParticipantsInKeygenFunc.
-func (mock *TSSKeeperMock) DeleteParticipantsInKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
-	if mock.DeleteParticipantsInKeygenFunc == nil {
-		panic("TSSKeeperMock.DeleteParticipantsInKeygenFunc: method is nil but TSSKeeper.DeleteParticipantsInKeygen was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockDeleteParticipantsInKeygen.Lock()
-	mock.calls.DeleteParticipantsInKeygen = append(mock.calls.DeleteParticipantsInKeygen, callInfo)
-	mock.lockDeleteParticipantsInKeygen.Unlock()
-	mock.DeleteParticipantsInKeygenFunc(ctx, keyID)
-}
-
-// DeleteParticipantsInKeygenCalls gets all the calls that were made to DeleteParticipantsInKeygen.
-// Check the length with:
-//     len(mockedTSSKeeper.DeleteParticipantsInKeygenCalls())
-func (mock *TSSKeeperMock) DeleteParticipantsInKeygenCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockDeleteParticipantsInKeygen.RLock()
-	calls = mock.calls.DeleteParticipantsInKeygen
-	mock.lockDeleteParticipantsInKeygen.RUnlock()
-	return calls
-}
-
 // DeleteSnapshotCounterForKeyID calls DeleteSnapshotCounterForKeyIDFunc.
 func (mock *TSSKeeperMock) DeleteSnapshotCounterForKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) {
 	if mock.DeleteSnapshotCounterForKeyIDFunc == nil {
@@ -2506,45 +2413,6 @@ func (mock *TSSKeeperMock) DeleteSnapshotCounterForKeyIDCalls() []struct {
 	mock.lockDeleteSnapshotCounterForKeyID.RLock()
 	calls = mock.calls.DeleteSnapshotCounterForKeyID
 	mock.lockDeleteSnapshotCounterForKeyID.RUnlock()
-	return calls
-}
-
-// DoesValidatorParticipateInKeygen calls DoesValidatorParticipateInKeygenFunc.
-func (mock *TSSKeeperMock) DoesValidatorParticipateInKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, validator github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
-	if mock.DoesValidatorParticipateInKeygenFunc == nil {
-		panic("TSSKeeperMock.DoesValidatorParticipateInKeygenFunc: method is nil but TSSKeeper.DoesValidatorParticipateInKeygen was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		KeyID     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-	}{
-		Ctx:       ctx,
-		KeyID:     keyID,
-		Validator: validator,
-	}
-	mock.lockDoesValidatorParticipateInKeygen.Lock()
-	mock.calls.DoesValidatorParticipateInKeygen = append(mock.calls.DoesValidatorParticipateInKeygen, callInfo)
-	mock.lockDoesValidatorParticipateInKeygen.Unlock()
-	return mock.DoesValidatorParticipateInKeygenFunc(ctx, keyID, validator)
-}
-
-// DoesValidatorParticipateInKeygenCalls gets all the calls that were made to DoesValidatorParticipateInKeygen.
-// Check the length with:
-//     len(mockedTSSKeeper.DoesValidatorParticipateInKeygenCalls())
-func (mock *TSSKeeperMock) DoesValidatorParticipateInKeygenCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	KeyID     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		KeyID     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
-	}
-	mock.lockDoesValidatorParticipateInKeygen.RLock()
-	calls = mock.calls.DoesValidatorParticipateInKeygen
-	mock.lockDoesValidatorParticipateInKeygen.RUnlock()
 	return calls
 }
 
@@ -3330,41 +3198,6 @@ func (mock *TSSKeeperMock) GetParamsCalls() []struct {
 	return calls
 }
 
-// GetParticipantsInKeygen calls GetParticipantsInKeygenFunc.
-func (mock *TSSKeeperMock) GetParticipantsInKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress {
-	if mock.GetParticipantsInKeygenFunc == nil {
-		panic("TSSKeeperMock.GetParticipantsInKeygenFunc: method is nil but TSSKeeper.GetParticipantsInKeygen was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetParticipantsInKeygen.Lock()
-	mock.calls.GetParticipantsInKeygen = append(mock.calls.GetParticipantsInKeygen, callInfo)
-	mock.lockGetParticipantsInKeygen.Unlock()
-	return mock.GetParticipantsInKeygenFunc(ctx, keyID)
-}
-
-// GetParticipantsInKeygenCalls gets all the calls that were made to GetParticipantsInKeygen.
-// Check the length with:
-//     len(mockedTSSKeeper.GetParticipantsInKeygenCalls())
-func (mock *TSSKeeperMock) GetParticipantsInKeygenCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockGetParticipantsInKeygen.RLock()
-	calls = mock.calls.GetParticipantsInKeygen
-	mock.lockGetParticipantsInKeygen.RUnlock()
-	return calls
-}
-
 // GetPrivateRecoveryInfo calls GetPrivateRecoveryInfoFunc.
 func (mock *TSSKeeperMock) GetPrivateRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 	if mock.GetPrivateRecoveryInfoFunc == nil {
@@ -3675,10 +3508,10 @@ func (mock *TSSKeeperMock) HasKeygenStartedCalls() []struct {
 	return calls
 }
 
-// HasPrivateRecoveryInfos calls HasPrivateRecoveryInfosFunc.
-func (mock *TSSKeeperMock) HasPrivateRecoveryInfos(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
-	if mock.HasPrivateRecoveryInfosFunc == nil {
-		panic("TSSKeeperMock.HasPrivateRecoveryInfosFunc: method is nil but TSSKeeper.HasPrivateRecoveryInfos was just called")
+// HasPrivateRecoveryInfo calls HasPrivateRecoveryInfoFunc.
+func (mock *TSSKeeperMock) HasPrivateRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
+	if mock.HasPrivateRecoveryInfoFunc == nil {
+		panic("TSSKeeperMock.HasPrivateRecoveryInfoFunc: method is nil but TSSKeeper.HasPrivateRecoveryInfo was just called")
 	}
 	callInfo := struct {
 		Ctx    github_com_cosmos_cosmos_sdk_types.Context
@@ -3689,16 +3522,16 @@ func (mock *TSSKeeperMock) HasPrivateRecoveryInfos(ctx github_com_cosmos_cosmos_
 		Sender: sender,
 		KeyID:  keyID,
 	}
-	mock.lockHasPrivateRecoveryInfos.Lock()
-	mock.calls.HasPrivateRecoveryInfos = append(mock.calls.HasPrivateRecoveryInfos, callInfo)
-	mock.lockHasPrivateRecoveryInfos.Unlock()
-	return mock.HasPrivateRecoveryInfosFunc(ctx, sender, keyID)
+	mock.lockHasPrivateRecoveryInfo.Lock()
+	mock.calls.HasPrivateRecoveryInfo = append(mock.calls.HasPrivateRecoveryInfo, callInfo)
+	mock.lockHasPrivateRecoveryInfo.Unlock()
+	return mock.HasPrivateRecoveryInfoFunc(ctx, sender, keyID)
 }
 
-// HasPrivateRecoveryInfosCalls gets all the calls that were made to HasPrivateRecoveryInfos.
+// HasPrivateRecoveryInfoCalls gets all the calls that were made to HasPrivateRecoveryInfo.
 // Check the length with:
-//     len(mockedTSSKeeper.HasPrivateRecoveryInfosCalls())
-func (mock *TSSKeeperMock) HasPrivateRecoveryInfosCalls() []struct {
+//     len(mockedTSSKeeper.HasPrivateRecoveryInfoCalls())
+func (mock *TSSKeeperMock) HasPrivateRecoveryInfoCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Sender github_com_cosmos_cosmos_sdk_types.ValAddress
 	KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
@@ -3708,9 +3541,9 @@ func (mock *TSSKeeperMock) HasPrivateRecoveryInfosCalls() []struct {
 		Sender github_com_cosmos_cosmos_sdk_types.ValAddress
 		KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 	}
-	mock.lockHasPrivateRecoveryInfos.RLock()
-	calls = mock.calls.HasPrivateRecoveryInfos
-	mock.lockHasPrivateRecoveryInfos.RUnlock()
+	mock.lockHasPrivateRecoveryInfo.RLock()
+	calls = mock.calls.HasPrivateRecoveryInfo
+	mock.lockHasPrivateRecoveryInfo.RUnlock()
 	return calls
 }
 
@@ -4128,41 +3961,6 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
-	return calls
-}
-
-// SetKeyInfo calls SetKeyInfoFunc.
-func (mock *TSSKeeperMock) SetKeyInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, info types.KeyInfo) {
-	if mock.SetKeyInfoFunc == nil {
-		panic("TSSKeeperMock.SetKeyInfoFunc: method is nil but TSSKeeper.SetKeyInfo was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info types.KeyInfo
-	}{
-		Ctx:  ctx,
-		Info: info,
-	}
-	mock.lockSetKeyInfo.Lock()
-	mock.calls.SetKeyInfo = append(mock.calls.SetKeyInfo, callInfo)
-	mock.lockSetKeyInfo.Unlock()
-	mock.SetKeyInfoFunc(ctx, info)
-}
-
-// SetKeyInfoCalls gets all the calls that were made to SetKeyInfo.
-// Check the length with:
-//     len(mockedTSSKeeper.SetKeyInfoCalls())
-func (mock *TSSKeeperMock) SetKeyInfoCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Info types.KeyInfo
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Info types.KeyInfo
-	}
-	mock.lockSetKeyInfo.RLock()
-	calls = mock.calls.SetKeyInfo
-	mock.lockSetKeyInfo.RUnlock()
 	return calls
 }
 

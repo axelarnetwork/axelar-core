@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -20,29 +19,27 @@ import (
 )
 
 var (
-	rotationPrefix             = utils.KeyFromStr("rotation")
-	rotationCountPrefix        = utils.KeyFromStr("rotation_count")
-	keygenStartPrefix          = utils.KeyFromStr("block_height")
-	pkPrefix                   = utils.KeyFromStr("pk")
-	groupRecoverPrefix         = utils.KeyFromStr("group_recovery_info")
-	privateRecoverPrefix       = utils.KeyFromStr("private_recovery_info")
-	snapshotForKeyIDPrefix     = utils.KeyFromStr("sfkid")
-	sigPrefix                  = utils.KeyFromStr("sig")
-	infoForSigPrefix           = utils.KeyFromStr("info_for_sig")
-	participatePrefix          = utils.KeyFromStr("part")
-	keyRequirementPrefix       = utils.KeyFromStr("key_requirement")
-	keyRolePrefix              = utils.KeyFromStr("key_role")
-	keyTssSuspendedUntil       = utils.KeyFromStr("key_tss_suspended_until")
-	keyRotatedAtPrefix         = utils.KeyFromStr("key_rotated_at")
-	availablePrefix            = utils.KeyFromStr("available")
-	presentKeysPrefix          = utils.KeyFromStr("present_keys")
-	sigStatusPrefix            = utils.KeyFromStr("sig_status")
-	rotationCountOfKeyIDPrefix = utils.KeyFromStr("rotation_count_of_key_id")
-	externalKeyIDsPrefix       = utils.KeyFromStr("external_key_ids")
-	multiSigKeyPrefix          = utils.KeyFromStr("multi_sig_keygen")
-	multiSigSignPrefix         = utils.KeyFromStr("multi_sig_sign")
-	keyInfoPrefix              = utils.KeyFromStr("key_info")
-	governanceKey              = utils.KeyFromStr("governance")
+	// Permanent
+	keyRecoveryInfoPrefix  = utils.KeyFromStr("recovery_info")
+	keyPrefix              = utils.KeyFromStr("key")
+	rotationPrefix         = utils.KeyFromStr("rotation_to_key_id")
+	rotationCountPrefix    = utils.KeyFromStr("rotation_count")
+	snapshotForKeyIDPrefix = utils.KeyFromStr("snapshot_counter_for_key_id")
+	multiSigKeyPrefix      = utils.KeyFromStr("multi_sig_keygen")
+	externalKeysPrefix     = utils.KeyFromStr("external_key_ids")
+	governanceKey          = utils.KeyFromStr("governance")
+	// temporary
+	keyInfoPrefix     = utils.KeyFromStr("info")
+	keygenStartPrefix = utils.KeyFromStr("block_height")
+	availablePrefix   = utils.KeyFromStr("available")
+	presentKeysPrefix = utils.KeyFromStr("present_keys")
+
+	sigPrefix            = utils.KeyFromStr("sig")
+	infoForSigPrefix     = utils.KeyFromStr("info_for_sig")
+	participatePrefix    = utils.KeyFromStr("part")
+	keyTssSuspendedUntil = utils.KeyFromStr("key_tss_suspended_until")
+	sigStatusPrefix      = utils.KeyFromStr("sig_status")
+	multisigSignPrefix   = utils.KeyFromStr("multisig_sign")
 
 	multisigKeygenQueue = "multisig_keygen"
 	multisigSignQueue   = "multisig_sign"
@@ -163,12 +160,6 @@ func (k Keeper) GetRouter() types.Router {
 // SetParams sets the tss module's parameters
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
-
-	for _, keyRequirement := range p.KeyRequirements {
-		// By copying this data to the KV store, we avoid having to iterate across all element
-		// in the parameters table when a caller needs to fetch information from it
-		k.setKeyRequirement(ctx, keyRequirement)
-	}
 }
 
 // GetParams gets the tss module's parameters
@@ -193,56 +184,15 @@ func (k Keeper) GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64 {
 	return result
 }
 
-// SetGroupRecoveryInfo sets the group recovery info for a given party
-func (k Keeper) SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte) {
-	k.getStore(ctx).SetRaw(groupRecoverPrefix.AppendStr(string(keyID)), recoveryInfo)
-}
-
-// GetGroupRecoveryInfo returns a party's group recovery info of a specific key ID
-func (k Keeper) GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte {
-	return k.getStore(ctx).GetRaw(groupRecoverPrefix.AppendStr(string(keyID)))
-}
-
-// SetPrivateRecoveryInfo sets the private recovery info for a given party
-func (k Keeper) SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte) {
-	k.getStore(ctx).SetRaw(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()), recoveryInfo)
-}
-
-// GetPrivateRecoveryInfo returns a party's private recovery info of a specific key ID
-func (k Keeper) GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte {
-	return k.getStore(ctx).GetRaw(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()))
-}
-
-// HasPrivateRecoveryInfos returns true if the private recovery infos for a given party exists
-func (k Keeper) HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool {
-	return k.getStore(ctx).Has(privateRecoverPrefix.AppendStr(string(keyID)).AppendStr(sender.String()))
-}
-
-// DeleteAllRecoveryInfos removes all recovery infos (private and group) associated to the given key ID
-func (k Keeper) DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID) {
-	store := k.getStore(ctx)
-	prefix := privateRecoverPrefix.AppendStr(string(keyID))
-	iter := store.Iterator(prefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.GetKey())
-	}
-
-	k.getStore(ctx).Delete(prefix)
-}
-
-func (k Keeper) setKeyRequirement(ctx sdk.Context, keyRequirement exported.KeyRequirement) {
-	key := keyRequirementPrefix.AppendStr(keyRequirement.KeyRole.SimpleString()).AppendStr(keyRequirement.KeyType.SimpleString())
-	k.getStore(ctx).Set(key, &keyRequirement)
-}
-
 // GetKeyRequirement gets the key requirement for a given chain of a given role
 func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool) {
-	var keyRequirement exported.KeyRequirement
-	ok := k.getStore(ctx).Get(keyRequirementPrefix.AppendStr(keyRole.SimpleString()).AppendStr(keyType.SimpleString()), &keyRequirement)
+	for _, keyRequirement := range k.GetParams(ctx).KeyRequirements {
+		if keyRequirement.KeyRole == keyRole && keyRequirement.KeyType == keyType {
+			return keyRequirement, true
+		}
+	}
 
-	return keyRequirement, ok
+	return exported.KeyRequirement{}, false
 }
 
 // GetMaxMissedBlocksPerWindow returns the maximum percent of blocks a validator is allowed
@@ -302,12 +252,12 @@ func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, 
 
 	// update block height of last seen ack
 	key := availablePrefix.AppendStr(validator.String())
+	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
 	store.SetRaw(key, bz)
 
 	// garbage collection
-	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.GetKey())
@@ -413,7 +363,7 @@ func (k Keeper) GetOldActiveKeyIDs(ctx sdk.Context, chain nexus.Chain, keyRole e
 	}
 
 	for ; rotationCount < currRotationCount; rotationCount++ {
-		keyID, ok := k.getKeyID(ctx, chain, rotationCount, keyRole)
+		keyID, ok := k.getKeyID(ctx, chain.Name, rotationCount, keyRole)
 		if !ok {
 			return nil, fmt.Errorf("%s's %s key of rotation count %d not found", chain.Name, keyRole.SimpleString(), rotationCount)
 		}
@@ -424,26 +374,41 @@ func (k Keeper) GetOldActiveKeyIDs(ctx sdk.Context, chain nexus.Chain, keyRole e
 	return activeKeyIDs, nil
 }
 
+func (k Keeper) getAllExternalKeys(ctx sdk.Context) (results []types.ExternalKeys) {
+	iter := k.getStore(ctx).Iterator(externalKeysPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var externalKeys types.ExternalKeys
+		iter.UnmarshalValue(&externalKeys)
+
+		results = append(results, externalKeys)
+	}
+
+	return results
+}
+
 // SetExternalKeyIDs stores the given list of external key IDs
 func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID) {
-	storageKey := externalKeyIDsPrefix.Append(utils.LowerCaseKey(chain.Name))
-	list, _ := json.Marshal(keyIDs)
-	k.getStore(ctx).SetRaw(storageKey, list)
+	k.setExternalKeys(ctx, types.ExternalKeys{Chain: chain.Name, KeyIDs: keyIDs})
+}
+
+func (k Keeper) setExternalKeys(ctx sdk.Context, externalKeys types.ExternalKeys) {
+	k.getStore(ctx).Set(externalKeysPrefix.Append(utils.LowerCaseKey(externalKeys.Chain)), &externalKeys)
 }
 
 // GetExternalKeyIDs retrieves the current list of external key IDs
 func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool) {
-	storageKey := externalKeyIDsPrefix.Append(utils.LowerCaseKey(chain.Name))
+	return k.getExternalKeyIDs(ctx, chain.Name)
+}
 
-	bz := k.getStore(ctx).GetRaw(storageKey)
-	if bz == nil {
+func (k Keeper) getExternalKeyIDs(ctx sdk.Context, chain string) ([]exported.KeyID, bool) {
+	var externalKeys types.ExternalKeys
+	if !k.getStore(ctx).Get(externalKeysPrefix.Append(utils.LowerCaseKey(chain)), &externalKeys) {
 		return []exported.KeyID{}, false
 	}
 
-	var keyIDs []exported.KeyID
-	_ = json.Unmarshal(bz, &keyIDs)
-
-	return keyIDs, true
+	return externalKeys.KeyIDs, true
 }
 
 // SetGovernanceKey sets the multisig governance key
