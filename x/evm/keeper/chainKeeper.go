@@ -20,7 +20,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -239,23 +238,6 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Ad
 	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
 
 	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
-}
-
-// SetBurnerAddress stores the burner address for the given cross chain recipient
-func (k chainKeeper) SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address types.Address) {
-	key := burnerAddressPrefix.Append(utils.LowerCaseKey(recipient.String()))
-	k.getStore(ctx, k.chain).SetRaw(key, address.Bytes())
-}
-
-// GetBurnerAddress retrieves all the burner addresses for the given cross chain
-func (k chainKeeper) GetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (types.Address, bool) {
-	key := burnerAddressPrefix.Append(utils.LowerCaseKey(recipient.String()))
-	bz := k.getStore(ctx, k.chain).GetRaw(key)
-	if bz == nil {
-		return types.Address{}, false
-	}
-
-	return types.Address(common.BytesToAddress(bz)), true
 }
 
 // GetBurnerByteCodes returns the bytecodes for the burner contract

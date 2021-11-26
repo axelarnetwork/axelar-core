@@ -61,29 +61,113 @@ func (m *QueryChainMaintainersResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryChainMaintainersResponse proto.InternalMessageInfo
 
+// LatestDepositAddressRequest represents a message that queries a deposit
+// address by recipient address
+type LatestDepositAddressRequest struct {
+	RecipientAddr  string `protobuf:"bytes,1,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
+	RecipientChain string `protobuf:"bytes,2,opt,name=recipient_chain,json=recipientChain,proto3" json:"recipient_chain,omitempty"`
+}
+
+func (m *LatestDepositAddressRequest) Reset()         { *m = LatestDepositAddressRequest{} }
+func (m *LatestDepositAddressRequest) String() string { return proto.CompactTextString(m) }
+func (*LatestDepositAddressRequest) ProtoMessage()    {}
+func (*LatestDepositAddressRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_18ecb24985e280bf, []int{1}
+}
+func (m *LatestDepositAddressRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LatestDepositAddressRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LatestDepositAddressRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LatestDepositAddressRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LatestDepositAddressRequest.Merge(m, src)
+}
+func (m *LatestDepositAddressRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *LatestDepositAddressRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LatestDepositAddressRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LatestDepositAddressRequest proto.InternalMessageInfo
+
+type LatestDepositAddressResponse struct {
+	DepositAddr string `protobuf:"bytes,1,opt,name=deposit_addr,json=depositAddr,proto3" json:"deposit_addr,omitempty"`
+}
+
+func (m *LatestDepositAddressResponse) Reset()         { *m = LatestDepositAddressResponse{} }
+func (m *LatestDepositAddressResponse) String() string { return proto.CompactTextString(m) }
+func (*LatestDepositAddressResponse) ProtoMessage()    {}
+func (*LatestDepositAddressResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_18ecb24985e280bf, []int{2}
+}
+func (m *LatestDepositAddressResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LatestDepositAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LatestDepositAddressResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LatestDepositAddressResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LatestDepositAddressResponse.Merge(m, src)
+}
+func (m *LatestDepositAddressResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *LatestDepositAddressResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LatestDepositAddressResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LatestDepositAddressResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*QueryChainMaintainersResponse)(nil), "nexus.v1beta1.QueryChainMaintainersResponse")
+	proto.RegisterType((*LatestDepositAddressRequest)(nil), "nexus.v1beta1.LatestDepositAddressRequest")
+	proto.RegisterType((*LatestDepositAddressResponse)(nil), "nexus.v1beta1.LatestDepositAddressResponse")
 }
 
 func init() { proto.RegisterFile("nexus/v1beta1/query.proto", fileDescriptor_18ecb24985e280bf) }
 
 var fileDescriptor_18ecb24985e280bf = []byte{
-	// 232 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcc, 0x4b, 0xad, 0x28,
-	0x2d, 0xd6, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0xd4, 0x2f, 0x2c, 0x4d, 0x2d, 0xaa, 0xd4,
-	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x05, 0x4b, 0xe9, 0x41, 0xa5, 0xa4, 0x44, 0xd2, 0xf3,
-	0xd3, 0xf3, 0xc1, 0x32, 0xfa, 0x20, 0x16, 0x44, 0x91, 0x52, 0x09, 0x97, 0x6c, 0x20, 0x48, 0x8f,
-	0x73, 0x46, 0x62, 0x66, 0x9e, 0x6f, 0x62, 0x66, 0x5e, 0x49, 0x62, 0x66, 0x5e, 0x6a, 0x51, 0x71,
-	0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x50, 0x30, 0x17, 0x77, 0x2e, 0x42, 0x58, 0x82,
-	0x51, 0x81, 0x59, 0x83, 0xc7, 0xc9, 0xf0, 0xd7, 0x3d, 0x79, 0xdd, 0xf4, 0xcc, 0x92, 0x8c, 0xd2,
-	0x24, 0xbd, 0xe4, 0xfc, 0x5c, 0xfd, 0xe4, 0xfc, 0xe2, 0xdc, 0xfc, 0x62, 0x28, 0xa5, 0x5b, 0x9c,
-	0x92, 0xad, 0x5f, 0x52, 0x59, 0x90, 0x5a, 0xac, 0x17, 0x96, 0x98, 0xe3, 0x98, 0x92, 0x52, 0x94,
-	0x5a, 0x5c, 0x1c, 0x84, 0x6c, 0x8a, 0x53, 0xc0, 0x89, 0x87, 0x72, 0x0c, 0x27, 0x1e, 0xc9, 0x31,
-	0x5e, 0x78, 0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb,
-	0x31, 0xdc, 0x78, 0x2c, 0xc7, 0x10, 0x65, 0x84, 0x64, 0x72, 0x62, 0x45, 0x6a, 0x4e, 0x62, 0x51,
-	0x5e, 0x6a, 0x49, 0x79, 0x7e, 0x51, 0x36, 0x94, 0xa7, 0x9b, 0x9c, 0x5f, 0x94, 0xaa, 0x5f, 0xa1,
-	0x0f, 0xf1, 0x3a, 0xd8, 0xa6, 0x24, 0x36, 0xb0, 0x77, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff,
-	0x20, 0x25, 0xb6, 0x5c, 0x10, 0x01, 0x00, 0x00,
+	// 318 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0xcf, 0x4e, 0x02, 0x31,
+	0x10, 0xc6, 0x77, 0x35, 0x31, 0xb1, 0x80, 0x26, 0x1b, 0x0f, 0xf8, 0xaf, 0x22, 0x89, 0x91, 0x0b,
+	0xdb, 0xa0, 0x4f, 0x00, 0x7a, 0xd4, 0x44, 0x31, 0xf1, 0xe0, 0xc5, 0x94, 0xed, 0x04, 0x1a, 0xd8,
+	0x76, 0xe9, 0x74, 0x15, 0xde, 0xc2, 0xc7, 0xe2, 0xc8, 0xd1, 0x93, 0x51, 0x78, 0x0b, 0x4f, 0x66,
+	0xcb, 0xea, 0x72, 0xf0, 0xd4, 0x76, 0xbe, 0xdf, 0xd7, 0xc9, 0x37, 0x43, 0xf6, 0x15, 0x4c, 0x52,
+	0x64, 0x2f, 0xad, 0x1e, 0x58, 0xde, 0x62, 0xe3, 0x14, 0xcc, 0x34, 0x4c, 0x8c, 0xb6, 0x3a, 0xa8,
+	0x38, 0x29, 0xcc, 0xa5, 0x83, 0xbd, 0xbe, 0xee, 0x6b, 0xa7, 0xb0, 0xec, 0xb6, 0x82, 0xea, 0x96,
+	0x1c, 0xdf, 0x67, 0x9e, 0xab, 0x01, 0x97, 0xea, 0x96, 0x4b, 0x65, 0xb9, 0x54, 0x60, 0xb0, 0x0b,
+	0x98, 0x68, 0x85, 0x10, 0x3c, 0x90, 0x52, 0x5c, 0x94, 0xab, 0x7e, 0x6d, 0xb3, 0x51, 0xee, 0xb4,
+	0xbe, 0x3f, 0x4e, 0x9a, 0x7d, 0x69, 0x07, 0x69, 0x2f, 0x8c, 0x74, 0xcc, 0x22, 0x8d, 0xb1, 0xc6,
+	0xfc, 0x68, 0xa2, 0x18, 0x32, 0x3b, 0x4d, 0x00, 0xc3, 0x47, 0x3e, 0x6a, 0x0b, 0x61, 0x00, 0xb1,
+	0xbb, 0xfe, 0x4b, 0x3d, 0x26, 0x87, 0x37, 0xdc, 0x02, 0xda, 0x6b, 0x48, 0x34, 0x4a, 0xfb, 0x0b,
+	0xc1, 0x38, 0x05, 0xb4, 0xc1, 0x19, 0xd9, 0x31, 0x10, 0xc9, 0x44, 0x82, 0xb2, 0xcf, 0x5c, 0x08,
+	0x53, 0xf5, 0x6b, 0x7e, 0x63, 0xbb, 0x5b, 0xf9, 0xab, 0x66, 0x86, 0xe0, 0x9c, 0xec, 0x16, 0x58,
+	0x94, 0x05, 0xa8, 0x6e, 0x38, 0xae, 0x70, 0xbb, 0x58, 0xf5, 0x36, 0x39, 0xfa, 0xbf, 0x5d, 0x9e,
+	0xf1, 0x94, 0x94, 0xc5, 0x4a, 0x59, 0xef, 0x56, 0x12, 0x05, 0xdd, 0xb9, 0x9b, 0x7d, 0x51, 0x6f,
+	0xb6, 0xa0, 0xfe, 0x7c, 0x41, 0xfd, 0xcf, 0x05, 0xf5, 0xdf, 0x96, 0xd4, 0x9b, 0x2f, 0xa9, 0xf7,
+	0xbe, 0xa4, 0xde, 0xd3, 0xc5, 0xda, 0x2c, 0xf8, 0x04, 0x46, 0xdc, 0x28, 0xb0, 0xaf, 0xda, 0x0c,
+	0xf3, 0x57, 0x33, 0xd2, 0x06, 0xd8, 0x84, 0xad, 0x96, 0xe5, 0x66, 0xd3, 0xdb, 0x72, 0x0b, 0xb8,
+	0xfc, 0x09, 0x00, 0x00, 0xff, 0xff, 0x9e, 0xf0, 0x0b, 0xef, 0xc2, 0x01, 0x00, 0x00,
 }
 
 func (m *QueryChainMaintainersResponse) Marshal() (dAtA []byte, err error) {
@@ -118,6 +202,73 @@ func (m *QueryChainMaintainersResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
+func (m *LatestDepositAddressRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LatestDepositAddressRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LatestDepositAddressRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.RecipientChain) > 0 {
+		i -= len(m.RecipientChain)
+		copy(dAtA[i:], m.RecipientChain)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.RecipientChain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.RecipientAddr) > 0 {
+		i -= len(m.RecipientAddr)
+		copy(dAtA[i:], m.RecipientAddr)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.RecipientAddr)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *LatestDepositAddressResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LatestDepositAddressResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LatestDepositAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.DepositAddr) > 0 {
+		i -= len(m.DepositAddr)
+		copy(dAtA[i:], m.DepositAddr)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.DepositAddr)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -140,6 +291,36 @@ func (m *QueryChainMaintainersResponse) Size() (n int) {
 			l = len(b)
 			n += 1 + l + sovQuery(uint64(l))
 		}
+	}
+	return n
+}
+
+func (m *LatestDepositAddressRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RecipientAddr)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = len(m.RecipientChain)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *LatestDepositAddressResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DepositAddr)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
 	}
 	return n
 }
@@ -210,6 +391,202 @@ func (m *QueryChainMaintainersResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.Maintainers = append(m.Maintainers, make([]byte, postIndex-iNdEx))
 			copy(m.Maintainers[len(m.Maintainers)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LatestDepositAddressRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LatestDepositAddressRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LatestDepositAddressRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientAddr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecipientAddr = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientChain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecipientChain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LatestDepositAddressResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LatestDepositAddressResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LatestDepositAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DepositAddr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DepositAddr = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

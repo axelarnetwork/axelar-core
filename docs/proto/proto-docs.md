@@ -212,6 +212,8 @@
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
 - [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
+    - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
   
 - [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
@@ -222,6 +224,7 @@
   
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
+    - [QueryService](#nexus.v1beta1.QueryService)
   
 - [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
     - [ChainState](#nexus.v1beta1.ChainState)
@@ -3186,6 +3189,38 @@ GenesisState represents the genesis state
 
 
 
+<a name="nexus.v1beta1.LatestDepositAddressRequest"></a>
+
+### LatestDepositAddressRequest
+LatestDepositAddressRequest represents a message that queries a deposit
+address by recipient address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LatestDepositAddressResponse"></a>
+
+### LatestDepositAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="nexus.v1beta1.QueryChainMaintainersResponse"></a>
 
 ### QueryChainMaintainersResponse
@@ -3300,6 +3335,16 @@ Msg defines the nexus Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
 | `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
+
+
+<a name="nexus.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
 
  <!-- end services -->
 

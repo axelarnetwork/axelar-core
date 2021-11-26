@@ -58,6 +58,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
+
 		ctx = rand.Context(nil)
 		rtr := baseapp.NewRouter()
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
