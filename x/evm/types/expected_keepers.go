@@ -70,8 +70,6 @@ type ChainKeeper interface {
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
-	SetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address Address)
-	GetBurnerAddress(ctx sdk.Context, recipient nexus.CrossChainAddress) (Address, bool)
 
 	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
 	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
@@ -120,6 +118,7 @@ type Nexus interface {
 	RegisterAsset(ctx sdk.Context, chainName, denom string)
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
+	SetDepositAddress(ctx sdk.Context, recipient nexus.CrossChainAddress, address string)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

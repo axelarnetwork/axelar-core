@@ -24,6 +24,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	queryCmd.AddCommand(
 		GetCommandChainMaintainers(queryRoute),
+		GetCommandLatestDepositAddress(),
 	)
 
 	return queryCmd
@@ -54,5 +55,37 @@ func GetCommandChainMaintainers(queryRoute string) *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCommandLatestDepositAddress returns the query for getting the latest deposit address of some recipient
+func GetCommandLatestDepositAddress() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "latest-deposit-address [recipient chain] [recipient address]",
+		Short: "Query for account by address",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.LatestDepositAddress(cmd.Context(),
+				&types.LatestDepositAddressRequest{
+					RecipientChain: args[0],
+					RecipientAddr:  args[1],
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }

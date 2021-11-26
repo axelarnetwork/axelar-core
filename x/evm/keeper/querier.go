@@ -10,7 +10,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
@@ -27,7 +26,6 @@ const (
 	QAddressByKeyID        = "address-by-key-id"
 	QNextMasterAddress     = "next-master-address"
 	QAxelarGatewayAddress  = "gateway-address"
-	QDepositAddresses      = "deposit-addresses"
 	QBytecode              = "bytecode"
 	QSignedTx              = "signed-tx"
 	QLatestBatchedCommands = "latest-batched-commands"
@@ -80,8 +78,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
-		case QDepositAddresses:
-			return QueryDepositAddress(ctx, chainKeeper, n, req.Data)
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QSignedTx:
@@ -250,46 +246,6 @@ func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainNa
 	default:
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
 	}
-}
-
-// QueryDepositAddress returns the deposit address linked to the given recipient address
-func QueryDepositAddress(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
-	var params types.DepositQueryParams
-	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "could not parse the recipient")
-	}
-
-	_, ok = k.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway address not set")
-	}
-
-	token := k.GetERC20TokenByAsset(ctx, params.Asset)
-	if !token.Is(types.Confirmed) {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' not confirmed", params.Asset))
-	}
-
-	recipientChain, ok := n.GetChain(ctx, params.Chain)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", params.Chain)
-	}
-
-	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: params.Address}
-	address, ok := k.GetBurnerAddress(ctx, recipient)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "no burner address found for %s", recipient.String())
-	}
-
-	resp := types.QueryBurnerAddressResponse{
-		Address: address.Hex(),
-	}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
 func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {

@@ -1,16 +1,16 @@
-## axelard query evm deposit-addresses
+## axelard query nexus latest-deposit-address
 
-Returns an evm chain deposit address for a recipient address on another blockchain
+Query for account by address
 
 ```
-axelard query evm deposit-addresses [evm chain] [recipient chain] [recipient address] [asset] [flags]
+axelard query nexus latest-deposit-address [recipient chain] [recipient address] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deposit-addresses
+  -h, --help          help for latest-deposit-address
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
@@ -27,4 +27,4 @@ axelard query evm deposit-addresses [evm chain] [recipient chain] [recipient add
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module

@@ -239,39 +239,6 @@ func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryDepositAddresses returns a handler to query the state of a deposit address
-func GetHandlerQueryDepositAddresses(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		recipientChain := mux.Vars(r)[utils.PathVarRecipientChain]
-		linkedAddress := mux.Vars(r)[utils.PathVarLinkedAddress]
-		asset := mux.Vars(r)[utils.PathVarAsset]
-
-		params := types.DepositQueryParams{
-			Chain:   recipientChain,
-			Address: linkedAddress,
-			Asset:   asset,
-		}
-		data := types.ModuleCdc.MustMarshalJSON(&params)
-
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositAddresses, chain), data)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
-			return
-		}
-
-		var res types.QueryBurnerAddressResponse
-		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryDepositState returns a handler to query the state of an ERC20 deposit confirmation
 func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

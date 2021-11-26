@@ -3344,7 +3344,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/deposit_address/{recipient_chain}/{recipient_addr}|
+| `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
 
  <!-- end services -->
 

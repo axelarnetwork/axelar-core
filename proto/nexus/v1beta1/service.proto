@@ -34,7 +34,7 @@ service QueryService {
   // LatestDepositAddress queries the a deposit address by recipient
   rpc LatestDepositAddress(LatestDepositAddressRequest)
       returns (LatestDepositAddressResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/deposit_address/"
+    option (google.api.http).get = "/nexus/v1beta1/latest_deposit_address/"
                                    "{recipient_chain}/{recipient_addr}";
   }
 }
