@@ -63,10 +63,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
+	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 	depositAddress := types.NewLinkedAddress(ctx, recipientChain.Name, req.Asset, req.RecipientAddr)
 	s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
-		nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr})
+		recipient,
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -187,21 +189,24 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 	for _, pendingTransfer := range pendingTransfers {
 		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 		if err != nil {
-			ctx.Logger().Debug(fmt.Sprintf("Discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 			continue
 		}
 
 		token, escrowAddress, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, pendingTransfer)
 		if err != nil {
-			return nil, err
+			ctx.Logger().Error(fmt.Sprintf("failed to prepare transfer %s: %e", pendingTransfer.String(), err))
+			continue
 		}
 
 		if err = s.bank.SendCoins(
 			ctx, escrowAddress, recipient, sdk.NewCoins(token),
 		); err != nil {
-			return nil, err
+			ctx.Logger().Error(fmt.Sprintf("failed to send %s from %s to %s: %e", token, escrowAddress, recipient, err))
+			continue
 		}
+		ctx.Logger().Debug(fmt.Sprintf("successfully sent %s from %s to %s", token, escrowAddress, recipient))
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
@@ -284,18 +289,23 @@ func (s msgServer) RouteIBCTransfers(c context.Context, req *types.RouteIBCTrans
 	for _, c := range s.BaseKeeper.GetCosmosChains(ctx) {
 		chain, ok := s.nexus.GetChain(ctx, c)
 		if !ok {
-			return &types.RouteIBCTransfersResponse{}, fmt.Errorf(fmt.Sprintf("%s is not a registered chain", chain.Name))
+			ctx.Logger().Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
+			continue
 		}
+
 		// Get the channel id for the chain
 		path, ok := s.BaseKeeper.GetIBCPath(ctx, chain.Name)
 		if !ok {
-			return &types.RouteIBCTransfersResponse{}, fmt.Errorf(fmt.Sprintf("destination chain %s does not have a channel", chain.Name))
+			ctx.Logger().Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
+			continue
 		}
+
 		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 		for _, p := range pendingTransfers {
 			token, sender, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, p)
 			if err != nil {
-				return nil, err
+				ctx.Logger().Error(fmt.Sprintf("failed to prepare transfer %s: %e", p.String(), err))
+				continue
 			}
 
 			err = IBCTransfer(ctx, s.BaseKeeper, s.ibcTransfer, s.ibcChannel, token, sender, p.Recipient.Address, path)
@@ -303,6 +313,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, req *types.RouteIBCTrans
 				ctx.Logger().Error(fmt.Sprintf("failed to send IBC transfer %s for %s:  %e", token, p.Recipient.Address, err))
 				continue
 			}
+			ctx.Logger().Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", token, sender, p.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}

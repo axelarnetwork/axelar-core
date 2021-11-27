@@ -54,7 +54,6 @@
       - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
-      - [deposit-addresses \[evm chain\] \[recipient chain\] \[recipient address\] \[asset\]](axelard_query_evm_deposit-addresses.md)	 - Returns an evm chain deposit address for a recipient address on another blockchain
       - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
@@ -111,6 +110,7 @@
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
+      - [latest-deposit-address \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module

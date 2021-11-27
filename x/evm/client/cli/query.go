@@ -26,7 +26,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
-		GetCmdDepositAddresses(queryRoute),
 		GetCmdAddress(queryRoute),
 		GetCmdAxelarGatewayAddress(queryRoute),
 		GetCmdTokenAddress(queryRoute),
@@ -39,34 +38,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 	return evmQueryCmd
 
-}
-
-// GetCmdDepositAddresses returns the deposit address command
-func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "deposit-addresses [evm chain] [recipient chain] [recipient address] [asset]",
-		Short: "Returns an evm chain deposit address for a recipient address on another blockchain",
-		Args:  cobra.ExactArgs(4),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			path := fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositAddresses, args[0])
-
-			bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalJSON(&types.DepositQueryParams{Chain: args[1], Address: args[2], Asset: args[3]}))
-			if err != nil {
-				return sdkerrors.Wrap(err, types.ErrFDepositAddress)
-			}
-
-			var res types.QueryBurnerAddressResponse
-			types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
-			return cliCtx.PrintProto(&res)
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
 }
 
 // GetCmdAddress returns the query for an EVM chain address
