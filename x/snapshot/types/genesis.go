@@ -10,17 +10,17 @@ import (
 )
 
 // NewGenesisState is the constructor for GenesisState
-func NewGenesisState(params Params, snapshots []exported.Snapshot, validatorProxies []ValidatorProxy) *GenesisState {
+func NewGenesisState(params Params, snapshots []exported.Snapshot, proxiedValidators []ProxiedValidator) *GenesisState {
 	return &GenesisState{
-		Params:           params,
-		Snapshots:        snapshots,
-		ValidatorProxies: validatorProxies,
+		Params:            params,
+		Snapshots:         snapshots,
+		ProxiedValidators: proxiedValidators,
 	}
 }
 
 // DefaultGenesisState returns a genesis state with default parameters
 func DefaultGenesisState() *GenesisState {
-	return NewGenesisState(DefaultParams(), []exported.Snapshot{}, []ValidatorProxy{})
+	return NewGenesisState(DefaultParams(), []exported.Snapshot{}, []ProxiedValidator{})
 }
 
 // Validate performs a validation check on the genesis parameters
@@ -39,8 +39,8 @@ func (m GenesisState) Validate() error {
 		}
 	}
 
-	for _, validatorProxy := range m.ValidatorProxies {
-		if err := validatorProxy.Validate(); err != nil {
+	for _, proxiedValidator := range m.ProxiedValidators {
+		if err := proxiedValidator.Validate(); err != nil {
 			return getValidateError(err)
 		}
 	}

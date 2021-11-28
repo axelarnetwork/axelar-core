@@ -28,7 +28,7 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
 func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequest) (*types.RegisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := s.Keeper.RegisterProxy(ctx, req.Sender, req.ProxyAddr); err != nil {
+	if err := s.Keeper.ActivateProxy(ctx, req.Sender, req.ProxyAddr); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
 	}
 

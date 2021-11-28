@@ -73,7 +73,7 @@ func getRandomSnapshot(counter int64) exported.Snapshot {
 
 func TestExportGenesis(t *testing.T) {
 	ctx, keeper, staking, bank, _, _ := setup()
-	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []exported.Snapshot{}, []types.ValidatorProxy{}))
+	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []exported.Snapshot{}, []types.ProxiedValidator{}))
 
 	staking.BondDenomFunc = func(sdk.Context) string {
 		return bondDenom
@@ -85,19 +85,19 @@ func TestExportGenesis(t *testing.T) {
 		return stakingtypes.Validator{}
 	}
 
-	validatorProxyCount := rand.I64Between(10, 100)
-	validators := make([]sdk.ValAddress, validatorProxyCount)
-	proxies := make([]sdk.AccAddress, validatorProxyCount)
-	expectedValidatorProxies := make([]types.ValidatorProxy, validatorProxyCount)
+	proxiedValidatorCount := rand.I64Between(10, 100)
+	validators := make([]sdk.ValAddress, proxiedValidatorCount)
+	proxies := make([]sdk.AccAddress, proxiedValidatorCount)
+	expectedProxiedValidators := make([]types.ProxiedValidator, proxiedValidatorCount)
 
-	for i := 0; i < int(validatorProxyCount); i++ {
+	for i := 0; i < int(proxiedValidatorCount); i++ {
 		validators[i] = rand.ValAddr()
 		proxies[i] = rand.AccAddr()
 
 		active := rand.Bools(0.5).Next()
-		expectedValidatorProxies[i] = types.NewValidatorProxy(validators[i], proxies[i], active)
+		expectedProxiedValidators[i] = types.NewProxiedValidator(validators[i], proxies[i], active)
 
-		err := keeper.RegisterProxy(ctx, validators[i], proxies[i])
+		err := keeper.ActivateProxy(ctx, validators[i], proxies[i])
 		assert.NoError(t, err)
 
 		if !active {
@@ -116,12 +116,12 @@ func TestExportGenesis(t *testing.T) {
 	keeper.setSnapshotCount(ctx, snapshotCount)
 
 	actual := keeper.ExportGenesis(ctx)
-	expected := types.NewGenesisState(types.DefaultParams(), expectedSnapshots, expectedValidatorProxies)
+	expected := types.NewGenesisState(types.DefaultParams(), expectedSnapshots, expectedProxiedValidators)
 
 	assert.NoError(t, actual.Validate())
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.ElementsMatch(t, expected.Snapshots, actual.Snapshots)
-	assert.ElementsMatch(t, expected.ValidatorProxies, actual.ValidatorProxies)
+	assert.ElementsMatch(t, expected.ProxiedValidators, actual.ProxiedValidators)
 }
 
 func TestInitGenesis(t *testing.T) {
@@ -133,19 +133,19 @@ func TestInitGenesis(t *testing.T) {
 		expectedSnapshots[i] = getRandomSnapshot(int64(i))
 	}
 
-	validatorProxyCount := rand.I64Between(10, 100)
-	expectedValidatorProxies := make([]types.ValidatorProxy, validatorProxyCount)
-	for i := 0; i < int(validatorProxyCount); i++ {
+	proxiedValidatorCount := rand.I64Between(10, 100)
+	expectedProxiedValidators := make([]types.ProxiedValidator, proxiedValidatorCount)
+	for i := 0; i < int(proxiedValidatorCount); i++ {
 		active := rand.Bools(0.5).Next()
-		expectedValidatorProxies[i] = types.NewValidatorProxy(rand.ValAddr(), rand.AccAddr(), active)
+		expectedProxiedValidators[i] = types.NewProxiedValidator(rand.ValAddr(), rand.AccAddr(), active)
 	}
 
-	expected := types.NewGenesisState(types.DefaultParams(), expectedSnapshots, expectedValidatorProxies)
+	expected := types.NewGenesisState(types.DefaultParams(), expectedSnapshots, expectedProxiedValidators)
 	keeper.InitGenesis(ctx, expected)
 	actual := keeper.ExportGenesis(ctx)
 
 	assert.NoError(t, actual.Validate())
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.ElementsMatch(t, expected.Snapshots, actual.Snapshots)
-	assert.ElementsMatch(t, expected.ValidatorProxies, actual.ValidatorProxies)
+	assert.ElementsMatch(t, expected.ProxiedValidators, actual.ProxiedValidators)
 }

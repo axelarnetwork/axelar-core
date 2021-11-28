@@ -248,7 +248,7 @@
     - [Params](#snapshot.v1beta1.Params)
   
 - [snapshot/v1beta1/types.proto](#snapshot/v1beta1/types.proto)
-    - [ValidatorProxy](#snapshot.v1beta1.ValidatorProxy)
+    - [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator)
   
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
@@ -3582,9 +3582,9 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="snapshot.v1beta1.ValidatorProxy"></a>
+<a name="snapshot.v1beta1.ProxiedValidator"></a>
 
-### ValidatorProxy
+### ProxiedValidator
 
 
 
@@ -3625,7 +3625,7 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#snapshot.v1beta1.Params) |  |  |
 | `snapshots` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) | repeated |  |
-| `validator_proxies` | [ValidatorProxy](#snapshot.v1beta1.ValidatorProxy) | repeated |  |
+| `proxied_validators` | [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator) | repeated |  |
 
 
 

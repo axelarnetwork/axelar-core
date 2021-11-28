@@ -126,7 +126,7 @@ func TestSnapshots(t *testing.T) {
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
 				addr := rand.AccAddr()
-				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), addr)
+				_ = snapshotKeeper.ActivateProxy(ctx, v.GetOperator(), addr)
 			}
 
 			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
@@ -191,7 +191,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
 		proxy, active := snapshotKeeper.GetProxy(ctx, principalAddress)
@@ -203,7 +203,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("same addresses", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := snapshotKeeper.RegisterProxy(ctx, expectedProxy.Bytes(), expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, expectedProxy.Bytes(), expectedProxy)
 
 		assert.Error(t, err)
 	}).Repeat(20))
@@ -213,7 +213,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 		address := rand.ValAddr()
 		proxy := rand.AccAddr()
-		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
+		err := snapshotKeeper.ActivateProxy(ctx, address, proxy)
 
 		assert.Error(t, err)
 
@@ -229,7 +229,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			return sdk.NewCoin("uaxl", sdk.ZeroInt())
 		}
 
-		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy)
 
 		assert.Error(t, err)
 
@@ -264,7 +264,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
-		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
+		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
 	}

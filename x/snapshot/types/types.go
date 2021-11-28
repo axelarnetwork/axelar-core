@@ -7,9 +7,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewValidatorProxy is the constructor of ValidatorProxy
-func NewValidatorProxy(validator sdk.ValAddress, proxy sdk.AccAddress, active bool) ValidatorProxy {
-	return ValidatorProxy{
+// NewProxiedValidator is the constructor of ProxiedValidator
+func NewProxiedValidator(validator sdk.ValAddress, proxy sdk.AccAddress, active bool) ProxiedValidator {
+	return ProxiedValidator{
 		Validator: validator,
 		Proxy:     proxy,
 		Active:    active,
@@ -17,7 +17,7 @@ func NewValidatorProxy(validator sdk.ValAddress, proxy sdk.AccAddress, active bo
 }
 
 // Validate returns an error if the validator proxy is not valid; nil otherwise
-func (m ValidatorProxy) Validate() error {
+func (m ProxiedValidator) Validate() error {
 	if err := sdk.VerifyAddressFormat(m.Validator); err != nil {
 		return sdkerrors.Wrap(err, "invalid validator")
 	}

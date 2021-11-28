@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message ValidatorProxy {
+message ProxiedValidator {
   bytes validator = 1 [ (gogoproto.casttype) =
                             "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes proxy = 2 [ (gogoproto.casttype) =

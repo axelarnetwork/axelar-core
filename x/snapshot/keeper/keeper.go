@@ -307,20 +307,26 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 	return snapshot, nil
 }
 
-// RegisterProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
+// ActivateProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
 // The proxy will be marked as active and to be included in the next snapshot by default
-func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
+func (k Keeper) ActivateProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
 	if bytes.Equal(operator, proxy) {
 		return fmt.Errorf("proxy address cannot be the same as the operator address")
 	}
 
-	if validatorProxy, ok := k.getValidatorProxy(ctx, operator); ok && (!validatorProxy.Validator.Equals(operator) || !validatorProxy.Proxy.Equals(proxy)) {
+	if existing, ok := k.getProxiedValidator(ctx, operator); ok && !existing.Proxy.Equals(proxy) {
 		return fmt.Errorf(
-			"validator proxy mismatch, expected validator: %s and proxy: %s, got validator: %s and proxy: %s",
-			validatorProxy.Validator.String(),
-			validatorProxy.Proxy.String(),
-			operator.String(),
+			"proxy mismatch, expected %s, got %s",
+			existing.Proxy.String(),
 			proxy.String(),
+		)
+	}
+
+	if existing, ok := k.getProxiedValidator(ctx, proxy); ok && !existing.Validator.Equals(operator) {
+		return fmt.Errorf(
+			"validator mismatch, expected %s, got %s",
+			existing.Validator.String(),
+			operator.String(),
 		)
 	}
 
@@ -331,7 +337,7 @@ func (k Keeper) RegisterProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 			proxy.String(), minBalance.String(), denom, balance.String())
 	}
 
-	k.setValidatorProxy(ctx, types.NewValidatorProxy(operator, proxy, true))
+	k.setProxiedValidator(ctx, types.NewProxiedValidator(operator, proxy, true))
 
 	return nil
 }
@@ -343,58 +349,58 @@ func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error 
 		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
 
-	validatorProxy, ok := k.getValidatorProxy(ctx, operator)
+	proxiedValidator, ok := k.getProxiedValidator(ctx, operator)
 	if !ok {
 		return fmt.Errorf("validator %s has no proxy registered", operator.String())
 	}
 
-	validatorProxy.Active = false
-	k.setValidatorProxy(ctx, validatorProxy)
+	proxiedValidator.Active = false
+	k.setProxiedValidator(ctx, proxiedValidator)
 
 	return nil
 }
 
-func (k Keeper) getValidatorProxy(ctx sdk.Context, addr sdk.Address) (types.ValidatorProxy, bool) {
-	var validatorProxy types.ValidatorProxy
+func (k Keeper) getProxiedValidator(ctx sdk.Context, addr sdk.Address) (types.ProxiedValidator, bool) {
+	var proxiedValidator types.ProxiedValidator
 
 	if bz := ctx.KVStore(k.storeKey).Get([]byte(proxyPrefix + addr.String())); bz != nil {
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &validatorProxy)
-		return validatorProxy, true
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &proxiedValidator)
+		return proxiedValidator, true
 	} else if bz := ctx.KVStore(k.storeKey).Get([]byte(operatorPrefix + addr.String())); bz != nil {
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &validatorProxy)
-		return validatorProxy, true
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &proxiedValidator)
+		return proxiedValidator, true
 	} else {
-		return types.ValidatorProxy{}, false
+		return types.ProxiedValidator{}, false
 	}
 }
 
-func (k Keeper) getValidatorProxies(ctx sdk.Context) []types.ValidatorProxy {
-	var validatorProxies []types.ValidatorProxy
+func (k Keeper) getProxiedValidators(ctx sdk.Context) []types.ProxiedValidator {
+	var proxiedValidators []types.ProxiedValidator
 
 	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(proxyPrefix))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		var validatorProxy types.ValidatorProxy
-		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &validatorProxy)
+		var proxiedValidator types.ProxiedValidator
+		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &proxiedValidator)
 
-		validatorProxies = append(validatorProxies, validatorProxy)
+		proxiedValidators = append(proxiedValidators, proxiedValidator)
 	}
 
-	return validatorProxies
+	return proxiedValidators
 }
 
-func (k Keeper) setValidatorProxy(ctx sdk.Context, validatorProxy types.ValidatorProxy) {
-	bz := k.cdc.MustMarshalLengthPrefixed(&validatorProxy)
+func (k Keeper) setProxiedValidator(ctx sdk.Context, proxiedValidator types.ProxiedValidator) {
+	bz := k.cdc.MustMarshalLengthPrefixed(&proxiedValidator)
 
-	ctx.KVStore(k.storeKey).Set([]byte(operatorPrefix+validatorProxy.Validator.String()), bz)
-	ctx.KVStore(k.storeKey).Set([]byte(proxyPrefix+validatorProxy.Proxy.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(operatorPrefix+proxiedValidator.Validator.String()), bz)
+	ctx.KVStore(k.storeKey).Set([]byte(proxyPrefix+proxiedValidator.Proxy.String()), bz)
 }
 
 // GetOperator returns the proxy address for a given principal address. Returns nil if not set.
 func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-	if validatorProxy, ok := k.getValidatorProxy(ctx, proxy); ok {
-		return validatorProxy.Validator
+	if proxiedValidator, ok := k.getProxiedValidator(ctx, proxy); ok {
+		return proxiedValidator.Validator
 	}
 
 	return nil
@@ -403,8 +409,8 @@ func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddres
 // GetProxy returns the proxy address for a given operator address. Returns nil if not set.
 // The bool value denotes wether or not the proxy is active and to be included in the next snapshot
 func (k Keeper) GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool) {
-	if validatorProxy, ok := k.getValidatorProxy(ctx, operator); ok {
-		return validatorProxy.Proxy, validatorProxy.Active
+	if proxiedValidator, ok := k.getProxiedValidator(ctx, operator); ok {
+		return proxiedValidator.Proxy, proxiedValidator.Active
 	}
 
 	return nil, false

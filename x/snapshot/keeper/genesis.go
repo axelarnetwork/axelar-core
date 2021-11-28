@@ -14,8 +14,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		k.setSnapshot(ctx, snapshot)
 	}
 
-	for _, validatorProxy := range genState.ValidatorProxies {
-		k.setValidatorProxy(ctx, validatorProxy)
+	for _, proxiedValidator := range genState.ProxiedValidators {
+		k.setProxiedValidator(ctx, proxiedValidator)
 	}
 }
 
@@ -24,6 +24,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	return types.NewGenesisState(
 		k.GetParams(ctx),
 		k.getSnapshots(ctx),
-		k.getValidatorProxies(ctx),
+		k.getProxiedValidators(ctx),
 	)
 }

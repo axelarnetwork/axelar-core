@@ -16,6 +16,6 @@ message GenesisState {
 
   repeated snapshot.exported.v1beta1.Snapshot snapshots = 2
       [ (gogoproto.nullable) = false ];
-  repeated ValidatorProxy validator_proxies = 3
+  repeated ProxiedValidator proxied_validators = 3
       [ (gogoproto.nullable) = false ];
 }

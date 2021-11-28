@@ -641,7 +641,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		}
 		s = &mock.SnapshotterMock{
 			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
-				return snapshot.Snapshot{}, true
+				return snapshot.Snapshot{Counter: rand.PosI64()}, true
 
 			},
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -698,7 +698,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		s = &mock.SnapshotterMock{
 			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
 				if len(s.TakeSnapshotCalls()) > 0 {
-					return snapshot.Snapshot{}, true
+					return snapshot.Snapshot{Counter: rand.PosI64()}, true
 				}
 				return snapshot.Snapshot{}, false
 			},
