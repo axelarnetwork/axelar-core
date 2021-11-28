@@ -53,7 +53,7 @@ func SetGenesisVoteCmd(defaultNodeHome string) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				genesisVote.VotingThreshold = threshold
+				genesisVote.Params.DefaultVotingThreshold = threshold
 			}
 
 			genesisVoteBz, err := cdc.MarshalJSON(&genesisVote)

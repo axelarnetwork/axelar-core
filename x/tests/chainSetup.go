@@ -93,7 +93,10 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 	snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 	snapKeeper := snapshotKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(snapshotTypes.StoreKey), snapSubspace, mocks.Staker, &snapshotTypesMock.BankKeeperMock{}, mocks.Slasher, mocks.Tss)
 	snapKeeper.SetParams(ctx, snapshotTypes.DefaultParams())
-	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), snapKeeper, mocks.Staker, rewardKeeper)
+
+	voterSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+	voter := voteKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(voteTypes.StoreKey), voterSubspace, snapKeeper, mocks.Staker, rewardKeeper)
+	voter.SetParams(ctx, voteTypes.DefaultParams())
 
 	btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "btc")
 	bitcoinKeeper := btcKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(btcTypes.StoreKey), btcSubspace)
@@ -110,7 +113,6 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	tssSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), tssTypes.DefaultParamspace)
 	signer := tssKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(tssTypes.StoreKey), tssSubspace, mocks.Slasher, rewardKeeper)
-
 	signer.SetParams(ctx, tssTypes.DefaultParams())
 
 	axelarnetSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), axelarnetTypes.DefaultParamspace)
@@ -118,10 +120,7 @@ func newNode(moniker string, mocks testMocks) *fake.Node {
 
 	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("balanceKey"), sdk.NewKVStoreKey("tbalanceKey"), "balance")
 	nexusK := nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey(nexusTypes.StoreKey), nexusSubspace, axelarnetK)
-
 	nexusK.SetParams(ctx, nexusTypes.DefaultParams())
-
-	voter.SetDefaultVotingThreshold(ctx, voteTypes.DefaultGenesisState().VotingThreshold)
 
 	tssRouter := tssTypes.NewRouter()
 	tssRouter = tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(EVMKeeper, nexusK, signer)).

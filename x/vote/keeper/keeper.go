@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -16,26 +17,27 @@ import (
 )
 
 var (
-	thresholdKey = utils.KeyFromStr("votingThreshold")
-	pollPrefix   = utils.KeyFromStr("poll")
-	votesPrefix  = utils.KeyFromStr("votes")
-	voterPrefix  = utils.KeyFromStr("voter")
+	pollPrefix  = utils.KeyFromStr("poll")
+	votesPrefix = utils.KeyFromStr("votes")
+	voterPrefix = utils.KeyFromStr("voter")
 )
 
 // Keeper - the vote module's keeper
 type Keeper struct {
 	storeKey    sdk.StoreKey
 	cdc         codec.BinaryCodec
+	paramSpace  paramtypes.Subspace
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	rewarder    types.Rewarder
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, snapshotter types.Snapshotter, staking types.StakingKeeper, rewarder types.Rewarder) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace paramtypes.Subspace, snapshotter types.Snapshotter, staking types.StakingKeeper, rewarder types.Rewarder) Keeper {
 	keeper := Keeper{
-		storeKey:    key,
 		cdc:         cdc,
+		storeKey:    key,
+		paramSpace:  paramSpace.WithKeyTable(types.KeyTable()),
 		snapshotter: snapshotter,
 		staking:     staking,
 		rewarder:    rewarder,
@@ -48,21 +50,20 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// SetDefaultVotingThreshold sets the default voting power threshold that must be reached to decide a poll
-func (k Keeper) SetDefaultVotingThreshold(ctx sdk.Context, threshold utils.Threshold) {
-	k.getKVStore(ctx).Set(thresholdKey, &threshold)
+// GetParams returns the total set of reward parameters.
+func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
+	k.paramSpace.GetParamSet(ctx, &params)
+
+	return params
 }
 
-// GetDefaultVotingThreshold returns the default voting power threshold that must be reached to decide a poll
-func (k Keeper) GetDefaultVotingThreshold(ctx sdk.Context) utils.Threshold {
-	var threshold utils.Threshold
-	k.getKVStore(ctx).Get(thresholdKey, &threshold)
-
-	return threshold
+// SetParams sets the total set of reward parameters.
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
+	k.paramSpace.SetParamSet(ctx, &params)
 }
 
 func (k Keeper) initializePoll(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, totalVotingPower sdk.Int, pollProperties ...exported.PollProperty) error {
-	metadata := types.NewPollMetaData(key, k.GetDefaultVotingThreshold(ctx), voters, totalVotingPower).With(pollProperties...)
+	metadata := types.NewPollMetaData(key, k.GetParams(ctx).DefaultVotingThreshold, voters, totalVotingPower).With(pollProperties...)
 	poll := types.NewPoll(ctx, metadata, k.newPollStore(ctx, metadata.Key), k.rewarder).WithLogger(k.Logger(ctx))
 
 	return poll.Initialize()
@@ -119,6 +120,24 @@ func (k Keeper) getPollMetadata(ctx sdk.Context, pollKey exported.PollKey) (expo
 	}
 
 	return poll, true
+}
+
+func (k Keeper) getNonPendingPollMetadatas(ctx sdk.Context) []exported.PollMetadata {
+	var pollMetadatas []exported.PollMetadata
+
+	iter := k.getKVStore(ctx).Iterator(pollPrefix)
+	utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var pollMetadata exported.PollMetadata
+		k.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &pollMetadata)
+
+		if !pollMetadata.Is(exported.Pending) {
+			pollMetadatas = append(pollMetadatas, pollMetadata)
+		}
+	}
+
+	return pollMetadatas
 }
 
 func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
