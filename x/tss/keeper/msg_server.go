@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
@@ -146,8 +147,8 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
 
-	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
-		float32(ctx.BlockHeight()), []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
+	metrics.MeasureSinceWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
+		time.Unix(ctx.BlockHeight(), 0), []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 
 	return response, nil
 }
