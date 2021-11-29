@@ -58,6 +58,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
 		}
+
 		ctx = rand.Context(nil)
 		rtr := baseapp.NewRouter()
 		msgServiceRtr := baseapp.NewMsgServiceRouter()
@@ -288,7 +289,8 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		ctx             sdk.Context
 		msg             *types.ExecutePendingTransfersRequest
 
-		transfers []nexus.CrossChainTransfer
+		transfers       []nexus.CrossChainTransfer
+		randTransferIdx int
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
@@ -306,6 +308,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 					transfer := randomTransfer(testToken, testChain)
 					transfers = append(transfers, transfer)
 				}
+				randTransferIdx = mathRand.Intn(len(transfers))
 				return transfers
 			},
 			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
@@ -343,14 +346,18 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when MintCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
+	t.Run("should continue when MintCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		bankKeeper.MintCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
-			return fmt.Errorf("failed")
+			if len(bankKeeper.MintCoinsCalls()) == randTransferIdx+1 {
+				return fmt.Errorf("failed")
+			}
+			return nil
 		}
 		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
 		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
-		assert.Error(t, err)
+		assert.NoError(t, err)
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers)-1)
 	}).Repeat(repeatCount))
 
 	t.Run("should send ICS20 token from escrow account to recipients, and archive pending transfers \\"+
@@ -613,12 +620,12 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		assert.Len(t, axelarnetKeeper.SetPendingIBCTransferCalls(), len(transfers))
 	}).Repeat(repeatCount))
 
-	t.Run("should return error when no path registered for cosmos chain", testutils.Func(func(t *testing.T) {
+	t.Run("should continue when no path registered for cosmos chain", testutils.Func(func(t *testing.T) {
 		setup()
 		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) { return "", false }
 		msg = types.NewRouteIBCTransfersRequest(rand.AccAddr())
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	}).Repeat(repeatCount))
 }
 

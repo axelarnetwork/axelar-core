@@ -4,6 +4,7 @@
 package mock
 
 import (
+	context "context"
 	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
@@ -45,6 +46,9 @@ var _ types.Nexus = &NexusMock{}
 // 			IsChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the IsChainMaintainer method")
 // 			},
+// 			LatestDepositAddressFunc: func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
+// 				panic("mock out the LatestDepositAddress method")
+// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -84,6 +88,9 @@ type NexusMock struct {
 
 	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
 	IsChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
+	// LatestDepositAddressFunc mocks the LatestDepositAddress method.
+	LatestDepositAddressFunc func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -152,6 +159,13 @@ type NexusMock struct {
 			// Maintainer is the maintainer argument value.
 			Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// LatestDepositAddress holds details about calls to the LatestDepositAddress method.
+		LatestDepositAddress []struct {
+			// C is the c argument value.
+			C context.Context
+			// Req is the req argument value.
+			Req *types.LatestDepositAddressRequest
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -182,6 +196,7 @@ type NexusMock struct {
 	lockGetParams             sync.RWMutex
 	lockIsChainActivated      sync.RWMutex
 	lockIsChainMaintainer     sync.RWMutex
+	lockLatestDepositAddress  sync.RWMutex
 	lockLogger                sync.RWMutex
 	lockRemoveChainMaintainer sync.RWMutex
 	lockSetParams             sync.RWMutex
@@ -464,6 +479,41 @@ func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 	mock.lockIsChainMaintainer.RLock()
 	calls = mock.calls.IsChainMaintainer
 	mock.lockIsChainMaintainer.RUnlock()
+	return calls
+}
+
+// LatestDepositAddress calls LatestDepositAddressFunc.
+func (mock *NexusMock) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
+	if mock.LatestDepositAddressFunc == nil {
+		panic("NexusMock.LatestDepositAddressFunc: method is nil but Nexus.LatestDepositAddress was just called")
+	}
+	callInfo := struct {
+		C   context.Context
+		Req *types.LatestDepositAddressRequest
+	}{
+		C:   c,
+		Req: req,
+	}
+	mock.lockLatestDepositAddress.Lock()
+	mock.calls.LatestDepositAddress = append(mock.calls.LatestDepositAddress, callInfo)
+	mock.lockLatestDepositAddress.Unlock()
+	return mock.LatestDepositAddressFunc(c, req)
+}
+
+// LatestDepositAddressCalls gets all the calls that were made to LatestDepositAddress.
+// Check the length with:
+//     len(mockedNexus.LatestDepositAddressCalls())
+func (mock *NexusMock) LatestDepositAddressCalls() []struct {
+	C   context.Context
+	Req *types.LatestDepositAddressRequest
+} {
+	var calls []struct {
+		C   context.Context
+		Req *types.LatestDepositAddressRequest
+	}
+	mock.lockLatestDepositAddress.RLock()
+	calls = mock.calls.LatestDepositAddress
+	mock.lockLatestDepositAddress.RUnlock()
 	return calls
 }
 

@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	senderPrefix     = utils.KeyFromStr("send")
-	chainPrefix      = utils.KeyFromStr("chain")
-	totalPrefix      = utils.KeyFromStr("total")
-	registeredPrefix = utils.KeyFromStr("registered")
-	chainStatePrefix = utils.KeyFromStr("chain_state")
+	senderPrefix      = utils.KeyFromStr("send")
+	chainPrefix       = utils.KeyFromStr("chain")
+	totalPrefix       = utils.KeyFromStr("total")
+	registeredPrefix  = utils.KeyFromStr("registered")
+	chainStatePrefix  = utils.KeyFromStr("chain_state")
+	depositAddrPrefix = utils.KeyFromStr("deposit_addr")
 
 	sequenceKey = utils.KeyFromStr("nextID")
 	registered  = []byte{0x01}
@@ -112,6 +113,7 @@ func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
 // LinkAddresses links a sender address to a cross-chain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
 	k.getStore(ctx).Set(senderPrefix.Append(utils.LowerCaseKey(sender.String())), &recipient)
+	k.setLatestDepositAddress(ctx, recipient, sender.Address)
 }
 
 // GetRecipient retrieves the cross chain recipient associated to the specified sender
@@ -315,4 +317,10 @@ func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// set the deposit address for the given recipient
+func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
+	k.getStore(ctx).SetRaw(key, []byte(address))
 }
