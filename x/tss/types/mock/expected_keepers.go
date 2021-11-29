@@ -1256,6 +1256,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetAvailableOperatorsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetAvailableOperators method")
 // 			},
+// 			GetControllerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+// 				panic("mock out the GetController method")
+// 			},
 // 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetCurrentKey method")
 // 			},
@@ -1367,6 +1370,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
+// 			SetControllerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress)  {
+// 				panic("mock out the SetController method")
+// 			},
 // 			SetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the SetExternalKeyIDs method")
 // 			},
@@ -1451,6 +1457,9 @@ type TSSKeeperMock struct {
 
 	// GetAvailableOperatorsFunc mocks the GetAvailableOperators method.
 	GetAvailableOperatorsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []github_com_cosmos_cosmos_sdk_types.ValAddress
+
+	// GetControllerFunc mocks the GetController method.
+	GetControllerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
 
 	// GetCurrentKeyFunc mocks the GetCurrentKey method.
 	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -1562,6 +1571,9 @@ type TSSKeeperMock struct {
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
+
+	// SetControllerFunc mocks the SetController method.
+	SetControllerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress)
 
 	// SetExternalKeyIDsFunc mocks the SetExternalKeyIDs method.
 	SetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
@@ -1706,6 +1718,11 @@ type TSSKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyIDs is the keyIDs argument value.
 			KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
+		}
+		// GetController holds details about calls to the GetController method.
+		GetController []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetCurrentKey holds details about calls to the GetCurrentKey method.
 		GetCurrentKey []struct {
@@ -1980,6 +1997,13 @@ type TSSKeeperMock struct {
 			// KeyIDs is the keyIDs argument value.
 			KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
+		// SetController holds details about calls to the SetController method.
+		SetController []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.AccAddress
+		}
 		// SetExternalKeyIDs holds details about calls to the SetExternalKeyIDs method.
 		SetExternalKeyIDs []struct {
 			// Ctx is the ctx argument value.
@@ -2121,6 +2145,7 @@ type TSSKeeperMock struct {
 	lockDoesValidatorParticipateInKeygen sync.RWMutex
 	lockDoesValidatorParticipateInSign   sync.RWMutex
 	lockGetAvailableOperators            sync.RWMutex
+	lockGetController                    sync.RWMutex
 	lockGetCurrentKey                    sync.RWMutex
 	lockGetCurrentKeyID                  sync.RWMutex
 	lockGetExternalKeyIDs                sync.RWMutex
@@ -2158,6 +2183,7 @@ type TSSKeeperMock struct {
 	lockRotateKey                        sync.RWMutex
 	lockSelectSignParticipants           sync.RWMutex
 	lockSetAvailableOperator             sync.RWMutex
+	lockSetController                    sync.RWMutex
 	lockSetExternalKeyIDs                sync.RWMutex
 	lockSetGovernanceKey                 sync.RWMutex
 	lockSetGroupRecoveryInfo             sync.RWMutex
@@ -2619,6 +2645,37 @@ func (mock *TSSKeeperMock) GetAvailableOperatorsCalls() []struct {
 	mock.lockGetAvailableOperators.RLock()
 	calls = mock.calls.GetAvailableOperators
 	mock.lockGetAvailableOperators.RUnlock()
+	return calls
+}
+
+// GetController calls GetControllerFunc.
+func (mock *TSSKeeperMock) GetController(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+	if mock.GetControllerFunc == nil {
+		panic("TSSKeeperMock.GetControllerFunc: method is nil but TSSKeeper.GetController was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetController.Lock()
+	mock.calls.GetController = append(mock.calls.GetController, callInfo)
+	mock.lockGetController.Unlock()
+	return mock.GetControllerFunc(ctx)
+}
+
+// GetControllerCalls gets all the calls that were made to GetController.
+// Check the length with:
+//     len(mockedTSSKeeper.GetControllerCalls())
+func (mock *TSSKeeperMock) GetControllerCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetController.RLock()
+	calls = mock.calls.GetController
+	mock.lockGetController.RUnlock()
 	return calls
 }
 
@@ -3941,6 +3998,41 @@ func (mock *TSSKeeperMock) SetAvailableOperatorCalls() []struct {
 	mock.lockSetAvailableOperator.RLock()
 	calls = mock.calls.SetAvailableOperator
 	mock.lockSetAvailableOperator.RUnlock()
+	return calls
+}
+
+// SetController calls SetControllerFunc.
+func (mock *TSSKeeperMock) SetController(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress) {
+	if mock.SetControllerFunc == nil {
+		panic("TSSKeeperMock.SetControllerFunc: method is nil but TSSKeeper.SetController was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.AccAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockSetController.Lock()
+	mock.calls.SetController = append(mock.calls.SetController, callInfo)
+	mock.lockSetController.Unlock()
+	mock.SetControllerFunc(ctx, address)
+}
+
+// SetControllerCalls gets all the calls that were made to SetController.
+// Check the length with:
+//     len(mockedTSSKeeper.SetControllerCalls())
+func (mock *TSSKeeperMock) SetControllerCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.AccAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.AccAddress
+	}
+	mock.lockSetController.RLock()
+	calls = mock.calls.SetController
+	mock.lockSetController.RUnlock()
 	return calls
 }
 

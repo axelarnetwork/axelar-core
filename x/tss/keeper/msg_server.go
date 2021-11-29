@@ -766,6 +766,14 @@ func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGover
 	return &types.UpdateGovernanceKeyResponse{}, nil
 }
 
+// RegisterController handles register axelar network controller
+func (s msgServer) RegisterController(c context.Context, req *types.RegisterControllerRequest) (*types.RegisterControllerResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	s.SetController(ctx, req.Controller)
+
+	return &types.RegisterControllerResponse{}, nil
+}
+
 func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
 	criminalFound := false
 	for _, voter := range poll.GetVoters() {

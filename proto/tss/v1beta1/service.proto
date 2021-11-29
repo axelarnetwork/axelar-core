@@ -86,6 +86,12 @@ service MsgService {
     option (google.api.http) = {
     };
   }
+
+  rpc RegisterController(tss.v1beta1.RegisterControllerRequest)
+      returns (tss.v1beta1.RegisterControllerResponse) {
+    option (google.api.http) = {
+    };
+  }
 }
 
 // Query defines the gRPC querier service.

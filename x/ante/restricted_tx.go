@@ -6,6 +6,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -27,7 +28,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	msgs := tx.GetMsgs()
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
-		case *tss.UpdateGovernanceKeyRequest, *axelarnet.RegisterFeeCollectorRequest:
+		case *tss.UpdateGovernanceKeyRequest, *axelarnet.RegisterFeeCollectorRequest, *tss.RegisterControllerRequest:
 			signer := msg.GetSigners()[0]
 
 			governanceKey, ok := d.tss.GetGovernanceKey(ctx)
@@ -36,6 +37,19 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 			}
 
 			if !signer.Equals(sdk.AccAddress(governanceKey.Address().Bytes())) {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "%s is not authorized to send transaction %T", signer, msg)
+			}
+		case *tss.RegisterExternalKeysRequest, *tss.StartKeygenRequest, *tss.RotateKeyRequest,
+			*axelarnet.RegisterIBCPathRequest, *axelarnet.RegisterAssetRequest, *axelarnet.AddCosmosBasedChainRequest,
+			*evm.AddChainRequest, *evm.ConfirmGatewayDeploymentRequest, *evm.CreateDeployTokenRequest, *evm.CreateTransferOwnershipRequest, *evm.CreateTransferOperatorshipRequest:
+			signer := msg.GetSigners()[0]
+
+			controller, ok := d.tss.GetController(ctx)
+			if !ok {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "controller not set")
+			}
+
+			if !signer.Equals(controller) {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "%s is not authorized to send transaction %T", signer, msg)
 			}
 		default:

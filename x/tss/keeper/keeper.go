@@ -43,6 +43,7 @@ var (
 	multiSigSignPrefix         = utils.KeyFromStr("multi_sig_sign")
 	keyInfoPrefix              = utils.KeyFromStr("key_info")
 	governanceKey              = utils.KeyFromStr("governance")
+	controller                 = utils.KeyFromStr("controller")
 
 	multisigKeygenQueue = "multisig_keygen"
 	multisigSignQueue   = "multisig_sign"
@@ -457,6 +458,21 @@ func (k Keeper) GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, b
 	ok := k.getStore(ctx).Get(governanceKey, &key)
 
 	return key, ok
+}
+
+// SetController sets the collector address
+func (k Keeper) SetController(ctx sdk.Context, address sdk.AccAddress) {
+	k.getStore(ctx).SetRaw(controller, address)
+}
+
+// GetController gets the collector address
+func (k Keeper) GetController(ctx sdk.Context) (sdk.AccAddress, bool) {
+	bz := k.getStore(ctx).GetRaw(controller)
+	if bz == nil {
+		return sdk.AccAddress{}, false
+	}
+
+	return bz, true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
