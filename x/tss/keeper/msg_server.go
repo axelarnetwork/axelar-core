@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
@@ -135,20 +136,19 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
 	}
 
-	// metrics for heartbeat
-	labels := []metrics.Label{
-		telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-		telemetry.NewLabel("address", valAddr.String()),
-		telemetry.NewLabel("height", strconv.FormatInt(ctx.BlockHeight(), 10)),
-		telemetry.NewLabel("key_IDs", strings.Join(exported.KeyIDsToStrings(req.KeyIDs), ",")),
-	}
-
-	//illegibilities
+	// metrics
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
-		labels = append(labels, telemetry.NewLabel(strings.ReplaceAll(ill.String(), "-", "_"), strconv.FormatBool(illegibility.Is(ill))))
+		gauge := float32(0)
+		if illegibility.Is(ill) {
+			gauge = 1
+		}
+
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "illegibility_" + ill.String()},
+			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
 
-	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "heartbeat"}, 1, labels)
+	metrics.MeasureSinceWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
+		time.Unix(ctx.BlockHeight(), 0), []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 
 	return response, nil
 }
