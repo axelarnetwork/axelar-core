@@ -1,12 +1,12 @@
 package types
 
 import (
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
@@ -46,7 +46,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&KeygenVoteData{},
 	)
 
-	registry.RegisterImplementations((*axelarnet.Refundable)(nil),
+	registry.RegisterImplementations((*reward.Refundable)(nil),
 		&HeartBeatRequest{},
 		&ProcessKeygenTrafficRequest{},
 		&VotePubKeyRequest{},

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -31,7 +32,6 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -240,7 +240,7 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 			*wire.NewOutPoint(txHash, mathRand.Uint32()),
 			rand.Bools(0.5).Next(),
 		)
-		msgs = append(msgs, axelarnet.NewRefundMsgRequest(signer, msg))
+		msgs = append(msgs, rewardtypes.NewRefundMsgRequest(signer, msg))
 	}
 	return msgs
 }

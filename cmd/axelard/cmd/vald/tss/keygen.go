@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 
+	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcec"
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -125,7 +125,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
 	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing multisig keys msg")
@@ -221,7 +221,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 			keyID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessKeygenTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: keyID, Payload: msg}
-		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+		refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
@@ -278,7 +278,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 
 	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
 	vote := &tss.VotePubKeyRequest{Sender: mgr.cliCtx.FromAddress, PollKey: pollKey, Result: result}
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
 
 	_, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err

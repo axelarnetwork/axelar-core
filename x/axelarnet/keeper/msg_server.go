@@ -6,12 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	"google.golang.org/grpc/codes"
@@ -26,26 +22,22 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	types.BaseKeeper
-	nexus        types.Nexus
-	bank         types.BankKeeper
-	ibcTransfer  types.IBCTransferKeeper
-	ibcChannel   types.ChannelKeeper
-	account      types.AccountKeeper
-	msgSvcRouter *baseapp.MsgServiceRouter
-	router       sdk.Router
+	nexus       types.Nexus
+	bank        types.BankKeeper
+	ibcTransfer types.IBCTransferKeeper
+	ibcChannel  types.ChannelKeeper
+	account     types.AccountKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) types.MsgServiceServer {
+func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper) types.MsgServiceServer {
 	return msgServer{
-		BaseKeeper:   k,
-		nexus:        n,
-		bank:         b,
-		ibcTransfer:  t,
-		ibcChannel:   c,
-		account:      a,
-		msgSvcRouter: m,
-		router:       r,
+		BaseKeeper:  k,
+		nexus:       n,
+		bank:        b,
+		ibcTransfer: t,
+		ibcChannel:  c,
+		account:     a,
 	}
 }
 
@@ -253,35 +245,6 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	return &types.RegisterAssetResponse{}, nil
 }
 
-func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*types.RefundMsgResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	msg := req.GetInnerMessage()
-	if msg == nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid inner message")
-	}
-
-	result, err := s.routeInnerMsg(ctx, msg)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to execute message")
-	}
-
-	fee, found := s.BaseKeeper.GetPendingRefund(ctx, *req)
-	if found {
-		// refund tx fee to the given account.
-		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.GetSigners()[0], sdk.NewCoins(fee))
-		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed to refund tx fee")
-		}
-
-		s.BaseKeeper.DeletePendingRefund(ctx, *req)
-	}
-
-	ctx.EventManager().EmitEvents(result.GetEvents())
-
-	return &types.RefundMsgResponse{Data: result.Data, Log: result.Log}, nil
-}
-
 // RouteIBCTransfers routes Transfer to cosmos chains
 func (s msgServer) RouteIBCTransfers(c context.Context, req *types.RouteIBCTransfersRequest) (*types.RouteIBCTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -385,35 +348,6 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctransfert
 		)
 	}
 	return denomTrace, nil
-}
-
-func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-
-	var msgResult *sdk.Result
-	var err error
-
-	if handler := s.msgSvcRouter.Handler(msg); handler != nil {
-		// ADR 031 request type routing
-		msgResult, err = handler(ctx, msg)
-	} else if legacyMsg, ok := msg.(legacytx.LegacyMsg); ok {
-		// legacy sdk.Msg routing
-		// Assuming that the app developer has migrated all their Msgs to
-		// proto messages and has registered all `Msg services`, then this
-		// path should never be called, because all those Msgs should be
-		// registered within the `msgServiceRouter` already.
-		msgRoute := legacyMsg.Route()
-		s.Logger(ctx).Debug(fmt.Sprintf("received legacy message type %s", legacyMsg.Type()))
-		handler := s.router.Route(ctx, msgRoute)
-		if handler == nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s", msgRoute)
-		}
-
-		msgResult, err = handler(ctx, msg)
-	} else {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
-	}
-
-	return msgResult, err
 }
 
 // toICS20 converts a cross chain transfer to ICS20 token

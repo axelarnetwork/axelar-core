@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -76,16 +77,29 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper      keeper.Keeper
-	nexus       types.Nexus
-	minter      types.Minter
-	staker      types.Staker
-	tss         types.Tss
-	snapshotter types.Snapshotter
+	keeper       keeper.Keeper
+	nexus        types.Nexus
+	minter       types.Minter
+	staker       types.Staker
+	tss          types.Tss
+	snapshotter  types.Snapshotter
+	msgSvcRouter *baseapp.MsgServiceRouter
+	router       sdk.Router
+	bank         types.Banker
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, nexus types.Nexus, minter types.Minter, staker types.Staker, tss types.Tss, snapshotter types.Snapshotter) AppModule {
+func NewAppModule(
+	k keeper.Keeper,
+	nexus types.Nexus,
+	minter types.Minter,
+	staker types.Staker,
+	tss types.Tss,
+	snapshotter types.Snapshotter,
+	bank types.Banker,
+	msgSvcRouter *baseapp.MsgServiceRouter,
+	router sdk.Router,
+) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -94,6 +108,9 @@ func NewAppModule(k keeper.Keeper, nexus types.Nexus, minter types.Minter, stake
 		staker:         staker,
 		tss:            tss,
 		snapshotter:    snapshotter,
+		msgSvcRouter:   msgSvcRouter,
+		router:         router,
+		bank:           bank,
 	}
 }
 
@@ -118,7 +135,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.Route{}
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.bank, am.msgSvcRouter, am.router))
 }
 
 // QuerierRoute returns this module's query route

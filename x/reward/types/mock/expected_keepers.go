@@ -171,6 +171,169 @@ func (mock *RewarderMock) LoggerCalls() []struct {
 	return calls
 }
 
+// Ensure, that RefunderMock does implement rewardtypes.Refunder.
+// If this is not the case, regenerate this file with moq.
+var _ rewardtypes.Refunder = &RefunderMock{}
+
+// RefunderMock is a mock implementation of rewardtypes.Refunder.
+//
+// 	func TestSomethingThatUsesRefunder(t *testing.T) {
+//
+// 		// make and configure a mocked rewardtypes.Refunder
+// 		mockedRefunder := &RefunderMock{
+// 			DeletePendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)  {
+// 				panic("mock out the DeletePendingRefund method")
+// 			},
+// 			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
+// 				panic("mock out the GetPendingRefund method")
+// 			},
+// 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 		}
+//
+// 		// use mockedRefunder in code that requires rewardtypes.Refunder
+// 		// and then make assertions.
+//
+// 	}
+type RefunderMock struct {
+	// DeletePendingRefundFunc mocks the DeletePendingRefund method.
+	DeletePendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)
+
+	// GetPendingRefundFunc mocks the GetPendingRefund method.
+	GetPendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool)
+
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// DeletePendingRefund holds details about calls to the DeletePendingRefund method.
+		DeletePendingRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Req is the req argument value.
+			Req rewardtypes.RefundMsgRequest
+		}
+		// GetPendingRefund holds details about calls to the GetPendingRefund method.
+		GetPendingRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Req is the req argument value.
+			Req rewardtypes.RefundMsgRequest
+		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+	}
+	lockDeletePendingRefund sync.RWMutex
+	lockGetPendingRefund    sync.RWMutex
+	lockLogger              sync.RWMutex
+}
+
+// DeletePendingRefund calls DeletePendingRefundFunc.
+func (mock *RefunderMock) DeletePendingRefund(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) {
+	if mock.DeletePendingRefundFunc == nil {
+		panic("RefunderMock.DeletePendingRefundFunc: method is nil but Refunder.DeletePendingRefund was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		Req rewardtypes.RefundMsgRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockDeletePendingRefund.Lock()
+	mock.calls.DeletePendingRefund = append(mock.calls.DeletePendingRefund, callInfo)
+	mock.lockDeletePendingRefund.Unlock()
+	mock.DeletePendingRefundFunc(ctx, req)
+}
+
+// DeletePendingRefundCalls gets all the calls that were made to DeletePendingRefund.
+// Check the length with:
+//     len(mockedRefunder.DeletePendingRefundCalls())
+func (mock *RefunderMock) DeletePendingRefundCalls() []struct {
+	Ctx cosmossdktypes.Context
+	Req rewardtypes.RefundMsgRequest
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		Req rewardtypes.RefundMsgRequest
+	}
+	mock.lockDeletePendingRefund.RLock()
+	calls = mock.calls.DeletePendingRefund
+	mock.lockDeletePendingRefund.RUnlock()
+	return calls
+}
+
+// GetPendingRefund calls GetPendingRefundFunc.
+func (mock *RefunderMock) GetPendingRefund(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
+	if mock.GetPendingRefundFunc == nil {
+		panic("RefunderMock.GetPendingRefundFunc: method is nil but Refunder.GetPendingRefund was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		Req rewardtypes.RefundMsgRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockGetPendingRefund.Lock()
+	mock.calls.GetPendingRefund = append(mock.calls.GetPendingRefund, callInfo)
+	mock.lockGetPendingRefund.Unlock()
+	return mock.GetPendingRefundFunc(ctx, req)
+}
+
+// GetPendingRefundCalls gets all the calls that were made to GetPendingRefund.
+// Check the length with:
+//     len(mockedRefunder.GetPendingRefundCalls())
+func (mock *RefunderMock) GetPendingRefundCalls() []struct {
+	Ctx cosmossdktypes.Context
+	Req rewardtypes.RefundMsgRequest
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		Req rewardtypes.RefundMsgRequest
+	}
+	mock.lockGetPendingRefund.RLock()
+	calls = mock.calls.GetPendingRefund
+	mock.lockGetPendingRefund.RUnlock()
+	return calls
+}
+
+// Logger calls LoggerFunc.
+func (mock *RefunderMock) Logger(ctx cosmossdktypes.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("RefunderMock.LoggerFunc: method is nil but Refunder.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedRefunder.LoggerCalls())
+func (mock *RefunderMock) LoggerCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
 // Ensure, that NexusMock does implement rewardtypes.Nexus.
 // If this is not the case, regenerate this file with moq.
 var _ rewardtypes.Nexus = &NexusMock{}
@@ -689,6 +852,9 @@ var _ rewardtypes.Banker = &BankerMock{}
 // 			MintCoinsFunc: func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error {
 // 				panic("mock out the MintCoins method")
 // 			},
+// 			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+// 				panic("mock out the SendCoinsFromModuleToAccount method")
+// 			},
 // 			SendCoinsFromModuleToModuleFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
 // 				panic("mock out the SendCoinsFromModuleToModule method")
 // 			},
@@ -701,6 +867,9 @@ var _ rewardtypes.Banker = &BankerMock{}
 type BankerMock struct {
 	// MintCoinsFunc mocks the MintCoins method.
 	MintCoinsFunc func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error
+
+	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
+	SendCoinsFromModuleToAccountFunc func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromModuleToModuleFunc mocks the SendCoinsFromModuleToModule method.
 	SendCoinsFromModuleToModuleFunc func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error
@@ -716,6 +885,17 @@ type BankerMock struct {
 			// Amt is the amt argument value.
 			Amt cosmossdktypes.Coins
 		}
+		// SendCoinsFromModuleToAccount holds details about calls to the SendCoinsFromModuleToAccount method.
+		SendCoinsFromModuleToAccount []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// SenderModule is the senderModule argument value.
+			SenderModule string
+			// RecipientAddr is the recipientAddr argument value.
+			RecipientAddr cosmossdktypes.AccAddress
+			// Amt is the amt argument value.
+			Amt cosmossdktypes.Coins
+		}
 		// SendCoinsFromModuleToModule holds details about calls to the SendCoinsFromModuleToModule method.
 		SendCoinsFromModuleToModule []struct {
 			// Ctx is the ctx argument value.
@@ -728,8 +908,9 @@ type BankerMock struct {
 			Amt cosmossdktypes.Coins
 		}
 	}
-	lockMintCoins                   sync.RWMutex
-	lockSendCoinsFromModuleToModule sync.RWMutex
+	lockMintCoins                    sync.RWMutex
+	lockSendCoinsFromModuleToAccount sync.RWMutex
+	lockSendCoinsFromModuleToModule  sync.RWMutex
 }
 
 // MintCoins calls MintCoinsFunc.
@@ -768,6 +949,49 @@ func (mock *BankerMock) MintCoinsCalls() []struct {
 	mock.lockMintCoins.RLock()
 	calls = mock.calls.MintCoins
 	mock.lockMintCoins.RUnlock()
+	return calls
+}
+
+// SendCoinsFromModuleToAccount calls SendCoinsFromModuleToAccountFunc.
+func (mock *BankerMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+	if mock.SendCoinsFromModuleToAccountFunc == nil {
+		panic("BankerMock.SendCoinsFromModuleToAccountFunc: method is nil but Banker.SendCoinsFromModuleToAccount was just called")
+	}
+	callInfo := struct {
+		Ctx           cosmossdktypes.Context
+		SenderModule  string
+		RecipientAddr cosmossdktypes.AccAddress
+		Amt           cosmossdktypes.Coins
+	}{
+		Ctx:           ctx,
+		SenderModule:  senderModule,
+		RecipientAddr: recipientAddr,
+		Amt:           amt,
+	}
+	mock.lockSendCoinsFromModuleToAccount.Lock()
+	mock.calls.SendCoinsFromModuleToAccount = append(mock.calls.SendCoinsFromModuleToAccount, callInfo)
+	mock.lockSendCoinsFromModuleToAccount.Unlock()
+	return mock.SendCoinsFromModuleToAccountFunc(ctx, senderModule, recipientAddr, amt)
+}
+
+// SendCoinsFromModuleToAccountCalls gets all the calls that were made to SendCoinsFromModuleToAccount.
+// Check the length with:
+//     len(mockedBanker.SendCoinsFromModuleToAccountCalls())
+func (mock *BankerMock) SendCoinsFromModuleToAccountCalls() []struct {
+	Ctx           cosmossdktypes.Context
+	SenderModule  string
+	RecipientAddr cosmossdktypes.AccAddress
+	Amt           cosmossdktypes.Coins
+} {
+	var calls []struct {
+		Ctx           cosmossdktypes.Context
+		SenderModule  string
+		RecipientAddr cosmossdktypes.AccAddress
+		Amt           cosmossdktypes.Coins
+	}
+	mock.lockSendCoinsFromModuleToAccount.RLock()
+	calls = mock.calls.SendCoinsFromModuleToAccount
+	mock.lockSendCoinsFromModuleToAccount.RUnlock()
 	return calls
 }
 

@@ -12,7 +12,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Nexus Minter Distributor Staker Banker
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Minter Distributor Staker Banker
 
 // Rewarder provides reward functionality
 type Rewarder interface {
@@ -20,6 +20,13 @@ type Rewarder interface {
 
 	GetParams(ctx sdk.Context) (params Params)
 	GetPool(ctx sdk.Context, name string) exported.RewardPool
+}
+
+// Refunder provides refunding functionality
+type Refunder interface {
+	Logger(ctx sdk.Context) log.Logger
+	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (sdk.Coin, bool)
+	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
 }
 
 // Nexus provides nexus functionality
@@ -50,6 +57,7 @@ type Staker interface {
 // Banker provides bank functionality
 type Banker interface {
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
 }
 
