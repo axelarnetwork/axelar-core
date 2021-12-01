@@ -16,6 +16,7 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -373,14 +374,19 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, chain.KeyType)
+	snapshot, ok := s.snapshotter.GetLatestSnapshot(ctx)
 	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), chain.KeyType)
-	}
+		keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, exported.Ethereum.KeyType)
+		if !ok {
+			return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), exported.Ethereum.KeyType)
+		}
 
-	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
-	if err != nil {
-		return nil, fmt.Errorf("unable to take snapshot: %v", err)
+		newSnapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
+		if err != nil {
+			return nil, fmt.Errorf("unable to take snapshot: %v", err)
+		}
+
+		snapshot = newSnapshot
 	}
 
 	keeper := s.ForChain(req.Name)
