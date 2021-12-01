@@ -248,6 +248,9 @@
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
   
+- [snapshot/v1beta1/types.proto](#snapshot/v1beta1/types.proto)
+    - [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator)
+  
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
   
@@ -3580,8 +3583,40 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `locking_period` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
 | `min_proxy_balance` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/types.proto
+
+
+
+<a name="snapshot.v1beta1.ProxiedValidator"></a>
+
+### ProxiedValidator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `proxy` | [bytes](#bytes) |  |  |
+| `active` | [bool](#bool) |  |  |
 
 
 
@@ -3613,6 +3648,8 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+| `snapshots` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) | repeated |  |
+| `proxied_validators` | [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator) | repeated |  |
 
 
 
