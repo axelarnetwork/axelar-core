@@ -4415,9 +4415,6 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-// 				panic("mock out the GetLatestCounter method")
-// 			},
 // 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
@@ -4443,9 +4440,6 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
-	// GetLatestCounterFunc mocks the GetLatestCounter method.
-	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
-
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
 
@@ -4466,11 +4460,6 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetLatestCounter holds details about calls to the GetLatestCounter method.
-		GetLatestCounter []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -4512,44 +4501,12 @@ type SnapshotterMock struct {
 			KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
 		}
 	}
-	lockGetLatestCounter         sync.RWMutex
 	lockGetLatestSnapshot        sync.RWMutex
 	lockGetOperator              sync.RWMutex
 	lockGetProxy                 sync.RWMutex
 	lockGetSnapshot              sync.RWMutex
 	lockGetValidatorIllegibility sync.RWMutex
 	lockTakeSnapshot             sync.RWMutex
-}
-
-// GetLatestCounter calls GetLatestCounterFunc.
-func (mock *SnapshotterMock) GetLatestCounter(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-	if mock.GetLatestCounterFunc == nil {
-		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetLatestCounter.Lock()
-	mock.calls.GetLatestCounter = append(mock.calls.GetLatestCounter, callInfo)
-	mock.lockGetLatestCounter.Unlock()
-	return mock.GetLatestCounterFunc(ctx)
-}
-
-// GetLatestCounterCalls gets all the calls that were made to GetLatestCounter.
-// Check the length with:
-//     len(mockedSnapshotter.GetLatestCounterCalls())
-func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetLatestCounter.RLock()
-	calls = mock.calls.GetLatestCounter
-	mock.lockGetLatestCounter.RUnlock()
-	return calls
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.

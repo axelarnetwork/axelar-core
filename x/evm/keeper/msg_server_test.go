@@ -640,8 +640,8 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
 		}
 		s = &mock.SnapshotterMock{
-			GetLatestCounterFunc: func(sdk.Context) int64 {
-				return rand.I64Between(50, 100)
+			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
+				return snapshot.Snapshot{Counter: rand.PosI64()}, true
 
 			},
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -696,11 +696,11 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		setup()
 
 		s = &mock.SnapshotterMock{
-			GetLatestCounterFunc: func(sdk.Context) int64 {
+			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
 				if len(s.TakeSnapshotCalls()) > 0 {
-					return rand.I64Between(50, 100)
+					return snapshot.Snapshot{Counter: rand.PosI64()}, true
 				}
-				return -1
+				return snapshot.Snapshot{}, false
 			},
 			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil

@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"time"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -10,9 +9,6 @@ import (
 )
 
 var (
-	// KeyLockingPeriod is the key for the locking period
-	KeyLockingPeriod = []byte("locking")
-
 	// KeyMinProxyBalance is the key for the minimum proxy balance
 	KeyMinProxyBalance = []byte("minproxybalance")
 )
@@ -25,7 +21,6 @@ func KeyTable() params.KeyTable {
 // DefaultParams - the module's default parameters
 func DefaultParams() Params {
 	return Params{
-		LockingPeriod:   1 * time.Nanosecond,
 		MinProxyBalance: 5000000,
 	}
 }
@@ -40,20 +35,8 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyLockingPeriod, &m.LockingPeriod, validateLockingPeriod),
 		params.NewParamSetPair(KeyMinProxyBalance, &m.MinProxyBalance, validateProxyBalance),
 	}
-}
-
-func validateLockingPeriod(period interface{}) error {
-	lock, ok := period.(time.Duration)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for locking period: %T", lock)
-	}
-	if lock < 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "locking period must be greater than 0")
-	}
-	return nil
 }
 
 func validateProxyBalance(balance interface{}) error {
@@ -69,10 +52,6 @@ func validateProxyBalance(balance interface{}) error {
 
 // Validate performs a validation check on the parameters
 func (m Params) Validate() error {
-	if err := validateLockingPeriod(m.LockingPeriod); err != nil {
-		return err
-	}
-
 	if err := validateProxyBalance(m.MinProxyBalance); err != nil {
 		return err
 	}

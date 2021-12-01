@@ -369,20 +369,21 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	seqNo := s.snapshotter.GetLatestCounter(ctx)
-	if seqNo < 0 {
+	snapshot, ok := s.snapshotter.GetLatestSnapshot(ctx)
+	if !ok {
 		keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, exported.Ethereum.KeyType)
 		if !ok {
 			return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), exported.Ethereum.KeyType)
 		}
 
-		snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
+		newSnapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
 		if err != nil {
 			return nil, fmt.Errorf("unable to take snapshot: %v", err)
 		}
 
-		seqNo = snapshot.Counter
+		snapshot = newSnapshot
 	}
+
 	keeper := s.ForChain(req.Name)
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
@@ -404,7 +405,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 	if err := s.voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
-		seqNo,
+		snapshot.Counter,
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
