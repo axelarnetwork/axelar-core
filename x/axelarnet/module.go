@@ -128,14 +128,15 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.keeper, am.nexus, genState)
+	am.keeper.InitGenesis(ctx, am.nexus, &genState)
 
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports a genesis state from the module's keeper
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	return nil
+	genState := am.keeper.ExportGenesis(ctx)
+	return cdc.MustMarshalJSON(genState)
 }
 
 // Route returns the module's route
