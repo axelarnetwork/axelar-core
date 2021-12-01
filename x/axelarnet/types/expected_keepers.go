@@ -23,8 +23,6 @@ type BaseKeeper interface {
 
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, chain string) (string, bool)
-	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (sdk.Coin, bool)
-	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
 	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress)
 	SetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64, value IBCTransfer)

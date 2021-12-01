@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,7 +15,8 @@ import (
 )
 
 var (
-	poolNamePrefix = utils.KeyFromStr("pool")
+	poolNamePrefix      = utils.KeyFromStr("pool")
+	pendingRefundPrefix = utils.KeyFromStr("refund")
 )
 
 var _ types.Rewarder = Keeper{}
@@ -94,4 +96,26 @@ func (k Keeper) setPool(ctx sdk.Context, pool types.Pool) {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// SetPendingRefund saves pending refundable message
+func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, fee sdk.Coin) error {
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
+	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
+	return nil
+}
+
+// GetPendingRefund retrieves a pending refundable message
+func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (sdk.Coin, bool) {
+	var fee sdk.Coin
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
+	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
+
+	return fee, ok
+}
+
+// DeletePendingRefund retrieves a pending refundable message
+func (k Keeper) DeletePendingRefund(ctx sdk.Context, req types.RefundMsgRequest) {
+	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
+	k.getStore(ctx).Delete(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])))
 }

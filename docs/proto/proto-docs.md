@@ -46,8 +46,6 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
-    - [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest)
-    - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest)
@@ -238,6 +236,13 @@
   
 - [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
     - [GenesisState](#reward.v1beta1.GenesisState)
+  
+- [reward/v1beta1/tx.proto](#reward/v1beta1/tx.proto)
+    - [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest)
+    - [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse)
+  
+- [reward/v1beta1/service.proto](#reward/v1beta1/service.proto)
+    - [MsgService](#reward.v1beta1.MsgService)
   
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
@@ -904,38 +909,6 @@ address
 
 
 
-<a name="axelarnet.v1beta1.RefundMsgRequest"></a>
-
-### RefundMsgRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.RefundMsgResponse"></a>
-
-### RefundMsgResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `data` | [bytes](#bytes) |  |  |
-| `log` | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
@@ -1080,7 +1053,6 @@ Msg defines the axelarnet Msg service.
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
-| `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
 
@@ -3490,6 +3462,80 @@ GenesisState represents the genesis state
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/tx.proto
+
+
+
+<a name="reward.v1beta1.RefundMsgRequest"></a>
+
+### RefundMsgRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.RefundMsgResponse"></a>
+
+### RefundMsgResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  |  |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="reward.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the axelarnet Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RefundMsg` | [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse) |  | POST|/reward/refund-message|
 
  <!-- end services -->
 

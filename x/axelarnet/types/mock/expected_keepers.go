@@ -28,9 +28,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
 // 				panic("mock out the DeletePendingIBCTransfer method")
 // 			},
-// 			DeletePendingRefundFunc: func(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest)  {
-// 				panic("mock out the DeletePendingRefund method")
-// 			},
 // 			GetCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string) (string, bool) {
 // 				panic("mock out the GetCosmosChain method")
 // 			},
@@ -45,9 +42,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			},
 // 			GetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool) {
 // 				panic("mock out the GetPendingIBCTransfer method")
-// 			},
-// 			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
-// 				panic("mock out the GetPendingRefund method")
 // 			},
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetRouteTimeoutWindow method")
@@ -83,9 +77,6 @@ type BaseKeeperMock struct {
 	// DeletePendingIBCTransferFunc mocks the DeletePendingIBCTransfer method.
 	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
 
-	// DeletePendingRefundFunc mocks the DeletePendingRefund method.
-	DeletePendingRefundFunc func(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest)
-
 	// GetCosmosChainFunc mocks the GetCosmosChain method.
 	GetCosmosChainFunc func(ctx cosmossdktypes.Context, asset string) (string, bool)
 
@@ -100,9 +91,6 @@ type BaseKeeperMock struct {
 
 	// GetPendingIBCTransferFunc mocks the GetPendingIBCTransfer method.
 	GetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool)
-
-	// GetPendingRefundFunc mocks the GetPendingRefund method.
-	GetPendingRefundFunc func(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest) (cosmossdktypes.Coin, bool)
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
@@ -141,13 +129,6 @@ type BaseKeeperMock struct {
 			// Sequence is the sequence argument value.
 			Sequence uint64
 		}
-		// DeletePendingRefund holds details about calls to the DeletePendingRefund method.
-		DeletePendingRefund []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Req is the req argument value.
-			Req axelarnettypes.RefundMsgRequest
-		}
 		// GetCosmosChain holds details about calls to the GetCosmosChain method.
 		GetCosmosChain []struct {
 			// Ctx is the ctx argument value.
@@ -182,13 +163,6 @@ type BaseKeeperMock struct {
 			ChannelID string
 			// Sequence is the sequence argument value.
 			Sequence uint64
-		}
-		// GetPendingRefund holds details about calls to the GetPendingRefund method.
-		GetPendingRefund []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Req is the req argument value.
-			Req axelarnettypes.RefundMsgRequest
 		}
 		// GetRouteTimeoutWindow holds details about calls to the GetRouteTimeoutWindow method.
 		GetRouteTimeoutWindow []struct {
@@ -254,13 +228,11 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockDeletePendingIBCTransfer   sync.RWMutex
-	lockDeletePendingRefund        sync.RWMutex
 	lockGetCosmosChain             sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
 	lockGetPendingIBCTransfer      sync.RWMutex
-	lockGetPendingRefund           sync.RWMutex
 	lockGetRouteTimeoutWindow      sync.RWMutex
 	lockGetTransactionFeeRate      sync.RWMutex
 	lockLogger                     sync.RWMutex
@@ -311,41 +283,6 @@ func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
 	mock.lockDeletePendingIBCTransfer.RLock()
 	calls = mock.calls.DeletePendingIBCTransfer
 	mock.lockDeletePendingIBCTransfer.RUnlock()
-	return calls
-}
-
-// DeletePendingRefund calls DeletePendingRefundFunc.
-func (mock *BaseKeeperMock) DeletePendingRefund(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest) {
-	if mock.DeletePendingRefundFunc == nil {
-		panic("BaseKeeperMock.DeletePendingRefundFunc: method is nil but BaseKeeper.DeletePendingRefund was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-		Req axelarnettypes.RefundMsgRequest
-	}{
-		Ctx: ctx,
-		Req: req,
-	}
-	mock.lockDeletePendingRefund.Lock()
-	mock.calls.DeletePendingRefund = append(mock.calls.DeletePendingRefund, callInfo)
-	mock.lockDeletePendingRefund.Unlock()
-	mock.DeletePendingRefundFunc(ctx, req)
-}
-
-// DeletePendingRefundCalls gets all the calls that were made to DeletePendingRefund.
-// Check the length with:
-//     len(mockedBaseKeeper.DeletePendingRefundCalls())
-func (mock *BaseKeeperMock) DeletePendingRefundCalls() []struct {
-	Ctx cosmossdktypes.Context
-	Req axelarnettypes.RefundMsgRequest
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-		Req axelarnettypes.RefundMsgRequest
-	}
-	mock.lockDeletePendingRefund.RLock()
-	calls = mock.calls.DeletePendingRefund
-	mock.lockDeletePendingRefund.RUnlock()
 	return calls
 }
 
@@ -521,41 +458,6 @@ func (mock *BaseKeeperMock) GetPendingIBCTransferCalls() []struct {
 	mock.lockGetPendingIBCTransfer.RLock()
 	calls = mock.calls.GetPendingIBCTransfer
 	mock.lockGetPendingIBCTransfer.RUnlock()
-	return calls
-}
-
-// GetPendingRefund calls GetPendingRefundFunc.
-func (mock *BaseKeeperMock) GetPendingRefund(ctx cosmossdktypes.Context, req axelarnettypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
-	if mock.GetPendingRefundFunc == nil {
-		panic("BaseKeeperMock.GetPendingRefundFunc: method is nil but BaseKeeper.GetPendingRefund was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-		Req axelarnettypes.RefundMsgRequest
-	}{
-		Ctx: ctx,
-		Req: req,
-	}
-	mock.lockGetPendingRefund.Lock()
-	mock.calls.GetPendingRefund = append(mock.calls.GetPendingRefund, callInfo)
-	mock.lockGetPendingRefund.Unlock()
-	return mock.GetPendingRefundFunc(ctx, req)
-}
-
-// GetPendingRefundCalls gets all the calls that were made to GetPendingRefund.
-// Check the length with:
-//     len(mockedBaseKeeper.GetPendingRefundCalls())
-func (mock *BaseKeeperMock) GetPendingRefundCalls() []struct {
-	Ctx cosmossdktypes.Context
-	Req axelarnettypes.RefundMsgRequest
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-		Req axelarnettypes.RefundMsgRequest
-	}
-	mock.lockGetPendingRefund.RLock()
-	calls = mock.calls.GetPendingRefund
-	mock.lockGetPendingRefund.RUnlock()
 	return calls
 }
 

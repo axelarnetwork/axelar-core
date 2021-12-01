@@ -1,10 +1,10 @@
 package types
 
 import (
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -40,7 +40,7 @@ type Staking interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 }
 
-// Axelarnet provides access to the axelarnet functionality
-type Axelarnet interface {
-	SetPendingRefund(ctx sdk.Context, req axelarnettypes.RefundMsgRequest, fee sdk.Coin) error
+// Reward provides access to the axelarnet functionality
+type Reward interface {
+	SetPendingRefund(ctx sdk.Context, req rewardtypes.RefundMsgRequest, fee sdk.Coin) error
 }

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +24,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -704,12 +704,11 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 				Topics:  []common.Hash{common.BytesToHash(rand.Bytes(common.HashLength))},
 			})
 		}
-
 	}
 
 	return logs
 }
 
 func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
-	return msg.(*axelarnetTypes.RefundMsgRequest).GetInnerMessage()
+	return msg.(*rewardtypes.RefundMsgRequest).GetInnerMessage()
 }

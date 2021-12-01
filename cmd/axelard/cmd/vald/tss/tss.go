@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,7 +20,6 @@ import (
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -289,7 +289,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	}
 
 	tssMsg := tss.NewHeartBeatRequest(mgr.cliCtx.FromAddress, present)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+	refundableMsg := rewardtypes.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
 	txRes, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
@@ -345,18 +345,18 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 	return abort(stream)
 }
 
-func (mgr *Mgr) extractRefundMsgResponse(res *sdk.TxResponse) (axelarnet.RefundMsgResponse, error) {
+func (mgr *Mgr) extractRefundMsgResponse(res *sdk.TxResponse) (rewardtypes.RefundMsgResponse, error) {
 	var txMsg sdk.TxMsgData
-	var refundReply axelarnet.RefundMsgResponse
+	var refundReply rewardtypes.RefundMsgResponse
 
 	bz, err := hex.DecodeString(res.Data)
 	if err != nil {
-		return axelarnet.RefundMsgResponse{}, err
+		return rewardtypes.RefundMsgResponse{}, err
 	}
 
 	err = mgr.cdc.Unmarshal(bz, &txMsg)
 	if err != nil {
-		return axelarnet.RefundMsgResponse{}, err
+		return rewardtypes.RefundMsgResponse{}, err
 	}
 
 	for _, msg := range txMsg.Data {
@@ -368,7 +368,7 @@ func (mgr *Mgr) extractRefundMsgResponse(res *sdk.TxResponse) (axelarnet.RefundM
 		return refundReply, nil
 	}
 
-	return axelarnet.RefundMsgResponse{}, fmt.Errorf("no refund response found in tx response")
+	return rewardtypes.RefundMsgResponse{}, fmt.Errorf("no refund response found in tx response")
 }
 
 func abort(stream Stream) error {
