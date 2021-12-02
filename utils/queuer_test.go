@@ -192,7 +192,7 @@ func TestNewSequenceKVQueue(t *testing.T) {
 	t.Run("should return false when dequeue idx is out of index", testutils.Func(func(t *testing.T) {
 		ctx, cdc := setup()
 
-		queueSize := rand.I64Between(0, 1000)
+		queueSize := rand.I64Between(2, 1000)
 		itemCount := uint64(rand.I64Between(1, queueSize))
 		items := make([]string, itemCount)
 

@@ -4,7 +4,7 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"sync"
