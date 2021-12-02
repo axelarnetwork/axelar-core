@@ -159,6 +159,23 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
 		asset.Amount.String(), recipient.Address, recipient.Chain.Name))
 
+	// merging all transfers for the specified recipient
+	store := k.getStore(ctx)
+	transfers := k.getPendingTransfersForRecipient(ctx, recipient)
+	merged := mergeTransfersBy(transfers, func(transfer exported.CrossChainTransfer) string {
+		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
+	})
+
+	for _, transfer := range transfers {
+		key := utils.LowerCaseKey(transfer.Recipient.Chain.Name).
+			Append(utils.LowerCaseKey(strconv.FormatUint(transfer.ID, 10)))
+		store.Delete(utils.LowerCaseKey(exported.Pending.String()).Append(key))
+	}
+
+	for _, transfer := range merged {
+		k.setPendingTransfer(ctx, transfer.Recipient, transfer.Asset)
+	}
+
 	return nil
 }
 
@@ -248,6 +265,25 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	return transfers
 }
 
+func (k Keeper) getPendingTransfersForRecipient(ctx sdk.Context, recipient exported.CrossChainAddress) []exported.CrossChainTransfer {
+	transfers := make([]exported.CrossChainTransfer, 0)
+
+	prefix := utils.LowerCaseKey(exported.Pending.String()).Append(utils.LowerCaseKey(recipient.Chain.Name))
+	iter := k.getStore(ctx).Iterator(prefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		var transfer exported.CrossChainTransfer
+		k.cdc.MustUnmarshalLengthPrefixed(bz, &transfer)
+		if recipient == transfer.Recipient {
+			transfers = append(transfers, transfer)
+		}
+	}
+
+	return transfers
+}
+
 func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) types.ChainState {
 	key := chainStatePrefix.Append(utils.LowerCaseKey(chain.Name))
 
@@ -323,4 +359,36 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
 	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
 	k.getStore(ctx).SetRaw(key, []byte(address))
+}
+
+// merges cross chain transfers grouped by the given function
+func mergeTransfersBy(transfers []exported.CrossChainTransfer, groupFn func(transfer exported.CrossChainTransfer) string) []exported.CrossChainTransfer {
+	results := []exported.CrossChainTransfer{}
+	transferAmountByAddressAndAsset := map[string]sdk.Int{}
+
+	for _, transfer := range transfers {
+		id := groupFn(transfer)
+
+		if _, ok := transferAmountByAddressAndAsset[id]; !ok {
+			transferAmountByAddressAndAsset[id] = sdk.ZeroInt()
+		}
+
+		transferAmountByAddressAndAsset[id] = transferAmountByAddressAndAsset[id].Add(transfer.Asset.Amount)
+	}
+
+	seen := map[string]bool{}
+
+	for _, transfer := range transfers {
+		id := groupFn(transfer)
+
+		if seen[id] {
+			continue
+		}
+
+		transfer.Asset.Amount = transferAmountByAddressAndAsset[id]
+		results = append(results, transfer)
+		seen[id] = true
+	}
+
+	return results
 }

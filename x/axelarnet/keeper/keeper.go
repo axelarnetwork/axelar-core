@@ -66,6 +66,14 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
+// GetMinDepositAmount returns the minimum deposit amount
+func (k Keeper) GetMinDepositAmount(ctx sdk.Context) sdk.Int {
+	var result sdk.Int
+	k.params.Get(ctx, types.KeyMinDepositAmount, &result)
+
+	return result
+}
+
 // GetTransactionFeeRate returns the transaction fee rate for axelarnet and cosmos chains
 func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 	var result sdk.Dec

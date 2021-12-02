@@ -136,6 +136,7 @@ type ReqCreateDeployToken struct {
 	TokenName   string       `json:"token_name" yaml:"token_name"`
 	Decimals    string       `json:"decimals" yaml:"decimals"`
 	Capacity    string       `json:"capacity" yaml:"capacity"`
+	MinDeposit  string       `json:"min_deposit" yaml:"min_deposit"`
 }
 
 // ReqCreateBurnTokens represents a request to create commands for all outstanding burns
@@ -394,10 +395,14 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 		if !ok {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
 		}
+		minDeposit, ok := sdk.NewIntFromString(req.MinDeposit)
+		if !ok {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse minimum deposit amount").Error())
+		}
 
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
 		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails)
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, minDeposit)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

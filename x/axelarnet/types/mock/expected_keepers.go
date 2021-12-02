@@ -43,6 +43,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain string) (string, bool) {
 // 				panic("mock out the GetIBCPath method")
 // 			},
+// 			GetMinDepositAmountFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+// 				panic("mock out the GetMinDepositAmount method")
+// 			},
 // 			GetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool) {
 // 				panic("mock out the GetPendingIBCTransfer method")
 // 			},
@@ -97,6 +100,9 @@ type BaseKeeperMock struct {
 
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain string) (string, bool)
+
+	// GetMinDepositAmountFunc mocks the GetMinDepositAmount method.
+	GetMinDepositAmountFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Int
 
 	// GetPendingIBCTransferFunc mocks the GetPendingIBCTransfer method.
 	GetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool)
@@ -171,6 +177,11 @@ type BaseKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// GetMinDepositAmount holds details about calls to the GetMinDepositAmount method.
+		GetMinDepositAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// GetPendingIBCTransfer holds details about calls to the GetPendingIBCTransfer method.
 		GetPendingIBCTransfer []struct {
@@ -259,6 +270,7 @@ type BaseKeeperMock struct {
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
+	lockGetMinDepositAmount        sync.RWMutex
 	lockGetPendingIBCTransfer      sync.RWMutex
 	lockGetPendingRefund           sync.RWMutex
 	lockGetRouteTimeoutWindow      sync.RWMutex
@@ -478,6 +490,37 @@ func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	mock.lockGetIBCPath.RLock()
 	calls = mock.calls.GetIBCPath
 	mock.lockGetIBCPath.RUnlock()
+	return calls
+}
+
+// GetMinDepositAmount calls GetMinDepositAmountFunc.
+func (mock *BaseKeeperMock) GetMinDepositAmount(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+	if mock.GetMinDepositAmountFunc == nil {
+		panic("BaseKeeperMock.GetMinDepositAmountFunc: method is nil but BaseKeeper.GetMinDepositAmount was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinDepositAmount.Lock()
+	mock.calls.GetMinDepositAmount = append(mock.calls.GetMinDepositAmount, callInfo)
+	mock.lockGetMinDepositAmount.Unlock()
+	return mock.GetMinDepositAmountFunc(ctx)
+}
+
+// GetMinDepositAmountCalls gets all the calls that were made to GetMinDepositAmount.
+// Check the length with:
+//     len(mockedBaseKeeper.GetMinDepositAmountCalls())
+func (mock *BaseKeeperMock) GetMinDepositAmountCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetMinDepositAmount.RLock()
+	calls = mock.calls.GetMinDepositAmount
+	mock.lockGetMinDepositAmount.RUnlock()
 	return calls
 }
 

@@ -183,10 +183,17 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 
 	if len(pendingTransfers) == 0 {
+		s.Logger(ctx).Debug("no pending transfers found")
 		return &types.ExecutePendingTransfersResponse{}, nil
 	}
 
+	var transfersToArchive []nexus.CrossChainTransfer
 	for _, pendingTransfer := range pendingTransfers {
+		if pendingTransfer.Asset.Amount.LT(s.GetMinDepositAmount(ctx)) {
+			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
+			continue
+		}
+
 		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 		if err != nil {
 			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
@@ -207,6 +214,15 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 			continue
 		}
 		ctx.Logger().Debug(fmt.Sprintf("successfully sent %s from %s to %s", token, escrowAddress, recipient))
+		transfersToArchive = append(transfersToArchive, pendingTransfer)
+	}
+
+	if len(transfersToArchive) == 0 {
+		s.Logger(ctx).Debug(fmt.Sprintf("no pending transfers ready for processing out of %d total", len(pendingTransfers)))
+		return &types.ExecutePendingTransfersResponse{}, nil
+	}
+
+	for _, pendingTransfer := range transfersToArchive {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 

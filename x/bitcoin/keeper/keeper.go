@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -27,7 +26,6 @@ var (
 	spentOutPointPrefix      = utils.KeyFromStr("spent_")
 	addrInfoPrefix           = utils.KeyFromStr("addr_info")
 	depositAddrPrefix        = utils.KeyFromStr("deposit_addr_")
-	dustAmtPrefix            = utils.KeyFromStr("dust_")
 	signedTxPrefix           = utils.KeyFromStr("signed_tx_")
 	unsignedTxPrefix         = utils.KeyFromStr("unsigned_tx_")
 	latestSignedTxHashPrefix = utils.KeyFromStr("latest_signed_tx_hash_")
@@ -365,29 +363,6 @@ func (k Keeper) GetLatestSignedTxHash(ctx sdk.Context, txType types.TxType) (*ch
 	}
 
 	return txHash, true
-}
-
-// SetDustAmount stores the dust amount for a destination bitcoin address
-func (k Keeper) SetDustAmount(ctx sdk.Context, encodedAddress string, amount btcutil.Amount) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(amount))
-
-	k.getStore(ctx).SetRaw(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)), bz)
-}
-
-// GetDustAmount returns the dust amount for a destination bitcoin address
-func (k Keeper) GetDustAmount(ctx sdk.Context, encodedAddress string) btcutil.Amount {
-	bz := k.getStore(ctx).GetRaw(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
-	if bz == nil {
-		return 0
-	}
-
-	return btcutil.Amount(int64(binary.LittleEndian.Uint64(bz)))
-}
-
-// DeleteDustAmount deletes the dust amount for a destination bitcoin address
-func (k Keeper) DeleteDustAmount(ctx sdk.Context, encodedAddress string) {
-	k.getStore(ctx).Delete(dustAmtPrefix.Append(utils.LowerCaseKey(encodedAddress)))
 }
 
 // SetUnconfirmedAmount stores the unconfirmed amount for the given key ID

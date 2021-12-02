@@ -1498,9 +1498,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 					KeyID:        masterKey.ID,
 				}, true
 			},
-			GetDustAmountFunc:        func(ctx sdk.Context, encodedAddress string) btcutil.Amount { return 0 },
 			GetUnconfirmedAmountFunc: func(ctx sdk.Context, keyID tss.KeyID) btcutil.Amount { return 0 },
-			DeleteDustAmountFunc:     func(ctx sdk.Context, encodedAddress string) {},
 			DeleteOutpointInfoFunc:   func(ctx sdk.Context, outPoint wire.OutPoint) {},
 			SetSpentOutpointInfoFunc: func(ctx sdk.Context, info types.OutPointInfo) {},
 			SetAddressInfoFunc:       func(ctx sdk.Context, address types.AddressInfo) {},

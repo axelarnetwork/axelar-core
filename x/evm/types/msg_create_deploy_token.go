@@ -8,12 +8,13 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, minDeposit sdk.Int) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:       sender,
 		Chain:        chain,
 		Asset:        asset,
 		TokenDetails: tokenDetails,
+		MinDeposit:   minDeposit,
 	}
 }
 

@@ -274,8 +274,8 @@ func (k chainKeeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, true
 }
 
-func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
-	metadata, err := k.initTokenMetadata(ctx, asset, details)
+func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20Token, error) {
+	metadata, err := k.initTokenMetadata(ctx, asset, details, minDeposit)
 	if err != nil {
 		return types.NilToken, err
 	}
@@ -680,7 +680,7 @@ func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (t
 	return result, found
 }
 
-func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20TokenMetadata, error) {
+func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20TokenMetadata, error) {
 	// perform a few checks now, so that it is impossible to get errors later
 	if token := k.GetERC20TokenByAsset(ctx, asset); !token.Is(types.NonExistent) {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("token for asset '%s' already set", asset)
@@ -716,6 +716,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		Details:      details,
 		TokenAddress: types.Address(tokenAddr),
 		ChainID:      sdk.NewIntFromBigInt(chainID),
+		MinDeposit:   minDeposit,
 		Status:       types.Initialized,
 	}
 	k.setTokenMetadata(ctx, asset, meta)

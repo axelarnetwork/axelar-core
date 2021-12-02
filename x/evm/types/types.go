@@ -91,6 +91,11 @@ func (t *ERC20Token) GetDetails() TokenDetails {
 	return t.metadata.Details
 }
 
+// GetMinDeposit returns the minimum deposit amount allowed for the token
+func (t *ERC20Token) GetMinDeposit() sdk.Int {
+	return t.metadata.MinDeposit
+}
+
 // Is returns true if the given status matches the token's status
 func (t *ERC20Token) Is(status Status) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x

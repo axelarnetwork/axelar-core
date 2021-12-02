@@ -953,30 +953,20 @@ func addWithdrawalOutputs(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, tx 
 		addressToTransfers[encodedAddress] = append(addressToTransfers[encodedAddress], transfer)
 	}
 
-	getRecipient := func(transfer nexus.CrossChainTransfer) string {
-		return transfer.Recipient.Address
-	}
-
 	// Combine output to same destination address
-	for _, combinedTransfer := range nexus.MergeTransfersBy(pendingTransfers, getRecipient) {
-		recipient, err := btcutil.DecodeAddress(combinedTransfer.Recipient.Address, network)
+	for _, transfer := range pendingTransfers {
+		recipient, err := btcutil.DecodeAddress(transfer.Recipient.Address, network)
 		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", combinedTransfer.Recipient.Address))
+			k.Logger(ctx).Error(fmt.Sprintf("%s is not a valid address", transfer.Recipient.Address))
 			continue
 		}
 
 		encodedAddress := recipient.EncodeAddress()
-		amount := combinedTransfer.Asset.Amount
+		amount := transfer.Asset.Amount
 
 		// Check if the recipient has unsent dust amount
-		unsentDust := k.GetDustAmount(ctx, encodedAddress)
-		k.DeleteDustAmount(ctx, encodedAddress)
-
-		amount = amount.Add(sdk.NewInt(int64(unsentDust)))
 		if amount.LT(minAmount) {
-			// Set and continue
-			k.SetDustAmount(ctx, encodedAddress, btcutil.Amount(amount.Int64()))
-
+			// Emit event and continue
 			ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeWithdrawal,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueFailed),

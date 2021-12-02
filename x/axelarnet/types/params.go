@@ -19,6 +19,7 @@ var (
 	KeyAssets             = []byte("assetInfo")
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
 	KeyTransactionFeeRate = []byte("transactionFeeRate")
+	KeyMinDepositAmount   = []byte("keyMinDepositAmount")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -31,6 +32,7 @@ func DefaultParams() Params {
 	return Params{
 		SupportedChains:    []string{"Bitcoin", "Ethereum"},
 		RouteTimeoutWindow: 100,
+		MinDeposit:         sdktypes.NewInt(1000000),
 		TransactionFeeRate: sdktypes.NewDecWithPrec(25, 5), // 0.025%
 	}
 }
@@ -48,6 +50,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validateUint64("RouteTimeoutWindow")),
 		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
+		params.NewParamSetPair(KeyMinDepositAmount, &m.MinDeposit, validateMinAmount),
 	}
 }
 
@@ -94,6 +97,19 @@ func validateTransactionFeeRate(i interface{}) error {
 
 	if v.GT(sdktypes.OneDec()) {
 		return fmt.Errorf("transaction fee rate %s must be <= 1", v)
+	}
+
+	return nil
+}
+
+func validateMinAmount(i interface{}) error {
+	v, ok := i.(sdktypes.Int)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if !v.IsPositive() {
+		return fmt.Errorf("transaction fee rate must be positive: %s", v)
 	}
 
 	return nil

@@ -1021,7 +1021,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinDeposit)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
@@ -1215,6 +1215,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 	if len(pendingTransfers) == 0 {
+		s.Logger(ctx).Debug("no pending transfers found")
 		return &types.CreatePendingTransfersResponse{}, nil
 	}
 
@@ -1227,13 +1228,15 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	getRecipientAndAsset := func(transfer nexus.CrossChainTransfer) string {
-		return fmt.Sprintf("%s-%s", transfer.Recipient.Address, transfer.Asset.Denom)
-	}
-	transfers := nexus.MergeTransfersBy(pendingTransfers, getRecipientAndAsset)
-
-	for _, transfer := range transfers {
+	var transfersToArchive []nexus.CrossChainTransfer
+	for _, transfer := range pendingTransfers {
 		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
+		if transfer.Asset.Amount.LT(token.GetMinDeposit()) {
+			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
+				"minimum amount for token %s (%s)", chain.Name, transfer.Recipient.Address, token.GetDetails().TokenName, token.GetDetails().Symbol))
+			continue
+		}
+
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
 		if err != nil {
@@ -1242,12 +1245,18 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
+		transfersToArchive = append(transfersToArchive, transfer)
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
 	}
 
-	for _, pendingTransfer := range pendingTransfers {
+	if len(transfersToArchive) == 0 {
+		s.Logger(ctx).Debug(fmt.Sprintf("no pending transfers ready for processing out of %d total", len(pendingTransfers)))
+		return &types.CreatePendingTransfersResponse{}, nil
+	}
+
+	for _, pendingTransfer := range transfersToArchive {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
