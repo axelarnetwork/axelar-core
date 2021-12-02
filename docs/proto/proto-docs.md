@@ -310,6 +310,8 @@
     - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
+    - [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest)
+    - [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
@@ -350,6 +352,8 @@
     - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
     - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
     - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
+    - [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest)
+    - [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -357,6 +361,7 @@
   
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
+    - [Query](#tss.v1beta1.Query)
   
 - [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
     - [Params](#vote.v1beta1.Params)
@@ -4286,6 +4291,7 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -4379,6 +4385,33 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryGovernanceKeyRequest"></a>
+
+### QueryGovernanceKeyRequest
+QueryGovernanceKeyRequest is the request type for the
+Query/GovernanceKey RPC method
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryGovernanceKeyResponse"></a>
+
+### QueryGovernanceKeyResponse
+QueryGovernanceKeyResponse is the response type for the
+Query/GovernanceKey RPC method
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -4950,6 +4983,32 @@ StartKeygenRequest indicate the start of keygen
 
 
 
+<a name="tss.v1beta1.UpdateGovernanceKeyRequest"></a>
+
+### UpdateGovernanceKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.UpdateGovernanceKeyResponse"></a>
+
+### UpdateGovernanceKeyResponse
+
+
+
+
+
+
+
 <a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
@@ -5053,6 +5112,17 @@ Msg defines the tss Msg service.
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+
+
+<a name="tss.v1beta1.Query"></a>
+
+### Query
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/tss/v1beta1/governance_key|
 
  <!-- end services -->
 

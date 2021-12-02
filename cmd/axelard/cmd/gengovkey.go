@@ -1,0 +1,84 @@
+package cmd
+
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/server"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/spf13/cobra"
+
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+)
+
+// SetMultisigGovernanceCmd returns set-governance-key cobra Command.
+func SetMultisigGovernanceCmd(defaultNodeHome string,
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-governance-key [threshold] [[pubKey]...]",
+		Short: "Set the genesis multisig governance key for the axelar network",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			depCdc := clientCtx.Codec
+			cdc := depCdc.(codec.Codec)
+
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			config := serverCtx.Config
+
+			config.SetRoot(clientCtx.HomeDir)
+
+			threshold, err := strconv.Atoi(args[0])
+			if err != nil {
+				return err
+			}
+
+			var pubKeys []crypto.PubKey
+			for i := 1; i < len(args); i++ {
+				var pk crypto.PubKey
+				err := clientCtx.Codec.UnmarshalInterfaceJSON([]byte(args[i]), &pk)
+				if err != nil {
+					return err
+				}
+
+				pubKeys = append(pubKeys, pk)
+			}
+
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+			genesisTSS := tssTypes.GetGenesisStateFromAppState(cdc, appState)
+
+			multisigPubkey := multisig.NewLegacyAminoPubKey(threshold, pubKeys)
+			genesisTSS.GovernanceKey = *multisigPubkey
+
+			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
+			if err != nil {
+				return fmt.Errorf("failed to marshal tss genesis state: %w", err)
+			}
+
+			appState[tssTypes.ModuleName] = genesisTSSBz
+
+			appStateJSON, err := json.Marshal(appState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal application genesis state: %w", err)
+			}
+			genDoc.AppState = appStateJSON
+
+			return genutil.ExportGenesisFile(genDoc, genFile)
+		},
+	}
+
+	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
+	return cmd
+}

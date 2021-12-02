@@ -40,6 +40,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdGetActiveOldKeysByValidator(queryRoute),
 		GetCmdGetDeactivatedOperators(queryRoute),
 		GetCmdExternalKeyID(queryRoute),
+		GetCmdGovernanceKey(queryRoute),
 	)
 
 	return tssQueryCmd
@@ -401,6 +402,34 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 				return err
 			}
 			return clientCtx.PrintProto(&res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdGovernanceKey returns the governance key of the network
+func GetCmdGovernanceKey(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "governance-key",
+		Short: "Returns the governance key",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.GovernanceKey(cmd.Context(),
+				&types.QueryGovernanceKeyRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
 

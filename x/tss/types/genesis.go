@@ -5,12 +5,16 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // DefaultGenesis represents the default genesis state
 func DefaultGenesis() *GenesisState {
-	return &GenesisState{DefaultParams()}
+	return &GenesisState{
+		Params:        DefaultParams(),
+		GovernanceKey: multisig.LegacyAminoPubKey{},
+	}
 }
 
 // Validate validates the genesis state
@@ -18,6 +22,11 @@ func (m GenesisState) Validate() error {
 	if err := m.Params.Validate(); err != nil {
 		return sdkerrors.Wrap(err, fmt.Sprintf("genesis state for module %s is invalid", ModuleName))
 	}
+
+	if int(m.GovernanceKey.Threshold) > len(m.GovernanceKey.PubKeys) {
+		return fmt.Errorf("threshold k of n multisignature: len(pubKeys) < k")
+	}
+
 	return nil
 }
 

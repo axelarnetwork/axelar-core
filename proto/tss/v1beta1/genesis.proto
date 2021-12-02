@@ -4,7 +4,12 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "tss/v1beta1/params.proto";
+import "cosmos/crypto/multisig/keys.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message GenesisState { Params params = 1 [ (gogoproto.nullable) = false ]; }
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
+      [ (gogoproto.nullable) = false ];
+}

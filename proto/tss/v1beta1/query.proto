@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "tss/exported/v1beta1/types.proto";
 import "tss/tofnd/v1beta1/tofnd.proto";
+import "cosmos/crypto/multisig/keys.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -138,4 +139,18 @@ message QueryNextKeyIDResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
+}
+
+// QueryGovernanceKeyRequest is the request type for the
+// Query/GovernanceKey RPC method
+message QueryGovernanceKeyRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+}
+
+// QueryGovernanceKeyResponse is the response type for the
+// Query/GovernanceKey RPC method
+message QueryGovernanceKeyResponse {
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 1
+      [ (gogoproto.nullable) = false ];
 }
