@@ -12,6 +12,61 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . Poll
 
+// Is checks if the poll is in the given state
+func (m PollMetadata) Is(state PollState) bool {
+	// this special case check is needed, because 0 & x == 0 is true for any x
+	if state == NonExistent {
+		return m.State == NonExistent
+	}
+	return state&m.State == state
+}
+
+// Validate returns an error if the poll metadata is not valid; nil otherwise
+func (m PollMetadata) Validate() error {
+	if err := m.Key.Validate(); err != nil {
+		return err
+	}
+
+	if m.ExpiresAt < -1 {
+		return fmt.Errorf("expires at must be >= -1")
+	}
+
+	if m.VotingThreshold.LTE(utils.ZeroThreshold) || m.VotingThreshold.GT(utils.OneThreshold) {
+		return fmt.Errorf("voting threshold must be >0 and <=1")
+	}
+
+	if m.Is(Completed) == (m.Result == nil) {
+		return fmt.Errorf("completed poll must have result set")
+	}
+
+	if m.Is(NonExistent) {
+		return fmt.Errorf("state cannot be non-existent")
+	}
+
+	if m.MinVoterCount < 0 || m.MinVoterCount > int64(len(m.Voters)) {
+		return fmt.Errorf("invalid min voter count")
+	}
+
+	actualTotalVotingPower := sdk.ZeroInt()
+	for _, voter := range m.Voters {
+		if err := sdk.VerifyAddressFormat(voter.Validator); err != nil {
+			return nil
+		}
+
+		if voter.VotingPower <= 0 {
+			return fmt.Errorf("voter's voting power must be >0")
+		}
+
+		actualTotalVotingPower = actualTotalVotingPower.AddRaw(voter.VotingPower)
+	}
+
+	if !m.TotalVotingPower.Equal(actualTotalVotingPower) {
+		return fmt.Errorf("total voting power mismatch")
+	}
+
+	return nil
+}
+
 // NewPollKey constructor for PollKey without nonce
 func NewPollKey(module string, id string) PollKey {
 	return PollKey{
