@@ -366,9 +366,6 @@
 - [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
     - [Params](#vote.v1beta1.Params)
   
-- [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
-    - [Params](#vote.v1beta1.Params)
-  
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
   
@@ -5126,37 +5123,6 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `GovernanceKey` | [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/tss/v1beta1/governance_key|
-
- <!-- end services -->
-
-
-
-<a name="vote/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## vote/v1beta1/params.proto
-
-
-
-<a name="vote.v1beta1.Params"></a>
-
-### Params
-Params represent the genesis parameters for the module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `default_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
