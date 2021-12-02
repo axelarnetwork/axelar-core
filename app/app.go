@@ -365,7 +365,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		slashingK, tssK,
 	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], snapK, stakingK, rewardK,
+		appCodec, keys[voteTypes.StoreKey], app.getSubspace(voteTypes.ModuleName), snapK, stakingK, rewardK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
@@ -551,6 +551,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
+	paramsKeeper.Subspace(voteTypes.ModuleName)
 
 	return paramsKeeper
 }

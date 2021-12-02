@@ -4,14 +4,12 @@ package vote.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
 
 import "gogoproto/gogo.proto";
-import "vote/v1beta1/params.proto";
-import "vote/exported/v1beta1/types.proto";
+import "utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message GenesisState {
-  Params params = 1 [ (gogoproto.nullable) = false ];
-
-  repeated vote.exported.v1beta1.PollMetadata poll_metadatas = 2
+// Params represent the genesis parameters for the module
+message Params {
+  utils.v1beta1.Threshold default_voting_threshold = 1
       [ (gogoproto.nullable) = false ];
 }

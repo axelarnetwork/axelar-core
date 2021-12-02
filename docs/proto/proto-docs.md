@@ -358,6 +358,9 @@
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
   
+- [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
+    - [Params](#vote.v1beta1.Params)
+  
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
   
@@ -5055,6 +5058,37 @@ Msg defines the tss Msg service.
 
 
 
+<a name="vote/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/params.proto
+
+
+
+<a name="vote.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `default_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="vote/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -5070,7 +5104,8 @@ Msg defines the tss Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `params` | [Params](#vote.v1beta1.Params) |  |  |
+| `poll_metadatas` | [vote.exported.v1beta1.PollMetadata](#vote.exported.v1beta1.PollMetadata) | repeated |  |
 
 
 
