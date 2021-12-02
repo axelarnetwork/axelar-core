@@ -574,6 +574,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		v       *mock.VoterMock
 		n       *mock.NexusMock
 		s       *mock.SnapshotterMock
+		tssk    *mock.TSSMock
 		msg     *types.ConfirmChainRequest
 		voteReq *types.VoteConfirmChainRequest
 		server  types.MsgServiceServer
@@ -647,9 +648,17 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			},
+			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
+				return snapshot.Snapshot{Counter: rand.PosI64()}, nil
+			},
+		}
+		tssk = &mock.TSSMock{
+			GetKeyRequirementFunc: func(sdk.Context, tss.KeyRole, tss.KeyType) (tss.KeyRequirement, bool) {
+				return tss.KeyRequirement{}, true
+			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, &mock.SignerMock{}, v, s)
+		server = keeper.NewMsgServerImpl(basek, tssk, n, &mock.SignerMock{}, v, s)
 	}
 
 	repeats := 20
