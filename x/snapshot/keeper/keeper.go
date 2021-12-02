@@ -446,7 +446,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 		illegibility |= exported.NoProxyRegistered
 	}
 
-	if k.tss.GetTssSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight() {
+	if k.tss.GetSuspendedUntil(ctx, validator.GetOperator()) > ctx.BlockHeight() {
 		illegibility |= exported.TssSuspended
 	}
 

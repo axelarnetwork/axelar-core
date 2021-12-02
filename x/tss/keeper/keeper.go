@@ -28,18 +28,16 @@ var (
 	multiSigKeyPrefix      = utils.KeyFromStr("multi_sig_keygen")
 	externalKeysPrefix     = utils.KeyFromStr("external_key_ids")
 	governanceKey          = utils.KeyFromStr("governance")
+	sigPrefix              = utils.KeyFromStr("sig")
+	validatorStatusPrefix  = utils.KeyFromStr("validator_status")
 	// temporary
-	keyInfoPrefix     = utils.KeyFromStr("info")
-	keygenStartPrefix = utils.KeyFromStr("block_height")
-	availablePrefix   = utils.KeyFromStr("available")
-	presentKeysPrefix = utils.KeyFromStr("present_keys")
-
-	sigPrefix            = utils.KeyFromStr("sig")
-	infoForSigPrefix     = utils.KeyFromStr("info_for_sig")
-	participatePrefix    = utils.KeyFromStr("part")
-	keyTssSuspendedUntil = utils.KeyFromStr("key_tss_suspended_until")
-	sigStatusPrefix      = utils.KeyFromStr("sig_status")
-	multisigSignPrefix   = utils.KeyFromStr("multisig_sign")
+	keyInfoPrefix      = utils.KeyFromStr("info")
+	keygenStartPrefix  = utils.KeyFromStr("block_height")
+	availablePrefix    = utils.KeyFromStr("available")
+	presentKeysPrefix  = utils.KeyFromStr("present_keys")
+	infoForSigPrefix   = utils.KeyFromStr("info_for_sig")
+	participatePrefix  = utils.KeyFromStr("part")
+	multisigSignPrefix = utils.KeyFromStr("multisig_sign")
 
 	multisigKeygenQueue = "multisig_keygen"
 	multisigSignQueue   = "multisig_sign"
@@ -227,23 +225,6 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	k.params.Get(ctx, types.MaxSimultaneousSignShares, &shares)
 
 	return shares
-}
-
-func (k Keeper) setTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress, suspendedUntilBlockNumber int64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(suspendedUntilBlockNumber))
-
-	k.getStore(ctx).SetRaw(keyTssSuspendedUntil.AppendStr(validator.String()), bz)
-}
-
-// GetTssSuspendedUntil returns the block number at which a validator is released from TSS suspension
-func (k Keeper) GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64 {
-	bz := k.getStore(ctx).GetRaw(keyTssSuspendedUntil.AppendStr(validator.String()))
-	if bz == nil {
-		return 0
-	}
-
-	return int64(binary.LittleEndian.Uint64(bz))
 }
 
 // SetAvailableOperator signals that a validator sent an ack

@@ -1277,9 +1277,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetKeyForSigIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-// 				panic("mock out the GetKeyForSigID method")
-// 			},
 // 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
@@ -1331,8 +1328,8 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (int64, bool) {
 // 				panic("mock out the GetSnapshotCounterForKeyID method")
 // 			},
-// 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
-// 				panic("mock out the GetTssSuspendedUntil method")
+// 			GetSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+// 				panic("mock out the GetSuspendedUntil method")
 // 			},
 // 			HasKeygenStartedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool {
 // 				panic("mock out the HasKeygenStarted method")
@@ -1461,9 +1458,6 @@ type TSSKeeperMock struct {
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
 
-	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
-	GetKeyForSigIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
-
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
 	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
 
@@ -1515,8 +1509,8 @@ type TSSKeeperMock struct {
 	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
 	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (int64, bool)
 
-	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
-	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
+	// GetSuspendedUntilFunc mocks the GetSuspendedUntil method.
+	GetSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// HasKeygenStartedFunc mocks the HasKeygenStarted method.
 	HasKeygenStartedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) bool
@@ -1728,13 +1722,6 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetKeyForSigID holds details about calls to the GetKeyForSigID method.
-		GetKeyForSigID []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
 		GetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
@@ -1858,8 +1845,8 @@ type TSSKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
-		GetTssSuspendedUntil []struct {
+		// GetSuspendedUntil holds details about calls to the GetSuspendedUntil method.
+		GetSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Validator is the validator argument value.
@@ -2074,7 +2061,6 @@ type TSSKeeperMock struct {
 	lockGetHeartbeatPeriodInBlocks      sync.RWMutex
 	lockGetInfoForSig                   sync.RWMutex
 	lockGetKey                          sync.RWMutex
-	lockGetKeyForSigID                  sync.RWMutex
 	lockGetKeyRequirement               sync.RWMutex
 	lockGetKeyType                      sync.RWMutex
 	lockGetMaxSimultaneousSignShares    sync.RWMutex
@@ -2092,7 +2078,7 @@ type TSSKeeperMock struct {
 	lockGetSignParticipantsAsJSON       sync.RWMutex
 	lockGetSignParticipantsSharesAsJSON sync.RWMutex
 	lockGetSnapshotCounterForKeyID      sync.RWMutex
-	lockGetTssSuspendedUntil            sync.RWMutex
+	lockGetSuspendedUntil               sync.RWMutex
 	lockHasKeygenStarted                sync.RWMutex
 	lockHasPrivateRecoveryInfo          sync.RWMutex
 	lockIsMultisigKeygenCompleted       sync.RWMutex
@@ -2801,41 +2787,6 @@ func (mock *TSSKeeperMock) GetKeyCalls() []struct {
 	return calls
 }
 
-// GetKeyForSigID calls GetKeyForSigIDFunc.
-func (mock *TSSKeeperMock) GetKeyForSigID(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-	if mock.GetKeyForSigIDFunc == nil {
-		panic("TSSKeeperMock.GetKeyForSigIDFunc: method is nil but TSSKeeper.GetKeyForSigID was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetKeyForSigID.Lock()
-	mock.calls.GetKeyForSigID = append(mock.calls.GetKeyForSigID, callInfo)
-	mock.lockGetKeyForSigID.Unlock()
-	return mock.GetKeyForSigIDFunc(ctx, sigID)
-}
-
-// GetKeyForSigIDCalls gets all the calls that were made to GetKeyForSigID.
-// Check the length with:
-//     len(mockedTSSKeeper.GetKeyForSigIDCalls())
-func (mock *TSSKeeperMock) GetKeyForSigIDCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}
-	mock.lockGetKeyForSigID.RLock()
-	calls = mock.calls.GetKeyForSigID
-	mock.lockGetKeyForSigID.RUnlock()
-	return calls
-}
-
 // GetKeyRequirement calls GetKeyRequirementFunc.
 func (mock *TSSKeeperMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 	if mock.GetKeyRequirementFunc == nil {
@@ -3438,10 +3389,10 @@ func (mock *TSSKeeperMock) GetSnapshotCounterForKeyIDCalls() []struct {
 	return calls
 }
 
-// GetTssSuspendedUntil calls GetTssSuspendedUntilFunc.
-func (mock *TSSKeeperMock) GetTssSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
-	if mock.GetTssSuspendedUntilFunc == nil {
-		panic("TSSKeeperMock.GetTssSuspendedUntilFunc: method is nil but TSSKeeper.GetTssSuspendedUntil was just called")
+// GetSuspendedUntil calls GetSuspendedUntilFunc.
+func (mock *TSSKeeperMock) GetSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+	if mock.GetSuspendedUntilFunc == nil {
+		panic("TSSKeeperMock.GetSuspendedUntilFunc: method is nil but TSSKeeper.GetSuspendedUntil was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
@@ -3450,16 +3401,16 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntil(ctx github_com_cosmos_cosmos_sdk
 		Ctx:       ctx,
 		Validator: validator,
 	}
-	mock.lockGetTssSuspendedUntil.Lock()
-	mock.calls.GetTssSuspendedUntil = append(mock.calls.GetTssSuspendedUntil, callInfo)
-	mock.lockGetTssSuspendedUntil.Unlock()
-	return mock.GetTssSuspendedUntilFunc(ctx, validator)
+	mock.lockGetSuspendedUntil.Lock()
+	mock.calls.GetSuspendedUntil = append(mock.calls.GetSuspendedUntil, callInfo)
+	mock.lockGetSuspendedUntil.Unlock()
+	return mock.GetSuspendedUntilFunc(ctx, validator)
 }
 
-// GetTssSuspendedUntilCalls gets all the calls that were made to GetTssSuspendedUntil.
+// GetSuspendedUntilCalls gets all the calls that were made to GetSuspendedUntil.
 // Check the length with:
-//     len(mockedTSSKeeper.GetTssSuspendedUntilCalls())
-func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
+//     len(mockedTSSKeeper.GetSuspendedUntilCalls())
+func (mock *TSSKeeperMock) GetSuspendedUntilCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
@@ -3467,9 +3418,9 @@ func (mock *TSSKeeperMock) GetTssSuspendedUntilCalls() []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
-	mock.lockGetTssSuspendedUntil.RLock()
-	calls = mock.calls.GetTssSuspendedUntil
-	mock.lockGetTssSuspendedUntil.RUnlock()
+	mock.lockGetSuspendedUntil.RLock()
+	calls = mock.calls.GetSuspendedUntil
+	mock.lockGetSuspendedUntil.RUnlock()
 	return calls
 }
 

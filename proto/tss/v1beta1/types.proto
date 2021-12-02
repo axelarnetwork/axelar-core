@@ -53,3 +53,9 @@ message ExternalKeys {
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
+
+message ValidatorStatus {
+  bytes validator = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  uint64 suspended_until = 2;
+}

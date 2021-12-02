@@ -309,6 +309,7 @@
     - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
     - [MultisigInfo](#tss.v1beta1.MultisigInfo)
     - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
+    - [ValidatorStatus](#tss.v1beta1.ValidatorStatus)
   
 - [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
     - [GenesisState](#tss.v1beta1.GenesisState)
@@ -4410,6 +4411,22 @@ KeyInfo holds information about a key
 
 
 
+
+<a name="tss.v1beta1.ValidatorStatus"></a>
+
+### ValidatorStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `suspended_until` | [uint64](#uint64) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -4441,6 +4458,8 @@ KeyInfo holds information about a key
 | `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
 | `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
 | `external_keys` | [ExternalKeys](#tss.v1beta1.ExternalKeys) | repeated |  |
+| `signatures` | [tss.exported.v1beta1.Signature](#tss.exported.v1beta1.Signature) | repeated |  |
+| `validator_statuses` | [ValidatorStatus](#tss.v1beta1.ValidatorStatus) | repeated |  |
 
 
 

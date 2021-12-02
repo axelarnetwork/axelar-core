@@ -22,6 +22,33 @@ const (
 	KeyIDLengthMax = 256
 )
 
+// Validate validates the given Signature
+func (m Signature) Validate() error {
+	if m.SigID == "" {
+		return fmt.Errorf("sig ID must be set")
+	}
+
+	if m.SigStatus == SigStatus_Unspecified {
+		return fmt.Errorf("sig status must be set")
+	}
+
+	if sig := m.GetSingleSig(); sig != nil {
+		if err := sig.SigKeyPair.Validate(); err != nil {
+			return err
+		}
+	}
+
+	if sig := m.GetMultiSig(); sig != nil {
+		for _, sigKeyPair := range sig.SigKeyPairs {
+			if err := sigKeyPair.Validate(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Validate returns an error if the key is not valid; nil otherwise
 func (m Key) Validate() error {
 	if err := m.ID.Validate(); err != nil {
