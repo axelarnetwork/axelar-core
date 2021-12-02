@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -20,7 +21,6 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -161,5 +161,5 @@ func randomOutpointInfo() btc.OutPointInfo {
 }
 
 func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
-	return msg.(*axelarnet.RefundMsgRequest).GetInnerMessage()
+	return msg.(*rewardtypes.RefundMsgRequest).GetInnerMessage()
 }

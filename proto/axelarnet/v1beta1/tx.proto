@@ -78,18 +78,6 @@ message RegisterAssetRequest {
 
 message RegisterAssetResponse {}
 
-message RefundMsgRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  google.protobuf.Any inner_message = 2
-      [ (cosmos_proto.accepts_interface) = "Refundable" ];
-}
-
-message RefundMsgResponse {
-  bytes data = 1;
-  string log = 2;
-}
-
 // RouteIBCTransfersRequest represents a message to route pending transfers to
 // cosmos based chains
 message RouteIBCTransfersRequest {

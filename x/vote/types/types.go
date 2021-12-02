@@ -110,11 +110,7 @@ func (p *Poll) WithLogger(logger log.Logger) *Poll {
 
 // Is checks if the poll is in the given state
 func (p Poll) Is(state exported.PollState) bool {
-	// this special case check is needed, because 0 & x == 0 is true for any x
-	if state == exported.NonExistent {
-		return p.State == exported.NonExistent
-	}
-	return state&p.State == state
+	return p.PollMetadata.Is(state)
 }
 
 // AllowOverride makes it possible to delete the poll, regardless of which state it is in

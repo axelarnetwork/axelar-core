@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 
+	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -174,7 +174,7 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 			sigID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessSignTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: sigID, Payload: msg}
-		refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+		refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
 		}
@@ -205,7 +205,7 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 
 	key := voting.NewPollKey(tss.ModuleName, sigID)
 	vote := &tss.VoteSigRequest{Sender: mgr.cliCtx.FromAddress, PollKey: key, Result: result}
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
 	_, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err
 }
@@ -238,7 +238,7 @@ func (mgr *Mgr) multiSigSignStart(keyID string, sigID string, shares uint32, pay
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig signatures for sig %s", mgr.principalAddr, sigID))
 	tssMsg := tss.NewSubmitMultisigSignaturesRequest(mgr.cliCtx.FromAddress, sigID, signatures)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing multisig keys msg")

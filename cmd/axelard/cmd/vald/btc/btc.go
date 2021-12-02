@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -58,7 +58,7 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
 	msg := btc.NewVoteConfirmOutpointRequest(mgr.cliCtx.FromAddress, pollKey, outPointInfo.GetOutPoint(), err == nil)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)

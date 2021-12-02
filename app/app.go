@@ -365,7 +365,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		slashingK, tssK,
 	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], snapK, stakingK, rewardK,
+		appCodec, keys[voteTypes.StoreKey], app.getSubspace(voteTypes.ModuleName), snapK, stakingK, rewardK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
@@ -373,7 +373,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName), axelarnetK,
 	)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, bApp.MsgServiceRouter(), bApp.Router(), transferModule, logger)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, transferModule, logger)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
@@ -422,7 +422,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnetModule,
-		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK),
+		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -515,8 +515,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
 		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
-		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, axelarnetK),
+		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
+		ante.NewRestrictedTx(tssK),
 	)
 	app.SetAnteHandler(anteHandler)
 
@@ -551,6 +552,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
+	paramsKeeper.Subspace(voteTypes.ModuleName)
 
 	return paramsKeeper
 }

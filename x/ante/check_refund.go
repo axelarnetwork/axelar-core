@@ -1,13 +1,13 @@
 package ante
 
 import (
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 // CheckRefundFeeDecorator record potential refund for tss and vote txs
@@ -15,17 +15,17 @@ type CheckRefundFeeDecorator struct {
 	registry    cdctypes.InterfaceRegistry
 	ak          antetypes.AccountKeeper
 	staking     types.Staking
-	axelarnet   types.Axelarnet
+	reward      types.Reward
 	snapshotter types.Snapshotter
 }
 
 // NewCheckRefundFeeDecorator constructor for CheckRefundFeeDecorator
-func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, axelarnet types.Axelarnet) CheckRefundFeeDecorator {
+func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, reward types.Reward) CheckRefundFeeDecorator {
 	return CheckRefundFeeDecorator{
 		registry,
 		ak,
 		staking,
-		axelarnet,
+		reward,
 		snapshotter,
 	}
 }
@@ -42,8 +42,8 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 
 		fee := feeTx.GetFee()
 		if len(fee) > 0 {
-			req := msgs[0].(*axelarnetTypes.RefundMsgRequest)
-			err := d.axelarnet.SetPendingRefund(ctx, *req, fee[0])
+			req := msgs[0].(*rewardtypes.RefundMsgRequest)
+			err := d.reward.SetPendingRefund(ctx, *req, fee[0])
 			if err != nil {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
@@ -60,7 +60,7 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 	}
 
 	switch msg := msgs[0].(type) {
-	case *axelarnetTypes.RefundMsgRequest:
+	case *rewardtypes.RefundMsgRequest:
 		if msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
 			// Validator must be bonded
 			sender := msg.GetSigners()[0]
@@ -81,7 +81,7 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 }
 
 func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
-	for _, url := range r.ListImplementations("axelarnet.v1beta1.Refundable") {
+	for _, url := range r.ListImplementations("reward.v1beta1.Refundable") {
 		if targetURL == url {
 			return true
 		}

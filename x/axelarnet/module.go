@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -84,15 +83,14 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger         log.Logger
-	keeper         keeper.Keeper
-	nexus          types.Nexus
-	bank           types.BankKeeper
-	transfer       types.IBCTransferKeeper
-	channel        types.ChannelKeeper
-	account        types.AccountKeeper
-	msgSvcRouter   *baseapp.MsgServiceRouter
-	router         sdk.Router
+	logger   log.Logger
+	keeper   keeper.Keeper
+	nexus    types.Nexus
+	bank     types.BankKeeper
+	transfer types.IBCTransferKeeper
+	channel  types.ChannelKeeper
+	account  types.AccountKeeper
+
 	transferModule transfer.AppModule
 }
 
@@ -104,8 +102,6 @@ func NewAppModule(
 	transfer types.IBCTransferKeeper,
 	channel types.ChannelKeeper,
 	account types.AccountKeeper,
-	msgSvcRouter *baseapp.MsgServiceRouter,
-	router sdk.Router,
 	transferModule transfer.AppModule,
 	logger log.Logger) AppModule {
 	return AppModule{
@@ -117,8 +113,6 @@ func NewAppModule(
 		transfer:       transfer,
 		channel:        channel,
 		account:        account,
-		msgSvcRouter:   msgSvcRouter,
-		router:         router,
 		transferModule: transferModule,
 	}
 }
@@ -146,7 +140,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account, am.msgSvcRouter, am.router))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account))
 }
 
 // QuerierRoute returns this module's query route

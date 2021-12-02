@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -82,7 +82,7 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
 
 	msg := evmTypes.NewVoteConfirmChainRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err
@@ -113,7 +113,7 @@ func (mgr Mgr) ProcessGatewayDeploymentConfirmation(e tmEvents.Event) error {
 	})
 
 	msg := evmTypes.NewVoteConfirmGatewayDeploymentRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
@@ -143,7 +143,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	})
 
 	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err
@@ -171,7 +171,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	})
 
 	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.cliCtx.FromAddress, chain, asset, pollKey, txID, confirmed)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err
@@ -210,7 +210,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 	})
 
 	msg := evmTypes.NewVoteConfirmTransferKeyRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-	refundableMsg := axelarnet.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
+	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err

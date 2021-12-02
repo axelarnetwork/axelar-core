@@ -46,8 +46,6 @@
     - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
     - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
-    - [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest)
-    - [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse)
     - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
     - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
     - [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest)
@@ -239,8 +237,18 @@
 - [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
     - [GenesisState](#reward.v1beta1.GenesisState)
   
+- [reward/v1beta1/tx.proto](#reward/v1beta1/tx.proto)
+    - [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest)
+    - [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse)
+  
+- [reward/v1beta1/service.proto](#reward/v1beta1/service.proto)
+    - [MsgService](#reward.v1beta1.MsgService)
+  
 - [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
     - [Params](#snapshot.v1beta1.Params)
+  
+- [snapshot/v1beta1/types.proto](#snapshot/v1beta1/types.proto)
+    - [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator)
   
 - [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
     - [GenesisState](#snapshot.v1beta1.GenesisState)
@@ -301,6 +309,8 @@
     - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
+    - [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest)
+    - [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
@@ -341,6 +351,8 @@
     - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
     - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
     - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
+    - [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest)
+    - [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -348,6 +360,10 @@
   
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
+    - [Query](#tss.v1beta1.Query)
+  
+- [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
+    - [Params](#vote.v1beta1.Params)
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
@@ -905,38 +921,6 @@ address
 
 
 
-<a name="axelarnet.v1beta1.RefundMsgRequest"></a>
-
-### RefundMsgRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.RefundMsgResponse"></a>
-
-### RefundMsgResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `data` | [bytes](#bytes) |  |  |
-| `log` | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
@@ -1081,7 +1065,6 @@ Msg defines the axelarnet Msg service.
 | `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
-| `RefundMsg` | [RefundMsgRequest](#axelarnet.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelarnet.v1beta1.RefundMsgResponse) |  | POST|/axelar/axelarnet/refund-message|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
 
@@ -3498,6 +3481,80 @@ GenesisState represents the genesis state
 
 
 
+<a name="reward/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/tx.proto
+
+
+
+<a name="reward.v1beta1.RefundMsgRequest"></a>
+
+### RefundMsgRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `inner_message` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.RefundMsgResponse"></a>
+
+### RefundMsgResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  |  |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="reward.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the axelarnet Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RefundMsg` | [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse) |  | POST|/reward/refund-message|
+
+ <!-- end services -->
+
+
+
 <a name="snapshot/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3513,8 +3570,40 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `locking_period` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
 | `min_proxy_balance` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/types.proto
+
+
+
+<a name="snapshot.v1beta1.ProxiedValidator"></a>
+
+### ProxiedValidator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `proxy` | [bytes](#bytes) |  |  |
+| `active` | [bool](#bool) |  |  |
 
 
 
@@ -3546,6 +3635,8 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+| `snapshots` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) | repeated |  |
+| `proxied_validators` | [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator) | repeated |  |
 
 
 
@@ -4179,6 +4270,7 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -4272,6 +4364,33 @@ Params is the parameter set for this module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryGovernanceKeyRequest"></a>
+
+### QueryGovernanceKeyRequest
+QueryGovernanceKeyRequest is the request type for the
+Query/GovernanceKey RPC method
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryGovernanceKeyResponse"></a>
+
+### QueryGovernanceKeyResponse
+QueryGovernanceKeyResponse is the response type for the
+Query/GovernanceKey RPC method
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -4843,6 +4962,32 @@ StartKeygenRequest indicate the start of keygen
 
 
 
+<a name="tss.v1beta1.UpdateGovernanceKeyRequest"></a>
+
+### UpdateGovernanceKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.UpdateGovernanceKeyResponse"></a>
+
+### UpdateGovernanceKeyResponse
+
+
+
+
+
+
+
 <a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
@@ -4946,6 +5091,48 @@ Msg defines the tss Msg service.
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+
+
+<a name="tss.v1beta1.Query"></a>
+
+### Query
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/tss/v1beta1/governance_key|
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/params.proto
+
+
+
+<a name="vote.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `default_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 
@@ -4966,7 +5153,8 @@ Msg defines the tss Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `params` | [Params](#vote.v1beta1.Params) |  |  |
+| `poll_metadatas` | [vote.exported.v1beta1.PollMetadata](#vote.exported.v1beta1.PollMetadata) | repeated |  |
 
 
 

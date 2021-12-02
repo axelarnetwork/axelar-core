@@ -3,11 +3,10 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
 // NewRefundMsgRequest creates a message of type RefundMsgRequest
@@ -63,15 +62,15 @@ func (m RefundMsgRequest) GetSigners() []sdk.AccAddress {
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m RefundMsgRequest) UnpackInterfaces(unpacker cdctypes.AnyUnpacker) error {
 	if m.InnerMessage != nil {
-		var refundableMsg axelarnet.Refundable
+		var refundableMsg exported.Refundable
 		return unpacker.UnpackAny(m.InnerMessage, &refundableMsg)
 	}
 	return nil
 }
 
 // GetInnerMessage unwrap the inner message
-func (m RefundMsgRequest) GetInnerMessage() axelarnet.Refundable {
-	innerMsg, ok := m.InnerMessage.GetCachedValue().(axelarnet.Refundable)
+func (m RefundMsgRequest) GetInnerMessage() exported.Refundable {
+	innerMsg, ok := m.InnerMessage.GetCachedValue().(exported.Refundable)
 	if !ok {
 		return nil
 	}

@@ -62,7 +62,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 func TestPoll_Expiry(t *testing.T) {
 	setup := func() exported.PollMetadata {
 		key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
-		return types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, []exported.Voter{}, sdk.ZeroInt())
+		return types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	}
 	repeats := 20
 	notExpiredStates := []exported.PollState{exported.NonExistent, exported.Pending, exported.Completed, exported.Failed}
@@ -424,7 +424,7 @@ func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
 
 func newRandomPollMetadata() exported.PollMetadata {
 	key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
-	poll := types.NewPollMetaData(key, types.DefaultGenesisState().VotingThreshold, []exported.Voter{}, sdk.ZeroInt())
+	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	poll.ExpiresAt = rand.I64Between(1, 1000000)
 	return poll
 }

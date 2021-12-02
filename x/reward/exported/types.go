@@ -12,3 +12,8 @@ type RewardPool interface {
 	ClearRewards(sdk.ValAddress)
 	ReleaseRewards(sdk.ValAddress) error
 }
+
+// Refundable interface is used to register refundable message
+type Refundable interface {
+	sdk.Msg
+}

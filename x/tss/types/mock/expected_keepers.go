@@ -14,6 +14,7 @@ import (
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	multisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -1267,6 +1268,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetExternalMultisigThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 // 				panic("mock out the GetExternalMultisigThreshold method")
 // 			},
+// 			GetGovernanceKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (multisig.LegacyAminoPubKey, bool) {
+// 				panic("mock out the GetGovernanceKey method")
+// 			},
 // 			GetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 // 				panic("mock out the GetGroupRecoveryInfo method")
 // 			},
@@ -1366,6 +1370,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the SetExternalKeyIDs method")
 // 			},
+// 			SetGovernanceKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisig.LegacyAminoPubKey)  {
+// 				panic("mock out the SetGovernanceKey method")
+// 			},
 // 			SetGroupRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)  {
 // 				panic("mock out the SetGroupRecoveryInfo method")
 // 			},
@@ -1456,6 +1463,9 @@ type TSSKeeperMock struct {
 
 	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
 	GetExternalMultisigThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
+
+	// GetGovernanceKeyFunc mocks the GetGovernanceKey method.
+	GetGovernanceKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (multisig.LegacyAminoPubKey, bool)
 
 	// GetGroupRecoveryInfoFunc mocks the GetGroupRecoveryInfo method.
 	GetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte
@@ -1555,6 +1565,9 @@ type TSSKeeperMock struct {
 
 	// SetExternalKeyIDsFunc mocks the SetExternalKeyIDs method.
 	SetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
+
+	// SetGovernanceKeyFunc mocks the SetGovernanceKey method.
+	SetGovernanceKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisig.LegacyAminoPubKey)
 
 	// SetGroupRecoveryInfoFunc mocks the SetGroupRecoveryInfo method.
 	SetGroupRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)
@@ -1721,6 +1734,11 @@ type TSSKeeperMock struct {
 		}
 		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
 		GetExternalMultisigThreshold []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetGovernanceKey holds details about calls to the GetGovernanceKey method.
+		GetGovernanceKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -1971,6 +1989,13 @@ type TSSKeeperMock struct {
 			// KeyIDs is the keyIDs argument value.
 			KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
+		// SetGovernanceKey holds details about calls to the SetGovernanceKey method.
+		SetGovernanceKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Key is the key argument value.
+			Key multisig.LegacyAminoPubKey
+		}
 		// SetGroupRecoveryInfo holds details about calls to the SetGroupRecoveryInfo method.
 		SetGroupRecoveryInfo []struct {
 			// Ctx is the ctx argument value.
@@ -2100,6 +2125,7 @@ type TSSKeeperMock struct {
 	lockGetCurrentKeyID                  sync.RWMutex
 	lockGetExternalKeyIDs                sync.RWMutex
 	lockGetExternalMultisigThreshold     sync.RWMutex
+	lockGetGovernanceKey                 sync.RWMutex
 	lockGetGroupRecoveryInfo             sync.RWMutex
 	lockGetHeartbeatPeriodInBlocks       sync.RWMutex
 	lockGetInfoForSig                    sync.RWMutex
@@ -2133,6 +2159,7 @@ type TSSKeeperMock struct {
 	lockSelectSignParticipants           sync.RWMutex
 	lockSetAvailableOperator             sync.RWMutex
 	lockSetExternalKeyIDs                sync.RWMutex
+	lockSetGovernanceKey                 sync.RWMutex
 	lockSetGroupRecoveryInfo             sync.RWMutex
 	lockSetInfoForSig                    sync.RWMutex
 	lockSetKey                           sync.RWMutex
@@ -2736,6 +2763,37 @@ func (mock *TSSKeeperMock) GetExternalMultisigThresholdCalls() []struct {
 	mock.lockGetExternalMultisigThreshold.RLock()
 	calls = mock.calls.GetExternalMultisigThreshold
 	mock.lockGetExternalMultisigThreshold.RUnlock()
+	return calls
+}
+
+// GetGovernanceKey calls GetGovernanceKeyFunc.
+func (mock *TSSKeeperMock) GetGovernanceKey(ctx github_com_cosmos_cosmos_sdk_types.Context) (multisig.LegacyAminoPubKey, bool) {
+	if mock.GetGovernanceKeyFunc == nil {
+		panic("TSSKeeperMock.GetGovernanceKeyFunc: method is nil but TSSKeeper.GetGovernanceKey was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetGovernanceKey.Lock()
+	mock.calls.GetGovernanceKey = append(mock.calls.GetGovernanceKey, callInfo)
+	mock.lockGetGovernanceKey.Unlock()
+	return mock.GetGovernanceKeyFunc(ctx)
+}
+
+// GetGovernanceKeyCalls gets all the calls that were made to GetGovernanceKey.
+// Check the length with:
+//     len(mockedTSSKeeper.GetGovernanceKeyCalls())
+func (mock *TSSKeeperMock) GetGovernanceKeyCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetGovernanceKey.RLock()
+	calls = mock.calls.GetGovernanceKey
+	mock.lockGetGovernanceKey.RUnlock()
 	return calls
 }
 
@@ -3925,6 +3983,41 @@ func (mock *TSSKeeperMock) SetExternalKeyIDsCalls() []struct {
 	return calls
 }
 
+// SetGovernanceKey calls SetGovernanceKeyFunc.
+func (mock *TSSKeeperMock) SetGovernanceKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisig.LegacyAminoPubKey) {
+	if mock.SetGovernanceKeyFunc == nil {
+		panic("TSSKeeperMock.SetGovernanceKeyFunc: method is nil but TSSKeeper.SetGovernanceKey was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key multisig.LegacyAminoPubKey
+	}{
+		Ctx: ctx,
+		Key: key,
+	}
+	mock.lockSetGovernanceKey.Lock()
+	mock.calls.SetGovernanceKey = append(mock.calls.SetGovernanceKey, callInfo)
+	mock.lockSetGovernanceKey.Unlock()
+	mock.SetGovernanceKeyFunc(ctx, key)
+}
+
+// SetGovernanceKeyCalls gets all the calls that were made to SetGovernanceKey.
+// Check the length with:
+//     len(mockedTSSKeeper.SetGovernanceKeyCalls())
+func (mock *TSSKeeperMock) SetGovernanceKeyCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Key multisig.LegacyAminoPubKey
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key multisig.LegacyAminoPubKey
+	}
+	mock.lockSetGovernanceKey.RLock()
+	calls = mock.calls.SetGovernanceKey
+	mock.lockSetGovernanceKey.RUnlock()
+	return calls
+}
+
 // SetGroupRecoveryInfo calls SetGroupRecoveryInfoFunc.
 func (mock *TSSKeeperMock) SetGroupRecoveryInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte) {
 	if mock.SetGroupRecoveryInfoFunc == nil {
@@ -4415,9 +4508,6 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetLatestCounterFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-// 				panic("mock out the GetLatestCounter method")
-// 			},
 // 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
@@ -4443,9 +4533,6 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
-	// GetLatestCounterFunc mocks the GetLatestCounter method.
-	GetLatestCounterFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
-
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
 
@@ -4466,11 +4553,6 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetLatestCounter holds details about calls to the GetLatestCounter method.
-		GetLatestCounter []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -4512,44 +4594,12 @@ type SnapshotterMock struct {
 			KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
 		}
 	}
-	lockGetLatestCounter         sync.RWMutex
 	lockGetLatestSnapshot        sync.RWMutex
 	lockGetOperator              sync.RWMutex
 	lockGetProxy                 sync.RWMutex
 	lockGetSnapshot              sync.RWMutex
 	lockGetValidatorIllegibility sync.RWMutex
 	lockTakeSnapshot             sync.RWMutex
-}
-
-// GetLatestCounter calls GetLatestCounterFunc.
-func (mock *SnapshotterMock) GetLatestCounter(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-	if mock.GetLatestCounterFunc == nil {
-		panic("SnapshotterMock.GetLatestCounterFunc: method is nil but Snapshotter.GetLatestCounter was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetLatestCounter.Lock()
-	mock.calls.GetLatestCounter = append(mock.calls.GetLatestCounter, callInfo)
-	mock.lockGetLatestCounter.Unlock()
-	return mock.GetLatestCounterFunc(ctx)
-}
-
-// GetLatestCounterCalls gets all the calls that were made to GetLatestCounter.
-// Check the length with:
-//     len(mockedSnapshotter.GetLatestCounterCalls())
-func (mock *SnapshotterMock) GetLatestCounterCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetLatestCounter.RLock()
-	calls = mock.calls.GetLatestCounter
-	mock.lockGetLatestCounter.RUnlock()
-	return calls
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.

@@ -1,12 +1,12 @@
 package types
 
 import (
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
@@ -22,6 +22,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterExternalKeysRequest{}, "tss/RegisterExternalKey", nil)
 	cdc.RegisterConcrete(&SubmitMultisigPubKeysRequest{}, "tss/SubmitMultisigPubKeys", nil)
 	cdc.RegisterConcrete(&SubmitMultisigSignaturesRequest{}, "tss/SubmitMultisigSignatures", nil)
+	cdc.RegisterConcrete(&UpdateGovernanceKeyRequest{}, "tss/UpdateGovernanceKey", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -37,6 +38,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RegisterExternalKeysRequest{},
 		&SubmitMultisigPubKeysRequest{},
 		&SubmitMultisigSignaturesRequest{},
+		&UpdateGovernanceKeyRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&tofnd.MessageOut_SignResult{},
@@ -46,7 +48,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&KeygenVoteData{},
 	)
 
-	registry.RegisterImplementations((*axelarnet.Refundable)(nil),
+	registry.RegisterImplementations((*reward.Refundable)(nil),
 		&HeartBeatRequest{},
 		&ProcessKeygenTrafficRequest{},
 		&VotePubKeyRequest{},

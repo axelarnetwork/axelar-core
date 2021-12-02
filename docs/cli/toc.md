@@ -143,6 +143,7 @@
       - [active-old-keys-by-validator \[validator address\]](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
       - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
+      - [governance-key](axelard_query_tss_governance-key.md)	 - Returns the governance key
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
       - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
       - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
@@ -165,6 +166,7 @@
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
   - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
   - [set-genesis-vote](axelard_set-genesis-vote.md)	 - Set the genesis parameters for the vote module
+  - [set-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_set-governance-key.md)	 - Set the genesis multisig governance key for the axelar network
   - [start](axelard_start.md)	 - Run the full node
   - [status](axelard_status.md)	 - Query remote node for status
   - [tendermint](axelard_tendermint.md)	 - Tendermint subcommands
@@ -263,6 +265,7 @@
       - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
+      - [update-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_tx_tss_update-governance-key.md)	 - Update the multisig governance key for axelar network
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.

@@ -3,7 +3,6 @@ package axelarnet
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -12,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper, m *baseapp.MsgServiceRouter, r sdk.Router) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, n, b, t, c, a, m, r)
+func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, n, b, t, c, a)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -57,13 +56,6 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully registered asset %s to chain %s", msg.Denom, msg.Chain)
-			}
-			return result, err
-		case *types.RefundMsgRequest:
-			res, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
 			}
 			return result, err
 		case *types.RouteIBCTransfersRequest:

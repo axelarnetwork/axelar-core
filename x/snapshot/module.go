@@ -102,16 +102,14 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	var genState types.GenesisState
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
-
-	InitGenesis(ctx, am.keeper, genState)
+	am.keeper.InitGenesis(ctx, &genState)
 
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports a genesis state from the module's keeper
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.keeper)
-	return cdc.MustMarshalJSON(&genState)
+	return cdc.MustMarshalJSON(am.keeper.ExportGenesis(ctx))
 }
 
 // RegisterServices registers a GRPC query service to respond to the
