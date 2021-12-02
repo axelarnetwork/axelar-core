@@ -13,3 +13,5 @@ lint:
     - tofnd
     - cosmos
     - ibc
+  except:
+    - SERVICE_SUFFIX

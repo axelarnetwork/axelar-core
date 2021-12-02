@@ -4,16 +4,15 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/gorilla/mux"
-
+	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -22,6 +21,7 @@ const (
 	TxKeygenStart          = "start"
 	TxMasterKeyRotate      = "rotate"
 	TxRegisterExternalKeys = "register-external-keys"
+	TxUpdateGovernanceKey  = "update-governance-key"
 
 	QuerySignature                = keeper.QuerySignature
 	QueryKey                      = keeper.QueryKey
@@ -59,12 +59,20 @@ type ReqKeyRotate struct {
 	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
+// ReqUpdateGovernanceKey represents a request to update multisig governance key
+type ReqUpdateGovernanceKey struct {
+	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Threshold int          `json:"threshold" yaml:"threshold"`
+	PubKeys   []string     `json:"pub_keys" yaml:"pub_keys"`
+}
+
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
 	registerTx(GetHandlerKeygenStart(cliCtx), TxKeygenStart)
 	registerTx(GetHandlerKeyRotate(cliCtx), TxMasterKeyRotate, clientUtils.PathVarChain)
 	registerTx(GetHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys, clientUtils.PathVarChain)
+	registerTx(GetHandlerUpdateGovernanceKey(cliCtx), TxUpdateGovernanceKey)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySignature, clientUtils.PathVarSigID)
@@ -195,6 +203,44 @@ func GetHandlerRegisterExternalKeys(cliCtx client.Context) http.HandlerFunc {
 		msg := types.NewRegisterExternalKeysRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], externalKeys...)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerUpdateGovernanceKey returns the handler to update multisig governance key
+func GetHandlerUpdateGovernanceKey(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqUpdateGovernanceKey
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		sender, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		var pubKeys []crypto.PubKey
+		for _, pubKeyStr := range req.PubKeys {
+			var pk crypto.PubKey
+			err := cliCtx.Codec.UnmarshalInterfaceJSON([]byte(pubKeyStr), &pk)
+			if err != nil {
+				return
+			}
+
+			pubKeys = append(pubKeys, pk)
+		}
+
+		msg := types.NewUpdateGovernanceKeyRequest(sender, req.Threshold, pubKeys...)
+		if err := msg.ValidateBasic(); err != nil {
 			return
 		}
 
