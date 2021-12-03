@@ -14,12 +14,14 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	exportedMock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
@@ -47,20 +49,91 @@ func init() {
 	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
 
 	nexusRouter := types.NewRouter()
-	nexusRouter.AddRoute("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
-		if !evmUtil.IsHexAddress(addr.Address) {
-			return fmt.Errorf("not an hex address")
-		}
+	nexusRouter.AddRoute("evm", &exportedMock.HandlerMock{
+		ValidateFunc: func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+			if !evmUtil.IsHexAddress(addr.Address) {
+				return fmt.Errorf("not an hex address")
+			}
 
-		return nil
-	}).AddRoute("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
-		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
-			return err
-		}
+			return nil
+		},
+	}).AddRoute("bitcoin", &exportedMock.HandlerMock{
+		ValidateFunc: func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+			if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
+				return err
+			}
+			return nil
 
-		return nil
+		},
+	}).AddRoute("axelarnet", &exportedMock.HandlerMock{
+		ValidateFunc: func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+			if _, err := sdk.GetFromBech32(addr.Address, "axelar"); err != nil {
+				return err
+			}
+
+			return nil
+		},
 	})
 	keeper.SetRouter(nexusRouter)
+}
+
+func TestValidAddresses(t *testing.T) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	err := keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.NoError(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
+	)
+
+	assert.NoError(t, err)
+}
+
+func TestInvalidAddresses(t *testing.T) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	err := keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "terra1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: rand.StrBetween(10, 30)},
+	)
+
+	assert.Error(t, err)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {
