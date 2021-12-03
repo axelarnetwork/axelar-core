@@ -1,11 +1,14 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	evmUtil "github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -14,6 +17,7 @@ import (
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -44,8 +48,16 @@ func init() {
 
 	nexusRouter := types.NewRouter()
 	nexusRouter.AddRoute("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+		if !evmUtil.IsHexAddress(addr.Address) {
+			return fmt.Errorf("not an hex address")
+		}
+
 		return nil
 	}).AddRoute("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	keeper.SetRouter(nexusRouter)
@@ -280,15 +292,49 @@ func makeRandAmount(denom string) sdk.Coin {
 	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, maxAmount)))
 }
 
-func makeRandAddressesForChain(origin, distination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
+func makeRandAddressesForChain(origin, destination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
+	var addr string
+
+	switch origin.Module {
+	case btcTypes.ModuleName:
+		addr = genBtcAddr()
+	case evmTypes.ModuleName:
+		addr = genEvmAddr()
+	default:
+		panic("unexpected module for origin")
+	}
+
 	sender := exported.CrossChainAddress{
-		Address: rand.Str(addrMaxLength),
+		Address: addr,
 		Chain:   origin,
 	}
+
+	switch destination.Module {
+	case btcTypes.ModuleName:
+		addr = genBtcAddr()
+	case evmTypes.ModuleName:
+		addr = genEvmAddr()
+	default:
+		panic("unexpected module for destination")
+	}
+
 	recipient := exported.CrossChainAddress{
-		Address: rand.Str(addrMaxLength),
-		Chain:   distination,
+		Address: addr,
+		Chain:   destination,
 	}
 
 	return sender, recipient
+}
+
+func genEvmAddr() string {
+	return evmUtil.BytesToAddress(rand.Bytes(evmUtil.AddressLength)).Hex()
+}
+
+func genBtcAddr() string {
+	addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), btcTypes.Testnet3.Params())
+	if err != nil {
+		panic(err)
+	}
+
+	return addr.EncodeAddress()
 }
