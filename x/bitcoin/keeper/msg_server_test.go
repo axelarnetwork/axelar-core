@@ -97,10 +97,11 @@ func TestHandleMsgLink(t *testing.T) {
 					Name:                  chain,
 					NativeAsset:           rand.StrBetween(5, 20),
 					SupportsForeignAssets: true,
+					Module:                rand.Str(10),
 				}, true
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
-			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) {},
+			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) error { return nil },
 		}
 		ctx = rand.Context(nil)
 		msg = randomMsgLink()

@@ -443,7 +443,7 @@ func TestLink_Success(t *testing.T) {
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) {},
+		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) error { return nil },
 		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
@@ -610,7 +610,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
-					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true}, true
+					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true, Module: rand.Str(10)}, true
 				}
 				return nexus.Chain{}, false
 			},

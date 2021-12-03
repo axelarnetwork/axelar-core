@@ -793,6 +793,7 @@ Chain represents the properties of a registered blockchain
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 | `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `module` | [string](#string) |  |  |
 
 
 

@@ -388,6 +388,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		AddRoute(btcTypes.ModuleName, btcKeeper.NewTssHandler(btcK, tssK))
 	tssK.SetRouter(tssRouter)
 
+	nexusRouter := nexusTypes.NewRouter()
+	nexusRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewNexusHandler()).
+		AddRoute(btcTypes.ModuleName, btcKeeper.NewNexusHandler(btcK)).
+		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewNexusHandler())
+	nexusK.SetRouter(nexusRouter)
+
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment

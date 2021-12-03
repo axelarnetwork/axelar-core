@@ -711,7 +711,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
-// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chainName string, denom string)  {
@@ -749,7 +749,7 @@ type NexusMock struct {
 	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chainName string, denom string) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chainName string, denom string)
@@ -1122,7 +1122,7 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
@@ -1138,7 +1138,7 @@ func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported
 	mock.lockLinkAddresses.Lock()
 	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
 	mock.lockLinkAddresses.Unlock()
-	mock.LinkAddressesFunc(ctx, sender, recipient)
+	return mock.LinkAddressesFunc(ctx, sender, recipient)
 }
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.
