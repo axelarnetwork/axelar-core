@@ -127,7 +127,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	if !s.nexus.IsAssetRegistered(ctx, recipientChain.Name, exported.Bitcoin.NativeAsset) {
+	if !s.nexus.IsAssetRegistered(ctx, recipientChain, exported.Bitcoin.NativeAsset) {
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
 	}
 

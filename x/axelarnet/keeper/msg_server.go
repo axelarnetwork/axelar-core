@@ -50,7 +50,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
+	found := s.nexus.IsAssetRegistered(ctx, recipientChain, req.Asset)
 	if !found {
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
@@ -128,7 +128,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			return nil, err
 		}
 
-	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet.Name, req.Token.Denom):
+	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet, req.Token.Denom):
 		// transfer coins from linked address to module account and burn them
 		if err := s.bank.SendCoinsFromAccountToModule(
 			ctx, req.DepositAddress, types.ModuleName, sdk.NewCoins(req.Token),
@@ -241,8 +241,8 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Chain.Name)
 	}
 	s.nexus.SetChain(ctx, req.Chain)
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
-	s.nexus.RegisterAsset(ctx, req.Chain.Name, req.Chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx, req.Chain, req.Chain.NativeAsset)
 
 	s.BaseKeeper.SetCosmosChain(ctx, types.CosmosChain{
 		Name:       req.Chain.Name,
@@ -259,12 +259,13 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequest) (*types.RegisterAssetResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, found := s.nexus.GetChain(ctx, req.Chain); !found {
+	chain, found := s.nexus.GetChain(ctx, req.Chain)
+	if !found {
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
-	s.nexus.RegisterAsset(ctx, req.Chain, req.Denom)
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Denom)
+	s.nexus.RegisterAsset(ctx, chain, req.Denom)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Denom)
 	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Denom, req.Chain)
 
 	return &types.RegisterAssetResponse{}, nil
@@ -416,7 +417,7 @@ func prepareTransfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types
 	case transfer.Asset.Denom == exported.Axelarnet.NativeAsset:
 		token = transfer.Asset
 		sender = types.GetEscrowAddress(transfer.Asset.Denom)
-	case n.IsAssetRegistered(ctx, exported.Axelarnet.Name, transfer.Asset.Denom):
+	case n.IsAssetRegistered(ctx, exported.Axelarnet, transfer.Asset.Denom):
 		if err := b.MintCoins(
 			ctx, types.ModuleName, sdk.NewCoins(transfer.Asset),
 		); err != nil {

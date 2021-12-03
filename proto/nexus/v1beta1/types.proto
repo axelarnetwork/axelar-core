@@ -4,6 +4,7 @@ package nexus.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -15,4 +16,16 @@ message ChainState {
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bool activated = 3;
+  repeated cosmos.base.v1beta1.Coin total = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  repeated string assets = 5 [ (gogoproto.nullable) = false ];
+}
+
+message LinkedAddresses {
+  nexus.exported.v1beta1.CrossChainAddress deposit_address = 1
+      [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.CrossChainAddress recipient_address = 2
+      [ (gogoproto.nullable) = false ];
 }

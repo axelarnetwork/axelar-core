@@ -3,20 +3,13 @@ package types
 import (
 	fmt "fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
 
-	// KeyChains represents the key for the known chains
-	KeyChains = []byte("assetInfo")
 	// KeyChainActivationThreshold represents the key for chain activation threshold
 	KeyChainActivationThreshold = []byte("chainActivationThreshold")
 )
@@ -29,7 +22,6 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		Chains:                   []exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
 		ChainActivationThreshold: utils.NewThreshold(40, 100),
 	}
 }
@@ -44,34 +36,14 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyChains, &m.Chains, validateChains),
 		params.NewParamSetPair(KeyChainActivationThreshold, &m.ChainActivationThreshold, validateChainActivationThreshold),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
-	if err := validateChains(m.Chains); err != nil {
-		return err
-	}
-
 	if err := validateChainActivationThreshold(m.ChainActivationThreshold); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func validateChains(infos interface{}) error {
-	chains, ok := infos.([]exported.Chain)
-	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []exported.Chain{}, infos)
-	}
-
-	for _, c := range chains {
-		if err := c.Validate(); err != nil {
-			return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid chain: %v", err)
-		}
 	}
 
 	return nil

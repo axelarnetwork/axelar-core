@@ -114,8 +114,8 @@ type Nexus interface {
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
-	RegisterAsset(ctx sdk.Context, chainName, denom string)
+	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, denom string)
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }

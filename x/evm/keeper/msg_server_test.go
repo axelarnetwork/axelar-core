@@ -387,7 +387,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
-		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return false },
+		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
 	}
 
 	signer := &mock.SignerMock{
@@ -448,7 +448,7 @@ func TestLink_Success(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
-		IsAssetRegisteredFunc: func(_ sdk.Context, chainName, denom string) bool { return true },
+		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 	}
 	signer := &mock.SignerMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -643,7 +643,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				c, ok := chains[chain]
 				return c, ok
 			},
-			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
 		}
 		s = &mock.SnapshotterMock{
 			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
@@ -1283,7 +1283,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				c, ok := chains[chain]
 				return c, ok
 			},
-			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -1335,7 +1335,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when asset is not registered on the origin chain", testutils.Func(func(t *testing.T) {
 		setup()
-		n.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		n.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 

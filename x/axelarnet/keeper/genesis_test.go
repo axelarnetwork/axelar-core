@@ -41,7 +41,7 @@ func TestGenesis(t *testing.T) {
 					GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 						return nexus.Chain{}, false
 					},
-					RegisterAssetFunc: func(sdk.Context, string, string) {},
+					RegisterAssetFunc: func(sdk.Context, nexus.Chain, string) {},
 				}
 
 				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())

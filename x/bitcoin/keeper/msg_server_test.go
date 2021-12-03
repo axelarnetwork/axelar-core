@@ -100,8 +100,8 @@ func TestHandleMsgLink(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) error { return nil },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 		}
 		ctx = rand.Context(nil)
 		msg = randomMsgLink()
@@ -137,7 +137,7 @@ func TestHandleMsgLink(t *testing.T) {
 
 	t.Run("asset not registered", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))

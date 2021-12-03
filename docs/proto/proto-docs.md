@@ -207,6 +207,10 @@
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
   
+- [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
+    - [ChainState](#nexus.v1beta1.ChainState)
+    - [LinkedAddresses](#nexus.v1beta1.LinkedAddresses)
+  
 - [nexus/v1beta1/genesis.proto](#nexus/v1beta1/genesis.proto)
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
@@ -224,9 +228,6 @@
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
     - [QueryService](#nexus.v1beta1.QueryService)
-  
-- [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
-    - [ChainState](#nexus.v1beta1.ChainState)
   
 - [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
     - [Params](#reward.v1beta1.Params)
@@ -837,6 +838,7 @@ registered blockchain
 | `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `id` | [uint64](#uint64) |  |  |
+| `state` | [TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
 
 
 
@@ -3154,8 +3156,58 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chains` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) | repeated |  |
 | `chain_activation_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/types.proto
+
+
+
+<a name="nexus.v1beta1.ChainState"></a>
+
+### ChainState
+ChainState represents the state of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+| `activated` | [bool](#bool) |  |  |
+| `total` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+| `assets` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LinkedAddresses"></a>
+
+### LinkedAddresses
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
 
 
 
@@ -3187,6 +3239,11 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#nexus.v1beta1.Params) |  |  |
+| `nonce` | [uint64](#uint64) |  |  |
+| `chains` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) | repeated |  |
+| `chain_states` | [ChainState](#nexus.v1beta1.ChainState) | repeated |  |
+| `linked_addresses` | [LinkedAddresses](#nexus.v1beta1.LinkedAddresses) | repeated |  |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
 
 
 
@@ -3366,39 +3423,6 @@ QueryService defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
-
- <!-- end services -->
-
-
-
-<a name="nexus/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## nexus/v1beta1/types.proto
-
-
-
-<a name="nexus.v1beta1.ChainState"></a>
-
-### ChainState
-ChainState represents the state of a registered blockchain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
-| `maintainers` | [bytes](#bytes) | repeated |  |
-| `activated` | [bool](#bool) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

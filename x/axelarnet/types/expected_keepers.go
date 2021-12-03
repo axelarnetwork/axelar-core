@@ -41,9 +41,9 @@ type Nexus interface {
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
-	RegisterAsset(ctx sdk.Context, chainName, denom string)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
+	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, denom string)
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
