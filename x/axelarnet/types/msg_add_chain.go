@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -19,6 +20,7 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset stri
 			NativeAsset:           nativeAsset,
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
+			Module:                types.ModuleName,
 		},
 	}
 }
