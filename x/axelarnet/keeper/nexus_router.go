@@ -9,7 +9,7 @@ import (
 func NewNexusHandler() nexus.Handler {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
 		if _, err := sdk.AccAddressFromBech32(address.Address); err != nil {
-
+			return err
 		}
 
 		return nil

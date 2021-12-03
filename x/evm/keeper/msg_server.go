@@ -258,9 +258,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	symbol := token.GetDetails().Symbol
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
-	s.nexus.LinkAddresses(ctx,
+	err = s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.Hex()},
 		recipient)
+	if err != nil {
+		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
+	}
 
 	burnerInfo := types.BurnerInfo{
 		TokenAddress:     types.Address(tokenAddr),

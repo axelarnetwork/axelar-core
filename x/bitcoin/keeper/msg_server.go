@@ -143,7 +143,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
-	s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
+	err = s.nexus.LinkAddresses(ctx, depositAddressInfo.ToCrossChainAddr(), recipient)
+	if err != nil {
+		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
+	}
+
 	s.SetAddressInfo(ctx, depositAddressInfo)
 	s.SetDepositAddress(ctx, recipient, addr)
 

@@ -57,10 +57,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 	depositAddress := types.NewLinkedAddress(ctx, recipientChain.Name, req.Asset, req.RecipientAddr)
-	s.nexus.LinkAddresses(ctx,
+	if err := s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
 		recipient,
-	)
+	); err != nil {
+		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
