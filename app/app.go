@@ -379,7 +379,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusRouter := nexusTypes.NewRouter()
 	nexusRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewNexusHandler()).
 		AddRoute(btcTypes.ModuleName, btcKeeper.NewNexusHandler(btcK)).
-		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewNexusHandler())
+		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewNexusHandler(axelarnetK))
 	nexusK.SetRouter(nexusRouter)
 
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, transferModule, logger)

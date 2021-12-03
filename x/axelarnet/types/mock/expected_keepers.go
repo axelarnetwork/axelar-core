@@ -28,6 +28,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
 // 				panic("mock out the DeletePendingIBCTransfer method")
 // 			},
+// 			GetCosmosChainAddrPrefixFunc: func(ctx cosmossdktypes.Context, chain string) (string, bool) {
+// 				panic("mock out the GetCosmosChainAddrPrefix method")
+// 			},
 // 			GetCosmosChainByAssetFunc: func(ctx cosmossdktypes.Context, asset string) (string, bool) {
 // 				panic("mock out the GetCosmosChainByAsset method")
 // 			},
@@ -58,6 +61,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
 // 				panic("mock out the RegisterIBCPath method")
 // 			},
+// 			SetCosmosChainAddrPrefixFunc: func(ctx cosmossdktypes.Context, chain string, addPrefix string)  {
+// 				panic("mock out the SetCosmosChainAddrPrefix method")
+// 			},
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
 // 				panic("mock out the SetFeeCollector method")
 // 			},
@@ -73,6 +79,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 type BaseKeeperMock struct {
 	// DeletePendingIBCTransferFunc mocks the DeletePendingIBCTransfer method.
 	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
+
+	// GetCosmosChainAddrPrefixFunc mocks the GetCosmosChainAddrPrefix method.
+	GetCosmosChainAddrPrefixFunc func(ctx cosmossdktypes.Context, chain string) (string, bool)
 
 	// GetCosmosChainByAssetFunc mocks the GetCosmosChainByAsset method.
 	GetCosmosChainByAssetFunc func(ctx cosmossdktypes.Context, asset string) (string, bool)
@@ -104,6 +113,9 @@ type BaseKeeperMock struct {
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
 
+	// SetCosmosChainAddrPrefixFunc mocks the SetCosmosChainAddrPrefix method.
+	SetCosmosChainAddrPrefixFunc func(ctx cosmossdktypes.Context, chain string, addPrefix string)
+
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
 
@@ -122,6 +134,13 @@ type BaseKeeperMock struct {
 			ChannelID string
 			// Sequence is the sequence argument value.
 			Sequence uint64
+		}
+		// GetCosmosChainAddrPrefix holds details about calls to the GetCosmosChainAddrPrefix method.
+		GetCosmosChainAddrPrefix []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain string
 		}
 		// GetCosmosChainByAsset holds details about calls to the GetCosmosChainByAsset method.
 		GetCosmosChainByAsset []struct {
@@ -191,6 +210,15 @@ type BaseKeeperMock struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// SetCosmosChainAddrPrefix holds details about calls to the SetCosmosChainAddrPrefix method.
+		SetCosmosChainAddrPrefix []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain string
+			// AddPrefix is the addPrefix argument value.
+			AddPrefix string
+		}
 		// SetFeeCollector holds details about calls to the SetFeeCollector method.
 		SetFeeCollector []struct {
 			// Ctx is the ctx argument value.
@@ -207,6 +235,7 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockDeletePendingIBCTransfer   sync.RWMutex
+	lockGetCosmosChainAddrPrefix   sync.RWMutex
 	lockGetCosmosChainByAsset      sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
@@ -217,6 +246,7 @@ type BaseKeeperMock struct {
 	lockLogger                     sync.RWMutex
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
+	lockSetCosmosChainAddrPrefix   sync.RWMutex
 	lockSetFeeCollector            sync.RWMutex
 	lockSetPendingIBCTransfer      sync.RWMutex
 }
@@ -261,6 +291,41 @@ func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
 	mock.lockDeletePendingIBCTransfer.RLock()
 	calls = mock.calls.DeletePendingIBCTransfer
 	mock.lockDeletePendingIBCTransfer.RUnlock()
+	return calls
+}
+
+// GetCosmosChainAddrPrefix calls GetCosmosChainAddrPrefixFunc.
+func (mock *BaseKeeperMock) GetCosmosChainAddrPrefix(ctx cosmossdktypes.Context, chain string) (string, bool) {
+	if mock.GetCosmosChainAddrPrefixFunc == nil {
+		panic("BaseKeeperMock.GetCosmosChainAddrPrefixFunc: method is nil but BaseKeeper.GetCosmosChainAddrPrefix was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetCosmosChainAddrPrefix.Lock()
+	mock.calls.GetCosmosChainAddrPrefix = append(mock.calls.GetCosmosChainAddrPrefix, callInfo)
+	mock.lockGetCosmosChainAddrPrefix.Unlock()
+	return mock.GetCosmosChainAddrPrefixFunc(ctx, chain)
+}
+
+// GetCosmosChainAddrPrefixCalls gets all the calls that were made to GetCosmosChainAddrPrefix.
+// Check the length with:
+//     len(mockedBaseKeeper.GetCosmosChainAddrPrefixCalls())
+func (mock *BaseKeeperMock) GetCosmosChainAddrPrefixCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain string
+	}
+	mock.lockGetCosmosChainAddrPrefix.RLock()
+	calls = mock.calls.GetCosmosChainAddrPrefix
+	mock.lockGetCosmosChainAddrPrefix.RUnlock()
 	return calls
 }
 
@@ -607,6 +672,45 @@ func (mock *BaseKeeperMock) RegisterIBCPathCalls() []struct {
 	mock.lockRegisterIBCPath.RLock()
 	calls = mock.calls.RegisterIBCPath
 	mock.lockRegisterIBCPath.RUnlock()
+	return calls
+}
+
+// SetCosmosChainAddrPrefix calls SetCosmosChainAddrPrefixFunc.
+func (mock *BaseKeeperMock) SetCosmosChainAddrPrefix(ctx cosmossdktypes.Context, chain string, addPrefix string) {
+	if mock.SetCosmosChainAddrPrefixFunc == nil {
+		panic("BaseKeeperMock.SetCosmosChainAddrPrefixFunc: method is nil but BaseKeeper.SetCosmosChainAddrPrefix was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		Chain     string
+		AddPrefix string
+	}{
+		Ctx:       ctx,
+		Chain:     chain,
+		AddPrefix: addPrefix,
+	}
+	mock.lockSetCosmosChainAddrPrefix.Lock()
+	mock.calls.SetCosmosChainAddrPrefix = append(mock.calls.SetCosmosChainAddrPrefix, callInfo)
+	mock.lockSetCosmosChainAddrPrefix.Unlock()
+	mock.SetCosmosChainAddrPrefixFunc(ctx, chain, addPrefix)
+}
+
+// SetCosmosChainAddrPrefixCalls gets all the calls that were made to SetCosmosChainAddrPrefix.
+// Check the length with:
+//     len(mockedBaseKeeper.SetCosmosChainAddrPrefixCalls())
+func (mock *BaseKeeperMock) SetCosmosChainAddrPrefixCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	Chain     string
+	AddPrefix string
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		Chain     string
+		AddPrefix string
+	}
+	mock.lockSetCosmosChainAddrPrefix.RLock()
+	calls = mock.calls.SetCosmosChainAddrPrefix
+	mock.lockSetCosmosChainAddrPrefix.RUnlock()
 	return calls
 }
 

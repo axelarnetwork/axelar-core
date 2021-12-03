@@ -30,6 +30,8 @@ type BaseKeeper interface {
 	GetCosmosChains(ctx sdk.Context) []string
 	RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string)
 	GetCosmosChainByAsset(ctx sdk.Context, asset string) (string, bool)
+	SetCosmosChainAddrPrefix(ctx sdk.Context, chain, addPrefix string)
+	GetCosmosChainAddrPrefix(ctx sdk.Context, chain string) (string, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

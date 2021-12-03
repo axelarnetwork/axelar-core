@@ -874,6 +874,7 @@ to nexus
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `addr_prefix` | [string](#string) |  |  |
 
 
 

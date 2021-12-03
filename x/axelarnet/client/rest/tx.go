@@ -2,13 +2,14 @@ package rest
 
 import (
 	"encoding/hex"
+	"net/http"
+
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -58,6 +59,7 @@ type ReqAddCosmosBasedChain struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
+	AddrPrefix  string       `json:"addr_prefix" yaml:"addr_prefix"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain
@@ -228,7 +230,7 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset)
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

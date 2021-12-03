@@ -61,7 +61,13 @@ func init() {
 
 		return nil
 	}).AddRoute("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
-		if _, err := sdk.GetFromBech32(addr.Address, "axelar"); err != nil {
+		bz, err := sdk.GetFromBech32(addr.Address, "axelar")
+		if err != nil {
+			return err
+		}
+
+		err = sdk.VerifyAddressFormat(bz)
+		if err != nil {
 			return err
 		}
 
