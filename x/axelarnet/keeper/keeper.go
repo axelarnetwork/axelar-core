@@ -230,7 +230,7 @@ func (k Keeper) SetCosmosChainAddrPrefix(ctx sdk.Context, chain, addPrefix strin
 func (k Keeper) GetCosmosChainAddrPrefix(ctx sdk.Context, chain string) (string, bool) {
 	key := addrPrefixPrefix.Append(utils.LowerCaseKey(chain))
 	bz := k.getStore(ctx).GetRaw(key)
-	if bz != nil {
+	if bz == nil {
 		return "", false
 	}
 	return string(bz), true
