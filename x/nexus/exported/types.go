@@ -6,16 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-//go:generate moq -out ./mock/handler.go -pkg mock . Handler
-
 // Handler defines a function that handles address verification upon a request to link addresses
-type Handler interface {
-	Validate(ctx sdk.Context, address CrossChainAddress) error
-	With(properties ...HandlerProperty) Handler
-}
-
-// HandlerProperty is a modifier for Handler. It should never be manually initialized
-type HandlerProperty func(handler Handler) Handler
+type Handler func(ctx sdk.Context, address CrossChainAddress) error
 
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
