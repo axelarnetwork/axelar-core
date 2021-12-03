@@ -17,6 +17,7 @@ import (
 var (
 	pathPrefix         = utils.KeyFromStr("path")
 	transferPrefix     = utils.KeyFromStr("transfer")
+	addrPrefixPrefix   = utils.KeyFromStr("addr_prefix")
 	cosmosChainPrefix  = utils.KeyFromStr("cosmos_chain")
 	chainByAssetPrefix = utils.KeyFromStr("chain_by_asset")
 	assetByChainPrefix = utils.KeyFromStr("asset_by_chain")
@@ -217,6 +218,22 @@ func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 	}
 
 	return bz, true
+}
+
+// SetCosmosChainAddrPrefix sets the address prefix for the given cosmos chain
+func (k Keeper) SetCosmosChainAddrPrefix(ctx sdk.Context, chain, addPrefix string) {
+	key := addrPrefixPrefix.Append(utils.LowerCaseKey(chain))
+	k.getStore(ctx).SetRaw(key, []byte(addPrefix))
+}
+
+// GetCosmosChainAddrPrefix gets the address prefix of the given cosmos chain
+func (k Keeper) GetCosmosChainAddrPrefix(ctx sdk.Context, chain string) (string, bool) {
+	key := addrPrefixPrefix.Append(utils.LowerCaseKey(chain))
+	bz := k.getStore(ctx).GetRaw(key)
+	if bz != nil {
+		return "", false
+	}
+	return string(bz), true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

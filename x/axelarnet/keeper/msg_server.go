@@ -227,6 +227,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	s.nexus.SetChain(ctx, req.Chain)
 	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
 	s.nexus.RegisterAsset(ctx, req.Chain.Name, req.Chain.NativeAsset)
+	s.SetCosmosChainAddrPrefix(ctx, req.Chain.Name, req.AddrPrefix)
 
 	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name)
 	return &types.AddCosmosBasedChainResponse{}, nil
