@@ -139,7 +139,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	if handler == nil {
 		return fmt.Errorf("unknown module for sender's chain %s", sender.Chain.String())
 	}
-	if err := handler.Validate(ctx, sender); err != nil {
+	if err := handler(ctx, sender); err != nil {
 		return err
 	}
 
@@ -147,7 +147,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	if handler == nil {
 		return fmt.Errorf("unknown module for recipient's chain %s", recipient.Chain.String())
 	}
-	if err := handler.Validate(ctx, recipient); err != nil {
+	if err := handler(ctx, recipient); err != nil {
 		return err
 	}
 

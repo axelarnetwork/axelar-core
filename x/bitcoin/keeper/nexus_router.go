@@ -8,25 +8,11 @@ import (
 
 // NewNexusHandler returns the handler for validating bitcoin addresses
 func NewNexusHandler(k Keeper) nexus.Handler {
-	return &handler{keeper: k}
-}
+	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
+		if _, err := btcutil.DecodeAddress(address.Address, k.GetNetwork(ctx).Params()); err != nil {
+			return err
+		}
 
-type handler struct {
-	keeper Keeper
-}
-
-func (h *handler) Validate(ctx sdk.Context, address nexus.CrossChainAddress) error {
-	if _, err := btcutil.DecodeAddress(address.Address, h.keeper.GetNetwork(ctx).Params()); err != nil {
-		return err
+		return nil
 	}
-
-	return nil
-}
-
-func (h *handler) With(properties ...nexus.HandlerProperty) nexus.Handler {
-	var newHandler nexus.Handler = h
-	for _, property := range properties {
-		newHandler = property(newHandler)
-	}
-	return newHandler
 }
