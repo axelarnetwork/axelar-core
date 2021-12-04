@@ -135,7 +135,7 @@ func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
 
 // LinkAddresses links a sender address to a cross-chain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
-	handler := k.GetRouter().GetRoute(sender.Chain.Module)
+	handler := k.GetRouter().GetAddressValidator(sender.Chain.Module)
 	if handler == nil {
 		return fmt.Errorf("unknown module for sender's chain %s", sender.Chain.String())
 	}
@@ -143,7 +143,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 		return err
 	}
 
-	handler = k.GetRouter().GetRoute(recipient.Chain.Module)
+	handler = k.GetRouter().GetAddressValidator(recipient.Chain.Module)
 	if handler == nil {
 		return fmt.Errorf("unknown module for recipient's chain %s", recipient.Chain.String())
 	}

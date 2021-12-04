@@ -60,6 +60,7 @@ func TestGenesis(t *testing.T) {
 				for i := range initialGenesis.Chains {
 					assert.Equal(t, initialGenesis.Chains[i].Name, exportedGenesis.Chains[i].Name)
 					assert.Equal(t, initialGenesis.Chains[i].IBCPath, exportedGenesis.Chains[i].IBCPath)
+					assert.Equal(t, initialGenesis.Chains[i].AddrPrefix, exportedGenesis.Chains[i].AddrPrefix)
 					assert.ElementsMatch(t, initialGenesis.Chains[i].Assets, exportedGenesis.Chains[i].Assets)
 				}
 			}).Run(t, 10)

@@ -29,14 +29,16 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 // ExportGenesis returns the reward module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	var chains []types.CosmosChain
-	for _, chain := range k.GetCosmosChains(ctx) {
-		ibcPath, _ := k.GetIBCPath(ctx, chain)
-		assets := k.getAssets(ctx, chain)
+	for _, chainName := range k.GetCosmosChains(ctx) {
+		ibcPath, _ := k.GetIBCPath(ctx, chainName)
+		assets := k.getAssets(ctx, chainName)
+		chain, _ := k.GetCosmosChainByName(ctx, chainName)
 
 		chains = append(chains, types.CosmosChain{
-			Name:    chain,
-			Assets:  assets,
-			IBCPath: ibcPath,
+			Name:       chainName,
+			Assets:     assets,
+			IBCPath:    ibcPath,
+			AddrPrefix: chain.AddrPrefix,
 		})
 	}
 

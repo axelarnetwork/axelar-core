@@ -48,19 +48,19 @@ func init() {
 	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
 
 	nexusRouter := types.NewRouter()
-	nexusRouter.AddRoute("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+	nexusRouter.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
 		if !evmUtil.IsHexAddress(addr.Address) {
 			return fmt.Errorf("not an hex address")
 		}
 
 		return nil
-	}).AddRoute("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
 		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
 			return err
 		}
 
 		return nil
-	}).AddRoute("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
 		bz, err := sdk.GetFromBech32(addr.Address, "axelar")
 		if err != nil {
 			return err
