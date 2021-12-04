@@ -574,6 +574,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		v       *mock.VoterMock
 		n       *mock.NexusMock
 		s       *mock.SnapshotterMock
+		tssk    *mock.TSSMock
 		msg     *types.ConfirmChainRequest
 		voteReq *types.VoteConfirmChainRequest
 		server  types.MsgServiceServer
@@ -623,8 +624,13 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(vote.PollState) bool {
-						return true
+					IsFunc: func(state vote.PollState) bool {
+						switch state {
+						case vote.Pending:
+							return true
+						default:
+							return false
+						}
 					},
 				}
 			},
@@ -640,16 +646,24 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return false },
 		}
 		s = &mock.SnapshotterMock{
-			GetLatestCounterFunc: func(sdk.Context) int64 {
-				return rand.I64Between(50, 100)
+			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
+				return snapshot.Snapshot{Counter: rand.PosI64()}, true
 
 			},
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			},
+			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
+				return snapshot.Snapshot{Counter: rand.PosI64()}, nil
+			},
+		}
+		tssk = &mock.TSSMock{
+			GetKeyRequirementFunc: func(sdk.Context, tss.KeyRole, tss.KeyType) (tss.KeyRequirement, bool) {
+				return tss.KeyRequirement{}, true
+			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, &mock.SignerMock{}, v, s)
+		server = keeper.NewMsgServerImpl(basek, tssk, n, &mock.SignerMock{}, v, s)
 	}
 
 	repeats := 20
@@ -696,11 +710,11 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		setup()
 
 		s = &mock.SnapshotterMock{
-			GetLatestCounterFunc: func(sdk.Context) int64 {
+			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
 				if len(s.TakeSnapshotCalls()) > 0 {
-					return rand.I64Between(50, 100)
+					return snapshot.Snapshot{Counter: rand.PosI64()}, true
 				}
-				return -1
+				return snapshot.Snapshot{}, false
 			},
 			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
@@ -793,8 +807,13 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
 						return nil
 					},
-					IsFunc: func(vote.PollState) bool {
-						return true
+					IsFunc: func(state vote.PollState) bool {
+						switch state {
+						case vote.Pending:
+							return true
+						default:
+							return false
+						}
 					},
 				}
 			},

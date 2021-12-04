@@ -1,31 +1,44 @@
 package types
 
 import (
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
+	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+// NewGenesisState is the constructor for GenesisState
+func NewGenesisState(params Params, pollMetadatas []exported.PollMetadata) *GenesisState {
+	return &GenesisState{
+		Params:        params,
+		PollMetadatas: pollMetadatas,
+	}
+}
 
 // DefaultGenesisState represents the default genesis state
 func DefaultGenesisState() *GenesisState {
-	return &GenesisState{
-		VotingThreshold: utils.Threshold{
-			Numerator:   2,
-			Denominator: 3,
-		},
-	}
+	return NewGenesisState(DefaultParams(), []exported.PollMetadata{})
 }
 
 // Validate validates the genesis state
 func (m GenesisState) Validate() error {
-	if m.VotingThreshold.Numerator < 0 || m.VotingThreshold.Denominator <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting threshold must contain positive integers")
+	if err := m.Params.Validate(); err != nil {
+		return getValidateError(err)
 	}
 
-	if m.VotingThreshold.Numerator > m.VotingThreshold.Denominator {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting threshold must be lesser than or equal to 1")
+	for _, pollMetadata := range m.PollMetadatas {
+		if pollMetadata.Is(exported.Pending) {
+			return getValidateError(fmt.Errorf("state of poll metadata %s is pending", pollMetadata.Key.String()))
+		}
+
+		if err := pollMetadata.Validate(); err != nil {
+			return getValidateError(err)
+		}
 	}
 
 	return nil
+}
+
+func getValidateError(err error) error {
+	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }

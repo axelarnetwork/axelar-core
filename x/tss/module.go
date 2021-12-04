@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -64,7 +65,10 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
 }
 
 // GetTxCmd returns all CLI tx commands for this module
@@ -135,7 +139,8 @@ func (AppModule) QuerierRoute() string {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 // LegacyQuerierHandler returns this module's Querier.

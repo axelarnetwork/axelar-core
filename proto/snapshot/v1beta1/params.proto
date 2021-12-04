@@ -8,8 +8,4 @@ import "google/protobuf/duration.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
-message Params {
-  google.protobuf.Duration locking_period = 1
-      [ (gogoproto.nullable) = false, (gogoproto.stdduration) = true ];
-  int64 min_proxy_balance = 2;
-}
+message Params { int64 min_proxy_balance = 1; }

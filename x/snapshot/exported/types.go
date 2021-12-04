@@ -3,7 +3,9 @@ package exported
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +18,78 @@ import (
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss
+
+// NewSnapshot is the constructor of Snapshot
+func NewSnapshot(
+	validators []Validator,
+	timestamp time.Time,
+	height int64,
+	totalShareCount sdk.Int,
+	counter int64,
+	keyShareDistributionPolicy tss.KeyShareDistributionPolicy,
+	corruptionThreshold int64,
+) Snapshot {
+	return Snapshot{
+		Validators:                 validators,
+		Timestamp:                  timestamp,
+		Height:                     height,
+		TotalShareCount:            totalShareCount,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: keyShareDistributionPolicy,
+		CorruptionThreshold:        corruptionThreshold,
+	}
+}
+
+// Validate returns an error if the snapshot is not valid; nil otherwise
+func (m Snapshot) Validate() error {
+	if len(m.Validators) == 0 {
+		return fmt.Errorf("missing validators")
+	}
+
+	expectedTotalShareCount := sdk.ZeroInt()
+	for _, validator := range m.Validators {
+		if err := validator.Validate(); err != nil {
+			return err
+		}
+
+		expectedTotalShareCount = expectedTotalShareCount.AddRaw(validator.ShareCount)
+	}
+
+	if m.Height < 0 {
+		return fmt.Errorf("height must be >=0")
+	}
+
+	if !m.TotalShareCount.Equal(expectedTotalShareCount) {
+		return fmt.Errorf("invalid total share count")
+	}
+
+	if m.Counter < 0 {
+		return fmt.Errorf("counter must be >=0")
+	}
+
+	if m.KeyShareDistributionPolicy == tss.Unspecified {
+		return fmt.Errorf("unspecified key distribution policy")
+	}
+
+	if m.CorruptionThreshold < 0 || m.CorruptionThreshold >= m.TotalShareCount.Int64() {
+		return fmt.Errorf("invalid corruption threshold: %d, total share count: %d", m.CorruptionThreshold, m.TotalShareCount.Int64())
+	}
+
+	return nil
+}
+
+// Validate returns an error if the validator is not valid; nil otherwise
+func (m Validator) Validate() error {
+	if m.SDKValidator == nil {
+		return fmt.Errorf("missing SDK validator")
+	}
+
+	if m.ShareCount <= 0 {
+		return fmt.Errorf("share count must be >0")
+	}
+
+	return nil
+}
 
 // SDKValidator is an interface for a Cosmos validator account
 type SDKValidator interface {
@@ -130,7 +204,6 @@ func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
-	GetLatestCounter(ctx sdk.Context) int64
 	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress

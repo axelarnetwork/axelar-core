@@ -531,3 +531,4 @@ func QueryExternalKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chain
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
+

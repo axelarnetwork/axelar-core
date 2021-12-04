@@ -8,6 +8,7 @@ import "tss/exported/v1beta1/types.proto";
 import "tss/v1beta1/types.proto";
 import "tss/tofnd/v1beta1/tofnd.proto";
 import "vote/exported/v1beta1/types.proto";
+import "cosmos/crypto/multisig/keys.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -136,3 +137,12 @@ message SubmitMultisigSignaturesRequest {
 }
 
 message SubmitMultisigSignaturesResponse {}
+
+message UpdateGovernanceKeyRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
+      [ (gogoproto.nullable) = false ];
+}
+
+message UpdateGovernanceKeyResponse {}

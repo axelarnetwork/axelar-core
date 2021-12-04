@@ -81,7 +81,6 @@ func TestSnapshots(t *testing.T) {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
 			staker := newMockStaker(validators...)
-			var counter int64 = 0
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
 			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
@@ -127,41 +126,29 @@ func TestSnapshots(t *testing.T) {
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
 				addr := rand.AccAddr()
-				_ = snapshotKeeper.RegisterProxy(ctx, v.GetOperator(), addr)
+				_ = snapshotKeeper.ActivateProxy(ctx, v.GetOperator(), addr)
 			}
 
 			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
-
 			assert.False(t, ok)
-			assert.Equal(t, int64(-1), snapshotKeeper.GetLatestCounter(ctx))
 
 			_, ok = snapshotKeeper.GetLatestSnapshot(ctx)
-
 			assert.False(t, ok)
 
 			snapshot, err := snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-
 			assert.NoError(t, err)
-			assert.Equal(t, int64(0), snapshotKeeper.GetLatestCounter(ctx))
+
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
 			}
 
 			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-			assert.Error(t, err)
-
-			ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.DefaultParams().LockingPeriod + 100))
-
-			counter++
-			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-
 			assert.NoError(t, err)
 
 			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 1)
 
 			assert.True(t, ok)
-			assert.Equal(t, snapshotKeeper.GetLatestCounter(ctx), int64(1))
 			for i, val := range validators {
 				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
 				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
@@ -204,7 +191,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy)
 
 		assert.NoError(t, err)
 		proxy, active := snapshotKeeper.GetProxy(ctx, principalAddress)
@@ -216,7 +203,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("same addresses", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := snapshotKeeper.RegisterProxy(ctx, expectedProxy.Bytes(), expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, expectedProxy.Bytes(), expectedProxy)
 
 		assert.Error(t, err)
 	}).Repeat(20))
@@ -226,7 +213,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 		address := rand.ValAddr()
 		proxy := rand.AccAddr()
-		err := snapshotKeeper.RegisterProxy(ctx, address, proxy)
+		err := snapshotKeeper.ActivateProxy(ctx, address, proxy)
 
 		assert.Error(t, err)
 
@@ -242,7 +229,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			return sdk.NewCoin("uaxl", sdk.ZeroInt())
 		}
 
-		err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy)
+		err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy)
 
 		assert.Error(t, err)
 
@@ -277,7 +264,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
-		if err := snapshotKeeper.RegisterProxy(ctx, principalAddress, expectedProxy); err != nil {
+		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {
 			panic(fmt.Sprintf("setup failed for unit test: %v", err))
 		}
 	}

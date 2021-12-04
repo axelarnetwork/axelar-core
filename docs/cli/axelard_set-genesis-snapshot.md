@@ -9,8 +9,8 @@ axelard set-genesis-snapshot [flags]
 ### Options
 
 ```
-  -h, --help                      help for set-genesis-snapshot
-      --locking-period duration   Locking period for the snapshot module (e.g., "6h"). (default 1ns)
+  -h, --help                    help for set-genesis-snapshot
+      --min-proxy-balance int   minimum balance required for a proxy address to be registered (default 5000000)
 ```
 
 ### Options inherited from parent commands
