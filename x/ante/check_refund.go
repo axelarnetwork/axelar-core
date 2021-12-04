@@ -1,6 +1,7 @@
 package ante
 
 import (
+	"fmt"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -34,6 +35,16 @@ func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetype
 func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
+	// reject unregistered refundable msg
+	for _, msg := range msgs {
+		switch msg := msg.(type) {
+		case *rewardtypes.RefundMsgRequest:
+			if !msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("%T is not refundable", msg))
+			}
+		}
+	}
+
 	if d.qualifyForRefund(ctx, msgs) {
 		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
@@ -61,23 +72,25 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 
 	switch msg := msgs[0].(type) {
 	case *rewardtypes.RefundMsgRequest:
-		if msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
-			// Validator must be bonded
-			sender := msg.GetSigners()[0]
-			validatorAddr := d.snapshotter.GetOperator(ctx, sender)
-			if validatorAddr == nil {
-				return false
-			}
-			validator := d.staking.Validator(ctx, validatorAddr)
-			if validator == nil || !validator.IsBonded() {
-				return false
-			}
+		if !msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
+			return false
 		}
-	default:
-		return false
+
+		// Validator must be bonded
+		sender := msg.GetSigners()[0]
+		validatorAddr := d.snapshotter.GetOperator(ctx, sender)
+		if validatorAddr == nil {
+			return false
+		}
+		validator := d.staking.Validator(ctx, validatorAddr)
+		if validator == nil || !validator.IsBonded() {
+			return false
+		}
+
+		return true
 	}
 
-	return true
+	return false
 }
 
 func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
