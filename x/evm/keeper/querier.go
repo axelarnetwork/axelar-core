@@ -27,7 +27,6 @@ const (
 	QNextMasterAddress     = "next-master-address"
 	QAxelarGatewayAddress  = "gateway-address"
 	QBytecode              = "bytecode"
-	QSignedTx              = "signed-tx"
 	QLatestBatchedCommands = "latest-batched-commands"
 	QBatchedCommands       = "batched-commands"
 )
@@ -80,8 +79,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
-		case QSignedTx:
-			return querySignedTx(ctx, chainKeeper, s, n, path[2])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -331,9 +328,9 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Pending, Log: "deposit transaction is waiting for confirmation"}
 	case !isPending && !ok:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_None, Log: "deposit transaction is not confirmed"}
-	case state == types.CONFIRMED:
+	case state == types.DepositStatus_Confirmed:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Confirmed, Log: "deposit transaction is confirmed"}
-	case state == types.BURNED:
+	case state == types.DepositStatus_Burned:
 		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
 	default:
 		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit is in an unexpected state")
@@ -370,26 +367,6 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	}
 
 	return bz, nil
-}
-
-func querySignedTx(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, txID string) ([]byte, error) {
-
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
-	sig, status := s.GetSig(ctx, txID)
-	if status != tss.SigStatus_Signed {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find signature for tx '%s' (current status: %s)", txID, status.String()))
-	}
-
-	signedTx, err := k.AssembleTx(ctx, txID, sig)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not insert generated signature: %v", err))
-	}
-
-	return signedTx.MarshalBinary()
 }
 
 // QueryBatchedCommands returns the batched commands for the given ID

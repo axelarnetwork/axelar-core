@@ -151,7 +151,7 @@ func TestQueryDepositState(t *testing.T) {
 			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
 				return types.ERC20Deposit{}, false
 			},
-			GetDepositFunc: func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+			GetDepositFunc: func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
 		}
@@ -215,9 +215,9 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 			if types.Hash(txID) == expectedDeposit.TxID && types.Address(burnerAddr) == expectedDeposit.BurnerAddress {
-				return expectedDeposit, types.CONFIRMED, true
+				return expectedDeposit, types.DepositStatus_Confirmed, true
 			}
 			return types.ERC20Deposit{}, 0, false
 		}
@@ -240,9 +240,9 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 			if types.Hash(txID) == expectedDeposit.TxID && types.Address(burnerAddr) == expectedDeposit.BurnerAddress {
-				return expectedDeposit, types.BURNED, true
+				return expectedDeposit, types.DepositStatus_Burned, true
 			}
 			return types.ERC20Deposit{}, 0, false
 		}

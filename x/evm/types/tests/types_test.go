@@ -43,14 +43,7 @@ func TestCreateMintTokenCommand(t *testing.T) {
 		strings.Repeat("0", 64-len(amountHex))+amountHex,
 		hex.EncodeToString([]byte(symbol)),
 	)
-	actual, err := types.CreateMintTokenCommand(
-		chainID,
-		keyID,
-		commandID,
-		symbol,
-		address,
-		amount,
-	)
+	actual, err := types.CreateMintTokenCommand(keyID, commandID, symbol, address, amount)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
@@ -209,8 +202,8 @@ func TestGetTokenAddress(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	expected := types.Address(common.HexToAddress("0xaaAAf41eEacF8D42411F802F44548ce1C7Fa65c9"))
 
-	k.SetParams(ctx, types.DefaultParams()...)
 	keeper := k.ForChain(chain)
+	keeper.SetParams(ctx, types.DefaultParams()[0])
 	keeper.SetPendingGateway(ctx, axelarGateway)
 	keeper.ConfirmPendingGateway(ctx)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
@@ -234,9 +227,9 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 	expectedBurnerAddr := common.HexToAddress("0x7516De97ee6B5028B4Aa3349e6391d8bf3De01b4")
 	expectedSalt := common.Hex2Bytes("b365d534cb5d28d511a8baf1125240c97b09cb46710645b30ed64f302c4ae7ff")
 
-	k.SetParams(ctx, types.DefaultParams()...)
-
-	actualburnerAddr, actualSalt, err := k.ForChain(exported.Ethereum.Name).GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
+	chainKeeper := k.ForChain(exported.Ethereum.Name)
+	chainKeeper.SetParams(ctx, types.DefaultParams()[0])
+	actualburnerAddr, actualSalt, err := chainKeeper.GetBurnerAddressAndSalt(ctx, tokenAddr, recipient, axelarGateway)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBurnerAddr, actualburnerAddr)

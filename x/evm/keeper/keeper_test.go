@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -38,14 +39,14 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		setup()
 
 		burnerInfo := types.BurnerInfo{
-			TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			Symbol:       rand.StrBetween(2, 5),
-			Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			Symbol:        rand.StrBetween(2, 5),
+			Salt:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		}
-		burnerAddress := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
-		keeper.ForChain(chain).SetBurnerInfo(ctx, burnerAddress, &burnerInfo)
-		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, burnerAddress)
+		keeper.ForChain(chain).SetBurnerInfo(ctx, burnerInfo)
+		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, common.Address(burnerInfo.BurnerAddress))
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)
@@ -55,8 +56,8 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 func TestKeeper_GetParams(t *testing.T) {
 	var (
-		keeperWithSubspace    types.BaseKeeper
-		keeperWithoutSubspace types.BaseKeeper
+		keeperWithSubspace    types.ChainKeeper
+		keeperWithoutSubspace types.ChainKeeper
 		ctx                   sdk.Context
 	)
 	setup := func() {
@@ -72,11 +73,11 @@ func TestKeeper_GetParams(t *testing.T) {
 		paramsK2 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
-		keeperWithSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK1)
-		keeperWithoutSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK2)
+		keeperWithSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK1).ForChain(exported.Ethereum.Name)
+		keeperWithoutSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK2).ForChain(exported.Ethereum.Name)
 
 		// load params into a subspace
-		keeperWithSubspace.SetParams(ctx, types.DefaultParams()...)
+		keeperWithSubspace.SetParams(ctx, types.DefaultParams()[0])
 	}
 
 	// assert: the ctx kvstore stores all the keys of the subspace, but keeperWithoutSubspace has no Subspace created to access it

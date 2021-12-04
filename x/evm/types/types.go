@@ -134,14 +134,7 @@ func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainT
 		return Command{}, err
 	}
 
-	return CreateMintTokenCommand(
-		t.metadata.ChainID.BigInt(),
-		key,
-		transferIDtoCommandID(transfer.ID),
-		t.metadata.Details.Symbol,
-		common.HexToAddress(transfer.Recipient.Address),
-		transfer.Asset.Amount.BigInt(),
-	)
+	return CreateMintTokenCommand(key, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
 }
 
 func transferIDtoCommandID(transferID uint64) CommandID {
@@ -342,15 +335,6 @@ type CommandParams struct {
 	Sender    string
 }
 
-// DepositState is an enum for the state of a deposit
-type DepositState int
-
-// States of confirmed deposits
-const (
-	CONFIRMED DepositState = iota
-	BURNED
-)
-
 // KeysToAddresses converts a slice of ECDSA public keys to evm addresses
 func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	addresses := make([]common.Address, len(keys))
@@ -485,7 +469,7 @@ func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails To
 }
 
 // CreateMintTokenCommand creates a command to mint token to the given address
-func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
+func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
 	params, err := createMintTokenParams(symbol, address, amount)
 	if err != nil {
 		return Command{}, err
@@ -687,6 +671,8 @@ type CommandBatch struct {
 	metadata CommandBatchMetadata
 	setter   func(batch CommandBatchMetadata)
 }
+
+var NonExistentCommand = NewCommandBatch(CommandBatchMetadata{}, func(CommandBatchMetadata) {})
 
 // NewCommandBatch returns a new command batch struct
 func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBatchMetadata)) CommandBatch {

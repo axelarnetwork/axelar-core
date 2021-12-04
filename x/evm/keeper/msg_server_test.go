@@ -81,18 +81,18 @@ func TestCreateBurnTokens(t *testing.T) {
 				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID).BigInt()
 			},
 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit) {},
-			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositState) {},
+			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
 			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{}
 			},
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
+			GetChainIDFunc: func(sdk.Context) (*big.Int, bool) {
+				return big.NewInt(rand.PosI64()), true
+			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
 			ForChainFunc: func(string) types.ChainKeeper {
 				return evmChainKeeper
-			},
-			GetParamsFunc: func(ctx sdk.Context) []types.Params {
-				return types.DefaultParams()
 			},
 		}
 		tssKeeper = &mock.TSSMock{}
@@ -192,7 +192,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.Len(t, evmChainKeeper.EnqueueCommandCalls(), depositCount)
 
 		for _, setDepositCall := range evmChainKeeper.SetDepositCalls() {
-			assert.Equal(t, types.BURNED, setDepositCall.State)
+			assert.Equal(t, types.DepositStatus_Burned, setDepositCall.State)
 		}
 
 		commandIDSeen := make(map[string]bool)
@@ -260,12 +260,12 @@ func TestLink_UnknownChain(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, types.Params{
+	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(minConfHeight),
-		Gateway:             bytecodes,
-		Token:               tokenBC,
+		GatewayCode:         bytecodes,
+		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
@@ -297,12 +297,12 @@ func TestLink_NoGateway(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, types.Params{
+	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(minConfHeight),
-		Gateway:             bytecodes,
-		Token:               tokenBC,
+		GatewayCode:         bytecodes,
+		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
@@ -468,7 +468,9 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	assert.Equal(t, types.BurnerInfo{TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}, *k.ForChain(chain).GetBurnerInfo(ctx, burnAddr))
+	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}
+	actual := *k.ForChain(chain).GetBurnerInfo(ctx, burnAddr)
+	assert.Equal(t, expected, actual)
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -607,12 +609,15 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 				return nil
 			},
 
-			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
-			GetPendingChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
+			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
-					return nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true, Module: rand.Str(10)}, true
+					return types.PendingChain{
+						Chain:  nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true,Module: rand.Str(10)},
+						Params: types.Params{},
+					}, true
 				}
-				return nexus.Chain{}, false
+				return types.PendingChain{}, false
 			},
 		}
 		v = &mock.VoterMock{
@@ -739,7 +744,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		basek.GetPendingChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
+		basek.GetPendingChainFunc = func(sdk.Context, string) (types.PendingChain, bool) { return types.PendingChain{}, false }
 
 		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -961,8 +966,7 @@ func TestAddChain(t *testing.T) {
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		basek = &mock.BaseKeeperMock{
-			SetParamsFunc:       func(sdk.Context, ...types.Params) {},
-			SetPendingChainFunc: func(sdk.Context, nexus.Chain) {},
+			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
 		}
 
 		tssMock = &mock.TSSMock{}
@@ -996,11 +1000,9 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(basek.SetParamsCalls()))
 		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
 		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
 		assert.Equal(t, nativeAsset, basek.SetPendingChainCalls()[0].Chain.NativeAsset)
-		assert.Equal(t, name, basek.SetParamsCalls()[0].Params[0].Chain)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
@@ -1043,7 +1045,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
-			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
 			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
@@ -1170,13 +1172,13 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
 		setup()
-		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 			return types.ERC20Deposit{
 				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:           sdk.NewUint(mathRand.Uint64()),
 				DestinationChain: btc.Bitcoin.Name,
 				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			}, types.CONFIRMED, true
+			}, types.DepositStatus_Confirmed, true
 		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -1186,13 +1188,13 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
 		setup()
-		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 			return types.ERC20Deposit{
 				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 				Amount:           sdk.NewUint(mathRand.Uint64()),
 				DestinationChain: btc.Bitcoin.Name,
 				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			}, types.BURNED, true
+			}, types.DepositStatus_Burned, true
 		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -1243,22 +1245,22 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				}
 				return nil
 			},
-			GetParamsFunc: func(sdk.Context) []types.Params {
-				return []types.Params{{
+		}
+		chaink = &mock.ChainKeeperMock{
+			GetParamsFunc: func(sdk.Context) types.Params {
+				return types.Params{
 					Chain:               exported.Ethereum.Name,
 					Network:             network,
 					ConfirmationHeight:  uint64(rand.I64Between(1, 10)),
-					Gateway:             bytecodes,
-					Token:               tokenBC,
+					GatewayCode:         bytecodes,
+					TokenCode:           tokenBC,
 					Burnable:            burnerBC,
 					RevoteLockingPeriod: 50,
 					VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 					MinVoterCount:       15,
 					CommandsGasLimit:    5000000,
-				}}
+				}
 			},
-		}
-		chaink = &mock.ChainKeeperMock{
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
@@ -1404,12 +1406,12 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 	encCfg := app.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.SetParams(ctx, types.Params{
+	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(confHeight),
-		Gateway:             bytecodes,
-		Token:               tokenBC,
+		GatewayCode:         bytecodes,
+		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
