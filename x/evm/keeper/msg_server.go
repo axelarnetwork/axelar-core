@@ -142,21 +142,20 @@ func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.Vo
 
 	keeper := s.ForChain(chain.Name)
 
-	if _, ok := keeper.GetGatewayAddress(ctx); ok {
-		return &types.VoteConfirmGatewayDeploymentResponse{Log: "gateway is already confirmed"}, nil
-	}
-
-	address, ok := keeper.GetPendingGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("no pending gateway found")
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
+	switch {
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		// If the voting threshold has been met and additional votes are received they should not return an error
+		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
+	}
+
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
 	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
@@ -187,6 +186,11 @@ func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.Vo
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("%s gateway confirmation result is %t", chain.Name, confirmed.Value))
+
+	address, ok := keeper.GetPendingGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no pending gateway found")
+	}
 
 	// handle poll result
 	event := sdk.NewEvent(
@@ -629,21 +633,26 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	registeredChain, registered := s.nexus.GetChain(ctx, req.Name)
-	if registered {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("chain %s already confirmed", registeredChain.Name)}, nil
-	}
-	chain, ok := s.GetPendingChain(ctx, req.Name)
-	if !ok {
-		return nil, fmt.Errorf("unknown chain %s", req.Name)
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
+	switch {
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		// if the voting threshold has been met and additional votes are received they should not return an error
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
+	default:
+	}
+
+	chain, chainFound := s.GetPendingChain(ctx, req.Name)
+	if !chainFound {
+		return nil, fmt.Errorf("unknown chain %s", req.Name)
+	}
+
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
 	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
@@ -708,33 +717,32 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
-	pendingDeposit, _ := keeper.GetPendingDeposit(ctx, req.PollKey)
-	poll := s.voter.GetPoll(ctx, req.PollKey)
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
 
+	poll := s.voter.GetPoll(ctx, req.PollKey)
 	switch {
-	case poll.Is(vote.NonExistent):
-		return nil, fmt.Errorf("no poll found for poll key %s", req.PollKey.String())
 	case poll.Is(vote.Expired):
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Expired.String())}, nil
 	case poll.Is(vote.Failed), poll.Is(vote.Completed):
 		// If the voting threshold has been met and additional votes are received they should not return an error
 		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Completed.String())}, nil
 	default:
-		// poll is pending
-		if pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID {
-			return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
-		}
+	}
+
+	keeper := s.ForChain(chain.Name)
+	pendingDeposit, _ := keeper.GetPendingDeposit(ctx, req.PollKey)
+
+	// poll is pending
+	if pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID {
+		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
 	}
 
 	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
 	if !ok {
 		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
-	}
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
@@ -817,26 +825,27 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
-	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
-	switch {
-	case token.Is(types.Confirmed):
-		return &types.VoteConfirmTokenResponse{
-			Log: fmt.Sprintf("token %s deployment already confirmed", req.Asset)}, nil
-	case !token.Is(types.Pending):
-		return nil, fmt.Errorf("no open poll for token '%s'", token.GetAsset())
-	case types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey:
-		return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
-	default:
-		// assert: the token is known and has not been confirmed before
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	keeper := s.ForChain(chain.Name)
+	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
+
 	poll := s.voter.GetPoll(ctx, req.PollKey)
+	switch {
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		// If the voting threshold has been met and additional votes are received they should not return an error
+		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
+	default:
+		if types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey {
+			return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
+		}
+	}
+
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
 	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
@@ -903,33 +912,30 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
-
-	pendingTransfer, pendingTransferFound := keeper.GetPendingTransferKey(ctx, req.PollKey)
-	archivedTransfer, archivedTransferFound := keeper.GetArchivedTransferKey(ctx, req.PollKey)
-
-	var keyRole tss.KeyRole
-	switch {
-	case !pendingTransferFound && !archivedTransferFound:
-		return nil, fmt.Errorf("no transfer key found for poll %s", req.PollKey.String())
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case archivedTransferFound:
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("%s in %s to keyID %s already confirmed", archivedTransfer.Type.SimpleString(), archivedTransfer.TxID.Hex(), archivedTransfer.NextKeyID)}, nil
-	case pendingTransferFound:
-		keyRole = s.signer.GetKeyRole(ctx, pendingTransfer.NextKeyID)
-		if keyRole == tss.Unknown {
-			return nil, fmt.Errorf("key %s cannot be found", pendingTransfer.NextKeyID)
-		}
-	default:
-		// assert: the transfer ownership/operatorship is known and has not been confirmed before
-	}
-
 	voter := s.snapshotter.GetOperator(ctx, req.Sender)
 	if voter == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
+	switch {
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		// If the voting threshold has been met and additional votes are received they should not return an error
+		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
+	default:
+	}
+
+	keeper := s.ForChain(chain.Name)
+	pendingTransfer, _ := keeper.GetPendingTransferKey(ctx, req.PollKey)
+
+	var keyRole tss.KeyRole
+	keyRole = s.signer.GetKeyRole(ctx, pendingTransfer.NextKeyID)
+	if keyRole == tss.Unknown {
+		return nil, fmt.Errorf("key %s cannot be found", pendingTransfer.NextKeyID)
+	}
+
 	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
 	if err := poll.Vote(voter, voteValue); err != nil {
 		return nil, err
