@@ -97,8 +97,9 @@ func randomChains() []types.CosmosChain {
 
 func randomChain() types.CosmosChain {
 	return types.CosmosChain{
-		Name:    rand.StrBetween(5, 20),
-		IBCPath: rand.StrBetween(5, 20),
-		Assets:  rand.Strings(5, 20).Take(int(rand.I64Between(1, 20))),
+		Name:       rand.StrBetween(5, 20),
+		IBCPath:    rand.StrBetween(5, 20),
+		Assets:     rand.Strings(5, 20).Take(int(rand.I64Between(1, 20))),
+		AddrPrefix: rand.StrBetween(5, 10),
 	}
 }
