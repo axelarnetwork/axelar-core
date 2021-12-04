@@ -153,8 +153,6 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain
 func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) {
-	k.setCosmosChain(ctx, chain)
-
 	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain.Name != chain {
 		k.deleteAssetByChain(ctx, registeredChain.Name, asset)
 	}
@@ -189,10 +187,6 @@ func (k Keeper) getAssets(ctx sdk.Context, chain string) []string {
 	}
 
 	return assets
-}
-
-func (k Keeper) setCosmosChain(ctx sdk.Context, chain string) {
-	k.getStore(ctx).SetRaw(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), []byte(chain))
 }
 
 // GetCosmosChainByAsset gets a asset's original chain
