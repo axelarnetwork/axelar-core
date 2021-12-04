@@ -427,6 +427,7 @@ Params represent the genesis parameters for the module
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [string](#string) | repeated |  |
+| `addr_prefix` | [string](#string) |  |  |
 
 
 

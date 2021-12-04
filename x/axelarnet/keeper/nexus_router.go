@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -17,7 +18,9 @@ func NewNexusHandler(k Keeper) nexus.Handler {
 			addrPrefix = sdk.GetConfig().GetBech32AccountAddrPrefix()
 			ok = true
 		} else {
-			addrPrefix, ok = k.GetCosmosChainAddrPrefix(ctx, address.Chain.Name)
+			var chain types.CosmosChain
+			chain, ok = k.GetCosmosChainByName(ctx, address.Chain.Name)
+			addrPrefix = chain.AddrPrefix
 		}
 
 		if !ok {

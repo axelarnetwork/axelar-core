@@ -104,8 +104,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
-			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
-				return "cosmoshub", true
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+				return types.CosmosChain{Name: "cosmoshub", AddrPrefix: rand.Str(5)}, true
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -291,8 +291,8 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return "", false
 			},
-			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
-				return testChain, true
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -441,8 +441,8 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
-			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
-				return "cosmoschain", true
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+				return types.CosmosChain{Name: "cosmoschain", AddrPrefix: rand.Str(5)}, true
 			},
 			GetCosmosChainsFunc: func(sdk.Context) []string {
 				var chains []string
@@ -506,7 +506,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 	t.Run("should mint wrapped token and route to cosmos chains, and archive pending transfers when get pending transfers from nexus keeper", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetCosmosChainByAssetFunc = func(sdk.Context, string) (string, bool) { return "", false }
+		axelarnetKeeper.GetCosmosChainByAssetFunc = func(sdk.Context, string) (types.CosmosChain, bool) { return types.CosmosChain{}, false }
 		msg = types.NewRouteIBCTransfersRequest(rand.AccAddr())
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
