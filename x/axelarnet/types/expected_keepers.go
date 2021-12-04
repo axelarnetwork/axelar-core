@@ -29,9 +29,9 @@ type BaseKeeper interface {
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []string
 	RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string)
-	GetCosmosChainByAsset(ctx sdk.Context, asset string) (string, bool)
-	SetCosmosChainAddrPrefix(ctx sdk.Context, chain, addPrefix string)
-	GetCosmosChainAddrPrefix(ctx sdk.Context, chain string) (string, bool)
+	GetCosmosChainByAsset(ctx sdk.Context, asset string) (CosmosChain, bool)
+	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
+	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

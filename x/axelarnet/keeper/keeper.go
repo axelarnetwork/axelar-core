@@ -136,15 +136,6 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 	k.getStore(ctx).Delete(key)
 }
 
-// GetCosmosChainByAsset gets an asset's original chain
-func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (string, bool) {
-	bz := k.getStore(ctx).GetRaw(chainByAssetPrefix.Append(utils.LowerCaseKey(asset)))
-	if bz == nil {
-		return "", false
-	}
-	return string(bz), true
-}
-
 // GetCosmosChains retrieves all registered cosmos chains
 func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 	var results []string
@@ -152,8 +143,9 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-		results = append(results, string(bz))
+		var value types.CosmosChain
+		iter.UnmarshalValue(&value)
+		results = append(results, value.Name)
 	}
 
 	return results
@@ -163,8 +155,8 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) {
 	k.setCosmosChain(ctx, chain)
 
-	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain != chain {
-		k.deleteAssetByChain(ctx, registeredChain, asset)
+	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain.Name != chain {
+		k.deleteAssetByChain(ctx, registeredChain.Name, asset)
 	}
 
 	k.setAssetByChain(ctx, chain, asset)
@@ -203,6 +195,21 @@ func (k Keeper) setCosmosChain(ctx sdk.Context, chain string) {
 	k.getStore(ctx).SetRaw(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), []byte(chain))
 }
 
+// GetCosmosChainByAsset gets a asset's original chain
+func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
+	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
+	if bz == nil {
+		return types.CosmosChain{}, false
+	}
+
+	chain, ok := k.GetCosmosChainByName(ctx, string(bz))
+	if !ok {
+		return types.CosmosChain{}, false
+	}
+
+	return chain, true
+}
+
 // SetFeeCollector sets axelarnet fee collector
 func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
 	if address != nil {
@@ -220,20 +227,25 @@ func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 	return bz, true
 }
 
-// SetCosmosChainAddrPrefix sets the address prefix for the given cosmos chain
-func (k Keeper) SetCosmosChainAddrPrefix(ctx sdk.Context, chain, addPrefix string) {
-	key := addrPrefixPrefix.Append(utils.LowerCaseKey(chain))
-	k.getStore(ctx).SetRaw(key, []byte(addPrefix))
+// SetCosmosChain sets the address prefix for the given cosmos chain
+func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
+	// register a cosmos chain to axelarnet
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name))
+	if !k.getStore(ctx).Has(key) {
+		k.getStore(ctx).Set(key, &chain)
+	}
 }
 
-// GetCosmosChainAddrPrefix gets the address prefix of the given cosmos chain
-func (k Keeper) GetCosmosChainAddrPrefix(ctx sdk.Context, chain string) (string, bool) {
-	key := addrPrefixPrefix.Append(utils.LowerCaseKey(chain))
-	bz := k.getStore(ctx).GetRaw(key)
-	if bz == nil {
-		return "", false
+// GetCosmosChainByName gets the address prefix of the given cosmos chain
+func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
+	var value types.CosmosChain
+	ok := k.getStore(ctx).Get(key, &value)
+	if !ok {
+		return types.CosmosChain{}, false
 	}
-	return string(bz), true
+
+	return value, true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

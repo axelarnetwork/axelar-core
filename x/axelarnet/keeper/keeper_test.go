@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 func TestKeeper_GetIBCPath(t *testing.T) {
@@ -77,6 +78,10 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.Str(10))
+			keeper.SetCosmosChain(ctx, types.CosmosChain{
+				Name:       chains[i],
+				AddrPrefix: rand.Str(5),
+			})
 			keeper.RegisterAssetToCosmosChain(ctx, rand.Str(10), chains[i])
 		}
 		sort.Strings(chains)
