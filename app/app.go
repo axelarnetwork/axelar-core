@@ -377,9 +377,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
 	nexusRouter := nexusTypes.NewRouter()
-	nexusRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewNexusHandler()).
-		AddRoute(btcTypes.ModuleName, btcKeeper.NewNexusHandler(btcK)).
-		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewNexusHandler(axelarnetK))
+	nexusRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
+		AddRoute(btcTypes.ModuleName, btcKeeper.NewAddressValidator(btcK)).
+		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
 	nexusK.SetRouter(nexusRouter)
 
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, transferModule, logger)

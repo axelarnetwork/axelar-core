@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// NewNexusHandler returns the handler for validating hex-encoded EVM addresses
-func NewNexusHandler() nexus.Handler {
+// NewAddressValidator returns the callback for validating hex-encoded EVM addresses
+func NewAddressValidator() nexus.AddressValidator {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
 		if !common.IsHexAddress(address.Address) {
 			return fmt.Errorf("not an hex address")

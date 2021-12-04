@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewNexusHandler returns the handler for validating bitcoin addresses
-func NewNexusHandler(k Keeper) nexus.Handler {
+// NewAddressValidator returns the callback for validating bitcoin addresses
+func NewAddressValidator(k Keeper) nexus.AddressValidator {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
 		if _, err := btcutil.DecodeAddress(address.Address, k.GetNetwork(ctx).Params()); err != nil {
 			return err

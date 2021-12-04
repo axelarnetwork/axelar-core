@@ -9,8 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewNexusHandler returns the handler for validating cosmos SDK addresses
-func NewNexusHandler(k Keeper) nexus.Handler {
+// NewAddressValidator returns the callback for validating cosmos SDK addresses
+func NewAddressValidator(k Keeper) nexus.AddressValidator {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
 		var addrPrefix string
 		var ok bool

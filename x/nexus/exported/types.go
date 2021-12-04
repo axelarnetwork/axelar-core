@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// Handler defines a function that handles address verification upon a request to link addresses
-type Handler func(ctx sdk.Context, address CrossChainAddress) error
+// AddressValidator defines a function that implements address verification upon a request to link addresses
+type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
 
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {

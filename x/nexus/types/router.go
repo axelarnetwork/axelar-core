@@ -8,23 +8,23 @@ import (
 
 // Router implements a nexus Handler router.
 type Router interface {
-	AddRoute(module string, handler exported.Handler) Router
+	AddRoute(module string, handler exported.AddressValidator) Router
 	HasRoute(module string) bool
-	GetRoute(module string) exported.Handler
+	GetRoute(module string) exported.AddressValidator
 	Seal()
 }
 
 var _ Router = (*router)(nil)
 
 type router struct {
-	routes map[string]exported.Handler
+	routes map[string]exported.AddressValidator
 	sealed bool
 }
 
 // NewRouter creates a new Router interface instance
 func NewRouter() Router {
 	return &router{
-		routes: make(map[string]exported.Handler),
+		routes: make(map[string]exported.AddressValidator),
 	}
 }
 
@@ -35,7 +35,7 @@ func (r *router) Seal() {
 
 // AddRoute registers a nexus handler for a given path and returns the handler.
 // Panics if the router is sealed, module is an empty string, or if the module has been registered already.
-func (r *router) AddRoute(module string, handler exported.Handler) Router {
+func (r *router) AddRoute(module string, handler exported.AddressValidator) Router {
 	if r.sealed {
 		panic("cannot add handler (router sealed)")
 	}
@@ -58,7 +58,7 @@ func (r *router) HasRoute(module string) bool {
 }
 
 // GetRoute returns a Handler for a given module.
-func (r *router) GetRoute(module string) exported.Handler {
+func (r *router) GetRoute(module string) exported.AddressValidator {
 	if !r.HasRoute(module) {
 		panic(fmt.Sprintf("handler for module \"%s\" not registered", module))
 	}
