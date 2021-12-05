@@ -35,7 +35,7 @@ type MultisigKeygenInfo interface {
 // MultisigSignInfo is an interface for multisig sign info
 type MultisigSignInfo interface {
 	MultisigBaseInfo
-	GetSigKeyPairs() []exported.SigKeyPair
+	GetTargetSigKeyPairs() []exported.SigKeyPair
 }
 
 // HasData checks duplicate data
@@ -142,8 +142,8 @@ func (m MultisigInfo) GetPubKeysByValidator(val sdk.ValAddress) []ecdsa.PublicKe
 	return pubKeys
 }
 
-// GetSigKeyPairs returns list of pub key and signature pairs
-func (m MultisigInfo) GetSigKeyPairs() []exported.SigKeyPair {
+// GetTargetSigKeyPairs returns list of pub key and signature pairs
+func (m MultisigInfo) GetTargetSigKeyPairs() []exported.SigKeyPair {
 	var pairs []exported.SigKeyPair
 	for _, info := range m.Infos {
 		for _, sigKeyPair := range info.Data {
@@ -154,6 +154,9 @@ func (m MultisigInfo) GetSigKeyPairs() []exported.SigKeyPair {
 				panic(err)
 			}
 			pairs = append(pairs, pair)
+			if len(pairs) >= int(m.TargetNum) {
+				return pairs
+			}
 		}
 	}
 
