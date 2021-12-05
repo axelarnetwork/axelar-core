@@ -136,7 +136,7 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 	k.getStore(ctx).Delete(key)
 }
 
-// GetCosmosChainByAsset gets a asset's original chain
+// GetCosmosChainByAsset gets an asset's original chain
 func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
 	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
 	if bz == nil {
