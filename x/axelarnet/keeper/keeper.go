@@ -186,11 +186,8 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 	return results
 }
 
-func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
-	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
-	var value types.CosmosChain
-	ok := k.getStore(ctx).Get(key, &value)
-	return value, ok
+func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types.CosmosChain, ok bool) {
+        return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
 }
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain
