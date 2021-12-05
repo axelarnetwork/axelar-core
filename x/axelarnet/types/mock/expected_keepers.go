@@ -55,7 +55,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string)  {
+// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string) error {
 // 				panic("mock out the RegisterAssetToCosmosChain method")
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
@@ -108,7 +108,7 @@ type BaseKeeperMock struct {
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
 	// RegisterAssetToCosmosChainFunc mocks the RegisterAssetToCosmosChain method.
-	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string)
+	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string) error
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
@@ -596,7 +596,7 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 }
 
 // RegisterAssetToCosmosChain calls RegisterAssetToCosmosChainFunc.
-func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) {
+func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) error {
 	if mock.RegisterAssetToCosmosChainFunc == nil {
 		panic("BaseKeeperMock.RegisterAssetToCosmosChainFunc: method is nil but BaseKeeper.RegisterAssetToCosmosChain was just called")
 	}
@@ -612,7 +612,7 @@ func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Contex
 	mock.lockRegisterAssetToCosmosChain.Lock()
 	mock.calls.RegisterAssetToCosmosChain = append(mock.calls.RegisterAssetToCosmosChain, callInfo)
 	mock.lockRegisterAssetToCosmosChain.Unlock()
-	mock.RegisterAssetToCosmosChainFunc(ctx, asset, chain)
+	return mock.RegisterAssetToCosmosChainFunc(ctx, asset, chain)
 }
 
 // RegisterAssetToCosmosChainCalls gets all the calls that were made to RegisterAssetToCosmosChain.

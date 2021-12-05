@@ -73,12 +73,21 @@ func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 
 // RegisterIBCPath registers an IBC path for a cosmos chain
 func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain, path string) error {
+	value, ok := k.getCosmosChain(ctx, chain)
+	if !ok {
+		return fmt.Errorf("unknown cosmos chain %s", chain)
+	}
+
 	key := pathPrefix.Append(utils.LowerCaseKey(chain))
 
 	if k.getStore(ctx).GetRaw(key) != nil {
-		return fmt.Errorf("chain %s already registered", chain)
+		return fmt.Errorf("path %s already registered for chain %s", path, chain)
 	}
+
+	value.IBCPath = path
+	k.SetCosmosChain(ctx, value)
 	k.getStore(ctx).SetRaw(key, []byte(path))
+
 	return nil
 }
 
@@ -130,7 +139,7 @@ func (k Keeper) getPendingIBCTransfers(ctx sdk.Context) []types.IBCTransfer {
 func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) {
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, sequence)
-	key := pathPrefix.Append(utils.KeyFromStr(portID)).Append(utils.KeyFromStr(channelID)).Append(utils.KeyFromBz(bz))
+	key := transferPrefix.Append(utils.KeyFromStr(portID)).Append(utils.KeyFromStr(channelID)).Append(utils.KeyFromBz(bz))
 
 	k.getStore(ctx).Delete(key)
 }
@@ -177,14 +186,31 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 	return results
 }
 
+func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
+	var value types.CosmosChain
+	ok := k.getStore(ctx).Get(key, &value)
+	return value, ok
+}
+
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain
-func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) {
+func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) error {
+	value, ok := k.getCosmosChain(ctx, chain)
+	if !ok {
+		return fmt.Errorf("unknown cosmos chain %s", chain)
+	}
+
+	value.Assets = append(value.Assets, asset)
+	k.SetCosmosChain(ctx, value)
+
 	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain.Name != chain {
 		k.deleteAssetByChain(ctx, registeredChain.Name, asset)
 	}
 
 	k.setAssetByChain(ctx, chain, asset)
 	k.setChainByAsset(ctx, asset, chain)
+
+	return nil
 }
 
 func (k Keeper) deleteAssetByChain(ctx sdk.Context, chain string, asset string) {
