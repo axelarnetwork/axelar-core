@@ -1448,7 +1448,7 @@ var _ types.Nexus = &NexusMock{}
 // 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
 // 				panic("mock out the IsChainActivated method")
 // 			},
-// 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 		}
@@ -1483,7 +1483,7 @@ type NexusMock struct {
 	IsChainActivatedFunc func(ctx sdk.Context, chain nexus.Chain) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress)
+	LinkAddressesFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1869,7 +1869,7 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
@@ -1885,7 +1885,7 @@ func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAdd
 	mock.lockLinkAddresses.Lock()
 	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
 	mock.lockLinkAddresses.Unlock()
-	mock.LinkAddressesFunc(ctx, sender, recipient)
+	return mock.LinkAddressesFunc(ctx, sender, recipient)
 }
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.

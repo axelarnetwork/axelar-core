@@ -57,10 +57,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 	depositAddress := types.NewLinkedAddress(ctx, recipientChain.Name, req.Asset, req.RecipientAddr)
-	s.nexus.LinkAddresses(ctx,
+	if err := s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
 		recipient,
-	)
+	); err != nil {
+		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -96,7 +98,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		if !ok {
 			return nil, fmt.Errorf("asset %s is not linked to a cosmos chain", denomTrace.GetBaseDenom())
 		}
-		path, ok := s.BaseKeeper.GetIBCPath(ctx, chain)
+		path, ok := s.BaseKeeper.GetIBCPath(ctx, chain.Name)
 		if !ok {
 			return nil, fmt.Errorf("path not found for chain %s", chain)
 		}
@@ -242,7 +244,14 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	s.nexus.RegisterAsset(ctx, exported.Axelarnet.Name, req.Chain.NativeAsset)
 	s.nexus.RegisterAsset(ctx, req.Chain.Name, req.Chain.NativeAsset)
 
-	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name)
+	s.BaseKeeper.SetCosmosChain(ctx, types.CosmosChain{
+		Name:       req.Chain.Name,
+		AddrPrefix: req.AddrPrefix,
+	})
+	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name); err != nil {
+		return &types.AddCosmosBasedChainResponse{}, err
+	}
+
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
 
@@ -377,7 +386,7 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctransfert
 func toICS20(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
 	chain, _ := k.GetCosmosChainByAsset(ctx, transfer.Asset.GetDenom())
-	path, _ := k.GetIBCPath(ctx, chain)
+	path, _ := k.GetIBCPath(ctx, chain.Name)
 
 	prefixedDenom := fmt.Sprintf("%s/%s", path, transfer.Asset.Denom)
 	// construct the denomination trace from the full raw denomination
@@ -391,7 +400,7 @@ func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, transfer nexus.Cross
 	if !ok {
 		return false
 	}
-	_, ok = k.GetIBCPath(ctx, chain)
+	_, ok = k.GetIBCPath(ctx, chain.Name)
 	return ok
 }
 

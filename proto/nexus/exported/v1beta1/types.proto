@@ -15,6 +15,7 @@ message Chain {
   string native_asset = 2;
   bool supports_foreign_assets = 3;
   tss.exported.v1beta1.KeyType key_type = 4;
+  string module = 5;
 }
 
 // CrossChainAddress represents a generalized address on any registered chain

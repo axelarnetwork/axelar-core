@@ -12,5 +12,6 @@ var (
 		NativeAsset:           "wei",
 		SupportsForeignAssets: true,
 		KeyType:               tss.Multisig,
+		Module:                "evm", // cannot use constant due to import cycle
 	}
 )

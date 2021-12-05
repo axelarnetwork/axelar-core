@@ -428,6 +428,7 @@ Params represent the genesis parameters for the module
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [string](#string) | repeated |  |
+| `addr_prefix` | [string](#string) |  |  |
 
 
 
@@ -794,6 +795,7 @@ Chain represents the properties of a registered blockchain
 | `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 | `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `module` | [string](#string) |  |  |
 
 
 
@@ -874,6 +876,7 @@ to nexus
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `addr_prefix` | [string](#string) |  |  |
 
 
 

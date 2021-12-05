@@ -11,7 +11,7 @@ import (
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
-func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset string) *AddCosmosBasedChainRequest {
+func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, addrPrefix string) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
@@ -19,7 +19,9 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset stri
 			NativeAsset:           nativeAsset,
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
+			Module:                "axelarnet", // cannot use constant due to import cycle
 		},
+		AddrPrefix: addrPrefix,
 	}
 }
 
@@ -41,6 +43,10 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 
 	if err := m.Chain.Validate(); err != nil {
 		return fmt.Errorf("invalid chain spec: %v", err)
+	}
+
+	if m.AddrPrefix == "" {
+		return fmt.Errorf("address prefix cannot be empty")
 	}
 
 	return nil

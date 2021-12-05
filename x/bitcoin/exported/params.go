@@ -12,5 +12,6 @@ var (
 		NativeAsset:           "satoshi",
 		SupportsForeignAssets: false,
 		KeyType:               tss.Threshold,
+		Module:                "bitcoin", // cannot use constant due to import cycle
 	}
 )

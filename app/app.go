@@ -373,6 +373,15 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName), axelarnetK,
 	)
+
+	// Setting Router will finalize all routes by sealing router
+	// No more routes can be added
+	nexusRouter := nexusTypes.NewRouter()
+	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
+		AddAddressValidator(btcTypes.ModuleName, btcKeeper.NewAddressValidator(btcK)).
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
+	nexusK.SetRouter(nexusRouter)
+
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, app.ibcKeeper.ChannelKeeper, accountK, transferModule, logger)
 
 	// Create static IBC router, add transfer route, then set and seal it

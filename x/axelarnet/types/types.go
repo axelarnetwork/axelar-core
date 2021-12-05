@@ -104,5 +104,9 @@ func (m CosmosChain) Validate() error {
 		return fmt.Errorf("chain must have a name")
 	}
 
+	if m.AddrPrefix == "" {
+		return fmt.Errorf("chain must have an address prefix")
+	}
+
 	return nil
 }

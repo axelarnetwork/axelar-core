@@ -35,6 +35,7 @@ type Keeper struct {
 	params   params.Subspace
 
 	axelarnetKeeper types.AxelarnetKeeper
+	router          types.Router
 }
 
 // NewKeeper returns a new nexus keeper
@@ -66,6 +67,28 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	var p types.Params
 	k.params.GetParamSet(ctx, &p)
 	return p
+}
+
+// SetRouter sets the nexus router. It will panic if called more than once
+func (k *Keeper) SetRouter(router types.Router) {
+	if k.router != nil {
+		panic("router already set")
+	}
+
+	k.router = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additionals handlers from being registered after the keeper is initialized.
+	k.router.Seal()
+}
+
+// GetRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetRouter() types.Router {
+	if k.router == nil {
+		k.SetRouter(types.NewRouter())
+	}
+
+	return k.router
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
@@ -111,9 +134,23 @@ func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address
-func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+	if handler := k.GetRouter().GetAddressValidator(sender.Chain.Module); handler == nil {
+		return fmt.Errorf("unknown module for sender's chain %s", sender.Chain.String())
+	} else if err := handler(ctx, sender); err != nil {
+		return err
+	}
+
+	if handler := k.GetRouter().GetAddressValidator(recipient.Chain.Module); handler == nil {
+		return fmt.Errorf("unknown module for recipient's chain %s", recipient.Chain.String())
+	} else if err := handler(ctx, recipient); err != nil {
+		return err
+	}
+
 	k.getStore(ctx).Set(senderPrefix.Append(utils.LowerCaseKey(sender.String())), &recipient)
 	k.setLatestDepositAddress(ctx, recipient, sender.Address)
+
+	return nil
 }
 
 // GetRecipient retrieves the cross chain recipient associated to the specified sender

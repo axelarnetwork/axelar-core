@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -47,6 +48,7 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 				NativeAsset:           nativeAsset,
 				SupportsForeignAssets: true,
 				KeyType:               tss.Multisig,
+				Module:                types.ModuleName,
 			}
 
 			if err := chain.Validate(); err != nil {

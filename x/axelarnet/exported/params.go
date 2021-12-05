@@ -12,5 +12,6 @@ var (
 		NativeAsset:           "uaxl",
 		SupportsForeignAssets: true,
 		KeyType:               tss.None,
+		Module:                "axelarnet", // cannot use constant due to import cycle
 	}
 )
