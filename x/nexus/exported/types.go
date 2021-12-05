@@ -2,6 +2,8 @@ package exported
 
 import (
 	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses
