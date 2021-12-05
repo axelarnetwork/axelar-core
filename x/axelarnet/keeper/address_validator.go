@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -15,12 +14,11 @@ func NewAddressValidator(k Keeper) nexus.AddressValidator {
 		var addrPrefix string
 		if address.Chain == exported.Axelarnet {
 			addrPrefix = sdk.GetConfig().GetBech32AccountAddrPrefix()
-			ok = true
 		} else {
-		        chain, ok := k.GetCosmosChainByName(ctx, address.Chain.Name)
+			chain, ok := k.GetCosmosChainByName(ctx, address.Chain.Name)
 			if !ok {
-			        return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
-		        }
+				return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
+			}
 			addrPrefix = chain.AddrPrefix
 		}
 

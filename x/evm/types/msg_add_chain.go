@@ -42,7 +42,7 @@ func (m AddChainRequest) ValidateBasic() error {
 		NativeAsset:           m.NativeAsset,
 		SupportsForeignAssets: true,
 		KeyType:               m.KeyType,
-		Module:                ModuleName
+		Module:                ModuleName,
 	}
 
 	if err := chain.Validate(); err != nil {
