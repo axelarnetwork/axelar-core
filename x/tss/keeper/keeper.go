@@ -252,12 +252,12 @@ func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, 
 
 	// update block height of last seen ack
 	key := availablePrefix.AppendStr(validator.String())
-	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
 	store.SetRaw(key, bz)
 
 	// garbage collection
+	iter := store.Iterator(presentKeysPrefix.AppendStr(validator.String()))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.GetKey())

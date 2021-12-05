@@ -9,7 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-// InitGenesis initializes the reward module's state from a given genesis state.
+// InitGenesis initializes the tss module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genState *types.GenesisState) {
 	k.SetParams(ctx, genState.Params)
 
@@ -86,23 +86,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 	}
 }
 
-// ExportGenesis returns the reward module's genesis state.
+// ExportGenesis returns the tss module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	keys := k.getKeys(ctx)
-	snapshotCounterForKeyID := make(map[exported.KeyID]int64)
-
-	for _, key := range keys {
-		if key.Role == exported.ExternalKey {
-			continue
-		}
-
-		snapshotCounter, ok := k.GetSnapshotCounterForKeyID(ctx, key.ID)
-		if !ok {
-			panic(fmt.Errorf("no snapshot counter found for key %s", key.ID))
-		}
-
-		snapshotCounterForKeyID[key.ID] = snapshotCounter
-	}
 
 	governanceKey, ok := k.GetGovernanceKey(ctx)
 	if !ok {
