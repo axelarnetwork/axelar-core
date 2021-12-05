@@ -28,6 +28,7 @@ type Nexus interface {
 	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
 	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
+	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 }
 
 // Snapshotter provides functionality to the snapshot module

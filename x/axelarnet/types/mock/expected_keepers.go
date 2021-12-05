@@ -28,8 +28,11 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
 // 				panic("mock out the DeletePendingIBCTransfer method")
 // 			},
-// 			GetCosmosChainByAssetFunc: func(ctx cosmossdktypes.Context, asset string) (string, bool) {
+// 			GetCosmosChainByAssetFunc: func(ctx cosmossdktypes.Context, asset string) (axelarnettypes.CosmosChain, bool) {
 // 				panic("mock out the GetCosmosChainByAsset method")
+// 			},
+// 			GetCosmosChainByNameFunc: func(ctx cosmossdktypes.Context, chain string) (axelarnettypes.CosmosChain, bool) {
+// 				panic("mock out the GetCosmosChainByName method")
 // 			},
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []string {
 // 				panic("mock out the GetCosmosChains method")
@@ -52,11 +55,14 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string)  {
+// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string) error {
 // 				panic("mock out the RegisterAssetToCosmosChain method")
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
 // 				panic("mock out the RegisterIBCPath method")
+// 			},
+// 			SetCosmosChainFunc: func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)  {
+// 				panic("mock out the SetCosmosChain method")
 // 			},
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
 // 				panic("mock out the SetFeeCollector method")
@@ -75,7 +81,10 @@ type BaseKeeperMock struct {
 	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
 
 	// GetCosmosChainByAssetFunc mocks the GetCosmosChainByAsset method.
-	GetCosmosChainByAssetFunc func(ctx cosmossdktypes.Context, asset string) (string, bool)
+	GetCosmosChainByAssetFunc func(ctx cosmossdktypes.Context, asset string) (axelarnettypes.CosmosChain, bool)
+
+	// GetCosmosChainByNameFunc mocks the GetCosmosChainByName method.
+	GetCosmosChainByNameFunc func(ctx cosmossdktypes.Context, chain string) (axelarnettypes.CosmosChain, bool)
 
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []string
@@ -99,10 +108,13 @@ type BaseKeeperMock struct {
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
 	// RegisterAssetToCosmosChainFunc mocks the RegisterAssetToCosmosChain method.
-	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string)
+	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string) error
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
+
+	// SetCosmosChainFunc mocks the SetCosmosChain method.
+	SetCosmosChainFunc func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)
 
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
@@ -129,6 +141,13 @@ type BaseKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// Asset is the asset argument value.
 			Asset string
+		}
+		// GetCosmosChainByName holds details about calls to the GetCosmosChainByName method.
+		GetCosmosChainByName []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain string
 		}
 		// GetCosmosChains holds details about calls to the GetCosmosChains method.
 		GetCosmosChains []struct {
@@ -191,6 +210,13 @@ type BaseKeeperMock struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// SetCosmosChain holds details about calls to the SetCosmosChain method.
+		SetCosmosChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain axelarnettypes.CosmosChain
+		}
 		// SetFeeCollector holds details about calls to the SetFeeCollector method.
 		SetFeeCollector []struct {
 			// Ctx is the ctx argument value.
@@ -208,6 +234,7 @@ type BaseKeeperMock struct {
 	}
 	lockDeletePendingIBCTransfer   sync.RWMutex
 	lockGetCosmosChainByAsset      sync.RWMutex
+	lockGetCosmosChainByName       sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
@@ -217,6 +244,7 @@ type BaseKeeperMock struct {
 	lockLogger                     sync.RWMutex
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
+	lockSetCosmosChain             sync.RWMutex
 	lockSetFeeCollector            sync.RWMutex
 	lockSetPendingIBCTransfer      sync.RWMutex
 }
@@ -265,7 +293,7 @@ func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
 }
 
 // GetCosmosChainByAsset calls GetCosmosChainByAssetFunc.
-func (mock *BaseKeeperMock) GetCosmosChainByAsset(ctx cosmossdktypes.Context, asset string) (string, bool) {
+func (mock *BaseKeeperMock) GetCosmosChainByAsset(ctx cosmossdktypes.Context, asset string) (axelarnettypes.CosmosChain, bool) {
 	if mock.GetCosmosChainByAssetFunc == nil {
 		panic("BaseKeeperMock.GetCosmosChainByAssetFunc: method is nil but BaseKeeper.GetCosmosChainByAsset was just called")
 	}
@@ -296,6 +324,41 @@ func (mock *BaseKeeperMock) GetCosmosChainByAssetCalls() []struct {
 	mock.lockGetCosmosChainByAsset.RLock()
 	calls = mock.calls.GetCosmosChainByAsset
 	mock.lockGetCosmosChainByAsset.RUnlock()
+	return calls
+}
+
+// GetCosmosChainByName calls GetCosmosChainByNameFunc.
+func (mock *BaseKeeperMock) GetCosmosChainByName(ctx cosmossdktypes.Context, chain string) (axelarnettypes.CosmosChain, bool) {
+	if mock.GetCosmosChainByNameFunc == nil {
+		panic("BaseKeeperMock.GetCosmosChainByNameFunc: method is nil but BaseKeeper.GetCosmosChainByName was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetCosmosChainByName.Lock()
+	mock.calls.GetCosmosChainByName = append(mock.calls.GetCosmosChainByName, callInfo)
+	mock.lockGetCosmosChainByName.Unlock()
+	return mock.GetCosmosChainByNameFunc(ctx, chain)
+}
+
+// GetCosmosChainByNameCalls gets all the calls that were made to GetCosmosChainByName.
+// Check the length with:
+//     len(mockedBaseKeeper.GetCosmosChainByNameCalls())
+func (mock *BaseKeeperMock) GetCosmosChainByNameCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain string
+	}
+	mock.lockGetCosmosChainByName.RLock()
+	calls = mock.calls.GetCosmosChainByName
+	mock.lockGetCosmosChainByName.RUnlock()
 	return calls
 }
 
@@ -533,7 +596,7 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 }
 
 // RegisterAssetToCosmosChain calls RegisterAssetToCosmosChainFunc.
-func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) {
+func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) error {
 	if mock.RegisterAssetToCosmosChainFunc == nil {
 		panic("BaseKeeperMock.RegisterAssetToCosmosChainFunc: method is nil but BaseKeeper.RegisterAssetToCosmosChain was just called")
 	}
@@ -549,7 +612,7 @@ func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Contex
 	mock.lockRegisterAssetToCosmosChain.Lock()
 	mock.calls.RegisterAssetToCosmosChain = append(mock.calls.RegisterAssetToCosmosChain, callInfo)
 	mock.lockRegisterAssetToCosmosChain.Unlock()
-	mock.RegisterAssetToCosmosChainFunc(ctx, asset, chain)
+	return mock.RegisterAssetToCosmosChainFunc(ctx, asset, chain)
 }
 
 // RegisterAssetToCosmosChainCalls gets all the calls that were made to RegisterAssetToCosmosChain.
@@ -607,6 +670,41 @@ func (mock *BaseKeeperMock) RegisterIBCPathCalls() []struct {
 	mock.lockRegisterIBCPath.RLock()
 	calls = mock.calls.RegisterIBCPath
 	mock.lockRegisterIBCPath.RUnlock()
+	return calls
+}
+
+// SetCosmosChain calls SetCosmosChainFunc.
+func (mock *BaseKeeperMock) SetCosmosChain(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain) {
+	if mock.SetCosmosChainFunc == nil {
+		panic("BaseKeeperMock.SetCosmosChainFunc: method is nil but BaseKeeper.SetCosmosChain was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain axelarnettypes.CosmosChain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockSetCosmosChain.Lock()
+	mock.calls.SetCosmosChain = append(mock.calls.SetCosmosChain, callInfo)
+	mock.lockSetCosmosChain.Unlock()
+	mock.SetCosmosChainFunc(ctx, chain)
+}
+
+// SetCosmosChainCalls gets all the calls that were made to SetCosmosChain.
+// Check the length with:
+//     len(mockedBaseKeeper.SetCosmosChainCalls())
+func (mock *BaseKeeperMock) SetCosmosChainCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain axelarnettypes.CosmosChain
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain axelarnettypes.CosmosChain
+	}
+	mock.lockSetCosmosChain.RLock()
+	calls = mock.calls.SetCosmosChain
+	mock.lockSetCosmosChain.RUnlock()
 	return calls
 }
 
@@ -711,7 +809,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chainName string, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
-// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)  {
+// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chainName string, denom string)  {
@@ -749,7 +847,7 @@ type NexusMock struct {
 	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chainName string, denom string) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress)
+	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chainName string, denom string)
@@ -1122,7 +1220,7 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) {
+func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
@@ -1138,7 +1236,7 @@ func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported
 	mock.lockLinkAddresses.Lock()
 	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
 	mock.lockLinkAddresses.Unlock()
-	mock.LinkAddressesFunc(ctx, sender, recipient)
+	return mock.LinkAddressesFunc(ctx, sender, recipient)
 }
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.

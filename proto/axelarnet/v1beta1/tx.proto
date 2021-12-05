@@ -63,6 +63,7 @@ message AddCosmosBasedChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+  string addr_prefix = 3;
 }
 
 message AddCosmosBasedChainResponse {}

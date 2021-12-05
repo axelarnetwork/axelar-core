@@ -21,4 +21,5 @@ message CosmosChain {
   string name = 1;
   string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
   repeated string assets = 3;
+  string addr_prefix = 4;
 }

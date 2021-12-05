@@ -1,20 +1,26 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	evmUtil "github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
@@ -40,6 +46,93 @@ func init() {
 		GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
 	}
 	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
+
+	nexusRouter := types.NewRouter()
+	nexusRouter.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+		if !evmUtil.IsHexAddress(addr.Address) {
+			return fmt.Errorf("not an hex address")
+		}
+
+		return nil
+	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
+			return err
+		}
+
+		return nil
+	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+		bz, err := sdk.GetFromBech32(addr.Address, "axelar")
+		if err != nil {
+			return err
+		}
+
+		err = sdk.VerifyAddressFormat(bz)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	keeper.SetRouter(nexusRouter)
+}
+
+func TestValidAddresses(t *testing.T) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	err := keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.NoError(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
+	)
+
+	assert.NoError(t, err)
+}
+
+func TestInvalidAddresses(t *testing.T) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	err := keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "terra1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+	)
+
+	assert.Error(t, err)
+
+	err = keeper.LinkAddresses(ctx,
+		exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+		exported.CrossChainAddress{Chain: btc.Bitcoin, Address: rand.StrBetween(10, 30)},
+	)
+
+	assert.Error(t, err)
 }
 
 func TestLinkNoForeignAssetSupport(t *testing.T) {
@@ -47,8 +140,9 @@ func TestLinkNoForeignAssetSupport(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
+	err := keeper.LinkAddresses(ctx, sender, recipient)
+	assert.NoError(t, err)
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
 	assert.Error(t, err)
 }
 
@@ -57,8 +151,9 @@ func TestLinkSuccess(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-	keeper.LinkAddresses(ctx, sender, recipient)
-	err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+	err := keeper.LinkAddresses(ctx, sender, recipient)
+	assert.NoError(t, err)
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	recp, ok := keeper.GetRecipient(ctx, sender)
 	assert.True(t, ok)
@@ -89,8 +184,9 @@ func TestPrepareSuccess(t *testing.T) {
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		amounts[recipient] = makeRandAmount(btcTypes.Satoshi)
-		keeper.LinkAddresses(ctx, sender, recipient)
-		err := keeper.EnqueueForTransfer(ctx, sender, amounts[recipient], feeRate)
+		err := keeper.LinkAddresses(ctx, sender, recipient)
+		assert.NoError(t, err)
+		err = keeper.EnqueueForTransfer(ctx, sender, amounts[recipient], feeRate)
 		assert.NoError(t, err)
 	}
 
@@ -116,9 +212,10 @@ func TestArchive(t *testing.T) {
 
 	for i := 0; i < linkedAddr; i++ {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-		keeper.LinkAddresses(ctx, sender, recipient)
+		err := keeper.LinkAddresses(ctx, sender, recipient)
+		assert.NoError(t, err)
 		amount := makeRandAmount(btcTypes.Satoshi)
-		err := keeper.EnqueueForTransfer(ctx, sender, amount, feeRate)
+		err = keeper.EnqueueForTransfer(ctx, sender, amount, feeRate)
 		assert.NoError(t, err)
 	}
 
@@ -148,11 +245,13 @@ func TestTotalInvalid(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-	keeper.LinkAddresses(ctx, btcSender, btcRecipient)
+	err := keeper.LinkAddresses(ctx, btcSender, btcRecipient)
+	assert.NoError(t, err)
 	ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
-	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
+	err = keeper.LinkAddresses(ctx, ethSender, ethRecipient)
+	assert.NoError(t, err)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
+	err = keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
@@ -166,12 +265,14 @@ func TestTotalSucess(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())
 	btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-	keeper.LinkAddresses(ctx, btcSender, btcRecipient)
+	err := keeper.LinkAddresses(ctx, btcSender, btcRecipient)
+	assert.NoError(t, err)
 
 	ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
-	keeper.LinkAddresses(ctx, ethSender, ethRecipient)
+	err = keeper.LinkAddresses(ctx, ethSender, ethRecipient)
+	assert.NoError(t, err)
 
-	err := keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
+	err = keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
 	assert.NoError(t, err)
 	transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
 	keeper.ArchivePendingTransfer(ctx, transfer)
@@ -190,6 +291,7 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 		Name:                  chainName,
 		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
+		Module:                rand.Str(10),
 	}
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -212,6 +314,7 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 		Name:                  chainName,
 		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
+		Module:                rand.Str(10),
 	}
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -234,6 +337,7 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 		Name:                  chainName,
 		NativeAsset:           rand.Str(3),
 		SupportsForeignAssets: true,
+		Module:                rand.Str(10),
 	}
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -260,15 +364,49 @@ func makeRandAmount(denom string) sdk.Coin {
 	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, maxAmount)))
 }
 
-func makeRandAddressesForChain(origin, distination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
+func makeRandAddressesForChain(origin, destination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {
+	var addr string
+
+	switch origin.Module {
+	case btcTypes.ModuleName:
+		addr = genBtcAddr()
+	case evmTypes.ModuleName:
+		addr = genEvmAddr()
+	default:
+		panic("unexpected module for origin")
+	}
+
 	sender := exported.CrossChainAddress{
-		Address: rand.Str(addrMaxLength),
+		Address: addr,
 		Chain:   origin,
 	}
+
+	switch destination.Module {
+	case btcTypes.ModuleName:
+		addr = genBtcAddr()
+	case evmTypes.ModuleName:
+		addr = genEvmAddr()
+	default:
+		panic("unexpected module for destination")
+	}
+
 	recipient := exported.CrossChainAddress{
-		Address: rand.Str(addrMaxLength),
-		Chain:   distination,
+		Address: addr,
+		Chain:   destination,
 	}
 
 	return sender, recipient
+}
+
+func genEvmAddr() string {
+	return evmUtil.BytesToAddress(rand.Bytes(evmUtil.AddressLength)).Hex()
+}
+
+func genBtcAddr() string {
+	addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), btcTypes.Testnet3.Params())
+	if err != nil {
+		panic(err)
+	}
+
+	return addr.EncodeAddress()
 }

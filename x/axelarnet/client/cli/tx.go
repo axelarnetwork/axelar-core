@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -148,9 +149,9 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [native asset]",
+		Use:   "add-cosmos-based-chain [name] [native asset] [address prefix]",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -158,8 +159,9 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
+			addrPrefix := args[2]
 
-			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset)
+			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

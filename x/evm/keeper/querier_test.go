@@ -64,6 +64,7 @@ func TestQueryTokenAddress(t *testing.T) {
 						Name:                  chain,
 						NativeAsset:           rand.StrBetween(5, 20),
 						SupportsForeignAssets: true,
+						Module:                rand.Str(10),
 					}, true
 				}
 				return nexus.Chain{}, false
@@ -161,6 +162,7 @@ func TestQueryDepositState(t *testing.T) {
 						Name:                  chain,
 						NativeAsset:           rand.StrBetween(5, 20),
 						SupportsForeignAssets: true,
+						Module:                rand.Str(10),
 					}, true
 				}
 				return nexus.Chain{}, false

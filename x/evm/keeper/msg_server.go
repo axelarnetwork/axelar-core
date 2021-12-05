@@ -258,9 +258,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	symbol := token.GetDetails().Symbol
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
-	s.nexus.LinkAddresses(ctx,
+	err = s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.Hex()},
 		recipient)
+	if err != nil {
+		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
+	}
 
 	burnerInfo := types.BurnerInfo{
 		TokenAddress:     types.Address(tokenAddr),
@@ -1453,7 +1456,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, fmt.Errorf("TSS is disabled")
 	}
 
-	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType})
+	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName})
 	s.SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(

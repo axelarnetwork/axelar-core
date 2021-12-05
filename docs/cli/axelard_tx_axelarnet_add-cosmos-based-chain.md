@@ -3,7 +3,7 @@
 Add a new cosmos based chain
 
 ```
-axelard tx axelarnet add-cosmos-based-chain [name] [native asset] [flags]
+axelard tx axelarnet add-cosmos-based-chain [name] [native asset] [address prefix] [flags]
 ```
 
 ### Options

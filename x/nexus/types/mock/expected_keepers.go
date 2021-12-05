@@ -49,6 +49,9 @@ var _ types.Nexus = &NexusMock{}
 // 			LatestDepositAddressFunc: func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 // 				panic("mock out the LatestDepositAddress method")
 // 			},
+// 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+// 				panic("mock out the LinkAddresses method")
+// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -91,6 +94,9 @@ type NexusMock struct {
 
 	// LatestDepositAddressFunc mocks the LatestDepositAddress method.
 	LatestDepositAddressFunc func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error)
+
+	// LinkAddressesFunc mocks the LinkAddresses method.
+	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -166,6 +172,15 @@ type NexusMock struct {
 			// Req is the req argument value.
 			Req *types.LatestDepositAddressRequest
 		}
+		// LinkAddresses holds details about calls to the LinkAddresses method.
+		LinkAddresses []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Sender is the sender argument value.
+			Sender exported.CrossChainAddress
+			// Recipient is the recipient argument value.
+			Recipient exported.CrossChainAddress
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -197,6 +212,7 @@ type NexusMock struct {
 	lockIsChainActivated      sync.RWMutex
 	lockIsChainMaintainer     sync.RWMutex
 	lockLatestDepositAddress  sync.RWMutex
+	lockLinkAddresses         sync.RWMutex
 	lockLogger                sync.RWMutex
 	lockRemoveChainMaintainer sync.RWMutex
 	lockSetParams             sync.RWMutex
@@ -514,6 +530,45 @@ func (mock *NexusMock) LatestDepositAddressCalls() []struct {
 	mock.lockLatestDepositAddress.RLock()
 	calls = mock.calls.LatestDepositAddress
 	mock.lockLatestDepositAddress.RUnlock()
+	return calls
+}
+
+// LinkAddresses calls LinkAddressesFunc.
+func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+	if mock.LinkAddressesFunc == nil {
+		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
+	}{
+		Ctx:       ctx,
+		Sender:    sender,
+		Recipient: recipient,
+	}
+	mock.lockLinkAddresses.Lock()
+	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
+	mock.lockLinkAddresses.Unlock()
+	return mock.LinkAddressesFunc(ctx, sender, recipient)
+}
+
+// LinkAddressesCalls gets all the calls that were made to LinkAddresses.
+// Check the length with:
+//     len(mockedNexus.LinkAddressesCalls())
+func (mock *NexusMock) LinkAddressesCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Sender    exported.CrossChainAddress
+	Recipient exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Sender    exported.CrossChainAddress
+		Recipient exported.CrossChainAddress
+	}
+	mock.lockLinkAddresses.RLock()
+	calls = mock.calls.LinkAddresses
+	mock.lockLinkAddresses.RUnlock()
 	return calls
 }
 

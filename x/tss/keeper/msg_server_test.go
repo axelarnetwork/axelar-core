@@ -45,6 +45,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 					Name:                  chain,
 					NativeAsset:           rand.StrBetween(5, 10),
 					SupportsForeignAssets: rand.Bools(0.5).Next(),
+					Module:                rand.Str(10),
 				}, true
 			},
 		}
@@ -126,7 +127,9 @@ func TestMsgServer_SubmitMultisigPubKey(t *testing.T) {
 			SetKeyFunc:                     func(ctx sdk.Context, key exported.Key) {},
 		}
 		snapshotter := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return randSnap.Validators[0].GetSDKValidator().GetOperator() },
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+				return randSnap.Validators[0].GetSDKValidator().GetOperator()
+			},
 			GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) { return randSnap, true },
 		}
 		staker := &mock.StakingKeeperMock{}
@@ -223,16 +226,24 @@ func TestMsgServer_SubmitMultisigSignatures(t *testing.T) {
 		randSnap = randSnapshot()
 		signInfo := randSignInfo(randSnap)
 		tssKeeper = &mock.TSSKeeperMock{
-			LoggerFunc:                        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
-			GetInfoForSigFunc:                 func(sdk.Context, string) (exported.SignInfo, bool) { return signInfo, true },
-			GetMultisigPubKeysByValidatorFunc: func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return []ecdsa.PublicKey{}, true },
-			SubmitSignaturesFunc:              func(sdk.Context, string, sdk.ValAddress, ...[]byte) bool { return true },
-			IsMultisigKeygenCompletedFunc:     func(sdk.Context, exported.KeyID) bool { return false },
-			GetMultisigSignInfoFunc:           func(sdk.Context, string) (types.MultisigSignInfo, bool) { return &types.MultisigInfo{TargetNum: rand.PosI64()}, true },
-			GetSigFunc:                        func(sdk.Context, string) (exported.Signature, exported.SigStatus) { return exported.Signature{}, exported.SigStatus_Signing },
+			LoggerFunc:        func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			GetInfoForSigFunc: func(sdk.Context, string) (exported.SignInfo, bool) { return signInfo, true },
+			GetMultisigPubKeysByValidatorFunc: func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) {
+				return []ecdsa.PublicKey{}, true
+			},
+			SubmitSignaturesFunc:          func(sdk.Context, string, sdk.ValAddress, ...[]byte) bool { return true },
+			IsMultisigKeygenCompletedFunc: func(sdk.Context, exported.KeyID) bool { return false },
+			GetMultisigSignInfoFunc: func(sdk.Context, string) (types.MultisigSignInfo, bool) {
+				return &types.MultisigInfo{TargetNum: rand.PosI64()}, true
+			},
+			GetSigFunc: func(sdk.Context, string) (exported.Signature, exported.SigStatus) {
+				return exported.Signature{}, exported.SigStatus_Signing
+			},
 		}
 		snapshotter := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return randSnap.Validators[0].GetSDKValidator().GetOperator() },
+			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
+				return randSnap.Validators[0].GetSDKValidator().GetOperator()
+			},
 			GetSnapshotFunc: func(sdk.Context, int64) (snapshot.Snapshot, bool) { return randSnap, true },
 		}
 		staker := &mock.StakingKeeperMock{}
@@ -245,7 +256,9 @@ func TestMsgServer_SubmitMultisigSignatures(t *testing.T) {
 	repeats := 20
 	t.Run("should return error when cannot find pub keys", testutils.Func(func(t *testing.T) {
 		setup()
-		tssKeeper.GetMultisigPubKeysByValidatorFunc = func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) { return []ecdsa.PublicKey{}, false }
+		tssKeeper.GetMultisigPubKeysByValidatorFunc = func(sdk.Context, exported.KeyID, sdk.ValAddress) ([]ecdsa.PublicKey, bool) {
+			return []ecdsa.PublicKey{}, false
+		}
 
 		sigs := randSignatures(randSnap.Validators[0])
 		_, err := server.SubmitMultisigSignatures(sdk.WrapSDKContext(ctx), &types.SubmitMultisigSignaturesRequest{

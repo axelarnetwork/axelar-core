@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 func TestKeeper_GetIBCPath(t *testing.T) {
@@ -35,10 +36,13 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		setup()
 		path := randomIBCPath()
-		asset := randomDenom()
-		err := keeper.RegisterIBCPath(ctx, asset, path)
+		chain := randomChain()
+		chain.Assets = nil
+		chain.IBCPath = ""
+		keeper.SetCosmosChain(ctx, chain)
+		err := keeper.RegisterIBCPath(ctx, chain.Name, path)
 		assert.NoError(t, err)
-		result, ok := keeper.GetIBCPath(ctx, asset)
+		result, ok := keeper.GetIBCPath(ctx, chain.Name)
 		assert.Equal(t, path, result)
 		assert.True(t, ok)
 	}).Repeat(repeats))
@@ -46,11 +50,14 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 	t.Run("should return error when registered the same asset twice", testutils.Func(func(t *testing.T) {
 		setup()
 		path := randomIBCPath()
-		asset := randomDenom()
-		err := keeper.RegisterIBCPath(ctx, asset, path)
+		chain := randomChain()
+		chain.Assets = nil
+		chain.IBCPath = ""
+		keeper.SetCosmosChain(ctx, chain)
+		err := keeper.RegisterIBCPath(ctx, chain.Name, path)
 		assert.NoError(t, err)
 		path2 := randomIBCPath()
-		err2 := keeper.RegisterIBCPath(ctx, asset, path2)
+		err2 := keeper.RegisterIBCPath(ctx, chain.Name, path2)
 		assert.Error(t, err2)
 	}).Repeat(repeats))
 
@@ -77,6 +84,10 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.Str(10))
+			keeper.SetCosmosChain(ctx, types.CosmosChain{
+				Name:       chains[i],
+				AddrPrefix: rand.Str(5),
+			})
 			keeper.RegisterAssetToCosmosChain(ctx, rand.Str(10), chains[i])
 		}
 		sort.Strings(chains)

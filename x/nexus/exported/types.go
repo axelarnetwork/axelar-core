@@ -6,6 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// AddressValidator defines a function that implements address verification upon a request to link addresses
+type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
+
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
 	if m.Name == "" {
@@ -18,6 +21,10 @@ func (m Chain) Validate() error {
 
 	if err := m.KeyType.Validate(); err != nil {
 		return err
+	}
+
+	if m.Module == "" {
+		return fmt.Errorf("missing module name")
 	}
 
 	return nil
