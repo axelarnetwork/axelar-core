@@ -135,6 +135,18 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 	k.getStore(ctx).Delete(key)
 }
 
+// GetCosmosChainByName gets the address prefix of the given cosmos chain
+func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
+	var value types.CosmosChain
+	ok := k.getStore(ctx).Get(key, &value)
+	if !ok {
+		return types.CosmosChain{}, false
+	}
+
+	return value, true
+}
+
 // GetCosmosChainByAsset gets an asset's original chain
 func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
 	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
@@ -227,18 +239,6 @@ func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 	}
 
 	return bz, true
-}
-
-// GetCosmosChainByName gets the address prefix of the given cosmos chain
-func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
-	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
-	var value types.CosmosChain
-	ok := k.getStore(ctx).Get(key, &value)
-	if !ok {
-		return types.CosmosChain{}, false
-	}
-
-	return value, true
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
