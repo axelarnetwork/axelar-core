@@ -17,7 +17,6 @@ import (
 var (
 	pathPrefix         = utils.KeyFromStr("path")
 	transferPrefix     = utils.KeyFromStr("transfer")
-	addrPrefixPrefix   = utils.KeyFromStr("addr_prefix")
 	cosmosChainPrefix  = utils.KeyFromStr("cosmos_chain")
 	chainByAssetPrefix = utils.KeyFromStr("chain_by_asset")
 	assetByChainPrefix = utils.KeyFromStr("asset_by_chain")
