@@ -232,7 +232,9 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		Name:       req.Chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
-	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name)
+	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name); err != nil {
+		return &types.AddCosmosBasedChainResponse{}, err
+	}
 
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
