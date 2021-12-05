@@ -103,7 +103,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
-			GetCosmosChainFunc: func(sdk.Context, string) (string, bool) {
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
 				return "cosmoshub", true
 			},
 		}
@@ -289,7 +289,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return "", false
 			},
-			GetCosmosChainFunc: func(sdk.Context, string) (string, bool) {
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
 				return testChain, true
 			},
 		}
@@ -438,7 +438,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
-			GetCosmosChainFunc: func(sdk.Context, string) (string, bool) {
+			GetCosmosChainByAssetFunc: func(sdk.Context, string) (string, bool) {
 				return "cosmoschain", true
 			},
 			GetCosmosChainsFunc: func(sdk.Context) []string {
@@ -448,7 +448,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			},
 
 			GetRouteTimeoutWindowFunc: func(ctx sdk.Context) uint64 { return 10 },
-			SetPendingIBCTransferFunc: func(ctx sdk.Context, portID, channelID string, sequence uint64, value types.IBCTransfer) {},
+			SetPendingIBCTransferFunc: func(ctx sdk.Context, transfer types.IBCTransfer) {},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
@@ -502,7 +502,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 	t.Run("should mint wrapped token and route to cosmos chains, and archive pending transfers when get pending transfers from nexus keeper", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetCosmosChainFunc = func(sdk.Context, string) (string, bool) { return "", false }
+		axelarnetKeeper.GetCosmosChainByAssetFunc = func(sdk.Context, string) (string, bool) { return "", false }
 		msg = types.NewRouteIBCTransfersRequest(rand.AccAddr())
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)

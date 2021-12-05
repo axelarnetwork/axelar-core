@@ -92,7 +92,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		}
 
 		// check if the asset registered with a path
-		chain, ok := s.BaseKeeper.GetCosmosChain(ctx, denomTrace.GetBaseDenom())
+		chain, ok := s.BaseKeeper.GetCosmosChainByAsset(ctx, denomTrace.GetBaseDenom())
 		if !ok {
 			return nil, fmt.Errorf("asset %s is not linked to a cosmos chain", denomTrace.GetBaseDenom())
 		}
@@ -302,7 +302,14 @@ func IBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper,
 	if err == nil {
 		// SendTransfer would return error if the next sequence not found
 		seq, _ := c.GetNextSequenceSend(ctx, portID, channelID)
-		k.SetPendingIBCTransfer(ctx, portID, channelID, seq-1, types.IBCTransfer{Sender: sender, Receiver: receiver, Token: token})
+		k.SetPendingIBCTransfer(ctx, types.IBCTransfer{
+			Sender:    sender,
+			Receiver:  receiver,
+			Token:     token,
+			PortID:    portID,
+			ChannelID: channelID,
+			Sequence:  seq - 1,
+		})
 	}
 	return err
 }
@@ -353,7 +360,7 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctransfert
 // toICS20 converts a cross chain transfer to ICS20 token
 func toICS20(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
-	chain, _ := k.GetCosmosChain(ctx, transfer.Asset.GetDenom())
+	chain, _ := k.GetCosmosChainByAsset(ctx, transfer.Asset.GetDenom())
 	path, _ := k.GetIBCPath(ctx, chain)
 
 	prefixedDenom := fmt.Sprintf("%s/%s", path, transfer.Asset.Denom)
@@ -364,7 +371,7 @@ func toICS20(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTrans
 
 // isFromCosmosChain returns true if the asset origins from cosmos chains
 func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) bool {
-	chain, ok := k.GetCosmosChain(ctx, transfer.Asset.GetDenom())
+	chain, ok := k.GetCosmosChainByAsset(ctx, transfer.Asset.GetDenom())
 	if !ok {
 		return false
 	}

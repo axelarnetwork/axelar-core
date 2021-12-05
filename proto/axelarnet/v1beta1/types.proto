@@ -12,4 +12,13 @@ message IBCTransfer {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string receiver = 2;
   cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
+  string port_id = 4 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 5 [ (gogoproto.customname) = "ChannelID" ];
+  uint64 sequence = 6;
+}
+
+message CosmosChain {
+  string name = 1;
+  string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
+  repeated string assets = 3;
 }
