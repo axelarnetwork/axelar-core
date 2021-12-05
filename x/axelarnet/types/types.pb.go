@@ -26,9 +26,12 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type IBCTransfer struct {
-	Sender   github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Receiver string                                        `protobuf:"bytes,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
-	Token    types.Coin                                    `protobuf:"bytes,3,opt,name=token,proto3" json:"token"`
+	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Receiver  string                                        `protobuf:"bytes,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
+	Token     types.Coin                                    `protobuf:"bytes,3,opt,name=token,proto3" json:"token"`
+	PortID    string                                        `protobuf:"bytes,4,opt,name=port_id,json=portId,proto3" json:"port_id,omitempty"`
+	ChannelID string                                        `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	Sequence  uint64                                        `protobuf:"varint,6,opt,name=sequence,proto3" json:"sequence,omitempty"`
 }
 
 func (m *IBCTransfer) Reset()         { *m = IBCTransfer{} }
@@ -64,32 +67,81 @@ func (m *IBCTransfer) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_IBCTransfer proto.InternalMessageInfo
 
+type CosmosChain struct {
+	Name    string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	IBCPath string   `protobuf:"bytes,2,opt,name=ibc_path,json=ibcPath,proto3" json:"ibc_path,omitempty"`
+	Assets  []string `protobuf:"bytes,3,rep,name=assets,proto3" json:"assets,omitempty"`
+}
+
+func (m *CosmosChain) Reset()         { *m = CosmosChain{} }
+func (m *CosmosChain) String() string { return proto.CompactTextString(m) }
+func (*CosmosChain) ProtoMessage()    {}
+func (*CosmosChain) Descriptor() ([]byte, []int) {
+	return fileDescriptor_60cef2e8b09d640f, []int{1}
+}
+func (m *CosmosChain) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CosmosChain) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CosmosChain.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CosmosChain) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CosmosChain.Merge(m, src)
+}
+func (m *CosmosChain) XXX_Size() int {
+	return m.Size()
+}
+func (m *CosmosChain) XXX_DiscardUnknown() {
+	xxx_messageInfo_CosmosChain.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CosmosChain proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*IBCTransfer)(nil), "axelarnet.v1beta1.IBCTransfer")
+	proto.RegisterType((*CosmosChain)(nil), "axelarnet.v1beta1.CosmosChain")
 }
 
 func init() { proto.RegisterFile("axelarnet/v1beta1/types.proto", fileDescriptor_60cef2e8b09d640f) }
 
 var fileDescriptor_60cef2e8b09d640f = []byte{
-	// 285 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x90, 0xb1, 0x4e, 0xeb, 0x30,
-	0x14, 0x86, 0xe3, 0x7b, 0xa1, 0x82, 0x94, 0x85, 0x88, 0xa1, 0x54, 0xc2, 0xad, 0x98, 0xb2, 0xc4,
-	0x56, 0x40, 0xb0, 0x37, 0x9d, 0xba, 0x46, 0x9d, 0xd8, 0x12, 0xe7, 0x10, 0xa2, 0x50, 0x9f, 0xca,
-	0x36, 0xa5, 0xbc, 0x05, 0xef, 0xc1, 0x8b, 0x64, 0xec, 0xc8, 0x54, 0x41, 0xf2, 0x16, 0x4c, 0xa8,
-	0x75, 0x08, 0x4c, 0xf6, 0xd1, 0x77, 0xf4, 0xeb, 0x3b, 0xbf, 0x7b, 0x91, 0xac, 0xe1, 0x31, 0x51,
-	0x12, 0x0c, 0x5f, 0x85, 0x29, 0x98, 0x24, 0xe4, 0xe6, 0x65, 0x09, 0x9a, 0x2d, 0x15, 0x1a, 0xf4,
-	0x4e, 0x3b, 0xcc, 0x5a, 0x3c, 0x3c, 0xcb, 0x31, 0xc7, 0x3d, 0xe5, 0xbb, 0x9f, 0x5d, 0x1c, 0x52,
-	0x81, 0x7a, 0x81, 0x9a, 0xa7, 0x89, 0x86, 0x2e, 0x49, 0x60, 0x21, 0x2d, 0xbf, 0x7c, 0x23, 0x6e,
-	0x7f, 0x16, 0x4d, 0xe7, 0x2a, 0x91, 0xfa, 0x1e, 0x94, 0x37, 0x73, 0x7b, 0x1a, 0x64, 0x06, 0x6a,
-	0x40, 0xc6, 0xc4, 0x3f, 0x89, 0xc2, 0xaf, 0xed, 0x28, 0xc8, 0x0b, 0xf3, 0xf0, 0x94, 0x32, 0x81,
-	0x0b, 0xde, 0xc6, 0xd9, 0x27, 0xd0, 0x59, 0xd9, 0x6a, 0x4d, 0x84, 0x98, 0x64, 0x99, 0x02, 0xad,
-	0xe3, 0x36, 0xc0, 0x1b, 0xba, 0x47, 0x0a, 0x04, 0x14, 0x2b, 0x50, 0x83, 0x7f, 0x63, 0xe2, 0x1f,
-	0xc7, 0xdd, 0xec, 0xdd, 0xb8, 0x87, 0x06, 0x4b, 0x90, 0x83, 0xff, 0x63, 0xe2, 0xf7, 0xaf, 0xce,
-	0x99, 0x0d, 0x64, 0x3b, 0xcd, 0x9f, 0x8b, 0xd8, 0x14, 0x0b, 0x19, 0x1d, 0x54, 0xdb, 0x91, 0x13,
-	0xdb, 0xed, 0x68, 0x5e, 0x7d, 0x52, 0xa7, 0xaa, 0x29, 0xd9, 0xd4, 0x94, 0x7c, 0xd4, 0x94, 0xbc,
-	0x36, 0xd4, 0xd9, 0x34, 0xd4, 0x79, 0x6f, 0xa8, 0x73, 0x77, 0xfb, 0xc7, 0xb3, 0xeb, 0xe7, 0x19,
-	0x55, 0xd9, 0x4e, 0x81, 0x40, 0x05, 0x7c, 0xfd, 0xcb, 0xac, 0x7b, 0xda, 0xdb, 0x57, 0x71, 0xfd,
-	0x1d, 0x00, 0x00, 0xff, 0xff, 0x5d, 0x51, 0x03, 0x2a, 0x74, 0x01, 0x00, 0x00,
+	// 420 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x51, 0x31, 0x6f, 0xd3, 0x40,
+	0x18, 0xb5, 0x9b, 0xd4, 0xa9, 0x2f, 0x30, 0x70, 0x42, 0xc8, 0x44, 0xc2, 0xb6, 0x8a, 0x84, 0x3c,
+	0x10, 0x5b, 0x01, 0xc1, 0x5e, 0xbb, 0x8b, 0xb7, 0xea, 0xd4, 0x89, 0xa5, 0x3a, 0x9f, 0x3f, 0x62,
+	0x2b, 0xcd, 0x5d, 0xb8, 0xbb, 0x96, 0xf2, 0x2f, 0x98, 0xf9, 0x45, 0x19, 0x33, 0x32, 0x59, 0xe0,
+	0xfc, 0x0b, 0x26, 0x64, 0x9f, 0x31, 0x9d, 0xee, 0x7b, 0xf7, 0x9e, 0x9e, 0xde, 0xf7, 0x3d, 0xf4,
+	0x8a, 0x3e, 0xc0, 0x2d, 0x95, 0x1c, 0x74, 0x72, 0xbf, 0x2a, 0x40, 0xd3, 0x55, 0xa2, 0xbf, 0xed,
+	0x40, 0xc5, 0x3b, 0x29, 0xb4, 0xc0, 0xcf, 0x46, 0x3a, 0x1e, 0xe8, 0xc5, 0xf3, 0xb5, 0x58, 0x8b,
+	0x9e, 0x4d, 0xba, 0xc9, 0x08, 0x17, 0x3e, 0x13, 0x6a, 0x2b, 0x54, 0x52, 0x50, 0x05, 0xa3, 0x13,
+	0x13, 0x35, 0x37, 0xfc, 0xf9, 0x8f, 0x13, 0x34, 0xcf, 0xd3, 0xec, 0x5a, 0x52, 0xae, 0x3e, 0x83,
+	0xc4, 0x39, 0x72, 0x14, 0xf0, 0x12, 0xa4, 0x67, 0x87, 0x76, 0xf4, 0x24, 0x5d, 0xfd, 0x69, 0x82,
+	0xe5, 0xba, 0xd6, 0xd5, 0x5d, 0x11, 0x33, 0xb1, 0x4d, 0x06, 0x3b, 0xf3, 0x2c, 0x55, 0xb9, 0x19,
+	0x62, 0x5d, 0x30, 0x76, 0x51, 0x96, 0x12, 0x94, 0x22, 0x83, 0x01, 0x5e, 0xa0, 0x33, 0x09, 0x0c,
+	0xea, 0x7b, 0x90, 0xde, 0x49, 0x68, 0x47, 0x2e, 0x19, 0x31, 0xfe, 0x80, 0x4e, 0xb5, 0xd8, 0x00,
+	0xf7, 0x26, 0xa1, 0x1d, 0xcd, 0xdf, 0xbd, 0x8c, 0x8d, 0x61, 0xdc, 0xc5, 0xfc, 0xb7, 0x51, 0x9c,
+	0x89, 0x9a, 0xa7, 0xd3, 0x7d, 0x13, 0x58, 0xc4, 0xa8, 0xf1, 0x6b, 0x34, 0xdb, 0x09, 0xa9, 0x6f,
+	0xea, 0xd2, 0x9b, 0x76, 0x8e, 0x29, 0x6a, 0x9b, 0xc0, 0xb9, 0x12, 0x52, 0xe7, 0x97, 0xc4, 0xe9,
+	0xa8, 0xbc, 0xc4, 0x6f, 0x11, 0x62, 0x15, 0xe5, 0x1c, 0x6e, 0x3b, 0xdd, 0x69, 0xaf, 0x7b, 0xda,
+	0x36, 0x81, 0x9b, 0x99, 0xdf, 0xfc, 0x92, 0xb8, 0x83, 0x20, 0x2f, 0xbb, 0x94, 0x0a, 0xbe, 0xdc,
+	0x01, 0x67, 0xe0, 0x39, 0xa1, 0x1d, 0x4d, 0xc9, 0x88, 0xcf, 0x29, 0x9a, 0x67, 0x7d, 0xae, 0xac,
+	0xa2, 0x35, 0xc7, 0x18, 0x4d, 0x39, 0xdd, 0x42, 0x7f, 0x19, 0x97, 0xf4, 0x33, 0x7e, 0x83, 0xce,
+	0xea, 0x82, 0xdd, 0xec, 0xa8, 0xae, 0xcc, 0x92, 0xe9, 0xbc, 0x6d, 0x82, 0x59, 0x9e, 0x66, 0x57,
+	0x54, 0x57, 0x64, 0x56, 0x17, 0xac, 0x1b, 0xf0, 0x0b, 0xe4, 0x50, 0xa5, 0x40, 0x2b, 0x6f, 0x12,
+	0x4e, 0x22, 0x97, 0x0c, 0x28, 0xbd, 0xde, 0xff, 0xf6, 0xad, 0x7d, 0xeb, 0xdb, 0x87, 0xd6, 0xb7,
+	0x7f, 0xb5, 0xbe, 0xfd, 0xfd, 0xe8, 0x5b, 0x87, 0xa3, 0x6f, 0xfd, 0x3c, 0xfa, 0xd6, 0xa7, 0x8f,
+	0x8f, 0x2e, 0x3f, 0x36, 0xfe, 0x55, 0xc8, 0xcd, 0x80, 0x96, 0x4c, 0x48, 0x48, 0x1e, 0xfe, 0x73,
+	0xa6, 0x8d, 0xc2, 0xe9, 0xcb, 0x7d, 0xff, 0x37, 0x00, 0x00, 0xff, 0xff, 0x18, 0xc4, 0x2e, 0x65,
+	0x46, 0x02, 0x00, 0x00,
 }
 
 func (m *IBCTransfer) Marshal() (dAtA []byte, err error) {
@@ -112,6 +164,25 @@ func (m *IBCTransfer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Sequence != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.Sequence))
+		i--
+		dAtA[i] = 0x30
+	}
+	if len(m.ChannelID) > 0 {
+		i -= len(m.ChannelID)
+		copy(dAtA[i:], m.ChannelID)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.ChannelID)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.PortID) > 0 {
+		i -= len(m.PortID)
+		copy(dAtA[i:], m.PortID)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.PortID)))
+		i--
+		dAtA[i] = 0x22
+	}
 	{
 		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -133,6 +204,52 @@ func (m *IBCTransfer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Sender)
 		copy(dAtA[i:], m.Sender)
 		i = encodeVarintTypes(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CosmosChain) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CosmosChain) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CosmosChain) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Assets) > 0 {
+		for iNdEx := len(m.Assets) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Assets[iNdEx])
+			copy(dAtA[i:], m.Assets[iNdEx])
+			i = encodeVarintTypes(dAtA, i, uint64(len(m.Assets[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.IBCPath) > 0 {
+		i -= len(m.IBCPath)
+		copy(dAtA[i:], m.IBCPath)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.IBCPath)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -166,6 +283,40 @@ func (m *IBCTransfer) Size() (n int) {
 	}
 	l = m.Token.Size()
 	n += 1 + l + sovTypes(uint64(l))
+	l = len(m.PortID)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.ChannelID)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.Sequence != 0 {
+		n += 1 + sovTypes(uint64(m.Sequence))
+	}
+	return n
+}
+
+func (m *CosmosChain) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.IBCPath)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.Assets) > 0 {
+		for _, s := range m.Assets {
+			l = len(s)
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -302,6 +453,235 @@ func (m *IBCTransfer) Unmarshal(dAtA []byte) error {
 			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PortID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PortID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChannelID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChannelID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sequence", wireType)
+			}
+			m.Sequence = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Sequence |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CosmosChain) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CosmosChain: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CosmosChain: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IBCPath", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IBCPath = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Assets", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Assets = append(m.Assets, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -7,6 +7,10 @@
 - [axelarnet/v1beta1/params.proto](#axelarnet/v1beta1/params.proto)
     - [Params](#axelarnet.v1beta1.Params)
   
+- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
+    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
+  
 - [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelarnet.v1beta1.GenesisState)
   
@@ -57,9 +61,6 @@
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
-  
-- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
-    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
 - [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
     - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
@@ -409,6 +410,59 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelarnet/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/types.proto
+
+
+
+<a name="axelarnet.v1beta1.CosmosChain"></a>
+
+### CosmosChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `ibc_path` | [string](#string) |  |  |
+| `assets` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.IBCTransfer"></a>
+
+### IBCTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `receiver` | [string](#string) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -425,6 +479,9 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#axelarnet.v1beta1.Params) |  |  |
+| `collector_address` | [bytes](#bytes) |  |  |
+| `chains` | [CosmosChain](#axelarnet.v1beta1.CosmosChain) | repeated |  |
+| `pending_transfers` | [IBCTransfer](#axelarnet.v1beta1.IBCTransfer) | repeated |  |
 
 
 
@@ -1067,39 +1124,6 @@ Msg defines the axelarnet Msg service.
 | `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
-
- <!-- end services -->
-
-
-
-<a name="axelarnet/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelarnet/v1beta1/types.proto
-
-
-
-<a name="axelarnet.v1beta1.IBCTransfer"></a>
-
-### IBCTransfer
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `receiver` | [string](#string) |  |  |
-| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

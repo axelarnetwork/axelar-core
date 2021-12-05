@@ -28,8 +28,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
 // 				panic("mock out the DeletePendingIBCTransfer method")
 // 			},
-// 			GetCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string) (string, bool) {
-// 				panic("mock out the GetCosmosChain method")
+// 			GetCosmosChainByAssetFunc: func(ctx cosmossdktypes.Context, asset string) (string, bool) {
+// 				panic("mock out the GetCosmosChainByAsset method")
 // 			},
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []string {
 // 				panic("mock out the GetCosmosChains method")
@@ -64,10 +64,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
 // 				panic("mock out the SetFeeCollector method")
 // 			},
-// 			SetParamsFunc: func(ctx cosmossdktypes.Context, n axelarnettypes.Nexus, p axelarnettypes.Params)  {
-// 				panic("mock out the SetParams method")
-// 			},
-// 			SetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64, value axelarnettypes.IBCTransfer)  {
+// 			SetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)  {
 // 				panic("mock out the SetPendingIBCTransfer method")
 // 			},
 // 		}
@@ -80,8 +77,8 @@ type BaseKeeperMock struct {
 	// DeletePendingIBCTransferFunc mocks the DeletePendingIBCTransfer method.
 	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
 
-	// GetCosmosChainFunc mocks the GetCosmosChain method.
-	GetCosmosChainFunc func(ctx cosmossdktypes.Context, asset string) (string, bool)
+	// GetCosmosChainByAssetFunc mocks the GetCosmosChainByAsset method.
+	GetCosmosChainByAssetFunc func(ctx cosmossdktypes.Context, asset string) (string, bool)
 
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []string
@@ -116,11 +113,8 @@ type BaseKeeperMock struct {
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
 
-	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx cosmossdktypes.Context, n axelarnettypes.Nexus, p axelarnettypes.Params)
-
 	// SetPendingIBCTransferFunc mocks the SetPendingIBCTransfer method.
-	SetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64, value axelarnettypes.IBCTransfer)
+	SetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -135,8 +129,8 @@ type BaseKeeperMock struct {
 			// Sequence is the sequence argument value.
 			Sequence uint64
 		}
-		// GetCosmosChain holds details about calls to the GetCosmosChain method.
-		GetCosmosChain []struct {
+		// GetCosmosChainByAsset holds details about calls to the GetCosmosChainByAsset method.
+		GetCosmosChainByAsset []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Asset is the asset argument value.
@@ -215,31 +209,16 @@ type BaseKeeperMock struct {
 			// Address is the address argument value.
 			Address cosmossdktypes.AccAddress
 		}
-		// SetParams holds details about calls to the SetParams method.
-		SetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// N is the n argument value.
-			N axelarnettypes.Nexus
-			// P is the p argument value.
-			P axelarnettypes.Params
-		}
 		// SetPendingIBCTransfer holds details about calls to the SetPendingIBCTransfer method.
 		SetPendingIBCTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// PortID is the portID argument value.
-			PortID string
-			// ChannelID is the channelID argument value.
-			ChannelID string
-			// Sequence is the sequence argument value.
-			Sequence uint64
-			// Value is the value argument value.
-			Value axelarnettypes.IBCTransfer
+			// Transfer is the transfer argument value.
+			Transfer axelarnettypes.IBCTransfer
 		}
 	}
 	lockDeletePendingIBCTransfer   sync.RWMutex
-	lockGetCosmosChain             sync.RWMutex
+	lockGetCosmosChainByAsset      sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
@@ -251,7 +230,6 @@ type BaseKeeperMock struct {
 	lockRegisterAssetToCosmosChain sync.RWMutex
 	lockRegisterIBCPath            sync.RWMutex
 	lockSetFeeCollector            sync.RWMutex
-	lockSetParams                  sync.RWMutex
 	lockSetPendingIBCTransfer      sync.RWMutex
 }
 
@@ -298,10 +276,10 @@ func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
 	return calls
 }
 
-// GetCosmosChain calls GetCosmosChainFunc.
-func (mock *BaseKeeperMock) GetCosmosChain(ctx cosmossdktypes.Context, asset string) (string, bool) {
-	if mock.GetCosmosChainFunc == nil {
-		panic("BaseKeeperMock.GetCosmosChainFunc: method is nil but BaseKeeper.GetCosmosChain was just called")
+// GetCosmosChainByAsset calls GetCosmosChainByAssetFunc.
+func (mock *BaseKeeperMock) GetCosmosChainByAsset(ctx cosmossdktypes.Context, asset string) (string, bool) {
+	if mock.GetCosmosChainByAssetFunc == nil {
+		panic("BaseKeeperMock.GetCosmosChainByAssetFunc: method is nil but BaseKeeper.GetCosmosChainByAsset was just called")
 	}
 	callInfo := struct {
 		Ctx   cosmossdktypes.Context
@@ -310,16 +288,16 @@ func (mock *BaseKeeperMock) GetCosmosChain(ctx cosmossdktypes.Context, asset str
 		Ctx:   ctx,
 		Asset: asset,
 	}
-	mock.lockGetCosmosChain.Lock()
-	mock.calls.GetCosmosChain = append(mock.calls.GetCosmosChain, callInfo)
-	mock.lockGetCosmosChain.Unlock()
-	return mock.GetCosmosChainFunc(ctx, asset)
+	mock.lockGetCosmosChainByAsset.Lock()
+	mock.calls.GetCosmosChainByAsset = append(mock.calls.GetCosmosChainByAsset, callInfo)
+	mock.lockGetCosmosChainByAsset.Unlock()
+	return mock.GetCosmosChainByAssetFunc(ctx, asset)
 }
 
-// GetCosmosChainCalls gets all the calls that were made to GetCosmosChain.
+// GetCosmosChainByAssetCalls gets all the calls that were made to GetCosmosChainByAsset.
 // Check the length with:
-//     len(mockedBaseKeeper.GetCosmosChainCalls())
-func (mock *BaseKeeperMock) GetCosmosChainCalls() []struct {
+//     len(mockedBaseKeeper.GetCosmosChainByAssetCalls())
+func (mock *BaseKeeperMock) GetCosmosChainByAssetCalls() []struct {
 	Ctx   cosmossdktypes.Context
 	Asset string
 } {
@@ -327,9 +305,9 @@ func (mock *BaseKeeperMock) GetCosmosChainCalls() []struct {
 		Ctx   cosmossdktypes.Context
 		Asset string
 	}
-	mock.lockGetCosmosChain.RLock()
-	calls = mock.calls.GetCosmosChain
-	mock.lockGetCosmosChain.RUnlock()
+	mock.lockGetCosmosChainByAsset.RLock()
+	calls = mock.calls.GetCosmosChainByAsset
+	mock.lockGetCosmosChainByAsset.RUnlock()
 	return calls
 }
 
@@ -710,85 +688,34 @@ func (mock *BaseKeeperMock) SetFeeCollectorCalls() []struct {
 	return calls
 }
 
-// SetParams calls SetParamsFunc.
-func (mock *BaseKeeperMock) SetParams(ctx cosmossdktypes.Context, n axelarnettypes.Nexus, p axelarnettypes.Params) {
-	if mock.SetParamsFunc == nil {
-		panic("BaseKeeperMock.SetParamsFunc: method is nil but BaseKeeper.SetParams was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-		N   axelarnettypes.Nexus
-		P   axelarnettypes.Params
-	}{
-		Ctx: ctx,
-		N:   n,
-		P:   p,
-	}
-	mock.lockSetParams.Lock()
-	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
-	mock.lockSetParams.Unlock()
-	mock.SetParamsFunc(ctx, n, p)
-}
-
-// SetParamsCalls gets all the calls that were made to SetParams.
-// Check the length with:
-//     len(mockedBaseKeeper.SetParamsCalls())
-func (mock *BaseKeeperMock) SetParamsCalls() []struct {
-	Ctx cosmossdktypes.Context
-	N   axelarnettypes.Nexus
-	P   axelarnettypes.Params
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-		N   axelarnettypes.Nexus
-		P   axelarnettypes.Params
-	}
-	mock.lockSetParams.RLock()
-	calls = mock.calls.SetParams
-	mock.lockSetParams.RUnlock()
-	return calls
-}
-
 // SetPendingIBCTransfer calls SetPendingIBCTransferFunc.
-func (mock *BaseKeeperMock) SetPendingIBCTransfer(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64, value axelarnettypes.IBCTransfer) {
+func (mock *BaseKeeperMock) SetPendingIBCTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) {
 	if mock.SetPendingIBCTransferFunc == nil {
 		panic("BaseKeeperMock.SetPendingIBCTransferFunc: method is nil but BaseKeeper.SetPendingIBCTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
-		Value     axelarnettypes.IBCTransfer
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
 	}{
-		Ctx:       ctx,
-		PortID:    portID,
-		ChannelID: channelID,
-		Sequence:  sequence,
-		Value:     value,
+		Ctx:      ctx,
+		Transfer: transfer,
 	}
 	mock.lockSetPendingIBCTransfer.Lock()
 	mock.calls.SetPendingIBCTransfer = append(mock.calls.SetPendingIBCTransfer, callInfo)
 	mock.lockSetPendingIBCTransfer.Unlock()
-	mock.SetPendingIBCTransferFunc(ctx, portID, channelID, sequence, value)
+	mock.SetPendingIBCTransferFunc(ctx, transfer)
 }
 
 // SetPendingIBCTransferCalls gets all the calls that were made to SetPendingIBCTransfer.
 // Check the length with:
 //     len(mockedBaseKeeper.SetPendingIBCTransferCalls())
 func (mock *BaseKeeperMock) SetPendingIBCTransferCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	PortID    string
-	ChannelID string
-	Sequence  uint64
-	Value     axelarnettypes.IBCTransfer
+	Ctx      cosmossdktypes.Context
+	Transfer axelarnettypes.IBCTransfer
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
-		Value     axelarnettypes.IBCTransfer
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
 	}
 	mock.lockSetPendingIBCTransfer.RLock()
 	calls = mock.calls.SetPendingIBCTransfer
