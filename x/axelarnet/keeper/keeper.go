@@ -211,6 +211,15 @@ func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
 	}
 }
 
+// SetCosmosChain sets the address prefix for the given cosmos chain
+func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
+	// register a cosmos chain to axelarnet
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name))
+	if !k.getStore(ctx).Has(key) {
+		k.getStore(ctx).Set(key, &chain)
+	}
+}
+
 // GetFeeCollector gets axelarnet fee collector
 func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 	bz := k.getStore(ctx).GetRaw(feeCollector)
@@ -219,15 +228,6 @@ func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 	}
 
 	return bz, true
-}
-
-// SetCosmosChain sets the address prefix for the given cosmos chain
-func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
-	// register a cosmos chain to axelarnet
-	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name))
-	if !k.getStore(ctx).Has(key) {
-		k.getStore(ctx).Set(key, &chain)
-	}
 }
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
