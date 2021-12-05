@@ -204,19 +204,19 @@ func (k Keeper) getAssets(ctx sdk.Context, chain string) []string {
 	return assets
 }
 
-// SetFeeCollector sets axelarnet fee collector
-func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
-	if address != nil {
-		k.getStore(ctx).SetRaw(feeCollector, address)
-	}
-}
-
 // SetCosmosChain sets the address prefix for the given cosmos chain
 func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
 	// register a cosmos chain to axelarnet
 	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name))
 	if !k.getStore(ctx).Has(key) {
 		k.getStore(ctx).Set(key, &chain)
+	}
+}
+
+// SetFeeCollector sets axelarnet fee collector
+func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
+	if address != nil {
+		k.getStore(ctx).SetRaw(feeCollector, address)
 	}
 }
 
