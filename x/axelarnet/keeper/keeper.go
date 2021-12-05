@@ -136,6 +136,21 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 	k.getStore(ctx).Delete(key)
 }
 
+// GetCosmosChainByAsset gets a asset's original chain
+func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
+	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
+	if bz == nil {
+		return types.CosmosChain{}, false
+	}
+
+	chain, ok := k.GetCosmosChainByName(ctx, string(bz))
+	if !ok {
+		return types.CosmosChain{}, false
+	}
+
+	return chain, true
+}
+
 // GetCosmosChains retrieves all registered cosmos chains
 func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 	var results []string
@@ -187,21 +202,6 @@ func (k Keeper) getAssets(ctx sdk.Context, chain string) []string {
 	}
 
 	return assets
-}
-
-// GetCosmosChainByAsset gets a asset's original chain
-func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
-	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
-	if bz == nil {
-		return types.CosmosChain{}, false
-	}
-
-	chain, ok := k.GetCosmosChainByName(ctx, string(bz))
-	if !ok {
-		return types.CosmosChain{}, false
-	}
-
-	return chain, true
 }
 
 // SetFeeCollector sets axelarnet fee collector
