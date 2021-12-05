@@ -2398,8 +2398,7 @@ GenesisState represents the genesis state
 | `command_queue` | [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry) | repeated |  |
 | `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
 | `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
-| `latest_batch` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) |  |  |
-| `signed_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
+| `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
 | `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
 | `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
 

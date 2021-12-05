@@ -1,8 +1,11 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -24,8 +27,7 @@ func DefaultChains() []GenesisState_Chain {
 			CommandQueue:      nil,
 			ConfirmedDeposits: nil,
 			BurnedDeposits:    nil,
-			LatestBatch:       CommandBatchMetadata{},
-			SignedBatches:     nil,
+			CommandBatches:    nil,
 			Gateway:           Gateway{},
 			Tokens:            nil,
 		}
@@ -34,16 +36,128 @@ func DefaultChains() []GenesisState_Chain {
 	return chains
 }
 
-// Validate calidates the genesis state
+// Validate validates the genesis state
 func (m GenesisState) Validate() error {
-	for _, chain := range m.Chains {
+	for j, chain := range m.Chains {
 		if err := chain.Params.Validate(); err != nil {
-			return sdkerrors.Wrap(err, fmt.Sprintf("genesis m for module %s is invalid", ModuleName))
+			return getValidateError(j, err)
 		}
 
+		if err := chain.Gateway.Validate(); err != nil {
+			return getValidateError(j, err)
+		}
+
+		for i, token := range chain.Tokens {
+			if err := token.Validate(); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid token %d", i))
+			}
+		}
+
+		for i, info := range chain.BurnerInfos {
+			if err := info.ValidateBasic(); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burner info %d", i))
+			}
+
+			if err := checkTokenInfo(info, chain.Tokens); err != nil {
+				return getValidateError(j, err)
+			}
+		}
+
+		for i, deposit := range chain.ConfirmedDeposits {
+			if err := deposit.ValidateBasic(); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed deposit %d", i))
+			}
+
+			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed deposit %d", i))
+			}
+		}
+
+		for i, deposit := range chain.BurnedDeposits {
+			if err := deposit.ValidateBasic(); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burned deposit %d", i))
+			}
+
+			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burned deposit %d", i))
+			}
+		}
+
+		if err := validateCommandBatches(chain.CommandBatches); err != nil {
+			return getValidateError(j, err)
+		}
 	}
 
 	return nil
+}
+
+func validateCommandBatches(batches []CommandBatchMetadata) error {
+	var batchesWithoutPreviousBatch []string
+	var batchesWithoutCompleteSign []string
+
+	for i, batch := range batches {
+		if batch.Status == BatchNonExistent {
+			return fmt.Errorf("status of command batch %d not set", i)
+		}
+
+		if batch.Status != BatchSigned {
+			batchesWithoutCompleteSign = append(batchesWithoutCompleteSign, strconv.Itoa(i))
+		}
+
+		if batch.ID == nil {
+			return fmt.Errorf("ID of command batch %d not set", i)
+		}
+
+		if batch.PrevBatchedCommandsID == nil {
+			batchesWithoutPreviousBatch = append(batchesWithoutPreviousBatch, strconv.Itoa(i))
+		}
+	}
+
+	if len(batchesWithoutCompleteSign) > 1 {
+		return fmt.Errorf("multiple uncompleted command batches: %s", strings.Join(batchesWithoutCompleteSign, ", "))
+	}
+
+	if len(batchesWithoutPreviousBatch) > 1 {
+		return fmt.Errorf("multiple command batches without previous batch ID: %s", strings.Join(batchesWithoutPreviousBatch, ", "))
+	}
+
+	return nil
+}
+
+func checkBurnerInfo(deposit ERC20Deposit, burnerInfos []BurnerInfo) error {
+	for _, info := range burnerInfos {
+		if bytes.Equal(deposit.BurnerAddress.Bytes(), info.BurnerAddress.Bytes()) {
+			if info.Asset != deposit.Asset {
+				return fmt.Errorf("expected asset %s, got %s", info.Asset, deposit.Asset)
+			}
+
+			if info.DestinationChain != deposit.DestinationChain {
+				return fmt.Errorf("expected destination address %s, got %s", info.DestinationChain, deposit.DestinationChain)
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("burner info for address %s not found", deposit.BurnerAddress.Hex())
+}
+
+func checkTokenInfo(info BurnerInfo, tokens []ERC20TokenMetadata) error {
+	for _, token := range tokens {
+		if bytes.Equal(info.TokenAddress.Bytes(), token.TokenAddress.Bytes()) {
+			if token.Asset != info.Asset {
+				return fmt.Errorf("expected asset %s, got %s", token.Asset, info.Asset)
+			}
+
+			if token.Details.Symbol != info.Symbol {
+				return fmt.Errorf("expected symbol %s, got %s", token.Details.Symbol, info.Symbol)
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("token with address %s not found", info.TokenAddress.Hex())
 }
 
 // GetGenesisStateFromAppState returns x/evm GenesisState given raw application
@@ -55,4 +169,8 @@ func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.R
 	}
 
 	return genesisState
+}
+
+func getValidateError(chainIdx int, err error) error {
+	return sdkerrors.Wrapf(sdkerrors.Wrapf(err, "invalid chain %d", chainIdx), "genesis state for module %s is invalid", ModuleName)
 }

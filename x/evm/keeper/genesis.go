@@ -26,11 +26,17 @@ func (k baseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 			ck.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
 		}
 
-		for _, batch := range chain.SignedBatches {
+		var latestBatch types.CommandBatchMetadata
+		for _, batch := range chain.CommandBatches {
 			ck.setCommandBatchMetadata(ctx, batch)
+			if batch.Status != types.BatchSigned {
+				latestBatch = batch
+			}
 		}
 
-		ck.setLatestBatchMetadata(ctx, chain.LatestBatch)
+		if latestBatch.Status != types.BatchNonExistent {
+			ck.setLatestBatchMetadata(ctx, latestBatch)
+		}
 
 		ck.setGateway(ctx, chain.Gateway)
 
@@ -60,8 +66,7 @@ func (k baseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 			CommandQueue:      ck.serializeCommandQueue(ctx),
 			ConfirmedDeposits: ck.GetConfirmedDeposits(ctx),
 			BurnedDeposits:    ck.getBurnedDeposits(ctx),
-			LatestBatch:       ck.getLatestCommandBatchMetadata(ctx),
-			SignedBatches:     ck.getCommandBatchesMetadata(ctx),
+			CommandBatches:    ck.getCommandBatchesMetadata(ctx),
 			Gateway:           ck.getGateway(ctx),
 			Tokens:            ck.getTokensMetadata(ctx),
 		}

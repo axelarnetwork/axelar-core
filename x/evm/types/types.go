@@ -877,7 +877,7 @@ func (m TokenDetails) Validate() error {
 	if m.Symbol == "" {
 		return fmt.Errorf("missing token symbol")
 	}
-	if !m.Capacity.IsPositive() {
+	if m.Capacity.IsNil() || !m.Capacity.IsPositive() {
 		return fmt.Errorf("token capacity must be a positive number")
 	}
 
@@ -1031,4 +1031,57 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	}
 
 	return result, nil
+}
+
+func (m *BurnerInfo) ValidateBasic() error {
+	if m.DestinationChain == "" {
+		return fmt.Errorf("destination chain not set")
+	}
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+	if m.Symbol == "" {
+		return fmt.Errorf("symbol not set")
+	}
+
+	return nil
+}
+
+func (m *Gateway) Validate() error {
+	if m.Status == GatewayStatusNone {
+		return fmt.Errorf("gatway status not set")
+	}
+	return nil
+}
+
+func (m *ERC20TokenMetadata) Validate() error {
+	if m.Status == NonExistent {
+		return fmt.Errorf("token status not set")
+	}
+
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+
+	if m.ChainID.IsNil() || !m.ChainID.IsPositive() {
+		return fmt.Errorf("chain ID not set")
+	}
+
+	if err := m.Details.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ERC20Deposit) ValidateBasic() error {
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("amount must be >0")
+	}
+
+	return nil
 }

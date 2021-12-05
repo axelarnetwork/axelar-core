@@ -20,8 +20,7 @@ message GenesisState {
         [ (gogoproto.nullable) = false ];
     repeated ERC20Deposit burned_deposits = 5 [ (gogoproto.nullable) = false ];
 
-    CommandBatchMetadata latest_batch = 7 [ (gogoproto.nullable) = false ];
-    repeated CommandBatchMetadata signed_batches = 8
+    repeated CommandBatchMetadata command_batches = 8
         [ (gogoproto.nullable) = false ];
 
     Gateway gateway = 9 [ (gogoproto.nullable) = false ];
