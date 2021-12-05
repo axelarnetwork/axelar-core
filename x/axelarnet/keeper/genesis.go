@@ -10,7 +10,10 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 	k.setParams(ctx, nexus, genState.Params)
 	k.SetFeeCollector(ctx, genState.CollectorAddress)
 	for _, chain := range genState.Chains {
-		k.SetCosmosChain(ctx, chain)
+		k.SetCosmosChain(ctx, types.CosmosChain{
+			Name:       chain.Name,
+			AddrPrefix: chain.AddrPrefix,
+		})
 
 		if err := k.RegisterIBCPath(ctx, chain.Name, chain.IBCPath); err != nil {
 			panic(err)
