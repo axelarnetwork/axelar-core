@@ -183,7 +183,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 	var transfersToArchive []nexus.CrossChainTransfer
 	for _, pendingTransfer := range pendingTransfers {
-		if pendingTransfer.Asset.Amount.LT(s.GetMinDepositAmount(ctx)) {
+		if pendingTransfer.Asset.Amount.LT(s.GetMinAmount(ctx)) {
 			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
 			continue
 		}

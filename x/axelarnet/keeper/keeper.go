@@ -63,10 +63,10 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
-// GetMinDepositAmount returns the minimum deposit amount
-func (k Keeper) GetMinDepositAmount(ctx sdk.Context) sdk.Int {
+// GetMinAmount returns the minimum deposit amount
+func (k Keeper) GetMinAmount(ctx sdk.Context) sdk.Int {
 	var result sdk.Int
-	k.params.Get(ctx, types.KeyMinDepositAmount, &result)
+	k.params.Get(ctx, types.KeyMinAmount, &result)
 
 	return result
 }
@@ -195,7 +195,7 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 }
 
 func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types.CosmosChain, ok bool) {
-        return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
+	return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
 }
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain

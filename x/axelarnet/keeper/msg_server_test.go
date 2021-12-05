@@ -295,7 +295,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
-			GetMinDepositAmountFunc: func(sdk.Context) sdk.Int {
+			GetMinAmountFunc: func(sdk.Context) sdk.Int {
 				return sdk.NewInt(1000000)
 			},
 		}

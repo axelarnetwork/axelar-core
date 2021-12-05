@@ -19,7 +19,7 @@ var (
 	KeyAssets             = []byte("assetInfo")
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
 	KeyTransactionFeeRate = []byte("transactionFeeRate")
-	KeyMinDepositAmount   = []byte("keyMinDepositAmount")
+	KeyMinAmount          = []byte("minAmount")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -32,7 +32,7 @@ func DefaultParams() Params {
 	return Params{
 		SupportedChains:    []string{"Bitcoin", "Ethereum"},
 		RouteTimeoutWindow: 100,
-		MinDeposit:         sdktypes.NewInt(1000000),
+		MinAmount:          sdktypes.NewInt(1000000),
 		TransactionFeeRate: sdktypes.NewDecWithPrec(25, 5), // 0.025%
 	}
 }
@@ -50,7 +50,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validateUint64("RouteTimeoutWindow")),
 		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
-		params.NewParamSetPair(KeyMinDepositAmount, &m.MinDeposit, validateMinAmount),
+		params.NewParamSetPair(KeyMinAmount, &m.MinAmount, validateMinAmount),
 	}
 }
 
