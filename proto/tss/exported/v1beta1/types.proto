@@ -129,4 +129,7 @@ message Key {
     MultisigKey multisig_key = 5;
   }
   google.protobuf.Timestamp rotated_at = 6 [ (gogoproto.stdtime) = true ];
+  int64 rotation_count = 7;
+  string chain = 8;
+  int64 snapshot_counter = 9;
 }

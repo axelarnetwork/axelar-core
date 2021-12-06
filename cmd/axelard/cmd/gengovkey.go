@@ -60,7 +60,7 @@ func SetMultisigGovernanceCmd(defaultNodeHome string,
 			genesisTSS := tssTypes.GetGenesisStateFromAppState(cdc, appState)
 
 			multisigPubkey := multisig.NewLegacyAminoPubKey(threshold, pubKeys)
-			genesisTSS.GovernanceKey = *multisigPubkey
+			genesisTSS.GovernanceKey = multisigPubkey
 
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
 			if err != nil {

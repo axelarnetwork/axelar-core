@@ -129,8 +129,8 @@ func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRo
 	key.Role = keyRole
 	key.Type = keyType
 
+	s.Keeper.setKeyInfo(ctx, keyInfo)
 	s.Keeper.SetKey(ctx, key)
-	s.Keeper.SetKeyInfo(ctx, keyInfo)
 	return key
 }
 
