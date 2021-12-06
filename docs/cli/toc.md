@@ -162,6 +162,8 @@
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
   - [set-genesis-mint](axelard_set-genesis-mint.md)	 - Set the genesis parameters for the mint module
+  - [set-genesis-reward](axelard_set-genesis-reward.md)	 - Set the genesis parameters for the reward module
+  - [set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
   - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module

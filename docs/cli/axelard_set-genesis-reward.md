@@ -1,18 +1,17 @@
-## axelard set-genesis-mint
+## axelard set-genesis-reward
 
-Set the genesis parameters for the mint module
+Set the genesis parameters for the reward module
 
 ```
-axelard set-genesis-mint [flags]
+axelard set-genesis-reward [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                               help for set-genesis-mint
-      --inflation-max string               Maximum inflation rate
-      --inflation-max-rate-change string   Maximum inflation rate change
-      --inflation-min string               Minimum inflation rate
+      --external-chain-voting-inflation-rate string   The fraction of total stake per year that's distributed among external chain voters (e.g., "0.02").
+  -h, --help                                          help for set-genesis-reward
+      --tss-relative-inflation-rate string            The fraction of current inflation rate that's rewarded for participating in TSS (e.g., "1.00").
 ```
 
 ### Options inherited from parent commands

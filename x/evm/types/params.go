@@ -83,7 +83,7 @@ func DefaultParams() []Params {
 		VotingThreshold:    utils.Threshold{Numerator: 33, Denominator: 100},
 		MinVoterCount:      1,
 		CommandsGasLimit:   5000000,
-		TransactionFeeRate: sdk.NewDecWithPrec(25, 5), // 0.025%
+		TransactionFeeRate: sdk.NewDecWithPrec(1, 3), // 0.1%
 	}}
 }
 
