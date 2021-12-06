@@ -33,7 +33,7 @@ func DefaultParams() Params {
 		SupportedChains:    []string{"Ethereum"},
 		RouteTimeoutWindow: 100,
 		MinAmount:          sdktypes.NewInt(100000),
-		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.05%
+		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.1%
 	}
 }
 
