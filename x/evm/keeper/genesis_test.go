@@ -44,6 +44,15 @@ func TestGenesis(t *testing.T) {
 
 		}).Run(t, 10)
 
+	Given("the default genesis state", func(t *testing.T) {
+		initialState = types.DefaultGenesisState()
+	}).When("it is valid", func(t *testing.T) {
+		assert.NoError(t, initialState.Validate())
+	}).Then("the keeper can be initialized", func(t *testing.T) {
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		assert.NotPanics(t, func() { k.InitGenesis(ctx, initialState) })
+	}).Run(t)
+
 }
 
 func assertChainsEqual(t *testing.T, initial types.GenesisState, exported types.GenesisState) {
