@@ -36,7 +36,7 @@ func DefaultChains() []GenesisState_Chain {
 	p := DefaultParams()
 
 	var chains []GenesisState_Chain
-	for _, params := range p {
+	for _, params := range DefaultParams() {
 		chain := GenesisState_Chain{
 			Params:            params,
 			BurnerInfos:       nil,
