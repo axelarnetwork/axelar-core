@@ -4,8 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,17 +27,12 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 		return fmt.Errorf("keyID %s is already in use", keyInfo.KeyID)
 	}
 
-	// set keygen participants
-	for _, v := range snapshot.Validators {
-		k.setParticipatesInKeygen(ctx, keyInfo.KeyID, v.GetSDKValidator().GetOperator())
-	}
-
 	k.setKeygenStart(ctx, keyInfo.KeyID)
 	// store snapshot round to be able to look up the correct validator set when signing with this key
 	k.setSnapshotCounterForKeyID(ctx, keyInfo.KeyID, snapshot.Counter)
 
 	// set key info that contains key role and key type
-	k.SetKeyInfo(ctx, keyInfo)
+	k.setKeyInfo(ctx, keyInfo)
 
 	keyRequirement, ok := k.GetKeyRequirement(ctx, keyInfo.KeyRole, keyInfo.KeyType)
 	if !ok {
@@ -78,34 +71,52 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 	return nil
 }
 
-// GetKey returns the key for a given ID, if it exists
-func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool) {
-	var key exported.Key
-	ok := k.getStore(ctx).Get(pkPrefix.AppendStr(string(keyID)), &key)
-	if !ok {
-		return exported.Key{}, false
+func (k Keeper) getKeys(ctx sdk.Context) (keys []exported.Key) {
+	iter := k.getStore(ctx).Iterator(keyPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var key exported.Key
+		iter.UnmarshalValue(&key)
+
+		keys = append(keys, key)
 	}
 
-	keyInfo, ok := k.getKeyInfo(ctx, keyID)
-	if !ok {
-		return exported.Key{}, false
-	}
+	return keys
+}
 
-	key.Role = keyInfo.KeyRole
-	key.Type = keyInfo.KeyType
-	key.RotatedAt = k.getRotatedAt(ctx, keyID)
-
-	return key, ok
+func (k Keeper) setKey(ctx sdk.Context, key exported.Key) {
+	k.getStore(ctx).Set(keyPrefix.AppendStr(string(key.ID)), &key)
 }
 
 // SetKey stores the given public key under the given key ID
 func (k Keeper) SetKey(ctx sdk.Context, key exported.Key) {
-	k.getStore(ctx).Set(pkPrefix.AppendStr(string(key.ID)), &key)
+	keyInfo, ok := k.getKeyInfo(ctx, key.ID)
+	if ok {
+		key.Role = keyInfo.KeyRole
+		key.Type = keyInfo.KeyType
+	}
+
+	if key.Role != exported.ExternalKey {
+		snapshotCounter, ok := k.GetSnapshotCounterForKeyID(ctx, key.ID)
+		if !ok {
+			panic(fmt.Errorf("snapshot counter for key %s not found", key.ID))
+		}
+
+		key.SnapshotCounter = snapshotCounter
+	}
+
+	k.setKey(ctx, key)
+}
+
+// GetKey returns the key for a given ID, if it exists
+func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (key exported.Key, ok bool) {
+	return key, k.getStore(ctx).Get(keyPrefix.AppendStr(string(keyID)), &key)
 }
 
 // GetCurrentKeyID returns the current key ID for given chain and role
 func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool) {
-	return k.getKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole), keyRole)
+	return k.getKeyID(ctx, chain.Name, k.GetRotationCount(ctx, chain, keyRole), keyRole)
 }
 
 // GetCurrentKey returns the current key for given chain and role
@@ -115,7 +126,7 @@ func (k Keeper) GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 
 // GetNextKeyID returns the next key ID for given chain and role
 func (k Keeper) GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) (exported.KeyID, bool) {
-	return k.getKeyID(ctx, chain, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole)
+	return k.getKeyID(ctx, chain.Name, k.GetRotationCount(ctx, chain, keyRole)+1, keyRole)
 }
 
 // GetNextKey returns the next key for given chain and role
@@ -125,7 +136,7 @@ func (k Keeper) GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.
 
 // GetKeyByRotationCount returns the key for given chain and key role by rotation count
 func (k Keeper) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotationCount int64) (exported.Key, bool) {
-	keyID, found := k.getKeyID(ctx, chain, rotationCount, keyRole)
+	keyID, found := k.getKeyID(ctx, chain.Name, rotationCount, keyRole)
 	if !found {
 		return exported.Key{}, false
 	}
@@ -133,36 +144,34 @@ func (k Keeper) GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRol
 	return k.GetKey(ctx, keyID)
 }
 
-// SetKeyInfo stores the role and type of the given key
-func (k Keeper) SetKeyInfo(ctx sdk.Context, keyInfo types.KeyInfo) {
+// getKeyInfo returns the key info of the given keyID
+func (k Keeper) getKeyInfo(ctx sdk.Context, keyID exported.KeyID) (keyInfo types.KeyInfo, ok bool) {
+	return keyInfo, k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo)
+}
+
+func (k Keeper) setKeyInfo(ctx sdk.Context, keyInfo types.KeyInfo) {
 	k.getStore(ctx).Set(keyInfoPrefix.AppendStr(string(keyInfo.KeyID)), &keyInfo)
 }
 
 // GetKeyRole returns the role of the given key
 func (k Keeper) GetKeyRole(ctx sdk.Context, keyID exported.KeyID) exported.KeyRole {
-	var keyInfo types.KeyInfo
-	if ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo); !ok {
-		return exported.Unknown
+	if key, ok := k.GetKey(ctx, keyID); ok {
+		return key.Role
 	}
 
-	return keyInfo.KeyRole
+	return exported.Unknown
 }
 
 func (k Keeper) setRotatedAt(ctx sdk.Context, keyID exported.KeyID) {
-	storageKey := keyRotatedAtPrefix.AppendStr(string(keyID))
-	k.getStore(ctx).Set(storageKey, &gogoprototypes.Int64Value{Value: ctx.BlockTime().Unix()})
-}
-
-func (k Keeper) getRotatedAt(ctx sdk.Context, keyID exported.KeyID) *time.Time {
-	storageKey := keyRotatedAtPrefix.AppendStr(string(keyID))
-
-	var seconds gogoprototypes.Int64Value
-	if ok := k.getStore(ctx).Get(storageKey, &seconds); !ok {
-		return nil
+	key, ok := k.GetKey(ctx, keyID)
+	if !ok {
+		panic(fmt.Errorf("key %s not found", keyID))
 	}
 
-	timestamp := time.Unix(seconds.Value, 0)
-	return &timestamp
+	timestamp := ctx.BlockTime()
+	key.RotatedAt = &timestamp
+
+	k.setKey(ctx, key)
 }
 
 // AssignNextKey stores a new key for a given chain which will become the default once RotateKey is called
@@ -174,8 +183,13 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 	// The key entry needs to store the keyID instead of the public key, because the keyID is needed whenever
 	// the keeper calls the secure private key store (e.g. for signing) and we would lose the keyID information otherwise
 	rotationCount := k.GetRotationCount(ctx, chain, keyRole) + 1
-	k.setKeyID(ctx, chain, rotationCount, keyRole, keyID)
-	k.setRotationCountOfKeyID(ctx, keyID, rotationCount)
+	_, ok := k.getKeyID(ctx, chain.Name, rotationCount, keyRole)
+	if ok {
+		return fmt.Errorf("next %s key for chain %s already assigned", keyRole.SimpleString(), chain.Name)
+	}
+
+	k.setKeyID(ctx, chain.Name, rotationCount, keyRole, keyID)
+	k.setRotationOfKey(ctx, keyID, rotationCount, chain)
 
 	k.Logger(ctx).Info(fmt.Sprintf("assigning next key for chain %s for role %s (ID: %s)", chain.Name, keyRole.SimpleString(), keyID))
 
@@ -185,12 +199,13 @@ func (k Keeper) AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole export
 // RotateKey rotates to the next stored key. Returns an error if no new key has been prepared
 func (k Keeper) RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error {
 	r := k.GetRotationCount(ctx, chain, keyRole)
-	keyID, found := k.getKeyID(ctx, chain, r+1, keyRole)
-	if !found {
+
+	keyID, ok := k.getKeyID(ctx, chain.Name, r+1, keyRole)
+	if !ok {
 		return fmt.Errorf("next %s key for chain %s not set", keyRole.SimpleString(), chain.Name)
 	}
 
-	k.setRotationCount(ctx, chain, keyRole, r+1)
+	k.setRotationCount(ctx, chain.Name, keyRole, r+1)
 	k.setRotatedAt(ctx, keyID)
 
 	return nil
@@ -210,9 +225,11 @@ func (k Keeper) setKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
 	k.getStore(ctx).SetRaw(keygenStartPrefix.AppendStr(string(keyID)), []byte{1})
 }
 
-func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {
-	storageKey := rotationPrefix.Append(utils.LowerCaseKey(chain.Name)).
-		Append(utils.KeyFromStr(keyRole.SimpleString())).Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
+func (k Keeper) getKeyID(ctx sdk.Context, chain string, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {
+	storageKey := rotationPrefix.
+		Append(utils.LowerCaseKey(chain)).
+		Append(utils.KeyFromStr(keyRole.SimpleString())).
+		Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
 
 	keyID := k.getStore(ctx).GetRaw(storageKey)
 	if keyID == nil {
@@ -222,9 +239,11 @@ func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, key
 	return exported.KeyID(keyID), true
 }
 
-func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.Chain, rotation int64, keyRole exported.KeyRole, keyID exported.KeyID) {
-	storageKey := rotationPrefix.Append(utils.LowerCaseKey(chain.Name)).
-		Append(utils.KeyFromStr(keyRole.SimpleString())).Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
+func (k Keeper) setKeyID(ctx sdk.Context, chain string, rotation int64, keyRole exported.KeyRole, keyID exported.KeyID) {
+	storageKey := rotationPrefix.
+		Append(utils.LowerCaseKey(chain)).
+		Append(utils.KeyFromStr(keyRole.SimpleString())).
+		Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
 
 	k.getStore(ctx).SetRaw(storageKey, []byte(keyID))
 }
@@ -241,8 +260,8 @@ func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	return rotation.Value
 }
 
-func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, rotation int64) {
-	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(keyRole.SimpleString()))
+func (k Keeper) setRotationCount(ctx sdk.Context, chain string, keyRole exported.KeyRole, rotation int64) {
+	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain)).Append(utils.KeyFromStr(keyRole.SimpleString()))
 	k.getStore(ctx).Set(storageKey, &gogoprototypes.Int64Value{Value: rotation})
 }
 
@@ -265,80 +284,35 @@ func (k Keeper) GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID
 	return counter.Value, true
 }
 
-// GetParticipantsInKeygen gets the keygen participants in the given keyID
-func (k Keeper) GetParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID) []sdk.ValAddress {
-	store := k.getStore(ctx)
-	key := participatePrefix.AppendStr("key").AppendStr(string(keyID))
-
-	iter := store.Iterator(key)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var participants []sdk.ValAddress
-	for ; iter.Valid(); iter.Next() {
-		validator := strings.TrimPrefix(string(iter.Key()), string(key.AsKey())+"_")
-		address, err := sdk.ValAddressFromBech32(validator)
-		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("ignore participant %s due to parsing error: %s", validator, err.Error()))
-			continue
-		}
-
-		participants = append(participants, address)
+func (k Keeper) setRotationOfKey(ctx sdk.Context, keyID exported.KeyID, rotationCount int64, chain nexus.Chain) {
+	key, ok := k.GetKey(ctx, keyID)
+	if !ok {
+		panic(fmt.Errorf("key %s not found", keyID))
 	}
 
-	return participants
-}
+	key.RotationCount = rotationCount
+	key.Chain = chain.Name
 
-// DeleteParticipantsInKeygen deletes the participants in the given key genereation
-func (k Keeper) DeleteParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID) {
-	store := k.getStore(ctx)
-
-	iter := store.Iterator(participatePrefix.AppendStr("key").AppendStr(string(keyID)))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		store.Delete(iter.GetKey())
-	}
-}
-
-func (k Keeper) setParticipatesInKeygen(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) {
-	k.getStore(ctx).SetRaw(participatePrefix.AppendStr("key").AppendStr(string(keyID)).AppendStr(validator.String()), []byte{})
-}
-
-func (k Keeper) setRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID, rotationCount int64) {
-	k.getStore(ctx).Set(rotationCountOfKeyIDPrefix.AppendStr(string(keyID)), &gogoprototypes.Int64Value{Value: rotationCount})
+	k.setKey(ctx, key)
 }
 
 // GetRotationCountOfKeyID returns the rotation count of the given key ID
 func (k Keeper) GetRotationCountOfKeyID(ctx sdk.Context, keyID exported.KeyID) (int64, bool) {
-	var rotationCount gogoprototypes.Int64Value
-	if ok := k.getStore(ctx).Get(rotationCountOfKeyIDPrefix.AppendStr(string(keyID)), &rotationCount); !ok {
+	key, ok := k.GetKey(ctx, keyID)
+	if !ok || key.RotationCount == 0 {
 		return 0, false
 	}
 
-	return rotationCount.Value, true
-}
-
-// DoesValidatorParticipateInKeygen returns true if given validator participates in key gen for the given key ID; otherwise, false
-func (k Keeper) DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool {
-	return k.getStore(ctx).Has(participatePrefix.AppendStr("key").AppendStr(string(keyID)).AppendStr(validator.String()))
+	return key.RotationCount, true
 }
 
 // GetKeyType returns the key type of the given keyID
 func (k Keeper) GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyType {
-	var keyInfo types.KeyInfo
-	if ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo); !ok {
-		return exported.KEY_TYPE_UNSPECIFIED
+	if key, ok := k.GetKey(ctx, keyID); ok {
+		return key.Type
 	}
 
-	return keyInfo.KeyType
-}
-
-// getKeyInfo returns the key info of the given keyID
-func (k Keeper) getKeyInfo(ctx sdk.Context, keyID exported.KeyID) (types.KeyInfo, bool) {
-	var keyInfo types.KeyInfo
-	ok := k.getStore(ctx).Get(keyInfoPrefix.AppendStr(string(keyID)), &keyInfo)
-
-	return keyInfo, ok
+	return exported.KEY_TYPE_UNSPECIFIED
 }
 
 // SubmitPubKeys stores public keys a validator has under the given multisig key ID
@@ -362,6 +336,24 @@ func (k Keeper) SubmitPubKeys(ctx sdk.Context, keyID exported.KeyID, validator s
 	return true
 }
 
+func (k Keeper) getCompletedMultisigKeygenInfos(ctx sdk.Context) (infos []types.MultisigInfo) {
+	iter := k.getStore(ctx).Iterator(multiSigKeyPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var info types.MultisigInfo
+		iter.UnmarshalValue(&info)
+
+		if !info.IsCompleted() {
+			continue
+		}
+
+		infos = append(infos, info)
+	}
+
+	return infos
+}
+
 // GetMultisigKeygenInfo returns the MultisigKeygenInfo
 func (k Keeper) GetMultisigKeygenInfo(ctx sdk.Context, keyID exported.KeyID) (types.MultisigKeygenInfo, bool) {
 	var info types.MultisigInfo
@@ -373,19 +365,6 @@ func (k Keeper) GetMultisigKeygenInfo(ctx sdk.Context, keyID exported.KeyID) (ty
 // SetMultisigKeygenInfo store the MultisigKeygenInfo
 func (k Keeper) SetMultisigKeygenInfo(ctx sdk.Context, info types.MultisigInfo) {
 	k.getStore(ctx).Set(multiSigKeyPrefix.AppendStr(info.ID), &info)
-}
-
-// GetMultisigPubKey returns the pub keys for a given keyID, if it exists
-func (k Keeper) GetMultisigPubKey(ctx sdk.Context, keyID exported.KeyID) (exported.MultisigKey, bool) {
-	keygenInfo, ok := k.GetMultisigKeygenInfo(ctx, keyID)
-	if !ok {
-		return exported.MultisigKey{}, false
-	}
-
-	role := k.GetKeyRole(ctx, keyID)
-	rotatedAt := k.getRotatedAt(ctx, keyID)
-
-	return exported.MultisigKey{ID: keyID, Values: keygenInfo.GetKeys(), Role: role, RotatedAt: rotatedAt}, true
 }
 
 // DeleteMultisigKeygen deletes the multisig keygen info for the given key ID

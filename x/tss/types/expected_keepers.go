@@ -72,11 +72,11 @@ type TSSKeeper interface {
 	GetParams(ctx sdk.Context) (params Params)
 	GetRouter() Router
 	SetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID, recoveryInfo []byte)
-	HasPrivateRecoveryInfos(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool
+	HasPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) bool
 	GetPrivateRecoveryInfo(ctx sdk.Context, sender sdk.ValAddress, keyID exported.KeyID) []byte
 	SetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID, recoveryInfo []byte)
 	GetGroupRecoveryInfo(ctx sdk.Context, keyID exported.KeyID) []byte
-	DeleteAllRecoveryInfos(ctx sdk.Context, keyID exported.KeyID)
+	DeleteKeyRecoveryInfo(ctx sdk.Context, keyID exported.KeyID)
 	GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool)
 	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
@@ -97,11 +97,9 @@ type TSSKeeper interface {
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole, keyID exported.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) error
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID) (int64, bool)
-	DoesValidatorParticipateInKeygen(ctx sdk.Context, keyID exported.KeyID, validator sdk.ValAddress) bool
 	HasKeygenStarted(ctx sdk.Context, keyID exported.KeyID) bool
 	DeleteKeygenStart(ctx sdk.Context, keyID exported.KeyID)
 	DeleteInfoForSig(ctx sdk.Context, sigID string)
-	DeleteParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID)
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID)
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
@@ -113,7 +111,6 @@ type TSSKeeper interface {
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.Snapshotter, chain nexus.Chain, keyID exported.KeyID, keyRole exported.KeyRole) error
 	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exported.KeyID, bool)
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
-	SetKeyInfo(ctx sdk.Context, info KeyInfo)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
@@ -123,7 +120,6 @@ type TSSKeeper interface {
 	GetMultisigKeygenInfo(ctx sdk.Context, keyID exported.KeyID) (MultisigKeygenInfo, bool)
 	IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID) bool
 	GetKeyType(ctx sdk.Context, keyID exported.KeyID) exported.KeyType
-	GetParticipantsInKeygen(ctx sdk.Context, keyID exported.KeyID) []sdk.ValAddress
 	DeleteMultisigKeygen(ctx sdk.Context, keyID exported.KeyID)
 	GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.KeyID, val sdk.ValAddress) ([]ecdsa.PublicKey, bool)
 	SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool

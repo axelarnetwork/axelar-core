@@ -14,7 +14,6 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -34,56 +33,18 @@ func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
 	}
 }
 
-func TestKeeper_AssignNextMasterKey_StartKeygenAfterLockingPeriod_Unlocked(t *testing.T) {
-	for _, currHeight := range randPosInt.Take(100) {
-		s := setup()
-		ctx := s.Ctx.WithBlockHeight(currHeight)
-
-		// snapshotHeight + lockingPeriod <= currHeight
-		lockingPeriod := rand2.I64Between(0, currHeight+1)
-		snapshotHeight := rand2.I64Between(0, currHeight-lockingPeriod+1)
-		assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
-
-		keyID := randDistinctStr.Next()
-		keyInfo := types.KeyInfo{
-			KeyID:   exported.KeyID(keyID),
-			KeyRole: exported.MasterKey,
-			KeyType: exported.Threshold,
-		}
-		err := s.Keeper.StartKeygen(ctx, s.Voter, keyInfo, snap)
-		assert.NoError(t, err)
-
-		// time passes
-		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand2.I64Between(0, 2*lockingPeriod))
-
-		sk, err := btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			panic(err)
-		}
-		key := tss.Key{ID: exported.KeyID(keyID), PublicKey: &tss.Key_ECDSAKey_{ECDSAKey: &tss.Key_ECDSAKey{Value: sk.PubKey().SerializeCompressed()}}, Role: tss.MasterKey}
-		s.Keeper.SetKey(ctx, key)
-		chain := evm.Ethereum
-		chain.KeyType = tss.Threshold
-
-		assert.NoError(t, s.Keeper.AssignNextKey(ctx, chain, exported.MasterKey, exported.KeyID(keyID)))
-	}
-}
-
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
-	// snapshotHeight + lockingPeriod <= currHeight
-	currHeight := rand2.I64Between(0, 10000000)
-	lockingPeriod := rand2.I64Between(0, currHeight+1)
-	snapshotHeight := rand2.I64Between(0, currHeight-lockingPeriod+1)
-	assert.GreaterOrEqual(t, currHeight, snapshotHeight+lockingPeriod)
+	s := setup()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 50; i++ {
 		chain := evm.Ethereum
-		s := setup()
-		time := time.Unix(time.Now().Unix(), 0)
-		s.Ctx = s.Ctx.WithBlockHeight(currHeight)
-		s.Ctx = s.Ctx.WithBlockTime(time)
+		s.Ctx = s.Ctx.WithBlockTime(time.Now())
 		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
-		expectedKey.RotatedAt = &time
+		timestamp := s.Ctx.BlockTime()
+		expectedKey.RotatedAt = &timestamp
+		expectedKey.Chain = chain.Name
+		expectedKey.RotationCount = int64(i + 1)
+		expectedKey.SnapshotCounter = snap.Counter
 
 		assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.MasterKey, expectedKey.ID))
 		assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.MasterKey))
@@ -99,9 +60,8 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 
 	chain := bitcoin.Bitcoin
 	s := setup()
-	time := time.Unix(time.Now().Unix(), 0)
 	s.Ctx = s.Ctx.WithBlockHeight(currHeight)
-	s.Ctx = s.Ctx.WithBlockTime(time)
+	s.Ctx = s.Ctx.WithBlockTime(time.Now())
 	expectedMasterKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
 	expectedSecondaryKey := s.SetKey(t, s.Ctx, exported.SecondaryKey, chain.KeyType)
 
@@ -111,10 +71,17 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, exported.SecondaryKey, expectedSecondaryKey.ID))
 	assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, exported.SecondaryKey))
 
+	timestamp := s.Ctx.BlockTime()
 	expectedMasterKey.Role = exported.MasterKey
-	expectedMasterKey.RotatedAt = &time
+	expectedMasterKey.RotatedAt = &timestamp
+	expectedMasterKey.Chain = chain.Name
+	expectedMasterKey.RotationCount = 1
+	expectedMasterKey.SnapshotCounter = snap.Counter
 	expectedSecondaryKey.Role = exported.SecondaryKey
-	expectedSecondaryKey.RotatedAt = &time
+	expectedSecondaryKey.RotatedAt = &timestamp
+	expectedSecondaryKey.Chain = chain.Name
+	expectedSecondaryKey.RotationCount = 1
+	expectedSecondaryKey.SnapshotCounter = snap.Counter
 
 	actualMasterKey, ok := s.Keeper.GetCurrentKey(s.Ctx, chain, exported.MasterKey)
 	assert.True(t, ok)
@@ -158,48 +125,6 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysSt
 			assert.Equal(t, pubKey, actualPubKey)
 		}
 	}
-}
-
-func TestGetKeygenParticipants(t *testing.T) {
-	repeats := 20
-	t.Run("should return keygen participants when keyID is found and keygen successful", testutils.Func(func(t *testing.T) {
-		s := setup()
-		snap = randSnapshot()
-		keyID := rand2.StrBetween(5, 20)
-		keyInfo := types.KeyInfo{
-			KeyID:   exported.KeyID(keyID),
-			KeyRole: exported.MasterKey,
-			KeyType: exported.Multisig,
-		}
-
-		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
-		assert.NoError(t, err)
-
-		participants := s.Keeper.GetParticipantsInKeygen(s.Ctx, exported.KeyID(keyID))
-		assert.Equal(t, len(snap.Validators), len(participants))
-
-		for _, v := range snap.Validators {
-			assert.Contains(t, participants, v.GetSDKValidator().GetOperator())
-		}
-	}).Repeat(repeats))
-
-	t.Run("should return empty list participants when keyID is not found", testutils.Func(func(t *testing.T) {
-		s := setup()
-		snap = randSnapshot()
-		keyIDs := randDistinctStr.Distinct().Take(2)
-		keyInfo := types.KeyInfo{
-			KeyID:   exported.KeyID(keyIDs[0]),
-			KeyRole: exported.MasterKey,
-			KeyType: exported.Multisig,
-		}
-
-		err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
-		assert.NoError(t, err)
-
-		participants := s.Keeper.GetParticipantsInKeygen(s.Ctx, exported.KeyID(keyIDs[1]))
-		assert.Equal(t, 0, len(participants))
-
-	}).Repeat(repeats))
 }
 
 func TestMultisigKeygen(t *testing.T) {

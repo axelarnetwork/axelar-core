@@ -26,7 +26,7 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
 	emitHeartbeatEvent(ctx, keeper, nexus)
 	sequentialSign(ctx, keeper.GetSignQueue(ctx), keeper, snapshotter, voter)
-	timeoutMultiSigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper)
+	timeoutMultiSigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper, snapshotter)
 	timeoutMultiSigSign(ctx, keeper.GetMultisigSignQueue(ctx), keeper)
 
 	return nil
@@ -157,7 +157,7 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 }
 
 // timeoutMultiSigKeygen checks timed out multisig keygen and penalize absent participants
-func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKVQueue, k types.TSSKeeper) {
+func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
 	var keyIDStr gogoprototypes.StringValue
 
 	for multiSigKeygenQueue.Peek(0, &keyIDStr) {
@@ -174,8 +174,19 @@ func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 
 		// penalize absent validator
 		if !multisigKeyInfo.IsCompleted() {
-			participants := k.GetParticipantsInKeygen(ctx, keyID)
-			for _, participant := range participants {
+			counter, ok := k.GetSnapshotCounterForKeyID(ctx, keyID)
+			if !ok {
+				panic(fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID))
+			}
+
+			snapshot, ok := s.GetSnapshot(ctx, counter)
+			if !ok {
+				panic(fmt.Errorf("could not obtain snapshot for counter %d", counter))
+			}
+
+			for _, v := range snapshot.Validators {
+				participant := v.GetSDKValidator().GetOperator()
+
 				if !multisigKeyInfo.DoesParticipate(participant) {
 					ctx.Logger().Debug(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
 					k.PenalizeCriminal(ctx, participant, tofnd.CRIME_TYPE_NON_MALICIOUS)
@@ -183,7 +194,6 @@ func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 			}
 
 			k.DeleteSnapshotCounterForKeyID(ctx, keyID)
-			k.DeleteParticipantsInKeygen(ctx, keyID)
 			k.DeleteMultisigKeygen(ctx, keyID)
 			ctx.Logger().Debug(fmt.Sprintf("multisig keygen %s timed out", keyID))
 			ctx.EventManager().EmitEvent(
