@@ -320,9 +320,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetKeyForSigIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-// 				panic("mock out the GetKeyForSigID method")
-// 			},
 // 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
@@ -374,9 +371,6 @@ type SignerMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
-
-	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
-	GetKeyForSigIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
 
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
 	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
@@ -467,13 +461,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetKeyForSigID holds details about calls to the GetKeyForSigID method.
-		GetKeyForSigID []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SigID is the sigID argument value.
-			SigID string
-		}
 		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
 		GetKeyRequirement []struct {
 			// Ctx is the ctx argument value.
@@ -550,7 +537,6 @@ type SignerMock struct {
 	lockGetExternalKeyIDs            sync.RWMutex
 	lockGetExternalMultisigThreshold sync.RWMutex
 	lockGetKey                       sync.RWMutex
-	lockGetKeyForSigID               sync.RWMutex
 	lockGetKeyRequirement            sync.RWMutex
 	lockGetKeyRole                   sync.RWMutex
 	lockGetKeyType                   sync.RWMutex
@@ -827,41 +813,6 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
-	return calls
-}
-
-// GetKeyForSigID calls GetKeyForSigIDFunc.
-func (mock *SignerMock) GetKeyForSigID(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-	if mock.GetKeyForSigIDFunc == nil {
-		panic("SignerMock.GetKeyForSigIDFunc: method is nil but Signer.GetKeyForSigID was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetKeyForSigID.Lock()
-	mock.calls.GetKeyForSigID = append(mock.calls.GetKeyForSigID, callInfo)
-	mock.lockGetKeyForSigID.Unlock()
-	return mock.GetKeyForSigIDFunc(ctx, sigID)
-}
-
-// GetKeyForSigIDCalls gets all the calls that were made to GetKeyForSigID.
-// Check the length with:
-//     len(mockedSigner.GetKeyForSigIDCalls())
-func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SigID string
-	}
-	mock.lockGetKeyForSigID.RLock()
-	calls = mock.calls.GetKeyForSigID
-	mock.lockGetKeyForSigID.RUnlock()
 	return calls
 }
 

@@ -19,4 +19,8 @@ message GenesisState {
   repeated tss.exported.v1beta1.Key keys = 4 [ (gogoproto.nullable) = false ];
   repeated MultisigInfo multisig_infos = 5 [ (gogoproto.nullable) = false ];
   repeated ExternalKeys external_keys = 6 [ (gogoproto.nullable) = false ];
+  repeated tss.exported.v1beta1.Signature signatures = 7
+      [ (gogoproto.nullable) = false ];
+  repeated ValidatorStatus validator_statuses = 8
+      [ (gogoproto.nullable) = false ];
 }

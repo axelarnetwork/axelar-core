@@ -183,7 +183,7 @@ type Slasher interface {
 
 // Tss provides functionality to tss module
 type Tss interface {
-	GetTssSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
 	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold

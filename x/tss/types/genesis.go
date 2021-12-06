@@ -18,14 +18,18 @@ func NewGenesisState(
 	keys []exported.Key,
 	multisigInfos []MultisigInfo,
 	externalKeys []ExternalKeys,
+	signatures []exported.Signature,
+	validatorStatuses []ValidatorStatus,
 ) *GenesisState {
 	return &GenesisState{
-		Params:           params,
-		GovernanceKey:    governanceKey,
-		KeyRecoveryInfos: keyRecoveryInfos,
-		Keys:             keys,
-		MultisigInfos:    multisigInfos,
-		ExternalKeys:     externalKeys,
+		Params:            params,
+		GovernanceKey:     governanceKey,
+		KeyRecoveryInfos:  keyRecoveryInfos,
+		Keys:              keys,
+		MultisigInfos:     multisigInfos,
+		ExternalKeys:      externalKeys,
+		Signatures:        signatures,
+		ValidatorStatuses: validatorStatuses,
 	}
 }
 
@@ -38,6 +42,8 @@ func DefaultGenesis() *GenesisState {
 		[]exported.Key{},
 		[]MultisigInfo{},
 		[]ExternalKeys{},
+		[]exported.Signature{},
+		[]ValidatorStatus{},
 	)
 }
 
@@ -73,6 +79,18 @@ func (m GenesisState) Validate() error {
 
 	for _, externalKeys := range m.ExternalKeys {
 		if err := externalKeys.Validate(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
+	for _, signature := range m.Signatures {
+		if err := signature.Validate(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
+	for _, validatorStatus := range m.ValidatorStatuses {
+		if err := validatorStatus.Validate(); err != nil {
 			return getValidateError(err)
 		}
 	}

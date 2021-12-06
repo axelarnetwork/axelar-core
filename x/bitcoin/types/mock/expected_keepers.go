@@ -246,9 +246,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyByRotationCountFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, rotationCount int64) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
 // 				panic("mock out the GetKeyByRotationCount method")
 // 			},
-// 			GetKeyForSigIDFunc: func(ctx sdk.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-// 				panic("mock out the GetKeyForSigID method")
-// 			},
 // 			GetKeyUnbondingLockingKeyRotationCountFunc: func(ctx sdk.Context) int64 {
 // 				panic("mock out the GetKeyUnbondingLockingKeyRotationCount method")
 // 			},
@@ -318,9 +315,6 @@ type SignerMock struct {
 
 	// GetKeyByRotationCountFunc mocks the GetKeyByRotationCount method.
 	GetKeyByRotationCountFunc func(ctx sdk.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, rotationCount int64) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
-
-	// GetKeyForSigIDFunc mocks the GetKeyForSigID method.
-	GetKeyForSigIDFunc func(ctx sdk.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
 
 	// GetKeyUnbondingLockingKeyRotationCountFunc mocks the GetKeyUnbondingLockingKeyRotationCount method.
 	GetKeyUnbondingLockingKeyRotationCountFunc func(ctx sdk.Context) int64
@@ -436,13 +430,6 @@ type SignerMock struct {
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 			// RotationCount is the rotationCount argument value.
 			RotationCount int64
-		}
-		// GetKeyForSigID holds details about calls to the GetKeyForSigID method.
-		GetKeyForSigID []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// SigID is the sigID argument value.
-			SigID string
 		}
 		// GetKeyUnbondingLockingKeyRotationCount holds details about calls to the GetKeyUnbondingLockingKeyRotationCount method.
 		GetKeyUnbondingLockingKeyRotationCount []struct {
@@ -560,7 +547,6 @@ type SignerMock struct {
 	lockGetExternalMultisigThreshold           sync.RWMutex
 	lockGetKey                                 sync.RWMutex
 	lockGetKeyByRotationCount                  sync.RWMutex
-	lockGetKeyForSigID                         sync.RWMutex
 	lockGetKeyUnbondingLockingKeyRotationCount sync.RWMutex
 	lockGetNextKey                             sync.RWMutex
 	lockGetOldActiveKeys                       sync.RWMutex
@@ -885,41 +871,6 @@ func (mock *SignerMock) GetKeyByRotationCountCalls() []struct {
 	mock.lockGetKeyByRotationCount.RLock()
 	calls = mock.calls.GetKeyByRotationCount
 	mock.lockGetKeyByRotationCount.RUnlock()
-	return calls
-}
-
-// GetKeyForSigID calls GetKeyForSigIDFunc.
-func (mock *SignerMock) GetKeyForSigID(ctx sdk.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
-	if mock.GetKeyForSigIDFunc == nil {
-		panic("SignerMock.GetKeyForSigIDFunc: method is nil but Signer.GetKeyForSigID was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		SigID string
-	}{
-		Ctx:   ctx,
-		SigID: sigID,
-	}
-	mock.lockGetKeyForSigID.Lock()
-	mock.calls.GetKeyForSigID = append(mock.calls.GetKeyForSigID, callInfo)
-	mock.lockGetKeyForSigID.Unlock()
-	return mock.GetKeyForSigIDFunc(ctx, sigID)
-}
-
-// GetKeyForSigIDCalls gets all the calls that were made to GetKeyForSigID.
-// Check the length with:
-//     len(mockedSigner.GetKeyForSigIDCalls())
-func (mock *SignerMock) GetKeyForSigIDCalls() []struct {
-	Ctx   sdk.Context
-	SigID string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		SigID string
-	}
-	mock.lockGetKeyForSigID.RLock()
-	calls = mock.calls.GetKeyForSigID
-	mock.lockGetKeyForSigID.RUnlock()
 	return calls
 }
 

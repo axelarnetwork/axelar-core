@@ -220,7 +220,7 @@ func createMocks(validators []stakingtypes.Validator) testMocks {
 		GetMaxMissedBlocksPerWindowFunc: func(sdk.Context) utils.Threshold {
 			return tssTypes.DefaultParams().MaxMissedBlocksPerWindow
 		},
-		GetTssSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
+		GetSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 		IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tssExported.KeyID) bool {
 			for _, validator := range validators {
 				if validator.GetOperator().String() == v.String() {

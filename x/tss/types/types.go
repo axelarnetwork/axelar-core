@@ -15,6 +15,15 @@ const (
 	TSSEnabled bool = false
 )
 
+// Validate validates the ValidatorStatus
+func (m ValidatorStatus) Validate() error {
+	if err := sdk.VerifyAddressFormat(m.Validator); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Validate validates the MultisigInfo
 func (m MultisigInfo) Validate() error {
 	if m.ID == "" {

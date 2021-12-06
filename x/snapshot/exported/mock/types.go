@@ -781,8 +781,8 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool) {
 // 				panic("mock out the GetNextKey method")
 // 			},
-// 			GetTssSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
-// 				panic("mock out the GetTssSuspendedUntil method")
+// 			GetSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+// 				panic("mock out the GetSuspendedUntil method")
 // 			},
 // 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
 // 				panic("mock out the IsOperatorAvailable method")
@@ -803,8 +803,8 @@ type TssMock struct {
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole tssexported.KeyRole) (tssexported.Key, bool)
 
-	// GetTssSuspendedUntilFunc mocks the GetTssSuspendedUntil method.
-	GetTssSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
+	// GetSuspendedUntilFunc mocks the GetSuspendedUntil method.
+	GetSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
 	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool
@@ -834,8 +834,8 @@ type TssMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole tssexported.KeyRole
 		}
-		// GetTssSuspendedUntil holds details about calls to the GetTssSuspendedUntil method.
-		GetTssSuspendedUntil []struct {
+		// GetSuspendedUntil holds details about calls to the GetSuspendedUntil method.
+		GetSuspendedUntil []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Validator is the validator argument value.
@@ -854,7 +854,7 @@ type TssMock struct {
 	lockGetKeyRequirement           sync.RWMutex
 	lockGetMaxMissedBlocksPerWindow sync.RWMutex
 	lockGetNextKey                  sync.RWMutex
-	lockGetTssSuspendedUntil        sync.RWMutex
+	lockGetSuspendedUntil           sync.RWMutex
 	lockIsOperatorAvailable         sync.RWMutex
 }
 
@@ -967,10 +967,10 @@ func (mock *TssMock) GetNextKeyCalls() []struct {
 	return calls
 }
 
-// GetTssSuspendedUntil calls GetTssSuspendedUntilFunc.
-func (mock *TssMock) GetTssSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
-	if mock.GetTssSuspendedUntilFunc == nil {
-		panic("TssMock.GetTssSuspendedUntilFunc: method is nil but Tss.GetTssSuspendedUntil was just called")
+// GetSuspendedUntil calls GetSuspendedUntilFunc.
+func (mock *TssMock) GetSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+	if mock.GetSuspendedUntilFunc == nil {
+		panic("TssMock.GetSuspendedUntilFunc: method is nil but Tss.GetSuspendedUntil was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
@@ -979,16 +979,16 @@ func (mock *TssMock) GetTssSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types
 		Ctx:       ctx,
 		Validator: validator,
 	}
-	mock.lockGetTssSuspendedUntil.Lock()
-	mock.calls.GetTssSuspendedUntil = append(mock.calls.GetTssSuspendedUntil, callInfo)
-	mock.lockGetTssSuspendedUntil.Unlock()
-	return mock.GetTssSuspendedUntilFunc(ctx, validator)
+	mock.lockGetSuspendedUntil.Lock()
+	mock.calls.GetSuspendedUntil = append(mock.calls.GetSuspendedUntil, callInfo)
+	mock.lockGetSuspendedUntil.Unlock()
+	return mock.GetSuspendedUntilFunc(ctx, validator)
 }
 
-// GetTssSuspendedUntilCalls gets all the calls that were made to GetTssSuspendedUntil.
+// GetSuspendedUntilCalls gets all the calls that were made to GetSuspendedUntil.
 // Check the length with:
-//     len(mockedTss.GetTssSuspendedUntilCalls())
-func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
+//     len(mockedTss.GetSuspendedUntilCalls())
+func (mock *TssMock) GetSuspendedUntilCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
@@ -996,9 +996,9 @@ func (mock *TssMock) GetTssSuspendedUntilCalls() []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
-	mock.lockGetTssSuspendedUntil.RLock()
-	calls = mock.calls.GetTssSuspendedUntil
-	mock.lockGetTssSuspendedUntil.RUnlock()
+	mock.lockGetSuspendedUntil.RLock()
+	calls = mock.calls.GetSuspendedUntil
+	mock.lockGetSuspendedUntil.RUnlock()
 	return calls
 }
 

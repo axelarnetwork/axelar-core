@@ -97,7 +97,6 @@ type Signer interface {
 	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
 	SetKey(ctx sdk.Context, key tss.Key)
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-	GetKeyForSigID(ctx sdk.Context, sigID string) (tss.Key, bool)
 	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
 	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error

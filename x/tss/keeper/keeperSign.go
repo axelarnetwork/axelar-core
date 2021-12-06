@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -123,33 +122,42 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 	return nil
 }
 
+func (k Keeper) getSignedSigs(ctx sdk.Context) (sigs []exported.Signature) {
+	iter := k.getStore(ctx).Iterator(sigPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var sig exported.Signature
+		iter.UnmarshalValue(&sig)
+
+		if sig.SigStatus != exported.SigStatus_Signed {
+			continue
+		}
+
+		sigs = append(sigs, sig)
+	}
+
+	return sigs
+}
+
+func (k Keeper) getSig(ctx sdk.Context, sigID string) (sig exported.Signature, ok bool) {
+	return sig, k.getStore(ctx).Get(sigPrefix.AppendStr(sigID), &sig)
+}
+
 // GetSig returns the signature associated with sigID
 // or nil, nil if no such signature exists
 func (k Keeper) GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus) {
-	status := k.getSigStatus(ctx, sigID)
-	if status != exported.SigStatus_Signed {
-		return exported.Signature{}, status
-	}
-
-	var signature exported.Signature
-	ok := k.getStore(ctx).Get(sigPrefix.AppendStr(sigID), &signature)
+	sig, ok := k.getSig(ctx, sigID)
 	if !ok {
-		return exported.Signature{}, exported.SigStatus_Invalid
+		return sig, exported.SigStatus_Invalid
 	}
 
-	return signature, exported.SigStatus_Signed
+	return sig, sig.SigStatus
 }
 
 // SetSig stores the given signature
 func (k Keeper) SetSig(ctx sdk.Context, signature exported.Signature) {
 	k.getStore(ctx).Set(sigPrefix.AppendStr(signature.SigID), &signature)
-}
-
-// GetKeyForSigID returns the key that produced the signature corresponding to the given ID
-func (k Keeper) GetKeyForSigID(ctx sdk.Context, sigID string) (exported.Key, bool) {
-	var info exported.SignInfo
-	k.getStore(ctx).Get(infoForSigPrefix.AppendStr(sigID), &info)
-	return k.GetKey(ctx, info.KeyID)
 }
 
 // SetInfoForSig stores key ID for the given sig ID
@@ -171,18 +179,21 @@ func (k Keeper) DeleteInfoForSig(ctx sdk.Context, sigID string) {
 
 // SetSigStatus defines the status of some sign sig ID
 func (k Keeper) SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus) {
-	bz := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bz, uint32(status))
-	k.getStore(ctx).SetRaw(sigStatusPrefix.AppendStr(sigID), bz)
+	sig, _ := k.getSig(ctx, sigID)
+	sig.SigID = sigID
+	sig.SigStatus = status
+
+	k.SetSig(ctx, sig)
 }
 
 // returns the status of a sig ID
 func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
-	bz := k.getStore(ctx).GetRaw(sigStatusPrefix.AppendStr(sigID))
-	if bz == nil {
+	sig, ok := k.getSig(ctx, sigID)
+	if !ok {
 		return exported.SigStatus_Unspecified
 	}
-	return exported.SigStatus(binary.LittleEndian.Uint32(bz))
+
+	return sig.SigStatus
 }
 
 // SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
@@ -317,7 +328,7 @@ func (k Keeper) PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crime
 	// currently we do not distinguish between malicious and non-malicious faults
 	case tofnd.CRIME_TYPE_MALICIOUS, tofnd.CRIME_TYPE_NON_MALICIOUS:
 		k.rewarder.GetPool(ctx, types.ModuleName).ClearRewards(criminal)
-		k.setTssSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
+		k.setSuspendedUntil(ctx, criminal, ctx.BlockHeight()+k.GetParams(ctx).SuspendDurationInBlocks)
 	default:
 		k.Logger(ctx).Info(fmt.Sprintf("no policy is set to penalize validator %s for crime type %s", criminal.String(), crimeType.String()))
 	}

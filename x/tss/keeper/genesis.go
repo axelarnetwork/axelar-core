@@ -84,6 +84,30 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 
 		k.setExternalKeys(ctx, externalKeys)
 	}
+
+	for _, signature := range genState.Signatures {
+		if signature.SigStatus != exported.SigStatus_Signed {
+			panic(fmt.Errorf("signature %s is not completed", signature.SigID))
+		}
+
+		if signature.GetSingleSig() == nil && signature.GetMultiSig() == nil {
+			panic(fmt.Errorf("signature %s is not completed", signature.SigID))
+		}
+
+		if _, ok := k.getSig(ctx, signature.SigID); ok {
+			panic(fmt.Errorf("signature %s already set", signature.SigID))
+		}
+
+		k.SetSig(ctx, signature)
+	}
+
+	for _, validatorStatus := range genState.ValidatorStatuses {
+		if _, ok := k.getValidatorStatus(ctx, validatorStatus.Validator); ok {
+			panic(fmt.Errorf("validator status %s already set", validatorStatus.Validator.String()))
+		}
+
+		k.setValidatorStatus(ctx, validatorStatus)
+	}
 }
 
 // ExportGenesis returns the tss module's genesis state.
@@ -99,6 +123,8 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 			keys,
 			k.getCompletedMultisigKeygenInfos(ctx),
 			k.getAllExternalKeys(ctx),
+			k.getSignedSigs(ctx),
+			k.getValidatorStatuses(ctx),
 		)
 	}
 
@@ -109,5 +135,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		keys,
 		k.getCompletedMultisigKeygenInfos(ctx),
 		k.getAllExternalKeys(ctx),
+		k.getSignedSigs(ctx),
+		k.getValidatorStatuses(ctx),
 	)
 }
