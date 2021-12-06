@@ -73,14 +73,16 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 		}
 
 		s.SetKey(ctx, exported.Key{
-			ID: externalKey.ID,
+			ID:    externalKey.ID,
+			Role:  exported.ExternalKey,
+			Type:  exported.None,
+			Chain: req.Chain,
 			PublicKey: &exported.Key_ECDSAKey_{
 				ECDSAKey: &exported.Key_ECDSAKey{
 					Value: externalKey.PubKey,
 				},
 			},
 		})
-		s.SetKeyInfo(ctx, types.KeyInfo{KeyID: externalKey.ID, KeyRole: exported.ExternalKey})
 		keyIDs[i] = externalKey.ID
 
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
@@ -233,7 +235,18 @@ func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKey
 	if err := keyID.Validate(); err != nil {
 		return nil, err
 	}
-	if !s.DoesValidatorParticipateInKeygen(ctx, keyID, senderAddress) {
+
+	counter, ok := s.GetSnapshotCounterForKeyID(ctx, keyID)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
+	}
+
+	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	if !ok {
+		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	}
+
+	if _, ok := snapshot.GetValidator(senderAddress); !ok {
 		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, req.SessionID)
 	}
 
@@ -311,7 +324,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 	case *tofnd.MessageOut_KeygenResult_Criminals:
 		voteData = res.Criminals
 	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasPrivateRecoveryInfos(ctx, voter, keyID) {
+		if s.HasPrivateRecoveryInfo(ctx, voter, keyID) {
 			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
 		}
 
@@ -378,8 +391,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 
 		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
 		s.DeleteKeygenStart(ctx, keyID)
-		s.DeleteParticipantsInKeygen(ctx, keyID)
-		s.DeleteAllRecoveryInfos(ctx, keyID)
+		s.DeleteKeyRecoveryInfo(ctx, keyID)
 
 		return &types.VotePubKeyResponse{}, nil
 	}
@@ -423,8 +435,7 @@ func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (
 		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
 		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
 		s.DeleteKeygenStart(ctx, keyID)
-		s.DeleteParticipantsInKeygen(ctx, keyID)
-		s.DeleteAllRecoveryInfos(ctx, keyID)
+		s.DeleteKeyRecoveryInfo(ctx, keyID)
 		poll.AllowOverride()
 
 		ctx.EventManager().EmitEvent(

@@ -301,6 +301,15 @@
 - [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
     - [Params](#tss.v1beta1.Params)
   
+- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [ExternalKeys](#tss.v1beta1.ExternalKeys)
+    - [KeyInfo](#tss.v1beta1.KeyInfo)
+    - [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo)
+    - [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry)
+    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
+    - [MultisigInfo](#tss.v1beta1.MultisigInfo)
+    - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
+  
 - [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
     - [GenesisState](#tss.v1beta1.GenesisState)
   
@@ -327,12 +336,6 @@
     - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
-  
-- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
-    - [KeyInfo](#tss.v1beta1.KeyInfo)
-    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
-    - [MultisigInfo](#tss.v1beta1.MultisigInfo)
-    - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
   
 - [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
     - [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest)
@@ -551,6 +554,9 @@ Params represent the genesis parameters for the module
 | `ecdsa_key` | [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey) |  |  |
 | `multisig_key` | [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey) |  |  |
 | `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `rotation_count` | [int64](#int64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
 
 
 
@@ -4281,6 +4287,138 @@ Params is the parameter set for this module
 
 
 
+<a name="tss/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/types.proto
+
+
+
+<a name="tss.v1beta1.ExternalKeys"></a>
+
+### ExternalKeys
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyInfo"></a>
+
+### KeyInfo
+KeyInfo holds information about a key
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyRecoveryInfo"></a>
+
+### KeyRecoveryInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `public` | [bytes](#bytes) |  |  |
+| `private` | [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyRecoveryInfo.PrivateEntry"></a>
+
+### KeyRecoveryInfo.PrivateEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeygenVoteData"></a>
+
+### KeygenVoteData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `group_recovery_info` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigInfo"></a>
+
+### MultisigInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `timeout` | [int64](#int64) |  |  |
+| `target_num` | [int64](#int64) |  |  |
+| `infos` | [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigInfo.Info"></a>
+
+### MultisigInfo.Info
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+| `data` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="tss/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4298,6 +4436,10 @@ Params is the parameter set for this module
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
 | `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+| `key_recovery_infos` | [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo) | repeated |  |
+| `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
+| `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
+| `external_keys` | [ExternalKeys](#tss.v1beta1.ExternalKeys) | repeated |  |
 
 
 
@@ -4653,89 +4795,6 @@ Query/GovernanceKey RPC method
 | VOTE_STATUS_PENDING | 2 |  |
 | VOTE_STATUS_DECIDED | 3 |  |
 
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="tss/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## tss/v1beta1/types.proto
-
-
-
-<a name="tss.v1beta1.KeyInfo"></a>
-
-### KeyInfo
-KeyInfo holds information about a key
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.KeygenVoteData"></a>
-
-### KeygenVoteData
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pub_key` | [bytes](#bytes) |  |  |
-| `group_recovery_info` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.MultisigInfo"></a>
-
-### MultisigInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `timeout` | [int64](#int64) |  |  |
-| `target_num` | [int64](#int64) |  |  |
-| `infos` | [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info) | repeated |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.MultisigInfo.Info"></a>
-
-### MultisigInfo.Info
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `participant` | [bytes](#bytes) |  |  |
-| `data` | [bytes](#bytes) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
 
  <!-- end enums -->
 

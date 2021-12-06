@@ -332,9 +332,6 @@ var _ types.Signer = &SignerMock{}
 // 			GetKeyTypeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType {
 // 				panic("mock out the GetKeyType method")
 // 			},
-// 			GetMultisigPubKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.MultisigKey, bool) {
-// 				panic("mock out the GetMultisigPubKey method")
-// 			},
 // 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetNextKeyID method")
 // 			},
@@ -389,9 +386,6 @@ type SignerMock struct {
 
 	// GetKeyTypeFunc mocks the GetKeyType method.
 	GetKeyTypeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-
-	// GetMultisigPubKeyFunc mocks the GetMultisigPubKey method.
-	GetMultisigPubKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.MultisigKey, bool)
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
 	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
@@ -503,13 +497,6 @@ type SignerMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
 		}
-		// GetMultisigPubKey holds details about calls to the GetMultisigPubKey method.
-		GetMultisigPubKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-		}
 		// GetNextKeyID holds details about calls to the GetNextKeyID method.
 		GetNextKeyID []struct {
 			// Ctx is the ctx argument value.
@@ -567,7 +554,6 @@ type SignerMock struct {
 	lockGetKeyRequirement            sync.RWMutex
 	lockGetKeyRole                   sync.RWMutex
 	lockGetKeyType                   sync.RWMutex
-	lockGetMultisigPubKey            sync.RWMutex
 	lockGetNextKeyID                 sync.RWMutex
 	lockGetSig                       sync.RWMutex
 	lockGetSnapshotCounterForKeyID   sync.RWMutex
@@ -985,41 +971,6 @@ func (mock *SignerMock) GetKeyTypeCalls() []struct {
 	mock.lockGetKeyType.RLock()
 	calls = mock.calls.GetKeyType
 	mock.lockGetKeyType.RUnlock()
-	return calls
-}
-
-// GetMultisigPubKey calls GetMultisigPubKeyFunc.
-func (mock *SignerMock) GetMultisigPubKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_tss_exported.MultisigKey, bool) {
-	if mock.GetMultisigPubKeyFunc == nil {
-		panic("SignerMock.GetMultisigPubKeyFunc: method is nil but Signer.GetMultisigPubKey was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetMultisigPubKey.Lock()
-	mock.calls.GetMultisigPubKey = append(mock.calls.GetMultisigPubKey, callInfo)
-	mock.lockGetMultisigPubKey.Unlock()
-	return mock.GetMultisigPubKeyFunc(ctx, keyID)
-}
-
-// GetMultisigPubKeyCalls gets all the calls that were made to GetMultisigPubKey.
-// Check the length with:
-//     len(mockedSigner.GetMultisigPubKeyCalls())
-func (mock *SignerMock) GetMultisigPubKeyCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID
-	}
-	mock.lockGetMultisigPubKey.RLock()
-	calls = mock.calls.GetMultisigPubKey
-	mock.lockGetMultisigPubKey.RUnlock()
 	return calls
 }
 
