@@ -3,7 +3,6 @@ package types
 import (
 	"crypto/ecdsa"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -124,9 +123,6 @@ type TSSKeeper interface {
 	SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.ValAddress, sigs ...[]byte) bool
 	GetMultisigSignInfo(ctx sdk.Context, sigID string) (MultisigSignInfo, bool)
 	DeleteMultisigSign(ctx sdk.Context, signID string)
-
-	SetGovernanceKey(ctx sdk.Context, key multisig.LegacyAminoPubKey)
-	GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool)
 }
 
 // Rewarder provides reward functionality

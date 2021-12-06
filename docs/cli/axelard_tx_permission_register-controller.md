@@ -1,9 +1,9 @@
-## axelard tx tss update-governance-key
+## axelard tx permission register-controller
 
-Update the multisig governance key for axelar network
+Register controller account
 
 ```
-axelard tx tss update-governance-key [threshold] [[pubKey]...] [flags]
+axelard tx permission register-controller [controller] [flags]
 ```
 
 ### Options
@@ -19,7 +19,7 @@ axelard tx tss update-governance-key [threshold] [[pubKey]...] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for update-governance-key
+  -h, --help                     help for register-controller
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -45,4 +45,4 @@ axelard tx tss update-governance-key [threshold] [[pubKey]...] [flags]
 
 ### SEE ALSO
 
-- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
+- [axelard tx permission](axelard_tx_permission.md)	 - permission transactions subcommands

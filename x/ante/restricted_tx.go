@@ -6,18 +6,21 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // RestrictedTx checks if the signer is authorized to send restricted transactions
 type RestrictedTx struct {
-	tss types.Tss
+	permission types.Permission
 }
 
 // NewRestrictedTx constructor for RestrictedTx
-func NewRestrictedTx(tss types.Tss) RestrictedTx {
+func NewRestrictedTx(permission types.Permission) RestrictedTx {
 	return RestrictedTx{
-		tss,
+		permission,
 	}
 }
 
@@ -27,15 +30,22 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	msgs := tx.GetMsgs()
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
-		case *tss.UpdateGovernanceKeyRequest, *axelarnet.RegisterFeeCollectorRequest:
+		case *permissionTypes.UpdateGovernanceKeyRequest, *permissionTypes.RegisterControllerRequest,
+			*axelarnet.RegisterFeeCollectorRequest:
+
 			signer := msg.GetSigners()[0]
-
-			governanceKey, ok := d.tss.GetGovernanceKey(ctx)
-			if !ok {
-				panic("governance key not found")
+			if permission.ROLE_ACCESS_CONTROL != d.permission.GetRole(ctx, signer) {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "%s is not authorized to send transaction %T", signer, msg)
 			}
+		case *tss.RegisterExternalKeysRequest, *tss.StartKeygenRequest,
+			*tss.RotateKeyRequest, *axelarnet.RegisterIBCPathRequest,
+			*axelarnet.RegisterAssetRequest, *axelarnet.AddCosmosBasedChainRequest,
+			*evm.AddChainRequest, *evm.ConfirmGatewayDeploymentRequest,
+			*evm.CreateDeployTokenRequest, *evm.CreateTransferOwnershipRequest,
+			*evm.CreateTransferOperatorshipRequest:
 
-			if !signer.Equals(sdk.AccAddress(governanceKey.Address().Bytes())) {
+			signer := msg.GetSigners()[0]
+			if permission.ROLE_CHAIN_MANAGEMENT != d.permission.GetRole(ctx, signer) {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "%s is not authorized to send transaction %T", signer, msg)
 			}
 		default:

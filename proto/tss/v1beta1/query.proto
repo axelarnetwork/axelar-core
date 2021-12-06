@@ -140,17 +140,3 @@ message QueryNextKeyIDResponse {
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
-
-// QueryGovernanceKeyRequest is the request type for the
-// Query/GovernanceKey RPC method
-message QueryGovernanceKeyRequest {
-  option (gogoproto.equal) = false;
-  option (gogoproto.goproto_getters) = false;
-}
-
-// QueryGovernanceKeyResponse is the response type for the
-// Query/GovernanceKey RPC method
-message QueryGovernanceKeyResponse {
-  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 1
-      [ (gogoproto.nullable) = false ];
-}

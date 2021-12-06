@@ -30,7 +30,6 @@ axelard query tss [flags]
 - [axelard query tss active-old-keys-by-validator](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
 - [axelard query tss deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
 - [axelard query tss external-key-id](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
-- [axelard query tss governance-key](axelard_query_tss_governance-key.md)	 - Returns the governance key
 - [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
 - [axelard query tss key-id](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
 - [axelard query tss key-shares-by-key-id](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID

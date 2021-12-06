@@ -41,6 +41,7 @@ axelard query [flags]
 - [axelard query mint](axelard_query_mint.md)	 - Querying commands for the minting module
 - [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
 - [axelard query params](axelard_query_params.md)	 - Querying commands for the params module
+- [axelard query permission](axelard_query_permission.md)	 - Querying commands for the permission module
 - [axelard query slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
 - [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
 - [axelard query staking](axelard_query_staking.md)	 - Querying commands for the staking module
