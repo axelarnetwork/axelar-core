@@ -22,7 +22,7 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(req.DepositChain))
 	bz := k.getStore(ctx).GetRaw(key)
 	if bz == nil {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for %s", recipient.String())
