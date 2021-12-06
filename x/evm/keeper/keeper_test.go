@@ -29,9 +29,9 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
-		paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = evmKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("evm"), paramsK)
+		keeper = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
 		chain = "Ethereum"
 	}
 
@@ -69,12 +69,12 @@ func TestKeeper_GetParams(t *testing.T) {
 		paramTStoreKey := sdk.NewKVStoreKey(paramstypes.TStoreKey)
 		storeKey := sdk.NewKVStoreKey(types.StoreKey)
 
-		paramsK1 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
-		paramsK2 := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, paramStoreKey, paramTStoreKey)
+		paramsK1 := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, paramStoreKey, paramTStoreKey)
+		paramsK2 := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, paramStoreKey, paramTStoreKey)
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
-		keeperWithSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK1).ForChain(exported.Ethereum.Name)
-		keeperWithoutSubspace = evmKeeper.NewKeeper(encCfg.Marshaler, storeKey, paramsK2).ForChain(exported.Ethereum.Name)
+		keeperWithSubspace = evmKeeper.NewKeeper(encCfg.Codec, storeKey, paramsK1).ForChain(exported.Ethereum.Name)
+		keeperWithoutSubspace = evmKeeper.NewKeeper(encCfg.Codec, storeKey, paramsK2).ForChain(exported.Ethereum.Name)
 
 		// load params into a subspace
 		keeperWithSubspace.SetParams(ctx, types.DefaultParams()[0])

@@ -27,7 +27,7 @@ type KVQueue interface {
 type BlockHeightKVQueue struct {
 	store       KVStore
 	blockHeight Key
-	name        Key
+	name        StringKey
 	logger      log.Logger
 }
 
@@ -38,28 +38,26 @@ func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger
 
 // ImportState should only be used to populate state at genesis. Panics if the given state is invalid
 func (q BlockHeightKVQueue) ImportState(state map[string]codec.ProtoMarshaler) {
-	if err := validateQueueState(string(q.name.AsKey()), state); err != nil {
+	if err := ValidateQueueState(state); err != nil {
 		panic(err)
 	}
 
 	for key, value := range state {
-		q.store.Set(KeyFromStr(key), value)
+		q.store.Set(q.name.AppendStr(key), value)
 	}
 }
 
-func validateQueueState(queueName string, state map[string]codec.ProtoMarshaler) error {
+// ValidateQueueState checks if the keys of the given map have the correct format to be imported as queue state.
+// The expected format is {block height}_{[a-zA-Z0-9]+}
+func ValidateQueueState(state map[string]codec.ProtoMarshaler) error {
 	for key := range state {
 		keyParticles := strings.Split(key, defaultDelimiter)
-		if len(keyParticles) != 3 {
-			return fmt.Errorf("expected key %s to consist of three parts", key)
+		if len(keyParticles) != 2 {
+			return fmt.Errorf("expected key %s to consist of two parts", key)
 		}
 
-		if keyParticles[0] != queueName {
-			return fmt.Errorf("expected first key part of %s to be %s, got %s", key, queueName, keyParticles[0])
-		}
-
-		if _, err := strconv.ParseInt(keyParticles[1], 10, 64); err != nil {
-			return fmt.Errorf("expected second key part of %s to be a block height", key)
+		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
+			return fmt.Errorf("expected first key part of %s to be a block height", key)
 		}
 	}
 	return nil

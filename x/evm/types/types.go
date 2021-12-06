@@ -427,7 +427,7 @@ func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
 func GetSignHash(commandData []byte) common.Hash {
 	hash := crypto.Keccak256(commandData)
 
-	//TODO: is this the same across any EVM chain?
+	// TODO: is this the same across any EVM chain?
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
 
 	return crypto.Keccak256Hash([]byte(msg))
@@ -672,6 +672,7 @@ type CommandBatch struct {
 	setter   func(batch CommandBatchMetadata)
 }
 
+// NonExistentCommand can be used to represent a non-existent command
 var NonExistentCommand = NewCommandBatch(CommandBatchMetadata{}, func(CommandBatchMetadata) {})
 
 // NewCommandBatch returns a new command batch struct
@@ -1033,6 +1034,7 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	return result, nil
 }
 
+// ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
 	if m.DestinationChain == "" {
 		return fmt.Errorf("destination chain not set")
@@ -1047,14 +1049,16 @@ func (m *BurnerInfo) ValidateBasic() error {
 	return nil
 }
 
-func (m *Gateway) Validate() error {
+// ValidateBasic does stateless validation of the object
+func (m *Gateway) ValidateBasic() error {
 	if m.Status == GatewayStatusNone {
 		return fmt.Errorf("gatway status not set")
 	}
 	return nil
 }
 
-func (m *ERC20TokenMetadata) Validate() error {
+// ValidateBasic does stateless validation of the object
+func (m *ERC20TokenMetadata) ValidateBasic() error {
 	if m.Status == NonExistent {
 		return fmt.Errorf("token status not set")
 	}
@@ -1074,6 +1078,7 @@ func (m *ERC20TokenMetadata) Validate() error {
 	return nil
 }
 
+// ValidateBasic does stateless validation of the object
 func (m *ERC20Deposit) ValidateBasic() error {
 	if m.Asset == "" {
 		return fmt.Errorf("asset not set")

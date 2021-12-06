@@ -26,8 +26,8 @@ func setup() (sdk.Context, Keeper, *mock.BankerMock, *mock.DistributorMock, *moc
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encodingConfig := params.MakeEncodingConfig()
-	subspace := paramstypes.NewSubspace(encodingConfig.Marshaler, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
-	keeper := NewKeeper(encodingConfig.Marshaler, sdk.NewKVStoreKey(types.StoreKey), subspace, &banker, &distributor, &staker)
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
+	keeper := NewKeeper(encodingConfig.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &banker, &distributor, &staker)
 
 	return ctx, keeper, &banker, &distributor, &staker
 }

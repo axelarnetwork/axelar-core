@@ -685,7 +685,7 @@ func (k chainKeeper) setUnsignedBatchID(ctx sdk.Context, id []byte) {
 }
 
 // returns the queue of commands
-func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.KVQueue {
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
 	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chainLowerKey), ctx.BlockHeight(), k.Logger(ctx))
 }
 
@@ -693,14 +693,29 @@ func (k chainKeeper) serializeCommandQueue(ctx sdk.Context) map[string]types.Com
 	iter := k.getStore(ctx, k.chainLowerKey).Iterator(utils.KeyFromStr(commandQueueName))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
-	var commands map[string]types.Command
+	commands := make(map[string]types.Command)
 	for ; iter.Valid(); iter.Next() {
 		var command types.Command
 		iter.UnmarshalValue(&command)
-		commands[string(iter.Key())] = command
+		key := string(iter.Key())
+		key = strings.TrimPrefix(key, commandQueueName)
+		key = strings.TrimPrefix(key, "_")
+		commands[key] = command
 	}
 
 	return commands
+}
+
+func (k chainKeeper) setCommandQueue(ctx sdk.Context, queueState map[string]types.Command) {
+	state := make(map[string]codec.ProtoMarshaler, len(queueState))
+	for key, value := range queueState {
+		// need to create a new variable inside the loop because the state map takes its reference,
+		// otherwise all entries would refer to a single &value pointer
+		v := value
+		state[key] = &v
+	}
+
+	k.getCommandQueue(ctx).ImportState(state)
 }
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {
@@ -840,14 +855,6 @@ func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
 	}
 
 	return common.Address{}, false
-}
-
-func (k chainKeeper) setCommandQueue(ctx sdk.Context, queue map[string]types.Command) {
-	store := k.getStore(ctx, k.chainLowerKey)
-
-	for key, value := range queue {
-		store.Set(utils.KeyFromStr(key), &value)
-	}
 }
 
 func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {

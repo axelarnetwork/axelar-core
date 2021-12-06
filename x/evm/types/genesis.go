@@ -4,18 +4,34 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+// NewGenesisState returns a new genesis state
+func NewGenesisState(chains []GenesisState_Chain) GenesisState {
+	sort.Slice(chains, less(chains))
+
+	return GenesisState{Chains: chains}
+}
+
+func less(chains []GenesisState_Chain) func(i int, j int) bool {
+	return func(i, j int) bool {
+		return chains[i].Params.Chain < chains[j].Params.Chain
+	}
+}
 
 // DefaultGenesisState returns a default genesis state
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{Chains: DefaultChains()}
 }
 
+// DefaultChains returns the default chains for a genesis state
 func DefaultChains() []GenesisState_Chain {
 	p := DefaultParams()
 
@@ -38,17 +54,41 @@ func DefaultChains() []GenesisState_Chain {
 
 // Validate validates the genesis state
 func (m GenesisState) Validate() error {
+	if !sort.SliceIsSorted(m.Chains, less(m.Chains)) {
+		return getValidateError(0, fmt.Errorf("chains must be sorted by name (in params)"))
+	}
+
 	for j, chain := range m.Chains {
 		if err := chain.Params.Validate(); err != nil {
-			return getValidateError(j, err)
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid params"))
 		}
 
-		if err := chain.Gateway.Validate(); err != nil {
-			return getValidateError(j, err)
+		if err := chain.Gateway.ValidateBasic(); err != nil {
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid gateway"))
+		}
+
+		if chain.Gateway.Status != GatewayStatusConfirmed {
+			errStr := "gateway is not confirmed"
+
+			if len(chain.Tokens) > 0 {
+				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))
+			}
+
+			if len(chain.ConfirmedDeposits) > 0 {
+				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have confirmed deposits"), errStr))
+			}
+
+			if len(chain.BurnedDeposits) > 0 {
+				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+			}
+
+			if len(chain.BurnerInfos) > 0 {
+				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+			}
 		}
 
 		for i, token := range chain.Tokens {
-			if err := token.Validate(); err != nil {
+			if err := token.ValidateBasic(); err != nil {
 				return getValidateError(j, sdkerrors.Wrapf(err, "invalid token %d", i))
 			}
 		}
@@ -59,7 +99,7 @@ func (m GenesisState) Validate() error {
 			}
 
 			if err := checkTokenInfo(info, chain.Tokens); err != nil {
-				return getValidateError(j, err)
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burner info %d", i))
 			}
 		}
 
@@ -84,7 +124,19 @@ func (m GenesisState) Validate() error {
 		}
 
 		if err := validateCommandBatches(chain.CommandBatches); err != nil {
-			return getValidateError(j, err)
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
+		}
+
+		if err := validateCommandBatches(chain.CommandBatches); err != nil {
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
+		}
+
+		queueState := make(map[string]codec.ProtoMarshaler, len(chain.CommandQueue))
+		for key, value := range chain.CommandQueue {
+			queueState[key] = &value
+		}
+		if err := utils.ValidateQueueState(queueState); err != nil {
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command queue state"))
 		}
 	}
 

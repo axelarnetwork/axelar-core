@@ -47,9 +47,7 @@ func (k baseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 }
 
 func (k baseKeeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
-	return types.GenesisState{
-		Chains: k.getChains(ctx),
-	}
+	return types.NewGenesisState(k.getChains(ctx))
 }
 
 func (k baseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
@@ -72,5 +70,6 @@ func (k baseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 		}
 		chains = append(chains, chain)
 	}
+
 	return chains
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	evmTest "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -32,21 +33,21 @@ func TestQueryTokenAddress(t *testing.T) {
 		evmChain        string
 		asset           string
 		symbol          string
-		expectedAddress common.Address
+		expectedAddress types.Address
 	)
 
 	setup := func() {
 		evmChain = rand.StrBetween(5, 10)
-		expectedAddress = randomAddress()
+		expectedAddress = evmTest.RandomAddress()
 		asset = btc.Bitcoin.NativeAsset
 		symbol = "axelarBTC"
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc:           func() string { return evmChain },
-			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return randomAddress(), true },
+			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) { return common.Address(evmTest.RandomAddress()), true },
 			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, s string) types.ERC20Token {
 				if symbol == s {
-					return createMockConfirmedERC20Token(asset, types.Address(expectedAddress), createDetails(asset, symbol))
+					return createMockConfirmedERC20Token(asset, expectedAddress, createDetails(asset, symbol))
 				}
 				return types.NilToken
 			},
@@ -141,8 +142,8 @@ func TestQueryDepositState(t *testing.T) {
 		expectedDeposit = types.ERC20Deposit{
 			DestinationChain: rand.StrBetween(5, 10),
 			Amount:           sdk.NewUint(uint64(rand.I64Between(100, 10000))),
-			BurnerAddress:    types.Address(randomAddress()),
-			TxID:             types.Hash(randomHash()),
+			BurnerAddress:    evmTest.RandomAddress(),
+			TxID:             evmTest.RandomHash(),
 			Asset:            rand.StrBetween(5, 10),
 		}
 
@@ -285,14 +286,6 @@ func TestQueryDepositState(t *testing.T) {
 		assert.EqualError(err, fmt.Sprintf("%s is not a registered chain: bridge error", evmChain))
 
 	}).Repeat(repeatCount))
-}
-
-func randomAddress() common.Address {
-	return common.BytesToAddress(rand.Bytes(common.AddressLength))
-}
-
-func randomHash() common.Hash {
-	return common.BytesToHash(rand.Bytes(common.HashLength))
 }
 
 func createMockConfirmedERC20Token(asset string, addr types.Address, details types.TokenDetails) types.ERC20Token {

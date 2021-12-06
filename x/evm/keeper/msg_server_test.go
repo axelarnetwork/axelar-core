@@ -258,8 +258,8 @@ func TestLink_UnknownChain(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := app.MakeEncodingConfig()
 
-	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
@@ -295,8 +295,8 @@ func TestLink_NoGateway(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := app.MakeEncodingConfig()
 
-	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
@@ -1404,8 +1404,8 @@ func createSignedTx() *evmTypes.Transaction {
 
 func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper {
 	encCfg := app.MakeEncodingConfig()
-	paramsK := paramsKeeper.NewKeeper(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
