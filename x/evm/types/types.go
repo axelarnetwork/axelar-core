@@ -1050,14 +1050,6 @@ func (m *BurnerInfo) ValidateBasic() error {
 }
 
 // ValidateBasic does stateless validation of the object
-func (m *Gateway) ValidateBasic() error {
-	if m.Status == GatewayStatusNone {
-		return fmt.Errorf("gatway status not set")
-	}
-	return nil
-}
-
-// ValidateBasic does stateless validation of the object
 func (m *ERC20TokenMetadata) ValidateBasic() error {
 	if m.Status == NonExistent {
 		return fmt.Errorf("token status not set")
