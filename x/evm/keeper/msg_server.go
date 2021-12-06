@@ -1466,7 +1466,11 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, fmt.Errorf("TSS is disabled")
 	}
 
-	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName})
+	s.SetPendingChain(
+		ctx,
+		nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
+		req.Params,
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
