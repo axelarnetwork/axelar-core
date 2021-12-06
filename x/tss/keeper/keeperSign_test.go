@@ -326,7 +326,7 @@ func TestMultisigSign(t *testing.T) {
 		multisigSign, ok := s.Keeper.GetMultisigSignInfo(s.Ctx, sigID)
 		assert.True(t, ok)
 		assert.Equal(t, int64(0), multisigSign.Count())
-		assert.Len(t, multisigSign.GetSigKeyPairs(), 0)
+		assert.Len(t, multisigSign.GetTargetSigKeyPairs(), 0)
 		assert.False(t, multisigSign.IsCompleted())
 		keyRequirement, _ := s.Keeper.GetKeyRequirement(s.Ctx, exported.MasterKey, exported.Multisig)
 		expectedTimeoutBlock := s.Ctx.BlockHeight() + keyRequirement.SignTimeout
@@ -396,7 +396,7 @@ func TestMultisigSign(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, sigCount, multisigSign.Count())
 			assert.True(t, multisigSign.DoesParticipate(v.GetSDKValidator().GetOperator()))
-			assert.Equal(t, expectedPairs, multisigSign.GetSigKeyPairs())
+			assert.Equal(t, expectedPairs[:snap.CorruptionThreshold+1], multisigSign.GetTargetSigKeyPairs())
 		}
 
 	}).Repeat(repeats))
