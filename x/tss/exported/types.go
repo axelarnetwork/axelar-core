@@ -22,6 +22,31 @@ const (
 	KeyIDLengthMax = 256
 )
 
+// Validate returns an error if the key is not valid; nil otherwise
+func (m Key) Validate() error {
+	if err := m.ID.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.Role.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.Type.Validate(); err != nil {
+		return err
+	}
+
+	if m.RotationCount < 0 {
+		return fmt.Errorf("rotation count must be >=0")
+	}
+
+	if m.SnapshotCounter < 0 {
+		return fmt.Errorf("snapshot counter must be >=0")
+	}
+
+	return nil
+}
+
 // KeyID ensures a correctly formatted tss key ID
 type KeyID string
 

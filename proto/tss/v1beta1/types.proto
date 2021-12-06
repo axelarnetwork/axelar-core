@@ -34,3 +34,22 @@ message MultisigInfo {
   int64 target_num = 3;
   repeated Info infos = 4;
 }
+
+message KeyRecoveryInfo {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  bytes public = 2;
+  map<string, bytes> private = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ExternalKeys {
+  string chain = 1;
+  repeated string key_ids = 2 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}

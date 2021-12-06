@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/btcsuite/btcd/btcec"
@@ -13,6 +14,65 @@ const (
 	// TSSEnabled indicates if threshold signing is permitted
 	TSSEnabled bool = false
 )
+
+// Validate validates the MultisigInfo
+func (m MultisigInfo) Validate() error {
+	if m.ID == "" {
+		return fmt.Errorf("ID must be set")
+	}
+
+	if m.Timeout <= 0 {
+		return fmt.Errorf("timeout must be >0")
+	}
+
+	if m.TargetNum <= 0 {
+		return fmt.Errorf("target num must be >0")
+	}
+
+	return nil
+}
+
+// Validate validates the ExternalKeys
+func (m ExternalKeys) Validate() error {
+	if m.Chain == "" {
+		return fmt.Errorf("chain must be set")
+	}
+
+	if len(m.KeyIDs) == 0 {
+		return fmt.Errorf("key IDs must be set")
+	}
+
+	for _, keyID := range m.KeyIDs {
+		if err := keyID.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate validates the KeyRecoveryInfo
+func (m KeyRecoveryInfo) Validate() error {
+	if err := m.KeyID.Validate(); err != nil {
+		return err
+	}
+
+	if len(m.Public) == 0 {
+		return fmt.Errorf("missing public key recovery info")
+	}
+
+	if len(m.Private) == 0 {
+		return fmt.Errorf("missing private key recovery info")
+	}
+
+	for validator, privateKeyRecoveryInfo := range m.Private {
+		if len(privateKeyRecoveryInfo) == 0 {
+			return fmt.Errorf("missing private key recovery info for validator %s", validator)
+		}
+	}
+
+	return nil
+}
 
 // MultisigBaseInfo is an interface for multisig base info
 type MultisigBaseInfo interface {
@@ -66,9 +126,7 @@ func (m *MultisigInfo) AddData(val sdk.ValAddress, data [][]byte) {
 func (m *MultisigInfo) GetData() [][]byte {
 	var data [][]byte
 	for _, info := range m.Infos {
-		for _, d := range info.Data {
-			data = append(data, d)
-		}
+		data = append(data, info.Data...)
 	}
 
 	return data

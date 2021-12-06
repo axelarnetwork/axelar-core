@@ -259,47 +259,171 @@ func (m *MultisigInfo_Info) GetData() [][]byte {
 	return nil
 }
 
+type KeyRecoveryInfo struct {
+	KeyID   github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	Public  []byte                                                    `protobuf:"bytes,2,opt,name=public,proto3" json:"public,omitempty"`
+	Private map[string][]byte                                         `protobuf:"bytes,3,rep,name=private,proto3" json:"private" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (m *KeyRecoveryInfo) Reset()         { *m = KeyRecoveryInfo{} }
+func (m *KeyRecoveryInfo) String() string { return proto.CompactTextString(m) }
+func (*KeyRecoveryInfo) ProtoMessage()    {}
+func (*KeyRecoveryInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_757d526ec8821445, []int{3}
+}
+func (m *KeyRecoveryInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeyRecoveryInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeyRecoveryInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeyRecoveryInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyRecoveryInfo.Merge(m, src)
+}
+func (m *KeyRecoveryInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeyRecoveryInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyRecoveryInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeyRecoveryInfo proto.InternalMessageInfo
+
+func (m *KeyRecoveryInfo) GetKeyID() github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+	if m != nil {
+		return m.KeyID
+	}
+	return ""
+}
+
+func (m *KeyRecoveryInfo) GetPublic() []byte {
+	if m != nil {
+		return m.Public
+	}
+	return nil
+}
+
+func (m *KeyRecoveryInfo) GetPrivate() map[string][]byte {
+	if m != nil {
+		return m.Private
+	}
+	return nil
+}
+
+type ExternalKeys struct {
+	Chain  string                                                      `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,2,rep,name=key_ids,json=keyIds,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_ids,omitempty"`
+}
+
+func (m *ExternalKeys) Reset()         { *m = ExternalKeys{} }
+func (m *ExternalKeys) String() string { return proto.CompactTextString(m) }
+func (*ExternalKeys) ProtoMessage()    {}
+func (*ExternalKeys) Descriptor() ([]byte, []int) {
+	return fileDescriptor_757d526ec8821445, []int{4}
+}
+func (m *ExternalKeys) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ExternalKeys) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ExternalKeys.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ExternalKeys) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExternalKeys.Merge(m, src)
+}
+func (m *ExternalKeys) XXX_Size() int {
+	return m.Size()
+}
+func (m *ExternalKeys) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExternalKeys.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ExternalKeys proto.InternalMessageInfo
+
+func (m *ExternalKeys) GetChain() string {
+	if m != nil {
+		return m.Chain
+	}
+	return ""
+}
+
+func (m *ExternalKeys) GetKeyIDs() []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+	if m != nil {
+		return m.KeyIDs
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*KeygenVoteData)(nil), "tss.v1beta1.KeygenVoteData")
 	proto.RegisterType((*KeyInfo)(nil), "tss.v1beta1.KeyInfo")
 	proto.RegisterType((*MultisigInfo)(nil), "tss.v1beta1.MultisigInfo")
 	proto.RegisterType((*MultisigInfo_Info)(nil), "tss.v1beta1.MultisigInfo.Info")
+	proto.RegisterType((*KeyRecoveryInfo)(nil), "tss.v1beta1.KeyRecoveryInfo")
+	proto.RegisterMapType((map[string][]byte)(nil), "tss.v1beta1.KeyRecoveryInfo.PrivateEntry")
+	proto.RegisterType((*ExternalKeys)(nil), "tss.v1beta1.ExternalKeys")
 }
 
 func init() { proto.RegisterFile("tss/v1beta1/types.proto", fileDescriptor_757d526ec8821445) }
 
 var fileDescriptor_757d526ec8821445 = []byte{
-	// 480 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xcf, 0x8b, 0xd3, 0x40,
-	0x14, 0x6e, 0xd2, 0x5f, 0xee, 0xb4, 0x2c, 0x38, 0x8a, 0x1b, 0x0a, 0x9b, 0x96, 0x9e, 0x7a, 0x69,
-	0x62, 0x57, 0x0f, 0x7a, 0xb4, 0x14, 0xa1, 0x16, 0x3d, 0x8c, 0xb2, 0xa0, 0x20, 0x65, 0x9a, 0xbc,
-	0x8d, 0x21, 0x3f, 0x26, 0xcc, 0x4c, 0xd6, 0xe6, 0x1f, 0xf0, 0xec, 0x9f, 0xe5, 0x71, 0x8f, 0x1e,
-	0xa4, 0x48, 0xfa, 0x5f, 0xec, 0x49, 0x66, 0x92, 0x5d, 0x72, 0x10, 0xc4, 0x4b, 0xf2, 0xcd, 0xbc,
-	0xf7, 0xbd, 0xf7, 0xbe, 0xef, 0x0d, 0x3a, 0x93, 0x42, 0xb8, 0xd7, 0x8b, 0x1d, 0x48, 0xba, 0x70,
-	0x65, 0x91, 0x81, 0x70, 0x32, 0xce, 0x24, 0xc3, 0x03, 0x29, 0x84, 0x53, 0x07, 0x46, 0x8f, 0x03,
-	0x16, 0x30, 0x7d, 0xef, 0x2a, 0x54, 0xa5, 0x8c, 0x26, 0x8a, 0x0b, 0xfb, 0x8c, 0x71, 0x09, 0xfe,
-	0xdf, 0x8a, 0x4c, 0x3f, 0xa2, 0xd3, 0x0d, 0x14, 0x01, 0xa4, 0x97, 0x4c, 0xc2, 0x8a, 0x4a, 0x8a,
-	0xcf, 0x50, 0x3f, 0xcb, 0x77, 0xdb, 0x08, 0x0a, 0xcb, 0x98, 0x18, 0xb3, 0x21, 0xe9, 0x65, 0xf9,
-	0x6e, 0x03, 0x05, 0x76, 0xd0, 0xa3, 0x80, 0xb3, 0x3c, 0xdb, 0x72, 0xf0, 0xd8, 0x35, 0xf0, 0x62,
-	0x1b, 0xa6, 0x57, 0xcc, 0x32, 0x75, 0xd2, 0x43, 0x1d, 0x22, 0x75, 0x64, 0x9d, 0x5e, 0xb1, 0xe9,
-	0x2f, 0x03, 0xf5, 0x37, 0xa0, 0x31, 0xfe, 0x8c, 0x7a, 0x11, 0x14, 0xdb, 0xd0, 0xd7, 0x35, 0x4f,
-	0x96, 0xaf, 0xcb, 0xc3, 0xb8, 0xab, 0x82, 0xab, 0xdb, 0xc3, 0xf8, 0x65, 0x10, 0xca, 0x2f, 0xf9,
-	0xce, 0xf1, 0x58, 0xe2, 0xd2, 0x3d, 0xc4, 0x94, 0xa7, 0x20, 0xbf, 0x32, 0x1e, 0xd5, 0xa7, 0xb9,
-	0xc7, 0x38, 0xb8, 0x7b, 0xb7, 0x29, 0xc6, 0xd1, 0x64, 0xd2, 0x8d, 0xa0, 0x58, 0xfb, 0xf8, 0x05,
-	0x7a, 0xa0, 0xca, 0x73, 0x16, 0x83, 0x9e, 0xe7, 0xf4, 0xe2, 0xdc, 0x51, 0xee, 0xdc, 0x67, 0xd7,
-	0xd2, 0x15, 0x8b, 0xb0, 0x18, 0x48, 0x3f, 0xaa, 0xc0, 0x1d, 0x53, 0x59, 0x62, 0xb5, 0xff, 0xc1,
-	0xfc, 0x50, 0x64, 0x15, 0x53, 0x81, 0xe9, 0x37, 0x13, 0x0d, 0xdf, 0xe6, 0xb1, 0x0c, 0x45, 0x18,
-	0x68, 0x8d, 0x4f, 0x90, 0x79, 0xaf, 0xaf, 0x57, 0x1e, 0xc6, 0xe6, 0x7a, 0x45, 0xcc, 0xd0, 0xc7,
-	0x16, 0xea, 0xcb, 0x30, 0x01, 0x96, 0x4b, 0x3d, 0x5b, 0x9b, 0xdc, 0x1d, 0xf1, 0x39, 0x42, 0x92,
-	0xf2, 0x00, 0xe4, 0x36, 0xcd, 0x13, 0xdd, 0xbe, 0x4d, 0x4e, 0xaa, 0x9b, 0x77, 0x79, 0x82, 0x9f,
-	0xa3, 0xae, 0x72, 0x58, 0x58, 0x9d, 0x49, 0x7b, 0x36, 0xb8, 0xb0, 0x9d, 0xc6, 0xc2, 0x9d, 0x66,
-	0x6b, 0x47, 0x7d, 0x48, 0x95, 0x3c, 0x62, 0xa8, 0xa3, 0xc7, 0x79, 0x8f, 0x06, 0x19, 0xe5, 0x32,
-	0xf4, 0xc2, 0x8c, 0xa6, 0xb2, 0xda, 0xe5, 0x72, 0x71, 0x7b, 0x18, 0xcf, 0x1b, 0x76, 0x7b, 0x4c,
-	0x24, 0x4c, 0xd4, 0xbf, 0xb9, 0xf0, 0xa3, 0xfa, 0x71, 0x5c, 0xd2, 0xf8, 0x95, 0xef, 0x73, 0x10,
-	0x82, 0x34, 0xab, 0x60, 0x8c, 0x3a, 0x3e, 0x95, 0xd4, 0x32, 0x27, 0xed, 0xd9, 0x90, 0x68, 0xbc,
-	0x7c, 0xf3, 0xa3, 0xb4, 0x8d, 0x9b, 0xd2, 0x36, 0x7e, 0x97, 0xb6, 0xf1, 0xfd, 0x68, 0xb7, 0x6e,
-	0x8e, 0x76, 0xeb, 0xe7, 0xd1, 0x6e, 0x7d, 0x7a, 0xfa, 0x1f, 0x8b, 0xd5, 0x7d, 0x77, 0x3d, 0xfd,
-	0x2a, 0x9f, 0xfd, 0x09, 0x00, 0x00, 0xff, 0xff, 0x44, 0x38, 0x4a, 0xec, 0xf5, 0x02, 0x00, 0x00,
+	// 614 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xcf, 0x6e, 0xd3, 0x4e,
+	0x10, 0x8e, 0x9d, 0x7f, 0xbf, 0x6c, 0xa3, 0xfe, 0x60, 0xa9, 0xda, 0x28, 0x52, 0x9d, 0x28, 0xa7,
+	0x72, 0xa8, 0x43, 0x0b, 0x87, 0xd2, 0x1b, 0x51, 0x0b, 0x0a, 0x11, 0x08, 0x2d, 0xa8, 0x12, 0x48,
+	0x28, 0x6c, 0xec, 0xa9, 0x6b, 0xc5, 0xf1, 0x5a, 0xbb, 0xeb, 0x10, 0xbf, 0x40, 0xaf, 0xf0, 0x58,
+	0x3d, 0xf6, 0xc8, 0x01, 0x45, 0xc8, 0x79, 0x8b, 0x9e, 0xd0, 0xae, 0x9d, 0xca, 0x20, 0x24, 0x84,
+	0x10, 0x17, 0x7b, 0x66, 0xe7, 0xfb, 0x66, 0x67, 0xbe, 0x19, 0x1b, 0xed, 0x48, 0x21, 0xfa, 0xf3,
+	0x83, 0x09, 0x48, 0x7a, 0xd0, 0x97, 0x49, 0x04, 0xc2, 0x8e, 0x38, 0x93, 0x0c, 0x6f, 0x48, 0x21,
+	0xec, 0x3c, 0xd0, 0xde, 0xf2, 0x98, 0xc7, 0xf4, 0x79, 0x5f, 0x59, 0x19, 0xa4, 0xdd, 0x55, 0x5c,
+	0x58, 0x44, 0x8c, 0x4b, 0x70, 0x7f, 0x95, 0xa4, 0xf7, 0x16, 0x6d, 0x8e, 0x20, 0xf1, 0x20, 0x3c,
+	0x63, 0x12, 0x4e, 0xa8, 0xa4, 0x78, 0x07, 0xd5, 0xa3, 0x78, 0x32, 0x9e, 0x42, 0xd2, 0x32, 0xba,
+	0xc6, 0x5e, 0x93, 0xd4, 0xa2, 0x78, 0x32, 0x82, 0x04, 0xdb, 0xe8, 0x9e, 0xc7, 0x59, 0x1c, 0x8d,
+	0x39, 0x38, 0x6c, 0x0e, 0x3c, 0x19, 0xfb, 0xe1, 0x39, 0x6b, 0x99, 0x1a, 0x74, 0x57, 0x87, 0x48,
+	0x1e, 0x19, 0x86, 0xe7, 0xac, 0xf7, 0xd5, 0x40, 0xf5, 0x11, 0x68, 0x1b, 0xbf, 0x47, 0xb5, 0x29,
+	0x24, 0x63, 0xdf, 0xd5, 0x39, 0x1b, 0x83, 0xa7, 0xe9, 0xb2, 0x53, 0x55, 0xc1, 0x93, 0x9b, 0x65,
+	0xe7, 0xb1, 0xe7, 0xcb, 0x8b, 0x78, 0x62, 0x3b, 0x6c, 0xd6, 0xa7, 0x0b, 0x08, 0x28, 0x0f, 0x41,
+	0x7e, 0x64, 0x7c, 0x9a, 0x7b, 0xfb, 0x0e, 0xe3, 0xd0, 0x5f, 0xf4, 0x8b, 0xcd, 0xd8, 0x9a, 0x4c,
+	0xaa, 0x53, 0x48, 0x86, 0x2e, 0x3e, 0x42, 0xff, 0xa9, 0xf4, 0x9c, 0x05, 0xa0, 0xeb, 0xd9, 0x3c,
+	0xdc, 0xb5, 0x95, 0x3a, 0xb7, 0xe8, 0xbc, 0x75, 0xc5, 0x22, 0x2c, 0x00, 0x52, 0x9f, 0x66, 0xc6,
+	0x9a, 0xa9, 0x24, 0x69, 0x95, 0x7f, 0xc3, 0x7c, 0x93, 0x44, 0x19, 0x53, 0x19, 0xbd, 0x4b, 0x13,
+	0x35, 0x5f, 0xc4, 0x81, 0xf4, 0x85, 0xef, 0xe9, 0x1e, 0xb7, 0x91, 0x79, 0xdb, 0x5f, 0x2d, 0x5d,
+	0x76, 0xcc, 0xe1, 0x09, 0x31, 0x7d, 0x17, 0xb7, 0x50, 0x5d, 0xfa, 0x33, 0x60, 0xb1, 0xd4, 0xb5,
+	0x95, 0xc9, 0xda, 0xc5, 0xbb, 0x08, 0x49, 0xca, 0x3d, 0x90, 0xe3, 0x30, 0x9e, 0xe9, 0xeb, 0xcb,
+	0xa4, 0x91, 0x9d, 0xbc, 0x8c, 0x67, 0xf8, 0x11, 0xaa, 0x2a, 0x85, 0x45, 0xab, 0xd2, 0x2d, 0xef,
+	0x6d, 0x1c, 0x5a, 0x76, 0x61, 0xe0, 0x76, 0xf1, 0x6a, 0x5b, 0x3d, 0x48, 0x06, 0x6e, 0x33, 0x54,
+	0xd1, 0xe5, 0xbc, 0x46, 0x1b, 0x11, 0xe5, 0xd2, 0x77, 0xfc, 0x88, 0x86, 0x32, 0x9b, 0xe5, 0xe0,
+	0xe0, 0x66, 0xd9, 0xd9, 0x2f, 0xc8, 0xed, 0x30, 0x31, 0x63, 0x22, 0x7f, 0xed, 0x0b, 0x77, 0x9a,
+	0x2f, 0xc7, 0x19, 0x0d, 0x9e, 0xb8, 0x2e, 0x07, 0x21, 0x48, 0x31, 0x0b, 0xc6, 0xa8, 0xe2, 0x52,
+	0x49, 0x5b, 0x66, 0xb7, 0xbc, 0xd7, 0x24, 0xda, 0xee, 0x7d, 0x32, 0xd1, 0xff, 0x4a, 0xd7, 0xc2,
+	0xec, 0xff, 0xf5, 0xbc, 0xb7, 0x91, 0x5a, 0xca, 0xc0, 0x77, 0xf2, 0xed, 0xcb, 0x3d, 0x3c, 0x44,
+	0xf5, 0x88, 0xfb, 0x73, 0x2a, 0xd5, 0x30, 0x95, 0x66, 0xf7, 0x7f, 0xd0, 0xec, 0xa7, 0x2a, 0xed,
+	0x57, 0x19, 0xf6, 0x34, 0x94, 0x3c, 0x19, 0x54, 0xae, 0x96, 0x9d, 0x12, 0x59, 0xf3, 0xdb, 0xc7,
+	0xa8, 0x59, 0x0c, 0xe3, 0x3b, 0xa8, 0xbc, 0xfe, 0x24, 0x1a, 0x44, 0x99, 0x78, 0x0b, 0x55, 0xe7,
+	0x34, 0x88, 0x21, 0xaf, 0x21, 0x73, 0x8e, 0xcd, 0x23, 0xa3, 0x77, 0x69, 0xa0, 0xe6, 0xe9, 0x42,
+	0x02, 0x0f, 0x69, 0x30, 0x82, 0x44, 0x28, 0xa8, 0x73, 0x41, 0xfd, 0x30, 0xa7, 0x67, 0x0e, 0xfe,
+	0x80, 0xea, 0x99, 0x48, 0x42, 0xeb, 0xd9, 0x18, 0x3c, 0x4b, 0x97, 0x9d, 0x9a, 0x6e, 0x54, 0xfc,
+	0x9d, 0x4c, 0x35, 0x2d, 0x93, 0x18, 0x3c, 0xbf, 0x4a, 0x2d, 0xe3, 0x3a, 0xb5, 0x8c, 0x6f, 0xa9,
+	0x65, 0x7c, 0x5e, 0x59, 0xa5, 0xeb, 0x95, 0x55, 0xfa, 0xb2, 0xb2, 0x4a, 0xef, 0x1e, 0xfc, 0x41,
+	0x72, 0xbd, 0x12, 0x93, 0x9a, 0xfe, 0x61, 0x3c, 0xfc, 0x1e, 0x00, 0x00, 0xff, 0xff, 0x86, 0xc4,
+	0xd7, 0x25, 0x90, 0x04, 0x00, 0x00,
 }
 
 func (m *KeygenVoteData) Marshal() (dAtA []byte, err error) {
@@ -472,6 +596,103 @@ func (m *MultisigInfo_Info) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *KeyRecoveryInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeyRecoveryInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyRecoveryInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Private) > 0 {
+		for k := range m.Private {
+			v := m.Private[k]
+			baseI := i
+			if len(v) > 0 {
+				i -= len(v)
+				copy(dAtA[i:], v)
+				i = encodeVarintTypes(dAtA, i, uint64(len(v)))
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintTypes(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintTypes(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Public) > 0 {
+		i -= len(m.Public)
+		copy(dAtA[i:], m.Public)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Public)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.KeyID) > 0 {
+		i -= len(m.KeyID)
+		copy(dAtA[i:], m.KeyID)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.KeyID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ExternalKeys) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExternalKeys) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExternalKeys) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.KeyIDs) > 0 {
+		for iNdEx := len(m.KeyIDs) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.KeyIDs[iNdEx])
+			copy(dAtA[i:], m.KeyIDs[iNdEx])
+			i = encodeVarintTypes(dAtA, i, uint64(len(m.KeyIDs[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTypes(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTypes(v)
 	base := offset
@@ -557,6 +778,54 @@ func (m *MultisigInfo_Info) Size() (n int) {
 	if len(m.Data) > 0 {
 		for _, b := range m.Data {
 			l = len(b)
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *KeyRecoveryInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Public)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.Private) > 0 {
+		for k, v := range m.Private {
+			_ = k
+			_ = v
+			l = 0
+			if len(v) > 0 {
+				l = 1 + len(v) + sovTypes(uint64(len(v)))
+			}
+			mapEntrySize := 1 + len(k) + sovTypes(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovTypes(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
+func (m *ExternalKeys) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.KeyIDs) > 0 {
+		for _, s := range m.KeyIDs {
+			l = len(s)
 			n += 1 + l + sovTypes(uint64(l))
 		}
 	}
@@ -1055,6 +1324,364 @@ func (m *MultisigInfo_Info) Unmarshal(dAtA []byte) error {
 			}
 			m.Data = append(m.Data, make([]byte, postIndex-iNdEx))
 			copy(m.Data[len(m.Data)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeyRecoveryInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeyRecoveryInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeyRecoveryInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyID = github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Public", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Public = append(m.Public[:0], dAtA[iNdEx:postIndex]...)
+			if m.Public == nil {
+				m.Public = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Private", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Private == nil {
+				m.Private = make(map[string][]byte)
+			}
+			var mapkey string
+			mapvalue := []byte{}
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTypes
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTypes
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthTypes
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapbyteLen uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTypes
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapbyteLen |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intMapbyteLen := int(mapbyteLen)
+					if intMapbyteLen < 0 {
+						return ErrInvalidLengthTypes
+					}
+					postbytesIndex := iNdEx + intMapbyteLen
+					if postbytesIndex < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if postbytesIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = make([]byte, mapbyteLen)
+					copy(mapvalue, dAtA[iNdEx:postbytesIndex])
+					iNdEx = postbytesIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipTypes(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Private[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExternalKeys) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExternalKeys: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExternalKeys: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyIDs", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyIDs = append(m.KeyIDs, github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
