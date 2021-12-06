@@ -1075,6 +1075,10 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return err
 	}
 
+	if m.MinAmount.IsNil() || !m.MinAmount.IsPositive() {
+		return fmt.Errorf("minimum amount not set")
+	}
+
 	return nil
 }
 

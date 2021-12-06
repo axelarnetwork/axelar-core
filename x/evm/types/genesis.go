@@ -33,8 +33,6 @@ func DefaultGenesisState() *GenesisState {
 
 // DefaultChains returns the default chains for a genesis state
 func DefaultChains() []GenesisState_Chain {
-	p := DefaultParams()
-
 	var chains []GenesisState_Chain
 	for _, params := range DefaultParams() {
 		chain := GenesisState_Chain{

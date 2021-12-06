@@ -703,7 +703,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.SetChain(ctx, pendingChain.Chain)
-	s.nexus.RegisterAsset(ctx, pendingChain.Chain.Name, pendingChain.Chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx, pendingChain.Chain, pendingChain.Chain.NativeAsset)
 	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
