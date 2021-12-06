@@ -31,6 +31,7 @@ Axelar App
 - [axelard set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
 - [axelard set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
 - [axelard set-genesis-mint](axelard_set-genesis-mint.md)	 - Set the genesis parameters for the mint module
+- [axelard set-genesis-reward](axelard_set-genesis-reward.md)	 - Set the genesis parameters for the reward module
 - [axelard set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
 - [axelard set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
 - [axelard set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module

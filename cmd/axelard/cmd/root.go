@@ -151,6 +151,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisAccountCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		debug.Cmd(),
+		SetGenesisRewardCmd(app.DefaultNodeHome),
 		SetGenesisStakingCmd(app.DefaultNodeHome),
 		SetGenesisSlashingCmd(app.DefaultNodeHome),
 		SetGenesisVoteCmd(app.DefaultNodeHome),

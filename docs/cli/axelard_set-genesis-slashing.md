@@ -9,7 +9,7 @@ axelard set-genesis-slashing [flags]
 ### Options
 
 ```
-      --downtime-jail-duration string       Jail duration due to downtime (e.g., "60s").
+      --downtime-jail-duration string       Jail duration due to downtime (e.g., "600s").
   -h, --help                                help for set-genesis-slashing
       --min-signed-per-window string        Minimum amount of signed blocks per window (e.g., "0.50").
       --signed-blocks-window uint           Block height window to measure liveness of each validator (e.g., 10000).
