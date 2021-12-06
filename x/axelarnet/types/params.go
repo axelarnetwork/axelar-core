@@ -31,7 +31,7 @@ func KeyTable() params.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		SupportedChains:    []string{"Ethereum"},
-		RouteTimeoutWindow: 100,
+		RouteTimeoutWindow: 17000,
 		MinAmount:          sdktypes.NewInt(100000),
 		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.1%
 	}
