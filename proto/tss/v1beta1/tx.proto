@@ -146,3 +146,14 @@ message UpdateGovernanceKeyRequest {
 }
 
 message UpdateGovernanceKeyResponse {}
+
+// RegisterControllerRequest represents a message to register axelar network
+// controller account
+message RegisterControllerRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes controller = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RegisterControllerResponse {}

@@ -349,6 +349,8 @@
     - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
     - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
     - [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse)
+    - [RegisterControllerRequest](#tss.v1beta1.RegisterControllerRequest)
+    - [RegisterControllerResponse](#tss.v1beta1.RegisterControllerResponse)
     - [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest)
     - [RegisterExternalKeysRequest.ExternalKey](#tss.v1beta1.RegisterExternalKeysRequest.ExternalKey)
     - [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse)
@@ -4999,6 +5001,33 @@ ProcessSignTrafficRequest protocol message
 
 
 
+<a name="tss.v1beta1.RegisterControllerRequest"></a>
+
+### RegisterControllerRequest
+RegisterControllerRequest represents a message to register axelar network
+controller account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `controller` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.RegisterControllerResponse"></a>
+
+### RegisterControllerResponse
+
+
+
+
+
+
+
 <a name="tss.v1beta1.RegisterExternalKeysRequest"></a>
 
 ### RegisterExternalKeysRequest
@@ -5280,6 +5309,7 @@ Msg defines the tss Msg service.
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
 | `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+| `RegisterController` | [RegisterControllerRequest](#tss.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#tss.v1beta1.RegisterControllerResponse) |  | ||
 
 
 <a name="tss.v1beta1.Query"></a>

@@ -127,6 +127,8 @@ type TSSKeeper interface {
 
 	SetGovernanceKey(ctx sdk.Context, key multisig.LegacyAminoPubKey)
 	GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool)
+	SetController(ctx sdk.Context, address sdk.AccAddress)
+	GetController(ctx sdk.Context) (sdk.AccAddress, bool)
 }
 
 // Rewarder provides reward functionality

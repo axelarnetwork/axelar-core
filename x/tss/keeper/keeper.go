@@ -27,7 +27,6 @@ var (
 	snapshotForKeyIDPrefix = utils.KeyFromStr("snapshot_counter_for_key_id")
 	multiSigKeyPrefix      = utils.KeyFromStr("multi_sig_keygen")
 	externalKeysPrefix     = utils.KeyFromStr("external_key_ids")
-	governanceKey          = utils.KeyFromStr("governance")
 	sigPrefix              = utils.KeyFromStr("sig")
 	validatorStatusPrefix  = utils.KeyFromStr("validator_status")
 	// temporary
@@ -390,19 +389,6 @@ func (k Keeper) getExternalKeyIDs(ctx sdk.Context, chain string) ([]exported.Key
 	}
 
 	return externalKeys.KeyIDs, true
-}
-
-// SetGovernanceKey sets the multisig governance key
-func (k Keeper) SetGovernanceKey(ctx sdk.Context, key multisig.LegacyAminoPubKey) {
-	k.getStore(ctx).Set(governanceKey, &key)
-}
-
-// GetGovernanceKey gets the multisig governance key
-func (k Keeper) GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool) {
-	var key multisig.LegacyAminoPubKey
-	ok := k.getStore(ctx).Get(governanceKey, &key)
-
-	return key, ok
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

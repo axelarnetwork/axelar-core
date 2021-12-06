@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdRotateKey(),
 		GetCmdRegisterExternalKeys(),
 		GetCmdUpdateGovernanceKey(),
+		GetCmdRegisterController(),
 	)
 
 	return tssTxCmd
@@ -202,6 +204,33 @@ func GetCmdUpdateGovernanceKey() *cobra.Command {
 		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterController returns the cli command to register axelar network controller account
+func GetCmdRegisterController() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-controller [controller]",
+		Short: "Register controller account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			controller, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+			msg := types.NewRegisterControllerRequest(cliCtx.GetFromAddress(), controller)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

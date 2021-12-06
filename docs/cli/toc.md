@@ -261,6 +261,7 @@
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
     - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
+      - [register-controller \[controller\]](axelard_tx_tss_register-controller.md)	 - Register controller account
       - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol

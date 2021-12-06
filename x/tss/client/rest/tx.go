@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/hex"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -22,6 +23,7 @@ const (
 	TxMasterKeyRotate      = "rotate"
 	TxRegisterExternalKeys = "register-external-keys"
 	TxUpdateGovernanceKey  = "update-governance-key"
+	TxRegisterController   = "register-controller"
 
 	QuerySignature                = keeper.QuerySignature
 	QueryKey                      = keeper.QueryKey
@@ -66,6 +68,12 @@ type ReqUpdateGovernanceKey struct {
 	PubKeys   []string     `json:"pub_keys" yaml:"pub_keys"`
 }
 
+// ReqRegisterController represents a request to register the controller
+type ReqRegisterController struct {
+	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Controller string       `json:"controller" yaml:"controller"`
+}
+
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
@@ -73,6 +81,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerKeyRotate(cliCtx), TxMasterKeyRotate, clientUtils.PathVarChain)
 	registerTx(GetHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys, clientUtils.PathVarChain)
 	registerTx(GetHandlerUpdateGovernanceKey(cliCtx), TxUpdateGovernanceKey)
+	registerTx(GetHandlerRegisterController(cliCtx), TxRegisterController)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySignature, clientUtils.PathVarSigID)
@@ -244,6 +253,38 @@ func GetHandlerUpdateGovernanceKey(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
+		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
+	}
+}
+
+// GetHandlerRegisterController returns the handler to register the controller
+func GetHandlerRegisterController(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReqRegisterController
+		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
+		if !ok {
+			return
+		}
+
+		controller, err := sdk.AccAddressFromBech32(req.Controller)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewRegisterControllerRequest(fromAddr, controller)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }

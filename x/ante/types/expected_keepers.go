@@ -22,6 +22,7 @@ type Tss interface {
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
 	GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool)
+	GetController(ctx sdk.Context) (sdk.AccAddress, bool)
 }
 
 // Nexus provides access to the nexus functionality
