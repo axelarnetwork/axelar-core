@@ -2,16 +2,17 @@ package types
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewRegisterAssetRequest is the constructor for RegisterAssetRequest
-func NewRegisterAssetRequest(sender sdk.AccAddress, chain, denom string) *RegisterAssetRequest {
+func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset Asset) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
 		Chain:  chain,
-		Denom:  denom,
+		Asset:  asset,
 	}
 }
 
@@ -35,8 +36,8 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 		return fmt.Errorf("missing chain name")
 	}
 
-	if m.Denom == "" {
-		return fmt.Errorf("missing asset name")
+	if err := m.Asset.Validate(); err != nil {
+		return err
 	}
 
 	return nil

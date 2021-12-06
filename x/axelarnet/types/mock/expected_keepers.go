@@ -58,7 +58,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string) error {
+// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error {
 // 				panic("mock out the RegisterAssetToCosmosChain method")
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
@@ -114,7 +114,7 @@ type BaseKeeperMock struct {
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
 	// RegisterAssetToCosmosChainFunc mocks the RegisterAssetToCosmosChain method.
-	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string) error
+	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
@@ -208,7 +208,7 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Asset is the asset argument value.
-			Asset string
+			Asset axelarnettypes.Asset
 			// Chain is the chain argument value.
 			Chain string
 		}
@@ -639,13 +639,13 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 }
 
 // RegisterAssetToCosmosChain calls RegisterAssetToCosmosChainFunc.
-func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) error {
+func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error {
 	if mock.RegisterAssetToCosmosChainFunc == nil {
 		panic("BaseKeeperMock.RegisterAssetToCosmosChainFunc: method is nil but BaseKeeper.RegisterAssetToCosmosChain was just called")
 	}
 	callInfo := struct {
 		Ctx   cosmossdktypes.Context
-		Asset string
+		Asset axelarnettypes.Asset
 		Chain string
 	}{
 		Ctx:   ctx,
@@ -663,12 +663,12 @@ func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Contex
 //     len(mockedBaseKeeper.RegisterAssetToCosmosChainCalls())
 func (mock *BaseKeeperMock) RegisterAssetToCosmosChainCalls() []struct {
 	Ctx   cosmossdktypes.Context
-	Asset string
+	Asset axelarnettypes.Asset
 	Chain string
 } {
 	var calls []struct {
 		Ctx   cosmossdktypes.Context
-		Asset string
+		Asset axelarnettypes.Asset
 		Chain string
 	}
 	mock.lockRegisterAssetToCosmosChain.RLock()

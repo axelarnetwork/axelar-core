@@ -88,7 +88,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 				Name:       chains[i],
 				AddrPrefix: rand.Str(5),
 			})
-			keeper.RegisterAssetToCosmosChain(ctx, rand.Str(10), chains[i])
+			keeper.RegisterAssetToCosmosChain(ctx, randomAsset(), chains[i])
 		}
 		sort.Strings(chains)
 		assert.Equal(t, chains, keeper.GetCosmosChains(ctx))
@@ -108,4 +108,11 @@ func randomIBCPath() string {
 	port := rand.StrBetween(5, 10)
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return port + "/" + identifier
+}
+
+func randomAsset() types.Asset {
+	return types.Asset{
+		Denom:     rand.Str(10),
+		MinAmount: sdk.NewInt(1000000),
+	}
 }

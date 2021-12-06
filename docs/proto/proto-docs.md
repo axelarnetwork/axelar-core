@@ -8,6 +8,7 @@
     - [Params](#axelarnet.v1beta1.Params)
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [Asset](#axelarnet.v1beta1.Asset)
     - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
@@ -422,6 +423,22 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelarnet.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.CosmosChain"></a>
 
 ### CosmosChain
@@ -432,7 +449,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
-| `assets` | [string](#string) | repeated |  |
+| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated |  |
 | `addr_prefix` | [string](#string) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
 
@@ -1003,7 +1020,7 @@ based chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `denom` | [string](#string) |  |  |
+| `asset` | [Asset](#axelarnet.v1beta1.Asset) |  |  |
 
 
 

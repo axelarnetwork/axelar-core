@@ -29,7 +29,7 @@ type BaseKeeper interface {
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []string
-	RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) error
+	RegisterAssetToCosmosChain(ctx sdk.Context, asset Asset, chain string) error
 	GetCosmosChainByAsset(ctx sdk.Context, asset string) (CosmosChain, bool)
 	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)

@@ -180,7 +180,7 @@
       - [confirm-deposit \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given amount of token to a burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
-      - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
+      - [register-asset \[chain\] \[denom\] \[min amount\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
       - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains

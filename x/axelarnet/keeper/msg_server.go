@@ -262,7 +262,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		AddrPrefix: req.AddrPrefix,
 		MinAmount:  req.MinAmount,
 	})
-	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name); err != nil {
+	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, types.Asset{Denom: req.Chain.NativeAsset, MinAmount: req.MinAmount}, req.Chain.Name); err != nil {
 		return &types.AddCosmosBasedChainResponse{}, err
 	}
 
@@ -278,9 +278,9 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
-	s.nexus.RegisterAsset(ctx, chain, req.Denom)
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Denom)
-	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Denom, req.Chain)
+	s.nexus.RegisterAsset(ctx, chain, req.Asset.Denom)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Asset.Denom)
+	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Asset, req.Chain)
 
 	return &types.RegisterAssetResponse{}, nil
 }
