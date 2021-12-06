@@ -30,9 +30,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin"
-	btcKeeper "github.com/axelarnetwork/axelar-core/x/bitcoin/keeper"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -151,7 +148,6 @@ var (
 
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
-		bitcoin.AppModuleBasic{},
 		evm.AppModuleBasic{},
 		snapshot.AppModuleBasic{},
 		nexus.AppModuleBasic{},
@@ -247,7 +243,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		capabilitytypes.StoreKey,
 
 		voteTypes.StoreKey,
-		btcTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
 		tssTypes.StoreKey,
@@ -353,9 +348,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 
 	// axelar custom keepers
-	btcK := btcKeeper.NewKeeper(
-		appCodec, keys[btcTypes.StoreKey], app.getSubspace(btcTypes.ModuleName),
-	)
 	evmK := evmKeeper.NewKeeper(
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
@@ -386,7 +378,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// No more routes can be added
 	nexusRouter := nexusTypes.NewRouter()
 	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
-		AddAddressValidator(btcTypes.ModuleName, btcKeeper.NewAddressValidator(btcK)).
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
 	nexusK.SetRouter(nexusRouter)
 
@@ -401,8 +392,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	tssRouter := tssTypes.NewRouter()
-	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK)).
-		AddRoute(btcTypes.ModuleName, btcKeeper.NewTssHandler(btcK, tssK))
+	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK))
 	tssK.SetRouter(tssRouter)
 
 	/****  Module Options ****/
@@ -437,7 +427,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, stakingK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
-		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(permissionK),
@@ -462,7 +451,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		tssTypes.ModuleName,
-		btcTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
@@ -489,7 +477,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		snapTypes.ModuleName,
 		tssTypes.ModuleName,
-		btcTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		voteTypes.ModuleName,
@@ -567,7 +554,6 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
-	paramsKeeper.Subspace(btcTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
