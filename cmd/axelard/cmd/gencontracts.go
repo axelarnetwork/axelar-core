@@ -52,7 +52,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Gateway = gateway
+				genesisState.Chains[0].Params.GatewayCode = gateway
 			}
 
 			if tokenFile != "" {
@@ -61,7 +61,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Token = token
+				genesisState.Chains[0].Params.TokenCode = token
 			}
 
 			if burnableFile != "" {
@@ -70,7 +70,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Burnable = burnable
+				genesisState.Chains[0].Params.Burnable = burnable
 			}
 
 			genesisStateBz, err := cdc.MarshalJSON(&genesisState)

@@ -66,7 +66,7 @@ func TestOutPointInfo_Equals(t *testing.T) {
 }
 
 func TestNewMasterConsolidationAddress(t *testing.T) {
-	repeat := 100
+	repeat := 20
 
 	internalPrivKey1, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {

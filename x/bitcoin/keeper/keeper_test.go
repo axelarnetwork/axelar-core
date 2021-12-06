@@ -32,9 +32,9 @@ func TestKeeper_GetAddress(t *testing.T) {
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		btcSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = bitcoinKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+		keeper = bitcoinKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("btc"), btcSubspace)
 	}
 	t.Run("case insensitive", testutils.Func(func(t *testing.T) {
 		setup()
@@ -66,9 +66,9 @@ func TestKeeper_GetOutPointInfo(t *testing.T) {
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		btcSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
+		btcSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"), "btc")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = bitcoinKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("btc"), btcSubspace)
+		keeper = bitcoinKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("btc"), btcSubspace)
 	}
 
 	t.Run("case insensitive", testutils.Func(func(t *testing.T) {

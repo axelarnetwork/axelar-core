@@ -1,12 +1,10 @@
 package types
 
 import (
-	"crypto/ecdsa"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -25,13 +23,13 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	GetParams(ctx sdk.Context) []Params
-	SetParams(ctx sdk.Context, params ...Params)
-
 	ForChain(chain string) ChainKeeper
-	SetPendingChain(ctx sdk.Context, chain nexus.Chain)
-	GetPendingChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+
+	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)
+	GetPendingChain(ctx sdk.Context, chain string) (PendingChain, bool)
 	DeletePendingChain(ctx sdk.Context, chain string)
+	InitGenesis(ctx sdk.Context, state GenesisState)
+	ExportGenesis(ctx sdk.Context) GenesisState
 }
 
 // ChainKeeper is implemented by this module's chain keeper
@@ -39,7 +37,12 @@ type ChainKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
 	GetName() string
+
+	SetParams(ctx sdk.Context, p Params)
+	GetParams(ctx sdk.Context) Params
+
 	GetNetwork(ctx sdk.Context) (string, bool)
+	GetChainID(ctx sdk.Context) (*big.Int, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
 	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)
@@ -51,15 +54,15 @@ type ChainKeeper interface {
 	DeletePendingGateway(ctx sdk.Context) error
 	GetPendingGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
-	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositState, bool)
+	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
-	SetBurnerInfo(ctx sdk.Context, burnerAddr common.Address, burnerInfo *BurnerInfo)
+	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
-	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositState)
+	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
 	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
 	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
@@ -70,10 +73,6 @@ type ChainKeeper interface {
 	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
-
-	GetHashToSign(ctx sdk.Context, rawTx *evmTypes.Transaction) common.Hash
-	SetUnsignedTx(ctx sdk.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
-	AssembleTx(ctx sdk.Context, txID string, sig tss.Signature) (*evmTypes.Transaction, error)
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, minDeposit sdk.Int) (ERC20Token, error)
 	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token

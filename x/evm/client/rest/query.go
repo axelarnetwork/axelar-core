@@ -218,27 +218,6 @@ func GetHandlerQueryBytecode(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQuerySignedTx returns a handler to fetch an EVM transaction that has been signed by the validators
-func GetHandlerQuerySignedTx(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-		chain := mux.Vars(r)[utils.PathVarChain]
-		txID := mux.Vars(r)[utils.PathVarTxID]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QSignedTx, chain, txID), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFSignedTx, txID).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, "0x"+common.Bytes2Hex(res))
-	}
-}
-
 // GetHandlerQueryDepositState returns a handler to query the state of an ERC20 deposit confirmation
 func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,6 @@
 package mock
 
 import (
-	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -13,7 +12,6 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"math/big"
 	"sync"
@@ -2087,22 +2085,22 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
 // 				panic("mock out the DeletePendingChain method")
 // 			},
+// 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState {
+// 				panic("mock out the ExportGenesis method")
+// 			},
 // 			ForChainFunc: func(chain string) types.ChainKeeper {
 // 				panic("mock out the ForChain method")
 // 			},
-// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
+// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool) {
 // 				panic("mock out the GetPendingChain method")
+// 			},
+// 			InitGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)  {
+// 				panic("mock out the InitGenesis method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)  {
-// 				panic("mock out the SetParams method")
-// 			},
-// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
+// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params)  {
 // 				panic("mock out the SetPendingChain method")
 // 			},
 // 		}
@@ -2115,23 +2113,23 @@ type BaseKeeperMock struct {
 	// DeletePendingChainFunc mocks the DeletePendingChain method.
 	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
 
+	// ExportGenesisFunc mocks the ExportGenesis method.
+	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState
+
 	// ForChainFunc mocks the ForChain method.
 	ForChainFunc func(chain string) types.ChainKeeper
 
-	// GetParamsFunc mocks the GetParams method.
-	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params
-
 	// GetPendingChainFunc mocks the GetPendingChain method.
-	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
+	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool)
+
+	// InitGenesisFunc mocks the InitGenesis method.
+	InitGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
-	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params)
-
 	// SetPendingChainFunc mocks the SetPendingChain method.
-	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
+	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2142,15 +2140,15 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// ExportGenesis holds details about calls to the ExportGenesis method.
+		ExportGenesis []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
 			// Chain is the chain argument value.
 			Chain string
-		}
-		// GetParams holds details about calls to the GetParams method.
-		GetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetPendingChain holds details about calls to the GetPendingChain method.
 		GetPendingChain []struct {
@@ -2159,17 +2157,17 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// InitGenesis holds details about calls to the InitGenesis method.
+		InitGenesis []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// State is the state argument value.
+			State types.GenesisState
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-		// SetParams holds details about calls to the SetParams method.
-		SetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Params is the params argument value.
-			Params []types.Params
 		}
 		// SetPendingChain holds details about calls to the SetPendingChain method.
 		SetPendingChain []struct {
@@ -2177,14 +2175,16 @@ type BaseKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
+			// P is the p argument value.
+			P types.Params
 		}
 	}
 	lockDeletePendingChain sync.RWMutex
+	lockExportGenesis      sync.RWMutex
 	lockForChain           sync.RWMutex
-	lockGetParams          sync.RWMutex
 	lockGetPendingChain    sync.RWMutex
+	lockInitGenesis        sync.RWMutex
 	lockLogger             sync.RWMutex
-	lockSetParams          sync.RWMutex
 	lockSetPendingChain    sync.RWMutex
 }
 
@@ -2223,6 +2223,37 @@ func (mock *BaseKeeperMock) DeletePendingChainCalls() []struct {
 	return calls
 }
 
+// ExportGenesis calls ExportGenesisFunc.
+func (mock *BaseKeeperMock) ExportGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState {
+	if mock.ExportGenesisFunc == nil {
+		panic("BaseKeeperMock.ExportGenesisFunc: method is nil but BaseKeeper.ExportGenesis was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockExportGenesis.Lock()
+	mock.calls.ExportGenesis = append(mock.calls.ExportGenesis, callInfo)
+	mock.lockExportGenesis.Unlock()
+	return mock.ExportGenesisFunc(ctx)
+}
+
+// ExportGenesisCalls gets all the calls that were made to ExportGenesis.
+// Check the length with:
+//     len(mockedBaseKeeper.ExportGenesisCalls())
+func (mock *BaseKeeperMock) ExportGenesisCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockExportGenesis.RLock()
+	calls = mock.calls.ExportGenesis
+	mock.lockExportGenesis.RUnlock()
+	return calls
+}
+
 // ForChain calls ForChainFunc.
 func (mock *BaseKeeperMock) ForChain(chain string) types.ChainKeeper {
 	if mock.ForChainFunc == nil {
@@ -2254,39 +2285,8 @@ func (mock *BaseKeeperMock) ForChainCalls() []struct {
 	return calls
 }
 
-// GetParams calls GetParamsFunc.
-func (mock *BaseKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Params {
-	if mock.GetParamsFunc == nil {
-		panic("BaseKeeperMock.GetParamsFunc: method is nil but BaseKeeper.GetParams was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetParams.Lock()
-	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
-	mock.lockGetParams.Unlock()
-	return mock.GetParamsFunc(ctx)
-}
-
-// GetParamsCalls gets all the calls that were made to GetParams.
-// Check the length with:
-//     len(mockedBaseKeeper.GetParamsCalls())
-func (mock *BaseKeeperMock) GetParamsCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetParams.RLock()
-	calls = mock.calls.GetParams
-	mock.lockGetParams.RUnlock()
-	return calls
-}
-
 // GetPendingChain calls GetPendingChainFunc.
-func (mock *BaseKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
+func (mock *BaseKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool) {
 	if mock.GetPendingChainFunc == nil {
 		panic("BaseKeeperMock.GetPendingChainFunc: method is nil but BaseKeeper.GetPendingChain was just called")
 	}
@@ -2317,6 +2317,41 @@ func (mock *BaseKeeperMock) GetPendingChainCalls() []struct {
 	mock.lockGetPendingChain.RLock()
 	calls = mock.calls.GetPendingChain
 	mock.lockGetPendingChain.RUnlock()
+	return calls
+}
+
+// InitGenesis calls InitGenesisFunc.
+func (mock *BaseKeeperMock) InitGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState) {
+	if mock.InitGenesisFunc == nil {
+		panic("BaseKeeperMock.InitGenesisFunc: method is nil but BaseKeeper.InitGenesis was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State types.GenesisState
+	}{
+		Ctx:   ctx,
+		State: state,
+	}
+	mock.lockInitGenesis.Lock()
+	mock.calls.InitGenesis = append(mock.calls.InitGenesis, callInfo)
+	mock.lockInitGenesis.Unlock()
+	mock.InitGenesisFunc(ctx, state)
+}
+
+// InitGenesisCalls gets all the calls that were made to InitGenesis.
+// Check the length with:
+//     len(mockedBaseKeeper.InitGenesisCalls())
+func (mock *BaseKeeperMock) InitGenesisCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	State types.GenesisState
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State types.GenesisState
+	}
+	mock.lockInitGenesis.RLock()
+	calls = mock.calls.InitGenesis
+	mock.lockInitGenesis.RUnlock()
 	return calls
 }
 
@@ -2351,57 +2386,24 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 	return calls
 }
 
-// SetParams calls SetParamsFunc.
-func (mock *BaseKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, params ...types.Params) {
-	if mock.SetParamsFunc == nil {
-		panic("BaseKeeperMock.SetParamsFunc: method is nil but BaseKeeper.SetParams was just called")
-	}
-	callInfo := struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Params []types.Params
-	}{
-		Ctx:    ctx,
-		Params: params,
-	}
-	mock.lockSetParams.Lock()
-	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
-	mock.lockSetParams.Unlock()
-	mock.SetParamsFunc(ctx, params...)
-}
-
-// SetParamsCalls gets all the calls that were made to SetParams.
-// Check the length with:
-//     len(mockedBaseKeeper.SetParamsCalls())
-func (mock *BaseKeeperMock) SetParamsCalls() []struct {
-	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	Params []types.Params
-} {
-	var calls []struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Params []types.Params
-	}
-	mock.lockSetParams.RLock()
-	calls = mock.calls.SetParams
-	mock.lockSetParams.RUnlock()
-	return calls
-}
-
 // SetPendingChain calls SetPendingChainFunc.
-func (mock *BaseKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) {
+func (mock *BaseKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params) {
 	if mock.SetPendingChainFunc == nil {
 		panic("BaseKeeperMock.SetPendingChainFunc: method is nil but BaseKeeper.SetPendingChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain nexus.Chain
+		P     types.Params
 	}{
 		Ctx:   ctx,
 		Chain: chain,
+		P:     p,
 	}
 	mock.lockSetPendingChain.Lock()
 	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
 	mock.lockSetPendingChain.Unlock()
-	mock.SetPendingChainFunc(ctx, chain)
+	mock.SetPendingChainFunc(ctx, chain, p)
 }
 
 // SetPendingChainCalls gets all the calls that were made to SetPendingChain.
@@ -2410,10 +2412,12 @@ func (mock *BaseKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_typ
 func (mock *BaseKeeperMock) SetPendingChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain nexus.Chain
+	P     types.Params
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain nexus.Chain
+		P     types.Params
 	}
 	mock.lockSetPendingChain.RLock()
 	calls = mock.calls.SetPendingChain
@@ -2433,9 +2437,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 		mockedChainKeeper := &ChainKeeperMock{
 // 			ArchiveTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)  {
 // 				panic("mock out the ArchiveTransferKey method")
-// 			},
-// 			AssembleTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
-// 				panic("mock out the AssembleTx method")
 // 			},
 // 			ConfirmPendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
 // 				panic("mock out the ConfirmPendingGateway method")
@@ -2476,13 +2477,16 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
 // 				panic("mock out the GetBurnerInfo method")
 // 			},
+// 			GetChainIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (*big.Int, bool) {
+// 				panic("mock out the GetChainID method")
+// 			},
 // 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 // 				panic("mock out the GetChainIDByNetwork method")
 // 			},
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
-// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 // 				panic("mock out the GetDeposit method")
 // 			},
 // 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
@@ -2496,9 +2500,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetGatewayByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetGatewayByteCodes method")
-// 			},
-// 			GetHashToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash {
-// 				panic("mock out the GetHashToSign method")
 // 			},
 // 			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
 // 				panic("mock out the GetLatestCommandBatch method")
@@ -2514,6 +2515,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool) {
 // 				panic("mock out the GetNetworkByID method")
+// 			},
+// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
+// 				panic("mock out the GetParams method")
 // 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
@@ -2542,11 +2546,14 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)  {
+// 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)  {
 // 				panic("mock out the SetBurnerInfo method")
 // 			},
-// 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)  {
+// 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
 // 				panic("mock out the SetDeposit method")
+// 			},
+// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
+// 				panic("mock out the SetParams method")
 // 			},
 // 			SetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, deposit *types.ERC20Deposit)  {
 // 				panic("mock out the SetPendingDeposit method")
@@ -2557,9 +2564,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetPendingTransferKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, transferOwnership *types.TransferKey)  {
 // 				panic("mock out the SetPendingTransferKey method")
 // 			},
-// 			SetUnsignedTxFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
-// 				panic("mock out the SetUnsignedTx method")
-// 			},
 // 		}
 //
 // 		// use mockedChainKeeper in code that requires types.ChainKeeper
@@ -2569,9 +2573,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 type ChainKeeperMock struct {
 	// ArchiveTransferKeyFunc mocks the ArchiveTransferKey method.
 	ArchiveTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey)
-
-	// AssembleTxFunc mocks the AssembleTx method.
-	AssembleTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error)
 
 	// ConfirmPendingGatewayFunc mocks the ConfirmPendingGateway method.
 	ConfirmPendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) error
@@ -2612,6 +2613,9 @@ type ChainKeeperMock struct {
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
 	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo
 
+	// GetChainIDFunc mocks the GetChainID method.
+	GetChainIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (*big.Int, bool)
+
 	// GetChainIDByNetworkFunc mocks the GetChainIDByNetwork method.
 	GetChainIDByNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int
 
@@ -2619,7 +2623,7 @@ type ChainKeeperMock struct {
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
 
 	// GetDepositFunc mocks the GetDeposit method.
-	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool)
+	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool)
 
 	// GetERC20TokenByAssetFunc mocks the GetERC20TokenByAsset method.
 	GetERC20TokenByAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
@@ -2632,9 +2636,6 @@ type ChainKeeperMock struct {
 
 	// GetGatewayByteCodesFunc mocks the GetGatewayByteCodes method.
 	GetGatewayByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
-
-	// GetHashToSignFunc mocks the GetHashToSign method.
-	GetHashToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash
 
 	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
 	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
@@ -2650,6 +2651,9 @@ type ChainKeeperMock struct {
 
 	// GetNetworkByIDFunc mocks the GetNetworkByID method.
 	GetNetworkByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id *big.Int) (string, bool)
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
 
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool)
@@ -2679,10 +2683,13 @@ type ChainKeeperMock struct {
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
-	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo)
+	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)
 
 	// SetDepositFunc mocks the SetDeposit method.
-	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState)
+	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
 
 	// SetPendingDepositFunc mocks the SetPendingDeposit method.
 	SetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, deposit *types.ERC20Deposit)
@@ -2693,9 +2700,6 @@ type ChainKeeperMock struct {
 	// SetPendingTransferKeyFunc mocks the SetPendingTransferKey method.
 	SetPendingTransferKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey, transferOwnership *types.TransferKey)
 
-	// SetUnsignedTxFunc mocks the SetUnsignedTx method.
-	SetUnsignedTxFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// ArchiveTransferKey holds details about calls to the ArchiveTransferKey method.
@@ -2704,15 +2708,6 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Key is the key argument value.
 			Key vote.PollKey
-		}
-		// AssembleTx holds details about calls to the AssembleTx method.
-		AssembleTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TxID is the txID argument value.
-			TxID string
-			// Sig is the sig argument value.
-			Sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
 		}
 		// ConfirmPendingGateway holds details about calls to the ConfirmPendingGateway method.
 		ConfirmPendingGateway []struct {
@@ -2805,6 +2800,11 @@ type ChainKeeperMock struct {
 			// Address is the address argument value.
 			Address common.Address
 		}
+		// GetChainID holds details about calls to the GetChainID method.
+		GetChainID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetChainIDByNetwork holds details about calls to the GetChainIDByNetwork method.
 		GetChainIDByNetwork []struct {
 			// Ctx is the ctx argument value.
@@ -2850,13 +2850,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetHashToSign holds details about calls to the GetHashToSign method.
-		GetHashToSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// RawTx is the rawTx argument value.
-			RawTx *evmTypes.Transaction
-		}
 		// GetLatestCommandBatch holds details about calls to the GetLatestCommandBatch method.
 		GetLatestCommandBatch []struct {
 			// Ctx is the ctx argument value.
@@ -2881,6 +2874,11 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// ID is the id argument value.
 			ID *big.Int
+		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetPendingDeposit holds details about calls to the GetPendingDeposit method.
 		GetPendingDeposit []struct {
@@ -2935,10 +2933,8 @@ type ChainKeeperMock struct {
 		SetBurnerInfo []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// BurnerAddr is the burnerAddr argument value.
-			BurnerAddr common.Address
 			// BurnerInfo is the burnerInfo argument value.
-			BurnerInfo *types.BurnerInfo
+			BurnerInfo types.BurnerInfo
 		}
 		// SetDeposit holds details about calls to the SetDeposit method.
 		SetDeposit []struct {
@@ -2947,7 +2943,14 @@ type ChainKeeperMock struct {
 			// Deposit is the deposit argument value.
 			Deposit types.ERC20Deposit
 			// State is the state argument value.
-			State types.DepositState
+			State types.DepositStatus
+		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// P is the p argument value.
+			P types.Params
 		}
 		// SetPendingDeposit holds details about calls to the SetPendingDeposit method.
 		SetPendingDeposit []struct {
@@ -2974,20 +2977,8 @@ type ChainKeeperMock struct {
 			// TransferOwnership is the transferOwnership argument value.
 			TransferOwnership *types.TransferKey
 		}
-		// SetUnsignedTx holds details about calls to the SetUnsignedTx method.
-		SetUnsignedTx []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TxID is the txID argument value.
-			TxID string
-			// Tx is the tx argument value.
-			Tx *evmTypes.Transaction
-			// Pk is the pk argument value.
-			Pk ecdsa.PublicKey
-		}
 	}
 	lockArchiveTransferKey            sync.RWMutex
-	lockAssembleTx                    sync.RWMutex
 	lockConfirmPendingGateway         sync.RWMutex
 	lockCreateERC20Token              sync.RWMutex
 	lockCreateNewBatchToSign          sync.RWMutex
@@ -3001,6 +2992,7 @@ type ChainKeeperMock struct {
 	lockGetBurnerAddressAndSalt       sync.RWMutex
 	lockGetBurnerByteCodes            sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
+	lockGetChainID                    sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
@@ -3008,12 +3000,12 @@ type ChainKeeperMock struct {
 	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetGatewayByteCodes           sync.RWMutex
-	lockGetHashToSign                 sync.RWMutex
 	lockGetLatestCommandBatch         sync.RWMutex
 	lockGetMinVoterCount              sync.RWMutex
 	lockGetName                       sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
 	lockGetNetworkByID                sync.RWMutex
+	lockGetParams                     sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
 	lockGetPendingGatewayAddress      sync.RWMutex
 	lockGetPendingTransferKey         sync.RWMutex
@@ -3025,10 +3017,10 @@ type ChainKeeperMock struct {
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
+	lockSetParams                     sync.RWMutex
 	lockSetPendingDeposit             sync.RWMutex
 	lockSetPendingGateway             sync.RWMutex
 	lockSetPendingTransferKey         sync.RWMutex
-	lockSetUnsignedTx                 sync.RWMutex
 }
 
 // ArchiveTransferKey calls ArchiveTransferKeyFunc.
@@ -3063,45 +3055,6 @@ func (mock *ChainKeeperMock) ArchiveTransferKeyCalls() []struct {
 	mock.lockArchiveTransferKey.RLock()
 	calls = mock.calls.ArchiveTransferKey
 	mock.lockArchiveTransferKey.RUnlock()
-	return calls
-}
-
-// AssembleTx calls AssembleTxFunc.
-func (mock *ChainKeeperMock) AssembleTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, sig github_com_axelarnetwork_axelar_core_x_tss_exported.Signature) (*evmTypes.Transaction, error) {
-	if mock.AssembleTxFunc == nil {
-		panic("ChainKeeperMock.AssembleTxFunc: method is nil but ChainKeeper.AssembleTx was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-		Sig:  sig,
-	}
-	mock.lockAssembleTx.Lock()
-	mock.calls.AssembleTx = append(mock.calls.AssembleTx, callInfo)
-	mock.lockAssembleTx.Unlock()
-	return mock.AssembleTxFunc(ctx, txID, sig)
-}
-
-// AssembleTxCalls gets all the calls that were made to AssembleTx.
-// Check the length with:
-//     len(mockedChainKeeper.AssembleTxCalls())
-func (mock *ChainKeeperMock) AssembleTxCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-	Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Sig  github_com_axelarnetwork_axelar_core_x_tss_exported.Signature
-	}
-	mock.lockAssembleTx.RLock()
-	calls = mock.calls.AssembleTx
-	mock.lockAssembleTx.RUnlock()
 	return calls
 }
 
@@ -3560,6 +3513,37 @@ func (mock *ChainKeeperMock) GetBurnerInfoCalls() []struct {
 	return calls
 }
 
+// GetChainID calls GetChainIDFunc.
+func (mock *ChainKeeperMock) GetChainID(ctx github_com_cosmos_cosmos_sdk_types.Context) (*big.Int, bool) {
+	if mock.GetChainIDFunc == nil {
+		panic("ChainKeeperMock.GetChainIDFunc: method is nil but ChainKeeper.GetChainID was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetChainID.Lock()
+	mock.calls.GetChainID = append(mock.calls.GetChainID, callInfo)
+	mock.lockGetChainID.Unlock()
+	return mock.GetChainIDFunc(ctx)
+}
+
+// GetChainIDCalls gets all the calls that were made to GetChainID.
+// Check the length with:
+//     len(mockedChainKeeper.GetChainIDCalls())
+func (mock *ChainKeeperMock) GetChainIDCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetChainID.RLock()
+	calls = mock.calls.GetChainID
+	mock.lockGetChainID.RUnlock()
+	return calls
+}
+
 // GetChainIDByNetwork calls GetChainIDByNetworkFunc.
 func (mock *ChainKeeperMock) GetChainIDByNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 	if mock.GetChainIDByNetworkFunc == nil {
@@ -3627,7 +3611,7 @@ func (mock *ChainKeeperMock) GetConfirmedDepositsCalls() []struct {
 }
 
 // GetDeposit calls GetDepositFunc.
-func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositState, bool) {
+func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	if mock.GetDepositFunc == nil {
 		panic("ChainKeeperMock.GetDepositFunc: method is nil but ChainKeeper.GetDeposit was just called")
 	}
@@ -3797,41 +3781,6 @@ func (mock *ChainKeeperMock) GetGatewayByteCodesCalls() []struct {
 	return calls
 }
 
-// GetHashToSign calls GetHashToSignFunc.
-func (mock *ChainKeeperMock) GetHashToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, rawTx *evmTypes.Transaction) common.Hash {
-	if mock.GetHashToSignFunc == nil {
-		panic("ChainKeeperMock.GetHashToSignFunc: method is nil but ChainKeeper.GetHashToSign was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		RawTx *evmTypes.Transaction
-	}{
-		Ctx:   ctx,
-		RawTx: rawTx,
-	}
-	mock.lockGetHashToSign.Lock()
-	mock.calls.GetHashToSign = append(mock.calls.GetHashToSign, callInfo)
-	mock.lockGetHashToSign.Unlock()
-	return mock.GetHashToSignFunc(ctx, rawTx)
-}
-
-// GetHashToSignCalls gets all the calls that were made to GetHashToSign.
-// Check the length with:
-//     len(mockedChainKeeper.GetHashToSignCalls())
-func (mock *ChainKeeperMock) GetHashToSignCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	RawTx *evmTypes.Transaction
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		RawTx *evmTypes.Transaction
-	}
-	mock.lockGetHashToSign.RLock()
-	calls = mock.calls.GetHashToSign
-	mock.lockGetHashToSign.RUnlock()
-	return calls
-}
-
 // GetLatestCommandBatch calls GetLatestCommandBatchFunc.
 func (mock *ChainKeeperMock) GetLatestCommandBatch(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
 	if mock.GetLatestCommandBatchFunc == nil {
@@ -3983,6 +3932,37 @@ func (mock *ChainKeeperMock) GetNetworkByIDCalls() []struct {
 	mock.lockGetNetworkByID.RLock()
 	calls = mock.calls.GetNetworkByID
 	mock.lockGetNetworkByID.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *ChainKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
+	if mock.GetParamsFunc == nil {
+		panic("ChainKeeperMock.GetParamsFunc: method is nil but ChainKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//     len(mockedChainKeeper.GetParamsCalls())
+func (mock *ChainKeeperMock) GetParamsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 
@@ -4274,23 +4254,21 @@ func (mock *ChainKeeperMock) LoggerCalls() []struct {
 }
 
 // SetBurnerInfo calls SetBurnerInfoFunc.
-func (mock *ChainKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerAddr common.Address, burnerInfo *types.BurnerInfo) {
+func (mock *ChainKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo) {
 	if mock.SetBurnerInfoFunc == nil {
 		panic("ChainKeeperMock.SetBurnerInfoFunc: method is nil but ChainKeeper.SetBurnerInfo was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		BurnerAddr common.Address
-		BurnerInfo *types.BurnerInfo
+		BurnerInfo types.BurnerInfo
 	}{
 		Ctx:        ctx,
-		BurnerAddr: burnerAddr,
 		BurnerInfo: burnerInfo,
 	}
 	mock.lockSetBurnerInfo.Lock()
 	mock.calls.SetBurnerInfo = append(mock.calls.SetBurnerInfo, callInfo)
 	mock.lockSetBurnerInfo.Unlock()
-	mock.SetBurnerInfoFunc(ctx, burnerAddr, burnerInfo)
+	mock.SetBurnerInfoFunc(ctx, burnerInfo)
 }
 
 // SetBurnerInfoCalls gets all the calls that were made to SetBurnerInfo.
@@ -4298,13 +4276,11 @@ func (mock *ChainKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_type
 //     len(mockedChainKeeper.SetBurnerInfoCalls())
 func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	BurnerAddr common.Address
-	BurnerInfo *types.BurnerInfo
+	BurnerInfo types.BurnerInfo
 } {
 	var calls []struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		BurnerAddr common.Address
-		BurnerInfo *types.BurnerInfo
+		BurnerInfo types.BurnerInfo
 	}
 	mock.lockSetBurnerInfo.RLock()
 	calls = mock.calls.SetBurnerInfo
@@ -4313,14 +4289,14 @@ func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 }
 
 // SetDeposit calls SetDepositFunc.
-func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositState) {
+func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
 	if mock.SetDepositFunc == nil {
 		panic("ChainKeeperMock.SetDepositFunc: method is nil but ChainKeeper.SetDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Deposit types.ERC20Deposit
-		State   types.DepositState
+		State   types.DepositStatus
 	}{
 		Ctx:     ctx,
 		Deposit: deposit,
@@ -4338,16 +4314,51 @@ func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.C
 func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Deposit types.ERC20Deposit
-	State   types.DepositState
+	State   types.DepositStatus
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Deposit types.ERC20Deposit
-		State   types.DepositState
+		State   types.DepositStatus
 	}
 	mock.lockSetDeposit.RLock()
 	calls = mock.calls.SetDeposit
 	mock.lockSetDeposit.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *ChainKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("ChainKeeperMock.SetParamsFunc: method is nil but ChainKeeper.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		P   types.Params
+	}{
+		Ctx: ctx,
+		P:   p,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, p)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//     len(mockedChainKeeper.SetParamsCalls())
+func (mock *ChainKeeperMock) SetParamsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	P   types.Params
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		P   types.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
 	return calls
 }
 
@@ -4461,48 +4472,5 @@ func (mock *ChainKeeperMock) SetPendingTransferKeyCalls() []struct {
 	mock.lockSetPendingTransferKey.RLock()
 	calls = mock.calls.SetPendingTransferKey
 	mock.lockSetPendingTransferKey.RUnlock()
-	return calls
-}
-
-// SetUnsignedTx calls SetUnsignedTxFunc.
-func (mock *ChainKeeperMock) SetUnsignedTx(ctx github_com_cosmos_cosmos_sdk_types.Context, txID string, tx *evmTypes.Transaction, pk ecdsa.PublicKey) error {
-	if mock.SetUnsignedTxFunc == nil {
-		panic("ChainKeeperMock.SetUnsignedTxFunc: method is nil but ChainKeeper.SetUnsignedTx was just called")
-	}
-	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Tx   *evmTypes.Transaction
-		Pk   ecdsa.PublicKey
-	}{
-		Ctx:  ctx,
-		TxID: txID,
-		Tx:   tx,
-		Pk:   pk,
-	}
-	mock.lockSetUnsignedTx.Lock()
-	mock.calls.SetUnsignedTx = append(mock.calls.SetUnsignedTx, callInfo)
-	mock.lockSetUnsignedTx.Unlock()
-	return mock.SetUnsignedTxFunc(ctx, txID, tx, pk)
-}
-
-// SetUnsignedTxCalls gets all the calls that were made to SetUnsignedTx.
-// Check the length with:
-//     len(mockedChainKeeper.SetUnsignedTxCalls())
-func (mock *ChainKeeperMock) SetUnsignedTxCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	TxID string
-	Tx   *evmTypes.Transaction
-	Pk   ecdsa.PublicKey
-} {
-	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		TxID string
-		Tx   *evmTypes.Transaction
-		Pk   ecdsa.PublicKey
-	}
-	mock.lockSetUnsignedTx.RLock()
-	calls = mock.calls.SetUnsignedTx
-	mock.lockSetUnsignedTx.RUnlock()
 	return calls
 }

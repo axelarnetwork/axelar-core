@@ -20,7 +20,7 @@ message ChainState {
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
-  repeated string assets = 5 [ (gogoproto.nullable) = false ];
+  repeated string assets = 5;
 }
 
 message LinkedAddresses {

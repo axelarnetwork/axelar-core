@@ -39,7 +39,7 @@ func TestNewTalliedVote(t *testing.T) {
 
 func TestTalliedVote_Marshaling(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	cdc := encCfg.Marshaler
+	cdc := encCfg.Codec
 
 	output := tofnd.KeygenOutput{PubKey: []byte("a public key"), GroupRecoverInfo: []byte{0}, PrivateRecoverInfo: []byte{0, 1, 2, 3}}
 	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{Data: &output}}

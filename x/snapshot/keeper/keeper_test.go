@@ -83,7 +83,7 @@ func TestSnapshots(t *testing.T) {
 			staker := newMockStaker(validators...)
 			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
 
-			snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+			snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
 			slashingKeeper := &snapshotMock.SlasherMock{
 				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
@@ -122,7 +122,7 @@ func TestSnapshots(t *testing.T) {
 				},
 			}
 
-			snapshotKeeper := keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, slashingKeeper, tssMock)
+			snapshotKeeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, slashingKeeper, tssMock)
 			snapshotKeeper.SetParams(ctx, types.DefaultParams())
 			for _, v := range validators {
 				addr := rand.AccAddr()
@@ -171,7 +171,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
@@ -185,7 +185,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -249,7 +249,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		snapSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
@@ -261,7 +261,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
 		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {

@@ -31,9 +31,8 @@ import (
 )
 
 const (
-	addrMaxLength int   = 20
-	maxAmount     int64 = 100000000000
-	linkedAddr    int   = 50
+	maxAmount  int64 = 100000000000
+	linkedAddr int   = 50
 )
 
 var keeper nexusKeeper.Keeper
@@ -41,11 +40,11 @@ var feeRate = sdk.NewDecWithPrec(25, 5)
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
-	nexusSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 	axelarnetKeeper := &mock.AxelarnetKeeperMock{
 		GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
 	}
-	keeper = nexusKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
+	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
 
 	nexusRouter := types.NewRouter()
 	nexusRouter.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
