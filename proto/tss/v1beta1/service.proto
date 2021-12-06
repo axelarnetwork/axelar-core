@@ -80,25 +80,7 @@ service MsgService {
     option (google.api.http) = {
     };
   }
-
-  rpc UpdateGovernanceKey(tss.v1beta1.UpdateGovernanceKeyRequest)
-      returns (tss.v1beta1.UpdateGovernanceKeyResponse) {
-    option (google.api.http) = {
-    };
-  }
-
-  rpc RegisterController(tss.v1beta1.RegisterControllerRequest)
-      returns (tss.v1beta1.RegisterControllerResponse) {
-    option (google.api.http) = {
-    };
-  }
 }
 
 // Query defines the gRPC querier service.
-service Query {
-  // GovernanceKey returns multisig governance key
-  rpc GovernanceKey(QueryGovernanceKeyRequest)
-      returns (QueryGovernanceKeyResponse) {
-    option (google.api.http).get = "/tss/v1beta1/governance_key";
-  }
-}
+service Query {}

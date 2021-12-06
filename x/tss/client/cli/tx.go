@@ -3,14 +3,11 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"strconv"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -31,8 +28,6 @@ func GetTxCmd() *cobra.Command {
 		getCmdKeygenStart(),
 		getCmdRotateKey(),
 		GetCmdRegisterExternalKeys(),
-		GetCmdUpdateGovernanceKey(),
-		GetCmdRegisterController(),
 	)
 
 	return tssTxCmd
@@ -162,75 +157,6 @@ func GetCmdRegisterExternalKeys() *cobra.Command {
 		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 	}
 
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdUpdateGovernanceKey returns the cli command to update the multisig governance key
-func GetCmdUpdateGovernanceKey() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "update-governance-key [threshold] [[pubKey]...]",
-		Short: "Update the multisig governance key for axelar network",
-		Args:  cobra.MinimumNArgs(2),
-	}
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		clientCtx, err := client.GetClientTxContext(cmd)
-		if err != nil {
-			return err
-		}
-
-		threshold, err := strconv.Atoi(args[0])
-		if err != nil {
-			return err
-		}
-
-		var pubKeys []crypto.PubKey
-		for i := 1; i < len(args); i++ {
-			var pk crypto.PubKey
-			err := clientCtx.Codec.UnmarshalInterfaceJSON([]byte(args[i]), &pk)
-			if err != nil {
-				return err
-			}
-
-			pubKeys = append(pubKeys, pk)
-		}
-
-		msg := types.NewUpdateGovernanceKeyRequest(clientCtx.GetFromAddress(), threshold, pubKeys...)
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
-
-		return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdRegisterController returns the cli command to register axelar network controller account
-func GetCmdRegisterController() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "register-controller [controller]",
-		Short: "Register controller account",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-			controller, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return err
-			}
-			msg := types.NewRegisterControllerRequest(cliCtx.GetFromAddress(), controller)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

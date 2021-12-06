@@ -137,23 +137,3 @@ message SubmitMultisigSignaturesRequest {
 }
 
 message SubmitMultisigSignaturesResponse {}
-
-message UpdateGovernanceKeyRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
-      [ (gogoproto.nullable) = false ];
-}
-
-message UpdateGovernanceKeyResponse {}
-
-// RegisterControllerRequest represents a message to register axelar network
-// controller account
-message RegisterControllerRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes controller = 2 [ (gogoproto.casttype) =
-                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-}
-
-message RegisterControllerResponse {}

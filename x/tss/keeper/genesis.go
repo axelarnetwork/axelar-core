@@ -13,8 +13,6 @@ import (
 func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genState *types.GenesisState) {
 	k.SetParams(ctx, genState.Params)
 
-	k.SetGovernanceKey(ctx, *genState.GovernanceKey)
-
 	rotationCountMap := make(map[string]map[exported.KeyRole]int64)
 	for _, key := range genState.Keys {
 		if _, ok := k.GetKey(ctx, key.ID); ok {
@@ -114,23 +112,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	keys := k.getKeys(ctx)
 
-	governanceKey, ok := k.GetGovernanceKey(ctx)
-	if !ok {
-		return types.NewGenesisState(
-			k.GetParams(ctx),
-			nil,
-			k.getKeyRecoveryInfos(ctx),
-			keys,
-			k.getCompletedMultisigKeygenInfos(ctx),
-			k.getAllExternalKeys(ctx),
-			k.getSignedSigs(ctx),
-			k.getValidatorStatuses(ctx),
-		)
-	}
-
 	return types.NewGenesisState(
 		k.GetParams(ctx),
-		&governanceKey,
 		k.getKeyRecoveryInfos(ctx),
 		keys,
 		k.getCompletedMultisigKeygenInfos(ctx),

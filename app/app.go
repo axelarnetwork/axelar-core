@@ -39,6 +39,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/permission"
+	permissionKeeper "github.com/axelarnetwork/axelar-core/x/permission/keeper"
+	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	"github.com/axelarnetwork/axelar-core/x/reward"
 	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -154,6 +157,7 @@ var (
 		nexus.AppModuleBasic{},
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
+		permission.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -250,6 +254,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexusTypes.StoreKey,
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
+		permissionTypes.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -373,6 +378,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName), axelarnetK,
 	)
+	permissionK := permissionKeeper.NewKeeper(
+		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
+	)
 
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
@@ -432,6 +440,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		bitcoin.NewAppModule(btcK, votingK, tssK, nexusK, snapK),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
+		permission.NewAppModule(permissionK),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -486,6 +495,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		voteTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 		rewardTypes.ModuleName,
+		permissionTypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&crisisK)
@@ -526,7 +536,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
-		ante.NewRestrictedTx(tssK),
+		ante.NewRestrictedTx(permissionK),
 	)
 	app.SetAnteHandler(anteHandler)
 
@@ -562,6 +572,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
 	paramsKeeper.Subspace(voteTypes.ModuleName)
+	paramsKeeper.Subspace(permissionTypes.ModuleName)
 
 	return paramsKeeper
 }
