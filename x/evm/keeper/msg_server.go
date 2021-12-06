@@ -371,14 +371,14 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	chain, ok := s.GetPendingChain(ctx, req.Name)
+	pendingChain, ok := s.GetPendingChain(ctx, req.Name)
 	if !ok {
 		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, chain.KeyType)
+	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, pendingChain.Chain.KeyType)
 	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), chain.KeyType)
+		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), pendingChain.Chain.KeyType)
 	}
 
 	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
@@ -651,7 +651,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	default:
 	}
 
-	chain, chainFound := s.GetPendingChain(ctx, req.Name)
+	pendingChain, chainFound := s.GetPendingChain(ctx, req.Name)
 	if !chainFound {
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
