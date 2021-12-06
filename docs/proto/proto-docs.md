@@ -434,6 +434,7 @@ Params represent the genesis parameters for the module
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [string](#string) | repeated |  |
 | `addr_prefix` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 
 
 
@@ -886,6 +887,7 @@ to nexus
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `addr_prefix` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 
 
 

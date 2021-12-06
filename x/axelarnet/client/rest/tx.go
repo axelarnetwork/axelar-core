@@ -60,6 +60,7 @@ type ReqAddCosmosBasedChain struct {
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 	AddrPrefix  string       `json:"addr_prefix" yaml:"addr_prefix"`
+	MinAmount   string       `json:"min_amount" yaml:"min_amount"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain
@@ -230,7 +231,12 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix)
+		minAmount, ok := sdk.NewIntFromString(req.MinAmount)
+		if !ok {
+			return
+		}
+
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix, minAmount)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

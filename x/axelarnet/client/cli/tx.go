@@ -149,9 +149,9 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [native asset] [address prefix]",
+		Use:   "add-cosmos-based-chain [name] [native asset] [address prefix] [min amount]",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -161,7 +161,11 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			nativeAsset := args[1]
 			addrPrefix := args[2]
 
-			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix)
+			minAmount, ok := sdk.NewIntFromString(args[3])
+			if !ok {
+				return fmt.Errorf("could not convert string to integer")
+			}
+			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix, minAmount)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

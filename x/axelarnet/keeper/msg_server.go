@@ -183,7 +183,20 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 	var transfersToArchive []nexus.CrossChainTransfer
 	for _, pendingTransfer := range pendingTransfers {
-		if pendingTransfer.Asset.Amount.LT(s.GetMinAmount(ctx)) {
+		var minAmount sdk.Int
+		if pendingTransfer.Recipient.Chain == exported.Axelarnet {
+			minAmount = s.GetMinAmount(ctx)
+		} else {
+			chain, ok := s.GetCosmosChainByName(ctx, pendingTransfer.Recipient.Chain.Name)
+			if !ok {
+				s.Logger(ctx).Error("cosmos chain '%s' not found", pendingTransfer.Recipient.Chain.Name)
+				continue
+			}
+
+			minAmount = chain.MinAmount
+		}
+
+		if pendingTransfer.Asset.Amount.LTE(minAmount) {
 			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
 			continue
 		}
@@ -247,6 +260,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	s.BaseKeeper.SetCosmosChain(ctx, types.CosmosChain{
 		Name:       req.Chain.Name,
 		AddrPrefix: req.AddrPrefix,
+		MinAmount:  req.MinAmount,
 	})
 	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name); err != nil {
 		return &types.AddCosmosBasedChainResponse{}, err

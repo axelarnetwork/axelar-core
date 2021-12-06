@@ -22,4 +22,8 @@ message CosmosChain {
   string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
   repeated string assets = 3;
   string addr_prefix = 4;
+  bytes min_amount = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
 }

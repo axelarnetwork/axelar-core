@@ -293,7 +293,10 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				return "", false
 			},
 			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
-				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
+				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5), MinAmount: sdk.NewInt(1000000)}, true
+			},
+			GetCosmosChainByNameFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5), MinAmount: sdk.NewInt(1000000)}, true
 			},
 			GetMinAmountFunc: func(sdk.Context) sdk.Int {
 				return sdk.NewInt(1000000)
