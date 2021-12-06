@@ -2,18 +2,14 @@ package types
 
 import (
 	"encoding/json"
-	fmt "fmt"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewGenesisState is the constructor for GenesisState
 func NewGenesisState(
 	params Params,
-	governanceKey *multisig.LegacyAminoPubKey,
 	keyRecoveryInfos []KeyRecoveryInfo,
 	keys []exported.Key,
 	multisigInfos []MultisigInfo,
@@ -23,7 +19,6 @@ func NewGenesisState(
 ) *GenesisState {
 	return &GenesisState{
 		Params:            params,
-		GovernanceKey:     governanceKey,
 		KeyRecoveryInfos:  keyRecoveryInfos,
 		Keys:              keys,
 		MultisigInfos:     multisigInfos,
@@ -37,7 +32,6 @@ func NewGenesisState(
 func DefaultGenesis() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
-		nil,
 		[]KeyRecoveryInfo{},
 		[]exported.Key{},
 		[]MultisigInfo{},
@@ -62,12 +56,6 @@ func (m GenesisState) Validate() error {
 	for _, key := range m.Keys {
 		if err := key.Validate(); err != nil {
 			return getValidateError(err)
-		}
-	}
-
-	if m.GovernanceKey != nil {
-		if int(m.GovernanceKey.Threshold) > len(m.GovernanceKey.PubKeys) {
-			return fmt.Errorf("threshold k of n multisignature: len(pubKeys) < k")
 		}
 	}
 

@@ -1,9 +1,9 @@
-## axelard query tss governance-key
+## axelard query permission governance-key
 
 Returns the governance key
 
 ```
-axelard query tss governance-key [flags]
+axelard query permission governance-key [flags]
 ```
 
 ### Options
@@ -27,4 +27,4 @@ axelard query tss governance-key [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+- [axelard query permission](axelard_query_permission.md)	 - Querying commands for the permission module

@@ -232,6 +232,34 @@
     - [MsgService](#nexus.v1beta1.MsgService)
     - [QueryService](#nexus.v1beta1.QueryService)
   
+- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
+    - [Role](#permission.exported.v1beta1.Role)
+  
+- [permission/v1beta1/types.proto](#permission/v1beta1/types.proto)
+    - [GovAccount](#permission.v1beta1.GovAccount)
+  
+- [permission/v1beta1/params.proto](#permission/v1beta1/params.proto)
+    - [Params](#permission.v1beta1.Params)
+  
+- [permission/v1beta1/genesis.proto](#permission/v1beta1/genesis.proto)
+    - [GenesisState](#permission.v1beta1.GenesisState)
+  
+- [permission/v1beta1/query.proto](#permission/v1beta1/query.proto)
+    - [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest)
+    - [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse)
+  
+- [permission/v1beta1/tx.proto](#permission/v1beta1/tx.proto)
+    - [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest)
+    - [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse)
+    - [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest)
+    - [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse)
+    - [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest)
+    - [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse)
+  
+- [permission/v1beta1/service.proto](#permission/v1beta1/service.proto)
+    - [Msg](#permission.v1beta1.Msg)
+    - [Query](#permission.v1beta1.Query)
+  
 - [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
     - [Params](#reward.v1beta1.Params)
   
@@ -324,8 +352,6 @@
     - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
-    - [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest)
-    - [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
@@ -360,8 +386,6 @@
     - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
     - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
     - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
-    - [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest)
-    - [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -3486,6 +3510,301 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="permission/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="permission.exported.v1beta1.Role"></a>
+
+### Role
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ROLE_UNSPECIFIED | 0 |  |
+| ROLE_ACCESS_CONTROL | 1 |  |
+| ROLE_CHAIN_MANAGEMENT | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/types.proto
+
+
+
+<a name="permission.v1beta1.GovAccount"></a>
+
+### GovAccount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `role` | [permission.exported.v1beta1.Role](#permission.exported.v1beta1.Role) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/params.proto
+
+
+
+<a name="permission.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/genesis.proto
+
+
+
+<a name="permission.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#permission.v1beta1.Params) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+| `gov_accounts` | [GovAccount](#permission.v1beta1.GovAccount) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/query.proto
+
+
+
+<a name="permission.v1beta1.QueryGovernanceKeyRequest"></a>
+
+### QueryGovernanceKeyRequest
+QueryGovernanceKeyRequest is the request type for the
+Query/GovernanceKey RPC method
+
+
+
+
+
+
+<a name="permission.v1beta1.QueryGovernanceKeyResponse"></a>
+
+### QueryGovernanceKeyResponse
+QueryGovernanceKeyResponse is the response type for the
+Query/GovernanceKey RPC method
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/tx.proto
+
+
+
+<a name="permission.v1beta1.DeregisterControllerRequest"></a>
+
+### DeregisterControllerRequest
+DeregisterController represents a message to deregister a controller account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `controller` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.DeregisterControllerResponse"></a>
+
+### DeregisterControllerResponse
+
+
+
+
+
+
+
+<a name="permission.v1beta1.RegisterControllerRequest"></a>
+
+### RegisterControllerRequest
+MsgRegisterController represents a message to register a controller account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `controller` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.RegisterControllerResponse"></a>
+
+### RegisterControllerResponse
+
+
+
+
+
+
+
+<a name="permission.v1beta1.UpdateGovernanceKeyRequest"></a>
+
+### UpdateGovernanceKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.UpdateGovernanceKeyResponse"></a>
+
+### UpdateGovernanceKeyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="permission.v1beta1.Msg"></a>
+
+### Msg
+Msg defines the gov Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterController` | [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse) |  | ||
+| `DeregisterController` | [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse) |  | ||
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+
+
+<a name="permission.v1beta1.Query"></a>
+
+### Query
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/permission/v1beta1/governance_key|
+
+ <!-- end services -->
+
+
+
 <a name="reward/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4535,7 +4854,6 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 | `key_recovery_infos` | [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo) | repeated |  |
 | `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
 | `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
@@ -4635,33 +4953,6 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_ids` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryGovernanceKeyRequest"></a>
-
-### QueryGovernanceKeyRequest
-QueryGovernanceKeyRequest is the request type for the
-Query/GovernanceKey RPC method
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryGovernanceKeyResponse"></a>
-
-### QueryGovernanceKeyResponse
-QueryGovernanceKeyResponse is the response type for the
-Query/GovernanceKey RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -5150,32 +5441,6 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="tss.v1beta1.UpdateGovernanceKeyRequest"></a>
-
-### UpdateGovernanceKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.UpdateGovernanceKeyResponse"></a>
-
-### UpdateGovernanceKeyResponse
-
-
-
-
-
-
-
 <a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
@@ -5279,7 +5544,6 @@ Msg defines the tss Msg service.
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
-| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse) |  | ||
 
 
 <a name="tss.v1beta1.Query"></a>
@@ -5289,7 +5553,6 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `GovernanceKey` | [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/tss/v1beta1/governance_key|
 
  <!-- end services -->
 

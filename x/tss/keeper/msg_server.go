@@ -770,13 +770,6 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 	return &types.SubmitMultisigSignaturesResponse{}, nil
 }
 
-func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGovernanceKeyRequest) (*types.UpdateGovernanceKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	s.SetGovernanceKey(ctx, req.GovernanceKey)
-
-	return &types.UpdateGovernanceKeyResponse{}, nil
-}
-
 func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
 	criminalFound := false
 	for _, voter := range poll.GetVoters() {

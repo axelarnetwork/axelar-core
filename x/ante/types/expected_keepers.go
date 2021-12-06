@@ -1,11 +1,11 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -21,7 +21,6 @@ type Tss interface {
 	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
-	GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool)
 }
 
 // Nexus provides access to the nexus functionality
@@ -42,7 +41,12 @@ type Staking interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 }
 
-// Reward provides access to the axelarnet functionality
+// Reward provides access to the reward functionality
 type Reward interface {
 	SetPendingRefund(ctx sdk.Context, req rewardtypes.RefundMsgRequest, fee sdk.Coin) error
+}
+
+// Permission provides access to the permission functionality
+type Permission interface {
+	GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role
 }
