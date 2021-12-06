@@ -15,7 +15,6 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -51,8 +50,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
-			depCdc := clientCtx.Codec
-			cdc := depCdc.(codec.Codec)
+			cdc := clientCtx.Codec
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
@@ -198,7 +196,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 
 func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName string) (chain evmTypes.GenesisState_Chain, index int) {
 	for index, chain = range chains {
-		if strings.ToLower(chain.Params.Chain) == strings.ToLower(chainName) {
+		if strings.EqualFold(param.Chain, chain) {
 			return
 		}
 	}
@@ -210,7 +208,7 @@ func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName string) (chain
 func findEVMNetwork(networks []evmTypes.NetworkInfo, network string) (index int) {
 	var info evmTypes.NetworkInfo
 	for index, info = range networks {
-		if strings.ToLower(info.Name) == strings.ToLower(network) {
+		if strings.EqualFold(info.Name, network) {
 			return
 		}
 	}
