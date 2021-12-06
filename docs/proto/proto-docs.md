@@ -3216,6 +3216,7 @@ address by recipient address
 | ----- | ---- | ----- | ----------- |
 | `recipient_addr` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
+| `deposit_chain` | [string](#string) |  |  |
 
 
 

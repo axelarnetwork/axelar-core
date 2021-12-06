@@ -18,6 +18,7 @@ message QueryChainMaintainersResponse {
 message LatestDepositAddressRequest {
   string recipient_addr = 1;
   string recipient_chain = 2;
+  string deposit_chain = 3;
 }
 
 message LatestDepositAddressResponse { string deposit_addr = 1; };
