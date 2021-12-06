@@ -51,7 +51,7 @@ jobs:
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core
-          image: axelar-core:${{ steps.set-tag.outputs.TAG }}
+          image: axelar-core:${{ steps.set-tag.outputs.TAG }}, axelar-core:${{ github.sha }}
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
