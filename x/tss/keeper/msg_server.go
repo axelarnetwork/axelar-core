@@ -748,7 +748,7 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 			SigID: info.SigID,
 			Sig: &exported.Signature_MultiSig_{
 				MultiSig: &exported.Signature_MultiSig{
-					SigKeyPairs: multisigSignInfo.GetSigKeyPairs(),
+					SigKeyPairs: multisigSignInfo.GetTargetSigKeyPairs(),
 				},
 			},
 			SigStatus: exported.SigStatus_Signed,
