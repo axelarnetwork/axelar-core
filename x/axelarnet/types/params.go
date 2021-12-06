@@ -30,10 +30,10 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedChains:    []string{"Bitcoin", "Ethereum"},
+		SupportedChains:    []string{"Ethereum"},
 		RouteTimeoutWindow: 100,
 		MinAmount:          sdktypes.NewInt(1000000),
-		TransactionFeeRate: sdktypes.NewDecWithPrec(25, 5), // 0.025%
+		TransactionFeeRate: sdktypes.NewDecWithPrec(5, 5), // 0.05%
 	}
 }
 
