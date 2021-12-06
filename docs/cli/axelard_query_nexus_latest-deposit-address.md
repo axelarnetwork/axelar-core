@@ -3,7 +3,7 @@
 Query for account by address
 
 ```
-axelard query nexus latest-deposit-address [recipient chain] [recipient address] [flags]
+axelard query nexus latest-deposit-address [deposit chain] [recipient chain] [recipient address] [flags]
 ```
 
 ### Options

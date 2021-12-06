@@ -110,7 +110,7 @@
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
-      - [latest-deposit-address \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+      - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module

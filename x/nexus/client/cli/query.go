@@ -61,9 +61,9 @@ func GetCommandChainMaintainers(queryRoute string) *cobra.Command {
 // GetCommandLatestDepositAddress returns the query for getting the latest deposit address of some recipient
 func GetCommandLatestDepositAddress() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "latest-deposit-address [recipient chain] [recipient address]",
+		Use:   "latest-deposit-address [deposit chain] [recipient chain] [recipient address]",
 		Short: "Query for account by address",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -74,8 +74,9 @@ func GetCommandLatestDepositAddress() *cobra.Command {
 
 			res, err := queryClient.LatestDepositAddress(cmd.Context(),
 				&types.LatestDepositAddressRequest{
-					RecipientChain: args[0],
-					RecipientAddr:  args[1],
+					DepositChain:   args[0],
+					RecipientChain: args[1],
+					RecipientAddr:  args[2],
 				})
 			if err != nil {
 				return err
