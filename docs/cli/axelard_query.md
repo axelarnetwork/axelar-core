@@ -29,7 +29,6 @@ axelard query [flags]
 - [axelard query account](axelard_query_account.md)	 - Query for account by address
 - [axelard query auth](axelard_query_auth.md)	 - Querying commands for the auth module
 - [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
-- [axelard query bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
 - [axelard query block](axelard_query_block.md)	 - Get verified data for a the block at given height
 - [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
 - [axelard query evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence

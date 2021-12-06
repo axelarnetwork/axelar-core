@@ -9,8 +9,6 @@ import (
 	"time"
 
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -20,6 +18,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -32,7 +31,7 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -230,14 +229,13 @@ func createMsgsWithRandomSigner() []sdk.Msg {
 	var msgs []sdk.Msg
 	signer := rand.AccAddr()
 	for i := int64(0); i < rand.I64Between(1, 20); i++ {
-		txHash, err := chainhash.NewHash(rand.Bytes(chainhash.HashSize))
-		if err != nil {
-			panic(err)
-		}
-		msg := btc.NewVoteConfirmOutpointRequest(
+
+		msg := evm.NewVoteConfirmDepositRequest(
 			signer,
-			exported.NewPollKey(btc.ModuleName, rand.StrBetween(5, 100)),
-			*wire.NewOutPoint(txHash, mathRand.Uint32()),
+			rand.StrBetween(5, 10),
+			exported.NewPollKey(evm.ModuleName, rand.StrBetween(5, 100)),
+			common.BytesToHash(rand.Bytes(common.HashLength)),
+			evm.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			rand.Bools(0.5).Next(),
 		)
 		msgs = append(msgs, rewardtypes.NewRefundMsgRequest(signer, msg))
