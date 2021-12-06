@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strconv"
 	"strings"
 
@@ -266,13 +265,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	burnerInfo := types.BurnerInfo{
-		TokenAddress:     types.Address(tokenAddr),
+		BurnerAddress:    types.Address(burnerAddr),
+		TokenAddress:     tokenAddr,
 		DestinationChain: req.RecipientChain,
 		Symbol:           symbol,
 		Asset:            req.Asset,
 		Salt:             types.Hash(salt),
 	}
-	keeper.SetBurnerInfo(ctx, burnerAddr, &burnerInfo)
+	keeper.SetBurnerInfo(ctx, burnerInfo)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
@@ -371,14 +371,14 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("chain '%s' is already confirmed", req.Name)
 	}
 
-	chain, ok := s.GetPendingChain(ctx, req.Name)
+	pendingChain, ok := s.GetPendingChain(ctx, req.Name)
 	if !ok {
 		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
 	}
 
-	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, chain.KeyType)
+	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, pendingChain.Chain.KeyType)
 	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), chain.KeyType)
+		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), pendingChain.Chain.KeyType)
 	}
 
 	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
@@ -445,9 +445,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	switch {
 	case !ok:
 		break
-	case state == types.CONFIRMED:
+	case state == types.DepositStatus_Confirmed:
 		return nil, fmt.Errorf("already confirmed")
-	case state == types.BURNED:
+	case state == types.DepositStatus_Burned:
 		return nil, fmt.Errorf("already burned")
 	}
 
@@ -651,7 +651,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	default:
 	}
 
-	chain, chainFound := s.GetPendingChain(ctx, req.Name)
+	pendingChain, chainFound := s.GetPendingChain(ctx, req.Name)
 	if !chainFound {
 		return nil, fmt.Errorf("unknown chain %s", req.Name)
 	}
@@ -702,8 +702,9 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.SetChain(ctx, chain)
-	s.nexus.RegisterAsset(ctx, chain, chain.NativeAsset)
+	s.nexus.SetChain(ctx, pendingChain.Chain)
+	s.nexus.RegisterAsset(ctx, pendingChain.Chain, pendingChain.Chain.NativeAsset)
+	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
 }
@@ -811,7 +812,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
 		return nil, err
 	}
-	keeper.SetDeposit(ctx, pendingDeposit, types.CONFIRMED)
+	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
 }
@@ -1061,8 +1062,8 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return &types.CreateBurnTokensResponse{}, nil
 	}
 
-	chainID := s.getChainID(ctx, req.Chain)
-	if chainID == nil {
+	chainID, ok := keeper.GetChainID(ctx)
+	if !ok {
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
@@ -1078,7 +1079,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	seen := map[string]bool{}
 	for _, deposit := range deposits {
 		keeper.DeleteDeposit(ctx, deposit)
-		keeper.SetDeposit(ctx, deposit, types.BURNED)
+		keeper.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
 
 		burnerAddressHex := deposit.BurnerAddress.Hex()
 
@@ -1268,7 +1269,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -1278,8 +1279,8 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, transferKeyType typ
 		return types.Command{}, err
 	}
 
-	chainID := s.getChainID(ctx, chainStr)
-	if chainID == nil {
+	chainID, ok := keeper.GetChainID(ctx)
+	if !ok {
 		return types.Command{}, fmt.Errorf("could not find chain ID for '%s'", chainStr)
 	}
 
@@ -1357,7 +1358,7 @@ func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateT
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	cmd, err := s.createTransferKeyCommand(ctx, types.Ownership, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, keeper, types.Ownership, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1377,7 +1378,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	cmd, err := s.createTransferKeyCommand(ctx, types.Operatorship, req.Chain, req.KeyID)
+	cmd, err := s.createTransferKeyCommand(ctx, keeper, types.Operatorship, req.Chain, req.KeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1400,12 +1401,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
-	chainID := s.getChainID(ctx, req.Chain)
-	if chainID == nil {
+	keeper := s.ForChain(chain.Name)
+
+	if _, ok := keeper.GetChainID(ctx); !ok {
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	keeper := s.ForChain(chain.Name)
 	id, err := keeper.CreateNewBatchToSign(ctx)
 	if err != nil {
 		return nil, err
@@ -1465,8 +1466,11 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, fmt.Errorf("TSS is disabled")
 	}
 
-	s.SetPendingChain(ctx, nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName})
-	s.SetParams(ctx, req.Params)
+	s.SetPendingChain(
+		ctx,
+		nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
+		req.Params,
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
@@ -1478,14 +1482,4 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	)
 
 	return &types.AddChainResponse{}, nil
-}
-
-func (s msgServer) getChainID(ctx sdk.Context, chain string) (chainID *big.Int) {
-	for _, p := range s.GetParams(ctx) {
-		if strings.EqualFold(p.Chain, chain) {
-			chainID = s.ForChain(chain).GetChainIDByNetwork(ctx, p.Network)
-		}
-	}
-
-	return
 }

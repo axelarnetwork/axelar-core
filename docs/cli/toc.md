@@ -57,7 +57,6 @@
       - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-      - [signed-tx \[chain\] \[txID\]](axelard_query_evm_signed-tx.md)	 - Fetch an EVM transaction \[txID\] that has been signed by the validators for chain \[chain\]
       - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
@@ -113,6 +112,8 @@
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
+    - [permission](axelard_query_permission.md)	 - Querying commands for the permission module
+      - [governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
@@ -143,7 +144,6 @@
       - [active-old-keys-by-validator \[validator address\]](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
       - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
       - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
-      - [governance-key](axelard_query_tss_governance-key.md)	 - Returns the governance key
       - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
       - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
       - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
@@ -162,6 +162,8 @@
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
   - [set-genesis-mint](axelard_set-genesis-mint.md)	 - Set the genesis parameters for the mint module
+  - [set-genesis-reward](axelard_set-genesis-reward.md)	 - Set the genesis parameters for the reward module
+  - [set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
   - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
@@ -247,6 +249,10 @@
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
       - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
       - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
+    - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
+      - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account
+      - [register-controller \[controller\]](axelard_tx_permission_register-controller.md)	 - Register controller account
+      - [update-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_tx_permission_update-governance-key.md)	 - Update the multisig governance key for axelar network
     - [sign \[file\]](axelard_tx_sign.md)	 - Sign a transaction generated offline
     - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
     - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
@@ -265,7 +271,6 @@
       - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
       - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
       - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
-      - [update-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_tx_tss_update-governance-key.md)	 - Update the multisig governance key for axelar network
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.

@@ -21,12 +21,14 @@ message NetworkInfo {
 // BurnerInfo describes information required to burn token at an burner address
 // that is deposited by an user
 message BurnerInfo {
-  bytes token_address = 1
+  bytes burner_address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  string destination_chain = 2;
-  string symbol = 3;
-  string asset = 4;
-  bytes salt = 5
+  bytes token_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 3;
+  string symbol = 4;
+  string asset = 5;
+  bytes salt = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
 }
 

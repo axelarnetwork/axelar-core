@@ -28,7 +28,6 @@ const (
 	TxConfirmDeposit              = "confirm-erc20-deposit"
 	TxConfirmTransferOwnership    = "confirm-transfer-ownership"
 	TxConfirmTransferOperatorship = "confirm-transfer-operatorship"
-	TxSignTx                      = "sign-tx"
 	TxCreatePendingTransfers      = "create-pending-transfers"
 	TxCreateDeployToken           = "create-deploy-token"
 	TxCreateBurnTokens            = "create-burn-token"
@@ -43,7 +42,6 @@ const (
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryBytecode             = keeper.QBytecode
-	QuerySignedTx             = keeper.QSignedTx
 	QueryDepositState         = keeper.QDepositState
 )
 
@@ -73,7 +71,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
-	registerQuery(GetHandlerQuerySignedTx(cliCtx), QuerySignedTx, clientUtils.PathVarChain, clientUtils.PathVarTxID)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
 }
 

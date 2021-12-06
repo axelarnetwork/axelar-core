@@ -3,9 +3,10 @@ package types_test
 import (
 	"crypto/ecdsa"
 	rand3 "crypto/rand"
+	"testing"
+
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/stretchr/testify/assert"
@@ -38,15 +39,15 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	}
 	encCfg := app.MakeEncodingConfig()
 
-	bz := encCfg.Marshaler.MustMarshalLengthPrefixed(&vote)
+	bz := encCfg.Codec.MustMarshalLengthPrefixed(&vote)
 	var msg tss.VotePubKeyRequest
-	encCfg.Marshaler.MustUnmarshalLengthPrefixed(bz, &msg)
+	encCfg.Codec.MustUnmarshalLengthPrefixed(bz, &msg)
 
 	assert.Equal(t, vote, msg)
 
-	bz = encCfg.Marshaler.MustMarshalJSON(&vote)
+	bz = encCfg.Codec.MustMarshalJSON(&vote)
 	var msg2 tss.VotePubKeyRequest
-	encCfg.Marshaler.MustUnmarshalJSON(bz, &msg2)
+	encCfg.Codec.MustUnmarshalJSON(bz, &msg2)
 
 	assert.Equal(t, vote, msg2)
 }
@@ -64,8 +65,8 @@ func TestMultisigKeyInfo(t *testing.T) {
 		}
 
 		multisigKeygenInfo := tss.MultisigInfo{
-			ID:           rand.StrBetween(5, 20),
-			Timeout:      rand.I64Between(1, 20000),
+			ID:        rand.StrBetween(5, 20),
+			Timeout:   rand.I64Between(1, 20000),
 			TargetNum: totalShareCount,
 		}
 		assert.False(t, multisigKeygenInfo.IsCompleted())

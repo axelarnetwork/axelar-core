@@ -15,7 +15,6 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -51,8 +50,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
-			depCdc := clientCtx.Codec
-			cdc := depCdc.(codec.Codec)
+			cdc := clientCtx.Codec
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
@@ -108,27 +106,27 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				// fetch existing EVM chain, or add new one
 				genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
 				moduleName = evmTypes.ModuleName
-				var params evmTypes.Params
+				var chain evmTypes.GenesisState_Chain
 
-				_, index := findEVMChain(genesisState.Params, evmChainName)
+				_, index := findEVMChain(genesisState.Chains, evmChainName)
 				if index < 0 {
-					defaults := evmTypes.DefaultParams()
-					params, _ = findEVMChain(defaults, evm.Ethereum.Name)
-					params.Chain = evmChainName
-					params.Network = ""
-					params.Networks = []evmTypes.NetworkInfo{}
-					genesisState.Params = append(genesisState.Params, params)
-					index = len(genesisState.Params) - 1
+					defaults := evmTypes.DefaultChains()
+					chain, _ = findEVMChain(defaults, evm.Ethereum.Name)
+					chain.Params.Chain = evmChainName
+					chain.Params.Network = ""
+					chain.Params.Networks = []evmTypes.NetworkInfo{}
+					genesisState.Chains = append(genesisState.Chains, chain)
+					index = len(genesisState.Chains) - 1
 				}
 
 				// update confirmation height
 				if confirmationHeight > 0 {
-					genesisState.Params[index].ConfirmationHeight = confirmationHeight
+					genesisState.Chains[index].Params.ConfirmationHeight = confirmationHeight
 				}
 
 				// update revote locking period
 				if revoteLockingPeriod > 0 {
-					genesisState.Params[index].RevoteLockingPeriod = revoteLockingPeriod
+					genesisState.Chains[index].Params.RevoteLockingPeriod = revoteLockingPeriod
 				}
 
 				// if we are editing the list of known networks, both evm-network-name
@@ -145,25 +143,25 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 						return fmt.Errorf("chain ID must be an integer")
 					}
 
-					i := findEVMNetwork(genesisState.Params[index].Networks, evmNetworkName)
+					i := findEVMNetwork(genesisState.Chains[index].Params.Networks, evmNetworkName)
 					if i < 0 {
-						genesisState.Params[index].Networks =
-							append(genesisState.Params[index].Networks,
+						genesisState.Chains[index].Params.Networks =
+							append(genesisState.Chains[index].Params.Networks,
 								evmTypes.NetworkInfo{Name: evmNetworkName, Id: id})
 					} else {
-						genesisState.Params[index].Networks[i].Id = id
+						genesisState.Chains[index].Params.Networks[i].Id = id
 					}
 
 				}
 
 				// update expected network
 				if expectedNetwork != "" {
-					i := findEVMNetwork(genesisState.Params[index].Networks, expectedNetwork)
+					i := findEVMNetwork(genesisState.Chains[index].Params.Networks, expectedNetwork)
 					if i < 0 {
 						return fmt.Errorf("unable to find network %s", expectedNetwork)
 					}
 
-					genesisState.Params[index].Network = genesisState.Params[index].Networks[i].Name
+					genesisState.Chains[index].Params.Network = genesisState.Chains[index].Params.Networks[i].Name
 				}
 
 				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
@@ -196,9 +194,9 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	return cmd
 }
 
-func findEVMChain(params []evmTypes.Params, chain string) (param evmTypes.Params, index int) {
-	for index, param = range params {
-		if strings.ToLower(param.Chain) == strings.ToLower(chain) {
+func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName string) (chain evmTypes.GenesisState_Chain, index int) {
+	for index, chain = range chains {
+		if strings.EqualFold(chainName, chain.Params.Chain) {
 			return
 		}
 	}
@@ -210,7 +208,7 @@ func findEVMChain(params []evmTypes.Params, chain string) (param evmTypes.Params
 func findEVMNetwork(networks []evmTypes.NetworkInfo, network string) (index int) {
 	var info evmTypes.NetworkInfo
 	for index, info = range networks {
-		if strings.ToLower(info.Name) == strings.ToLower(network) {
+		if strings.EqualFold(info.Name, network) {
 			return
 		}
 	}

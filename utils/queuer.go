@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -25,13 +27,40 @@ type KVQueue interface {
 type BlockHeightKVQueue struct {
 	store       KVStore
 	blockHeight Key
-	name        Key
+	name        StringKey
 	logger      log.Logger
 }
 
 // NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
 func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
 	return BlockHeightKVQueue{store: store, name: KeyFromStr(name), logger: logger}.WithBlockHeight(blockHeight)
+}
+
+// ImportState should only be used to populate state at genesis. Panics if the given state is invalid
+func (q BlockHeightKVQueue) ImportState(state map[string]codec.ProtoMarshaler) {
+	if err := ValidateQueueState(state); err != nil {
+		panic(err)
+	}
+
+	for key, value := range state {
+		q.store.Set(q.name.AppendStr(key), value)
+	}
+}
+
+// ValidateQueueState checks if the keys of the given map have the correct format to be imported as queue state.
+// The expected format is {block height}_{[a-zA-Z0-9]+}
+func ValidateQueueState(state map[string]codec.ProtoMarshaler) error {
+	for key := range state {
+		keyParticles := strings.Split(key, defaultDelimiter)
+		if len(keyParticles) != 2 {
+			return fmt.Errorf("expected key %s to consist of two parts", key)
+		}
+
+		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
+			return fmt.Errorf("expected first key part of %s to be a block height", key)
+		}
+	}
+	return nil
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key

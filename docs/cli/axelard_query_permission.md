@@ -1,17 +1,15 @@
-## axelard query tss governance-key
+## axelard query permission
 
-Returns the governance key
+Querying commands for the permission module
 
 ```
-axelard query tss governance-key [flags]
+axelard query permission [flags]
 ```
 
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for governance-key
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -h, --help   help for permission
 ```
 
 ### Options inherited from parent commands
@@ -27,4 +25,5 @@ axelard query tss governance-key [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query permission governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key

@@ -15,15 +15,17 @@ import (
 )
 
 const (
-	flagInflationMax = "inflation-max"
-	flagInflationMin = "inflation-min"
+	flagInflationMax           = "inflation-max"
+	flagInflationMin           = "inflation-min"
+	flagInflationMaxRateChange = "inflation-max-rate-change"
 )
 
 // SetGenesisMintCmd returns set-genesis-mint cobra Command.
 func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 	var (
-		inflationMin string
-		inflationMax string
+		inflationMin           string
+		inflationMax           string
+		inflationMaxRateChange string
 	)
 
 	cmd := &cobra.Command{
@@ -68,6 +70,15 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 				genesis.Params.InflationMax = max
 			}
 
+			if inflationMaxRateChange != "" {
+				max, err := sdk.NewDecFromStr(inflationMaxRateChange)
+				if err != nil {
+					return err
+				}
+
+				genesis.Params.InflationRateChange = max
+			}
+
 			if err := genesis.Params.Validate(); err != nil {
 				return err
 			}
@@ -91,6 +102,7 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().StringVar(&inflationMin, flagInflationMin, "", "Minimum inflation rate")
 	cmd.Flags().StringVar(&inflationMax, flagInflationMax, "", "Maximum inflation rate")
+	cmd.Flags().StringVar(&inflationMaxRateChange, flagInflationMaxRateChange, "", "Maximum inflation rate change")
 
 	return cmd
 }

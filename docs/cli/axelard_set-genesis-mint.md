@@ -9,9 +9,10 @@ axelard set-genesis-mint [flags]
 ### Options
 
 ```
-  -h, --help                   help for set-genesis-mint
-      --inflation-max string   Maximum inflation rate
-      --inflation-min string   Minimum inflation rate
+  -h, --help                               help for set-genesis-mint
+      --inflation-max string               Maximum inflation rate
+      --inflation-max-rate-change string   Maximum inflation rate change
+      --inflation-min string               Minimum inflation rate
 ```
 
 ### Options inherited from parent commands

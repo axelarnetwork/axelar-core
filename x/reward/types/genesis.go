@@ -1,6 +1,9 @@
 package types
 
 import (
+	"encoding/json"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
@@ -34,4 +37,15 @@ func (m GenesisState) Validate() error {
 
 func getValidateError(err error) error {
 	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+}
+
+// GetGenesisStateFromAppState returns x/reward GenesisState given raw application
+// genesis state.
+func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.RawMessage) GenesisState {
+	var genesisState GenesisState
+	if appState[ModuleName] != nil {
+		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
+	}
+
+	return genesisState
 }

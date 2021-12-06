@@ -50,7 +50,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
 
 	initClientCtx := client.Context{}.
-		WithCodec(encodingConfig.Marshaler).
+		WithCodec(encodingConfig.Codec).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithLegacyAmino(encodingConfig.Amino).
@@ -151,7 +151,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisAccountCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		debug.Cmd(),
+		SetGenesisRewardCmd(app.DefaultNodeHome),
 		SetGenesisStakingCmd(app.DefaultNodeHome),
+		SetGenesisSlashingCmd(app.DefaultNodeHome),
 		SetGenesisVoteCmd(app.DefaultNodeHome),
 		SetGenesisTSSCmd(app.DefaultNodeHome),
 		SetGenesisSnapshotCmd(app.DefaultNodeHome),
@@ -174,7 +176,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	)
 
 	// Add rosetta command
-	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
+	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
 	defaults := map[string]string{
 		flags.FlagKeyringBackend:   "test",

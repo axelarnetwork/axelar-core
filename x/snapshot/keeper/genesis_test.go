@@ -34,9 +34,9 @@ func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Marshaler, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snapshot")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snapshot")
 	keeper := NewKeeper(
-		encodingConfig.Marshaler,
+		encodingConfig.Codec,
 		sdk.NewKVStoreKey(types.StoreKey),
 		subspace,
 		&staking,

@@ -24,7 +24,7 @@ var (
 	KeyVotingThreshold     = []byte("votingThreshold")
 	KeyGateway             = []byte("gateway")
 	KeyToken               = []byte("token")
-	KeyBurnable            = []byte("burneable")
+	KeyBurnable            = []byte("burnable")
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
 	KeyTransactionFeeRate  = []byte("transactionFeeRate")
@@ -54,8 +54,8 @@ func DefaultParams() []Params {
 		Chain:               exported.Ethereum.Name,
 		ConfirmationHeight:  1,
 		Network:             Ganache,
-		Gateway:             bzGateway,
-		Token:               bzToken,
+		GatewayCode:         bzGateway,
+		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
 		RevoteLockingPeriod: 50,
 		Networks: []NetworkInfo{
@@ -83,7 +83,7 @@ func DefaultParams() []Params {
 		VotingThreshold:    utils.Threshold{Numerator: 33, Denominator: 100},
 		MinVoterCount:      1,
 		CommandsGasLimit:   5000000,
-		TransactionFeeRate: sdk.NewDecWithPrec(25, 5), // 0.025%
+		TransactionFeeRate: sdk.NewDecWithPrec(1, 3), // 0.1%
 	}}
 }
 
@@ -100,8 +100,8 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChain, &m.Chain, validateChain),
 		params.NewParamSetPair(KeyConfirmationHeight, &m.ConfirmationHeight, validateConfirmationHeight),
 		params.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
-		params.NewParamSetPair(KeyGateway, &m.Gateway, validateBytes),
-		params.NewParamSetPair(KeyToken, &m.Token, validateBytes),
+		params.NewParamSetPair(KeyGateway, &m.GatewayCode, validateBytes),
+		params.NewParamSetPair(KeyToken, &m.TokenCode, validateBytes),
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),

@@ -31,10 +31,10 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Marshaler, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
 
 	keeper := NewKeeper(
-		encodingConfig.Marshaler,
+		encodingConfig.Codec,
 		sdk.NewKVStoreKey(types.StoreKey),
 		subspace,
 		&snapshotter,

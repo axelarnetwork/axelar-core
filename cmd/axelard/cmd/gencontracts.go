@@ -6,7 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
@@ -31,8 +30,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
-			depCdc := clientCtx.Codec
-			cdc := depCdc.(codec.Codec)
+			cdc := clientCtx.Codec
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
@@ -52,7 +50,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Gateway = gateway
+				genesisState.Chains[0].Params.GatewayCode = gateway
 			}
 
 			if tokenFile != "" {
@@ -61,7 +59,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Token = token
+				genesisState.Chains[0].Params.TokenCode = token
 			}
 
 			if burnableFile != "" {
@@ -70,7 +68,7 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Params[0].Burnable = burnable
+				genesisState.Chains[0].Params.Burnable = burnable
 			}
 
 			genesisStateBz, err := cdc.MarshalJSON(&genesisState)

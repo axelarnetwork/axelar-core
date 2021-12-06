@@ -31,7 +31,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdTokenAddress(queryRoute),
 		GetCmdDepositState(queryRoute),
 		GetCmdBytecode(queryRoute),
-		GetCmdSignedTx(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
 		GetCmdLatestBatchedCommands(queryRoute),
 	)
@@ -215,31 +214,6 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
 			if err != nil {
 				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
-			}
-
-			fmt.Println("0x" + common.Bytes2Hex(res))
-			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdSignedTx fetches an EVM transaction that has been signed by the validators
-func GetCmdSignedTx(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "signed-tx [chain] [txID]",
-		Short: "Fetch an EVM transaction [txID] that has been signed by the validators for chain [chain]",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QSignedTx, args[0], args[1]), nil)
-			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFSignedTx, args[1])
 			}
 
 			fmt.Println("0x" + common.Bytes2Hex(res))

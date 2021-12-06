@@ -149,9 +149,12 @@
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
+    - [PendingChain](#evm.v1beta1.PendingChain)
   
 - [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
     - [GenesisState](#evm.v1beta1.GenesisState)
+    - [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain)
+    - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
@@ -229,6 +232,34 @@
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
     - [QueryService](#nexus.v1beta1.QueryService)
+  
+- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
+    - [Role](#permission.exported.v1beta1.Role)
+  
+- [permission/v1beta1/types.proto](#permission/v1beta1/types.proto)
+    - [GovAccount](#permission.v1beta1.GovAccount)
+  
+- [permission/v1beta1/params.proto](#permission/v1beta1/params.proto)
+    - [Params](#permission.v1beta1.Params)
+  
+- [permission/v1beta1/genesis.proto](#permission/v1beta1/genesis.proto)
+    - [GenesisState](#permission.v1beta1.GenesisState)
+  
+- [permission/v1beta1/query.proto](#permission/v1beta1/query.proto)
+    - [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest)
+    - [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse)
+  
+- [permission/v1beta1/tx.proto](#permission/v1beta1/tx.proto)
+    - [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest)
+    - [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse)
+    - [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest)
+    - [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse)
+    - [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest)
+    - [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse)
+  
+- [permission/v1beta1/service.proto](#permission/v1beta1/service.proto)
+    - [Msg](#permission.v1beta1.Msg)
+    - [Query](#permission.v1beta1.Query)
   
 - [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
     - [Params](#reward.v1beta1.Params)
@@ -322,8 +353,6 @@
     - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
     - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
     - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
-    - [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest)
-    - [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse)
     - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
     - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
     - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
@@ -358,8 +387,6 @@
     - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
     - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
     - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
-    - [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest)
-    - [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse)
     - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
     - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
     - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
@@ -2039,6 +2066,7 @@ that is deposited by an user
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `burner_address` | [bytes](#bytes) |  |  |
 | `token_address` | [bytes](#bytes) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -2338,8 +2366,8 @@ Params is the parameter set for this module
 | `chain` | [string](#string) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `network` | [string](#string) |  |  |
-| `gateway` | [bytes](#bytes) |  |  |
-| `token` | [bytes](#bytes) |  |  |
+| `gateway_code` | [bytes](#bytes) |  |  |
+| `token_code` | [bytes](#bytes) |  |  |
 | `burnable` | [bytes](#bytes) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
@@ -2347,6 +2375,22 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `transaction_fee_rate` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingChain"></a>
+
+### PendingChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 
 
 
@@ -2377,7 +2421,45 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+| `chains` | [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GenesisState.Chain"></a>
+
+### GenesisState.Chain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `burner_infos` | [BurnerInfo](#evm.v1beta1.BurnerInfo) | repeated |  |
+| `command_queue` | [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry) | repeated |  |
+| `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
+| `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
+| `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GenesisState.Chain.CommandQueueEntry"></a>
+
+### GenesisState.Chain.CommandQueueEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Command](#evm.v1beta1.Command) |  |  |
 
 
 
@@ -3447,6 +3529,301 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="permission/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="permission.exported.v1beta1.Role"></a>
+
+### Role
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ROLE_UNSPECIFIED | 0 |  |
+| ROLE_ACCESS_CONTROL | 1 |  |
+| ROLE_CHAIN_MANAGEMENT | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/types.proto
+
+
+
+<a name="permission.v1beta1.GovAccount"></a>
+
+### GovAccount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `role` | [permission.exported.v1beta1.Role](#permission.exported.v1beta1.Role) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/params.proto
+
+
+
+<a name="permission.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/genesis.proto
+
+
+
+<a name="permission.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#permission.v1beta1.Params) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+| `gov_accounts` | [GovAccount](#permission.v1beta1.GovAccount) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/query.proto
+
+
+
+<a name="permission.v1beta1.QueryGovernanceKeyRequest"></a>
+
+### QueryGovernanceKeyRequest
+QueryGovernanceKeyRequest is the request type for the
+Query/GovernanceKey RPC method
+
+
+
+
+
+
+<a name="permission.v1beta1.QueryGovernanceKeyResponse"></a>
+
+### QueryGovernanceKeyResponse
+QueryGovernanceKeyResponse is the response type for the
+Query/GovernanceKey RPC method
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/tx.proto
+
+
+
+<a name="permission.v1beta1.DeregisterControllerRequest"></a>
+
+### DeregisterControllerRequest
+DeregisterController represents a message to deregister a controller account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `controller` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.DeregisterControllerResponse"></a>
+
+### DeregisterControllerResponse
+
+
+
+
+
+
+
+<a name="permission.v1beta1.RegisterControllerRequest"></a>
+
+### RegisterControllerRequest
+MsgRegisterController represents a message to register a controller account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `controller` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.RegisterControllerResponse"></a>
+
+### RegisterControllerResponse
+
+
+
+
+
+
+
+<a name="permission.v1beta1.UpdateGovernanceKeyRequest"></a>
+
+### UpdateGovernanceKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
+
+
+
+
+
+
+<a name="permission.v1beta1.UpdateGovernanceKeyResponse"></a>
+
+### UpdateGovernanceKeyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="permission.v1beta1.Msg"></a>
+
+### Msg
+Msg defines the gov Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `RegisterController` | [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse) |  | ||
+| `DeregisterController` | [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse) |  | ||
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+
+
+<a name="permission.v1beta1.Query"></a>
+
+### Query
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/permission/v1beta1/governance_key|
+
+ <!-- end services -->
+
+
+
 <a name="reward/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4496,7 +4873,6 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tss.v1beta1.Params) |  |  |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 | `key_recovery_infos` | [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo) | repeated |  |
 | `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
 | `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
@@ -4596,33 +4972,6 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_ids` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryGovernanceKeyRequest"></a>
-
-### QueryGovernanceKeyRequest
-QueryGovernanceKeyRequest is the request type for the
-Query/GovernanceKey RPC method
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryGovernanceKeyResponse"></a>
-
-### QueryGovernanceKeyResponse
-QueryGovernanceKeyResponse is the response type for the
-Query/GovernanceKey RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
 
 
 
@@ -5111,32 +5460,6 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="tss.v1beta1.UpdateGovernanceKeyRequest"></a>
-
-### UpdateGovernanceKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.UpdateGovernanceKeyResponse"></a>
-
-### UpdateGovernanceKeyResponse
-
-
-
-
-
-
-
 <a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
@@ -5240,7 +5563,6 @@ Msg defines the tss Msg service.
 | `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | ||
 | `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
-| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#tss.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#tss.v1beta1.UpdateGovernanceKeyResponse) |  | ||
 
 
 <a name="tss.v1beta1.Query"></a>
@@ -5250,7 +5572,6 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `GovernanceKey` | [QueryGovernanceKeyRequest](#tss.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#tss.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/tss/v1beta1/governance_key|
 
  <!-- end services -->
 
