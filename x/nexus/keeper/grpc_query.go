@@ -21,8 +21,13 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
 	}
 
+	depositChain, ok := k.GetChain(ctx, req.DepositChain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
+	}
+
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(depositChain.Name))
 	bz := k.getStore(ctx).GetRaw(key)
 	if bz == nil {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for %s", recipient.String())

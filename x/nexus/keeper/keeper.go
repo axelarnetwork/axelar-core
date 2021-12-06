@@ -148,7 +148,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress
 	}
 
 	k.getStore(ctx).Set(senderPrefix.Append(utils.LowerCaseKey(sender.String())), &recipient)
-	k.setLatestDepositAddress(ctx, recipient, sender.Address)
+	k.setLatestDepositAddress(ctx, recipient, sender)
 
 	return nil
 }
@@ -357,7 +357,7 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 }
 
 // set the deposit address for the given recipient
-func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipient exported.CrossChainAddress, address string) {
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String()))
-	k.getStore(ctx).SetRaw(key, []byte(address))
+func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipient, deposit exported.CrossChainAddress) {
+	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(deposit.Chain.Name))
+	k.getStore(ctx).SetRaw(key, []byte(deposit.Address))
 }
