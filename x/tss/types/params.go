@@ -94,7 +94,7 @@ func DefaultParams() Params {
 		UnbondingLockingKeyRotationCount: 4,
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 4, Denominator: 8},
 		MaxSignQueueSize:                 50,
-		MaxSimultaneousSignShares:        26,
+		MaxSimultaneousSignShares:        100,
 	}
 }
 
