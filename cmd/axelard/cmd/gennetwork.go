@@ -196,7 +196,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 
 func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName string) (chain evmTypes.GenesisState_Chain, index int) {
 	for index, chain = range chains {
-		if strings.EqualFold(param.Chain, chain) {
+		if strings.EqualFold(chainName, chain.Params.Chain) {
 			return
 		}
 	}
