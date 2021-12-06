@@ -200,7 +200,7 @@ func TestGetTokenAddress(t *testing.T) {
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	expected := types.Address(common.HexToAddress("0xaaAAf41eEacF8D42411F802F44548ce1C7Fa65c9"))
+	expected := types.Address(common.HexToAddress("0xDbB02DFedCc52cDC33C4eB6959Ea2f3DA67d6eEc"))
 
 	keeper := k.ForChain(chain)
 	keeper.SetParams(ctx, types.DefaultParams()[0])
@@ -224,7 +224,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 	recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
 	tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
-	expectedBurnerAddr := common.HexToAddress("0x7516De97ee6B5028B4Aa3349e6391d8bf3De01b4")
+	expectedBurnerAddr := common.HexToAddress("0x54507775880357AD534957B0520009b15CAB7c6F")
 	expectedSalt := common.Hex2Bytes("b365d534cb5d28d511a8baf1125240c97b09cb46710645b30ed64f302c4ae7ff")
 
 	chainKeeper := k.ForChain(exported.Ethereum.Name)
