@@ -46,7 +46,6 @@ func (m CrossChainAddress) Validate() error {
 		return err
 	}
 
-	// TODO: validate .Address according to .Chain
 	if m.Address == "" {
 		return fmt.Errorf("address must be set")
 	}
