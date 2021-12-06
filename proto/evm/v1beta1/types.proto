@@ -60,7 +60,11 @@ message ERC20TokenMetadata {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string tx_hash = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  Status status = 6;
+  bytes min_amount = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  Status status = 7;
 }
 
 enum Status {

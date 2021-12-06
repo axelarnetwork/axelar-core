@@ -419,7 +419,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount)
 	if err != nil {
 		panic(err)
 	}
@@ -838,7 +838,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(rand.Str(10), rand.Str(3)))
+		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(rand.Str(10), rand.Str(3)), sdk.NewInt(1000000))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
@@ -1234,6 +1234,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		msg = createMsgSignDeploy(createDetails(rand.Str(10), rand.Str(3)))
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
@@ -1265,11 +1266,11 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
 
-			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
-				return createMockERC20Token(asset, details), nil
+				return createMockERC20Token(asset, details, minDeposit), nil
 			},
 
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
@@ -1292,7 +1293,6 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return "", false
 			},
 		}
-		msg = createMsgSignDeploy(createDetails(rand.Str(10), rand.Str(3)))
 
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
 	}
@@ -1431,7 +1431,7 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	account := rand.AccAddr()
 
 	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
-	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details}
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinAmount: sdk.NewInt(1000000)}
 }
 
 func createDetails(name, symbol string) types.TokenDetails {
@@ -1441,10 +1441,11 @@ func createDetails(name, symbol string) types.TokenDetails {
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
 
-func createMockERC20Token(asset string, details types.TokenDetails) types.ERC20Token {
+func createMockERC20Token(asset string, details types.TokenDetails, minAmount sdk.Int) types.ERC20Token {
 	meta := types.ERC20TokenMetadata{
 		Asset:        asset,
 		Details:      details,
+		MinAmount:    minAmount,
 		Status:       types.Initialized,
 		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),

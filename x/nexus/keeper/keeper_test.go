@@ -206,6 +206,47 @@ func TestPrepareSuccess(t *testing.T) {
 	assert.Equal(t, linkedAddr, count)
 }
 
+func TestPrepareMerge(t *testing.T) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	keeper.SetParams(ctx, types.DefaultParams())
+
+	// merge transfers from same sender
+	sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
+	keeper.LinkAddresses(ctx, sender, recipient)
+	firstAmount := makeRandAmount(btcTypes.Satoshi)
+	err := keeper.EnqueueForTransfer(ctx, sender, firstAmount, feeRate)
+	assert.NoError(t, err)
+	recp, ok := keeper.GetRecipient(ctx, sender)
+	assert.True(t, ok)
+	assert.Equal(t, recipient, recp)
+	transfers := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)
+	assert.Len(t, transfers, 1)
+	firstFeeDue := sdk.NewDecFromInt(firstAmount.Amount).Mul(feeRate).TruncateInt()
+	assert.Equal(t, firstAmount.Amount.Sub(firstFeeDue), transfers[0].Asset.Amount)
+
+	secondAmount := makeRandAmount(btcTypes.Satoshi)
+	err = keeper.EnqueueForTransfer(ctx, sender, secondAmount, feeRate)
+	assert.NoError(t, err)
+	recp, ok = keeper.GetRecipient(ctx, sender)
+	assert.True(t, ok)
+	assert.Equal(t, recipient, recp)
+	transfers = keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)
+	assert.Len(t, transfers, 1)
+	secondFeeDue := sdk.NewDecFromInt(secondAmount.Amount).Mul(feeRate).TruncateInt()
+	total := firstAmount.Amount.Sub(firstFeeDue).Add(secondAmount.Amount.Sub(secondFeeDue))
+	assert.Equal(t, total, transfers[0].Asset.Amount)
+
+	// new transfer from some other sender
+	sender, recipient = makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
+	keeper.LinkAddresses(ctx, sender, recipient)
+	err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+	assert.NoError(t, err)
+	recp, ok = keeper.GetRecipient(ctx, sender)
+	assert.True(t, ok)
+	assert.Equal(t, recipient, recp)
+	assert.Len(t, keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending), 2)
+}
+
 func TestArchive(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetParams(ctx, types.DefaultParams())

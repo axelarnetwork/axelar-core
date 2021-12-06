@@ -43,6 +43,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain string) (string, bool) {
 // 				panic("mock out the GetIBCPath method")
 // 			},
+// 			GetMinAmountFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+// 				panic("mock out the GetMinAmount method")
+// 			},
 // 			GetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool) {
 // 				panic("mock out the GetPendingIBCTransfer method")
 // 			},
@@ -94,6 +97,9 @@ type BaseKeeperMock struct {
 
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain string) (string, bool)
+
+	// GetMinAmountFunc mocks the GetMinAmount method.
+	GetMinAmountFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Int
 
 	// GetPendingIBCTransferFunc mocks the GetPendingIBCTransfer method.
 	GetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool)
@@ -165,6 +171,11 @@ type BaseKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// GetMinAmount holds details about calls to the GetMinAmount method.
+		GetMinAmount []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// GetPendingIBCTransfer holds details about calls to the GetPendingIBCTransfer method.
 		GetPendingIBCTransfer []struct {
@@ -238,6 +249,7 @@ type BaseKeeperMock struct {
 	lockGetCosmosChains            sync.RWMutex
 	lockGetFeeCollector            sync.RWMutex
 	lockGetIBCPath                 sync.RWMutex
+	lockGetMinAmount               sync.RWMutex
 	lockGetPendingIBCTransfer      sync.RWMutex
 	lockGetRouteTimeoutWindow      sync.RWMutex
 	lockGetTransactionFeeRate      sync.RWMutex
@@ -456,6 +468,37 @@ func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	mock.lockGetIBCPath.RLock()
 	calls = mock.calls.GetIBCPath
 	mock.lockGetIBCPath.RUnlock()
+	return calls
+}
+
+// GetMinAmount calls GetMinAmountFunc.
+func (mock *BaseKeeperMock) GetMinAmount(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+	if mock.GetMinAmountFunc == nil {
+		panic("BaseKeeperMock.GetMinAmountFunc: method is nil but BaseKeeper.GetMinAmount was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetMinAmount.Lock()
+	mock.calls.GetMinAmount = append(mock.calls.GetMinAmount, callInfo)
+	mock.lockGetMinAmount.Unlock()
+	return mock.GetMinAmountFunc(ctx)
+}
+
+// GetMinAmountCalls gets all the calls that were made to GetMinAmount.
+// Check the length with:
+//     len(mockedBaseKeeper.GetMinAmountCalls())
+func (mock *BaseKeeperMock) GetMinAmountCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetMinAmount.RLock()
+	calls = mock.calls.GetMinAmount
+	mock.lockGetMinAmount.RUnlock()
 	return calls
 }
 

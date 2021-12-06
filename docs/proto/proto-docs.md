@@ -397,6 +397,7 @@ Params represent the genesis parameters for the module
 | `supported_chains` | [string](#string) | repeated |  |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 | `transaction_fee_rate` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 
 
 
@@ -2099,6 +2100,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 
 
@@ -2751,6 +2753,7 @@ command for AxelarGateway
 | `chain` | [string](#string) |  |  |
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 
 
 

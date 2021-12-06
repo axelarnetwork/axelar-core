@@ -63,6 +63,14 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
+// GetMinAmount returns the minimum deposit amount
+func (k Keeper) GetMinAmount(ctx sdk.Context) sdk.Int {
+	var result sdk.Int
+	k.params.Get(ctx, types.KeyMinAmount, &result)
+
+	return result
+}
+
 // GetTransactionFeeRate returns the transaction fee rate for axelarnet and cosmos chains
 func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 	var result sdk.Dec
@@ -187,7 +195,7 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
 }
 
 func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types.CosmosChain, ok bool) {
-        return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
+	return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
 }
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain

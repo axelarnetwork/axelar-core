@@ -288,18 +288,22 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return "", false
 			},
 			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
+			GetMinAmountFunc: func(sdk.Context) sdk.Int {
+				return sdk.NewInt(1000000)
+			},
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain)
+					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
 					transfers = append(transfers, transfer)
 				}
 				randTransferIdx = mathRand.Intn(len(transfers))
@@ -339,6 +343,26 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 	}).Repeat(repeatCount))
 
+	t.Run("should not mint any tokens due to no transfer meeting the minimum deposit amount", testutils.Func(func(t *testing.T) {
+		setup()
+		nexusKeeper.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
+			transfers = []nexus.CrossChainTransfer{}
+			for i := int64(0); i < rand.I64Between(1, 50); i++ {
+				transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
+				transfer.Asset.Amount = sdk.NewInt(100000)
+				transfers = append(transfers, transfer)
+			}
+			randTransferIdx = mathRand.Intn(len(transfers))
+			return transfers
+		}
+		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
+		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Len(t, bankKeeper.MintCoinsCalls(), 0)
+		assert.Len(t, bankKeeper.SendCoinsCalls(), 0)
+		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), 0)
+	}).Repeat(repeatCount))
+
 	t.Run("should continue when MintCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		bankKeeper.MintCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
@@ -372,7 +396,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		setup()
 		transfers = []nexus.CrossChainTransfer{}
 		for i := int64(0); i < rand.I64Between(1, 50); i++ {
-			transfer := randomTransfer(exported.Axelarnet.NativeAsset, testChain)
+			transfer := randomTransfer(exported.Axelarnet.NativeAsset, testChain, sdk.NewInt(1000000))
 			transfers = append(transfers, transfer)
 		}
 		nexusKeeper.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
@@ -457,7 +481,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain)
+					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
 					transfers = append(transfers, transfer)
 				}
 				return transfers
@@ -549,14 +573,14 @@ func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
 
 }
 
-func randomTransfer(asset string, chain string) nexus.CrossChainTransfer {
+func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossChainTransfer {
 	hash := sha256.Sum256(rand.BytesBetween(20, 50))
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 	c := nexus.Chain{Name: chain, NativeAsset: "cosmos", SupportsForeignAssets: true, Module: rand.Str(10)}
 
 	return nexus.CrossChainTransfer{
 		Recipient: nexus.CrossChainAddress{Chain: c, Address: ranAddr},
-		Asset:     sdk.NewInt64Coin(asset, rand.I64Between(1, 10000000000)),
+		Asset:     sdk.NewInt64Coin(asset, rand.I64Between(minAmount.Int64(), minAmount.Int64()+10000000000)),
 		ID:        mathRand.Uint64(),
 	}
 }

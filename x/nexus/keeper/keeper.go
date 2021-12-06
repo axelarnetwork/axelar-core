@@ -180,6 +180,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// collect fee
+	// TODO: this should be now done upon mint/withdrawl rather than per individual transfer
 	feeCollector, ok := k.axelarnetKeeper.GetFeeCollector(ctx)
 	feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
 	if ok && feeDue.IsPositive() {
@@ -192,10 +193,22 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	if sender.Chain.NativeAsset != asset.Denom {
 		k.subtractFromChainTotal(ctx, sender.Chain, asset)
 	}
-	k.setPendingTransfer(ctx, recipient, asset)
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		asset.Amount.String(), recipient.Address, recipient.Chain.Name))
 
+	// merging transfers for the specified recipient
+	previousTransfer, found := k.getPendingTransferForRecipientAndAsset(ctx, recipient, asset.Denom)
+
+	if found {
+		asset = asset.Add(previousTransfer.Asset)
+
+		key := utils.LowerCaseKey(previousTransfer.Recipient.Chain.Name).
+			Append(utils.LowerCaseKey(strconv.FormatUint(previousTransfer.ID, 10)))
+		k.getStore(ctx).Delete(utils.LowerCaseKey(exported.Pending.String()).Append(key))
+	}
+
+	k.setPendingTransfer(ctx, recipient, asset)
+
+	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
+		asset.String(), recipient.Address, recipient.Chain.Name))
 	return nil
 }
 
@@ -276,13 +289,29 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
 		var transfer exported.CrossChainTransfer
-		k.cdc.MustUnmarshalLengthPrefixed(bz, &transfer)
+		iter.UnmarshalValue(&transfer)
 		transfers = append(transfers, transfer)
 	}
 
 	return transfers
+}
+
+func (k Keeper) getPendingTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string) (exported.CrossChainTransfer, bool) {
+	prefix := utils.LowerCaseKey(exported.Pending.String()).Append(utils.LowerCaseKey(recipient.Chain.Name))
+	iter := k.getStore(ctx).Iterator(prefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var transfer exported.CrossChainTransfer
+		iter.UnmarshalValue(&transfer)
+
+		if recipient == transfer.Recipient && denom == transfer.Asset.Denom {
+			return transfer, true
+		}
+	}
+
+	return exported.CrossChainTransfer{}, false
 }
 
 func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) types.ChainState {

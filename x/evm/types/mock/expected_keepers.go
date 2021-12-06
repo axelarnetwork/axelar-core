@@ -2489,7 +2489,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			ConfirmPendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
 // 				panic("mock out the ConfirmPendingGateway method")
 // 			},
-// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
 // 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, error) {
@@ -2626,7 +2626,7 @@ type ChainKeeperMock struct {
 	ConfirmPendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) error
 
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
-	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error)
+	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int) (types.ERC20Token, error)
 
 	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
 	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, error)
@@ -2776,6 +2776,8 @@ type ChainKeeperMock struct {
 			Asset string
 			// Details is the details argument value.
 			Details types.TokenDetails
+			// MinDeposit is the minDeposit argument value.
+			MinDeposit github_com_cosmos_cosmos_sdk_types.Int
 		}
 		// CreateNewBatchToSign holds details about calls to the CreateNewBatchToSign method.
 		CreateNewBatchToSign []struct {
@@ -3184,37 +3186,41 @@ func (mock *ChainKeeperMock) ConfirmPendingGatewayCalls() []struct {
 }
 
 // CreateERC20Token calls CreateERC20TokenFunc.
-func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails) (types.ERC20Token, error) {
+func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int) (types.ERC20Token, error) {
 	if mock.CreateERC20TokenFunc == nil {
 		panic("ChainKeeperMock.CreateERC20TokenFunc: method is nil but ChainKeeper.CreateERC20Token was just called")
 	}
 	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Asset   string
-		Details types.TokenDetails
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Asset      string
+		Details    types.TokenDetails
+		MinDeposit github_com_cosmos_cosmos_sdk_types.Int
 	}{
-		Ctx:     ctx,
-		Asset:   asset,
-		Details: details,
+		Ctx:        ctx,
+		Asset:      asset,
+		Details:    details,
+		MinDeposit: minDeposit,
 	}
 	mock.lockCreateERC20Token.Lock()
 	mock.calls.CreateERC20Token = append(mock.calls.CreateERC20Token, callInfo)
 	mock.lockCreateERC20Token.Unlock()
-	return mock.CreateERC20TokenFunc(ctx, asset, details)
+	return mock.CreateERC20TokenFunc(ctx, asset, details, minDeposit)
 }
 
 // CreateERC20TokenCalls gets all the calls that were made to CreateERC20Token.
 // Check the length with:
 //     len(mockedChainKeeper.CreateERC20TokenCalls())
 func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Asset   string
-	Details types.TokenDetails
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	Asset      string
+	Details    types.TokenDetails
+	MinDeposit github_com_cosmos_cosmos_sdk_types.Int
 } {
 	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Asset   string
-		Details types.TokenDetails
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Asset      string
+		Details    types.TokenDetails
+		MinDeposit github_com_cosmos_cosmos_sdk_types.Int
 	}
 	mock.lockCreateERC20Token.RLock()
 	calls = mock.calls.CreateERC20Token
