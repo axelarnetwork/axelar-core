@@ -419,7 +419,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinDeposit)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount)
 	if err != nil {
 		panic(err)
 	}
@@ -1431,7 +1431,7 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	account := rand.AccAddr()
 
 	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
-	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinDeposit: sdk.NewInt(1000000)}
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinAmount: sdk.NewInt(1000000)}
 }
 
 func createDetails(name, symbol string) types.TokenDetails {
@@ -1441,11 +1441,11 @@ func createDetails(name, symbol string) types.TokenDetails {
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
 
-func createMockERC20Token(asset string, details types.TokenDetails, minDeposit sdk.Int) types.ERC20Token {
+func createMockERC20Token(asset string, details types.TokenDetails, minAmount sdk.Int) types.ERC20Token {
 	meta := types.ERC20TokenMetadata{
 		Asset:        asset,
 		Details:      details,
-		MinDeposit:   minDeposit,
+		MinAmount:    minAmount,
 		Status:       types.Initialized,
 		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),

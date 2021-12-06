@@ -2100,7 +2100,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
-| `min_deposit` | [bytes](#bytes) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 
 
@@ -2753,7 +2753,7 @@ command for AxelarGateway
 | `chain` | [string](#string) |  |  |
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
-| `min_deposit` | [bytes](#bytes) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
 
 
 

@@ -91,9 +91,9 @@ func (t *ERC20Token) GetDetails() TokenDetails {
 	return t.metadata.Details
 }
 
-// GetMinDeposit returns the minimum deposit amount allowed for the token
-func (t *ERC20Token) GetMinDeposit() sdk.Int {
-	return t.metadata.MinDeposit
+// GetMinAmount returns the minimum amount allowed for mint/withdrawals
+func (t *ERC20Token) GetMinAmount() sdk.Int {
+	return t.metadata.MinAmount
 }
 
 // Is returns true if the given status matches the token's status

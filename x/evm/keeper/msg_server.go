@@ -1026,7 +1026,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinDeposit)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinAmount)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
@@ -1236,7 +1236,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	var transfersToArchive []nexus.CrossChainTransfer
 	for _, transfer := range pendingTransfers {
 		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
-		if transfer.Asset.Amount.LT(token.GetMinDeposit()) {
+		if transfer.Asset.Amount.LT(token.GetMinAmount()) {
 			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
 				"minimum amount for token %s (%s)", chain.Name, transfer.Recipient.Address, token.GetDetails().TokenName, token.GetDetails().Symbol))
 			continue

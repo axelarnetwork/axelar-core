@@ -680,7 +680,7 @@ func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (t
 	return result, found
 }
 
-func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20TokenMetadata, error) {
+func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, minAmount sdk.Int) (types.ERC20TokenMetadata, error) {
 	// perform a few checks now, so that it is impossible to get errors later
 	if token := k.GetERC20TokenByAsset(ctx, asset); !token.Is(types.NonExistent) {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("token for asset '%s' already set", asset)
@@ -716,7 +716,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		Details:      details,
 		TokenAddress: types.Address(tokenAddr),
 		ChainID:      sdk.NewIntFromBigInt(chainID),
-		MinDeposit:   minDeposit,
+		MinAmount:    minAmount,
 		Status:       types.Initialized,
 	}
 	k.setTokenMetadata(ctx, asset, meta)
