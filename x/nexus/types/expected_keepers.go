@@ -16,6 +16,9 @@ import (
 type Nexus interface {
 	Logger(ctx sdk.Context) log.Logger
 
+	InitGenesis(ctx sdk.Context, genState *GenesisState)
+	ExportGenesis(ctx sdk.Context) *GenesisState
+
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
 

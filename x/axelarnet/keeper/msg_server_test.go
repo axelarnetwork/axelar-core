@@ -52,8 +52,8 @@ func TestHandleMsgLink(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
 			LinkAddressesFunc:     func(sdk.Context, nexus.CrossChainAddress, nexus.CrossChainAddress) error { return nil },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 		}
 
 		ctx = rand.Context(nil)
@@ -81,7 +81,7 @@ func TestHandleMsgLink(t *testing.T) {
 	t.Run("should return error when the given asset is not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgLink()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -117,7 +117,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc:  func(sdk.Context, string, string) bool { return true },
+			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
 			AddToChainTotalFunc:    func(_ sdk.Context, _ nexus.Chain, _ sdk.Coin) {},
 		}
@@ -186,7 +186,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should enqueue Transfer in nexus keeper when registered ICS20 tokens are sent from burner address to escrow address", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
 		msg.Token.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -201,7 +201,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should return error when ICS20 token hash not found in IBCTransferKeeper", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		transferKeeper.GetDenomTraceFunc = func(sdk.Context, tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
 			return ibctypes.DenomTrace{}, false
 		}
@@ -213,7 +213,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should return error when ICS20 token path not registered in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) {
 			return "", false
 		}
@@ -225,7 +225,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should return error when ICS20 token tracing path does not match registered path in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) {
 			return randomIBCPath(), true
 		}
@@ -237,7 +237,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should return error when SendCoins in bank keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		bankKeeper.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
 			return fmt.Errorf("failed")
 		}
@@ -264,7 +264,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("should return error when asset is not a valid IBC denom and not registered", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, string, string) bool { return false }
+		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
 		msg.Token.Denom = "ibc" + randomDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -318,7 +318,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc:  func(sdk.Context, string, string) bool { return true },
+			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
 		}
 		bankKeeper = &mock.BankKeeperMock{
@@ -495,7 +495,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc: func(sdk.Context, string, string) bool { return true },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },

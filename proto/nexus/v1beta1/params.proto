@@ -4,14 +4,11 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
 import "utils/v1beta1/threshold.proto";
-import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
 message Params {
-  repeated nexus.exported.v1beta1.Chain chains = 1
-      [ (gogoproto.nullable) = false ];
-  utils.v1beta1.Threshold chain_activation_threshold = 2
+  utils.v1beta1.Threshold chain_activation_threshold = 1
       [ (gogoproto.nullable) = false ];
 }

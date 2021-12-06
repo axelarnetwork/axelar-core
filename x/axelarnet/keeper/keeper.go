@@ -50,7 +50,7 @@ func (k Keeper) setParams(ctx sdk.Context, n types.Nexus, p types.Params) {
 	for _, c := range p.SupportedChains {
 		chain, ok := n.GetChain(ctx, c)
 		if ok {
-			n.RegisterAsset(ctx, exported.Axelarnet.Name, chain.NativeAsset)
+			n.RegisterAsset(ctx, exported.Axelarnet, chain.NativeAsset)
 		}
 	}
 }

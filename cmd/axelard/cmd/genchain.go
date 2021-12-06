@@ -19,7 +19,6 @@ import (
 
 // AddGenesisEVMChainCmd returns set-genesis-chain cobra Command.
 func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:   "add-genesis-evm-chain [name] [native asset]",
 		Short: "Adds an EVM chain in genesis.json",
@@ -56,9 +55,7 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			genesisState := nexusTypes.GetGenesisStateFromAppState(cdc, appState)
-			chains := genesisState.Params.Chains
-			chains = append(chains, chain)
-			genesisState.Params.Chains = chains
+			genesisState.Chains = append(genesisState.Chains, chain)
 
 			genesisStateBz, err := cdc.MarshalJSON(&genesisState)
 			if err != nil {

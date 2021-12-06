@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,12 +25,11 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
 	}
 
-	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	key := depositAddrPrefix.Append(utils.LowerCaseKey(recipient.String())).Append(utils.LowerCaseKey(depositChain.Name))
-	bz := k.getStore(ctx).GetRaw(key)
-	if bz == nil {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for %s", recipient.String())
+	recipientAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
+	depositAddress, ok := k.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
 	}
 
-	return &types.LatestDepositAddressResponse{DepositAddr: string(bz)}, nil
+	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
 }

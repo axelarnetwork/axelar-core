@@ -117,7 +117,7 @@ type Nexus interface {
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
-	IsAssetRegistered(ctx sdk.Context, chainName, denom string) bool
+	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }

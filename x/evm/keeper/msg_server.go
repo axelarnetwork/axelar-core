@@ -244,7 +244,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain.Name, req.Asset)
+	found := s.nexus.IsAssetRegistered(ctx, recipientChain, req.Asset)
 	if !found || !token.Is(types.Confirmed) {
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
@@ -703,7 +703,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.SetChain(ctx, chain)
-	s.nexus.RegisterAsset(ctx, chain.Name, chain.NativeAsset)
+	s.nexus.RegisterAsset(ctx, chain, chain.NativeAsset)
 
 	return &types.VoteConfirmChainResponse{}, nil
 }
@@ -896,7 +896,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain.Name, req.Asset)
+	s.nexus.RegisterAsset(ctx, chain, req.Asset)
 	token.ConfirmDeployment()
 
 	return &types.VoteConfirmTokenResponse{
@@ -1013,7 +1013,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	if !s.nexus.IsAssetRegistered(ctx, originChain.Name, req.Asset.Name) {
+	if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
 		return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
 	}
 

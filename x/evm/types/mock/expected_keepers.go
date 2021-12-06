@@ -1155,7 +1155,7 @@ var _ types.Nexus = &NexusMock{}
 // 			GetTransfersForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
-// 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) bool {
+// 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
 // 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) bool {
@@ -1164,7 +1164,7 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string)  {
+// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
@@ -1199,7 +1199,7 @@ type NexusMock struct {
 	GetTransfersForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
-	IsAssetRegisteredFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) bool
+	IsAssetRegisteredFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string) bool
 
 	// IsChainActivatedFunc mocks the IsChainActivated method.
 	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) bool
@@ -1208,7 +1208,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string)
+	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string)
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
@@ -1272,8 +1272,8 @@ type NexusMock struct {
 		IsAssetRegistered []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// ChainName is the chainName argument value.
-			ChainName string
+			// Chain is the chain argument value.
+			Chain nexus.Chain
 			// Denom is the denom argument value.
 			Denom string
 		}
@@ -1297,8 +1297,8 @@ type NexusMock struct {
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// ChainName is the chainName argument value.
-			ChainName string
+			// Chain is the chain argument value.
+			Chain nexus.Chain
 			// Denom is the denom argument value.
 			Denom string
 		}
@@ -1578,37 +1578,37 @@ func (mock *NexusMock) GetTransfersForChainCalls() []struct {
 }
 
 // IsAssetRegistered calls IsAssetRegisteredFunc.
-func (mock *NexusMock) IsAssetRegistered(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) bool {
+func (mock *NexusMock) IsAssetRegistered(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string) bool {
 	if mock.IsAssetRegisteredFunc == nil {
 		panic("NexusMock.IsAssetRegisteredFunc: method is nil but Nexus.IsAssetRegistered was just called")
 	}
 	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		ChainName string
-		Denom     string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+		Denom string
 	}{
-		Ctx:       ctx,
-		ChainName: chainName,
-		Denom:     denom,
+		Ctx:   ctx,
+		Chain: chain,
+		Denom: denom,
 	}
 	mock.lockIsAssetRegistered.Lock()
 	mock.calls.IsAssetRegistered = append(mock.calls.IsAssetRegistered, callInfo)
 	mock.lockIsAssetRegistered.Unlock()
-	return mock.IsAssetRegisteredFunc(ctx, chainName, denom)
+	return mock.IsAssetRegisteredFunc(ctx, chain, denom)
 }
 
 // IsAssetRegisteredCalls gets all the calls that were made to IsAssetRegistered.
 // Check the length with:
 //     len(mockedNexus.IsAssetRegisteredCalls())
 func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	ChainName string
-	Denom     string
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+	Denom string
 } {
 	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		ChainName string
-		Denom     string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+		Denom string
 	}
 	mock.lockIsAssetRegistered.RLock()
 	calls = mock.calls.IsAssetRegistered
@@ -1691,37 +1691,37 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName string, denom string) {
+func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string) {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		ChainName string
-		Denom     string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+		Denom string
 	}{
-		Ctx:       ctx,
-		ChainName: chainName,
-		Denom:     denom,
+		Ctx:   ctx,
+		Chain: chain,
+		Denom: denom,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	mock.RegisterAssetFunc(ctx, chainName, denom)
+	mock.RegisterAssetFunc(ctx, chain, denom)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
 // Check the length with:
 //     len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	ChainName string
-	Denom     string
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain nexus.Chain
+	Denom string
 } {
 	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		ChainName string
-		Denom     string
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain nexus.Chain
+		Denom string
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
