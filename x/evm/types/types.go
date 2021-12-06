@@ -134,14 +134,7 @@ func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainT
 		return Command{}, err
 	}
 
-	return CreateMintTokenCommand(
-		t.metadata.ChainID.BigInt(),
-		key,
-		transferIDtoCommandID(transfer.ID),
-		t.metadata.Details.Symbol,
-		common.HexToAddress(transfer.Recipient.Address),
-		transfer.Asset.Amount.BigInt(),
-	)
+	return CreateMintTokenCommand(key, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
 }
 
 func transferIDtoCommandID(transferID uint64) CommandID {
@@ -342,15 +335,6 @@ type CommandParams struct {
 	Sender    string
 }
 
-// DepositState is an enum for the state of a deposit
-type DepositState int
-
-// States of confirmed deposits
-const (
-	CONFIRMED DepositState = iota
-	BURNED
-)
-
 // KeysToAddresses converts a slice of ECDSA public keys to evm addresses
 func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	addresses := make([]common.Address, len(keys))
@@ -443,7 +427,7 @@ func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
 func GetSignHash(commandData []byte) common.Hash {
 	hash := crypto.Keccak256(commandData)
 
-	//TODO: is this the same across any EVM chain?
+	// TODO: is this the same across any EVM chain?
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
 
 	return crypto.Keccak256Hash([]byte(msg))
@@ -485,7 +469,7 @@ func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails To
 }
 
 // CreateMintTokenCommand creates a command to mint token to the given address
-func CreateMintTokenCommand(chainID *big.Int, keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
+func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
 	params, err := createMintTokenParams(symbol, address, amount)
 	if err != nil {
 		return Command{}, err
@@ -687,6 +671,9 @@ type CommandBatch struct {
 	metadata CommandBatchMetadata
 	setter   func(batch CommandBatchMetadata)
 }
+
+// NonExistentCommand can be used to represent a non-existent command
+var NonExistentCommand = NewCommandBatch(CommandBatchMetadata{}, func(CommandBatchMetadata) {})
 
 // NewCommandBatch returns a new command batch struct
 func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBatchMetadata)) CommandBatch {
@@ -891,7 +878,7 @@ func (m TokenDetails) Validate() error {
 	if m.Symbol == "" {
 		return fmt.Errorf("missing token symbol")
 	}
-	if !m.Capacity.IsPositive() {
+	if m.Capacity.IsNil() || !m.Capacity.IsPositive() {
 		return fmt.Errorf("token capacity must be a positive number")
 	}
 
@@ -1045,4 +1032,65 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	}
 
 	return result, nil
+}
+
+// ValidateBasic does stateless validation of the object
+func (m *BurnerInfo) ValidateBasic() error {
+	if m.DestinationChain == "" {
+		return fmt.Errorf("destination chain not set")
+	}
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+	if m.Symbol == "" {
+		return fmt.Errorf("symbol not set")
+	}
+
+	return nil
+}
+
+// ValidateBasic does stateless validation of the object
+func (m *Gateway) ValidateBasic() error {
+	if m.Status == GatewayStatusNone {
+		return fmt.Errorf("gatway status not set")
+	}
+	return nil
+}
+
+// ValidateBasic does stateless validation of the object
+func (m *ERC20TokenMetadata) ValidateBasic() error {
+	if m.Status == NonExistent {
+		return fmt.Errorf("token status not set")
+	}
+
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+
+	if m.ChainID.IsNil() || !m.ChainID.IsPositive() {
+		return fmt.Errorf("chain ID not set")
+	}
+
+	if err := m.Details.Validate(); err != nil {
+		return err
+	}
+
+	if m.MinAmount.IsNil() || !m.MinAmount.IsPositive() {
+		return fmt.Errorf("minimum amount not set")
+	}
+
+	return nil
+}
+
+// ValidateBasic does stateless validation of the object
+func (m *ERC20Deposit) ValidateBasic() error {
+	if m.Asset == "" {
+		return fmt.Errorf("asset not set")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("amount must be >0")
+	}
+
+	return nil
 }

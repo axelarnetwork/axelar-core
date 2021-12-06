@@ -29,9 +29,9 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		axelarnetSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+		axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = axelarnetKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace)
+		keeper = axelarnetKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace)
 	}
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		setup()
@@ -72,9 +72,9 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 	)
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		axelarnetSubspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+		axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = axelarnetKeeper.NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace)
+		keeper = axelarnetKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace)
 	}
 	t.Run("should return list of registered cosmos chains", testutils.Func(func(t *testing.T) {
 		setup()

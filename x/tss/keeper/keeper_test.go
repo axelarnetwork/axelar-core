@@ -73,7 +73,7 @@ func setup() *testSetup {
 		},
 	}
 
-	subspace := params.NewSubspace(encCfg.Marshaler, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 	setup := &testSetup{
 		Voter:       voter,
 		Snapshotter: snapshotter,
@@ -99,7 +99,7 @@ func setup() *testSetup {
 	}
 	rewarder := &tssMock.RewarderMock{}
 
-	k := NewKeeper(encCfg.Marshaler, sdk.NewKVStoreKey("tss"), subspace, slasher, rewarder)
+	k := NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("tss"), subspace, slasher, rewarder)
 	k.SetParams(ctx, types.DefaultParams())
 
 	setup.Keeper = k

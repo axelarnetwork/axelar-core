@@ -148,9 +148,12 @@
   
 - [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
     - [Params](#evm.v1beta1.Params)
+    - [PendingChain](#evm.v1beta1.PendingChain)
   
 - [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
     - [GenesisState](#evm.v1beta1.GenesisState)
+    - [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain)
+    - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
@@ -2020,6 +2023,7 @@ that is deposited by an user
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `burner_address` | [bytes](#bytes) |  |  |
 | `token_address` | [bytes](#bytes) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
@@ -2319,8 +2323,8 @@ Params is the parameter set for this module
 | `chain` | [string](#string) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `network` | [string](#string) |  |  |
-| `gateway` | [bytes](#bytes) |  |  |
-| `token` | [bytes](#bytes) |  |  |
+| `gateway_code` | [bytes](#bytes) |  |  |
+| `token_code` | [bytes](#bytes) |  |  |
 | `burnable` | [bytes](#bytes) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
@@ -2328,6 +2332,22 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `transaction_fee_rate` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingChain"></a>
+
+### PendingChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 
 
 
@@ -2358,7 +2378,45 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#evm.v1beta1.Params) | repeated |  |
+| `chains` | [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GenesisState.Chain"></a>
+
+### GenesisState.Chain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `burner_infos` | [BurnerInfo](#evm.v1beta1.BurnerInfo) | repeated |  |
+| `command_queue` | [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry) | repeated |  |
+| `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
+| `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
+| `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GenesisState.Chain.CommandQueueEntry"></a>
+
+### GenesisState.Chain.CommandQueueEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Command](#evm.v1beta1.Command) |  |  |
 
 
 
