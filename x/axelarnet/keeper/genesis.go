@@ -8,9 +8,7 @@ import (
 // InitGenesis initializes the reward module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.GenesisState) {
 	k.setParams(ctx, nexus, genState.Params)
-	if err := k.SetFeeCollector(ctx, genState.CollectorAddress); err != nil {
-		panic(err)
-	}
+	k.SetFeeCollector(ctx, genState.CollectorAddress)
 
 	for _, chain := range genState.Chains {
 		k.SetCosmosChain(ctx, types.CosmosChain{
