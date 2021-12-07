@@ -24,7 +24,7 @@ type BaseKeeper interface {
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, chain string) (string, bool)
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
-	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress)
+	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) error
 	SetPendingIBCTransfer(ctx sdk.Context, transfer IBCTransfer)
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
