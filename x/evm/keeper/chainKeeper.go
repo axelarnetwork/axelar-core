@@ -642,7 +642,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
 
 	command, ok := k.popCommand(ctx)
 	if !ok {
-		return nil, fmt.Errorf("no commands to sign found")
+		return nil, &NoCommandsToSignError{}
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
