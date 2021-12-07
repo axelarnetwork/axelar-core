@@ -27,8 +27,8 @@ func less(chains []GenesisState_Chain) func(i int, j int) bool {
 }
 
 // DefaultGenesisState returns a default genesis state
-func DefaultGenesisState() *GenesisState {
-	return &GenesisState{Chains: DefaultChains()}
+func DefaultGenesisState() GenesisState {
+	return GenesisState{Chains: DefaultChains()}
 }
 
 // DefaultChains returns the default chains for a genesis state
@@ -59,10 +59,6 @@ func (m GenesisState) Validate() error {
 	for j, chain := range m.Chains {
 		if err := chain.Params.Validate(); err != nil {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid params"))
-		}
-
-		if err := chain.Gateway.ValidateBasic(); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid gateway"))
 		}
 
 		if chain.Gateway.Status != GatewayStatusConfirmed {
