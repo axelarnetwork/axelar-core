@@ -37,6 +37,10 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 			k.setSnapshotCounterForKeyID(ctx, key.ID, key.SnapshotCounter)
 		}
 
+		if _, ok := rotationCountMap[key.Chain]; !ok {
+			rotationCountMap[key.Chain] = make(map[exported.KeyRole]int64)
+		}
+
 		rotationCount, ok := rotationCountMap[key.Chain][key.Role]
 		if !ok || key.RotationCount > rotationCount {
 			rotationCountMap[key.Chain][key.Role] = key.RotationCount
