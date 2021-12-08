@@ -613,8 +613,21 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
 					return types.PendingChain{
-						Chain:  nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true,Module: rand.Str(10)},
-						Params: types.Params{},
+						Chain: nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true, Module: rand.Str(10)},
+						Params: types.Params{
+							GatewayCode:         rand.Bytes(1024),
+							TokenCode:           rand.Bytes(1024),
+							Burnable:            rand.Bytes(1024),
+							Chain:               msg.Name,
+							ConfirmationHeight:  1,
+							Network:             "Fuji",
+							RevoteLockingPeriod: 50,
+							Networks:            []types.NetworkInfo{{Name: "Fuji", Id: sdk.NewInt(47)}},
+							VotingThreshold:     utils.NewThreshold(2, 5),
+							MinVoterCount:       2,
+							CommandsGasLimit:    1000,
+							TransactionFeeRate:  sdk.ZeroDec(),
+						},
 					}, true
 				}
 				return types.PendingChain{}, false
