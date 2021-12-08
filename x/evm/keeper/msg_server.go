@@ -386,22 +386,13 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		return nil, fmt.Errorf("unable to take snapshot: %v", err)
 	}
 
-	keeper := s.ForChain(req.Name)
-
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Name)
+	if err := pendingChain.Params.Validate(); err != nil {
+		return nil, err
 	}
 
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", req.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", req.Name)
-	}
+	period := pendingChain.Params.RevoteLockingPeriod
+	votingThreshold := pendingChain.Params.VotingThreshold
+	minVoterCount := pendingChain.Params.MinVoterCount
 
 	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
 	if err := s.voter.InitializePollWithSnapshot(
