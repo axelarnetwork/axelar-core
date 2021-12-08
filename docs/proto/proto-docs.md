@@ -427,7 +427,6 @@ Params represent the genesis parameters for the module
 | `supported_chains` | [string](#string) | repeated |  |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 | `transaction_fee_rate` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
 
 
 
@@ -478,7 +477,6 @@ Params represent the genesis parameters for the module
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated |  |
 | `addr_prefix` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
 
 
 

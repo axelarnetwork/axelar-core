@@ -61,7 +61,6 @@ func TestGenesis(t *testing.T) {
 					assert.Equal(t, initialGenesis.Chains[i].Name, exportedGenesis.Chains[i].Name)
 					assert.Equal(t, initialGenesis.Chains[i].IBCPath, exportedGenesis.Chains[i].IBCPath)
 					assert.Equal(t, initialGenesis.Chains[i].AddrPrefix, exportedGenesis.Chains[i].AddrPrefix)
-					assert.Equal(t, initialGenesis.Chains[i].MinAmount, exportedGenesis.Chains[i].MinAmount)
 					assert.ElementsMatch(t, initialGenesis.Chains[i].Assets, exportedGenesis.Chains[i].Assets)
 				}
 			}).Run(t, 10)
@@ -108,6 +107,5 @@ func randomChain() types.CosmosChain {
 		IBCPath:    randomIBCPath(),
 		Assets:     assets,
 		AddrPrefix: rand.StrBetween(5, 10),
-		MinAmount:  sdk.NewInt(rand.I64Between(100000, 10000000)),
 	}
 }

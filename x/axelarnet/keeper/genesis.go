@@ -13,7 +13,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 		k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: chain.AddrPrefix,
-			MinAmount:  chain.MinAmount,
 		})
 
 		if err := k.RegisterIBCPath(ctx, chain.Name, chain.IBCPath); err != nil {
@@ -43,7 +42,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 			Assets:     assets,
 			IBCPath:    ibcPath,
 			AddrPrefix: chain.AddrPrefix,
-			MinAmount:  chain.MinAmount,
 		})
 	}
 

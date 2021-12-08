@@ -18,7 +18,7 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
-	GetMinAmount(ctx sdk.Context) sdk.Int
+	//GetMinAmount(ctx sdk.Context) sdk.Int
 	GetTransactionFeeRate(ctx sdk.Context) sdk.Dec
 
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
@@ -33,6 +33,7 @@ type BaseKeeper interface {
 	GetCosmosChainByAsset(ctx sdk.Context, asset string) (CosmosChain, bool)
 	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
+	GetAsset(ctx sdk.Context, chain, denom string) (Asset, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers

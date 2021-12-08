@@ -23,7 +23,7 @@ message QuerySignatureResponse {
   }
 
   message MultisigSignature {
-    exported.v1beta1.SigStatus sig_status = 1;
+    tss.exported.v1beta1.SigStatus sig_status = 1;
     repeated Signature signatures = 2 [ (gogoproto.nullable) = false ];
   }
 

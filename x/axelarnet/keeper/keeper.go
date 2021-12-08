@@ -234,6 +234,14 @@ func (k Keeper) setChainByAsset(ctx sdk.Context, asset string, chain string) {
 	k.getStore(ctx).SetRaw(chainByAssetPrefix.Append(utils.LowerCaseKey(asset)), []byte(chain))
 }
 
+// GetAsset retrieves an asset by chain and denom
+func (k Keeper) GetAsset(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
+	var asset types.Asset
+	return asset, k.getStore(ctx).Get(assetByChainPrefix.
+		Append(utils.LowerCaseKey(chain)).
+		Append(utils.LowerCaseKey(asset.Denom)), &asset)
+}
+
 func (k Keeper) getAssets(ctx sdk.Context, chain string) []types.Asset {
 	iter := k.getStore(ctx).Iterator(assetByChainPrefix.Append(utils.LowerCaseKey(chain)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
