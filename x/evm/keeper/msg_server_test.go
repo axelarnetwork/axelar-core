@@ -573,7 +573,6 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 	var (
 		ctx     sdk.Context
 		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
 		v       *mock.VoterMock
 		n       *mock.NexusMock
 		s       *mock.SnapshotterMock
@@ -592,24 +591,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 		}
 		voteReq = &types.VoteConfirmChainRequest{Name: chain}
 
-		chaink = &mock.ChainKeeperMock{
-			GetRevoteLockingPeriodFunc: func(ctx sdk.Context) (int64, bool) {
-				return rand.I64Between(50, 100), true
-			},
-			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
-				return utils.Threshold{Numerator: 15, Denominator: 100}, true
-			},
-			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
-		}
-
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.EqualFold(chain, msg.Name) {
-					return chaink
-				}
-				return nil
-			},
-
 			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
