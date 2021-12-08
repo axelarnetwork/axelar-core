@@ -33,14 +33,6 @@
       - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations
       - [total](axelard_query_bank_total.md)	 - Query the total supply of coins of the chain
-    - [bitcoin](axelard_query_bitcoin.md)	 - bitcoin query subcommands
-      - [consolidation-address](axelard_query_bitcoin_consolidation-address.md)	 - Returns the bitcoin consolidation address
-      - [deposit-addresses \[chain\] \[recipient address\]](axelard_query_bitcoin_deposit-addresses.md)	 - Returns a bitcoin deposit address for a recipient address on another blockchain
-      - [deposit-status \[txID:voutIdx\]](axelard_query_bitcoin_deposit-status.md)	 - Returns the status of the bitcoin deposit with the given outpoint
-      - [latest-tx \[keyRole\]](axelard_query_bitcoin_latest-tx.md)	 - Returns the latest consolidation transaction of the given key role
-      - [min-output-amount](axelard_query_bitcoin_min-output-amount.md)	 - Returns the minimum amount allowed for any transaction output in satoshi
-      - [next-key-id \[keyRole\]](axelard_query_bitcoin_next-key-id.md)	 - Returns the ID of the next assigned key
-      - [signed-tx \[txHash\]](axelard_query_bitcoin_signed-tx.md)	 - Returns the signed consolidation transaction of the given transaction hash
     - [block \[height\]](axelard_query_block.md)	 - Get verified data for a the block at given height
     - [distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
       - [commission \[validator\]](axelard_query_distribution_commission.md)	 - Query distribution validator commission
@@ -189,14 +181,6 @@
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
         ignored as it is implied from \[from_key_or_address\].
-    - [bitcoin](axelard_tx_bitcoin.md)	 - bitcoin transactions subcommands
-      - [confirm-tx-out \[txID:voutIdx\] \[amount\] \[address\]](axelard_tx_bitcoin_confirm-tx-out.md)	 - Confirm a Bitcoin transaction
-      - [create-master-tx \[keyID\]](axelard_tx_bitcoin_create-master-tx.md)	 - Create a Bitcoin transaction for consolidating master key UTXOs, and send the change to an address controlled by \[keyID\]
-      - [create-pending-transfers-tx \[keyID\]](axelard_tx_bitcoin_create-pending-transfers-tx.md)	 - Create a Bitcoin transaction for all pending transfers
-      - [create-rescue-tx](axelard_tx_bitcoin_create-rescue-tx.md)	 - Create a Bitcoin transaction for rescuing the outpoints that were sent to old keys
-      - [link \[chain\] \[address\]](axelard_tx_bitcoin_link.md)	 - Link a cross chain address to a bitcoin address created by Axelar
-      - [sign-tx \[keyRole\]](axelard_tx_bitcoin_sign-tx.md)	 - Sign a consolidation transaction with the current key of given key role
-      - [submit-external-signature \[keyID\] \[signatureHex\] \[sigHashHex\]](axelard_tx_bitcoin_submit-external-signature.md)	 - Submit a signature of the given external key signing the given sig hash
     - [broadcast \[file_path\]](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
