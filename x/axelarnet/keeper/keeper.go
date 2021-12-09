@@ -166,7 +166,7 @@ func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.Cosmo
 
 // GetCosmosChainByAsset gets an asset's original chain
 func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.CosmosChain, bool) {
-	bz := k.getStore(ctx).GetRaw(assetByChainPrefix.Append(utils.LowerCaseKey(asset)))
+	bz := k.getStore(ctx).GetRaw(chainByAssetPrefix.Append(utils.LowerCaseKey(asset)))
 	if bz == nil {
 		return types.CosmosChain{}, false
 	}
