@@ -186,13 +186,13 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 		chain, ok := s.GetCosmosChainByAsset(ctx, pendingTransfer.Asset.Denom)
 		if !ok {
-			s.Logger(ctx).Error("no cosmos chain found for asset '%s'", pendingTransfer.Asset.Denom)
+			s.Logger(ctx).Error(fmt.Sprintf("no cosmos chain found for asset '%s'", pendingTransfer.Asset.Denom))
 			continue
 		}
 
 		asset, ok := s.GetAsset(ctx, chain.Name, pendingTransfer.Asset.Denom)
 		if !ok {
-			s.Logger(ctx).Error("asset %s not found for chain '%s'", pendingTransfer.Asset.Denom, chain.Name)
+			s.Logger(ctx).Error(fmt.Sprintf("asset %s not found for chain '%s'", pendingTransfer.Asset.Denom, chain.Name))
 			continue
 		}
 
