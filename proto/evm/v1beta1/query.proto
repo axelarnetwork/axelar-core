@@ -69,3 +69,5 @@ message QueryDepositStateResponse {
 }
 
 message QueryBurnerAddressResponse { string address = 1; }
+
+message QueryChainsResponse { repeated string chains = 1; }
