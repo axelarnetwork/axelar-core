@@ -11,7 +11,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -104,7 +103,7 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress, chain.Name, keyRole.SimpleString())
 					}
 
-					oldActiveKeys, err := d.tss.GetOldActiveKeys(ctx, exported.Bitcoin, keyRole)
+					oldActiveKeys, err := d.tss.GetOldActiveKeys(ctx, chain, keyRole)
 					if err != nil {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 					}
