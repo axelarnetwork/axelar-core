@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"bytes"
-
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
