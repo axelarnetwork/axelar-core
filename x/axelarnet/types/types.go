@@ -67,7 +67,9 @@ func (s sortedChains) Swap(i, j int) {
 func SortChains(chains []CosmosChain) {
 	sort.Stable(sortedChains(chains))
 	for _, chain := range chains {
-		sort.Strings(chain.Assets)
+		sort.SliceStable(chain.Assets, func(i int, j int) bool {
+			return chain.Assets[i].Denom < chain.Assets[j].Denom
+		})
 	}
 }
 
@@ -106,6 +108,19 @@ func (m CosmosChain) Validate() error {
 
 	if m.AddrPrefix == "" {
 		return fmt.Errorf("chain must have an address prefix")
+	}
+
+	return nil
+}
+
+// Validate checks the stateless validity of the asset
+func (m Asset) Validate() error {
+	if m.Denom == "" {
+		return fmt.Errorf("asset must have a denomination")
+	}
+
+	if m.MinAmount.LTE(sdk.ZeroInt()) {
+		return fmt.Errorf("minimum amount must be greater than zero")
 	}
 
 	return nil

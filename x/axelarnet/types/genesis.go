@@ -24,7 +24,14 @@ func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:           DefaultParams(),
 		CollectorAddress: nil,
-		Chains:           []CosmosChain{},
+		Chains: []CosmosChain{{
+			Name:       ModuleName,
+			AddrPrefix: "axelar",
+			Assets: []Asset{{
+				Denom:     "uaxl",
+				MinAmount: sdk.NewInt(1000000),
+			}},
+		}},
 		PendingTransfers: []IBCTransfer{},
 	}
 }

@@ -97,10 +97,15 @@ func randomChains() []types.CosmosChain {
 }
 
 func randomChain() types.CosmosChain {
+	assets := make([]types.Asset, rand.I64Between(5, 20))
+	for i := range assets {
+		assets[i] = randomAsset()
+	}
+
 	return types.CosmosChain{
 		Name:       rand.StrBetween(5, 20),
 		IBCPath:    randomIBCPath(),
-		Assets:     rand.Strings(5, 20).Take(int(rand.I64Between(1, 20))),
+		Assets:     assets,
 		AddrPrefix: rand.StrBetween(5, 10),
 	}
 }

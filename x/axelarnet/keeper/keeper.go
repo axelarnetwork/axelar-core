@@ -199,7 +199,7 @@ func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types
 }
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain
-func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) error {
+func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset types.Asset, chain string) error {
 	value, ok := k.getCosmosChain(ctx, chain)
 	if !ok {
 		return fmt.Errorf("unknown cosmos chain %s", chain)
@@ -208,12 +208,12 @@ func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain 
 	value.Assets = append(value.Assets, asset)
 	k.SetCosmosChain(ctx, value)
 
-	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain.Name != chain {
-		k.deleteAssetByChain(ctx, registeredChain.Name, asset)
+	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset.Denom); ok && registeredChain.Name != chain {
+		k.deleteAssetByChain(ctx, registeredChain.Name, asset.Denom)
 	}
 
 	k.setAssetByChain(ctx, chain, asset)
-	k.setChainByAsset(ctx, asset, chain)
+	k.setChainByAsset(ctx, asset.Denom, chain)
 
 	return nil
 }
@@ -224,23 +224,33 @@ func (k Keeper) deleteAssetByChain(ctx sdk.Context, chain string, asset string) 
 		Append(utils.LowerCaseKey(asset)))
 }
 
-func (k Keeper) setAssetByChain(ctx sdk.Context, chain string, asset string) {
-	k.getStore(ctx).SetRaw(assetByChainPrefix.
+func (k Keeper) setAssetByChain(ctx sdk.Context, chain string, asset types.Asset) {
+	k.getStore(ctx).Set(assetByChainPrefix.
 		Append(utils.LowerCaseKey(chain)).
-		Append(utils.LowerCaseKey(asset)), []byte(asset))
+		Append(utils.LowerCaseKey(asset.Denom)), &asset)
 }
 
 func (k Keeper) setChainByAsset(ctx sdk.Context, asset string, chain string) {
 	k.getStore(ctx).SetRaw(chainByAssetPrefix.Append(utils.LowerCaseKey(asset)), []byte(chain))
 }
 
-func (k Keeper) getAssets(ctx sdk.Context, chain string) []string {
+// GetAsset retrieves an asset by chain and denom
+func (k Keeper) GetAsset(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
+	var asset types.Asset
+	return asset, k.getStore(ctx).Get(assetByChainPrefix.
+		Append(utils.LowerCaseKey(chain)).
+		Append(utils.LowerCaseKey(denom)), &asset)
+}
+
+func (k Keeper) getAssets(ctx sdk.Context, chain string) []types.Asset {
 	iter := k.getStore(ctx).Iterator(assetByChainPrefix.Append(utils.LowerCaseKey(chain)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
-	var assets []string
+	var assets []types.Asset
 	for ; iter.Valid(); iter.Next() {
-		assets = append(assets, string(iter.Value()))
+		var asset types.Asset
+		iter.UnmarshalValue(&asset)
+		assets = append(assets, asset)
 	}
 
 	return assets

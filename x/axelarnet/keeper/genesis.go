@@ -25,7 +25,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 		}
 
 		for _, asset := range chain.Assets {
-			k.RegisterAssetToCosmosChain(ctx, asset, chain.Name)
+			if err := k.RegisterAssetToCosmosChain(ctx, asset, chain.Name); err != nil {
+				panic(err)
+			}
 		}
 	}
 

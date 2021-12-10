@@ -295,8 +295,11 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetCosmosChainByAssetFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
-			GetMinAmountFunc: func(sdk.Context) sdk.Int {
-				return sdk.NewInt(1000000)
+			GetCosmosChainByNameFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
+			},
+			GetAssetFunc: func(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
+				return types.Asset{Denom: testToken, MinAmount: sdk.NewInt(1000000)}, true
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
