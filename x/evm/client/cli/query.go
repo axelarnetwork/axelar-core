@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 
+	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
@@ -33,6 +34,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBytecode(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
 		GetCmdLatestBatchedCommands(queryRoute),
+		GetCmdChains(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -276,6 +278,29 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 			var res types.QueryBatchedCommandsResponse
 			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdChains returns the query to get all EVM chains
+func GetCmdChains(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "chains",
+		Short: "Get EVM chains",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, err := evmclient.QueryChains(clientCtx)
+			if err != nil {
+				return err
+			}
 			return clientCtx.PrintProto(&res)
 		},
 	}
