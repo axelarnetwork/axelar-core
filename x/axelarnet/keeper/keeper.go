@@ -239,7 +239,7 @@ func (k Keeper) GetAsset(ctx sdk.Context, chain, denom string) (types.Asset, boo
 	var asset types.Asset
 	return asset, k.getStore(ctx).Get(assetByChainPrefix.
 		Append(utils.LowerCaseKey(chain)).
-		Append(utils.LowerCaseKey(asset.Denom)), &asset)
+		Append(utils.LowerCaseKey(denom)), &asset)
 }
 
 func (k Keeper) getAssets(ctx sdk.Context, chain string) []types.Asset {
