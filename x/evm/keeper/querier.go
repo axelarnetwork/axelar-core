@@ -29,6 +29,7 @@ const (
 	QBytecode              = "bytecode"
 	QLatestBatchedCommands = "latest-batched-commands"
 	QBatchedCommands       = "batched-commands"
+	QChains                = "chains"
 )
 
 //Bytecode labels
@@ -79,6 +80,8 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
+		case QChains:
+			return queryChains(ctx, n)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -418,4 +421,18 @@ func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (typ
 		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 	return batchedCommandsSig, nil
+}
+
+func queryChains(ctx sdk.Context, n types.Nexus) ([]byte, error) {
+	chains := n.GetChains(ctx)
+
+	evmChains := []string{}
+	for _, c := range chains {
+		if c.Module == types.ModuleName {
+			evmChains = append(evmChains, c.Name)
+		}
+	}
+
+	response := types.QueryChainsResponse{Chains: evmChains}
+	return response.Marshal()
 }

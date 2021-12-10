@@ -14,6 +14,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+
+	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 )
 
 // query parameters
@@ -247,6 +249,25 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 
 		var res types.QueryDepositStateResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryChains returns a handler to query EVM chains
+func GetHandlerQueryChains(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		res, err := evmclient.QueryChains(cliCtx)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

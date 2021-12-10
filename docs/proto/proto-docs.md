@@ -162,6 +162,7 @@
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
+    - [QueryChainsResponse](#evm.v1beta1.QueryChainsResponse)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
@@ -2559,6 +2560,21 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryChainsResponse"></a>
+
+### QueryChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
 
 
 
