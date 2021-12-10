@@ -32,7 +32,6 @@ func DefaultParams() Params {
 	return Params{
 		SupportedChains:    []string{"Ethereum"},
 		RouteTimeoutWindow: 17000,
-		MinAmount:          sdktypes.NewInt(100000),
 		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.1%
 	}
 }
@@ -50,7 +49,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validateUint64("RouteTimeoutWindow")),
 		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
-		params.NewParamSetPair(KeyMinAmount, &m.MinAmount, validateMinAmount),
 	}
 }
 
@@ -97,19 +95,6 @@ func validateTransactionFeeRate(i interface{}) error {
 
 	if v.GT(sdktypes.OneDec()) {
 		return fmt.Errorf("transaction fee rate %s must be <= 1", v)
-	}
-
-	return nil
-}
-
-func validateMinAmount(i interface{}) error {
-	v, ok := i.(sdktypes.Int)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if !v.IsPositive() {
-		return fmt.Errorf("transaction fee rate must be positive: %s", v)
 	}
 
 	return nil

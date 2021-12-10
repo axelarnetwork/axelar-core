@@ -11,7 +11,7 @@ import (
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
-func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, addrPrefix string) *AddCosmosBasedChainRequest {
+func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, addrPrefix string, minAmount sdk.Int) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
@@ -22,6 +22,7 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, add
 			Module:                "axelarnet", // cannot use constant due to import cycle
 		},
 		AddrPrefix: addrPrefix,
+		MinAmount:  minAmount,
 	}
 }
 
@@ -47,6 +48,10 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 
 	if m.AddrPrefix == "" {
 		return fmt.Errorf("address prefix cannot be empty")
+	}
+
+	if m.MinAmount.LTE(sdk.ZeroInt()) {
+		return fmt.Errorf("minimum mint/withdrawal amount must be greater than zero")
 	}
 
 	return nil

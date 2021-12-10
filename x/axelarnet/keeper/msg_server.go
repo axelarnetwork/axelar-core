@@ -183,15 +183,27 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 	var transfersToArchive []nexus.CrossChainTransfer
 	for _, pendingTransfer := range pendingTransfers {
-		if pendingTransfer.Asset.Amount.LT(s.GetMinAmount(ctx)) {
-			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
-			continue
-		}
-
 		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 		if err != nil {
 			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
+			continue
+		}
+
+		chain, ok := s.GetCosmosChainByAsset(ctx, pendingTransfer.Asset.Denom)
+		if !ok {
+			s.Logger(ctx).Error(fmt.Sprintf("no cosmos chain found for asset '%s'", pendingTransfer.Asset.Denom))
+			continue
+		}
+
+		asset, ok := s.GetAsset(ctx, chain.Name, pendingTransfer.Asset.Denom)
+		if !ok {
+			s.Logger(ctx).Error(fmt.Sprintf("asset %s not found for chain '%s'", pendingTransfer.Asset.Denom, chain.Name))
+			continue
+		}
+
+		if pendingTransfer.Asset.Amount.LTE(asset.MinAmount) {
+			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
 			continue
 		}
 
@@ -248,7 +260,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		Name:       req.Chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
-	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Chain.NativeAsset, req.Chain.Name); err != nil {
+	if err := s.BaseKeeper.RegisterAssetToCosmosChain(ctx, types.Asset{Denom: req.Chain.NativeAsset, MinAmount: req.MinAmount}, req.Chain.Name); err != nil {
 		return &types.AddCosmosBasedChainResponse{}, err
 	}
 
@@ -264,9 +276,9 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
-	s.nexus.RegisterAsset(ctx, chain, req.Denom)
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Denom)
-	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Denom, req.Chain)
+	s.nexus.RegisterAsset(ctx, chain, req.Asset.Denom)
+	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Asset.Denom)
+	s.BaseKeeper.RegisterAssetToCosmosChain(ctx, req.Asset, req.Chain)
 
 	return &types.RegisterAssetResponse{}, nil
 }

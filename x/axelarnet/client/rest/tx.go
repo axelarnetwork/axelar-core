@@ -60,13 +60,15 @@ type ReqAddCosmosBasedChain struct {
 	Name        string       `json:"name" yaml:"name"`
 	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
 	AddrPrefix  string       `json:"addr_prefix" yaml:"addr_prefix"`
+	MinAmount   string       `json:"min_amount" yaml:"min_amount"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain
 type ReqRegisterAsset struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain   string       `json:"chain" yaml:"chain"`
-	Denom   string       `json:"denom" yaml:"denom"`
+	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain     string       `json:"chain" yaml:"chain"`
+	Denom     string       `json:"denom" yaml:"denom"`
+	MinAmount string       `json:"min_amount" yaml:"min_amount"`
 }
 
 // ReqRegisterFeeCollector represents a request to register axelarnet fee collector account
@@ -230,7 +232,12 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix)
+		minAmount, ok := sdk.NewIntFromString(req.MinAmount)
+		if !ok {
+			return
+		}
+
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix, minAmount)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -257,7 +264,12 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, req.Denom)
+		amount, ok := sdk.NewIntFromString(req.MinAmount)
+		if !ok {
+			return
+		}
+
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, types.Asset{Denom: req.Denom, MinAmount: amount})
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

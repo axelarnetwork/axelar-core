@@ -149,9 +149,9 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [native asset] [address prefix]",
+		Use:   "add-cosmos-based-chain [name] [native asset] [min amount] [address prefix]",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -159,9 +159,15 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			}
 			name := args[0]
 			nativeAsset := args[1]
-			addrPrefix := args[2]
 
-			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix)
+			minAmount, ok := sdk.NewIntFromString(args[2])
+			if !ok {
+				return fmt.Errorf("could not convert string to integer")
+			}
+
+			addrPrefix := args[3]
+
+			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix, minAmount)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -176,9 +182,9 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 // GetCmdRegisterAsset returns the cli command to register an asset to a cosmos based chain
 func GetCmdRegisterAsset() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-asset [chain] [denom]",
+		Use:   "register-asset [chain] [denom] [min amount]",
 		Short: "Register a new asset to a cosmos based chain",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -187,7 +193,12 @@ func GetCmdRegisterAsset() *cobra.Command {
 			chain := args[0]
 			denom := args[1]
 
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, denom)
+			minAmount, ok := sdk.NewIntFromString(args[3])
+			if !ok {
+				return fmt.Errorf("could not convert string to integer")
+			}
+
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.Asset{Denom: denom, MinAmount: minAmount})
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
