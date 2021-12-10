@@ -30,9 +30,9 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("sig ID '%s' has been used before", info.SigID)
 	}
 
-	keyInfo, ok := k.getKeyInfo(ctx, info.KeyID)
+	key, ok := k.GetKey(ctx, info.KeyID)
 	if !ok {
-		return fmt.Errorf("key info %s not found", info.KeyID)
+		return fmt.Errorf("key %s not found", info.KeyID)
 	}
 
 	snap, ok := snapshotter.GetSnapshot(ctx, info.SnapshotCounter)
@@ -40,7 +40,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap, keyInfo.KeyType)
+	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap, key.Type)
 	if err != nil {
 		return err
 	}
@@ -63,12 +63,12 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		))
 	}
 
-	keyRequirement, ok := k.GetKeyRequirement(ctx, keyInfo.KeyRole, keyInfo.KeyType)
+	keyRequirement, ok := k.GetKeyRequirement(ctx, key.Role, key.Type)
 	if !ok {
-		return fmt.Errorf("key requirement for key role %s type %s not found", keyInfo.KeyRole.SimpleString(), keyInfo.KeyType)
+		return fmt.Errorf("key requirement for %s and %s not found", key.Role, key.Type)
 	}
 
-	switch keyInfo.KeyType {
+	switch key.Type {
 	case exported.Threshold:
 		_, ok := k.GetKey(ctx, info.KeyID)
 		if !ok {
@@ -101,7 +101,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 			return err
 		}
 	default:
-		return fmt.Errorf("invalid key type %s", keyInfo.KeyType.SimpleString())
+		return fmt.Errorf("invalid key type %s", key.Type)
 	}
 
 	q := k.GetSignQueue(ctx)
