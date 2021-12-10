@@ -67,7 +67,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			SetCosmosChainFunc: func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)  {
 // 				panic("mock out the SetCosmosChain method")
 // 			},
-// 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)  {
+// 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error {
 // 				panic("mock out the SetFeeCollector method")
 // 			},
 // 			SetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)  {
@@ -123,7 +123,7 @@ type BaseKeeperMock struct {
 	SetCosmosChainFunc func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)
 
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
-	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress)
+	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error
 
 	// SetPendingIBCTransferFunc mocks the SetPendingIBCTransfer method.
 	SetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)
@@ -764,7 +764,7 @@ func (mock *BaseKeeperMock) SetCosmosChainCalls() []struct {
 }
 
 // SetFeeCollector calls SetFeeCollectorFunc.
-func (mock *BaseKeeperMock) SetFeeCollector(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) {
+func (mock *BaseKeeperMock) SetFeeCollector(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error {
 	if mock.SetFeeCollectorFunc == nil {
 		panic("BaseKeeperMock.SetFeeCollectorFunc: method is nil but BaseKeeper.SetFeeCollector was just called")
 	}
@@ -778,7 +778,7 @@ func (mock *BaseKeeperMock) SetFeeCollector(ctx cosmossdktypes.Context, address 
 	mock.lockSetFeeCollector.Lock()
 	mock.calls.SetFeeCollector = append(mock.calls.SetFeeCollector, callInfo)
 	mock.lockSetFeeCollector.Unlock()
-	mock.SetFeeCollectorFunc(ctx, address)
+	return mock.SetFeeCollectorFunc(ctx, address)
 }
 
 // SetFeeCollectorCalls gets all the calls that were made to SetFeeCollector.

@@ -356,7 +356,10 @@ func IBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper,
 func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFeeCollectorRequest) (*types.RegisterFeeCollectorResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	s.BaseKeeper.SetFeeCollector(ctx, req.FeeCollector)
+	if err := s.BaseKeeper.SetFeeCollector(ctx, req.FeeCollector); err != nil {
+		return nil, err
+	}
+
 	return &types.RegisterFeeCollectorResponse{}, nil
 }
 

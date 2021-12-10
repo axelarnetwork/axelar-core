@@ -266,10 +266,13 @@ func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
 }
 
 // SetFeeCollector sets axelarnet fee collector
-func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) {
-	if address != nil {
-		k.getStore(ctx).SetRaw(feeCollector, address)
+func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) error {
+	if err := sdk.VerifyAddressFormat(address); err != nil {
+		return err
 	}
+
+	k.getStore(ctx).SetRaw(feeCollector, address)
+	return nil
 }
 
 // GetFeeCollector gets axelarnet fee collector
