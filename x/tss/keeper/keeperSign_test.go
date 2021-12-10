@@ -320,7 +320,7 @@ func TestMultisigSign(t *testing.T) {
 			}
 			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
 		}
-
+		s.Keeper.SetKey(s.Ctx, generateMultisigKey(keyID))
 		err = s.Keeper.StartSign(s.Ctx, signInfo, s.Snapshotter, s.Voter)
 		assert.NoError(t, err)
 		multisigSign, ok := s.Keeper.GetMultisigSignInfo(s.Ctx, sigID)
@@ -369,6 +369,7 @@ func TestMultisigSign(t *testing.T) {
 			}
 			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
 		}
+		s.Keeper.SetKey(s.Ctx, generateMultisigKey(keyID))
 
 		err = s.Keeper.StartSign(s.Ctx, signInfo, s.Snapshotter, s.Voter)
 		assert.NoError(t, err)
