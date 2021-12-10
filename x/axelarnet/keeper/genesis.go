@@ -10,7 +10,7 @@ import (
 // InitGenesis initializes the reward module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.GenesisState) {
 	k.setParams(ctx, nexus, genState.Params)
-	if genState.CollectorAddress != nil && !bytes.Equal(genState.CollectorAddress.Bytes(), []byte{}) {
+	if len(genState.CollectorAddress) > 0 {
 		if err := k.SetFeeCollector(ctx, genState.CollectorAddress); err != nil {
 			panic(err)
 		}
