@@ -183,6 +183,12 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 	var transfersToArchive []nexus.CrossChainTransfer
 	for _, pendingTransfer := range pendingTransfers {
+		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
+		if err != nil {
+			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
+			continue
+		}
 
 		chain, ok := s.GetCosmosChainByAsset(ctx, pendingTransfer.Asset.Denom)
 		if !ok {
@@ -198,13 +204,6 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.Execute
 
 		if pendingTransfer.Asset.Amount.LTE(asset.MinAmount) {
 			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from recipient %s due to deposited amount being below minimum amount", pendingTransfer.Recipient.Address))
-			continue
-		}
-
-		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
-		if err != nil {
-			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
-			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 			continue
 		}
 
