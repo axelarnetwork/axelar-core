@@ -532,6 +532,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
+		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -539,7 +541,6 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
-
 		if signature := signResult.GetSignature(); signature != nil {
 			key, _ := s.GetKey(ctx, info.KeyID)
 			pk, err := key.GetECDSAPubKey()
@@ -560,6 +561,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				},
 				SigStatus: exported.SigStatus_Signed,
 			})
+			s.route(ctx, info)
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
 			event = event.AppendAttributes(
@@ -567,14 +569,13 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
-			s.route(ctx, info)
-
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
 

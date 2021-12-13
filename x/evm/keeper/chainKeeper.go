@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -206,9 +207,7 @@ func (k chainKeeper) getBurnerInfos(ctx sdk.Context) []types.BurnerInfo {
 }
 
 // calculates the token address for some asset with the provided axelar gateway address
-func (k chainKeeper) getTokenAddress(ctx sdk.Context, assetName string, details types.TokenDetails, gatewayAddr common.Address) (common.Address, error) {
-	assetName = strings.ToLower(assetName)
-
+func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails, gatewayAddr common.Address) (common.Address, error) {
 	var saltToken [32]byte
 	copy(saltToken[:], crypto.Keccak256Hash([]byte(details.Symbol)).Bytes())
 
@@ -533,15 +532,6 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.I
 	return nil
 }
 
-func (k chainKeeper) getUnsigned(ctx sdk.Context) types.CommandBatchMetadata {
-	var unsigned types.CommandBatchMetadata
-	if id := k.getStore(ctx, k.chainLowerKey).GetRaw(unsignedBatchIDKey); id != nil {
-		k.getStore(ctx, k.chainLowerKey).Get(commandBatchPrefix.AppendStr(string(id)), &unsigned)
-	}
-
-	return unsigned
-}
-
 func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
 	var cmd types.Command
 	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
@@ -582,7 +572,7 @@ func (k chainKeeper) GetLatestCommandBatch(ctx sdk.Context) types.CommandBatch {
 }
 
 func (k chainKeeper) getLatestCommandBatchMetadata(ctx sdk.Context) types.CommandBatchMetadata {
-	if batch := k.getUnsigned(ctx); batch.Status != types.BatchNonExistent {
+	if batch := k.getUnsignedCommandBatch(ctx); batch.Status != types.BatchNonExistent {
 		return batch
 	}
 
@@ -609,7 +599,9 @@ func (k chainKeeper) getCommandBatchesMetadata(ctx sdk.Context) []types.CommandB
 func (k chainKeeper) getLatestSignedCommandBatchID(ctx sdk.Context) []byte {
 	return k.getStore(ctx, k.chainLowerKey).GetRaw(latestSignedBatchIDKey)
 }
-func (k chainKeeper) setLatestSignedCommandBatchID(ctx sdk.Context, id []byte) {
+
+// SetLatestSignedCommandBatchID stores the latest signed command batch ID
+func (k chainKeeper) SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte) {
 	k.getStore(ctx, k.chainLowerKey).SetRaw(latestSignedBatchIDKey, id)
 }
 
@@ -618,31 +610,19 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 	case types.BatchNonExistent:
 		return
 	case types.BatchSigning, types.BatchAborted:
-		k.setUnsignedBatchID(ctx, batch.ID)
+		k.setUnsignedCommandBatchID(ctx, batch.ID)
 	case types.BatchSigned:
-		k.setLatestSignedCommandBatchID(ctx, batch.ID)
+		k.SetLatestSignedCommandBatchID(ctx, batch.ID)
 	default:
 		panic(fmt.Sprintf("batch status %s is not handled", batch.Status.String()))
 	}
 }
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
-func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
-	unsigned := k.getUnsigned(ctx)
-	switch unsigned.Status {
-	case types.BatchSigning:
-		fallthrough
-	case types.BatchAborted:
-		return nil, fmt.Errorf("signing for command batch '%s' is still in progress", unsigned.ID)
-	case types.BatchSigned:
-		k.setLatestSignedCommandBatchID(ctx, unsigned.ID)
-	default:
-		// first batch to be created
-	}
-
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
 	command, ok := k.popCommand(ctx)
 	if !ok {
-		return nil, fmt.Errorf("no commands to sign found")
+		return types.CommandBatch{}, fmt.Errorf("no commands to sign found")
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
@@ -665,22 +645,40 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) ([]byte, error) {
 		commands = append(commands, cmd.Clone())
 	}
 
-	batchedCommands, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
+	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
 	if err != nil {
-		return nil, err
+		return types.CommandBatch{}, err
 	}
 
-	if latestSignedBatchedCommands := k.GetLatestCommandBatch(ctx); latestSignedBatchedCommands.Is(types.BatchSigned) {
-		batchedCommands.PrevBatchedCommandsID = latestSignedBatchedCommands.GetID()
+	latest := k.GetLatestCommandBatch(ctx)
+	if !latest.Is(types.BatchSigned) && !latest.Is(types.BatchNonExistent) {
+		return types.CommandBatch{}, fmt.Errorf("latest command batch %s is still being processed", hex.EncodeToString(latest.GetID()))
 	}
 
-	k.setCommandBatchMetadata(ctx, batchedCommands)
-	k.setUnsignedBatchID(ctx, batchedCommands.ID)
+	commandBatch.PrevBatchedCommandsID = latest.GetID()
+	k.setCommandBatchMetadata(ctx, commandBatch)
+	k.setUnsignedCommandBatchID(ctx, commandBatch.ID)
 
-	return batchedCommands.ID, nil
+	setter := func(m types.CommandBatchMetadata) {
+		k.setCommandBatchMetadata(ctx, m)
+	}
+	return types.NewCommandBatch(commandBatch, setter), nil
 }
 
-func (k chainKeeper) setUnsignedBatchID(ctx sdk.Context, id []byte) {
+// DeleteUnsignedCommandBatchID deletes the unsigned command batch ID
+func (k chainKeeper) DeleteUnsignedCommandBatchID(ctx sdk.Context) {
+	k.getStore(ctx, k.chainLowerKey).Delete(unsignedBatchIDKey)
+}
+
+func (k chainKeeper) getUnsignedCommandBatch(ctx sdk.Context) types.CommandBatchMetadata {
+	if id := k.getStore(ctx, k.chainLowerKey).GetRaw(unsignedBatchIDKey); id != nil {
+		return k.getCommandBatchMetadata(ctx, id)
+	}
+
+	return types.CommandBatchMetadata{}
+}
+
+func (k chainKeeper) setUnsignedCommandBatchID(ctx sdk.Context, id []byte) {
 	k.getStore(ctx, k.chainLowerKey).SetRaw(unsignedBatchIDKey, id)
 }
 
@@ -782,7 +780,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 	}
 
 	chainID := k.getSigner(ctx).ChainID()
-	tokenAddr, err := k.getTokenAddress(ctx, asset, details, gatewayAddr)
+	tokenAddr, err := k.getTokenAddress(ctx, details, gatewayAddr)
 	if err != nil {
 		return types.ERC20TokenMetadata{}, err
 	}
