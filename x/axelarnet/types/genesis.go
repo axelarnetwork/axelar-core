@@ -29,7 +29,7 @@ func DefaultGenesisState() *GenesisState {
 			AddrPrefix: "axelar",
 			Assets: []Asset{{
 				Denom:     "uaxl",
-				MinAmount: sdk.NewInt(1000000),
+				MinAmount: sdk.NewInt(100000),
 			}},
 		}},
 		PendingTransfers: []IBCTransfer{},
