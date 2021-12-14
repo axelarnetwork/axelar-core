@@ -79,11 +79,29 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				return fmt.Errorf("failed to parse vesting amount: %w", err)
 			}
 
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
+			authGenState := authtypes.GetGenesisStateFromAppState(cdc, appState)
+
+			accs, err := authtypes.UnpackAccounts(authGenState.Accounts)
+			if err != nil {
+				return fmt.Errorf("failed to get accounts from any: %w", err)
+			}
+
+			if accs.Contains(addr) {
+				return fmt.Errorf("cannot add account at existing address %s", addr)
+			}
+
 			// create concrete account type based on input parameters
 			var genAccount authtypes.GenesisAccount
 
 			balances := banktypes.Balance{Address: addr.String(), Coins: coins.Sort()}
-			baseAccount := authtypes.NewBaseAccount(addr, nil, 0, 0)
+			accountNum := uint64(len(accs)) // Increment the account number whenever a new account is added
+			baseAccount := authtypes.NewBaseAccount(addr, nil, accountNum, 0)
 
 			if !vestingAmt.IsZero() {
 				baseVestingAccount := authvesting.NewBaseVestingAccount(baseAccount, vestingAmt.Sort(), vestingEnd)
@@ -109,23 +127,6 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 
 			if err := genAccount.Validate(); err != nil {
 				return fmt.Errorf("failed to validate new genesis account: %w", err)
-			}
-
-			genFile := config.GenesisFile()
-			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
-			}
-
-			authGenState := authtypes.GetGenesisStateFromAppState(cdc, appState)
-
-			accs, err := authtypes.UnpackAccounts(authGenState.Accounts)
-			if err != nil {
-				return fmt.Errorf("failed to get accounts from any: %w", err)
-			}
-
-			if accs.Contains(addr) {
-				return fmt.Errorf("cannot add account at existing address %s", addr)
 			}
 
 			// Add the new account to the set of genesis accounts and sanitize the
