@@ -193,7 +193,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 			chain := args[0]
 			denom := args[1]
 
-			minAmount, ok := sdk.NewIntFromString(args[3])
+			minAmount, ok := sdk.NewIntFromString(args[2])
 			if !ok {
 				return fmt.Errorf("could not convert string to integer")
 			}
