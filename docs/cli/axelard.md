@@ -27,7 +27,9 @@ Axelar App
 - [axelard migrate](axelard_migrate.md)	 - Migrate genesis to a specified target version
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard rosetta](axelard_rosetta.md)	 - spin up a rosetta server
+- [axelard set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
 - [axelard set-genesis-chain-params](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
+- [axelard set-genesis-crisis](axelard_set-genesis-crisis.md)	 - Set the genesis parameters for the crisis module
 - [axelard set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
 - [axelard set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
 - [axelard set-genesis-mint](axelard_set-genesis-mint.md)	 - Set the genesis parameters for the mint module

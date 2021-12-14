@@ -163,6 +163,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 		SetGenesisMintCmd(app.DefaultNodeHome),
 		SetMultisigGovernanceCmd(app.DefaultNodeHome),
+		SetGenesisCrisisCmd(app.DefaultNodeHome),
+		SetGenesisAuthCmd(app.DefaultNodeHome),
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), crisis.AddModuleInitFlags)
