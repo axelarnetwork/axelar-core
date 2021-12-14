@@ -25,8 +25,8 @@ const (
 func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 	var (
 		minDeposit       string
-		maxDepositPeriod uint64
-		votingPeriod     uint64
+		maxDepositPeriod string
+		votingPeriod     string
 	)
 
 	cmd := &cobra.Command{
@@ -61,12 +61,20 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 				genesisGov.DepositParams.MinDeposit = sdk.NewCoins(coin)
 			}
 
-			if maxDepositPeriod > 0 {
-				genesisGov.DepositParams.MaxDepositPeriod = time.Duration(maxDepositPeriod) * time.Nanosecond
+			if maxDepositPeriod != "" {
+				duration, err := time.ParseDuration(maxDepositPeriod)
+				if err != nil {
+					return err
+				}
+				genesisGov.DepositParams.MaxDepositPeriod = duration
 			}
 
-			if votingPeriod > 0 {
-				genesisGov.VotingParams.VotingPeriod = time.Duration(votingPeriod) * time.Nanosecond
+			if votingPeriod != "" {
+				duration, err := time.ParseDuration(votingPeriod)
+				if err != nil {
+					return err
+				}
+				genesisGov.VotingParams.VotingPeriod = duration
 			}
 
 			genesisGovBz, err := cdc.MarshalJSON(&genesisGov)
@@ -87,8 +95,8 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().StringVar(&minDeposit, flagMinDeposit, "", "Minimum deposit for a proposal to enter voting period")
-	cmd.Flags().Uint64Var(&maxDepositPeriod, flagMaxDepositPeriod, 0, "Maximum period for AXL holders to deposit on a proposal (time ns)")
-	cmd.Flags().Uint64Var(&votingPeriod, flagVotingPeriod, 0, "Length of the voting period (time ns)")
+	cmd.Flags().StringVar(&maxDepositPeriod, flagMaxDepositPeriod, "", "Maximum period for AXL holders to deposit on a proposal (time ns)")
+	cmd.Flags().StringVar(&votingPeriod, flagVotingPeriod, "", "Length of the voting period (time ns)")
 
 	return cmd
 }

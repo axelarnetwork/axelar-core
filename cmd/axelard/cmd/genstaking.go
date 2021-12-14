@@ -16,17 +16,21 @@ import (
 )
 
 const (
-	flagUnbondingPeriod = "unbonding-period"
-	flagMaxValidators   = "max-validators"
-	flagBondDenom       = "bond-denom"
+	flagUnbondingPeriod   = "unbonding-period"
+	flagHistoricalEntries = "historical-entries"
+	flagMaxEntries        = "max-entries"
+	flagMaxValidators     = "max-validators"
+	flagBondDenom         = "bond-denom"
 )
 
 // SetGenesisStakingCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisStakingCmd(defaultNodeHome string) *cobra.Command {
 	var (
-		unbond    string
-		max       uint32
-		bondDenom string
+		unbond            string
+		historicalEntries uint32
+		maxEntries        uint32
+		maxValidators     uint32
+		bondDenom         string
 	)
 
 	cmd := &cobra.Command{
@@ -61,8 +65,16 @@ func SetGenesisStakingCmd(defaultNodeHome string) *cobra.Command {
 				genesisStaking.Params.UnbondingTime = period
 			}
 
-			if max > 0 {
-				genesisStaking.Params.MaxValidators = max
+			if historicalEntries > 0 {
+				genesisStaking.Params.HistoricalEntries = historicalEntries
+			}
+
+			if maxEntries > 0 {
+				genesisStaking.Params.MaxEntries = maxEntries
+			}
+
+			if maxValidators > 0 {
+				genesisStaking.Params.MaxValidators = maxValidators
 			}
 
 			if bondDenom != "" {
@@ -99,7 +111,9 @@ func SetGenesisStakingCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
 	cmd.Flags().StringVar(&unbond, flagUnbondingPeriod, "", "Time duration of unbonding (e.g., \"6h\").")
-	cmd.Flags().Uint32Var(&max, flagMaxValidators, 0, "A positive integer representing the maximum number of validators (max uint16 = 65535)")
+	cmd.Flags().Uint32Var(&historicalEntries, flagHistoricalEntries, 0, "A positive integer representing the number of historical entries kept")
+	cmd.Flags().Uint32Var(&maxEntries, flagMaxEntries, 0, "A positive integer representing the maximum number of redelegations allowed within the unbonding period")
+	cmd.Flags().Uint32Var(&maxValidators, flagMaxValidators, 0, "A positive integer representing the maximum number of validators (max uint16 = 65535)")
 	cmd.Flags().StringVar(&bondDenom, flagBondDenom, "", "A string representing bondable coin denomination")
 
 	return cmd

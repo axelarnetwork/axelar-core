@@ -18,6 +18,9 @@ const (
 	flagInflationMax           = "inflation-max"
 	flagInflationMin           = "inflation-min"
 	flagInflationMaxRateChange = "inflation-max-rate-change"
+	flagGoalBonded             = "goal-bonded"
+	flagMintDenom              = "mint-denom"
+	flagBlocksPerYear          = "blocks-per-year"
 )
 
 // SetGenesisMintCmd returns set-genesis-mint cobra Command.
@@ -26,6 +29,9 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 		inflationMin           string
 		inflationMax           string
 		inflationMaxRateChange string
+		goalBonded             string
+		mintDenom              string
+		blocksPerYear          uint64
 	)
 
 	cmd := &cobra.Command{
@@ -79,6 +85,23 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 				genesis.Params.InflationRateChange = max
 			}
 
+			if goalBonded != "" {
+				bondedRatio, err := sdk.NewDecFromStr(goalBonded)
+				if err != nil {
+					return err
+				}
+
+				genesis.Params.GoalBonded = bondedRatio
+			}
+
+			if mintDenom != "" {
+				genesis.Params.MintDenom = mintDenom
+			}
+
+			if blocksPerYear != 0 {
+				genesis.Params.BlocksPerYear = blocksPerYear
+			}
+
 			if err := genesis.Params.Validate(); err != nil {
 				return err
 			}
@@ -103,6 +126,9 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().StringVar(&inflationMin, flagInflationMin, "", "Minimum inflation rate")
 	cmd.Flags().StringVar(&inflationMax, flagInflationMax, "", "Maximum inflation rate")
 	cmd.Flags().StringVar(&inflationMaxRateChange, flagInflationMaxRateChange, "", "Maximum inflation rate change")
+	cmd.Flags().StringVar(&goalBonded, flagGoalBonded, "", "The target ratio of bonded stake to total supply")
+	cmd.Flags().StringVar(&mintDenom, flagMintDenom, "", "Denomination of minted tokens")
+	cmd.Flags().Uint64Var(&blocksPerYear, flagBlocksPerYear, 0, "Expected number of blocks per year")
 
 	return cmd
 }
