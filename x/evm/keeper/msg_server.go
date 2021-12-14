@@ -983,7 +983,8 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name))
+	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
+		keyRole.SimpleString(), chain.Name), "txID", pendingTransfer.TxID.Hex(), "rotation count", s.tss.GetRotationCount(ctx, chain, keyRole))
 	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 

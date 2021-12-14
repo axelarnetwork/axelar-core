@@ -1,18 +1,16 @@
-## axelard set-genesis-gov
+## axelard set-genesis-crisis
 
-Set the genesis parameters for the governance module
+Set the genesis parameters for the crisis module
 
 ```
-axelard set-genesis-gov [flags]
+axelard set-genesis-crisis [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                        help for set-genesis-gov
-      --max-deposit-period string   Maximum period for AXL holders to deposit on a proposal (time ns)
-      --minimum-deposit string      Minimum deposit for a proposal to enter voting period
-      --voting-period string        Length of the voting period (time ns)
+      --constant-fee string   Transaction fee to initiate a broken invariant check.
+  -h, --help                  help for set-genesis-crisis
 ```
 
 ### Options inherited from parent commands

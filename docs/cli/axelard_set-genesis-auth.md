@@ -1,18 +1,16 @@
-## axelard set-genesis-gov
+## axelard set-genesis-auth
 
-Set the genesis parameters for the governance module
+Set the genesis parameters for the auth module
 
 ```
-axelard set-genesis-gov [flags]
+axelard set-genesis-auth [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                        help for set-genesis-gov
-      --max-deposit-period string   Maximum period for AXL holders to deposit on a proposal (time ns)
-      --minimum-deposit string      Minimum deposit for a proposal to enter voting period
-      --voting-period string        Length of the voting period (time ns)
+  -h, --help                help for set-genesis-auth
+      --tx-sig-limit uint   Max number of signatures allowed in a transaction.
 ```
 
 ### Options inherited from parent commands
