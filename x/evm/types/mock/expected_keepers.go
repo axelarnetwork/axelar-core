@@ -30,6 +30,9 @@ var _ types.TSS = &TSSMock{}
 // 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool) {
 // 				panic("mock out the GetKeyRequirement method")
 // 			},
+// 			GetRotationCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+// 				panic("mock out the GetRotationCount method")
+// 			},
 // 		}
 //
 // 		// use mockedTSS in code that requires types.TSS
@@ -39,6 +42,9 @@ var _ types.TSS = &TSSMock{}
 type TSSMock struct {
 	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
 	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement, bool)
+
+	// GetRotationCountFunc mocks the GetRotationCount method.
+	GetRotationCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -51,8 +57,18 @@ type TSSMock struct {
 			// KeyType is the keyType argument value.
 			KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
 		}
+		// GetRotationCount holds details about calls to the GetRotationCount method.
+		GetRotationCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
 	}
 	lockGetKeyRequirement sync.RWMutex
+	lockGetRotationCount  sync.RWMutex
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
@@ -91,6 +107,45 @@ func (mock *TSSMock) GetKeyRequirementCalls() []struct {
 	mock.lockGetKeyRequirement.RLock()
 	calls = mock.calls.GetKeyRequirement
 	mock.lockGetKeyRequirement.RUnlock()
+	return calls
+}
+
+// GetRotationCount calls GetRotationCountFunc.
+func (mock *TSSMock) GetRotationCount(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+	if mock.GetRotationCountFunc == nil {
+		panic("TSSMock.GetRotationCountFunc: method is nil but TSS.GetRotationCount was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetRotationCount.Lock()
+	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
+	mock.lockGetRotationCount.Unlock()
+	return mock.GetRotationCountFunc(ctx, chain, keyRole)
+}
+
+// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
+// Check the length with:
+//     len(mockedTSS.GetRotationCountCalls())
+func (mock *TSSMock) GetRotationCountCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockGetRotationCount.RLock()
+	calls = mock.calls.GetRotationCount
+	mock.lockGetRotationCount.RUnlock()
 	return calls
 }
 
