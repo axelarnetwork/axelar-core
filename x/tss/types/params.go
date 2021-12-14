@@ -92,7 +92,7 @@ func DefaultParams() Params {
 		HeartbeatPeriodInBlocks:          50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 4,
-		ExternalMultisigThreshold:        utils.Threshold{Numerator: 4, Denominator: 7},
+		ExternalMultisigThreshold:        utils.Threshold{Numerator: 4, Denominator: 8},
 		MaxSignQueueSize:                 50,
 		MaxSimultaneousSignShares:        100,
 	}
