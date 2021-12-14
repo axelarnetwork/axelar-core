@@ -9,10 +9,10 @@ axelard set-genesis-gov [flags]
 ### Options
 
 ```
-  -h, --help                      help for set-genesis-gov
-      --max-deposit-period uint   Maximum period for AXL holders to deposit on a proposal (time ns)
-      --minimum-deposit string    Minimum deposit for a proposal to enter voting period
-      --voting-period uint        Length of the voting period (time ns)
+  -h, --help                        help for set-genesis-gov
+      --max-deposit-period string   Maximum period for AXL holders to deposit on a proposal (time ns)
+      --minimum-deposit string      Minimum deposit for a proposal to enter voting period
+      --voting-period string        Length of the voting period (time ns)
 ```
 
 ### Options inherited from parent commands
