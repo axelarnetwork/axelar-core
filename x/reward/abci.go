@@ -81,6 +81,11 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 	amountPerChain := totalStakingSupply.ToDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
 
 	for _, chain := range n.GetChains(ctx) {
+		// ignore inactive chain
+		if !n.IsChainActivated(ctx, chain) {
+			continue
+		}
+
 		rewardPool := k.GetPool(ctx, chain.Name)
 		maintainers := n.GetChainMaintainers(ctx, chain)
 		if len(maintainers) == 0 {
