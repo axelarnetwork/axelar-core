@@ -137,7 +137,7 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 	}
 
 	if res.Code != abci.CodeTypeOK {
-		return nil, sdkerrors.New(res.Codespace, res.Code, res.RawLog)
+		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
 	return res, nil
