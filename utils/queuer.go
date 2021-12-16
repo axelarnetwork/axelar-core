@@ -19,6 +19,7 @@ type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
+	QueuedKeys() []Key
 }
 
 // BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
@@ -102,6 +103,22 @@ func (q BlockHeightKVQueue) IsEmpty() bool {
 	defer iter.Close()
 
 	return !iter.Valid()
+}
+
+// QueuedKeys returns a list of keys for the elements still enqueued
+func (q BlockHeightKVQueue) QueuedKeys() []Key {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	var keys []Key
+	for ; iter.Valid(); iter.Next() {
+		var key gogoprototypes.BytesValue
+		q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
+
+		keys = append(keys, KeyFromBz(key.Value))
+	}
+
+	return keys
 }
 
 // WithBlockHeight returns a queue with the given block height

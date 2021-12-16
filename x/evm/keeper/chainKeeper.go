@@ -36,7 +36,7 @@ var (
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 
-	commandQueueName = "command_queue"
+	commandQueueName = "queue_commands"
 )
 
 var _ types.ChainKeeper = chainKeeper{}
@@ -369,14 +369,28 @@ func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (types.Comm
 // GetPendingCommands returns the list of commands not yet added to any batch
 func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 	var commands []types.Command
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(commandPrefix)
+
+	keys := k.getCommandQueue(ctx).QueuedKeys()
+	for _, key := range keys {
+		var cmd types.Command
+		ok := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
+		if ok {
+			commands = append(commands, cmd)
+		}
+	}
+
+	/*iter := k.getStore(ctx, k.chainLowerKey).Iterator(commandPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
+		if k.getCommandQueue(ctx).Queued(utils.KeyFromBz(iter.Key())) {
+			continue
+		}
+
 		var cmd types.Command
 		iter.UnmarshalValue(&cmd)
 		commands = append(commands, cmd)
-	}
+	}*/
 
 	return commands
 }

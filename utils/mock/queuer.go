@@ -28,6 +28,9 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			IsEmptyFunc: func() bool {
 // 				panic("mock out the IsEmpty method")
 // 			},
+// 			QueuedKeysFunc: func() []utils.Key {
+// 				panic("mock out the QueuedKeys method")
+// 			},
 // 		}
 //
 // 		// use mockedKVQueue in code that requires utils.KVQueue
@@ -43,6 +46,9 @@ type KVQueueMock struct {
 
 	// IsEmptyFunc mocks the IsEmpty method.
 	IsEmptyFunc func() bool
+
+	// QueuedKeysFunc mocks the QueuedKeys method.
+	QueuedKeysFunc func() []utils.Key
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -63,10 +69,14 @@ type KVQueueMock struct {
 		// IsEmpty holds details about calls to the IsEmpty method.
 		IsEmpty []struct {
 		}
+		// QueuedKeys holds details about calls to the QueuedKeys method.
+		QueuedKeys []struct {
+		}
 	}
-	lockDequeue sync.RWMutex
-	lockEnqueue sync.RWMutex
-	lockIsEmpty sync.RWMutex
+	lockDequeue    sync.RWMutex
+	lockEnqueue    sync.RWMutex
+	lockIsEmpty    sync.RWMutex
+	lockQueuedKeys sync.RWMutex
 }
 
 // Dequeue calls DequeueFunc.
@@ -162,5 +172,31 @@ func (mock *KVQueueMock) IsEmptyCalls() []struct {
 	mock.lockIsEmpty.RLock()
 	calls = mock.calls.IsEmpty
 	mock.lockIsEmpty.RUnlock()
+	return calls
+}
+
+// QueuedKeys calls QueuedKeysFunc.
+func (mock *KVQueueMock) QueuedKeys() []utils.Key {
+	if mock.QueuedKeysFunc == nil {
+		panic("KVQueueMock.QueuedKeysFunc: method is nil but KVQueue.QueuedKeys was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockQueuedKeys.Lock()
+	mock.calls.QueuedKeys = append(mock.calls.QueuedKeys, callInfo)
+	mock.lockQueuedKeys.Unlock()
+	return mock.QueuedKeysFunc()
+}
+
+// QueuedKeysCalls gets all the calls that were made to QueuedKeys.
+// Check the length with:
+//     len(mockedKVQueue.QueuedKeysCalls())
+func (mock *KVQueueMock) QueuedKeysCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockQueuedKeys.RLock()
+	calls = mock.calls.QueuedKeys
+	mock.lockQueuedKeys.RUnlock()
 	return calls
 }
