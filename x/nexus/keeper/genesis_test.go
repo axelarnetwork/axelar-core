@@ -96,13 +96,11 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	}
 	expected.LinkedAddresses = expectedLinkedAddresses
 
-	transferCount := rand.I64Between(10, 20)
-	expected.Nonce = uint64(transferCount)
+	expected.Nonce = uint64(linkedAddressesCount)
 	expectedEthereumTotal := sdk.NewCoins()
-	for i := 0; i < int(transferCount); i++ {
-		linkedAddressesIndex := rand.I64Between(0, linkedAddressesCount)
-		depositAddress := expectedLinkedAddresses[linkedAddressesIndex].DepositAddress
-		recipientAddress := expectedLinkedAddresses[linkedAddressesIndex].RecipientAddress
+	for i, linkedAddress := range expectedLinkedAddresses {
+		depositAddress := linkedAddress.DepositAddress
+		recipientAddress := linkedAddress.RecipientAddress
 		asset := sdk.NewCoin(axelarnet.Axelarnet.NativeAsset, sdk.NewInt(rand.PosI64()))
 
 		keeper.EnqueueForTransfer(
