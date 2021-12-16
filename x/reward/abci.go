@@ -87,9 +87,14 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 			continue
 		}
 
-		validators := make([]stakingtypes.Validator, len(maintainers))
-		for i, maintainer := range maintainers {
-			validators[i] = s.Validator(ctx, maintainer).(stakingtypes.Validator)
+		var validators []stakingtypes.Validator
+		for _, maintainer := range maintainers {
+			v := s.Validator(ctx, maintainer)
+			if v == nil {
+				continue
+			}
+
+			validators = append(validators, v.(stakingtypes.Validator))
 		}
 
 		addRewardsByConsensusPower(ctx, s, rewardPool, validators, sdk.NewDecCoinFromDec(denom, amountPerChain))
