@@ -45,11 +45,27 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 
 		response, err = Broadcast(ctx, txf, msgs)
 		if err != nil {
-			// reset account and sequence number in case they were the issue
-			b.txFactory = b.txFactory.
-				WithAccountNumber(0).
-				WithSequence(0)
-			return err
+			if !isABCIError(err) {
+				return err
+			}
+
+			// retry on incorrect account sequence
+			if sdkerrors.ErrWrongSequence.Is(err) {
+				// reset account and sequence number in case they were the issue
+				b.txFactory = b.txFactory.
+					WithAccountNumber(0).
+					WithSequence(0)
+				return err
+			}
+
+			// retry on out of gas
+			if sdkerrors.ErrOutOfGas.Is(err) {
+				return err
+			}
+
+			// do not retry on other ABCI error
+			b.logger.Debug(fmt.Sprintf("tx response with error: %s", err))
+			return nil
 		}
 
 		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
@@ -199,4 +215,23 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 	}()
 
 	return p
+}
+
+type causer interface {
+	Cause() error
+}
+
+func isABCIError(err error) bool {
+	for {
+		switch e := err.(type) {
+		case nil:
+			return false
+		case *sdkerrors.Error:
+			return true
+		case causer:
+			err = e.Cause()
+		default:
+			return false
+		}
+	}
 }
