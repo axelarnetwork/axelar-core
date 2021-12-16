@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -28,8 +29,8 @@ func NewGenesisState(
 	}
 }
 
-// DefaultGenesis represents the default genesis state
-func DefaultGenesis() *GenesisState {
+// DefaultGenesisState represents the default genesis state
+func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
 		[]KeyRecoveryInfo{},
