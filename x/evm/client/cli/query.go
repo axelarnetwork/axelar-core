@@ -34,6 +34,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBytecode(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
 		GetCmdLatestBatchedCommands(queryRoute),
+		GetCmdPendingCommands(queryRoute),
+		GetCmdCommand(queryRoute),
 		GetCmdChains(queryRoute),
 	)
 
