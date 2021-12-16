@@ -67,7 +67,7 @@ func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryPendingCommandsResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		res.Unmarshal(bz)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -91,7 +91,7 @@ func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryCommandResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		res.Unmarshal(bz)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

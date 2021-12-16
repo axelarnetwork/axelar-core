@@ -30,7 +30,7 @@ var (
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	commandBatchPrefix          = utils.KeyFromStr("command_batch")
+	commandBatchPrefix          = utils.KeyFromStr("batched_commands")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")

@@ -307,7 +307,7 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryPendingCommandsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+			res.Unmarshal(bz)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -337,7 +337,7 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 			}
 
 			var res types.QueryCommandResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+			res.Unmarshal(bz)
 
 			return clientCtx.PrintProto(&res)
 		},

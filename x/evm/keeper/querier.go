@@ -82,7 +82,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
 		case QPendingCommands:
-			return queryPendingCommands(ctx, chainKeeper, n)
+			return QueryPendingCommands(ctx, chainKeeper, n)
 		case QCommand:
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
@@ -95,12 +95,13 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	}
 }
 
-func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
+// QueryPendingCommands returns the pending commands for a gateway
+func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
 	var resp types.QueryPendingCommandsResponse
 	commands := keeper.GetPendingCommands(ctx)
 
 	for _, cmd := range commands {
-		cmdResp, err := getCommandResponse(ctx, keeper.GetName(), n, cmd)
+		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
 		if err != nil {
 			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
@@ -108,7 +109,7 @@ func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nex
 		resp.Commands = append(resp.Commands, cmdResp)
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	return resp.Marshal()
 }
 
 func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id string) ([]byte, error) {
@@ -122,15 +123,16 @@ func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id s
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", cmd.ID.Hex()))
 	}
 
-	resp, err := getCommandResponse(ctx, keeper.GetName(), n, cmd)
+	resp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	return resp.Marshal()
 }
 
-func getCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd types.Command) (types.QueryCommandResponse, error) {
+// GetCommandResponse converts a Command into a CommandResponse type
+func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd types.Command) (types.QueryCommandResponse, error) {
 	params := make(map[string]string)
 
 	switch cmd.Command {
