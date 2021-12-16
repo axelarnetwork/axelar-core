@@ -47,15 +47,15 @@ const (
 			"type": "function"
 		}
 	]`
-	axelarGatewayCommandMintToken            = "mintToken"
+	AxelarGatewayCommandMintToken            = "mintToken"
 	mintTokenMaxGasCost                      = 200000
-	axelarGatewayCommandDeployToken          = "deployToken"
+	AxelarGatewayCommandDeployToken          = "deployToken"
 	deployTokenMaxGasCost                    = 1500000
-	axelarGatewayCommandBurnToken            = "burnToken"
+	AxelarGatewayCommandBurnToken            = "burnToken"
 	burnTokenMaxGasCost                      = 200000
-	axelarGatewayCommandTransferOwnership    = "transferOwnership"
+	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
 	transferOwnershipMaxGasCost              = 150000
-	axelarGatewayCommandTransferOperatorship = "transferOperatorship"
+	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
 	transferOperatorshipMaxGasCost           = 150000
 	axelarGatewayFuncExecute                 = "execute"
 )
@@ -445,7 +445,7 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, bur
 
 	return Command{
 		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command:    axelarGatewayCommandBurnToken,
+		Command:    AxelarGatewayCommandBurnToken,
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: burnTokenMaxGasCost,
@@ -461,7 +461,7 @@ func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails To
 
 	return Command{
 		ID:         NewCommandID([]byte(tokenDetails.Symbol), chainID),
-		Command:    axelarGatewayCommandDeployToken,
+		Command:    AxelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: deployTokenMaxGasCost,
@@ -477,7 +477,7 @@ func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, addres
 
 	return Command{
 		ID:         id,
-		Command:    axelarGatewayCommandMintToken,
+		Command:    AxelarGatewayCommandMintToken,
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: mintTokenMaxGasCost,
@@ -528,7 +528,7 @@ func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferTyp
 	case Ownership:
 		return Command{
 			ID:         id,
-			Command:    axelarGatewayCommandTransferOwnership,
+			Command:    AxelarGatewayCommandTransferOwnership,
 			Params:     params,
 			KeyID:      keyID,
 			MaxGasCost: transferOwnershipMaxGasCost,
@@ -536,7 +536,7 @@ func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferTyp
 	case Operatorship:
 		return Command{
 			ID:         id,
-			Command:    axelarGatewayCommandTransferOperatorship,
+			Command:    AxelarGatewayCommandTransferOperatorship,
 			Params:     params,
 			KeyID:      keyID,
 			MaxGasCost: transferOperatorshipMaxGasCost,
@@ -716,6 +716,11 @@ func (b CommandBatch) GetSigHash() Hash {
 
 }
 
+// GetCommands returns the IDs of the commands included in the batch
+func (b CommandBatch) GetCommands() []CommandID {
+	return b.metadata.CommandIDs
+}
+
 // Is returns true if batched commands is in the given status; false otherwise
 func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
@@ -770,6 +775,19 @@ func NewCommandID(data []byte, chainID *big.Int) CommandID {
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.Bytes()...))[:commandIDSize])
 
 	return commandID
+}
+
+// HexToCommandID decodes an hex representation of a CommandID
+func HexToCommandID(id string) (CommandID, error) {
+	bz, err := hex.DecodeString(id)
+	if err != nil {
+		return CommandID{}, err
+	}
+
+	var commandID CommandID
+	copy(commandID[:], bz)
+
+	return commandID, nil
 }
 
 // Hex returns the hex representation of command ID
@@ -949,6 +967,32 @@ func createMintTokenParams(symbol string, address common.Address, amount *big.In
 	return result, nil
 }
 
+// DecodeMintTokenParams unpacks the parameters of a mint token command
+func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", common.Address{}, nil, err
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return "", common.Address{}, nil, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return "", common.Address{}, nil, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return "", common.Address{}, nil, err
+	}
+
+	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
+}
+
 func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity *big.Int) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
@@ -979,6 +1023,32 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	return result, nil
 }
 
+// DecodeDeployTokenParams unpacks the parameters of a deploy token command
+func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", "", 0, nil, err
+	}
+
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
+	if err != nil {
+		return "", "", 0, nil, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return "", "", 0, nil, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return "", "", 0, nil, err
+	}
+
+	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), nil
+}
+
 func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
@@ -999,6 +1069,27 @@ func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	return result, nil
 }
 
+// DecodeBurnTokenParams unpacks the parameters of a burn token command
+func DecodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", common.Hash{}, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return "", common.Hash{}, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return "", common.Hash{}, err
+	}
+
+	return params[0].(string), params[1].([common.HashLength]byte), nil
+}
+
 func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
@@ -1012,6 +1103,22 @@ func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
 	}
 
 	return result, nil
+}
+
+// DecodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
+func DecodeTransferSinglesigParams(bz []byte) (common.Address, error) {
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	arguments := abi.Arguments{{Type: addressType}}
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return params[0].(common.Address), nil
 }
 
 func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
@@ -1032,6 +1139,27 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	}
 
 	return result, nil
+}
+
+// DecodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
+func DecodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return []common.Address{}, 0, err
+	}
+
+	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
 }
 
 // ValidateBasic does stateless validation of the object

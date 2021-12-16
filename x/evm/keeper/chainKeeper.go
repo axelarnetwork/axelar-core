@@ -357,6 +357,30 @@ func (k chainKeeper) EnqueueCommand(ctx sdk.Context, command types.Command) erro
 	return nil
 }
 
+// GetCommand returns the command specified by the given ID
+func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (types.Command, bool) {
+	key := commandPrefix.AppendStr(id.Hex())
+	var cmd types.Command
+	found := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
+
+	return cmd, found
+}
+
+// GetPendingCommands returns the list of commands not yet added to any batch
+func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
+	var commands []types.Command
+	iter := k.getStore(ctx, k.chainLowerKey).Iterator(commandPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var cmd types.Command
+		iter.UnmarshalValue(&cmd)
+		commands = append(commands, cmd)
+	}
+
+	return commands
+}
+
 // SetPendingDeposit stores a pending deposit
 func (k chainKeeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, deposit *types.ERC20Deposit) {
 	k.getStore(ctx, k.chainLowerKey).Set(pendingDepositPrefix.AppendStr(key.String()), deposit)

@@ -49,6 +49,53 @@ func GetHandlerQueryLatestBatchedCommands(cliCtx client.Context) http.HandlerFun
 	}
 }
 
+// GetHandlerQueryPendingCommands returns a handler to get the list of commands not yet added to a batch
+func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QPendingCommands, chain))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain).Error())
+			return
+		}
+
+		var res types.QueryPendingCommandsResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// GetHandlerQueryCommand returns a handler to get the command with the given ID on the specified chain
+func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		id := mux.Vars(r)[utils.PathVarCommandID]
+
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommand, chain, id))
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain).Error())
+			return
+		}
+
+		var res types.QueryCommandResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
 // GetHandlerQueryBatchedCommands returns a handler to query batched commands by ID
 func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

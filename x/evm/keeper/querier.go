@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -29,6 +30,8 @@ const (
 	QBytecode              = "bytecode"
 	QLatestBatchedCommands = "latest-batched-commands"
 	QBatchedCommands       = "batched-commands"
+	QPendingCommands       = "pending-commands"
+	QCommand               = "command"
 	QChains                = "chains"
 )
 
@@ -78,6 +81,10 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
+		case QPendingCommands:
+			return queryPendingCommands(ctx, chainKeeper, n)
+		case QCommand:
+			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QChains:
@@ -86,6 +93,121 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
+}
+
+func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
+	var resp types.QueryPendingCommandsResponse
+	commands := keeper.GetPendingCommands(ctx)
+
+	for _, cmd := range commands {
+		cmdResp, err := getCommandResponse(ctx, keeper.GetName(), n, cmd)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		resp.Commands = append(resp.Commands, cmdResp)
+	}
+
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+}
+
+func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id string) ([]byte, error) {
+	cmdID, err := types.HexToCommandID(id)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	cmd, ok := keeper.GetCommand(ctx, cmdID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", cmd.ID.Hex()))
+	}
+
+	resp, err := getCommandResponse(ctx, keeper.GetName(), n, cmd)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+}
+
+func getCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd types.Command) (types.QueryCommandResponse, error) {
+	params := make(map[string]string)
+
+	switch cmd.Command {
+	case types.AxelarGatewayCommandDeployToken:
+		name, symbol, decs, cap, err := types.DecodeDeployTokenParams(cmd.Params)
+		if err != nil {
+			return types.QueryCommandResponse{}, err
+		}
+
+		params["token_name"] = name
+		params["symbol"] = symbol
+		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
+		params["capacity"] = cap.String()
+
+	case types.AxelarGatewayCommandMintToken:
+		name, addr, amount, err := types.DecodeMintTokenParams(cmd.Params)
+		if err != nil {
+			return types.QueryCommandResponse{}, err
+		}
+
+		params["token_name"] = name
+		params["recipient"] = addr.Hex()
+		params["amount"] = amount.String()
+
+	case types.AxelarGatewayCommandBurnToken:
+		symbol, salt, err := types.DecodeBurnTokenParams(cmd.Params)
+		if err != nil {
+			return types.QueryCommandResponse{}, err
+		}
+
+		params["symbol"] = symbol
+		params["salt"] = salt.Hex()
+
+	case types.AxelarGatewayCommandTransferOwnership, types.AxelarGatewayCommandTransferOperatorship:
+		chain, ok := n.GetChain(ctx, chainName)
+		if !ok {
+			return types.QueryCommandResponse{}, fmt.Errorf("unknown chain '%s'", chainName)
+		}
+
+		switch chain.KeyType {
+		case tss.Threshold:
+			address, err := types.DecodeTransferSinglesigParams(cmd.Params)
+			if err != nil {
+				return types.QueryCommandResponse{}, err
+			}
+
+			params["new_address"] = address.Hex()
+
+		case tss.Multisig:
+			addresses, threshold, err := types.DecodeTransferMultisigParams(cmd.Params)
+			if err != nil {
+				return types.QueryCommandResponse{}, err
+			}
+
+			var hexs []string
+			for _, address := range addresses {
+				hexs = append(hexs, address.Hex())
+			}
+
+			params["new_addresses"] = strings.Join(hexs, ";")
+			params["threshold"] = strconv.FormatUint(uint64(threshold), 10)
+
+		default:
+			return types.QueryCommandResponse{}, fmt.Errorf("unsupported key type '%s'", chain.KeyType.SimpleString())
+		}
+
+	default:
+		return types.QueryCommandResponse{}, fmt.Errorf("unknown command type '%s'", cmd.Command)
+	}
+
+	return types.QueryCommandResponse{
+		ID:         cmd.ID.Hex(),
+		Type:       cmd.Command,
+		KeyID:      string(cmd.KeyID),
+		MaxGasCost: cmd.MaxGasCost,
+		Params:     params,
+	}, nil
 }
 
 // QueryLatestBatchedCommands returns the latest batched commands
@@ -109,6 +231,11 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 	prevBatchedCommandsIDHex := ""
 	if batchedCommands.GetPrevBatchedCommandsID() != nil {
 		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.GetPrevBatchedCommandsID())
+	}
+
+	var commandIDs []string
+	for _, id := range batchedCommands.GetCommands() {
+		commandIDs = append(commandIDs, id.Hex())
 	}
 
 	var resp types.QueryBatchedCommandsResponse
@@ -162,6 +289,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			Signature:             signatures,
 			ExecuteData:           hex.EncodeToString(executeData),
 			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+			CommandIDs:            commandIDs,
 		}
 	default:
 		resp = types.QueryBatchedCommandsResponse{
@@ -172,6 +300,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 			Signature:             nil,
 			ExecuteData:           "",
 			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+			CommandIDs:            commandIDs,
 		}
 	}
 

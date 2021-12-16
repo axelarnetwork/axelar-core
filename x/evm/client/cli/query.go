@@ -285,6 +285,65 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 	return cmd
 }
 
+// GetCmdPendingCommands returns the query to get the list of commands not yet added to a batch
+func GetCmdPendingCommands(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pending-commands [chain]",
+		Short: "Get the list of commands not yet added to a batch",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QPendingCommands, chain))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain)
+			}
+
+			var res types.QueryPendingCommandsResponse
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCommand returns the query to get the command with the given ID on the specified chain
+func GetCmdCommand(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "command [chain] [id]",
+		Short: "Get information about an EVM gateway command given a chain and the command ID",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			id := args[1]
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QCommand, chain, id))
+			if err != nil {
+				return sdkerrors.Wrapf(err, "could not get command for chain %s", chain)
+			}
+
+			var res types.QueryCommandResponse
+			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdChains returns the query to get all EVM chains
 func GetCmdChains(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
