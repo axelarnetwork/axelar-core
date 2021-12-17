@@ -6,6 +6,7 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/codec"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"sync"
 )
 
@@ -28,8 +29,8 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			IsEmptyFunc: func() bool {
 // 				panic("mock out the IsEmpty method")
 // 			},
-// 			QueuedKeysFunc: func() []utils.Key {
-// 				panic("mock out the QueuedKeys method")
+// 			ValuesFunc: func() []gogoprototypes.BytesValue {
+// 				panic("mock out the Values method")
 // 			},
 // 		}
 //
@@ -47,8 +48,8 @@ type KVQueueMock struct {
 	// IsEmptyFunc mocks the IsEmpty method.
 	IsEmptyFunc func() bool
 
-	// QueuedKeysFunc mocks the QueuedKeys method.
-	QueuedKeysFunc func() []utils.Key
+	// ValuesFunc mocks the Values method.
+	ValuesFunc func() []gogoprototypes.BytesValue
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -69,14 +70,14 @@ type KVQueueMock struct {
 		// IsEmpty holds details about calls to the IsEmpty method.
 		IsEmpty []struct {
 		}
-		// QueuedKeys holds details about calls to the QueuedKeys method.
-		QueuedKeys []struct {
+		// Values holds details about calls to the Values method.
+		Values []struct {
 		}
 	}
-	lockDequeue    sync.RWMutex
-	lockEnqueue    sync.RWMutex
-	lockIsEmpty    sync.RWMutex
-	lockQueuedKeys sync.RWMutex
+	lockDequeue sync.RWMutex
+	lockEnqueue sync.RWMutex
+	lockIsEmpty sync.RWMutex
+	lockValues  sync.RWMutex
 }
 
 // Dequeue calls DequeueFunc.
@@ -175,28 +176,28 @@ func (mock *KVQueueMock) IsEmptyCalls() []struct {
 	return calls
 }
 
-// QueuedKeys calls QueuedKeysFunc.
-func (mock *KVQueueMock) QueuedKeys() []utils.Key {
-	if mock.QueuedKeysFunc == nil {
-		panic("KVQueueMock.QueuedKeysFunc: method is nil but KVQueue.QueuedKeys was just called")
+// Values calls ValuesFunc.
+func (mock *KVQueueMock) Values() []gogoprototypes.BytesValue {
+	if mock.ValuesFunc == nil {
+		panic("KVQueueMock.ValuesFunc: method is nil but KVQueue.Values was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockQueuedKeys.Lock()
-	mock.calls.QueuedKeys = append(mock.calls.QueuedKeys, callInfo)
-	mock.lockQueuedKeys.Unlock()
-	return mock.QueuedKeysFunc()
+	mock.lockValues.Lock()
+	mock.calls.Values = append(mock.calls.Values, callInfo)
+	mock.lockValues.Unlock()
+	return mock.ValuesFunc()
 }
 
-// QueuedKeysCalls gets all the calls that were made to QueuedKeys.
+// ValuesCalls gets all the calls that were made to Values.
 // Check the length with:
-//     len(mockedKVQueue.QueuedKeysCalls())
-func (mock *KVQueueMock) QueuedKeysCalls() []struct {
+//     len(mockedKVQueue.ValuesCalls())
+func (mock *KVQueueMock) ValuesCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockQueuedKeys.RLock()
-	calls = mock.calls.QueuedKeys
-	mock.lockQueuedKeys.RUnlock()
+	mock.lockValues.RLock()
+	calls = mock.calls.Values
+	mock.lockValues.RUnlock()
 	return calls
 }
