@@ -36,7 +36,7 @@ func TestCommands(t *testing.T) {
 		chain = "Ethereum"
 	}
 
-	t.Run("should set a pending command", testutils.Func(func(t *testing.T) {
+	t.Run("enqueue and then batch commands", testutils.Func(func(t *testing.T) {
 		setup()
 		chainKeeper := keeper.ForChain(chain)
 		chainKeeper.SetParams(ctx, types.DefaultParams()[0])
