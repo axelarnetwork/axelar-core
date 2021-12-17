@@ -117,11 +117,10 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		}
 
 		// metrics for sign participation
-		metrics.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"}, 1,
+		metrics.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"}, float32(validator.ShareCount),
 			[]metrics.Label{
 				telemetry.NewLabel("sigID", info.SigID),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
 			})
 	}
 
