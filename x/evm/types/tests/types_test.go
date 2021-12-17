@@ -37,10 +37,23 @@ func TestDeployToken(t *testing.T) {
 		Capacity:  sdk.NewIntFromBigInt(big.NewInt(rand.I64Between(100, 100000))),
 	}
 
-	cmd, err := types.CreateDeployTokenCommand(chainID, keyID, details)
-	assert.NoError(t, err)
+	capBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(capBz, details.Capacity.Uint64())
+	capHex := hex.EncodeToString(capBz)
 
-	decodedName, decodedSymbol, decodedDecs, decodedCap, err := types.DecodeDeployTokenParams(cmd.Params)
+	expectedParams := fmt.Sprintf("000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000%s%s000000000000000000000000000000000000000000000000000000000000000a%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003%s0000000000000000000000000000000000000000000000000000000000",
+
+		hex.EncodeToString([]byte{byte(details.Decimals)}),
+		strings.Repeat("0", 64-len(capHex))+capHex,
+		hex.EncodeToString([]byte(details.TokenName)),
+		hex.EncodeToString([]byte(details.Symbol)),
+	)
+	actual, err := types.CreateDeployTokenCommand(chainID, keyID, details)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedName, decodedSymbol, decodedDecs, decodedCap, err := types.DecodeDeployTokenParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, details.TokenName, decodedName)
 	assert.Equal(t, details.Symbol, decodedSymbol)
