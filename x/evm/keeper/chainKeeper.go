@@ -370,10 +370,8 @@ func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (types.Comm
 func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 	var commands []types.Command
 
-	values := k.getCommandQueue(ctx).Values()
-	for _, value := range values {
-		key := utils.KeyFromBz(value.Value)
-
+	keys := k.getCommandQueue(ctx).Keys()
+	for _, key := range keys {
 		var cmd types.Command
 		ok := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
 		if ok {
