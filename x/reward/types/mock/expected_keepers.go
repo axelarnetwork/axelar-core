@@ -350,6 +350,9 @@ var _ rewardtypes.Nexus = &NexusMock{}
 // 			GetChainsFunc: func(ctx cosmossdktypes.Context) []nexus.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
+// 			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain) bool {
+// 				panic("mock out the IsChainActivated method")
+// 			},
 // 		}
 //
 // 		// use mockedNexus in code that requires rewardtypes.Nexus
@@ -362,6 +365,9 @@ type NexusMock struct {
 
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx cosmossdktypes.Context) []nexus.Chain
+
+	// IsChainActivatedFunc mocks the IsChainActivated method.
+	IsChainActivatedFunc func(ctx cosmossdktypes.Context, chain nexus.Chain) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -377,9 +383,17 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// IsChainActivated holds details about calls to the IsChainActivated method.
+		IsChainActivated []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+		}
 	}
 	lockGetChainMaintainers sync.RWMutex
 	lockGetChains           sync.RWMutex
+	lockIsChainActivated    sync.RWMutex
 }
 
 // GetChainMaintainers calls GetChainMaintainersFunc.
@@ -445,6 +459,41 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	mock.lockGetChains.RLock()
 	calls = mock.calls.GetChains
 	mock.lockGetChains.RUnlock()
+	return calls
+}
+
+// IsChainActivated calls IsChainActivatedFunc.
+func (mock *NexusMock) IsChainActivated(ctx cosmossdktypes.Context, chain nexus.Chain) bool {
+	if mock.IsChainActivatedFunc == nil {
+		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain nexus.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockIsChainActivated.Lock()
+	mock.calls.IsChainActivated = append(mock.calls.IsChainActivated, callInfo)
+	mock.lockIsChainActivated.Unlock()
+	return mock.IsChainActivatedFunc(ctx, chain)
+}
+
+// IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
+// Check the length with:
+//     len(mockedNexus.IsChainActivatedCalls())
+func (mock *NexusMock) IsChainActivatedCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain nexus.Chain
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain nexus.Chain
+	}
+	mock.lockIsChainActivated.RLock()
+	calls = mock.calls.IsChainActivated
+	mock.lockIsChainActivated.RUnlock()
 	return calls
 }
 
