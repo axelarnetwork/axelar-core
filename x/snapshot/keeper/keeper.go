@@ -397,9 +397,9 @@ func (k Keeper) setProxiedValidator(ctx sdk.Context, proxiedValidator types.Prox
 	ctx.KVStore(k.storeKey).Set([]byte(proxyPrefix+proxiedValidator.Proxy.String()), bz)
 }
 
-// GetOperator returns the proxy address for a given principal address. Returns nil if not set.
+// GetOperator returns the principal address for a given proxy address. Returns nil if not set.
 func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-	if proxiedValidator, ok := k.getProxiedValidator(ctx, proxy); ok {
+	if proxiedValidator, ok := k.getProxiedValidator(ctx, proxy); ok && proxiedValidator.Active {
 		return proxiedValidator.Validator
 	}
 
