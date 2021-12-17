@@ -36,7 +36,7 @@ var (
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 
-	commandQueueName = "queue_commands"
+	commandQueueName = "cmd_queue"
 )
 
 var _ types.ChainKeeper = chainKeeper{}
