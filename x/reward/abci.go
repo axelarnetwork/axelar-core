@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -15,10 +16,29 @@ func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {
 
 // EndBlocker is called at the end of every block, process external chain voting inflation
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) []abci.ValidatorUpdate {
-	handleExternalChainVotingInflation(ctx, k, n, m)
+	handleExternalChainVotingInflation(ctx, k, n, m, s)
 	handleTssInflation(ctx, k, m, s, t, ss)
 
 	return nil
+}
+
+func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool exported.RewardPool, validators []stakingtypes.Validator, totalReward sdk.DecCoin) {
+	totalAmount := totalReward.Amount
+	denom := totalReward.Denom
+
+	totalConsensusPower := sdk.ZeroInt()
+	for _, validator := range validators {
+		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower(s.PowerReduction(ctx)))
+	}
+
+	for _, validator := range validators {
+		// Each validator receives reward weighted by consensus power
+		amount := totalAmount.MulInt64(validator.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
+		rewardPool.AddReward(
+			validator.GetOperator(),
+			sdk.NewCoin(denom, amount),
+		)
+	}
 }
 
 func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) {
@@ -28,7 +48,6 @@ func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s typ
 	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).TssRelativeInflationRate)
 
 	var validators []stakingtypes.Validator
-	totalConsensusPower := sdk.ZeroInt()
 
 	validatorIterFn := func(_ int64, v stakingtypes.ValidatorI) bool {
 		if !t.IsOperatorAvailable(ctx, v.GetOperator()) {
@@ -45,25 +64,16 @@ func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s typ
 			return false
 		}
 
-		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower(s.PowerReduction(ctx)))
 		validators = append(validators, validator)
 
 		return false
 	}
 	s.IterateBondedValidatorsByPower(ctx, validatorIterFn)
 
-	for _, validator := range validators {
-		// Each validator receives reward weighted by consensus power
-		amount := totalAmount.MulInt64(validator.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
-		rewardPool.AddReward(
-			validator.GetOperator(),
-			sdk.NewCoin(mintParams.MintDenom, amount),
-		)
-	}
-
+	addRewardsByConsensusPower(ctx, s, rewardPool, validators, sdk.NewDecCoinFromDec(mintParams.MintDenom, totalAmount))
 }
 
-func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n types.Nexus, m types.Minter) {
+func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker) {
 	totalStakingSupply := m.StakingTokenSupply(ctx)
 	blocksPerYear := m.GetParams(ctx).BlocksPerYear
 	inflationRate := k.GetParams(ctx).ExternalChainVotingInflationRate
@@ -77,13 +87,16 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 			continue
 		}
 
-		reward := sdk.NewCoin(
-			denom,
-			amountPerChain.QuoInt64(int64(len(maintainers))).RoundInt(),
-		)
+		var validators []stakingtypes.Validator
 		for _, maintainer := range maintainers {
-			// Each maintainer receives equal amount of reward
-			rewardPool.AddReward(maintainer, reward)
+			v := s.Validator(ctx, maintainer)
+			if v == nil {
+				continue
+			}
+
+			validators = append(validators, v.(stakingtypes.Validator))
 		}
+
+		addRewardsByConsensusPower(ctx, s, rewardPool, validators, sdk.NewDecCoinFromDec(denom, amountPerChain))
 	}
 }
