@@ -43,6 +43,10 @@ func (k baseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 		for _, token := range chain.Tokens {
 			ck.setTokenMetadata(ctx, token)
 		}
+
+		if chain.LatestBatchedCommandsID != nil {
+			ck.setLatestSignedCommandBatchID(ctx, chain.LatestBatchedCommandsID)
+		}
 	}
 }
 
@@ -59,14 +63,15 @@ func (k baseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 		ck := k.ForChain(string(iter.Value())).(chainKeeper)
 
 		chain := types.GenesisState_Chain{
-			Params:            ck.GetParams(ctx),
-			BurnerInfos:       ck.getBurnerInfos(ctx),
-			CommandQueue:      ck.serializeCommandQueue(ctx),
-			ConfirmedDeposits: ck.GetConfirmedDeposits(ctx),
-			BurnedDeposits:    ck.getBurnedDeposits(ctx),
-			CommandBatches:    ck.getCommandBatchesMetadata(ctx),
-			Gateway:           ck.getGateway(ctx),
-			Tokens:            ck.getTokensMetadata(ctx),
+			Params:                  ck.GetParams(ctx),
+			BurnerInfos:             ck.getBurnerInfos(ctx),
+			CommandQueue:            ck.serializeCommandQueue(ctx),
+			ConfirmedDeposits:       ck.GetConfirmedDeposits(ctx),
+			BurnedDeposits:          ck.getBurnedDeposits(ctx),
+			CommandBatches:          ck.getCommandBatchesMetadata(ctx),
+			Gateway:                 ck.getGateway(ctx),
+			Tokens:                  ck.getTokensMetadata(ctx),
+			LatestBatchedCommandsID: ck.getLatestSignedCommandBatchID(ctx),
 		}
 		chains = append(chains, chain)
 	}

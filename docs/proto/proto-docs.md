@@ -2443,6 +2443,7 @@ GenesisState represents the genesis state
 | `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
 | `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
 | `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
+| `latest_batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 
