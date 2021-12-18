@@ -23,6 +23,7 @@ const (
 	AttributeKeyKeyType            = "keyType"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyBurnAddress        = "burnAddress"
+	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyTokenAddress       = "tokenAddress"
 	AttributeKeyGatewayAddress     = "gatewayAddress"
 	AttributeKeyBytecodeHash       = "bytecodeHash"
