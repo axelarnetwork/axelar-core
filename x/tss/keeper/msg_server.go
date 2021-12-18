@@ -733,38 +733,10 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 		sigKeyPairs = append(sigKeyPairs, bz)
 	}
 
-	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...)
-	if !ok {
+	if !s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...) {
 		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
+
 		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
-	}
-
-	// existence is checked before
-	multisigSignInfo, _ := s.GetMultisigSignInfo(ctx, info.SigID)
-
-	if multisigSignInfo.IsCompleted() {
-		s.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signed)
-		s.SetSig(ctx, exported.Signature{
-			SigID: info.SigID,
-			Sig: &exported.Signature_MultiSig_{
-				MultiSig: &exported.Signature_MultiSig{
-					SigKeyPairs: multisigSignInfo.GetTargetSigKeyPairs(),
-				},
-			},
-			SigStatus: exported.SigStatus_Signed,
-		})
-		s.route(ctx, info)
-
-		s.Logger(ctx).Debug(fmt.Sprintf("multisig sign %s completed", req.SigID))
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeSign,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeySigID, req.SigID),
-				sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-				sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
-		)
 	}
 
 	return &types.SubmitMultisigSignaturesResponse{}, nil
