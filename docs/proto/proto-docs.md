@@ -425,7 +425,6 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `supported_chains` | [string](#string) | repeated |  |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 | `transaction_fee_rate` | [string](#string) |  |  |
 
