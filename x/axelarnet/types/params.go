@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -30,7 +28,6 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		SupportedChains:    nil,
 		RouteTimeoutWindow: 17000,
 		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.1%
 	}
@@ -46,37 +43,33 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		set on the correct Params data struct
 	*/
 	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyAssets, &m.SupportedChains, validateSupportedChains),
-		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validateUint64("RouteTimeoutWindow")),
+		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validatePosUInt64("RouteTimeoutWindow")),
 		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
-	return validateSupportedChains(m.SupportedChains)
-}
-
-func validateSupportedChains(infos interface{}) error {
-	supportedChains, ok := infos.([]string)
-	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidGenesis, "invalid parameter type for %T: %T", []string{}, infos)
+	if err := validatePosUInt64("RouteTimeoutWindow")(m.RouteTimeoutWindow); err != nil {
+		return err
 	}
 
-	for _, chain := range supportedChains {
-		if chain == "" {
-			return sdkerrors.Wrap(types.ErrInvalidGenesis, "chain name cannot be an empty string")
-		}
+	if err := validateTransactionFeeRate(m.TransactionFeeRate); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func validateUint64(field string) func(value interface{}) error {
+func validatePosUInt64(field string) func(value interface{}) error {
 	return func(value interface{}) error {
-		_, ok := value.(uint64)
+		val, ok := value.(uint64)
 		if !ok {
 			return fmt.Errorf("invalid parameter type for %s: %T", field, value)
+		}
+
+		if val <= 0 {
+			return fmt.Errorf("%s must be a positive integer", field)
 		}
 
 		return nil
