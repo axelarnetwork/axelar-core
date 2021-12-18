@@ -33,10 +33,6 @@ func RandomChain() types.GenesisState_Chain {
 		CommandBatches: RandomBatches(),
 	}
 
-	if len(chain.CommandBatches) > 0 {
-		chain.LatestBatchedCommandsID = chain.CommandBatches[len(chain.CommandBatches)-1].ID
-	}
-
 	if chain.Gateway.Status != types.GatewayStatusConfirmed {
 		return chain
 	}
