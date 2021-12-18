@@ -16,7 +16,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/klauspost/compress v1.11.9 // indirect
-	github.com/matryer/moq v0.2.4
+	github.com/matryer/moq v0.2.5
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/rakyll/statik v0.1.7
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
