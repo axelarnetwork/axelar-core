@@ -34,7 +34,7 @@ func (k baseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 
 		if latestBatch.Status != types.BatchNonExistent {
 			ck.setLatestBatchMetadata(ctx, latestBatch)
-			ck.setLatestSignedCommandBatchID(ctx, latestBatch.ID)
+			ck.SetLatestSignedCommandBatchID(ctx, latestBatch.ID)
 		}
 
 		ck.setGateway(ctx, chain.Gateway)

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -10,18 +11,25 @@ import (
 
 // NewTssHandler returns the handler for processing signatures delivered by the tss module
 func NewTssHandler(keeper types.BaseKeeper, nexus types.Nexus, signer types.Signer) tss.Handler {
-	return func(ctx sdk.Context, _ tss.SignInfo) error {
+	return func(ctx sdk.Context, sigInfo tss.SignInfo) error {
 		chains := nexus.GetChains(ctx)
 
+		ok := false
 		for _, chain := range chains {
-			handleUnsignedBatchedCommands(ctx, keeper.ForChain(chain.Name), signer)
+			if ok = handleUnsignedBatchedCommands(ctx, keeper.ForChain(chain.Name), signer); ok {
+				break
+			}
+		}
+
+		if !ok {
+			return fmt.Errorf("no command batch found to handle for signature %s", sigInfo.GetSigID())
 		}
 
 		return nil
 	}
 }
 
-func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (handled bool) {
+func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) bool {
 	if _, ok := keeper.GetNetwork(ctx); !ok {
 		return false
 	}
