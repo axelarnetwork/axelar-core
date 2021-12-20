@@ -24,10 +24,12 @@ RUN make build
 FROM alpine:3.12
 
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
+RUN addgroup -S axelard && adduser -S axelard -G axelard
+USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
 
 # The home directory of axelar-core where configuration/genesis/data are stored
-ENV HOME_DIR /root
+ENV HOME_DIR /home/axelard
 # Host name for tss daemon (only necessary for validator nodes)
 ENV TOFND_HOST ""
 # The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
