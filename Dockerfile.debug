@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:experimental
 
 FROM golang:1.16.4 as debug
+RUN groupadd -r axelard && useradd -m -r -g axelard axelard
 
 WORKDIR /axelar
+RUN chown -R axelard:axelard /axelar
 
 RUN go get github.com/go-delve/delve/cmd/dlv
 
@@ -18,7 +20,7 @@ RUN make debug
 RUN cp /axelar/bin/* /usr/local/bin
 
 # The home directory of axelar-core where configuration/genesis/data are stored
-ENV HOME_DIR /root
+ENV HOME_DIR /home/axelard
 # Whether or not to start the REST server
 ENV START_REST false
 # Host name for tss daemon (only necessary for validator nodes)
@@ -39,5 +41,7 @@ ENV NODE_MONIKER ""
 ENV REST_CONTINUE true
 # Should dlv wait for a debugger to attach to the axelard process before starting it?
 ENV CORE_CONTINUE true
+
+USER axelard
 
 ENTRYPOINT ["/axelar/entrypoint.debug.sh"]

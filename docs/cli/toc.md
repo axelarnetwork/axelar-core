@@ -47,9 +47,11 @@
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
+      - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
       - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant

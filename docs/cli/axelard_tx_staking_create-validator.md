@@ -27,7 +27,7 @@ axelard tx staking create-validator [flags]
   -h, --help                                help for create-validator
       --identity string                     The optional identity signature (ex. UPort or Keybase)
       --ip string                           The node's public IP. It takes effect only when used in combination with --generate-only (default "127.0.0.1")
-      --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
+      --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string                  The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                              Use a connected Ledger device
       --min-self-delegation string          The minimum self delegation required on the validator
