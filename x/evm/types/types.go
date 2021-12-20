@@ -683,11 +683,6 @@ func NewCommandBatch(metadata CommandBatchMetadata, setter func(batch CommandBat
 	}
 }
 
-// GetCommandsID returns the CommandIDs array
-func (b CommandBatch) GetCommandsID() []CommandID {
-	return b.metadata.CommandIDs
-}
-
 // GetPrevBatchedCommandsID returns the batch that preceeds this one
 func (b CommandBatch) GetPrevBatchedCommandsID() []byte {
 	return b.metadata.PrevBatchedCommandsID
