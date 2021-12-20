@@ -772,7 +772,9 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
 	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
 	if !ok {
-		return nil, fmt.Errorf("cross-chain sender has no recipient")
+		msg := "cross-chain sender has no recipient"
+		s.Logger(ctx).Error(msg)
+		return &types.VoteConfirmDepositResponse{Log: msg}, nil
 	}
 
 	// handle poll result
@@ -797,11 +799,14 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	feeRate, ok := keeper.GetTransactionFeeRate(ctx)
 	if !ok {
-		return nil, fmt.Errorf("could not retrieve transaction fee rate")
+		msg := "could not retrieve transaction fee rate"
+		s.Logger(ctx).Error(msg)
+		return &types.VoteConfirmDepositResponse{Log: msg}, nil
 	}
 
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
-		return nil, err
+		s.Logger(ctx).Error(err.Error())
+		return &types.VoteConfirmDepositResponse{Log: err.Error()}, nil
 	}
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
@@ -980,7 +985,8 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	if err := s.signer.RotateKey(ctx, chain, keyRole); err != nil {
-		return nil, err
+		s.Logger(ctx).Error(err.Error())
+		return &types.VoteConfirmTransferKeyResponse{Log: err.Error()}, nil
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
