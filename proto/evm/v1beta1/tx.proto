@@ -211,6 +211,7 @@ message SignCommandsRequest {
 message SignCommandsResponse {
   bytes batched_commands_id = 1
       [ (gogoproto.customname) = "BatchedCommandsID" ];
+  int32 commands_count = 2;
 }
 
 message AddChainRequest {

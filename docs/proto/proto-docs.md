@@ -3082,6 +3082,7 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `batched_commands_id` | [bytes](#bytes) |  |  |
+| `commands_count` | [int32](#int32) |  |  |
 
 
 

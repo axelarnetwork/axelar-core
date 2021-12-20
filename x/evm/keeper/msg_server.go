@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -1414,8 +1413,8 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	if err != nil {
 		return nil, err
 	}
-	if cmp.Equal(commandBatch, types.CommandBatch{}) {
-		return &types.SignCommandsResponse{BatchedCommandsID: nil}, nil
+	if len(commandBatch.GetCommandsID()) == 0 {
+		return &types.SignCommandsResponse{CommandsCount: 0, BatchedCommandsID: nil}, nil
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
@@ -1451,7 +1450,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: commandBatch.GetID()}, nil
+	return &types.SignCommandsResponse{CommandsCount: int32(len(commandBatch.GetCommandsID())), BatchedCommandsID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
