@@ -716,8 +716,8 @@ func (b CommandBatch) GetSigHash() Hash {
 
 }
 
-// GetCommands returns the IDs of the commands included in the batch
-func (b CommandBatch) GetCommands() []CommandID {
+// GetCommandIDs returns the IDs of the commands included in the batch
+func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
 }
 

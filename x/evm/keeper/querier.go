@@ -236,7 +236,7 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 	}
 
 	var commandIDs []string
-	for _, id := range batchedCommands.GetCommands() {
+	for _, id := range batchedCommands.GetCommandIDs() {
 		commandIDs = append(commandIDs, id.Hex())
 	}
 
