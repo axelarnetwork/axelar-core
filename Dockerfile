@@ -23,6 +23,7 @@ RUN make build
 
 FROM alpine:3.12
 
+RUN apk add jq
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
 RUN addgroup -S -g 1001 axelard && adduser -S -u 1000 axelard -G axelard
 USER axelard
