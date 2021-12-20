@@ -1,6 +1,8 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -20,4 +22,11 @@ type StakingKeeper interface {
 // BankKeeper adopts the GetBalance function of the bank keeper that is used by this module
 type BankKeeper interface {
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
+}
+
+// Nexus provides functionality to manage cross-chain transfers
+type Nexus interface {
+	GetChains(ctx sdk.Context) []nexus.Chain
+	IsChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) bool
+	RemoveChainMaintainer(ctx sdk.Context, chain nexus.Chain, maintainer sdk.ValAddress) error
 }

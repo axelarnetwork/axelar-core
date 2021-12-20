@@ -1,30 +1,23 @@
-## axelard tx gov submit-proposal
+## axelard tx gov submit-proposal ibc-upgrade
 
-Submit a proposal along with an initial deposit
+Submit an IBC upgrade proposal
 
 ### Synopsis
 
-Submit a proposal along with an initial deposit.
-Proposal title, description, type and deposit can be given directly or through a proposal JSON file.
-
-Example:
-$ <appd> tx gov submit-proposal --proposal="path/to/proposal.json" --from mykey
-
-Where proposal.json contains:
-
+Submit an IBC client breaking upgrade proposal along with an initial deposit.
+The client state specified is the upgraded client state representing the upgraded chain
+Example Upgraded Client State JSON:
 {
-"title": "Test Proposal",
-"description": "My awesome proposal",
-"type": "Text",
-"deposit": "10test"
+"@type":"/ibc.lightclients.tendermint.v1.ClientState",
+"chain_id":"testchain1",
+"unbonding_period":"1814400s",
+"latest_height":{"revision_number":"0","revision_height":"2"},
+"proof_specs":\[{"leaf_spec":{"hash":"SHA256","prehash_key":"NO_HASH","prehash_value":"SHA256","length":"VAR_PROTO","prefix":"AA=="},"inner_spec":{"child_order":\[0,1\],"child_size":33,"min_prefix_length":4,"max_prefix_length":12,"empty_child":null,"hash":"SHA256"},"max_depth":0,"min_depth":0},{"leaf_spec":{"hash":"SHA256","prehash_key":"NO_HASH","prehash_value":"SHA256","length":"VAR_PROTO","prefix":"AA=="},"inner_spec":{"child_order":\[0,1\],"child_size":32,"min_prefix_length":1,"max_prefix_length":1,"empty_child":null,"hash":"SHA256"},"max_depth":0,"min_depth":0}\],
+"upgrade_path":\["upgrade","upgradedIBCState"\],
 }
 
-Which is equivalent to:
-
-$ <appd> tx gov submit-proposal --title="Test Proposal" --description="My awesome proposal" --type="Text" --deposit="10test" --from mykey
-
 ```
-axelard tx gov submit-proposal [flags]
+axelard tx gov submit-proposal ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]
 ```
 
 ### Options
@@ -32,8 +25,8 @@ axelard tx gov submit-proposal [flags]
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
-      --deposit string           The proposal deposit
-      --description string       The proposal description
+      --deposit string           deposit of proposal
+      --description string       description of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -42,19 +35,17 @@ axelard tx gov submit-proposal [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for submit-proposal
+  -h, --help                     help for ibc-upgrade
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
-      --proposal string          Proposal file path (if this path is given, other proposal flags are ignored)
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
-      --title string             The proposal title
-      --type string              The proposal Type
+      --title string             title of proposal
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
@@ -71,10 +62,4 @@ axelard tx gov submit-proposal [flags]
 
 ### SEE ALSO
 
-- [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-- [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
-- [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
-- [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
-- [axelard tx gov submit-proposal param-change](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
-- [axelard tx gov submit-proposal software-upgrade](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
-- [axelard tx gov submit-proposal update-client](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

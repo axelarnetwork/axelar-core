@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -156,6 +157,11 @@ func validateCommandBatches(batches []CommandBatchMetadata) error {
 
 		if batch.PrevBatchedCommandsID == nil {
 			batchesWithoutPreviousBatch = append(batchesWithoutPreviousBatch, strconv.Itoa(i))
+		}
+
+		if i > 0 && !bytes.Equal(batches[i-1].ID, batch.PrevBatchedCommandsID) {
+			return fmt.Errorf("previous batch ID mismatch at index %d (want '%s', got '%s')",
+				i, hex.EncodeToString(batches[i-1].ID), hex.EncodeToString(batch.PrevBatchedCommandsID))
 		}
 	}
 

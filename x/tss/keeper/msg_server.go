@@ -532,6 +532,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
+		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -539,7 +541,6 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
-
 		if signature := signResult.GetSignature(); signature != nil {
 			key, _ := s.GetKey(ctx, info.KeyID)
 			pk, err := key.GetECDSAPubKey()
@@ -560,6 +561,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				},
 				SigStatus: exported.SigStatus_Signed,
 			})
+			s.route(ctx, info)
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
 			event = event.AppendAttributes(
@@ -567,14 +569,13 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
-			s.route(ctx, info)
-
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
 
@@ -733,38 +734,10 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 		sigKeyPairs = append(sigKeyPairs, bz)
 	}
 
-	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...)
-	if !ok {
+	if !s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...) {
 		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
+
 		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
-	}
-
-	// existence is checked before
-	multisigSignInfo, _ := s.GetMultisigSignInfo(ctx, info.SigID)
-
-	if multisigSignInfo.IsCompleted() {
-		s.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signed)
-		s.SetSig(ctx, exported.Signature{
-			SigID: info.SigID,
-			Sig: &exported.Signature_MultiSig_{
-				MultiSig: &exported.Signature_MultiSig{
-					SigKeyPairs: multisigSignInfo.GetTargetSigKeyPairs(),
-				},
-			},
-			SigStatus: exported.SigStatus_Signed,
-		})
-		s.route(ctx, info)
-
-		s.Logger(ctx).Debug(fmt.Sprintf("multisig sign %s completed", req.SigID))
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeSign,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeySigID, req.SigID),
-				sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-				sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
-		)
 	}
 
 	return &types.SubmitMultisigSignaturesResponse{}, nil
