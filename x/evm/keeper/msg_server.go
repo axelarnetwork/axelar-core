@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -1412,6 +1413,9 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	commandBatch, err := getCommandBatchToSign(ctx, keeper)
 	if err != nil {
 		return nil, err
+	}
+	if cmp.Equal(commandBatch, types.CommandBatch{}) {
+		return &types.SignCommandsResponse{BatchedCommandsID: nil}, nil
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())

@@ -647,7 +647,7 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
 	command, ok := k.popCommand(ctx)
 	if !ok {
-		return types.CommandBatch{}, fmt.Errorf("no commands to sign found")
+		return types.CommandBatch{}, nil
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
