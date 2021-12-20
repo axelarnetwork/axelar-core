@@ -179,7 +179,11 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 				return types.QueryCommandResponse{}, err
 			}
 
-			params["newOwner"] = address.Hex()
+			param := "newOwner"
+			if cmd.Command == types.AxelarGatewayCommandTransferOperatorship {
+				param = "newOperator"
+			}
+			params[param] = address.Hex()
 
 		case tss.Multisig:
 			addresses, threshold, err := types.DecodeTransferMultisigParams(cmd.Params)
@@ -192,7 +196,11 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 				hexs = append(hexs, address.Hex())
 			}
 
-			params["newOwners"] = strings.Join(hexs, ";")
+			param := "newOwners"
+			if cmd.Command == types.AxelarGatewayCommandTransferOperatorship {
+				param = "newOperators"
+			}
+			params[param] = strings.Join(hexs, ";")
 			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
 
 		default:
