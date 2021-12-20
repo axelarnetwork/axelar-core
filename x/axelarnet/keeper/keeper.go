@@ -10,7 +10,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -47,12 +46,6 @@ func (k Keeper) getParams(ctx sdk.Context) (params types.Params) {
 
 func (k Keeper) setParams(ctx sdk.Context, n types.Nexus, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
-	for _, c := range p.SupportedChains {
-		chain, ok := n.GetChain(ctx, c)
-		if ok {
-			n.RegisterAsset(ctx, exported.Axelarnet, chain.NativeAsset)
-		}
-	}
 }
 
 // GetRouteTimeoutWindow returns the timeout window for IBC transfers routed by axelarnet

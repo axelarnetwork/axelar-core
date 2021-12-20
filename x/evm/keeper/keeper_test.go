@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -19,6 +20,65 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
+
+func TestCommands(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		keeper types.BaseKeeper
+		chain  string
+	)
+
+	setup := func() {
+		encCfg := params.MakeEncodingConfig()
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
+		chain = "Ethereum"
+	}
+
+	t.Run("enqueue and then batch commands", testutils.Func(func(t *testing.T) {
+		setup()
+		chainKeeper := keeper.ForChain(chain)
+		chainKeeper.SetParams(ctx, types.DefaultParams()[0])
+		chainID, ok := chainKeeper.GetChainID(ctx)
+		assert.True(t, ok)
+
+		numCmds := int(rand.I64Between(10, 50))
+		var commands []types.Command
+
+		for i := 0; i < numCmds; i++ {
+			tokenDetails := createDetails(rand.Str(10), rand.Str(3))
+			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails)
+			assert.NoError(t, err)
+
+			err = chainKeeper.EnqueueCommand(ctx, cmd)
+			assert.NoError(t, err)
+
+			commands = append(commands, cmd)
+		}
+
+		for _, cmd := range commands {
+			fetchedCmd, ok := chainKeeper.GetCommand(ctx, cmd.ID)
+			assert.True(t, ok)
+			assert.Equal(t, cmd, fetchedCmd)
+		}
+		assert.ElementsMatch(t, commands, chainKeeper.GetPendingCommands(ctx))
+
+		lastLength := len(chainKeeper.GetPendingCommands(ctx))
+		for {
+			_, err := chainKeeper.CreateNewBatchToSign(ctx)
+			assert.NoError(t, err)
+			remainingCmds := chainKeeper.GetPendingCommands(ctx)
+			assert.Less(t, len(remainingCmds), lastLength)
+			lastLength = len(remainingCmds)
+			batch := chainKeeper.GetLatestCommandBatch(ctx)
+			batch.SetStatus(types.BatchSigned)
+			if lastLength == 0 {
+				break
+			}
+		}
+	}).Repeat(20))
+}
 
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (

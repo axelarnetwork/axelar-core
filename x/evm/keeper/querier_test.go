@@ -2,10 +2,13 @@ package keeper_test
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 	"testing"
 
 	evmTest "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -23,6 +26,82 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+func TestQueryPendingCommands(t *testing.T) {
+	var (
+		chainKeeper *mock.ChainKeeperMock
+		nexusKeeper *mock.NexusMock
+		ctx         sdk.Context
+		evmChain    string
+		asset       string
+		symbol      string
+		chainID     *big.Int
+		keyID       tss.KeyID
+		cmds        []types.Command
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		evmChain = rand.StrBetween(5, 10)
+		asset = btc.Bitcoin.NativeAsset
+		symbol = "axelarBTC"
+		chainID = big.NewInt(1)
+		keyID = tssTestUtils.RandKeyID()
+		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, createDetails(asset, symbol))
+		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
+		cmdBurn, _ := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
+			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			Symbol:        symbol,
+			Salt:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+		})
+		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetNameFunc: func() string { return evmChain },
+			GetPendingCommandsFunc: func(sdk.Context) []types.Command {
+				return cmds
+			},
+		}
+
+		nexusKeeper = &mock.NexusMock{
+			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+					return nexus.Chain{
+						Name:                  evmChain,
+						NativeAsset:           rand.StrBetween(5, 20),
+						SupportsForeignAssets: true,
+						Module:                rand.Str(10),
+					}, true
+				}
+				return nexus.Chain{}, false
+			},
+		}
+	}
+
+	repeatCount := 20
+
+	t.Run("happy path", testutils.Func(func(t *testing.T) {
+		setup()
+
+		var res types.QueryPendingCommandsResponse
+		bz, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
+		assert.NoError(t, err)
+
+		err = res.Unmarshal(bz)
+		assert.NoError(t, err)
+
+		var cmdResp []types.QueryCommandResponse
+		for _, cmd := range cmds {
+			resp, err := evmKeeper.GetCommandResponse(ctx, evmChain, nexusKeeper, cmd)
+			assert.NoError(t, err)
+			cmdResp = append(cmdResp, resp)
+		}
+
+		assert.ElementsMatch(t, cmdResp, res.Commands)
+
+	}).Repeat(repeatCount))
+}
 
 func TestQueryTokenAddress(t *testing.T) {
 

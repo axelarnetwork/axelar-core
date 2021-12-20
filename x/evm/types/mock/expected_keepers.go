@@ -2541,6 +2541,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int {
 // 				panic("mock out the GetChainIDByNetwork method")
 // 			},
+// 			GetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id types.CommandID) (types.Command, bool) {
+// 				panic("mock out the GetCommand method")
+// 			},
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
@@ -2576,6 +2579,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
 // 				panic("mock out the GetParams method")
+// 			},
+// 			GetPendingCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command {
+// 				panic("mock out the GetPendingCommands method")
 // 			},
 // 			GetPendingDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool) {
 // 				panic("mock out the GetPendingDeposit method")
@@ -2683,6 +2689,9 @@ type ChainKeeperMock struct {
 	// GetChainIDByNetworkFunc mocks the GetChainIDByNetwork method.
 	GetChainIDByNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) *big.Int
 
+	// GetCommandFunc mocks the GetCommand method.
+	GetCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id types.CommandID) (types.Command, bool)
+
 	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
 
@@ -2718,6 +2727,9 @@ type ChainKeeperMock struct {
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
+
+	// GetPendingCommandsFunc mocks the GetPendingCommands method.
+	GetPendingCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command
 
 	// GetPendingDepositFunc mocks the GetPendingDeposit method.
 	GetPendingDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key vote.PollKey) (types.ERC20Deposit, bool)
@@ -2884,6 +2896,13 @@ type ChainKeeperMock struct {
 			// Network is the network argument value.
 			Network string
 		}
+		// GetCommand holds details about calls to the GetCommand method.
+		GetCommand []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ID is the id argument value.
+			ID types.CommandID
+		}
 		// GetConfirmedDeposits holds details about calls to the GetConfirmedDeposits method.
 		GetConfirmedDeposits []struct {
 			// Ctx is the ctx argument value.
@@ -2949,6 +2968,11 @@ type ChainKeeperMock struct {
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetPendingCommands holds details about calls to the GetPendingCommands method.
+		GetPendingCommands []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -3074,6 +3098,7 @@ type ChainKeeperMock struct {
 	lockGetBurnerInfo                 sync.RWMutex
 	lockGetChainID                    sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
+	lockGetCommand                    sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
@@ -3086,6 +3111,7 @@ type ChainKeeperMock struct {
 	lockGetNetwork                    sync.RWMutex
 	lockGetNetworkByID                sync.RWMutex
 	lockGetParams                     sync.RWMutex
+	lockGetPendingCommands            sync.RWMutex
 	lockGetPendingDeposit             sync.RWMutex
 	lockGetPendingGatewayAddress      sync.RWMutex
 	lockGetPendingTransferKey         sync.RWMutex
@@ -3691,6 +3717,41 @@ func (mock *ChainKeeperMock) GetChainIDByNetworkCalls() []struct {
 	return calls
 }
 
+// GetCommand calls GetCommandFunc.
+func (mock *ChainKeeperMock) GetCommand(ctx github_com_cosmos_cosmos_sdk_types.Context, id types.CommandID) (types.Command, bool) {
+	if mock.GetCommandFunc == nil {
+		panic("ChainKeeperMock.GetCommandFunc: method is nil but ChainKeeper.GetCommand was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  types.CommandID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetCommand.Lock()
+	mock.calls.GetCommand = append(mock.calls.GetCommand, callInfo)
+	mock.lockGetCommand.Unlock()
+	return mock.GetCommandFunc(ctx, id)
+}
+
+// GetCommandCalls gets all the calls that were made to GetCommand.
+// Check the length with:
+//     len(mockedChainKeeper.GetCommandCalls())
+func (mock *ChainKeeperMock) GetCommandCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  types.CommandID
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  types.CommandID
+	}
+	mock.lockGetCommand.RLock()
+	calls = mock.calls.GetCommand
+	mock.lockGetCommand.RUnlock()
+	return calls
+}
+
 // GetConfirmedDeposits calls GetConfirmedDepositsFunc.
 func (mock *ChainKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 	if mock.GetConfirmedDepositsFunc == nil {
@@ -4075,6 +4136,37 @@ func (mock *ChainKeeperMock) GetParamsCalls() []struct {
 	mock.lockGetParams.RLock()
 	calls = mock.calls.GetParams
 	mock.lockGetParams.RUnlock()
+	return calls
+}
+
+// GetPendingCommands calls GetPendingCommandsFunc.
+func (mock *ChainKeeperMock) GetPendingCommands(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command {
+	if mock.GetPendingCommandsFunc == nil {
+		panic("ChainKeeperMock.GetPendingCommandsFunc: method is nil but ChainKeeper.GetPendingCommands was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPendingCommands.Lock()
+	mock.calls.GetPendingCommands = append(mock.calls.GetPendingCommands, callInfo)
+	mock.lockGetPendingCommands.Unlock()
+	return mock.GetPendingCommandsFunc(ctx)
+}
+
+// GetPendingCommandsCalls gets all the calls that were made to GetPendingCommands.
+// Check the length with:
+//     len(mockedChainKeeper.GetPendingCommandsCalls())
+func (mock *ChainKeeperMock) GetPendingCommandsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetPendingCommands.RLock()
+	calls = mock.calls.GetPendingCommands
+	mock.lockGetPendingCommands.RUnlock()
 	return calls
 }
 

@@ -181,7 +181,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
 	defaults := map[string]string{
-		flags.FlagKeyringBackend:   "test",
+		flags.FlagKeyringBackend:   "file",
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
 		flags.FlagSkipConfirmation: "true",
 		flags.FlagGasPrices:        "0.05uaxl",

@@ -29,6 +29,7 @@ message QueryBatchedCommandsResponse {
   string execute_data = 6;
   string prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
+  repeated string command_ids = 8 [ (gogoproto.customname) = "CommandIDs" ];
 }
 
 message QueryAddressResponse {
@@ -71,3 +72,15 @@ message QueryDepositStateResponse {
 message QueryBurnerAddressResponse { string address = 1; }
 
 message QueryChainsResponse { repeated string chains = 1; }
+
+message QueryPendingCommandsResponse {
+  repeated QueryCommandResponse commands = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryCommandResponse {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string type = 2;
+  map<string, string> params = 3 [ (gogoproto.nullable) = false ];
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  uint32 max_gas_cost = 5;
+}
