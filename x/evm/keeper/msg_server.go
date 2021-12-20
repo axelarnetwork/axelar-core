@@ -1249,10 +1249,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		}
 	}
 
-	if len(transfersToArchive) == 0 {
-		s.Logger(ctx).Debug(fmt.Sprintf("no pending transfers ready for processing out of %d total", len(pendingTransfers)))
-		return &types.CreatePendingTransfersResponse{}, nil
-	}
+	s.Logger(ctx).Debug(fmt.Sprintf("%d pending transfers ready for processing out of %d total", len(transfersToArchive), len(pendingTransfers)))
 
 	for _, pendingTransfer := range transfersToArchive {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
@@ -1382,6 +1379,19 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
+	latest := keeper.GetLatestCommandBatch(ctx)
+
+	switch latest.GetStatus() {
+	case types.BatchSigning:
+		return types.CommandBatch{}, fmt.Errorf("signing for command batch '%s' is still in progress", hex.EncodeToString(latest.GetID()))
+	case types.BatchAborted:
+		return latest, nil
+	default:
+		return keeper.CreateNewBatchToSign(ctx)
+	}
+}
+
 func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsRequest) (*types.SignCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
@@ -1399,17 +1409,14 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	id, err := keeper.CreateNewBatchToSign(ctx)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper)
 	if err != nil {
 		return nil, err
 	}
 
-	// if no error was thrown above, the batch exists
-	batchedCommands := keeper.GetBatchByID(ctx, id)
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.GetKeyID())
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.GetKeyID())
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
 
 	sigMetadata := types.SigMetadata{
@@ -1417,11 +1424,11 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Chain: chain.Name,
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
+	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
 	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           batchedCommands.GetKeyID(),
+		KeyID:           commandBatch.GetKeyID(),
 		SigID:           batchedCommandsIDHex,
-		Msg:             batchedCommands.GetSigHash().Bytes(),
+		Msg:             commandBatch.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
@@ -1440,7 +1447,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID()}, nil
+	return &types.SignCommandsResponse{BatchedCommandsID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {

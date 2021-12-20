@@ -78,11 +78,13 @@ type ChainKeeper interface {
 	GetERC20TokenBySymbol(ctx sdk.Context, symbol string) ERC20Token
 
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
-	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
+  GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
 	GetPendingCommands(ctx sdk.Context) []Command
-	CreateNewBatchToSign(ctx sdk.Context) ([]byte, error)
+	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
+	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
+	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 }
 
 // ParamsKeeper represents a global paramstore
