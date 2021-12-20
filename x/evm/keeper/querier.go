@@ -148,12 +148,12 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 		params["cap"] = cap.String()
 
 	case types.AxelarGatewayCommandMintToken:
-		name, addr, amount, err := types.DecodeMintTokenParams(cmd.Params)
+		symbol, addr, amount, err := types.DecodeMintTokenParams(cmd.Params)
 		if err != nil {
 			return types.QueryCommandResponse{}, err
 		}
 
-		params["symbol"] = name
+		params["symbol"] = symbol
 		params["account"] = addr.Hex()
 		params["amount"] = amount.String()
 
