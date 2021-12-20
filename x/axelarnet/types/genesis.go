@@ -42,7 +42,7 @@ func (m GenesisState) Validate() error {
 		return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 	}
 
-	if m.CollectorAddress != nil {
+	if len(m.CollectorAddress) > 0 {
 		if err := sdk.VerifyAddressFormat(m.CollectorAddress); err != nil {
 			return getValidateError(err)
 		}
