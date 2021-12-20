@@ -138,13 +138,23 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	}
 
 	// metrics
+	keygenIll := illegibility.FilterIllegibilityForNewKey()
+	signIll := illegibility.FilterIllegibilityForSigning()
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
 		gauge := float32(0)
-		if illegibility.Is(ill) {
+		if keygenIll.Is(ill) {
 			gauge = 1
 		}
 
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "illegibility_" + ill.String()},
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen_illegibility_" + ill.String()},
+			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
+
+		gauge = 0
+		if signIll.Is(ill) {
+			gauge = 1
+		}
+
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign_illegibility_" + ill.String()},
 			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
 
