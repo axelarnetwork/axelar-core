@@ -68,7 +68,7 @@ func validatePosUInt64(field string) func(value interface{}) error {
 			return fmt.Errorf("invalid parameter type for %s: %T", field, value)
 		}
 
-		if val <= 0 {
+		if val == 0 {
 			return fmt.Errorf("%s must be a positive integer", field)
 		}
 
