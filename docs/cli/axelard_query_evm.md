@@ -30,7 +30,9 @@ axelard query evm [flags]
 - [axelard query evm batched-commands](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
 - [axelard query evm bytecode](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
 - [axelard query evm chains](axelard_query_evm_chains.md)	 - Get EVM chains
+- [axelard query evm command](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
 - [axelard query evm deposit-state](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
 - [axelard query evm gateway-address](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
 - [axelard query evm latest-batched-commands](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+- [axelard query evm pending-commands](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
 - [axelard query evm token-address](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset

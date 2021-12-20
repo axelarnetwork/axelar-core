@@ -164,8 +164,11 @@
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryChainsResponse](#evm.v1beta1.QueryChainsResponse)
+    - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
+    - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
+    - [QueryPendingCommandsResponse](#evm.v1beta1.QueryPendingCommandsResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
@@ -2561,6 +2564,7 @@ deposit address
 | `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
+| `command_ids` | [string](#string) | repeated |  |
 
 
 
@@ -2597,6 +2601,41 @@ deposit address
 
 
 
+<a name="evm.v1beta1.QueryCommandResponse"></a>
+
+### QueryCommandResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+| `params` | [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry) | repeated |  |
+| `key_id` | [string](#string) |  |  |
+| `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryCommandResponse.ParamsEntry"></a>
+
+### QueryCommandResponse.ParamsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.QueryDepositStateParams"></a>
 
 ### QueryDepositStateParams
@@ -2624,6 +2663,21 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
 | `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryPendingCommandsResponse"></a>
+
+### QueryPendingCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `commands` | [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse) | repeated |  |
 
 
 

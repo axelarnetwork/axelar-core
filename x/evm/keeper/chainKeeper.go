@@ -31,13 +31,13 @@ var (
 	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	commandBatchPrefix          = utils.KeyFromStr("command_batch")
+	commandBatchPrefix          = utils.KeyFromStr("batched_commands")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 
-	commandQueueName = "command_queue"
+	commandQueueName = "cmd_queue"
 )
 
 var _ types.ChainKeeper = chainKeeper{}
@@ -354,6 +354,31 @@ func (k chainKeeper) EnqueueCommand(ctx sdk.Context, command types.Command) erro
 
 	k.getCommandQueue(ctx).Enqueue(key, &command)
 	return nil
+}
+
+// GetCommand returns the command specified by the given ID
+func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (types.Command, bool) {
+	key := commandPrefix.AppendStr(id.Hex())
+	var cmd types.Command
+	found := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
+
+	return cmd, found
+}
+
+// GetPendingCommands returns the list of commands not yet added to any batch
+func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
+	var commands []types.Command
+
+	keys := k.getCommandQueue(ctx).Keys()
+	for _, key := range keys {
+		var cmd types.Command
+		ok := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
+		if ok {
+			commands = append(commands, cmd)
+		}
+	}
+
+	return commands
 }
 
 // SetPendingDeposit stores a pending deposit

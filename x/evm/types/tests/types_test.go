@@ -26,6 +26,41 @@ import (
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
+func TestDeployToken(t *testing.T) {
+	chainID := big.NewInt(1)
+	keyID := tssTestUtils.RandKeyID()
+
+	details := types.TokenDetails{
+		TokenName: rand.Str(10),
+		Symbol:    rand.Str(3),
+		Decimals:  uint8(rand.I64Between(3, 10)),
+		Capacity:  sdk.NewIntFromBigInt(big.NewInt(rand.I64Between(100, 100000))),
+	}
+
+	capBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(capBz, details.Capacity.Uint64())
+	capHex := hex.EncodeToString(capBz)
+
+	expectedParams := fmt.Sprintf("000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000%s%s000000000000000000000000000000000000000000000000000000000000000a%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003%s0000000000000000000000000000000000000000000000000000000000",
+
+		hex.EncodeToString([]byte{byte(details.Decimals)}),
+		strings.Repeat("0", 64-len(capHex))+capHex,
+		hex.EncodeToString([]byte(details.TokenName)),
+		hex.EncodeToString([]byte(details.Symbol)),
+	)
+	actual, err := types.CreateDeployTokenCommand(chainID, keyID, details)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedName, decodedSymbol, decodedDecs, decodedCap, err := types.DecodeDeployTokenParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, details.TokenName, decodedName)
+	assert.Equal(t, details.Symbol, decodedSymbol)
+	assert.Equal(t, details.Decimals, decodedDecs)
+	assert.Equal(t, details.Capacity.BigInt(), decodedCap)
+}
+
 func TestCreateMintTokenCommand(t *testing.T) {
 	chainID := big.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
@@ -47,6 +82,13 @@ func TestCreateMintTokenCommand(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedSymbol, decodedAddr, decodedAmount, err := types.DecodeMintTokenParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, symbol, decodedSymbol)
+	assert.Equal(t, address, decodedAddr)
+	assert.Equal(t, amount, decodedAmount)
+
 }
 
 func TestCreateBurnTokenCommand(t *testing.T) {
@@ -69,6 +111,11 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedSymbol, decodedSalt, err := types.DecodeBurnTokenParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, symbol, decodedSymbol)
+	assert.Equal(t, salt, decodedSalt)
 }
 
 func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
@@ -86,6 +133,10 @@ func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedAddr, err := types.DecodeTransferSinglesigParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, newOwnerAddr, decodedAddr)
 }
 
 func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
@@ -103,6 +154,10 @@ func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedAddr, err := types.DecodeTransferSinglesigParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, newOperatorAddr, decodedAddr)
 }
 
 func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
@@ -127,6 +182,11 @@ func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedAddrs, decodedThreshold, err := types.DecodeTransferMultisigParams(actual.Params)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, addresses, decodedAddrs)
+	assert.Equal(t, threshold, decodedThreshold)
 }
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 	chainID := big.NewInt(1)
@@ -150,6 +210,11 @@ func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	decodedAddrs, decodedThreshold, err := types.DecodeTransferMultisigParams(actual.Params)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, addresses, decodedAddrs)
+	assert.Equal(t, threshold, decodedThreshold)
 }
 
 func TestGetSignHash(t *testing.T) {
