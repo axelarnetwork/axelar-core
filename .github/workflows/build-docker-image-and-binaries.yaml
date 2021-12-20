@@ -16,6 +16,19 @@ jobs:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      actions: none
+      checks: none
+      contents: read
+      deployments: none
+      issues: none
+      packages: write
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
+      id-token: write # needed for signing the images with GitHub OIDC
+
     steps:
       - name: Validate tag
         env:
@@ -29,6 +42,9 @@ jobs:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
           submodules: recursive
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
 
       - name: Set up ssh agent
         uses: webfactory/ssh-agent@v0.5.2
@@ -55,6 +71,12 @@ jobs:
           make build-push-docker-images
         env:
           SEMVER: ${{ github.event.inputs.tag }}
+
+      - name: Sign the images with GitHub OIDC
+        run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
+        env:
+          TAGS: axelar-core:${{ github.event.inputs.tag }}
+          COSIGN_EXPERIMENTAL: 1
 
       - name: Build Binaries for Linux/MacOS
         env:
