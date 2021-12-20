@@ -19,6 +19,8 @@ type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
+
+	//TODO: convert to iterator
 	Keys() []Key
 }
 
