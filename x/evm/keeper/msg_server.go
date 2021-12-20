@@ -1414,7 +1414,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 	if len(commandBatch.GetCommandIDs()) == 0 {
-		return &types.SignCommandsResponse{CommandsCount: 0, BatchedCommandsID: nil}, nil
+		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
 	}
 
 	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
@@ -1450,7 +1450,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{CommandsCount: int32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
+	return &types.SignCommandsResponse{CommandCount: int32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
