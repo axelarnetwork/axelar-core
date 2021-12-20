@@ -24,7 +24,7 @@ RUN make build
 FROM alpine:3.12
 
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
-RUN addgroup -S axelard && adduser -S axelard -G axelard
+RUN addgroup -S -g 1001 axelard && adduser -S -u 1000 axelard -G axelard
 USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
 
