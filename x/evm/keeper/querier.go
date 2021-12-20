@@ -153,8 +153,8 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 			return types.QueryCommandResponse{}, err
 		}
 
-		params["token_name"] = name
-		params["recipient"] = addr.Hex()
+		params["symbol"] = name
+		params["account"] = addr.Hex()
 		params["amount"] = amount.String()
 
 	case types.AxelarGatewayCommandBurnToken:
