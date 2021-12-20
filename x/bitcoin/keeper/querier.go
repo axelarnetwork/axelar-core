@@ -19,7 +19,7 @@ import (
 
 // Query paths
 const (
-	QDepositAddress                = "depositAddresses"
+	QDepositAddress                = "depositAddress"
 	QConsolidationAddressByKeyRole = "consolidationAddrByKeyRole"
 	QConsolidationAddressByKeyID   = "consolidationAddrByKeyID"
 	QNextKeyID                     = "nextKeyID"
