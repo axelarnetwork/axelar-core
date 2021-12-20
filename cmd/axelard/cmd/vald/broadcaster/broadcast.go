@@ -45,27 +45,11 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 
 		response, err = Broadcast(ctx, txf, msgs)
 		if err != nil {
-			if !isABCIError(err) {
-				return err
-			}
-
-			// retry on incorrect account sequence
-			if sdkerrors.ErrWrongSequence.Is(err) {
-				// reset account and sequence number in case they were the issue
-				b.txFactory = b.txFactory.
-					WithAccountNumber(0).
-					WithSequence(0)
-				return err
-			}
-
-			// retry on out of gas
-			if sdkerrors.ErrOutOfGas.Is(err) {
-				return err
-			}
-
-			// do not retry on other ABCI error
-			b.logger.Debug(fmt.Sprintf("tx response with error: %s", err))
-			return nil
+			// reset account and sequence number in case they were the issue
+			b.txFactory = b.txFactory.
+				WithAccountNumber(0).
+				WithSequence(0)
+			return err
 		}
 
 		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
@@ -170,11 +154,11 @@ type RetryPipeline struct {
 // Push adds the given function to the serialized execution pipeline
 func (p RetryPipeline) Push(f func() error) error {
 	e := make(chan error, 1)
-	p.c <- func() { e <- p.retry(f) }
+	p.c <- func() { e <- p.retry(f, sdkerrors.ErrOutOfGas, sdkerrors.ErrWrongSequence) }
 	return <-e
 }
 
-func (p RetryPipeline) retry(f func() error) error {
+func (p RetryPipeline) retry(f func() error, ABCIError ...*sdkerrors.Error) error {
 	var err error
 	for i := 0; i <= p.maxRetries; i++ {
 		err = f()
@@ -183,6 +167,17 @@ func (p RetryPipeline) retry(f func() error) error {
 				p.logger.Info("successful broadcast after backoff")
 			}
 			return nil
+		}
+
+		if isABCIError(err) {
+			for _, e := range ABCIError {
+				if e.Is(err) {
+					break
+				}
+				p.logger.Error(fmt.Sprintf("tx response with error: %s", err))
+				return nil
+			}
+
 		}
 
 		if i < p.maxRetries {
