@@ -59,15 +59,12 @@ func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		chain := mux.Vars(r)[utils.PathVarChain]
-
-		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QPendingCommands, chain))
+		res, err := evmclient.QueryPendingCommands(cliCtx, chain)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		var res types.QueryPendingCommandsResponse
-		res.Unmarshal(bz)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -84,14 +81,12 @@ func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 		chain := mux.Vars(r)[utils.PathVarChain]
 		id := mux.Vars(r)[utils.PathVarCommandID]
 
-		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommand, chain, id))
+		res, err := evmclient.QueryCommand(cliCtx, chain, id)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain).Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		var res types.QueryCommandResponse
-		res.Unmarshal(bz)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

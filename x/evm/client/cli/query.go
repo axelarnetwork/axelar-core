@@ -299,15 +299,10 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			chain := args[0]
-
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QPendingCommands, chain))
+			res, err := evmclient.QueryPendingCommands(clientCtx, args[0])
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain)
+				return err
 			}
-
-			var res types.QueryPendingCommandsResponse
-			res.Unmarshal(bz)
 
 			return clientCtx.PrintProto(&res)
 		},
@@ -328,16 +323,10 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			chain := args[0]
-			id := args[1]
-
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QCommand, chain, id))
+			res, err := evmclient.QueryCommand(clientCtx, args[0], args[1])
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get command for chain %s", chain)
+				return err
 			}
-
-			var res types.QueryCommandResponse
-			res.Unmarshal(bz)
 
 			return clientCtx.PrintProto(&res)
 		},
