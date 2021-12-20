@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
@@ -139,18 +138,25 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	}
 
 	// metrics
+	keygenIll := illegibility.FilterIllegibilityForNewKey()
+	signIll := illegibility.FilterIllegibilityForSigning()
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
 		gauge := float32(0)
-		if illegibility.Is(ill) {
+		if keygenIll.Is(ill) {
 			gauge = 1
 		}
 
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "illegibility_" + ill.String()},
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen_illegibility_" + ill.String()},
+			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
+
+		gauge = 0
+		if signIll.Is(ill) {
+			gauge = 1
+		}
+
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign_illegibility_" + ill.String()},
 			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
-
-	metrics.MeasureSinceWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
-		time.Unix(ctx.BlockHeight(), 0), []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 
 	return response, nil
 }
@@ -208,15 +214,14 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
-	ts := ctx.BlockTime().Unix()
 	for _, validator := range snapshot.Validators {
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "keygen", "participation"},
-			float32(validator.ShareCount),
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen", "participation"}, 0,
 			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 				telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID)),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
+				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
 			})
 	}
 
