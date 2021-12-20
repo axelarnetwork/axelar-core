@@ -142,10 +142,10 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 			return types.QueryCommandResponse{}, err
 		}
 
-		params["token_name"] = name
+		params["name"] = name
 		params["symbol"] = symbol
 		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
-		params["capacity"] = cap.String()
+		params["cap"] = cap.String()
 
 	case types.AxelarGatewayCommandMintToken:
 		name, addr, amount, err := types.DecodeMintTokenParams(cmd.Params)
@@ -179,7 +179,7 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 				return types.QueryCommandResponse{}, err
 			}
 
-			params["new_address"] = address.Hex()
+			params["newOwner"] = address.Hex()
 
 		case tss.Multisig:
 			addresses, threshold, err := types.DecodeTransferMultisigParams(cmd.Params)
@@ -192,8 +192,8 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 				hexs = append(hexs, address.Hex())
 			}
 
-			params["new_addresses"] = strings.Join(hexs, ";")
-			params["threshold"] = strconv.FormatUint(uint64(threshold), 10)
+			params["newOwners"] = strings.Join(hexs, ";")
+			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
 
 		default:
 			return types.QueryCommandResponse{}, fmt.Errorf("unsupported key type '%s'", chain.KeyType.SimpleString())
