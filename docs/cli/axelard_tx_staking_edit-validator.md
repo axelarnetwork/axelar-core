@@ -23,7 +23,7 @@ axelard tx staking edit-validator [flags]
       --generate-only                Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                         help for edit-validator
       --identity string              The (optional) identity signature (ex. UPort or Keybase) (default "[do-not-modify]")
-      --keyring-backend string       Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
+      --keyring-backend string       Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string           The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                       Use a connected Ledger device
       --min-self-delegation string   The minimum self delegation required on the validator
