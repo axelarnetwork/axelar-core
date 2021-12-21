@@ -896,8 +896,8 @@ func (m TokenDetails) Validate() error {
 	if m.Symbol == "" {
 		return fmt.Errorf("missing token symbol")
 	}
-	if m.Capacity.IsNil() || !m.Capacity.IsPositive() {
-		return fmt.Errorf("token capacity must be a positive number")
+	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
+		return fmt.Errorf("token capacity must be a non-negative number")
 	}
 
 	return nil
