@@ -46,4 +46,11 @@ ENV PRESTART_SCRIPT ""
 # The Axelar node's moniker
 ENV NODE_MONIKER ""
 
+# Create these folders so that when they are mounted the permissions flow down
+RUN mkdir /home/axelard/.axelar && chown axelard /home/axelard/.axelar
+RUN mkdir /home/axelard/shared && chown axelard /home/axelard/shared
+RUN mkdir /home/axelard/genesis && chown axelard /home/axelard/genesis
+RUN mkdir /home/axelard/scripts && chown axelard /home/axelard/scripts
+RUN mkdir /home/axelard/conf && chown axelard /home/axelard/conf
+
 ENTRYPOINT ["/entrypoint.sh"]
