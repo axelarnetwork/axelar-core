@@ -34,7 +34,7 @@ ENV HOME_DIR /home/axelard
 # Host name for tss daemon (only necessary for validator nodes)
 ENV TOFND_HOST ""
 # The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
-ENV KEYRING_BACKEND test
+ENV AXELARD_KEYRING_BACKEND file
 # The chain ID
 ENV AXELARD_CHAIN_ID axelar-testnet-toronto
 # The file with the peer list to connect to the network
