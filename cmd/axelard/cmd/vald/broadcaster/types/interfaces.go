@@ -29,6 +29,6 @@ type Broadcaster interface {
 
 // Pipeline represents an execution pipeline
 type Pipeline interface {
-	Push(func() error) error
+	Push(func() error, func(error) bool) error
 	Close()
 }
