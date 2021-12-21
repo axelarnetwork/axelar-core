@@ -113,7 +113,11 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			res, err := server.SignCommands(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully started signing batched commands with ID %s", hex.EncodeToString(res.BatchedCommandsID))
+				if res.CommandCount == 0 {
+					result.Log = "no command to sign found"
+				} else {
+					result.Log = fmt.Sprintf("successfully started signing batched commands with ID %s", hex.EncodeToString(res.BatchedCommandsID))
+				}
 			}
 			return result, err
 		case *types.AddChainRequest:
@@ -121,7 +125,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully added new chain %s", msg.Name)
-
 			}
 			return result, err
 		default:
