@@ -94,7 +94,7 @@ func SortTransfers(transfers []IBCTransfer) {
 
 // Validate checks the stateless validity of the cosmos chain
 func (m CosmosChain) Validate() error {
-	if m.IBCPath == "" {
+	if m.Name != ModuleName && m.IBCPath == "" {
 		return fmt.Errorf("IBC path is empty")
 	}
 

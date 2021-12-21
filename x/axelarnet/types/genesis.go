@@ -29,7 +29,7 @@ func DefaultGenesisState() *GenesisState {
 			AddrPrefix: "axelar",
 			Assets: []Asset{{
 				Denom:     "uaxl",
-				MinAmount: sdk.NewInt(1000000),
+				MinAmount: sdk.NewInt(100000),
 			}},
 		}},
 		PendingTransfers: []IBCTransfer{},
@@ -42,7 +42,7 @@ func (m GenesisState) Validate() error {
 		return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 	}
 
-	if m.CollectorAddress != nil {
+	if len(m.CollectorAddress) > 0 {
 		if err := sdk.VerifyAddressFormat(m.CollectorAddress); err != nil {
 			return getValidateError(err)
 		}

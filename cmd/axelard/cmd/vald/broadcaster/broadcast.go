@@ -59,6 +59,16 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
 
 		return nil
+	}, func(err error) bool {
+		if !isABCIError(err) {
+			return true
+		}
+
+		if sdkerrors.ErrWrongSequence.Is(err) || sdkerrors.ErrOutOfGas.Is(err) {
+			return true
+		}
+
+		return false
 	})
 	return response, err
 }
@@ -137,7 +147,7 @@ func Broadcast(ctx sdkClient.Context, txf tx.Factory, msgs []sdk.Msg) (*sdk.TxRe
 	}
 
 	if res.Code != abci.CodeTypeOK {
-		return res, fmt.Errorf(res.RawLog)
+		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
 	return res, nil
@@ -152,13 +162,13 @@ type RetryPipeline struct {
 }
 
 // Push adds the given function to the serialized execution pipeline
-func (p RetryPipeline) Push(f func() error) error {
+func (p RetryPipeline) Push(f func() error, retryOnError func(error) bool) error {
 	e := make(chan error, 1)
-	p.c <- func() { e <- p.retry(f) }
+	p.c <- func() { e <- p.retry(f, retryOnError) }
 	return <-e
 }
 
-func (p RetryPipeline) retry(f func() error) error {
+func (p RetryPipeline) retry(f func() error, retryOnError func(error) bool) error {
 	var err error
 	for i := 0; i <= p.maxRetries; i++ {
 		err = f()
@@ -166,6 +176,11 @@ func (p RetryPipeline) retry(f func() error) error {
 			if i > 0 {
 				p.logger.Info("successful broadcast after backoff")
 			}
+			return nil
+		}
+
+		if !retryOnError(err) {
+			p.logger.Error(fmt.Sprintf("tx response with error: %s", err))
 			return nil
 		}
 
@@ -199,4 +214,23 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 	}()
 
 	return p
+}
+
+type causer interface {
+	Cause() error
+}
+
+func isABCIError(err error) bool {
+	for {
+		switch e := err.(type) {
+		case nil:
+			return false
+		case *sdkerrors.Error:
+			return true
+		case causer:
+			err = e.Cause()
+		default:
+			return false
+		}
+	}
 }

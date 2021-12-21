@@ -278,10 +278,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, req.RecipientChain),
+			sdk.NewAttribute(types.AttributeKeyChain, senderChain.Name),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 		),
 	)
@@ -492,7 +492,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
@@ -781,7 +781,15 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
+		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+
+	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
+	if burnerInfo != nil {
+		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
+	}
+
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
@@ -983,7 +991,8 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name))
+	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
+		keyRole.SimpleString(), chain.Name), "txID", pendingTransfer.TxID.Hex(), "rotation count", s.tss.GetRotationCount(ctx, chain, keyRole))
 	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 
@@ -1248,10 +1257,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		}
 	}
 
-	if len(transfersToArchive) == 0 {
-		s.Logger(ctx).Debug(fmt.Sprintf("no pending transfers ready for processing out of %d total", len(pendingTransfers)))
-		return &types.CreatePendingTransfersResponse{}, nil
-	}
+	s.Logger(ctx).Debug(fmt.Sprintf("%d pending transfers ready for processing out of %d total", len(transfersToArchive), len(pendingTransfers)))
 
 	for _, pendingTransfer := range transfersToArchive {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
@@ -1381,6 +1387,19 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
+	latest := keeper.GetLatestCommandBatch(ctx)
+
+	switch latest.GetStatus() {
+	case types.BatchSigning:
+		return types.CommandBatch{}, fmt.Errorf("signing for command batch '%s' is still in progress", hex.EncodeToString(latest.GetID()))
+	case types.BatchAborted:
+		return latest, nil
+	default:
+		return keeper.CreateNewBatchToSign(ctx)
+	}
+}
+
 func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsRequest) (*types.SignCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
@@ -1398,17 +1417,17 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
 	}
 
-	id, err := keeper.CreateNewBatchToSign(ctx)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper)
 	if err != nil {
 		return nil, err
 	}
+	if len(commandBatch.GetCommandIDs()) == 0 {
+		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
+	}
 
-	// if no error was thrown above, the batch exists
-	batchedCommands := keeper.GetBatchByID(ctx, id)
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, batchedCommands.GetKeyID())
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
 	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", batchedCommands.GetKeyID())
+		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
 
 	sigMetadata := types.SigMetadata{
@@ -1416,11 +1435,11 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Chain: chain.Name,
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
+	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
 	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           batchedCommands.GetKeyID(),
+		KeyID:           commandBatch.GetKeyID(),
 		SigID:           batchedCommandsIDHex,
-		Msg:             batchedCommands.GetSigHash().Bytes(),
+		Msg:             commandBatch.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
 		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
@@ -1439,7 +1458,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{BatchedCommandsID: batchedCommands.GetID()}, nil
+	return &types.SignCommandsResponse{CommandCount: uint32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {

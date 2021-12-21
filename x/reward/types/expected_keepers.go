@@ -33,6 +33,7 @@ type Refunder interface {
 type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
+	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }
 
 // Minter provides mint functionality

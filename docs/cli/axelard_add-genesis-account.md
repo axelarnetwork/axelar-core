@@ -18,7 +18,7 @@ axelard add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
 ```
       --height int               Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help                     help for add-genesis-account
-      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "test")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "file")
       --node string              <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
       --vesting-amount string    amount of coins for vesting accounts
       --vesting-end-time int     schedule end time (unix epoch) for vesting accounts

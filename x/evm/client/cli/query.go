@@ -34,6 +34,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBytecode(queryRoute),
 		GetCmdQueryBatchedCommands(queryRoute),
 		GetCmdLatestBatchedCommands(queryRoute),
+		GetCmdPendingCommands(queryRoute),
+		GetCmdCommand(queryRoute),
 		GetCmdChains(queryRoute),
 	)
 
@@ -277,6 +279,54 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 
 			var res types.QueryBatchedCommandsResponse
 			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdPendingCommands returns the query to get the list of commands not yet added to a batch
+func GetCmdPendingCommands(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pending-commands [chain]",
+		Short: "Get the list of commands not yet added to a batch",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, err := evmclient.QueryPendingCommands(clientCtx, args[0])
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCommand returns the query to get the command with the given ID on the specified chain
+func GetCmdCommand(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "command [chain] [id]",
+		Short: "Get information about an EVM gateway command given a chain and the command ID",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, err := evmclient.QueryCommand(clientCtx, args[0], args[1])
+			if err != nil {
+				return err
+			}
 
 			return clientCtx.PrintProto(&res)
 		},

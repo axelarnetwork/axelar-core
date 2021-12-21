@@ -8,10 +8,9 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
 message Params {
-  repeated string supported_chains = 1;
   // IBC packet route timeout window
-  uint64 route_timeout_window = 2;
-  string transaction_fee_rate = 3 [
+  uint64 route_timeout_window = 1;
+  string transaction_fee_rate = 2 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];

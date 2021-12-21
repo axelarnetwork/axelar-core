@@ -147,7 +147,7 @@ func TestRetryPipeline_Push(t *testing.T) {
 					err := p.Push(func() error {
 						retry++
 						return fmt.Errorf("retry %d, iteration %d", retry, i)
-					})
+					}, func(_ error) bool { return true })
 					assert.Error(t, err)
 				}(i)
 			}
@@ -180,13 +180,38 @@ func TestRetryPipeline_Push(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			go func() {
 				defer wg.Done()
-				assert.NoError(t, p.Push(mockFunc))
+				assert.NoError(t, p.Push(mockFunc, func(_ error) bool { return true }))
 			}()
 		}
 		wg.Wait()
 		// assert the func has been called the expected amount of times and no data races occurred
 		assert.Equal(t, iterations, callCounter)
 	})
+
+	t.Run("no retry if retry filter is false", func(t *testing.T) {
+		retries := int(rand.I64Between(1, 20))
+		backOff := utils.LinearBackOff(2 * time.Microsecond)
+		p := NewPipelineWithRetry(int(rand.I64Between(10, 100000)), retries, backOff, log.TestingLogger())
+
+		iterations := int(rand.I64Between(20, 100))
+
+		wg := &sync.WaitGroup{}
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+			go func(i int) {
+				defer wg.Done()
+				retry := 0
+				err := p.Push(func() error {
+					retry++
+					return fmt.Errorf("retry %d, iteration %d", retry, i)
+				}, func(_ error) bool { return false })
+				assert.NoError(t, err)
+				assert.True(t, retry == 1)
+			}(i)
+		}
+		wg.Wait()
+	})
+
 }
 
 func setup() (*Broadcaster, client.Context) {

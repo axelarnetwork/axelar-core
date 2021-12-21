@@ -163,6 +163,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 		SetGenesisMintCmd(app.DefaultNodeHome),
 		SetMultisigGovernanceCmd(app.DefaultNodeHome),
+		SetGenesisCrisisCmd(app.DefaultNodeHome),
+		SetGenesisAuthCmd(app.DefaultNodeHome),
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), crisis.AddModuleInitFlags)
@@ -179,14 +181,18 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
 	defaults := map[string]string{
-		flags.FlagKeyringBackend:   "test",
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
 		flags.FlagSkipConfirmation: "true",
 		flags.FlagGasPrices:        "0.05uaxl",
 	}
+	// overwrite default and set as current value
 	utils.OverwriteFlagDefaults(rootCmd, defaults, true)
-	// Only set default, not actual value of chain ID, so it can be overwritten by env variable
-	utils.OverwriteFlagDefaults(rootCmd, map[string]string{flags.FlagChainID: app.Name}, false)
+
+	// Only set default, not actual value, so it can be overwritten by env variable
+	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+		flags.FlagChainID:        app.Name,
+		flags.FlagKeyringBackend: "file",
+	}, false)
 
 	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
 

@@ -88,7 +88,7 @@ func SetGenesisSlashingCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if slashFractionDowntime != "" {
-				fraction, err := sdk.NewDecFromStr(slashFractionDoubleSign)
+				fraction, err := sdk.NewDecFromStr(slashFractionDowntime)
 				if err != nil {
 					return err
 				}

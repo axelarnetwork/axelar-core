@@ -29,7 +29,7 @@ var (
 	sigPrefix              = utils.KeyFromStr("sig")
 	validatorStatusPrefix  = utils.KeyFromStr("validator_status")
 	// temporary
-	keyInfoPrefix      = utils.KeyFromStr("info")
+	keyInfoPrefix      = utils.KeyFromStr("info_for_key")
 	keygenStartPrefix  = utils.KeyFromStr("block_height")
 	availablePrefix    = utils.KeyFromStr("available")
 	presentKeysPrefix  = utils.KeyFromStr("present_keys")

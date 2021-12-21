@@ -7,6 +7,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -26,8 +27,8 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter) []abci.ValidatorUpdate {
 	emitHeartbeatEvent(ctx, keeper, nexus)
 	sequentialSign(ctx, keeper.GetSignQueue(ctx), keeper, snapshotter, voter)
-	timeoutMultiSigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper, snapshotter)
-	timeoutMultiSigSign(ctx, keeper.GetMultisigSignQueue(ctx), keeper)
+	timeoutMultisigKeygen(ctx, keeper.GetMultisigKeygenQueue(ctx), keeper, snapshotter)
+	handleMultisigSigns(ctx, keeper.GetMultisigSignQueue(ctx), keeper)
 
 	return nil
 }
@@ -117,13 +118,13 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		}
 
 		// metrics for sign participation
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "sign", "participation"},
-			float32(validator.ShareCount),
+		metrics.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"}, 0,
 			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
 				telemetry.NewLabel("sigID", info.SigID),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
+				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
 			})
 	}
 
@@ -156,8 +157,8 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10))
 }
 
-// timeoutMultiSigKeygen checks timed out multisig keygen and penalize absent participants
-func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
+// timeoutMultisigKeygen checks timed out multisig keygen and penalize absent participants
+func timeoutMultisigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKVQueue, k types.TSSKeeper, s types.Snapshotter) {
 	var keyIDStr gogoprototypes.StringValue
 
 	for multiSigKeygenQueue.Peek(0, &keyIDStr) {
@@ -208,10 +209,11 @@ func timeoutMultiSigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 		multiSigKeygenQueue.Dequeue(0, &keyIDStr)
 	}
 }
-func timeoutMultiSigSign(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k types.TSSKeeper) {
+func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k types.TSSKeeper) {
 	var sigIDStr gogoprototypes.StringValue
+	i := uint64(0)
 
-	for sequenceQueue.Peek(0, &sigIDStr) {
+	for sequenceQueue.Peek(i, &sigIDStr) {
 		sigID := sigIDStr.Value
 
 		multisigSignInfo, ok := k.GetMultisigSignInfo(ctx, sigID)
@@ -220,12 +222,38 @@ func timeoutMultiSigSign(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 			panic(fmt.Sprintf("timeout block height for multisig sign %s not found", sigID))
 		}
 
-		if multisigSignInfo.GetTimeoutBlock() > ctx.BlockHeight() {
-			return
+		info, ok := k.GetInfoForSig(ctx, sigID)
+		if !ok {
+			// should not reach here,
+			panic(fmt.Sprintf("sig info %s info does not exist", sigID))
 		}
 
-		// penalize absent validator
-		if !multisigSignInfo.IsCompleted() {
+		switch {
+		// handle multisig session completion
+		case multisigSignInfo.IsCompleted():
+			k.SetSigStatus(ctx, sigID, exported.SigStatus_Signed)
+			k.SetSig(ctx, exported.Signature{
+				SigID: sigID,
+				Sig: &exported.Signature_MultiSig_{
+					MultiSig: &exported.Signature_MultiSig{
+						SigKeyPairs: multisigSignInfo.GetTargetSigKeyPairs(),
+					},
+				},
+				SigStatus: exported.SigStatus_Signed,
+			})
+
+			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s completed", sigID))
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeSign,
+					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+					sdk.NewAttribute(types.AttributeKeySigID, sigID),
+					sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
+					sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
+			)
+		// handle multisig session timeout
+		case multisigSignInfo.GetTimeoutBlock() <= ctx.BlockHeight():
 			participants := k.GetSignParticipants(ctx, sigID)
 
 			for _, participant := range participants {
@@ -236,18 +264,19 @@ func timeoutMultiSigSign(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				}
 			}
 
-			info, ok := k.GetInfoForSig(ctx, sigID)
-			if !ok {
-				// should not reach here,
-				panic(fmt.Sprintf("sig ifno %s info does not exist", sigID))
-			}
-
 			k.SetSigStatus(ctx, sigID, exported.SigStatus_Aborted)
 			k.DeleteInfoForSig(ctx, sigID)
 			k.DeleteMultisigSign(ctx, sigID)
 
-			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s timed out", sigID))
+			if router := k.GetRouter(); router.HasRoute(info.RequestModule) {
+				handler := router.GetRoute(info.RequestModule)
+				err := handler(ctx, info)
+				if err != nil {
+					panic(sdkerrors.Wrapf(err, "error while routing signature to module %s", info.RequestModule))
+				}
+			}
 
+			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s timed out", sigID))
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
 				types.EventTypeSign,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -257,8 +286,20 @@ func timeoutMultiSigSign(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, sigID))),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject),
 			))
+		// multisig session is still in progress, ignore
+		default:
+			i++
+			continue
 		}
 
-		sequenceQueue.Dequeue(0, &sigIDStr)
+		if router := k.GetRouter(); router.HasRoute(info.RequestModule) {
+			handler := router.GetRoute(info.RequestModule)
+			err := handler(ctx, info)
+			if err != nil {
+				panic(sdkerrors.Wrapf(err, "error while routing signature to module %s", info.RequestModule))
+			}
+		}
+
+		sequenceQueue.Dequeue(i, &sigIDStr)
 	}
 }
