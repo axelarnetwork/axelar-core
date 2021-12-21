@@ -3692,7 +3692,7 @@ var _ types.Pipeline = &PipelineMock{}
 // 			CloseFunc: func()  {
 // 				panic("mock out the Close method")
 // 			},
-// 			PushFunc: func(fn func() error) error {
+// 			PushFunc: func(fn1 func() error, fn2 func(error) bool) error {
 // 				panic("mock out the Push method")
 // 			},
 // 		}
@@ -3706,7 +3706,7 @@ type PipelineMock struct {
 	CloseFunc func()
 
 	// PushFunc mocks the Push method.
-	PushFunc func(fn func() error) error
+	PushFunc func(fn1 func() error, fn2 func(error) bool) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3715,8 +3715,10 @@ type PipelineMock struct {
 		}
 		// Push holds details about calls to the Push method.
 		Push []struct {
-			// Fn is the fn argument value.
-			Fn func() error
+			// Fn1 is the fn1 argument value.
+			Fn1 func() error
+			// Fn2 is the fn2 argument value.
+			Fn2 func(error) bool
 		}
 	}
 	lockClose sync.RWMutex
@@ -3750,11 +3752,13 @@ func (mock *PipelineMock) CloseCalls() []struct {
 }
 
 // Push calls PushFunc.
-func (mock *PipelineMock) Push(fn func() error) error {
+func (mock *PipelineMock) Push(fn1 func() error, fn2 func(error) bool) error {
 	callInfo := struct {
-		Fn func() error
+		Fn1 func() error
+		Fn2 func(error) bool
 	}{
-		Fn: fn,
+		Fn1: fn1,
+		Fn2: fn2,
 	}
 	mock.lockPush.Lock()
 	mock.calls.Push = append(mock.calls.Push, callInfo)
@@ -3765,17 +3769,19 @@ func (mock *PipelineMock) Push(fn func() error) error {
 		)
 		return errOut
 	}
-	return mock.PushFunc(fn)
+	return mock.PushFunc(fn1, fn2)
 }
 
 // PushCalls gets all the calls that were made to Push.
 // Check the length with:
 //     len(mockedPipeline.PushCalls())
 func (mock *PipelineMock) PushCalls() []struct {
-	Fn func() error
+	Fn1 func() error
+	Fn2 func(error) bool
 } {
 	var calls []struct {
-		Fn func() error
+		Fn1 func() error
+		Fn2 func(error) bool
 	}
 	mock.lockPush.RLock()
 	calls = mock.calls.Push
