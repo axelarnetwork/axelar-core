@@ -1450,7 +1450,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{CommandCount: int32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
+	return &types.SignCommandsResponse{CommandCount: uint32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {
