@@ -22,7 +22,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		ChainActivationThreshold: utils.NewThreshold(40, 100),
+		ChainActivationThreshold: utils.NewThreshold(55, 100),
 	}
 }
 
