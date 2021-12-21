@@ -33,7 +33,7 @@ func QueryHandlerDepositAddresses(cliCtx client.Context) http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		params := types.DepositQueryParams{Chain: vars[utils.PathVarChain], Address: vars[utils.PathVarEthereumAddress]}
-		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddresses)
+		path := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QDepositAddress)
 
 		bz, _, err := cliCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
 		if err != nil {

@@ -50,7 +50,7 @@ func GetCmdDepositAddresses(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddresses)
+			path := fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QDepositAddress)
 			params := types.DepositQueryParams{Chain: args[0], Address: args[1]}
 
 			bz, _, err := clientCtx.QueryWithData(path, types.ModuleCdc.MustMarshalLengthPrefixed(&params))
