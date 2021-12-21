@@ -80,7 +80,7 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
-		VotingThreshold:    utils.Threshold{Numerator: 33, Denominator: 100},
+		VotingThreshold:    utils.Threshold{Numerator: 51, Denominator: 100},
 		MinVoterCount:      1,
 		CommandsGasLimit:   5000000,
 		TransactionFeeRate: sdk.NewDecWithPrec(1, 3), // 0.1%
