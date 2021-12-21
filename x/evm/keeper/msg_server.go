@@ -279,8 +279,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, senderChain.Name),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, burnerAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyAddress, req.RecipientAddr),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 		),
@@ -492,7 +492,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyBurnAddress, req.BurnerAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
@@ -781,7 +781,15 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
+		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+
+	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
+	if burnerInfo != nil {
+		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
+	}
+
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
