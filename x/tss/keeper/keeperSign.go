@@ -361,6 +361,12 @@ func (k Keeper) SubmitSignatures(ctx sdk.Context, sigID string, validator sdk.Va
 		panic(fmt.Sprintf("MultisigSignInfo %s not found", sigID))
 	}
 
+	for _, sig := range sigs {
+		if signInfo.HasData(sig) {
+			return false
+		}
+	}
+
 	signInfo.AddData(validator, sigs)
 	k.SetMultisigSignInfo(ctx, signInfo)
 

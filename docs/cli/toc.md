@@ -47,9 +47,11 @@
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
+      - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
       - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
@@ -218,8 +220,10 @@
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
         - [cancel-software-upgrade \[flags\]](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
         - [community-pool-spend \[proposal-file\]](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
+        - [ibc-upgrade \[name\] \[height\] \[path/to/upgraded_client_state.json\] \[flags\]](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
         - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
         - [software-upgrade \[name\] (--upgrade-height \[height\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
+        - [update-client \[subject-client-id\] \[substitute-client-id\] \[flags\]](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
       - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
       - [weighted-vote \[proposal-id\] \[weighted-options\]](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands

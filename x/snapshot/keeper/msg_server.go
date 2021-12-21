@@ -17,12 +17,16 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	Keeper
+	nexus types.Nexus
 }
 
 // NewMsgServerImpl returns an implementation of the snapshot MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
-	return msgServer{Keeper: keeper}
+func NewMsgServerImpl(keeper Keeper, nexus types.Nexus) types.MsgServiceServer {
+	return msgServer{
+		Keeper: keeper,
+		nexus:  nexus,
+	}
 }
 
 func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequest) (*types.RegisterProxyResponse, error) {
@@ -83,5 +87,19 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		})
 
 	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender.String(), proxy.String()))
+
+	// remove validator as chain maintainer since it can no longer vote
+	for _, chain := range s.nexus.GetChains(ctx) {
+		if !s.nexus.IsChainMaintainer(ctx, chain, req.Sender) {
+			continue
+		}
+
+		s.Logger(ctx).Info(fmt.Sprintf("validator %s deregistered maintainer for chain %s", req.Sender.String(), chain.Name))
+
+		if err := s.nexus.RemoveChainMaintainer(ctx, chain, req.Sender); err != nil {
+			return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
+		}
+	}
+
 	return &types.DeactivateProxyResponse{}, nil
 }

@@ -29,13 +29,12 @@ func (k baseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 		var latestBatch types.CommandBatchMetadata
 		for _, batch := range chain.CommandBatches {
 			ck.setCommandBatchMetadata(ctx, batch)
-			if batch.Status != types.BatchSigned {
-				latestBatch = batch
-			}
+			latestBatch = batch
 		}
 
 		if latestBatch.Status != types.BatchNonExistent {
 			ck.setLatestBatchMetadata(ctx, latestBatch)
+			ck.SetLatestSignedCommandBatchID(ctx, latestBatch.ID)
 		}
 
 		ck.setGateway(ctx, chain.Gateway)

@@ -1,9 +1,15 @@
-## axelard tx evm link
+## axelard tx gov submit-proposal update-client
 
-Link a cross chain address to an EVM chain address created by Axelar
+Submit an update IBC client proposal
+
+### Synopsis
+
+Submit an update IBC client proposal along with an initial deposit.
+Please specify a subject client identifier you want to update..
+Please specify the substitute client the subject client will be updated to.
 
 ```
-axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [flags]
+axelard tx gov submit-proposal update-client [subject-client-id] [substitute-client-id] [flags]
 ```
 
 ### Options
@@ -11,6 +17,8 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
+      --deposit string           deposit of proposal
+      --description string       description of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -19,7 +27,7 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for link
+  -h, --help                     help for update-client
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -29,6 +37,7 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             title of proposal
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
@@ -45,4 +54,4 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

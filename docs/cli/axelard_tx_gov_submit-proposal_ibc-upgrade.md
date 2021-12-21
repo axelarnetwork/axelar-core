@@ -1,9 +1,23 @@
-## axelard tx evm link
+## axelard tx gov submit-proposal ibc-upgrade
 
-Link a cross chain address to an EVM chain address created by Axelar
+Submit an IBC upgrade proposal
+
+### Synopsis
+
+Submit an IBC client breaking upgrade proposal along with an initial deposit.
+The client state specified is the upgraded client state representing the upgraded chain
+Example Upgraded Client State JSON:
+{
+"@type":"/ibc.lightclients.tendermint.v1.ClientState",
+"chain_id":"testchain1",
+"unbonding_period":"1814400s",
+"latest_height":{"revision_number":"0","revision_height":"2"},
+"proof_specs":\[{"leaf_spec":{"hash":"SHA256","prehash_key":"NO_HASH","prehash_value":"SHA256","length":"VAR_PROTO","prefix":"AA=="},"inner_spec":{"child_order":\[0,1\],"child_size":33,"min_prefix_length":4,"max_prefix_length":12,"empty_child":null,"hash":"SHA256"},"max_depth":0,"min_depth":0},{"leaf_spec":{"hash":"SHA256","prehash_key":"NO_HASH","prehash_value":"SHA256","length":"VAR_PROTO","prefix":"AA=="},"inner_spec":{"child_order":\[0,1\],"child_size":32,"min_prefix_length":1,"max_prefix_length":1,"empty_child":null,"hash":"SHA256"},"max_depth":0,"min_depth":0}\],
+"upgrade_path":\["upgrade","upgradedIBCState"\],
+}
 
 ```
-axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [flags]
+axelard tx gov submit-proposal ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]
 ```
 
 ### Options
@@ -11,6 +25,8 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
+      --deposit string           deposit of proposal
+      --description string       description of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -19,7 +35,7 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for link
+  -h, --help                     help for ibc-upgrade
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -29,6 +45,7 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             title of proposal
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
@@ -45,4 +62,4 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

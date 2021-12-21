@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
@@ -139,18 +138,25 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	}
 
 	// metrics
+	keygenIll := illegibility.FilterIllegibilityForNewKey()
+	signIll := illegibility.FilterIllegibilityForSigning()
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
 		gauge := float32(0)
-		if illegibility.Is(ill) {
+		if keygenIll.Is(ill) {
 			gauge = 1
 		}
 
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "illegibility_" + ill.String()},
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen_illegibility_" + ill.String()},
+			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
+
+		gauge = 0
+		if signIll.Is(ill) {
+			gauge = 1
+		}
+
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign_illegibility_" + ill.String()},
 			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
-
-	metrics.MeasureSinceWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
-		time.Unix(ctx.BlockHeight(), 0), []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 
 	return response, nil
 }
@@ -208,15 +214,14 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
 
 	// metrics for keygen participation
-	ts := ctx.BlockTime().Unix()
 	for _, validator := range snapshot.Validators {
-		telemetry.SetGaugeWithLabels(
-			[]string{types.ModuleName, "keygen", "participation"},
-			float32(validator.ShareCount),
+		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen", "participation"}, 0,
 			[]metrics.Label{
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ts, 10)),
 				telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID)),
 				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
+				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
+				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
+				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
 			})
 	}
 
@@ -532,6 +537,8 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
+		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 
 		return &types.VoteSigResponse{}, nil
 	}
@@ -539,7 +546,6 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	result := poll.GetResult()
 	switch signResult := result.(type) {
 	case *tofnd.MessageOut_SignResult:
-
 		if signature := signResult.GetSignature(); signature != nil {
 			key, _ := s.GetKey(ctx, info.KeyID)
 			pk, err := key.GetECDSAPubKey()
@@ -560,6 +566,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				},
 				SigStatus: exported.SigStatus_Signed,
 			})
+			s.route(ctx, info)
 
 			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
 			event = event.AppendAttributes(
@@ -567,14 +574,13 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
 			)
 
-			s.route(ctx, info)
-
 			return &types.VoteSigResponse{}, nil
 		}
 
 		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
 		s.DeleteInfoForSig(ctx, req.PollKey.ID)
 		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+		s.route(ctx, info)
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		poll.AllowOverride()
 
@@ -733,38 +739,10 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 		sigKeyPairs = append(sigKeyPairs, bz)
 	}
 
-	ok = s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...)
-	if !ok {
+	if !s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...) {
 		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
+
 		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
-	}
-
-	// existence is checked before
-	multisigSignInfo, _ := s.GetMultisigSignInfo(ctx, info.SigID)
-
-	if multisigSignInfo.IsCompleted() {
-		s.SetSigStatus(ctx, info.SigID, exported.SigStatus_Signed)
-		s.SetSig(ctx, exported.Signature{
-			SigID: info.SigID,
-			Sig: &exported.Signature_MultiSig_{
-				MultiSig: &exported.Signature_MultiSig{
-					SigKeyPairs: multisigSignInfo.GetTargetSigKeyPairs(),
-				},
-			},
-			SigStatus: exported.SigStatus_Signed,
-		})
-		s.route(ctx, info)
-
-		s.Logger(ctx).Debug(fmt.Sprintf("multisig sign %s completed", req.SigID))
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeSign,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeySigID, req.SigID),
-				sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-				sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
-		)
 	}
 
 	return &types.SubmitMultisigSignaturesResponse{}, nil

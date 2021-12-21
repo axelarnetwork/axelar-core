@@ -21,7 +21,7 @@ axelard tx tss register-external-keys [chain] [flags]
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                     help for register-external-keys
       --key strings              key ID and public key in the hex format, e.g. [keyID:keyHex]
-      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "test")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
