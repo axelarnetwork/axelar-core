@@ -80,7 +80,10 @@ func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, voterAddre
 			continue
 		}
 
-		voters = append(voters, exported.Voter{Validator: voterAddress, VotingPower: validator.GetConsensusPower(k.staking.PowerReduction(ctx))})
+		if power := validator.GetConsensusPower(k.staking.PowerReduction(ctx)); power > 0 {
+			voters = append(voters, exported.Voter{Validator: voterAddress, VotingPower: power})
+		}
+
 	}
 
 	return k.initializePoll(ctx, key, voters, k.staking.GetLastTotalPower(ctx), pollProperties...)
