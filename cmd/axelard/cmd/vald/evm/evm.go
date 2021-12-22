@@ -307,7 +307,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 			return common.HexToHash(s), nil
 		}},
 		{Key: evmTypes.AttributeKeyAmount, Map: func(s string) (interface{}, error) { return sdk.ParseUint(s) }},
-		{Key: evmTypes.AttributeKeyBurnAddress, Map: func(s string) (interface{}, error) {
+		{Key: evmTypes.AttributeKeyDepositAddress, Map: func(s string) (interface{}, error) {
 			return common.HexToAddress(s), nil
 		}},
 		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
