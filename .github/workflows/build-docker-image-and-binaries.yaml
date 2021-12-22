@@ -16,19 +16,6 @@ jobs:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
 
-    permissions:
-      actions: none
-      checks: none
-      contents: read
-      deployments: none
-      issues: none
-      packages: write
-      pull-requests: none
-      repository-projects: none
-      security-events: none
-      statuses: none
-      id-token: write # needed for signing the images with GitHub OIDC
-
     steps:
       - name: Validate tag
         env:
