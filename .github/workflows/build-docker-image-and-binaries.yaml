@@ -75,7 +75,7 @@ jobs:
       - name: Sign the images with GitHub OIDC
         run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
         env:
-          TAGS: axelar-core:${{ github.event.inputs.tag }}
+          TAGS: axelarnet/axelar-core:${{ github.event.inputs.tag }}
           COSIGN_EXPERIMENTAL: 1
 
       - name: Build Binaries for Linux/MacOS
