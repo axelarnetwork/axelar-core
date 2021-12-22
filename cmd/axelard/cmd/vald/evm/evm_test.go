@@ -192,13 +192,13 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
 		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:        "Ethereum",
-			evmTypes.AttributeKeyTxID:         common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyAmount:       strconv.FormatUint(uint64(amount), 10),
-			evmTypes.AttributeKeyBurnAddress:  common.Bytes2Hex(burnAddrBytes),
-			evmTypes.AttributeKeyTokenAddress: common.Bytes2Hex(tokenAddrBytes),
-			evmTypes.AttributeKeyConfHeight:   strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:         string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyChain:          "Ethereum",
+			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyAmount:         strconv.FormatUint(uint64(amount), 10),
+			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
+			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
+			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		rpc = &mock.ClientMock{
