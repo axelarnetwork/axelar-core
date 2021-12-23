@@ -340,6 +340,9 @@ func IBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper,
 	if err == nil {
 		// SendTransfer would return error if the next sequence not found
 		seq, _ := c.GetNextSequenceSend(ctx, portID, channelID)
+		if seq == 0 {
+			return fmt.Errorf("next sequence number for channel ID '%s' at port ID '%s' is zero", channelID, portID)
+		}
 		k.SetPendingIBCTransfer(ctx, types.IBCTransfer{
 			Sender:    sender,
 			Receiver:  receiver,
