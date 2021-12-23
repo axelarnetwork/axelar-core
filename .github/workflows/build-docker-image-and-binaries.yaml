@@ -16,6 +16,11 @@ jobs:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
     steps:
       - name: Validate tag
         env:
