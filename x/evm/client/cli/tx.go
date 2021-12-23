@@ -18,6 +18,10 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
+const (
+	flagAddress = "address"
+)
+
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd() *cobra.Command {
 	evmTxCmd := &cobra.Command{
@@ -273,41 +277,48 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [min deposit]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
 		Args:  cobra.ExactArgs(8),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			originChain := args[1]
-			originAsset := args[2]
-			tokenName := args[3]
-			symbol := args[4]
-			decs, err := strconv.ParseUint(args[5], 10, 8)
-			if err != nil {
-				return fmt.Errorf("could not parse decimals")
-			}
-			capacity, ok := sdk.NewIntFromString(args[6])
-			if !ok {
-				return fmt.Errorf("could not parse capacity")
-			}
-
-			minAmount, ok := sdk.NewIntFromString(args[7])
-			if !ok {
-				return fmt.Errorf("could not parse minimum deposit amount")
-			}
-
-			asset := types.NewAsset(originChain, originAsset)
-			tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
-			msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, minAmount)
-			if err = msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
 	}
+	address := cmd.Flags().String(flagAddress, types.ZeroAddress.Hex(), "existing ERC20 token's address")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		chain := args[0]
+		originChain := args[1]
+		originAsset := args[2]
+		tokenName := args[3]
+		symbol := args[4]
+		decs, err := strconv.ParseUint(args[5], 10, 8)
+		if err != nil {
+			return fmt.Errorf("could not parse decimals")
+		}
+		capacity, ok := sdk.NewIntFromString(args[6])
+		if !ok {
+			return fmt.Errorf("could not parse capacity")
+		}
+
+		minAmount, ok := sdk.NewIntFromString(args[7])
+		if !ok {
+			return fmt.Errorf("could not parse minimum deposit amount")
+		}
+
+		if !common.IsHexAddress(*address) {
+			return fmt.Errorf("could not parse address")
+		}
+
+		asset := types.NewAsset(originChain, originAsset)
+		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
+		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, minAmount, types.Address(common.HexToAddress(*address)))
+		if err = msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+	}
+
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

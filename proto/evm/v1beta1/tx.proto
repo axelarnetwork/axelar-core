@@ -98,7 +98,6 @@ message CreateBurnTokensResponse {}
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 message CreateDeployTokenRequest {
-
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
@@ -108,6 +107,8 @@ message CreateDeployTokenRequest {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
+  bytes address = 6
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 message CreateDeployTokenResponse {}
