@@ -135,7 +135,7 @@ func GetValdCommand() *cobra.Command {
 	setPersistentFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 	values := map[string]string{
-		flags.FlagKeyringBackend: "test",
+		flags.FlagKeyringBackend: "file",
 		flags.FlagGasAdjustment:  "4",
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
 		flags.FlagGasPrices:      "0.05uaxl",
