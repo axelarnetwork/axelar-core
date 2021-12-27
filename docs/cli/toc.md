@@ -238,6 +238,7 @@
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
+      - [activate-chain \[\[chains\]...\]](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
       - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
       - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
     - [permission](axelard_tx_permission.md)	 - permission transactions subcommands

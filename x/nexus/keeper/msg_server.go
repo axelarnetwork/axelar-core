@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -14,13 +15,15 @@ var _ types.MsgServiceServer = msgServer{}
 type msgServer struct {
 	types.Nexus
 	snapshotter types.Snapshotter
+	staking     types.StakingKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the nexus MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper) types.MsgServiceServer {
 	return msgServer{
 		Nexus:       k,
 		snapshotter: snapshotter,
+		staking:     staking,
 	}
 }
 
@@ -96,4 +99,50 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 	}
 
 	return &types.DeregisterChainMaintainerResponse{}, nil
+}
+
+func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequest) (*types.ActivateChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	for _, chainStr := range req.Chains {
+		chain, ok := s.GetChain(ctx, chainStr)
+		if !ok {
+			return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+		}
+
+		if s.IsChainActivated(ctx, chain) {
+			continue
+		}
+
+		sumConsensusPower := sdk.ZeroInt()
+		maintainers := s.GetChainMaintainers(ctx, chain)
+
+		for _, maintainer := range maintainers {
+			validator := s.staking.Validator(ctx, maintainer)
+			if validator == nil {
+				continue
+			}
+
+			if !validator.IsBonded() || validator.IsJailed() {
+				continue
+			}
+
+			sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(s.staking.PowerReduction(ctx)))
+		}
+
+		if utils.NewThreshold(sumConsensusPower.Int64(), s.staking.GetLastTotalPower(ctx).Int64()).GTE(s.GetParams(ctx).ChainActivationThreshold) {
+			s.Nexus.ActivateChain(ctx, chain)
+
+			s.Logger(ctx).Info(fmt.Sprintf("chain %s activated", chain.Name))
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeChain,
+					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueActivated),
+					sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+				),
+			)
+		}
+	}
+
+	return &types.ActivateChainResponse{}, nil
 }

@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler of the nexus module
-func NewHandler(k types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, snapshotter)
+func NewHandler(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, snapshotter, staking)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -21,6 +21,9 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter) sdk.Handler {
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.DeregisterChainMaintainerRequest:
 			res, err := server.DeregisterChainMaintainer(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.ActivateChainRequest:
+			res, err := server.ActivateChain(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
