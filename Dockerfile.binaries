@@ -4,8 +4,7 @@ RUN apt update && apt install \
   openssh-client \
   git \
   ca-certificates \
-  make \
-  build-essential
+  make
 
 WORKDIR $GOPATH/src/github.com/axelarnetwork/axelar-core
 ARG SEMVER
@@ -18,5 +17,5 @@ COPY ./go.sum .
 RUN --mount=type=ssh go mod download
 
 COPY . .
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 RUN make build-binaries
