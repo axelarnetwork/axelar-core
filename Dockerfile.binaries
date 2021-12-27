@@ -4,7 +4,8 @@ RUN apt update && apt install \
   openssh-client \
   git \
   ca-certificates \
-  make
+  make \
+  build-essential
 
 WORKDIR $GOPATH/src/github.com/axelarnetwork/axelar-core
 ARG SEMVER
