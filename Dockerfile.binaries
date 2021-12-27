@@ -17,5 +17,5 @@ COPY ./go.sum .
 RUN --mount=type=ssh go mod download
 
 COPY . .
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
 RUN make build-binaries
