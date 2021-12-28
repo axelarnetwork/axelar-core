@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"unicode/utf8"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,8 +23,26 @@ func IndexOf(strs []string, str string) int {
 	return -1
 }
 
-// ValidateString checks if the given string is entirely composed of utf8 runs and if its normalized as NFKC
-func ValidateString(str string, canBeEmpty bool) error {
+// ValidateString checks if the given string is:
+//
+// 1. non-empty
+// 2. entirely composed of utf8 runes
+// 3. normalized as NFKC
+// 4. does not contain any forbidden sub strings
+func ValidateString(str string, forbidden ...string) error {
+	return validateString(str, false, forbidden...)
+}
+
+// ValidateStringAllowEmpty checks if the given string is:
+//
+// 1. entirely composed of utf8 runes
+// 2. normalized as NFKC
+// 3. does not contain any forbidden sub strings
+func ValidateStringAllowEmpty(str string, forbidden ...string) error {
+	return validateString(str, true, forbidden...)
+}
+
+func validateString(str string, canBeEmpty bool, forbidden ...string) error {
 	if !canBeEmpty && len(str) == 0 {
 		return fmt.Errorf("string is empty")
 	}
@@ -35,6 +54,17 @@ func ValidateString(str string, canBeEmpty bool) error {
 
 	if !norm.NFKC.IsNormalString(str) {
 		return fmt.Errorf("wrong normalization")
+	}
+
+	if len(forbidden) == 0 {
+		return nil
+	}
+
+	for _, f := range forbidden {
+		f = norm.NFKC.String(f)
+		if strings.Index(str, f) > -1 {
+			return fmt.Errorf("string '%s' contains forbidden substring '%s'", str, f)
+		}
 	}
 
 	return nil

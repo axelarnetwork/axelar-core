@@ -34,15 +34,15 @@ func (m LinkRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.RecipientChain, false); err != nil {
+	if err := utils.ValidateString(m.RecipientChain, utils.DefaultDelimiter); err != nil {
 		return fmt.Errorf("invalid recipient chain: %s", err.Error())
 	}
 
-	if err := utils.ValidateString(m.RecipientAddr, false); err != nil {
+	if err := utils.ValidateString(m.RecipientAddr, utils.DefaultDelimiter); err != nil {
 		return fmt.Errorf("invalid recipient address: %s", err.Error())
 	}
 
-	if err := utils.ValidateString(m.Asset, false); err != nil {
+	if err := utils.ValidateString(m.Asset, utils.DefaultDelimiter); err != nil {
 		return fmt.Errorf("invalid asset: %s", err.Error())
 	}
 

@@ -10,7 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-const defaultDelimiter = "_"
+const DefaultDelimiter = "_"
 
 // Key represents a store key to interact with the KVStore
 type Key interface {
@@ -137,7 +137,7 @@ func KeyFromBz(k []byte) StringKey {
 // AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes (default is "_")
 func (k key) AsKey(delimiter ...string) []byte {
 	if len(delimiter) == 0 {
-		return k.asKey(defaultDelimiter)
+		return k.asKey(DefaultDelimiter)
 	}
 	return k.asKey(delimiter[0])
 }
