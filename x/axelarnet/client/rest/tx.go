@@ -113,10 +113,7 @@ func TxHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := utils.NormalizeString(req.RecipientChain)
-		addr := utils.NormalizeString(req.RecipientAddr)
-		asset := utils.NormalizeString(req.Asset)
-		msg := types.NewLinkRequest(fromAddr, chain, addr, asset)
+		msg := types.NewLinkRequest(fromAddr, req.RecipientChain, req.RecipientAddr, req.Asset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -209,9 +206,7 @@ func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := utils.NormalizeString(req.Chain)
-		path := utils.NormalizeString(req.Path)
-		msg := types.NewRegisterIBCPathRequest(fromAddr, chain, path)
+		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Chain, req.Path)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -243,11 +238,7 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		name := utils.NormalizeString(req.Name)
-		nativeAsset := utils.NormalizeString(req.NativeAsset)
-		addrPrefix := utils.NormalizeString(req.AddrPrefix)
-
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, name, nativeAsset, addrPrefix, minAmount)
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix, minAmount)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -279,10 +270,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := utils.NormalizeString(req.Chain)
-		denom := utils.NormalizeString(req.Denom)
-
-		msg := types.NewRegisterAssetRequest(fromAddr, chain, types.Asset{Denom: denom, MinAmount: amount})
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, types.Asset{Denom: utils.NormalizeString(req.Denom), MinAmount: amount})
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

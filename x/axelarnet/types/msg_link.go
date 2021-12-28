@@ -10,9 +10,9 @@ import (
 func NewLinkRequest(sender sdk.AccAddress, recipientChain, recipientAddr, asset string) *LinkRequest {
 	return &LinkRequest{
 		Sender:         sender,
-		RecipientAddr:  recipientAddr,
-		RecipientChain: recipientChain,
-		Asset:          asset,
+		RecipientAddr:  utils.NormalizeString(recipientAddr),
+		RecipientChain: utils.NormalizeString(recipientChain),
+		Asset:          utils.NormalizeString(asset),
 	}
 }
 

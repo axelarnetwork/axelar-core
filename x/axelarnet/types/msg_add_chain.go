@@ -16,13 +16,13 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, add
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
-			Name:                  name,
-			NativeAsset:           nativeAsset,
+			Name:                  utils.NormalizeString(name),
+			NativeAsset:           utils.NormalizeString(nativeAsset),
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
 			Module:                "axelarnet", // cannot use constant due to import cycle
 		},
-		AddrPrefix: addrPrefix,
+		AddrPrefix: utils.NormalizeString(addrPrefix),
 		MinAmount:  minAmount,
 	}
 }

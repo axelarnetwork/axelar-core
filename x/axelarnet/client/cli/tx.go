@@ -51,10 +51,7 @@ func GetCmdLink() *cobra.Command {
 				return err
 			}
 
-			chain := utils.NormalizeString(args[0])
-			addr := utils.NormalizeString(args[1])
-			asset := utils.NormalizeString(args[2])
-			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), chain, addr, asset)
+			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), args[0], args[1], args[2])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -138,10 +135,7 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 				return err
 			}
 
-			chain := utils.NormalizeString(args[0])
-			path := utils.NormalizeString(args[1])
-
-			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), chain, path)
+			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -164,15 +158,15 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := utils.NormalizeString(args[0])
-			nativeAsset := utils.NormalizeString(args[1])
+			name := args[0]
+			nativeAsset := args[1]
 
 			minAmount, ok := sdk.NewIntFromString(args[2])
 			if !ok {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			addrPrefix := utils.NormalizeString(args[3])
+			addrPrefix := args[3]
 
 			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix, minAmount)
 			if err := msg.ValidateBasic(); err != nil {
@@ -197,7 +191,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain := utils.NormalizeString(args[0])
+			chain := args[0]
 			denom := utils.NormalizeString(args[1])
 
 			minAmount, ok := sdk.NewIntFromString(args[2])

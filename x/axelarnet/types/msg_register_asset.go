@@ -10,7 +10,7 @@ import (
 func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset Asset) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  utils.NormalizeString(chain),
 		Asset:  asset,
 	}
 }

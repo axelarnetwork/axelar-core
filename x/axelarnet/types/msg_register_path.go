@@ -11,8 +11,8 @@ import (
 func NewRegisterIBCPathRequest(sender sdk.AccAddress, chain, path string) *RegisterIBCPathRequest {
 	return &RegisterIBCPathRequest{
 		Sender: sender,
-		Chain:  chain,
-		Path:   path,
+		Chain:  utils.NormalizeString(chain),
+		Path:   utils.NormalizeString(path),
 	}
 }
 
