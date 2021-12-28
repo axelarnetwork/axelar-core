@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
+// DefaultDelimiter represents the default delimiter used for the KV store keys
 const DefaultDelimiter = "_"
 
 // Key represents a store key to interact with the KVStore
