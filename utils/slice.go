@@ -34,8 +34,8 @@ func NormalizeString(str string) string {
 // 2. entirely composed of utf8 runes
 // 3. normalized as NFKC
 // 4. does not contain any forbidden sub strings
-func ValidateString(str string, forbidden ...string) error {
-	return validateString(str, false, forbidden...)
+func ValidateString(str string, forbidden string) error {
+	return validateString(str, false, forbidden)
 }
 
 // ValidateStringAllowEmpty checks if the given string is:
@@ -43,11 +43,11 @@ func ValidateString(str string, forbidden ...string) error {
 // 1. entirely composed of utf8 runes
 // 2. normalized as NFKC
 // 3. does not contain any forbidden sub strings
-func ValidateStringAllowEmpty(str string, forbidden ...string) error {
-	return validateString(str, true, forbidden...)
+func ValidateStringAllowEmpty(str string, forbidden string) error {
+	return validateString(str, true, forbidden)
 }
 
-func validateString(str string, canBeEmpty bool, forbidden ...string) error {
+func validateString(str string, canBeEmpty bool, forbidden string) error {
 	if !canBeEmpty && len(str) == 0 {
 		return fmt.Errorf("string is empty")
 	}
@@ -65,9 +65,10 @@ func validateString(str string, canBeEmpty bool, forbidden ...string) error {
 		return nil
 	}
 
-		if strings.ContainsAny(str, forbidden) {
-			return fmt.Errorf("string '%s' must not contain any of '%s'", str, forbidden)
-		}
+	forbidden = norm.NFKC.String(forbidden)
+	if strings.ContainsAny(str, forbidden) {
+		return fmt.Errorf("string '%s' must not contain any of '%s'", str, forbidden)
+	}
 
 	return nil
 }
