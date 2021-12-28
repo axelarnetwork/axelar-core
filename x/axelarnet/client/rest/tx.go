@@ -279,7 +279,10 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, types.Asset{Denom: req.Denom, MinAmount: amount})
+		chain := utils.NormalizeString(req.Chain)
+		denom := utils.NormalizeString(req.Denom)
+
+		msg := types.NewRegisterAssetRequest(fromAddr, chain, types.Asset{Denom: denom, MinAmount: amount})
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

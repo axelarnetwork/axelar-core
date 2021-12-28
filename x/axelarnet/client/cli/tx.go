@@ -197,8 +197,8 @@ func GetCmdRegisterAsset() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain := args[0]
-			denom := args[1]
+			chain := utils.NormalizeString(args[0])
+			denom := utils.NormalizeString(args[1])
 
 			minAmount, ok := sdk.NewIntFromString(args[2])
 			if !ok {
