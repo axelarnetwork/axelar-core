@@ -33,7 +33,7 @@ func NormalizeString(str string) string {
 // 1. non-empty
 // 2. entirely composed of utf8 runes
 // 3. normalized as NFKC
-// 4. does not contain any forbidden sub strings
+// 4. does not contain any forbidden Unicode code points
 func ValidateString(str string, forbidden string) error {
 	return validateString(str, false, forbidden)
 }
@@ -42,7 +42,7 @@ func ValidateString(str string, forbidden string) error {
 //
 // 1. entirely composed of utf8 runes
 // 2. normalized as NFKC
-// 3. does not contain any forbidden sub strings
+// 3. does not contain any forbidden Unicode code points
 func ValidateStringAllowEmpty(str string, forbidden string) error {
 	return validateString(str, true, forbidden)
 }
