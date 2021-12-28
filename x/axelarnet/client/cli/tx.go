@@ -164,15 +164,15 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := args[0]
-			nativeAsset := args[1]
+			name := utils.NormalizeString(args[0])
+			nativeAsset := utils.NormalizeString(args[1])
 
 			minAmount, ok := sdk.NewIntFromString(args[2])
 			if !ok {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			addrPrefix := args[3]
+			addrPrefix := utils.NormalizeString(args[3])
 
 			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix, minAmount)
 			if err := msg.ValidateBasic(); err != nil {

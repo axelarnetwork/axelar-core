@@ -243,7 +243,11 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix, minAmount)
+		name := utils.NormalizeString(req.Name)
+		nativeAsset := utils.NormalizeString(req.NativeAsset)
+		addrPrefix := utils.NormalizeString(req.AddrPrefix)
+
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, name, nativeAsset, addrPrefix, minAmount)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
