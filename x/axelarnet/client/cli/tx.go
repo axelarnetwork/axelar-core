@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"golang.org/x/text/unicode/norm"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -51,9 +51,9 @@ func GetCmdLink() *cobra.Command {
 				return err
 			}
 
-			chain := norm.NFKC.String(args[0])
-			addr := norm.NFKC.String(args[1])
-			asset := norm.NFKC.String(args[2])
+			chain := utils.NormalizeString(args[0])
+			addr := utils.NormalizeString(args[1])
+			asset := utils.NormalizeString(args[2])
 			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), chain, addr, asset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err

@@ -23,6 +23,11 @@ func IndexOf(strs []string, str string) int {
 	return -1
 }
 
+// NormalizeString enforces normalizes a string as NFKC
+func NormalizeString(str string) string {
+	return norm.NFKC.String(str)
+}
+
 // ValidateString checks if the given string is:
 //
 // 1. non-empty

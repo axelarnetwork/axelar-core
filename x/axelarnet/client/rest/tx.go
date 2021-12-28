@@ -4,13 +4,13 @@ import (
 	"encoding/hex"
 	"net/http"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"golang.org/x/text/unicode/norm"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -113,9 +113,9 @@ func TxHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		chain := norm.NFKC.String(req.RecipientChain)
-		addr := norm.NFKC.String(req.RecipientAddr)
-		asset := norm.NFKC.String(req.Asset)
+		chain := utils.NormalizeString(req.RecipientChain)
+		addr := utils.NormalizeString(req.RecipientAddr)
+		asset := utils.NormalizeString(req.Asset)
 		msg := types.NewLinkRequest(fromAddr, chain, addr, asset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
