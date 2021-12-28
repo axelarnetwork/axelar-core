@@ -138,7 +138,10 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			chain := utils.NormalizeString(args[0])
+			path := utils.NormalizeString(args[1])
+
+			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), chain, path)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

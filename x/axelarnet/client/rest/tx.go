@@ -209,7 +209,9 @@ func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Chain, req.Path)
+		chain := utils.NormalizeString(req.Chain)
+		path := utils.NormalizeString(req.Path)
+		msg := types.NewRegisterIBCPathRequest(fromAddr, chain, path)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
