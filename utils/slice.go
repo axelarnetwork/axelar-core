@@ -65,12 +65,9 @@ func validateString(str string, canBeEmpty bool, forbidden ...string) error {
 		return nil
 	}
 
-	for _, f := range forbidden {
-		f = norm.NFKC.String(f)
-		if strings.Index(str, f) > -1 {
-			return fmt.Errorf("string '%s' contains forbidden substring '%s'", str, f)
+		if strings.ContainsAny(str, forbidden) {
+			return fmt.Errorf("string '%s' must not contain any of '%s'", str, forbidden)
 		}
-	}
 
 	return nil
 }
