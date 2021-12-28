@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
@@ -112,7 +113,10 @@ func TxHandlerLink(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewLinkRequest(fromAddr, req.RecipientChain, req.RecipientAddr, req.Asset)
+		chain := norm.NFKC.String(req.RecipientChain)
+		addr := norm.NFKC.String(req.RecipientAddr)
+		asset := norm.NFKC.String(req.Asset)
+		msg := types.NewLinkRequest(fromAddr, chain, addr, asset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

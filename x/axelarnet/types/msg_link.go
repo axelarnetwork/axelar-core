@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -33,14 +34,16 @@ func (m LinkRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.RecipientChain == "" {
-		return fmt.Errorf("missing recipient chain")
+	if err := utils.ValidateString(m.RecipientChain, false); err != nil {
+		return fmt.Errorf("invalid recipient chain: %s", err.Error())
 	}
-	if m.RecipientAddr == "" {
-		return fmt.Errorf("missing recipient address")
+
+	if err := utils.ValidateString(m.RecipientAddr, false); err != nil {
+		return fmt.Errorf("invalid recipient address: %s", err.Error())
 	}
-	if m.Asset == "" {
-		return fmt.Errorf("missing asset")
+
+	if err := utils.ValidateString(m.Asset, false); err != nil {
+		return fmt.Errorf("invalid asset: %s", err.Error())
 	}
 
 	return nil

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"golang.org/x/text/unicode/norm"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -50,7 +51,10 @@ func GetCmdLink() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), args[0], args[1], args[2])
+			chain := norm.NFKC.String(args[0])
+			addr := norm.NFKC.String(args[1])
+			asset := norm.NFKC.String(args[2])
+			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), chain, addr, asset)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
