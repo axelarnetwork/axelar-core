@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -57,10 +58,10 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 		totalVotingPower = totalVotingPower.AddRaw(voters[i].VotingPower)
 	}
 
-	pollKey := exported.PollKey{Module: rand.Str(5), ID: rand.Str(10)}
+	pollKey := exported.PollKey{Module: randomNormalizedStr(5), ID: randomNormalizedStr(10)}
 	keeper.initializePoll(ctx, pollKey, voters, totalVotingPower,
 		exported.ExpiryAt(rand.PosI64()),
-		exported.RewardPool(rand.Str(5)),
+		exported.RewardPool(randomNormalizedStr(5)),
 		exported.MinVoterCount(rand.I64Between(1, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
 	)
@@ -112,4 +113,8 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.ElementsMatch(t, expected.PollMetadatas, actual.PollMetadatas)
 	assert.NoError(t, actual.Validate())
+}
+
+func randomNormalizedStr(size int) string {
+	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "")
 }
