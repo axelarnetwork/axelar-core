@@ -34,6 +34,12 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
+      returns (nexus.v1beta1.DeactivateChainResponse) {
+    option (google.api.http) = {
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

@@ -53,6 +53,10 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, depositAddress exported.CrossChai
 		return err
 	}
 
+	if !k.IsChainActivated(ctx, depositAddress.Chain) || !k.IsChainActivated(ctx, recipientAddress.Chain) {
+		return fmt.Errorf("chain is not activated")
+	}
+
 	linkedAddresses := types.NewLinkedAddresses(depositAddress, recipientAddress)
 
 	k.setLinkedAddresses(ctx, linkedAddresses)

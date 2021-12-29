@@ -58,7 +58,7 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
-// EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
+// EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
 func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) error {
 	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
 		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
@@ -68,9 +68,17 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", asset.Denom, sender.Chain.Name)
 	}
 
+	if !k.IsChainActivated(ctx, sender.Chain) {
+		return fmt.Errorf("source chain %s is not activated", sender.Chain.Name)
+	}
+
 	recipient, ok := k.GetRecipient(ctx, sender)
 	if !ok {
 		return fmt.Errorf("no recipient linked to sender %s", sender.String())
+	}
+
+	if !k.IsChainActivated(ctx, recipient.Chain) {
+		return fmt.Errorf("recipient chain %s is not activated", recipient.Chain.Name)
 	}
 
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
@@ -133,6 +141,10 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain
 func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) (transfers []exported.CrossChainTransfer) {
+	if !k.IsChainActivated(ctx, chain) {
+		return transfers
+	}
+
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 

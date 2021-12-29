@@ -43,7 +43,8 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 			*axelarnet.RegisterAssetRequest, *axelarnet.AddCosmosBasedChainRequest,
 			*evm.AddChainRequest, *evm.ConfirmGatewayDeploymentRequest,
 			*evm.CreateDeployTokenRequest, *evm.CreateTransferOwnershipRequest,
-			*evm.CreateTransferOperatorshipRequest, *nexus.ActivateChainRequest:
+			*evm.CreateTransferOperatorshipRequest, *nexus.ActivateChainRequest,
+			*nexus.DeactivateChainRequest:
 
 			signer := msg.GetSigners()[0]
 			if permission.ROLE_CHAIN_MANAGEMENT != d.permission.GetRole(ctx, signer) {

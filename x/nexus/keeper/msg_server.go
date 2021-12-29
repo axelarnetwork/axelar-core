@@ -3,10 +3,12 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -111,43 +113,104 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 
 func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequest) (*types.ActivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	for _, chainStr := range req.Chains {
-		chain, ok := s.GetChain(ctx, chainStr)
-		if !ok {
-			return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+	if strings.ToLower(req.Chains[0]) == "all" {
+		for _, chain := range s.GetChains(ctx) {
+			s.activateChain(ctx, chain)
 		}
+	} else {
+		for _, chainStr := range req.Chains {
+			chain, ok := s.GetChain(ctx, chainStr)
+			if !ok {
+				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+			}
+			s.activateChain(ctx, chain)
 
-		if s.IsChainActivated(ctx, chain) {
+		}
+	}
+	return &types.ActivateChainResponse{}, nil
+}
+
+// DeactivateChain handles deactivate chains in case of emergencies
+func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChainRequest) (*types.DeactivateChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if strings.ToLower(req.Chains[0]) == "all" {
+		for _, chain := range s.GetChains(ctx) {
+			s.deactivateChain(ctx, chain)
+		}
+	} else {
+		for _, chainStr := range req.Chains {
+			chain, ok := s.GetChain(ctx, chainStr)
+			if !ok {
+				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+			}
+
+			s.deactivateChain(ctx, chain)
+		}
+	}
+	return &types.DeactivateChainResponse{}, nil
+}
+
+func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
+	if s.IsChainActivated(ctx, chain) {
+		return
+	}
+
+	// no chain maintainer for cosmos chains
+	if s.axelarnet.IsCosmosChain(ctx, chain.Name) {
+		s.Nexus.ActivateChain(ctx, chain)
+		return
+	}
+
+	if !isMetActivationThreshold(ctx, s.Nexus, s.staking, chain) {
+		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s", chain.Name))
+		return
+	}
+
+	s.Nexus.ActivateChain(ctx, chain)
+
+	s.Logger(ctx).Info(fmt.Sprintf("chain %s activated", chain.Name))
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeChain,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueActivated),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		),
+	)
+}
+
+func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
+	if !s.IsChainActivated(ctx, chain) {
+		return
+	}
+
+	s.Nexus.DeactivateChain(ctx, chain)
+
+	s.Logger(ctx).Info(fmt.Sprintf("chain %s deactivated", chain.Name))
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeChain,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeactivated),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		),
+	)
+}
+
+func isMetActivationThreshold(ctx sdk.Context, nexus types.Nexus, staking types.StakingKeeper, chain exported.Chain) bool {
+	sumConsensusPower := sdk.ZeroInt()
+	maintainers := nexus.GetChainMaintainers(ctx, chain)
+
+	for _, maintainer := range maintainers {
+		validator := staking.Validator(ctx, maintainer)
+
+		if validator == nil || !validator.IsBonded() || validator.IsJailed() {
 			continue
 		}
 
-		sumConsensusPower := sdk.ZeroInt()
-		maintainers := s.GetChainMaintainers(ctx, chain)
-
-		for _, maintainer := range maintainers {
-			validator := s.staking.Validator(ctx, maintainer)
-
-			if validator == nil || !validator.IsBonded() || validator.IsJailed() {
-				continue
-			}
-
-			sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(s.staking.PowerReduction(ctx)))
-		}
-
-		if utils.NewThreshold(sumConsensusPower.Int64(), s.staking.GetLastTotalPower(ctx).Int64()).GTE(s.GetParams(ctx).ChainActivationThreshold) {
-			s.Nexus.ActivateChain(ctx, chain)
-
-			s.Logger(ctx).Info(fmt.Sprintf("chain %s activated", chain.Name))
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					types.EventTypeChain,
-					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueActivated),
-					sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-				),
-			)
-		}
+		sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(staking.PowerReduction(ctx)))
 	}
 
-	return &types.ActivateChainResponse{}, nil
+	return utils.NewThreshold(sumConsensusPower.Int64(), staking.GetLastTotalPower(ctx).Int64()).GTE(nexus.GetParams(ctx).ChainActivationThreshold)
 }
