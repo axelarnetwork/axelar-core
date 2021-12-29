@@ -199,7 +199,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.Asset{Denom: denom, MinAmount: minAmount})
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.NewAsset(denom, minAmount))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

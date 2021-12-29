@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -270,7 +269,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, types.Asset{Denom: utils.NormalizeString(req.Denom), MinAmount: amount})
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, types.NewAsset(req.Denom, amount))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

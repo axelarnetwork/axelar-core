@@ -114,6 +114,11 @@ func (m CosmosChain) Validate() error {
 	return nil
 }
 
+// NewAsset returns an asset struct
+func NewAsset(denom string, minAmount sdk.Int) Asset {
+	return Asset{Denom: utils.NormalizeString(denom), MinAmount: minAmount}
+}
+
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
 	if err := utils.ValidateString(m.Denom, utils.DefaultDelimiter); err != nil {
