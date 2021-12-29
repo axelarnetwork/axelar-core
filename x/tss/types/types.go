@@ -5,9 +5,11 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -26,8 +28,8 @@ func (m ValidatorStatus) Validate() error {
 
 // Validate validates the MultisigInfo
 func (m MultisigInfo) Validate() error {
-	if m.ID == "" {
-		return fmt.Errorf("ID must be set")
+	if err := utils.ValidateString(m.ID, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid ID")
 	}
 
 	if m.Timeout <= 0 {
@@ -43,8 +45,8 @@ func (m MultisigInfo) Validate() error {
 
 // Validate validates the ExternalKeys
 func (m ExternalKeys) Validate() error {
-	if m.Chain == "" {
-		return fmt.Errorf("chain must be set")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if len(m.KeyIDs) == 0 {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -24,8 +25,8 @@ const (
 
 // Validate validates the given Signature
 func (m Signature) Validate() error {
-	if m.SigID == "" {
-		return fmt.Errorf("sig ID must be set")
+	if err := utils.ValidateString(m.SigID, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid signature ID")
 	}
 
 	if m.SigStatus == SigStatus_Unspecified {
