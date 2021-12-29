@@ -1,11 +1,10 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -13,7 +12,7 @@ import (
 func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.KeyRole, keyID string) *RotateKeyRequest {
 	return &RotateKeyRequest{
 		Sender:  sender,
-		Chain:   chain,
+		Chain:   utils.NormalizeString(chain),
 		KeyRole: keyRole,
 		KeyID:   exported.KeyID(keyID),
 	}
@@ -34,8 +33,8 @@ func (m RotateKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.KeyRole.Validate(); err != nil {

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -8,7 +9,7 @@ import (
 
 // NewSubmitMultisigSignaturesRequest constructor for SubmitMultisigSignaturesRequest
 func NewSubmitMultisigSignaturesRequest(sender sdk.AccAddress, sigID string, signatures [][]byte) *SubmitMultisigSignaturesRequest {
-	return &SubmitMultisigSignaturesRequest{Sender: sender, SigID: sigID, Signatures: signatures}
+	return &SubmitMultisigSignaturesRequest{Sender: sender, SigID: utils.NormalizeString(sigID), Signatures: signatures}
 }
 
 // Route implements the sdk.Msg interface.
@@ -22,6 +23,10 @@ func (m SubmitMultisigSignaturesRequest) Type() string { return "SubmitMultisigS
 func (m SubmitMultisigSignaturesRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+
+	if err := utils.ValidateString(m.SigID, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid signature ID")
 	}
 
 	for _, sig := range m.Signatures {
