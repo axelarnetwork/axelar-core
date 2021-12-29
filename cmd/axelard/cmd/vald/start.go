@@ -135,12 +135,17 @@ func GetValdCommand() *cobra.Command {
 	setPersistentFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 	values := map[string]string{
-		flags.FlagKeyringBackend: "file",
-		flags.FlagGasAdjustment:  "4",
-		flags.FlagBroadcastMode:  flags.BroadcastSync,
-		flags.FlagGasPrices:      "0.05uaxl",
+		flags.FlagGasAdjustment: "4",
+		flags.FlagBroadcastMode: flags.BroadcastSync,
+		flags.FlagGasPrices:     "0.05uaxl",
 	}
 	utils.OverwriteFlagDefaults(cmd, values, true)
+
+	// Only set default, not actual value, so it can be overwritten by env variable
+	utils.OverwriteFlagDefaults(cmd, map[string]string{
+		flags.FlagChainID:        app.Name,
+		flags.FlagKeyringBackend: "file",
+	}, false)
 
 	return cmd
 }
