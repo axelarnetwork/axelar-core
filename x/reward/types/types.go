@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -10,15 +11,15 @@ import (
 // NewPool is the constructor of Pool
 func NewPool(name string) Pool {
 	return Pool{
-		Name:    name,
+		Name:    utils.NormalizeString(name),
 		Rewards: []Pool_Reward{},
 	}
 }
 
 // Validate returns an error if the pool is not valid; nil otherwise
 func (m Pool) Validate() error {
-	if m.Name == "" {
-		return fmt.Errorf("name not set for pool")
+	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid name")
 	}
 
 	validatorSeen := make(map[string]bool)
