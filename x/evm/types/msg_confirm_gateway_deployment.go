@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +11,7 @@ import (
 func NewConfirmGatewayDeploymentRequest(sender sdk.AccAddress, chain string, txID common.Hash, address common.Address) *ConfirmGatewayDeploymentRequest {
 	return &ConfirmGatewayDeploymentRequest{
 		Sender:  sender,
-		Chain:   chain,
+		Chain:   utils.NormalizeString(chain),
 		TxID:    Hash(txID),
 		Address: Address(address),
 	}
@@ -34,8 +33,8 @@ func (m ConfirmGatewayDeploymentRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	return nil

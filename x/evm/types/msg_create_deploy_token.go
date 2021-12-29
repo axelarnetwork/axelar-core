@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,7 +12,7 @@ import (
 func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, minAmount sdk.Int) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:       sender,
-		Chain:        chain,
+		Chain:        utils.NormalizeString(chain),
 		Asset:        asset,
 		TokenDetails: tokenDetails,
 		MinAmount:    minAmount,
@@ -44,8 +45,8 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {

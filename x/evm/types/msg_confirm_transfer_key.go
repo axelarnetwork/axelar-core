@@ -1,12 +1,11 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -14,7 +13,7 @@ import (
 func NewConfirmTransferKeyRequest(sender sdk.AccAddress, chain string, txID common.Hash, transferType TransferKeyType, keyID string) *ConfirmTransferKeyRequest {
 	return &ConfirmTransferKeyRequest{
 		Sender:       sender,
-		Chain:        chain,
+		Chain:        utils.NormalizeString(chain),
 		TxID:         Hash(txID),
 		TransferType: transferType,
 		KeyID:        tss.KeyID(keyID),
@@ -37,8 +36,8 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.TransferType.Validate(); err != nil {

@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,7 +10,7 @@ import (
 func NewSignCommandsRequest(sender sdk.AccAddress, chain string) *SignCommandsRequest {
 	return &SignCommandsRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  utils.NormalizeString(chain),
 	}
 }
 
@@ -31,8 +30,8 @@ func (m SignCommandsRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	return nil

@@ -1,15 +1,14 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewCreateBurnTokensRequest is the constructor for CreateBurnTokensRequest
 func NewCreateBurnTokensRequest(sender sdk.AccAddress, chain string) *CreateBurnTokensRequest {
-	return &CreateBurnTokensRequest{Sender: sender, Chain: chain}
+	return &CreateBurnTokensRequest{Sender: sender, Chain: utils.NormalizeString(chain)}
 }
 
 // Route implements sdk.Msg
@@ -38,8 +37,8 @@ func (m CreateBurnTokensRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	return nil

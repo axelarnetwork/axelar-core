@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +11,7 @@ import (
 func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
 		Sender:        sender,
-		Chain:         chain,
+		Chain:         utils.NormalizeString(chain),
 		TxID:          Hash(txID),
 		Amount:        amount,
 		BurnerAddress: Address(burnerAddr),
@@ -35,8 +34,8 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	return nil

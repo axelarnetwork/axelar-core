@@ -1,11 +1,10 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -17,7 +16,7 @@ func NewVoteConfirmChainRequest(
 	confirmed bool) *VoteConfirmChainRequest {
 	return &VoteConfirmChainRequest{
 		Sender:    sender,
-		Name:      name,
+		Name:      utils.NormalizeString(name),
 		PollKey:   key,
 		Confirmed: confirmed,
 	}
@@ -38,8 +37,8 @@ func (m VoteConfirmChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Name == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
 	return m.PollKey.Validate()

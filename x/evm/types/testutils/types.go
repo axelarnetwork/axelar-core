@@ -114,7 +114,7 @@ func RandomNetworks() []types.NetworkInfo {
 // RandomNetwork returns a random (valid) network for testing
 func RandomNetwork() types.NetworkInfo {
 	return types.NetworkInfo{
-		Name: rand.StrBetween(5, 20),
+		Name: randomNormalizedStr(5, 20),
 		Id:   sdk.NewInt(rand.PosI64()),
 	}
 }
@@ -135,8 +135,8 @@ func RandomDeposit() types.ERC20Deposit {
 	return types.ERC20Deposit{
 		TxID:             RandomHash(),
 		Amount:           sdk.NewUint(uint64(rand.PosI64())),
-		Asset:            rand.StrBetween(5, 10),
-		DestinationChain: rand.StrBetween(5, 20),
+		Asset:            randomNormalizedStr(5, 10),
+		DestinationChain: randomNormalizedStr(5, 20),
 		BurnerAddress:    RandomAddress(),
 	}
 }
@@ -145,9 +145,9 @@ func RandomDeposit() types.ERC20Deposit {
 func RandomCommand() types.Command {
 	return types.Command{
 		ID:         RandomCommandID(),
-		Command:    rand.StrBetween(5, 20),
+		Command:    randomNormalizedStr(5, 20),
 		Params:     rand.Bytes(int(rand.I64Between(1, 100))),
-		KeyID:      exported.KeyID(rand.StrBetween(5, 20)),
+		KeyID:      exported.KeyID(randomNormalizedStr(5, 20)),
 		MaxGasCost: uint32(rand.I64Between(0, 100000)),
 	}
 }
@@ -181,7 +181,7 @@ func RandomBatch() types.CommandBatchMetadata {
 		Data:                  rand.Bytes(int(rand.I64Between(1, 1000))),
 		SigHash:               RandomHash(),
 		Status:                types.BatchedCommandsStatus(rand.I64Between(1, int64(len(types.BatchedCommandsStatus_name)))),
-		KeyID:                 exported.KeyID(rand.StrBetween(5, 20)),
+		KeyID:                 exported.KeyID(randomNormalizedStr(5, 20)),
 		PrevBatchedCommandsID: rand.Bytes(int(rand.I64Between(1, 100))),
 	}
 }
@@ -216,7 +216,7 @@ func RandomTokens() []types.ERC20TokenMetadata {
 // RandomToken returns a random (valid) token for testing
 func RandomToken() types.ERC20TokenMetadata {
 	return types.ERC20TokenMetadata{
-		Asset:        rand.StrBetween(5, 20),
+		Asset:        randomNormalizedStr(5, 20),
 		ChainID:      sdk.NewInt(rand.PosI64()),
 		Details:      RandomTokenDetails(),
 		TokenAddress: RandomAddress(),
@@ -229,8 +229,8 @@ func RandomToken() types.ERC20TokenMetadata {
 // RandomTokenDetails returns a random (valid) token details instance for testing
 func RandomTokenDetails() types.TokenDetails {
 	return types.TokenDetails{
-		TokenName: rand.StrBetween(5, 20),
-		Symbol:    rand.StrBetween(5, 20),
+		TokenName: randomNormalizedStr(5, 20),
+		Symbol:    randomNormalizedStr(5, 20),
 		Decimals:  uint8(rand.I64Between(1, 20)),
 		Capacity:  sdk.NewInt(rand.PosI64()),
 	}
@@ -263,9 +263,9 @@ func RandomBurnerInfo() types.BurnerInfo {
 	return types.BurnerInfo{
 		BurnerAddress:    RandomAddress(),
 		TokenAddress:     RandomAddress(),
-		DestinationChain: rand.StrBetween(5, 20),
-		Symbol:           rand.StrBetween(5, 20),
-		Asset:            rand.StrBetween(5, 20),
+		DestinationChain: randomNormalizedStr(5, 20),
+		Symbol:           randomNormalizedStr(5, 20),
+		Asset:            randomNormalizedStr(5, 20),
 		Salt:             RandomHash(),
 	}
 }
@@ -275,7 +275,7 @@ func RandomParams() types.Params {
 	nominator := rand.I64Between(1, 100)
 	denominator := rand.I64Between(nominator, 101)
 	params := types.Params{
-		Chain:               rand.StrBetween(5, 20),
+		Chain:               randomNormalizedStr(5, 20),
 		ConfirmationHeight:  uint64(rand.PosI64()),
 		GatewayCode:         rand.Bytes(int(rand.I64Between(10, 100))),
 		TokenCode:           rand.Bytes(int(rand.I64Between(10, 100))),
@@ -301,4 +301,8 @@ func RandomAddress() types.Address {
 // RandomHash returns a random (valid) hash for testing
 func RandomHash() types.Hash {
 	return types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
+}
+
+func randomNormalizedStr(min, max int) string {
+	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "")
 }

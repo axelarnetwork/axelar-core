@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,8 +15,8 @@ import (
 func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, keyType tss.KeyType, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
-		Name:        name,
-		NativeAsset: nativeAsset,
+		Name:        utils.NormalizeString(name),
+		NativeAsset: utils.NormalizeString(nativeAsset),
 		KeyType:     keyType,
 		Params:      params,
 	}
