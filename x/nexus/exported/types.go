@@ -3,7 +3,9 @@ package exported
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses
@@ -46,8 +48,8 @@ func (m CrossChainAddress) Validate() error {
 		return err
 	}
 
-	if m.Address == "" {
-		return fmt.Errorf("address must be set")
+	if err := utils.ValidateString(m.Address, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid address")
 	}
 
 	return nil
@@ -65,12 +67,12 @@ func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset 
 
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
-	if m.Name == "" {
-		return fmt.Errorf("missing chain name")
+	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
-	if m.NativeAsset == "" {
-		return fmt.Errorf("missing native asset name")
+	if err := utils.ValidateString(m.NativeAsset, utils.DefaultDelimiter); err != nil {
+		return sdkerrors.Wrap(err, "invalid native asset")
 	}
 
 	if err := m.KeyType.Validate(); err != nil {
