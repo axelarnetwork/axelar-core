@@ -14,6 +14,10 @@ func OverwriteFlagDefaults(c *cobra.Command, defaults map[string]string, updateV
 			if updateVal || !f.Changed {
 				_ = f.Value.Set(val)
 			}
+
+			if updateVal {
+				f.Changed = true
+			}
 		}
 	}
 	for key, val := range defaults {
