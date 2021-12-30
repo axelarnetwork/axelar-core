@@ -33,13 +33,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc"
-	btcRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	utils2 "github.com/axelarnetwork/axelar-core/utils"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -199,7 +196,6 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		}
 	}
 
-	btcMgr := createBTCMgr(axelarCfg, ctx, bc, logger, cdc)
 	evmMgr := createEVMMgr(axelarCfg, ctx, bc, logger, cdc)
 
 	// we have two processes listening to block headers
@@ -227,8 +223,6 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
 	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-
-	btcConf := subscribe(btcTypes.EventTypeOutpointConfirmation, btcTypes.ModuleName, btcTypes.AttributeValueStart)
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -262,7 +256,6 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
 		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
 		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
-		tmEvents.Consume(btcConf, btcMgr.ProcessConfirmation),
 		tmEvents.Consume(evmNewChain, evmMgr.ProcessNewChain),
 		tmEvents.Consume(evmChainConf, evmMgr.ProcessChainConfirmation),
 		tmEvents.Consume(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation),
@@ -320,26 +313,6 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 	}
 
 	return mgr
-}
-
-func createBTCMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *btc.Mgr {
-	var rpc *btcRPC.ClientImpl
-	var err error
-
-	if axelarCfg.BtcConfig.RPCAddr != "" {
-		rpc, err = btcRPC.NewRPCClient(axelarCfg.BtcConfig, logger)
-		if err != nil {
-			logger.Error(err.Error())
-			panic(err)
-		}
-
-		// clean up btcRPC connection on process shutdown
-		cleanupCommands = append(cleanupCommands, rpc.Shutdown)
-		logger.Info("Successfully connected to Bitcoin bridge ")
-	}
-
-	btcMgr := btc.NewMgr(rpc, cliCtx, b, logger, cdc)
-	return btcMgr
 }
 
 func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
