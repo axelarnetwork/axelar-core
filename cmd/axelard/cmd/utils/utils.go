@@ -11,9 +11,12 @@ func OverwriteFlagDefaults(c *cobra.Command, defaults map[string]string, updateV
 	set := func(s *pflag.FlagSet, key, val string) {
 		if f := s.Lookup(key); f != nil {
 			f.DefValue = val
+			if updateVal || !f.Changed {
+				_ = f.Value.Set(val)
+			}
+
 			if updateVal {
-				_ = c.Flags().Set(key, val)
-				_ = c.PersistentFlags().Set(key, val)
+				f.Changed = true
 			}
 		}
 	}

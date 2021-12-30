@@ -66,17 +66,12 @@ func TestOverwriteFlagDefaults(t *testing.T) {
 
 			assert.Equal(t, f1.DefValue, newDefaultString)
 			assert.Equal(t, f2.DefValue, strconv.FormatInt(newDefaultInt, 10))
+			assert.Equal(t, f1.Value.String(), newDefaultString)
+			assert.Equal(t, f2.Value.String(), strconv.FormatInt(newDefaultInt, 10))
 
 			if testCase.updateVal {
-				assert.Equal(t, f1.Value.String(), newDefaultString)
 				assert.True(t, f1.Changed)
-				assert.Equal(t, f2.Value.String(), strconv.FormatInt(newDefaultInt, 10))
 				assert.True(t, f2.Changed)
-			} else {
-				assert.Equal(t, f1.Value.String(), defaultString)
-				assert.False(t, f1.Changed)
-				assert.Equal(t, f2.Value.String(), strconv.FormatInt(defaultInt, 10))
-				assert.False(t, f2.Changed)
 			}
 
 		}).Repeat(repeats))
