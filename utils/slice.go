@@ -34,8 +34,14 @@ func NormalizeString(str string) string {
 // 2. entirely composed of utf8 runes
 // 3. normalized as NFKC
 // 4. does not contain any forbidden Unicode code points
-func ValidateString(str string, forbidden string) error {
-	return validateString(str, false, forbidden)
+func ValidateString(str string, forbidden ...string) error {
+    if len(forbidden) == 0 {
+        forbidden = utils.DefaultDelimiter
+    } else {
+        forbidden = strings.Join(forbidden)
+    }
+
+    return validateString(str, false, forbidden)
 }
 
 // ValidateStringAllowEmpty checks if the given string is:
