@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,6 +15,24 @@ func TestNewRootCmd(t *testing.T) {
 		cmd := root
 		assert.True(t, testCmd(t, cmd), "no command with usage 'vald-start' found")
 	})
+
+	t.Run("keyring default set to file", func(t *testing.T) {
+		cmd := root
+		assert.True(t, keyringBackendSetToFile(t, cmd), "no keyring backend flag found")
+	})
+}
+
+func keyringBackendSetToFile(t *testing.T, cmd *cobra.Command) (foundKeyringBackend bool) {
+	if f := cmd.Flags().Lookup(flags.FlagKeyringBackend); f != nil {
+		assert.Equal(t, keyring.BackendFile, f.DefValue)
+		assert.Equal(t, keyring.BackendFile, f.Value)
+		assert.False(t, f.Changed)
+	}
+
+	for _, c := range cmd.Commands() {
+		foundKeyringBackend = foundKeyringBackend || testCmd(t, c)
+	}
+	return foundKeyringBackend
 }
 
 func testCmd(t *testing.T, cmd *cobra.Command) (foundVald bool) {
