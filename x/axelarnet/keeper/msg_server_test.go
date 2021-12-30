@@ -465,6 +465,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	setup := func() {
 		ibcPath := randomIBCPath()
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc: func(sdk.Context) log.Logger { return log.TestingLogger() },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
