@@ -28,7 +28,7 @@ func (m ValidatorStatus) Validate() error {
 
 // Validate validates the MultisigInfo
 func (m MultisigInfo) Validate() error {
-	if err := utils.ValidateString(m.ID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.ID); err != nil {
 		return sdkerrors.Wrap(err, "invalid ID")
 	}
 
@@ -45,7 +45,7 @@ func (m MultisigInfo) Validate() error {
 
 // Validate validates the ExternalKeys
 func (m ExternalKeys) Validate() error {
-	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

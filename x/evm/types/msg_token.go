@@ -32,7 +32,7 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

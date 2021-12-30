@@ -33,7 +33,7 @@ func (m RotateKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
-	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

@@ -47,7 +47,7 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid chain spec: %v", err)
 	}
 
-	if err := utils.ValidateString(m.AddrPrefix, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 

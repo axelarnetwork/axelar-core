@@ -871,10 +871,10 @@ func NewAsset(chain, name string) Asset {
 
 // Validate ensures that all fields are filled with sensible values
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
-	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
 	return nil
@@ -892,10 +892,10 @@ func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int)
 
 // Validate ensures that all fields are filled with sensible values
 func (m TokenDetails) Validate() error {
-	if err := utils.ValidateString(m.TokenName, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.TokenName); err != nil {
 		return sdkerrors.Wrap(err, "invalid token name")
 	}
-	if err := utils.ValidateString(m.Symbol, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid token symbol")
 	}
 	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
@@ -1166,13 +1166,13 @@ func DecodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
-	if err := utils.ValidateString(m.DestinationChain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
-	if err := utils.ValidateString(m.Asset, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
-	if err := utils.ValidateString(m.Symbol, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid symbol")
 	}
 
@@ -1185,7 +1185,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return fmt.Errorf("token status not set")
 	}
 
-	if err := utils.ValidateString(m.Asset, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
@@ -1206,7 +1206,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 
 // ValidateBasic does stateless validation of the object
 func (m *ERC20Deposit) ValidateBasic() error {
-	if err := utils.ValidateString(m.Asset, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 

@@ -86,7 +86,7 @@ func (m PollKey) Validate() error {
 		return fmt.Errorf("missing module")
 	}
 
-	if err := utils.ValidateString(m.ID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.ID); err != nil {
 		return sdkerrors.Wrap(err, "invalid recipient address")
 	}
 

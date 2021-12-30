@@ -18,7 +18,7 @@ func NewPool(name string) Pool {
 
 // Validate returns an error if the pool is not valid; nil otherwise
 func (m Pool) Validate() error {
-	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
 

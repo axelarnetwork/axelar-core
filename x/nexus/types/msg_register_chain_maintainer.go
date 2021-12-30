@@ -42,7 +42,7 @@ func (m RegisterChainMaintainerRequest) ValidateBasic() error {
 	}
 
 	for _, chain := range m.Chains {
-		if err := utils.ValidateString(chain, utils.DefaultDelimiter); err != nil {
+		if err := utils.ValidateString(chain); err != nil {
 			return sdkerrors.Wrap(err, fmt.Sprintf("invalid chain '%s'", chain))
 		}
 	}

@@ -99,7 +99,7 @@ func (m OutPointInfo) Validate() error {
 	if m.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
-	if err := utils.ValidateString(m.Address, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Address); err != nil {
 		return sdkerrors.Wrap(err, "invalid address")
 	}
 	return nil

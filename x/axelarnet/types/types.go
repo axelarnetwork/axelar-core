@@ -31,15 +31,15 @@ func (m IBCTransfer) Validate() error {
 		return err
 	}
 
-	if err := utils.ValidateString(m.PortID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.PortID); err != nil {
 		return sdkerrors.Wrap(err, "invalid port ID")
 	}
 
-	if err := utils.ValidateString(m.ChannelID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.ChannelID); err != nil {
 		return sdkerrors.Wrap(err, "invalid channel ID")
 	}
 
-	if err := utils.ValidateString(m.Receiver, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Receiver); err != nil {
 		return sdkerrors.Wrap(err, "invalid receiver")
 	}
 
@@ -103,11 +103,11 @@ func (m CosmosChain) Validate() error {
 		return fmt.Errorf("chain must contain assets")
 	}
 
-	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
 
-	if err := utils.ValidateString(m.AddrPrefix, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
@@ -121,7 +121,7 @@ func NewAsset(denom string, minAmount sdk.Int) Asset {
 
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Denom, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Denom); err != nil {
 		return sdkerrors.Wrap(err, "invalid denomination")
 	}
 

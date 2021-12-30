@@ -32,11 +32,11 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if err := utils.ValidateString(m.Path, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Path); err != nil {
 		return sdkerrors.Wrap(err, "invalid path")
 	}
 	f := host.NewPathValidator(func(path string) error {

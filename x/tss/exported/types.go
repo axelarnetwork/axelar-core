@@ -25,7 +25,7 @@ const (
 
 // Validate validates the given Signature
 func (m Signature) Validate() error {
-	if err := utils.ValidateString(m.SigID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.SigID); err != nil {
 		return sdkerrors.Wrap(err, "invalid signature ID")
 	}
 

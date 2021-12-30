@@ -28,7 +28,7 @@ func (m ProcessSignTrafficRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if err := utils.ValidateString(m.SessionID, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.SessionID); err != nil {
 		return sdkerrors.Wrap(err, "invalid session ID")
 	}
 	if !m.Payload.IsBroadcast && len(m.Payload.ToPartyUid) == 0 {

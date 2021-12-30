@@ -48,7 +48,7 @@ func (m CrossChainAddress) Validate() error {
 		return err
 	}
 
-	if err := utils.ValidateString(m.Address, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Address); err != nil {
 		return sdkerrors.Wrap(err, "invalid address")
 	}
 
@@ -67,11 +67,11 @@ func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset 
 
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
-	if err := utils.ValidateString(m.Name, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
-	if err := utils.ValidateString(m.NativeAsset, utils.DefaultDelimiter); err != nil {
+	if err := utils.ValidateString(m.NativeAsset); err != nil {
 		return sdkerrors.Wrap(err, "invalid native asset")
 	}
 
