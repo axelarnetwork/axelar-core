@@ -36,7 +36,7 @@ ENV TOFND_HOST ""
 # The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
 ENV AXELARD_KEYRING_BACKEND file
 # The chain ID
-ENV AXELARD_CHAIN_ID axelar-testnet-toronto
+ENV AXELARD_CHAIN_ID axelar-testnet-lisbon
 # The file with the peer list to connect to the network
 ENV PEERS_FILE ""
 # Path of an existing configuration file to use (optional)
