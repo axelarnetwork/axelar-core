@@ -47,6 +47,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		k.setTransfer(ctx, transfer)
 		transferSeen[transfer.ID] = true
 	}
+
+	k.setTransferFee(ctx, genState.Fee)
+
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -58,5 +61,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getChainStates(ctx),
 		k.getAllLinkedAddresses(ctx),
 		k.getTransfers(ctx),
+		k.getTransferFee(ctx),
 	)
 }
