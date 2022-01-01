@@ -469,7 +469,7 @@ func prepareTransfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types
 		sender = a.GetModuleAddress(types.ModuleName)
 	default:
 		// should not reach here
-		panic(fmt.Sprintf("unrecognized %s token", coin))
+		panic(fmt.Sprintf("unrecognized %s token", coin.Denom))
 	}
 
 	return coin, sender, nil

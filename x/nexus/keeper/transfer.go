@@ -82,7 +82,6 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// collect fee
-	// TODO: this should be now done upon mint/withdrawl rather than per individual transfer
 	if feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt(); feeDue.IsPositive() {
 		k.addTransferFee(ctx, sdk.NewCoin(asset.Denom, feeDue))
 		asset = asset.SubAmount(feeDue)
