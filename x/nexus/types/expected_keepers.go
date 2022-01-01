@@ -10,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -44,9 +44,4 @@ type StakingKeeper interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 	PowerReduction(sdk.Context) sdk.Int
 	GetLastTotalPower(sdk.Context) sdk.Int
-}
-
-// AxelarnetKeeper provides functionality to the axelarnet module
-type AxelarnetKeeper interface {
-	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
 }

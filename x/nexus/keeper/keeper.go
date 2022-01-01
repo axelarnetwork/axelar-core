@@ -19,6 +19,7 @@ var (
 	chainStatePrefix      = utils.KeyFromStr("state")
 	linkedAddressesPrefix = utils.KeyFromStr("linked_addresses")
 	transferPrefix        = utils.KeyFromStr("transfer")
+	transferFee           = utils.KeyFromStr("fee")
 	// temporary
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
 )
@@ -28,14 +29,12 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
-
-	axelarnetKeeper types.AxelarnetKeeper
-	router          types.Router
+	router   types.Router
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, ak types.AxelarnetKeeper) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), axelarnetKeeper: ak}
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 
 // Logger returns a module-specific logger.
