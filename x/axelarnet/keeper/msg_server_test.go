@@ -301,7 +301,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetAssetFunc: func(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
 				return types.Asset{Denom: testToken, MinAmount: sdk.NewInt(1000000)}, true
 			},
-			GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
@@ -324,8 +323,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
-			GetTransferFeesFunc:    func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
-			SubTransferFeeFunc:     func(sdk.Context, sdk.Coin) {},
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },

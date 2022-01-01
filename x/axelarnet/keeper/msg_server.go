@@ -167,7 +167,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 }
 
 // ExecutePendingTransfers handles execute pending transfers
-func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePendingTransfersRequest) (*types.ExecutePendingTransfersResponse, error) {
+func (s msgServer) ExecutePendingTransfers(c context.Context, req *types.ExecutePendingTransfersRequest) (*types.ExecutePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, types.ModuleName)
 	if !ok {
@@ -185,7 +185,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	for _, pendingTransfer := range pendingTransfers {
 		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 		if err != nil {
-			s.Logger(ctx).Error(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+			ctx.Logger().Debug(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 			continue
 		}
@@ -207,11 +207,19 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			continue
 		}
 
-		if err = transfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, recipient, pendingTransfer.Asset); err != nil {
-			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
+		token, escrowAddress, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, pendingTransfer)
+		if err != nil {
+			ctx.Logger().Error(fmt.Sprintf("failed to prepare transfer %s: %e", pendingTransfer.String(), err))
 			continue
 		}
 
+		if err = s.bank.SendCoins(
+			ctx, escrowAddress, recipient, sdk.NewCoins(token),
+		); err != nil {
+			ctx.Logger().Error(fmt.Sprintf("failed to send %s from %s to %s: %e", token, escrowAddress, recipient, err))
+			continue
+		}
+		ctx.Logger().Debug(fmt.Sprintf("successfully sent %s from %s to %s", token, escrowAddress, recipient))
 		transfersToArchive = append(transfersToArchive, pendingTransfer)
 	}
 
@@ -222,17 +230,6 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 
 	for _, pendingTransfer := range transfersToArchive {
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
-	}
-
-	// release transfer fees
-	if collector, ok := s.GetFeeCollector(ctx); ok {
-		for _, fee := range s.nexus.GetTransferFees(ctx) {
-			if err := transfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, collector, fee); err != nil {
-				s.Logger(ctx).Error("failed to collect fees", "err", err)
-				continue
-			}
-			s.nexus.SubTransferFee(ctx, fee)
-		}
 	}
 
 	return &types.ExecutePendingTransfersResponse{}, nil
@@ -286,42 +283,38 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	return &types.RegisterAssetResponse{}, nil
 }
 
-// RouteIBCTransfers routes transfer to cosmos chains
-func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfersRequest) (*types.RouteIBCTransfersResponse, error) {
+// RouteIBCTransfers routes Transfer to cosmos chains
+func (s msgServer) RouteIBCTransfers(c context.Context, req *types.RouteIBCTransfersRequest) (*types.RouteIBCTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	// loop through all cosmos chains
 	for _, c := range s.BaseKeeper.GetCosmosChains(ctx) {
 		chain, ok := s.nexus.GetChain(ctx, c)
 		if !ok {
-			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
-			continue
-		}
-
-		if strings.EqualFold(chain.Name, exported.Axelarnet.Name) {
+			ctx.Logger().Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
 		}
 
 		// Get the channel id for the chain
 		path, ok := s.BaseKeeper.GetIBCPath(ctx, chain.Name)
 		if !ok {
-			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
+			ctx.Logger().Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
 		}
 
 		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 		for _, p := range pendingTransfers {
-			token, sender, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, p.Asset)
+			token, sender, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, p)
 			if err != nil {
-				s.Logger(ctx).Error(fmt.Sprintf("failed to prepare transfer %s: %s", p.String(), err))
+				ctx.Logger().Error(fmt.Sprintf("failed to prepare transfer %s: %e", p.String(), err))
 				continue
 			}
 
 			err = IBCTransfer(ctx, s.BaseKeeper, s.ibcTransfer, s.ibcChannel, token, sender, p.Recipient.Address, path)
 			if err != nil {
-				s.Logger(ctx).Error(fmt.Sprintf("failed to send IBC transfer %s for %s:  %s", token, p.Recipient.Address, err))
+				ctx.Logger().Error(fmt.Sprintf("failed to send IBC transfer %s for %s:  %e", token, p.Recipient.Address, err))
 				continue
 			}
-			s.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", token, sender, p.Recipient.Address))
+			ctx.Logger().Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", token, sender, p.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
@@ -412,20 +405,20 @@ func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctransfert
 }
 
 // toICS20 converts a cross chain transfer to ICS20 token
-func toICS20(ctx sdk.Context, k types.BaseKeeper, coin sdk.Coin) sdk.Coin {
+func toICS20(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
-	chain, _ := k.GetCosmosChainByAsset(ctx, coin.GetDenom())
+	chain, _ := k.GetCosmosChainByAsset(ctx, transfer.Asset.GetDenom())
 	path, _ := k.GetIBCPath(ctx, chain.Name)
 
-	prefixedDenom := fmt.Sprintf("%s/%s", path, coin.Denom)
+	prefixedDenom := fmt.Sprintf("%s/%s", path, transfer.Asset.Denom)
 	// construct the denomination trace from the full raw denomination
 	denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
-	return sdk.NewCoin(denomTrace.IBCDenom(), coin.Amount)
+	return sdk.NewCoin(denomTrace.IBCDenom(), transfer.Asset.Amount)
 }
 
 // isFromCosmosChain returns true if the asset origins from cosmos chains
-func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, coin sdk.Coin) bool {
-	chain, ok := k.GetCosmosChainByAsset(ctx, coin.GetDenom())
+func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, transfer nexus.CrossChainTransfer) bool {
+	chain, ok := k.GetCosmosChainByAsset(ctx, transfer.Asset.GetDenom())
 	if !ok {
 		return false
 	}
@@ -433,44 +426,31 @@ func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, coin sdk.Coin) bool 
 	return ok
 }
 
-func transfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {
-	coin, escrowAddress, err := prepareTransfer(ctx, k, n, b, a, coin)
-	if err != nil {
-		return fmt.Errorf("failed to prepare transfer %s: %s", coin, err)
-	}
-
-	if err = b.SendCoins(
-		ctx, escrowAddress, recipient, sdk.NewCoins(coin),
-	); err != nil {
-		return fmt.Errorf("failed to send %s from %s to %s: %s", coin, escrowAddress, recipient, err)
-	}
-	k.Logger(ctx).Debug(fmt.Sprintf("successfully sent %s from %s to %s", coin, escrowAddress, recipient))
-
-	return nil
-}
-
-func prepareTransfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, coin sdk.Coin) (sdk.Coin, sdk.AccAddress, error) {
+func prepareTransfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, transfer nexus.CrossChainTransfer) (sdk.Coin, sdk.AccAddress, error) {
+	var token sdk.Coin
 	var sender sdk.AccAddress
 	// pending transfer can be either of cosmos chains assets, Axelarnet native asset, assets from supported chain
 	switch {
 	// asset origins from cosmos chains, it will be converted to ICS20 token
-	case isFromCosmosChain(ctx, k, coin):
-		coin = toICS20(ctx, k, coin)
-		sender = types.GetEscrowAddress(coin.GetDenom())
-	case coin.Denom == exported.Axelarnet.NativeAsset:
-		sender = types.GetEscrowAddress(coin.Denom)
-	case n.IsAssetRegistered(ctx, exported.Axelarnet, coin.Denom):
+	case isFromCosmosChain(ctx, k, transfer):
+		token = toICS20(ctx, k, transfer)
+		sender = types.GetEscrowAddress(token.GetDenom())
+	case transfer.Asset.Denom == exported.Axelarnet.NativeAsset:
+		token = transfer.Asset
+		sender = types.GetEscrowAddress(transfer.Asset.Denom)
+	case n.IsAssetRegistered(ctx, exported.Axelarnet, transfer.Asset.Denom):
 		if err := b.MintCoins(
-			ctx, types.ModuleName, sdk.NewCoins(coin),
+			ctx, types.ModuleName, sdk.NewCoins(transfer.Asset),
 		); err != nil {
 			return sdk.Coin{}, nil, err
 		}
 
+		token = transfer.Asset
 		sender = a.GetModuleAddress(types.ModuleName)
 	default:
 		// should not reach here
-		panic(fmt.Sprintf("unrecognized %s token", coin.Denom))
+		panic(fmt.Sprintf("unrecognized %s token", transfer.Asset.Denom))
 	}
 
-	return coin, sender, nil
+	return token, sender, nil
 }

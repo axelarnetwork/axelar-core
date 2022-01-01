@@ -839,3 +839,68 @@ func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RUnlock()
 	return calls
 }
+
+// Ensure, that AxelarnetKeeperMock does implement nexustypes.AxelarnetKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ nexustypes.AxelarnetKeeper = &AxelarnetKeeperMock{}
+
+// AxelarnetKeeperMock is a mock implementation of nexustypes.AxelarnetKeeper.
+//
+// 	func TestSomethingThatUsesAxelarnetKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked nexustypes.AxelarnetKeeper
+// 		mockedAxelarnetKeeper := &AxelarnetKeeperMock{
+// 			GetFeeCollectorFunc: func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
+// 				panic("mock out the GetFeeCollector method")
+// 			},
+// 		}
+//
+// 		// use mockedAxelarnetKeeper in code that requires nexustypes.AxelarnetKeeper
+// 		// and then make assertions.
+//
+// 	}
+type AxelarnetKeeperMock struct {
+	// GetFeeCollectorFunc mocks the GetFeeCollector method.
+	GetFeeCollectorFunc func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetFeeCollector holds details about calls to the GetFeeCollector method.
+		GetFeeCollector []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+	}
+	lockGetFeeCollector sync.RWMutex
+}
+
+// GetFeeCollector calls GetFeeCollectorFunc.
+func (mock *AxelarnetKeeperMock) GetFeeCollector(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
+	if mock.GetFeeCollectorFunc == nil {
+		panic("AxelarnetKeeperMock.GetFeeCollectorFunc: method is nil but AxelarnetKeeper.GetFeeCollector was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetFeeCollector.Lock()
+	mock.calls.GetFeeCollector = append(mock.calls.GetFeeCollector, callInfo)
+	mock.lockGetFeeCollector.Unlock()
+	return mock.GetFeeCollectorFunc(ctx)
+}
+
+// GetFeeCollectorCalls gets all the calls that were made to GetFeeCollector.
+// Check the length with:
+//     len(mockedAxelarnetKeeper.GetFeeCollectorCalls())
+func (mock *AxelarnetKeeperMock) GetFeeCollectorCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetFeeCollector.RLock()
+	calls = mock.calls.GetFeeCollector
+	mock.lockGetFeeCollector.RUnlock()
+	return calls
+}
