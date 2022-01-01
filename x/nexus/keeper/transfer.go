@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -50,6 +49,15 @@ func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossC
 	k.setNonce(ctx, id+1)
 }
 
+func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
+	k.getStore(ctx).Set(transferFee, &fee)
+}
+
+func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
+	k.getStore(ctx).Get(transferFee, &fee)
+	return fee
+}
+
 // EnqueueForTransfer appoints the amount of tokens to be transfered/minted to the recipient previously linked to the specified sender
 func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) error {
 	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
@@ -69,19 +77,14 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
-	// collect fee
-	// TODO: this should be now done upon mint/withdrawl rather than per individual transfer
-	feeCollector, ok := k.axelarnetKeeper.GetFeeCollector(ctx)
-	feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
-	if ok && feeDue.IsPositive() {
-		asset.Amount = asset.Amount.Sub(feeDue)
-		fee := sdk.NewCoin(asset.Denom, feeDue)
-		feeRecipient := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: feeCollector.String()}
-		k.setNewPendingTransfer(ctx, feeRecipient, fee)
-	}
-
 	if sender.Chain.NativeAsset != asset.Denom {
 		k.subtractFromChainTotal(ctx, sender.Chain, asset)
+	}
+
+	// collect fee
+	if feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt(); feeDue.IsPositive() {
+		k.addTransferFee(ctx, sdk.NewCoin(asset.Denom, feeDue))
+		asset = asset.SubAmount(feeDue)
 	}
 
 	// merging transfers for the specified recipient
@@ -141,4 +144,23 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	}
 
 	return transfers
+}
+
+// addTransferFee adds transfer fee
+func (k Keeper) addTransferFee(ctx sdk.Context, coin sdk.Coin) {
+	fee := k.getTransferFee(ctx)
+	fee.Coins = fee.Coins.Add(coin)
+	k.setTransferFee(ctx, fee)
+}
+
+// GetTransferFees returns the accumulated transfer fees
+func (k Keeper) GetTransferFees(ctx sdk.Context) sdk.Coins {
+	return k.getTransferFee(ctx).Coins
+}
+
+// SubTransferFee subtracts coin from transfer fee
+func (k Keeper) SubTransferFee(ctx sdk.Context, coin sdk.Coin) {
+	fee := k.getTransferFee(ctx)
+	fee.Coins = fee.Coins.Sub(sdk.NewCoins(coin))
+	k.setTransferFee(ctx, fee)
 }
