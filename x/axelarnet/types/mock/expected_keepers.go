@@ -858,6 +858,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			GetRecipientFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
+// 			GetTransferFeesFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
+// 				panic("mock out the GetTransferFees method")
+// 			},
 // 			GetTransfersForChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
@@ -872,6 +875,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			},
 // 			SetChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
 // 				panic("mock out the SetChain method")
+// 			},
+// 			SubTransferFeeFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)  {
+// 				panic("mock out the SubTransferFee method")
 // 			},
 // 		}
 //
@@ -895,6 +901,9 @@ type NexusMock struct {
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress) (exported.CrossChainAddress, bool)
 
+	// GetTransferFeesFunc mocks the GetTransferFees method.
+	GetTransferFeesFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Coins
+
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
 	GetTransfersForChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain, state exported.TransferState) []exported.CrossChainTransfer
 
@@ -909,6 +918,9 @@ type NexusMock struct {
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
+
+	// SubTransferFeeFunc mocks the SubTransferFee method.
+	SubTransferFeeFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -953,6 +965,11 @@ type NexusMock struct {
 			// Sender is the sender argument value.
 			Sender exported.CrossChainAddress
 		}
+		// GetTransferFees holds details about calls to the GetTransferFees method.
+		GetTransferFees []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
 		GetTransfersForChain []struct {
 			// Ctx is the ctx argument value.
@@ -996,17 +1013,26 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
+		// SubTransferFee holds details about calls to the SubTransferFee method.
+		SubTransferFee []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Coin is the coin argument value.
+			Coin cosmossdktypes.Coin
+		}
 	}
 	lockAddToChainTotal        sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
 	lockGetRecipient           sync.RWMutex
+	lockGetTransferFees        sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
 	lockIsAssetRegistered      sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
+	lockSubTransferFee         sync.RWMutex
 }
 
 // AddToChainTotal calls AddToChainTotalFunc.
@@ -1193,6 +1219,37 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
 	mock.lockGetRecipient.RUnlock()
+	return calls
+}
+
+// GetTransferFees calls GetTransferFeesFunc.
+func (mock *NexusMock) GetTransferFees(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
+	if mock.GetTransferFeesFunc == nil {
+		panic("NexusMock.GetTransferFeesFunc: method is nil but Nexus.GetTransferFees was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetTransferFees.Lock()
+	mock.calls.GetTransferFees = append(mock.calls.GetTransferFees, callInfo)
+	mock.lockGetTransferFees.Unlock()
+	return mock.GetTransferFeesFunc(ctx)
+}
+
+// GetTransferFeesCalls gets all the calls that were made to GetTransferFees.
+// Check the length with:
+//     len(mockedNexus.GetTransferFeesCalls())
+func (mock *NexusMock) GetTransferFeesCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetTransferFees.RLock()
+	calls = mock.calls.GetTransferFees
+	mock.lockGetTransferFees.RUnlock()
 	return calls
 }
 
@@ -1384,6 +1441,41 @@ func (mock *NexusMock) SetChainCalls() []struct {
 	mock.lockSetChain.RLock()
 	calls = mock.calls.SetChain
 	mock.lockSetChain.RUnlock()
+	return calls
+}
+
+// SubTransferFee calls SubTransferFeeFunc.
+func (mock *NexusMock) SubTransferFee(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) {
+	if mock.SubTransferFeeFunc == nil {
+		panic("NexusMock.SubTransferFeeFunc: method is nil but Nexus.SubTransferFee was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}{
+		Ctx:  ctx,
+		Coin: coin,
+	}
+	mock.lockSubTransferFee.Lock()
+	mock.calls.SubTransferFee = append(mock.calls.SubTransferFee, callInfo)
+	mock.lockSubTransferFee.Unlock()
+	mock.SubTransferFeeFunc(ctx, coin)
+}
+
+// SubTransferFeeCalls gets all the calls that were made to SubTransferFee.
+// Check the length with:
+//     len(mockedNexus.SubTransferFeeCalls())
+func (mock *NexusMock) SubTransferFeeCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Coin cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}
+	mock.lockSubTransferFee.RLock()
+	calls = mock.calls.SubTransferFee
+	mock.lockSubTransferFee.RUnlock()
 	return calls
 }
 

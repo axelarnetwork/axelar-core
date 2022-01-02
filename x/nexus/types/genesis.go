@@ -19,6 +19,7 @@ func NewGenesisState(
 	chainStates []ChainState,
 	linkedAddresses []LinkedAddresses,
 	transfers []exported.CrossChainTransfer,
+	fee exported.TransferFee,
 ) *GenesisState {
 	return &GenesisState{
 		Params:          params,
@@ -27,6 +28,7 @@ func NewGenesisState(
 		ChainStates:     chainStates,
 		LinkedAddresses: linkedAddresses,
 		Transfers:       transfers,
+		Fee:             fee,
 	}
 }
 
@@ -39,6 +41,7 @@ func DefaultGenesisState() *GenesisState {
 		[]ChainState{},
 		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},
+		exported.TransferFee{},
 	)
 }
 
@@ -70,6 +73,10 @@ func (m GenesisState) Validate() error {
 		if err := transfer.Validate(); err != nil {
 			return getValidateError(err)
 		}
+	}
+
+	if err := m.Fee.Coins.Validate(); err != nil {
+		return getValidateError(err)
 	}
 
 	return nil

@@ -22,12 +22,9 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 )
 
-func setup() (sdk.Context, Keeper, *mock.AxelarnetKeeperMock) {
-	axelarnetKeeper := mock.AxelarnetKeeperMock{}
-
+func setup() (sdk.Context, Keeper) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
@@ -38,10 +35,9 @@ func setup() (sdk.Context, Keeper, *mock.AxelarnetKeeperMock) {
 		encodingConfig.Codec,
 		sdk.NewKVStoreKey(types.StoreKey),
 		subspace,
-		&axelarnetKeeper,
 	)
 
-	return ctx, keeper, &axelarnetKeeper
+	return ctx, keeper
 }
 
 func getRandomAxelarnetAddress() exported.CrossChainAddress {
@@ -68,16 +64,13 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
-	ctx, keeper, axelarnetKeeper := setup()
+	ctx, keeper := setup()
 	keeper.InitGenesis(ctx, types.DefaultGenesisState())
 
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetkeeper.Keeper{}))
 	keeper.SetRouter(router)
-	axelarnetKeeper.GetFeeCollectorFunc = func(ctx sdk.Context) (sdk.AccAddress, bool) {
-		return sdk.AccAddress{}, true
-	}
 
 	expected := types.DefaultGenesisState()
 
@@ -141,7 +134,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.NoError(t, actual.Validate())
 	assertChainStatesEqual(t, expected, actual)
 
-	ctx, keeper, _ = setup()
+	ctx, keeper = setup()
 	keeper.InitGenesis(ctx, expected)
 	actual = keeper.ExportGenesis(ctx)
 
