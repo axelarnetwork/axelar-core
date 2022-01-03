@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -136,8 +137,12 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		res, err := h(ctx, msg)
 		if err != nil {
+			// if the error is not already a registered error the error message would be obscured, so wrap it in a general registered error
+			if !utils.IsABCIError(err) {
+				err = sdkerrors.Wrap(types.ErrEVM, err.Error())
+			}
 			k.Logger(ctx).Debug(err.Error())
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+			return nil, err
 		}
 		k.Logger(ctx).Debug(res.Log)
 		return res, nil

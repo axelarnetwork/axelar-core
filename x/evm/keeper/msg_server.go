@@ -1068,7 +1068,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	}
 
 	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
+		return nil, s.newErrRotationInProgress(chain, tss.SecondaryKey)
 	}
 
 	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
@@ -1105,6 +1105,10 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	}
 
 	return &types.CreateBurnTokensResponse{}, nil
+}
+
+func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) error {
+	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
 }
 
 func getMultisigThreshold(keyCount int, threshold utils.Threshold) uint8 {
@@ -1226,7 +1230,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	}
 
 	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
+		return nil, s.newErrRotationInProgress(chain, tss.SecondaryKey)
 	}
 
 	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
@@ -1293,10 +1297,10 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 	// don't allow any transfer key if the next master/secondary key is already assigned
 	if _, nextMasterKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
-		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)
+		return types.Command{}, s.newErrRotationInProgress(chain, tss.MasterKey)
 	}
 	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return types.Command{}, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.SecondaryKey.SimpleString(), chain.Name)
+		return types.Command{}, s.newErrRotationInProgress(chain, tss.SecondaryKey)
 	}
 
 	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
@@ -1392,7 +1396,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 
 	switch latest.GetStatus() {
 	case types.BatchSigning:
-		return types.CommandBatch{}, fmt.Errorf("signing for command batch '%s' is still in progress", hex.EncodeToString(latest.GetID()))
+		return types.CommandBatch{}, sdkerrors.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
 	case types.BatchAborted:
 		return latest, nil
 	default:
