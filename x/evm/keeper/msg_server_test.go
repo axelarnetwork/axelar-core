@@ -414,7 +414,7 @@ func TestLink_Success(t *testing.T) {
 	ctx := rand.Context(fake.NewMultiStore())
 	chain := "Ethereum"
 	k := newKeeper(ctx, chain, minConfHeight)
-	tokenDetails := createDetails(rand.Str(10), rand.Str(3))
+	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
 	msg := createMsgSignDeploy(tokenDetails)
 
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
@@ -826,7 +826,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(rand.Str(10), rand.Str(3)), sdk.NewInt(1000000))
+		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)), sdk.NewInt(1000000))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
@@ -1219,7 +1219,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		msg = createMsgSignDeploy(createDetails(rand.Str(10), rand.Str(3)))
+		msg = createMsgSignDeploy(createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
@@ -1439,4 +1439,8 @@ func createMockERC20Token(asset string, details types.TokenDetails, minAmount sd
 		func(meta types.ERC20TokenMetadata) {},
 		meta,
 	)
+}
+
+func randomNormalizedStr(size int) string {
+	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "")
 }
