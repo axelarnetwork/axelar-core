@@ -3,15 +3,21 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewActivateChainRequest creates a message of type ActivateChainRequest
 func NewActivateChainRequest(sender sdk.AccAddress, chains ...string) *ActivateChainRequest {
+	var normalizedChains []string
+	for _, chain := range chains {
+		normalizedChains = append(normalizedChains, utils.NormalizeString(chain))
+	}
+
 	return &ActivateChainRequest{
 		Sender: sender,
-		Chains: chains,
+		Chains: normalizedChains,
 	}
 }
 
@@ -36,8 +42,8 @@ func (m ActivateChainRequest) ValidateBasic() error {
 	}
 
 	for _, chain := range m.Chains {
-		if chain == "" {
-			return fmt.Errorf("chain cannot be empty")
+		if err := utils.ValidateString(chain); err != nil {
+			return sdkerrors.Wrap(err, fmt.Sprintf("invalid chain '%s'", chain))
 		}
 	}
 
