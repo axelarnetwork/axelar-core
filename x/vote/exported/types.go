@@ -87,7 +87,7 @@ func (m PollKey) Validate() error {
 	}
 
 	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid recipient address")
+		return sdkerrors.Wrap(err, "invalid poll key ID")
 	}
 
 	return nil
