@@ -85,7 +85,7 @@ func GetCmdDeregisterChainMaintainer() *cobra.Command {
 // GetCmdActivateChain returns the cli command to activate the given chains
 func GetCmdActivateChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "activate-chain [[chains]...]",
+		Use:   "activate-chain [chain]...",
 		Short: "activate the given chains",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

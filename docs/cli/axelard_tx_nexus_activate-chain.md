@@ -3,7 +3,7 @@
 activate the given chains
 
 ```
-axelard tx nexus activate-chain [[chains]...] [flags]
+axelard tx nexus activate-chain [chain]... [flags]
 ```
 
 ### Options

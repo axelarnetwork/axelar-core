@@ -118,11 +118,8 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 
 		for _, maintainer := range maintainers {
 			validator := s.staking.Validator(ctx, maintainer)
-			if validator == nil {
-				continue
-			}
 
-			if !validator.IsBonded() || validator.IsJailed() {
+			if validator == nil || !validator.IsBonded() || validator.IsJailed() {
 				continue
 			}
 
