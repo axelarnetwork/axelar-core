@@ -1,11 +1,10 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -13,7 +12,7 @@ import (
 func NewCreateTransferOperatorshipRequest(sender sdk.AccAddress, chain string, keyID string) *CreateTransferOperatorshipRequest {
 	return &CreateTransferOperatorshipRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  utils.NormalizeString(chain),
 		KeyID:  tss.KeyID(keyID),
 	}
 }
@@ -34,8 +33,8 @@ func (m CreateTransferOperatorshipRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.KeyID.Validate(); err != nil {

@@ -1,12 +1,11 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -19,10 +18,10 @@ func NewVoteConfirmTokenRequest(
 	confirmed bool) *VoteConfirmTokenRequest {
 	return &VoteConfirmTokenRequest{
 		Sender:    sender,
-		Chain:     chain,
+		Chain:     utils.NormalizeString(chain),
 		PollKey:   key,
 		TxID:      Hash(txID),
-		Asset:     asset,
+		Asset:     utils.NormalizeString(asset),
 		Confirmed: confirmed,
 	}
 }
@@ -42,11 +41,11 @@ func (m VoteConfirmTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
-	if m.Asset == "" {
-		return fmt.Errorf("asset missing")
+	if err := utils.ValidateString(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
 	return m.PollKey.Validate()

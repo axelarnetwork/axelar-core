@@ -54,7 +54,7 @@ func (q BlockHeightKVQueue) ImportState(state map[string]codec.ProtoMarshaler) {
 // The expected format is {block height}_{[a-zA-Z0-9]+}
 func ValidateQueueState(state map[string]codec.ProtoMarshaler) error {
 	for key := range state {
-		keyParticles := strings.Split(key, defaultDelimiter)
+		keyParticles := strings.Split(key, DefaultDelimiter)
 		if len(keyParticles) != 2 {
 			return fmt.Errorf("expected key %s to consist of two parts", key)
 		}

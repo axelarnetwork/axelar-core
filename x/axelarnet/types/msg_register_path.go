@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
@@ -11,8 +11,8 @@ import (
 func NewRegisterIBCPathRequest(sender sdk.AccAddress, chain, path string) *RegisterIBCPathRequest {
 	return &RegisterIBCPathRequest{
 		Sender: sender,
-		Chain:  chain,
-		Path:   path,
+		Chain:  utils.NormalizeString(chain),
+		Path:   utils.NormalizeString(path),
 	}
 }
 
@@ -32,10 +32,13 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
+	if err := utils.ValidateString(m.Path); err != nil {
+		return sdkerrors.Wrap(err, "invalid path")
+	}
 	f := host.NewPathValidator(func(path string) error {
 		return nil
 	})

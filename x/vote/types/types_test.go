@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -61,7 +62,7 @@ func TestTalliedVote_Marshaling(t *testing.T) {
 
 func TestPoll_Expiry(t *testing.T) {
 	setup := func() exported.PollMetadata {
-		key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
+		key := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
 		return types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	}
 	repeats := 20
@@ -176,18 +177,18 @@ func TestPoll_Vote(t *testing.T) {
 		votingPowers[voter.String()] = rand.PosI64()
 		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
-		assert.Error(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
+		assert.Error(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: randomNormalizedStr(10, 10)}))
 	}).Repeat(repeats))
 
 	t.Run("poll already completed", testutils.Func(func(t *testing.T) {
-		result, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(10)})
+		result, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: randomNormalizedStr(10, 10)})
 		poll := setup(exported.PollMetadata{State: exported.Completed, Result: result}, rand.PosI64())
 
 		voter := rand.ValAddr()
 		votingPowers[voter.String()] = rand.PosI64()
 		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
-		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
+		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: randomNormalizedStr(10, 10)}))
 	}).Repeat(repeats))
 
 	t.Run("poll already failed", testutils.Func(func(t *testing.T) {
@@ -197,7 +198,7 @@ func TestPoll_Vote(t *testing.T) {
 		votingPowers[voter.String()] = rand.PosI64()
 		totalVotingPower = sdk.NewInt(votingPowers[voter.String()]).MulRaw(10)
 
-		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: rand.Str(10)}))
+		assert.NoError(t, poll.Vote(voter, &gogoprototypes.StringValue{Value: randomNormalizedStr(10, 10)}))
 	}).Repeat(repeats))
 
 	t.Run("voter unknown", testutils.Func(func(t *testing.T) {
@@ -205,7 +206,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(metadata, rand.PosI64())
 
 		voterAddr := rand.ValAddr()
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 
 		assert.Error(t, poll.Vote(voterAddr, voteValue))
 	}).Repeat(repeats))
@@ -216,7 +217,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(metadata, rand.PosI64())
 
 		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
 		assert.True(t, poll.Is(exported.Pending))
@@ -231,7 +232,7 @@ func TestPoll_Vote(t *testing.T) {
 		assert.True(t, poll.Is(exported.Pending))
 
 		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
 	}).Repeat(repeats))
@@ -241,7 +242,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(metadata, rand.PosI64())
 
 		voterAddr := poll.Voters[rand.I64Between(0, int64(len(poll.Voters)))].Validator
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 
 		assert.NoError(t, poll.Vote(voterAddr, voteValue))
 		assert.Error(t, poll.Vote(voterAddr, voteValue))
@@ -251,7 +252,7 @@ func TestPoll_Vote(t *testing.T) {
 		metadata := newRandomPollMetadata()
 		poll := setup(metadata, rand.PosI64())
 
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
 			assert.NoError(t, poll.Vote(addr, voteValue))
@@ -268,7 +269,7 @@ func TestPoll_Vote(t *testing.T) {
 		t.Log(len(votingPowers), "votes")
 		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
-			voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+			voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 			assert.NoError(t, poll.Vote(addr, voteValue))
 		}
 
@@ -280,7 +281,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll := setup(metadata, rand.PosI64())
 		poll.MinVoterCount = int64(len(votingPowers) + 1)
 
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 		for voter := range votingPowers {
 			addr, _ := sdk.ValAddressFromBech32(voter)
 			assert.NoError(t, poll.Vote(addr, voteValue))
@@ -296,7 +297,7 @@ func TestPoll_Vote(t *testing.T) {
 		poll.MinVoterCount = int64(len(votingPowers))
 		poll.VotingThreshold = utils.ZeroThreshold
 
-		voteValue := &gogoprototypes.StringValue{Value: rand.StrBetween(1, 500)}
+		voteValue := &gogoprototypes.StringValue{Value: randomNormalizedStr(1, 500)}
 		voterCount := int64(0)
 		for voter := range votingPowers {
 			if voterCount > metadata.MinVoterCount-2 {
@@ -423,8 +424,12 @@ func getValues(m map[string]types.TalliedVote) []types.TalliedVote {
 }
 
 func newRandomPollMetadata() exported.PollMetadata {
-	key := exported.NewPollKey(rand.StrBetween(5, 20), rand.StrBetween(5, 20))
+	key := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
 	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, []exported.Voter{}, sdk.ZeroInt())
 	poll.ExpiresAt = rand.I64Between(1, 1000000)
 	return poll
+}
+
+func randomNormalizedStr(min, max int) string {
+	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "")
 }

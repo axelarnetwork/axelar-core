@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
@@ -30,16 +31,16 @@ func (m IBCTransfer) Validate() error {
 		return err
 	}
 
-	if m.PortID == "" {
-		return fmt.Errorf("port ID is empty")
+	if err := utils.ValidateString(m.PortID); err != nil {
+		return sdkerrors.Wrap(err, "invalid port ID")
 	}
 
-	if m.ChannelID == "" {
-		return fmt.Errorf("channel ID is empty")
+	if err := utils.ValidateString(m.ChannelID); err != nil {
+		return sdkerrors.Wrap(err, "invalid channel ID")
 	}
 
-	if m.Receiver == "" {
-		return fmt.Errorf("receiver is empty")
+	if err := utils.ValidateString(m.Receiver); err != nil {
+		return sdkerrors.Wrap(err, "invalid receiver")
 	}
 
 	if err := m.Token.Validate(); err != nil {
@@ -102,21 +103,26 @@ func (m CosmosChain) Validate() error {
 		return fmt.Errorf("chain must contain assets")
 	}
 
-	if m.Name == "" {
-		return fmt.Errorf("chain must have a name")
+	if err := utils.ValidateString(m.Name); err != nil {
+		return sdkerrors.Wrap(err, "invalid name")
 	}
 
-	if m.AddrPrefix == "" {
-		return fmt.Errorf("chain must have an address prefix")
+	if err := utils.ValidateString(m.AddrPrefix); err != nil {
+		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
 	return nil
 }
 
+// NewAsset returns an asset struct
+func NewAsset(denom string, minAmount sdk.Int) Asset {
+	return Asset{Denom: utils.NormalizeString(denom), MinAmount: minAmount}
+}
+
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
-	if m.Denom == "" {
-		return fmt.Errorf("asset must have a denomination")
+	if err := utils.ValidateString(m.Denom); err != nil {
+		return sdkerrors.Wrap(err, "invalid denomination")
 	}
 
 	if m.MinAmount.LTE(sdk.ZeroInt()) {

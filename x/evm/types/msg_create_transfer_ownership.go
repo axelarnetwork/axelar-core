@@ -1,17 +1,16 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewCreateTransferOwnershipRequest is the constructor for CreateTransferOwnershipRequest
 func NewCreateTransferOwnershipRequest(sender sdk.AccAddress, chain string, keyID string) *CreateTransferOwnershipRequest {
-	return &CreateTransferOwnershipRequest{Sender: sender, Chain: chain, KeyID: tss.KeyID(keyID)}
+	return &CreateTransferOwnershipRequest{Sender: sender, Chain: utils.NormalizeString(chain), KeyID: tss.KeyID(keyID)}
 }
 
 // Route implements sdk.Msg
@@ -40,8 +39,8 @@ func (m CreateTransferOwnershipRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.KeyID.Validate(); err != nil {

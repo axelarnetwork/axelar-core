@@ -11,10 +11,12 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -862,18 +864,18 @@ func (t TransferKeyType) SimpleString() string {
 // NewAsset returns a new Asset instance
 func NewAsset(chain, name string) Asset {
 	return Asset{
-		Chain: chain,
-		Name:  name,
+		Chain: utils.NormalizeString(chain),
+		Name:  utils.NormalizeString(name),
 	}
 }
 
 // Validate ensures that all fields are filled with sensible values
 func (m Asset) Validate() error {
-	if m.Chain == "" {
-		return fmt.Errorf("missing asset chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
-	if m.Name == "" {
-		return fmt.Errorf("missing asset name")
+	if err := utils.ValidateString(m.Name); err != nil {
+		return sdkerrors.Wrap(err, "invalid name")
 	}
 	return nil
 }
@@ -881,8 +883,8 @@ func (m Asset) Validate() error {
 // NewTokenDetails returns a new TokenDetails instance
 func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int) TokenDetails {
 	return TokenDetails{
-		TokenName: tokenName,
-		Symbol:    symbol,
+		TokenName: utils.NormalizeString(tokenName),
+		Symbol:    utils.NormalizeString(symbol),
 		Decimals:  decimals,
 		Capacity:  capacity,
 	}
@@ -890,11 +892,11 @@ func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int)
 
 // Validate ensures that all fields are filled with sensible values
 func (m TokenDetails) Validate() error {
-	if m.TokenName == "" {
-		return fmt.Errorf("missing token name")
+	if err := utils.ValidateString(m.TokenName); err != nil {
+		return sdkerrors.Wrap(err, "invalid token name")
 	}
-	if m.Symbol == "" {
-		return fmt.Errorf("missing token symbol")
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid token symbol")
 	}
 	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
 		return fmt.Errorf("token capacity must be a non-negative number")
@@ -1164,14 +1166,14 @@ func DecodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
-	if m.DestinationChain == "" {
-		return fmt.Errorf("destination chain not set")
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
-	if m.Asset == "" {
-		return fmt.Errorf("asset not set")
+	if err := utils.ValidateString(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
 	}
-	if m.Symbol == "" {
-		return fmt.Errorf("symbol not set")
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid symbol")
 	}
 
 	return nil
@@ -1183,8 +1185,8 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return fmt.Errorf("token status not set")
 	}
 
-	if m.Asset == "" {
-		return fmt.Errorf("asset not set")
+	if err := utils.ValidateString(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
 	if m.ChainID.IsNil() || !m.ChainID.IsPositive() {
@@ -1204,8 +1206,8 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 
 // ValidateBasic does stateless validation of the object
 func (m *ERC20Deposit) ValidateBasic() error {
-	if m.Asset == "" {
-		return fmt.Errorf("asset not set")
+	if err := utils.ValidateString(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
 	if m.Amount.IsZero() {

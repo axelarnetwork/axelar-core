@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -71,7 +72,7 @@ func (m PollMetadata) Validate() error {
 func NewPollKey(module string, id string) PollKey {
 	return PollKey{
 		Module: module,
-		ID:     id,
+		ID:     utils.NormalizeString(id),
 	}
 }
 
@@ -85,8 +86,8 @@ func (m PollKey) Validate() error {
 		return fmt.Errorf("missing module")
 	}
 
-	if m.ID == "" {
-		return fmt.Errorf("missing poll ID")
+	if err := utils.ValidateString(m.ID, ""); err != nil {
+		return sdkerrors.Wrap(err, "invalid poll key ID")
 	}
 
 	return nil

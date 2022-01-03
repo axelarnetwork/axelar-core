@@ -18,6 +18,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -86,7 +87,7 @@ func NewOutPointInfo(outPoint *wire.OutPoint, amount btcutil.Amount, address str
 	return OutPointInfo{
 		OutPoint: outPoint.String(),
 		Amount:   amount,
-		Address:  address,
+		Address:  utils.NormalizeString(address),
 	}
 }
 
@@ -98,8 +99,8 @@ func (m OutPointInfo) Validate() error {
 	if m.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
-	if m.Address == "" {
-		return fmt.Errorf("invalid address to track")
+	if err := utils.ValidateString(m.Address); err != nil {
+		return sdkerrors.Wrap(err, "invalid address")
 	}
 	return nil
 }

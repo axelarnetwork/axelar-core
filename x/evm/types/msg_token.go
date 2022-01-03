@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +11,7 @@ import (
 func NewConfirmTokenRequest(sender sdk.AccAddress, chain string, asset Asset, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  utils.NormalizeString(chain),
 		Asset:  asset,
 		TxID:   Hash(txID),
 	}
@@ -33,8 +32,8 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {

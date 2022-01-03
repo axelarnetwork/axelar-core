@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,7 +10,7 @@ import (
 func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset Asset) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  utils.NormalizeString(chain),
 		Asset:  asset,
 	}
 }
@@ -32,8 +31,8 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain name")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {
