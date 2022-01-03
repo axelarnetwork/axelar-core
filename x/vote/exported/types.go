@@ -86,7 +86,7 @@ func (m PollKey) Validate() error {
 		return fmt.Errorf("missing module")
 	}
 
-	if err := utils.ValidateString(m.ID); err != nil {
+	if err := utils.ValidateString(m.ID, ""); err != nil {
 		return sdkerrors.Wrap(err, "invalid poll key ID")
 	}
 
