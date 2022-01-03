@@ -7,6 +7,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -42,7 +43,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 			*axelarnet.RegisterAssetRequest, *axelarnet.AddCosmosBasedChainRequest,
 			*evm.AddChainRequest, *evm.ConfirmGatewayDeploymentRequest,
 			*evm.CreateDeployTokenRequest, *evm.CreateTransferOwnershipRequest,
-			*evm.CreateTransferOperatorshipRequest:
+			*evm.CreateTransferOperatorshipRequest, *nexus.ActivateChainRequest:
 
 			signer := msg.GetSigners()[0]
 			if permission.ROLE_CHAIN_MANAGEMENT != d.permission.GetRole(ctx, signer) {

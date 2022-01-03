@@ -26,5 +26,6 @@ axelard tx nexus [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx nexus activate-chain](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
 - [axelard tx nexus deregister-chain-maintainer](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
 - [axelard tx nexus register-chain-maintainer](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
