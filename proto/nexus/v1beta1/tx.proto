@@ -23,3 +23,11 @@ message DeregisterChainMaintainerRequest {
 }
 
 message DeregisterChainMaintainerResponse {}
+
+message ActivateChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2;
+}
+
+message ActivateChainResponse {}
