@@ -23,8 +23,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -41,10 +39,7 @@ var feeRate = sdk.NewDecWithPrec(25, 5)
 func init() {
 	encCfg := app.MakeEncodingConfig()
 	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	axelarnetKeeper := &mock.AxelarnetKeeperMock{
-		GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
-	}
-	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, axelarnetKeeper)
+	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 
 	nexusRouter := types.NewRouter()
 	nexusRouter.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
@@ -195,10 +190,9 @@ func TestPrepareSuccess(t *testing.T) {
 
 	count := 0
 	for _, transfer := range transfers {
-		amount, ok := amounts[transfer.Recipient]
-		if ok {
+		if amount, ok := amounts[transfer.Recipient]; ok {
 			count++
-			amount.Amount = amount.Amount.Sub(sdk.NewDecFromInt(amount.Amount).Mul(feeRate).TruncateInt())
+			amount = amount.SubAmount(sdk.NewDecFromInt(amount.Amount).Mul(feeRate).TruncateInt())
 			assert.Equal(t, transfer.Asset, amount)
 		}
 	}
