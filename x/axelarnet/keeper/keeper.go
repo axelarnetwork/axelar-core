@@ -149,7 +149,6 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 func (k Keeper) IsCosmosChain(ctx sdk.Context, chain string) bool {
 	_, ok := k.getCosmosChain(ctx, chain)
 	return ok
-	return k.getStore(ctx).Has(key)
 }
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
