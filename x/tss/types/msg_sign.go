@@ -8,7 +8,7 @@ import (
 )
 
 // NewProcessSignTrafficRequest constructor for NewProcessSignTrafficRequest
-func NewProcessSignTrafficRequest(sender sdk.AccAddress, session string, payload *tofnd.TrafficOut) *ProcessSignTrafficRequest {
+func NewProcessSignTrafficRequest(sender sdk.AccAddress, session string, payload tofnd.TrafficOut) *ProcessSignTrafficRequest {
 	return &ProcessSignTrafficRequest{
 		Sender:    sender,
 		SessionID: utils.NormalizeString(session),
