@@ -261,7 +261,7 @@ func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKey
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
 			sdk.NewAttribute(types.AttributeKeySessionID, req.SessionID),
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(req.Payload)))))
+			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(&req.Payload)))))
 
 	return &types.ProcessKeygenTrafficResponse{}, nil
 }
@@ -484,7 +484,7 @@ func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignT
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
 			sdk.NewAttribute(types.AttributeKeySessionID, req.SessionID),
 			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(req.Payload)))))
+			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(&req.Payload)))))
 
 	return &types.ProcessSignTrafficResponse{}, nil
 }
@@ -509,7 +509,7 @@ func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types
 	}
 
 	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, req.Result); err != nil {
+	if err := poll.Vote(voter, &req.Result); err != nil {
 		return nil, err
 	}
 
