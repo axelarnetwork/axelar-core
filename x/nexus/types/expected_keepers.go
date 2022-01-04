@@ -45,3 +45,8 @@ type StakingKeeper interface {
 	PowerReduction(sdk.Context) sdk.Int
 	GetLastTotalPower(sdk.Context) sdk.Int
 }
+
+// AxelarnetKeeper procides functionality  to the axelarnet module
+type AxelarnetKeeper interface {
+	IsCosmosChain(ctx sdk.Context, chain string) bool
+}
