@@ -16,14 +16,16 @@ type msgServer struct {
 	types.Nexus
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
+	axelarnet   types.AxelarnetKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the nexus MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) types.MsgServiceServer {
 	return msgServer{
 		Nexus:       k,
 		snapshotter: snapshotter,
 		staking:     staking,
+		axelarnet:   axelarnet,
 	}
 }
 
@@ -38,10 +40,16 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
-			return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chainStr))
+			continue
 		}
 
+		if s.axelarnet.IsCosmosChain(ctx, chain.Name) {
+			s.Logger(ctx).Error(fmt.Sprintf("'%s' is a cosmos chain, skipping maintainer registration", chain.Name))
+			continue
+		}
 		if s.IsChainMaintainer(ctx, chain, validator) {
+			s.Logger(ctx).Info(fmt.Sprintf("'%s' is already a maintainer for chain '%s'", validator.String(), chain.Name))
 			continue
 		}
 
