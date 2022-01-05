@@ -26,7 +26,7 @@ func (m HeartBeatRequest) ValidateBasic() error {
 
 	for _, keyID := range m.KeyIDs {
 		if err := keyID.Validate(); err != nil {
-			return sdkerrors.Wrapf(ErrTss, "invalid key ID '%s'", keyID, err.Error())
+			return sdkerrors.Wrapf(ErrTss, "invalid key ID '%s': %s", keyID, err.Error())
 		}
 	}
 
