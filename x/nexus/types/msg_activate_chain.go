@@ -8,31 +8,31 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewRegisterChainMaintainerRequest creates a message of type RegisterChainMaintainerRequest
-func NewRegisterChainMaintainerRequest(sender sdk.AccAddress, chains ...string) *RegisterChainMaintainerRequest {
+// NewActivateChainRequest creates a message of type ActivateChainRequest
+func NewActivateChainRequest(sender sdk.AccAddress, chains ...string) *ActivateChainRequest {
 	var normalizedChains []string
 	for _, chain := range chains {
 		normalizedChains = append(normalizedChains, utils.NormalizeString(chain))
 	}
 
-	return &RegisterChainMaintainerRequest{
+	return &ActivateChainRequest{
 		Sender: sender,
 		Chains: normalizedChains,
 	}
 }
 
 // Route implements sdk.Msg
-func (m RegisterChainMaintainerRequest) Route() string {
+func (m ActivateChainRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m RegisterChainMaintainerRequest) Type() string {
-	return "RegisterChainMaintainer"
+func (m ActivateChainRequest) Type() string {
+	return "ActivateChain"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m RegisterChainMaintainerRequest) ValidateBasic() error {
+func (m ActivateChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -51,12 +51,12 @@ func (m RegisterChainMaintainerRequest) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m RegisterChainMaintainerRequest) GetSignBytes() []byte {
+func (m ActivateChainRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m RegisterChainMaintainerRequest) GetSigners() []sdk.AccAddress {
+func (m ActivateChainRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

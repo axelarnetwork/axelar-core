@@ -1,15 +1,14 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewCreatePendingTransfersRequest - CreatePendingTransfersRequest constructor
 func NewCreatePendingTransfersRequest(sender sdk.AccAddress, chain string) *CreatePendingTransfersRequest {
-	return &CreatePendingTransfersRequest{Sender: sender, Chain: chain}
+	return &CreatePendingTransfersRequest{Sender: sender, Chain: utils.NormalizeString(chain)}
 }
 
 // Route returns the route for this message
@@ -27,8 +26,8 @@ func (m CreatePendingTransfersRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Chain == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	return nil

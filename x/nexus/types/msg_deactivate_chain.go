@@ -3,36 +3,37 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-// NewRegisterChainMaintainerRequest creates a message of type RegisterChainMaintainerRequest
-func NewRegisterChainMaintainerRequest(sender sdk.AccAddress, chains ...string) *RegisterChainMaintainerRequest {
+// NewDeactivateChainRequest creates a message of type DeactivateChainRequest
+func NewDeactivateChainRequest(sender sdk.AccAddress, chains ...string) *DeactivateChainRequest {
 	var normalizedChains []string
 	for _, chain := range chains {
 		normalizedChains = append(normalizedChains, utils.NormalizeString(chain))
 	}
 
-	return &RegisterChainMaintainerRequest{
+	return &DeactivateChainRequest{
 		Sender: sender,
 		Chains: normalizedChains,
 	}
 }
 
 // Route implements sdk.Msg
-func (m RegisterChainMaintainerRequest) Route() string {
+func (m DeactivateChainRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m RegisterChainMaintainerRequest) Type() string {
-	return "RegisterChainMaintainer"
+func (m DeactivateChainRequest) Type() string {
+	return "DeactivateChain"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m RegisterChainMaintainerRequest) ValidateBasic() error {
+func (m DeactivateChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -51,12 +52,12 @@ func (m RegisterChainMaintainerRequest) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m RegisterChainMaintainerRequest) GetSignBytes() []byte {
+func (m DeactivateChainRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m RegisterChainMaintainerRequest) GetSigners() []sdk.AccAddress {
+func (m DeactivateChainRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

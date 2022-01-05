@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
@@ -15,13 +16,13 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, add
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
-			Name:                  name,
-			NativeAsset:           nativeAsset,
+			Name:                  utils.NormalizeString(name),
+			NativeAsset:           utils.NormalizeString(nativeAsset),
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
 			Module:                "axelarnet", // cannot use constant due to import cycle
 		},
-		AddrPrefix: addrPrefix,
+		AddrPrefix: utils.NormalizeString(addrPrefix),
 		MinAmount:  minAmount,
 	}
 }
@@ -46,8 +47,8 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid chain spec: %v", err)
 	}
 
-	if m.AddrPrefix == "" {
-		return fmt.Errorf("address prefix cannot be empty")
+	if err := utils.ValidateString(m.AddrPrefix); err != nil {
+		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
 	if m.MinAmount.LTE(sdk.ZeroInt()) {

@@ -2,7 +2,6 @@ package types
 
 import (
 	context "context"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -32,6 +31,7 @@ type Nexus interface {
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
 	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
+	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 }
 
 // Snapshotter provides functionality to the snapshot module
@@ -44,4 +44,9 @@ type StakingKeeper interface {
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 	PowerReduction(sdk.Context) sdk.Int
 	GetLastTotalPower(sdk.Context) sdk.Int
+}
+
+// AxelarnetKeeper procides functionality  to the axelarnet module
+type AxelarnetKeeper interface {
+	IsCosmosChain(ctx sdk.Context, chain string) bool
 }

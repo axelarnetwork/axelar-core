@@ -1,10 +1,12 @@
 package keeper_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
@@ -79,10 +81,10 @@ func randomIBCTransfer() types.IBCTransfer {
 	denom := rand.Strings(5, 20).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY")).Next()
 	return types.IBCTransfer{
 		Sender:    rand.AccAddr(),
-		Receiver:  rand.StrBetween(5, 20),
+		Receiver:  randomNormalizedStr(5, 20),
 		Token:     sdk.NewCoin(denom, sdk.NewInt(rand.PosI64())),
-		PortID:    rand.StrBetween(5, 20),
-		ChannelID: rand.StrBetween(5, 20),
+		PortID:    randomNormalizedStr(5, 20),
+		ChannelID: randomNormalizedStr(5, 20),
 		Sequence:  uint64(rand.PosI64()),
 	}
 }
@@ -103,9 +105,13 @@ func randomChain() types.CosmosChain {
 	}
 
 	return types.CosmosChain{
-		Name:       rand.StrBetween(5, 20),
+		Name:       strings.ReplaceAll(randomNormalizedStr(5, 20), utils.DefaultDelimiter, ""),
 		IBCPath:    randomIBCPath(),
 		Assets:     assets,
-		AddrPrefix: rand.StrBetween(5, 10),
+		AddrPrefix: strings.ReplaceAll(randomNormalizedStr(5, 20), utils.DefaultDelimiter, ""),
 	}
+}
+
+func randomNormalizedStr(min, max int) string {
+	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "")
 }

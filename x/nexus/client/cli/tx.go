@@ -24,6 +24,8 @@ func GetTxCmd() *cobra.Command {
 	txCmd.AddCommand(
 		GetCmdRegisterChainMaintainer(),
 		GetCmdDeregisterChainMaintainer(),
+		GetCmdActivateChain(),
+		GetCmdDeactivateChain(),
 	)
 
 	return txCmd
@@ -68,6 +70,58 @@ func GetCmdDeregisterChainMaintainer() *cobra.Command {
 			}
 
 			msg := types.NewDeregisterChainMaintainerRequest(cliCtx.GetFromAddress(), args...)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdActivateChain returns the cli command to activate the given chains
+func GetCmdActivateChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "activate-chain [chain]...",
+		Short: "activate the given chains",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewActivateChainRequest(cliCtx.GetFromAddress(), args...)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdDeactivateChain returns the cli command to deactivate the given chains
+func GetCmdDeactivateChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deactivate-chain [chain]...",
+		Short: "deactivate the given chains",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewDeactivateChainRequest(cliCtx.GetFromAddress(), args...)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

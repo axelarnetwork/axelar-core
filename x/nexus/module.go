@@ -84,15 +84,17 @@ type AppModule struct {
 	keeper      types.Nexus
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
+	axelarnet   types.AxelarnetKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		snapshotter:    snapshotter,
 		staking:        staking,
+		axelarnet:      axelarnet,
 	}
 }
 
@@ -128,13 +130,13 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.staking)
+	return EndBlocker(ctx, req, am.keeper)
 }
 
 // Route returns the module's route
 // Deprecated
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.staking, am.axelarnet))
 }
 
 // QuerierRoute returns this module's query route

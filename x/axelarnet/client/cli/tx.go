@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -191,14 +192,14 @@ func GetCmdRegisterAsset() *cobra.Command {
 				return err
 			}
 			chain := args[0]
-			denom := args[1]
+			denom := utils.NormalizeString(args[1])
 
 			minAmount, ok := sdk.NewIntFromString(args[2])
 			if !ok {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.Asset{Denom: denom, MinAmount: minAmount})
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.NewAsset(denom, minAmount))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

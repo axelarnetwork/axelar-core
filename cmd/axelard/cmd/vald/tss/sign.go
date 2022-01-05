@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -173,7 +174,7 @@ func (mgr *Mgr) handleIntermediateSignMsgs(sigID string, intermediate <-chan *to
 		mgr.Logger.Debug(fmt.Sprintf("outgoing sign msg: sig [%.20s] from me [%.20s] to [%.20s] broadcast [%t]\n",
 			sigID, mgr.principalAddr, msg.ToPartyUid, msg.IsBroadcast))
 		// sender is set by broadcaster
-		tssMsg := &tss.ProcessSignTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: sigID, Payload: msg}
+		tssMsg := types.NewProcessSignTrafficRequest(mgr.cliCtx.FromAddress, sigID, *msg)
 		refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing sign msg")
@@ -204,7 +205,7 @@ func (mgr *Mgr) handleSignResult(sigID string, resultChan <-chan interface{}) er
 	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received sign result for %s [%+v]", sigID, result))
 
 	key := voting.NewPollKey(tss.ModuleName, sigID)
-	vote := &tss.VoteSigRequest{Sender: mgr.cliCtx.FromAddress, PollKey: key, Result: result}
+	vote := &tss.VoteSigRequest{Sender: mgr.cliCtx.FromAddress, PollKey: key, Result: *result}
 	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
 	_, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
 	return err

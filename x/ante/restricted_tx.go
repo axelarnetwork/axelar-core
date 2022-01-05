@@ -7,6 +7,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -31,7 +32,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *permissionTypes.UpdateGovernanceKeyRequest, *permissionTypes.RegisterControllerRequest,
-			*axelarnet.RegisterFeeCollectorRequest:
+			*axelarnet.RegisterFeeCollectorRequest, *nexus.ActivateChainRequest, *nexus.DeactivateChainRequest:
 
 			signer := msg.GetSigners()[0]
 			if permission.ROLE_ACCESS_CONTROL != d.permission.GetRole(ctx, signer) {

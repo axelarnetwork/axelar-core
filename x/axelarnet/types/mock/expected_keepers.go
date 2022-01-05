@@ -843,6 +843,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //
 // 		// make and configure a mocked axelarnettypes.Nexus
 // 		mockedNexus := &NexusMock{
+// 			ActivateChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
+// 				panic("mock out the ActivateChain method")
+// 			},
 // 			AddToChainTotalFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, amount cosmossdktypes.Coin)  {
 // 				panic("mock out the AddToChainTotal method")
 // 			},
@@ -886,6 +889,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //
 // 	}
 type NexusMock struct {
+	// ActivateChainFunc mocks the ActivateChain method.
+	ActivateChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
+
 	// AddToChainTotalFunc mocks the AddToChainTotal method.
 	AddToChainTotalFunc func(ctx cosmossdktypes.Context, chain exported.Chain, amount cosmossdktypes.Coin)
 
@@ -924,6 +930,13 @@ type NexusMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// ActivateChain holds details about calls to the ActivateChain method.
+		ActivateChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain exported.Chain
+		}
 		// AddToChainTotal holds details about calls to the AddToChainTotal method.
 		AddToChainTotal []struct {
 			// Ctx is the ctx argument value.
@@ -1021,6 +1034,7 @@ type NexusMock struct {
 			Coin cosmossdktypes.Coin
 		}
 	}
+	lockActivateChain          sync.RWMutex
 	lockAddToChainTotal        sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
@@ -1033,6 +1047,41 @@ type NexusMock struct {
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
 	lockSubTransferFee         sync.RWMutex
+}
+
+// ActivateChain calls ActivateChainFunc.
+func (mock *NexusMock) ActivateChain(ctx cosmossdktypes.Context, chain exported.Chain) {
+	if mock.ActivateChainFunc == nil {
+		panic("NexusMock.ActivateChainFunc: method is nil but Nexus.ActivateChain was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockActivateChain.Lock()
+	mock.calls.ActivateChain = append(mock.calls.ActivateChain, callInfo)
+	mock.lockActivateChain.Unlock()
+	mock.ActivateChainFunc(ctx, chain)
+}
+
+// ActivateChainCalls gets all the calls that were made to ActivateChain.
+// Check the length with:
+//     len(mockedNexus.ActivateChainCalls())
+func (mock *NexusMock) ActivateChainCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain exported.Chain
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}
+	mock.lockActivateChain.RLock()
+	calls = mock.calls.ActivateChain
+	mock.lockActivateChain.RUnlock()
+	return calls
 }
 
 // AddToChainTotal calls AddToChainTotalFunc.

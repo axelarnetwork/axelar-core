@@ -40,7 +40,7 @@ message ProcessKeygenTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tss.tofnd.v1beta1.TrafficOut payload = 3;
+  tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
 }
 
 message ProcessKeygenTrafficResponse {}
@@ -50,7 +50,7 @@ message ProcessSignTrafficRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
-  tss.tofnd.v1beta1.TrafficOut payload = 3;
+  tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
 }
 
 message ProcessSignTrafficResponse {}
@@ -60,7 +60,8 @@ message VotePubKeyRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
-  tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3;
+  tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3
+      [ (gogoproto.nullable) = false ];
 }
 message VotePubKeyResponse { string log = 1; }
 
@@ -69,7 +70,8 @@ message VoteSigRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
-  tss.tofnd.v1beta1.MessageOut.SignResult result = 3;
+  tss.tofnd.v1beta1.MessageOut.SignResult result = 3
+      [ (gogoproto.nullable) = false ];
 }
 
 message VoteSigResponse { string log = 1; }

@@ -77,6 +77,9 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	keeper.SetChain(ctx, bitcoin.Bitcoin)
 	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, bitcoin.Bitcoin.NativeAsset)
 	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
+	for _, chain := range expected.Chains {
+		keeper.ActivateChain(ctx, chain)
+	}
 
 	linkedAddressesCount := rand.I64Between(100, 1000)
 	expectedLinkedAddresses := make([]types.LinkedAddresses, linkedAddressesCount)
@@ -117,15 +120,18 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		{
 			Chain:  axelarnet.Axelarnet,
 			Assets: []string{axelarnet.Axelarnet.NativeAsset},
+			Activated: true,
 		},
 		{
 			Chain:  evm.Ethereum,
 			Assets: []string{evm.Ethereum.NativeAsset},
 			Total:  expectedEthereumTotal,
+			Activated: true,
 		},
 		{
 			Chain:  bitcoin.Bitcoin,
 			Assets: []string{bitcoin.Bitcoin.NativeAsset},
+			Activated: true,
 		},
 	}
 

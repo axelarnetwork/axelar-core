@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,7 +10,7 @@ import (
 func NewConfirmChainRequest(sender sdk.AccAddress, name string) *ConfirmChainRequest {
 	return &ConfirmChainRequest{
 		Sender: sender,
-		Name:   name,
+		Name:   utils.NormalizeString(name),
 	}
 }
 
@@ -30,8 +29,8 @@ func (m ConfirmChainRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
-	if m.Name == "" {
-		return fmt.Errorf("missing chain")
+	if err := utils.ValidateString(m.Name); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
 	return nil

@@ -14,7 +14,8 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueRegister   = "register"
-	AttributeValueDeregister = "deregister"
-	AttributeValueActivated  = "activated"
+	AttributeValueRegister    = "register"
+	AttributeValueDeregister  = "deregister"
+	AttributeValueActivated   = "activated"
+	AttributeValueDeactivated = "deactivated"
 )

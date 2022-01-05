@@ -27,6 +27,19 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/registerChainMaintainer"
+      body : "*"
+    };
+  }
+
+  rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
+      returns (nexus.v1beta1.DeactivateChainResponse) {
+    option (google.api.http) = {
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

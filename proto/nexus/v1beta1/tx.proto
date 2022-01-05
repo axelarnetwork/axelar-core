@@ -23,3 +23,21 @@ message DeregisterChainMaintainerRequest {
 }
 
 message DeregisterChainMaintainerResponse {}
+
+// ActivateChainRequest represents a message to activate chains
+message ActivateChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2;
+}
+
+message ActivateChainResponse {}
+
+// DeactivateChainRequest represents a message to deactivate chains
+message DeactivateChainRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2;
+}
+
+message DeactivateChainResponse {}

@@ -35,7 +35,7 @@ func TestMsgVotePubKey_Marshaling(t *testing.T) {
 	vote := tss.VotePubKeyRequest{
 		Sender:  sender,
 		PollKey: exported.NewPollKey("test", "test"),
-		Result:  result,
+		Result:  *result,
 	}
 	encCfg := app.MakeEncodingConfig()
 
