@@ -123,7 +123,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 }
 
 func (k Keeper) getSignedSigs(ctx sdk.Context) (sigs []exported.Signature) {
-	iter := k.getStore(ctx).Iterator(sigPrefix.AppendStr("_"))
+	iter := k.getStore(ctx).Iterator(sigPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 	for ; iter.Valid(); iter.Next() {
 		var sig exported.Signature
