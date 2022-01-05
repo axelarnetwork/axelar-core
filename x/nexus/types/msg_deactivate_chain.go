@@ -5,13 +5,20 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewDeactivateChainRequest creates a message of type DeactivateChainRequest
 func NewDeactivateChainRequest(sender sdk.AccAddress, chains ...string) *DeactivateChainRequest {
+	var normalizedChains []string
+	for _, chain := range chains {
+		normalizedChains = append(normalizedChains, utils.NormalizeString(chain))
+	}
+
 	return &DeactivateChainRequest{
 		Sender: sender,
-		Chains: chains,
+		Chains: normalizedChains,
 	}
 }
 
@@ -36,8 +43,8 @@ func (m DeactivateChainRequest) ValidateBasic() error {
 	}
 
 	for _, chain := range m.Chains {
-		if chain == "" {
-			return fmt.Errorf("chain cannot be empty")
+		if err := utils.ValidateString(chain); err != nil {
+			return sdkerrors.Wrap(err, fmt.Sprintf("invalid chain '%s'", chain))
 		}
 	}
 

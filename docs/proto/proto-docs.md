@@ -3523,7 +3523,7 @@ address by recipient address
 <a name="nexus.v1beta1.ActivateChainRequest"></a>
 
 ### ActivateChainRequest
-
+ActivateChainRequest represents a message to activate chains
 
 
 | Field | Type | Label | Description |
@@ -3549,7 +3549,7 @@ address by recipient address
 <a name="nexus.v1beta1.DeactivateChainRequest"></a>
 
 ### DeactivateChainRequest
-MsgUnfreezeChainRequest represents a message to unfreeze a chain
+DeactivateChainRequest represents a message to deactivate chains
 
 
 | Field | Type | Label | Description |

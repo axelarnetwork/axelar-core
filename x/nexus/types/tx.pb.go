@@ -173,6 +173,7 @@ func (m *DeregisterChainMaintainerResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeregisterChainMaintainerResponse proto.InternalMessageInfo
 
+// ActivateChainRequest represents a message to activate chains
 type ActivateChainRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chains []string                                      `protobuf:"bytes,2,rep,name=chains,proto3" json:"chains,omitempty"`
@@ -247,7 +248,7 @@ func (m *ActivateChainResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ActivateChainResponse proto.InternalMessageInfo
 
-// MsgUnfreezeChainRequest represents a message to unfreeze a chain
+// DeactivateChainRequest represents a message to deactivate chains
 type DeactivateChainRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chains []string                                      `protobuf:"bytes,2,rep,name=chains,proto3" json:"chains,omitempty"`

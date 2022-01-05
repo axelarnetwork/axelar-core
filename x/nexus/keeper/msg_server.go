@@ -157,12 +157,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	}
 
 	// no chain maintainer for cosmos chains
-	if s.axelarnet.IsCosmosChain(ctx, chain.Name) {
-		s.Nexus.ActivateChain(ctx, chain)
-		return
-	}
-
-	if !isMetActivationThreshold(ctx, s.Nexus, s.staking, chain) {
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !isMetActivationThreshold(ctx, s.Nexus, s.staking, chain) {
 		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s", chain.Name))
 		return
 	}
