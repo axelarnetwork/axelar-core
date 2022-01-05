@@ -29,6 +29,10 @@ func (m SubmitMultisigSignaturesRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid signature ID")
 	}
 
+	if len(m.Signatures) == 0 {
+		return sdkerrors.Wrap(ErrTss, "no signature is given")
+	}
+
 	for _, sig := range m.Signatures {
 		_, err := btcec.ParseDERSignature(sig, btcec.S256())
 		if err != nil {

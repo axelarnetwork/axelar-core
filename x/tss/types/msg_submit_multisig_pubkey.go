@@ -31,6 +31,10 @@ func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
 		return err
 	}
 
+	if len(m.SigKeyPairs) == 0 {
+		return sdkerrors.Wrap(ErrTss, "no sig key pairs are given")
+	}
+
 	// check uniqueness
 	seen := map[string]bool{}
 	for _, info := range m.SigKeyPairs {
