@@ -8,16 +8,14 @@ type causer interface {
 
 // IsABCIError checks if the error is a (wrapped) registered error
 func IsABCIError(err error) bool {
-	for {
-		switch e := err.(type) {
-		case nil:
-			return false
-		case *errors.Error:
-			return true
-		case causer:
-			err = e.Cause()
-		default:
-			return false
-		}
+	switch e := err.(type) {
+	case nil:
+		return false
+	case *errors.Error:
+		return true
+	case causer:
+		return IsABCIError(e.Cause())
+	default:
+		return false
 	}
 }
