@@ -148,9 +148,9 @@ require (
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
-replace github.com/opencontainers/image-spec => github.com/opencontainers/image-spec v1.0.2
+replace github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 
-replace github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.3
+replace github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.0.3
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
