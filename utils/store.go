@@ -80,7 +80,7 @@ func (store KVStore) Delete(key Key) {
 
 // Iterator returns an Iterator that can handle a structured Key
 func (store KVStore) Iterator(prefix Key) Iterator {
-	iter := sdk.KVStorePrefixIterator(store.KVStore, prefix.AsKey())
+	iter := sdk.KVStorePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
