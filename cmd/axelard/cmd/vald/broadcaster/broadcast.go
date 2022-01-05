@@ -60,7 +60,7 @@ func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.Tx
 
 		return nil
 	}, func(err error) bool {
-		if !isABCIError(err) {
+		if !utils.IsABCIError(err) {
 			return true
 		}
 
@@ -214,23 +214,4 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 	}()
 
 	return p
-}
-
-type causer interface {
-	Cause() error
-}
-
-func isABCIError(err error) bool {
-	for {
-		switch e := err.(type) {
-		case nil:
-			return false
-		case *sdkerrors.Error:
-			return true
-		case causer:
-			err = e.Cause()
-		default:
-			return false
-		}
-	}
 }
