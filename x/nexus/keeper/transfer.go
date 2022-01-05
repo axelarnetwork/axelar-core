@@ -69,7 +69,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	if !k.IsChainActivated(ctx, sender.Chain) {
-		return fmt.Errorf("source chain %s is not activated", sender.Chain.Name)
+		return fmt.Errorf("source chain '%s' is not activated", sender.Chain.Name)
 	}
 
 	recipient, ok := k.GetRecipient(ctx, sender)
@@ -78,7 +78,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	if !k.IsChainActivated(ctx, recipient.Chain) {
-		return fmt.Errorf("recipient chain %s is not activated", recipient.Chain.Name)
+		return fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
