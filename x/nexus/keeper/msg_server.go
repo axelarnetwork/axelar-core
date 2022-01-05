@@ -14,6 +14,8 @@ import (
 
 var _ types.MsgServiceServer = msgServer{}
 
+const allChain = "*"
+
 type msgServer struct {
 	types.Nexus
 	snapshotter types.Snapshotter
@@ -113,7 +115,7 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 
 func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequest) (*types.ActivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if strings.ToLower(req.Chains[0]) == "all" {
+	if strings.ToLower(req.Chains[0]) == allChain {
 		for _, chain := range s.GetChains(ctx) {
 			s.activateChain(ctx, chain)
 		}
@@ -134,7 +136,7 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChainRequest) (*types.DeactivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if strings.ToLower(req.Chains[0]) == "all" {
+	if strings.ToLower(req.Chains[0]) == allChain {
 		for _, chain := range s.GetChains(ctx) {
 			s.deactivateChain(ctx, chain)
 		}
@@ -153,11 +155,12 @@ func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChain
 
 func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	if s.IsChainActivated(ctx, chain) {
+		s.Logger(ctx).Info(fmt.Sprintf("chain %s already activated", chain.Name))
 		return
 	}
 
 	// no chain maintainer for cosmos chains
-	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !isMetActivationThreshold(ctx, s.Nexus, s.staking, chain) {
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !isActivationThresholdMet(ctx, s.Nexus, s.staking, chain) {
 		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s", chain.Name))
 		return
 	}
@@ -177,6 +180,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 
 func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 	if !s.IsChainActivated(ctx, chain) {
+		s.Logger(ctx).Info(fmt.Sprintf("chain %s already deactivated", chain.Name))
 		return
 	}
 
@@ -193,7 +197,7 @@ func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 	)
 }
 
-func isMetActivationThreshold(ctx sdk.Context, nexus types.Nexus, staking types.StakingKeeper, chain exported.Chain) bool {
+func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, staking types.StakingKeeper, chain exported.Chain) bool {
 	sumConsensusPower := sdk.ZeroInt()
 	maintainers := nexus.GetChainMaintainers(ctx, chain)
 

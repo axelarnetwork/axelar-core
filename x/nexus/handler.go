@@ -27,9 +27,7 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, staking types.Stak
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.DeactivateChainRequest:
 			res, err := server.DeactivateChain(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-
-			return result, err
+			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
