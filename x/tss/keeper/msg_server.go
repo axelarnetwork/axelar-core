@@ -106,16 +106,18 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
-		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
-	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
-	s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr)
+	// this could happen after register proxy but before create validator
+	validatorI := s.staker.Validator(ctx, valAddr)
+	if validatorI == nil {
+		s.Logger(ctx).Info(fmt.Sprintf("%s is not a validator", valAddr))
+		return &types.HeartBeatResponse{}, nil
+	}
 
 	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
 	// and it is not exposed in the ValidatorI interface
-	validator, ok := s.staker.Validator(ctx, valAddr).(stakingtypes.Validator)
+	validator, ok := validatorI.(stakingtypes.Validator)
 	if !ok {
-		s.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validator))
+		s.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validatorI))
 		return &types.HeartBeatResponse{}, nil
 	}
 
@@ -124,6 +126,11 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 		s.Logger(ctx).Error(err.Error())
 		return &types.HeartBeatResponse{}, nil
 	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
+		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
+	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
+	s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr)
 
 	response := &types.HeartBeatResponse{
 		KeygenIllegibility:  illegibility.FilterIllegibilityForNewKey(),
