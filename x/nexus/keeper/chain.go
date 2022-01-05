@@ -90,6 +90,15 @@ func (k Keeper) ActivateChain(ctx sdk.Context, chain exported.Chain) {
 	k.setChainState(ctx, chainState)
 }
 
+// DeactivateChain deactivates the given chain
+func (k Keeper) DeactivateChain(ctx sdk.Context, chain exported.Chain) {
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
+	chainState.Activated = false
+
+	k.setChainState(ctx, chainState)
+}
+
 // IsChainActivated returns true if the given chain is activated; false otherwise
 func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
 	chainState, ok := k.getChainState(ctx, chain)

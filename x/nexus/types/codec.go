@@ -12,6 +12,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterChainMaintainerRequest{}, "nexus/RegisterChainMaintainer", nil)
 	cdc.RegisterConcrete(&DeregisterChainMaintainerRequest{}, "nexus/DeregisterChainMaintainer", nil)
 	cdc.RegisterConcrete(&ActivateChainRequest{}, "nexus/ActivateChain", nil)
+	cdc.RegisterConcrete(&DeactivateChainRequest{}, "nexus/DeactivateChain", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -20,6 +21,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RegisterChainMaintainerRequest{},
 		&DeregisterChainMaintainerRequest{},
 		&ActivateChainRequest{},
+		&DeactivateChainRequest{},
 	)
 }
 

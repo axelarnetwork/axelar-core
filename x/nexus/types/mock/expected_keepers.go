@@ -28,6 +28,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			AddChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error {
 // 				panic("mock out the AddChainMaintainer method")
 // 			},
+// 			DeactivateChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
+// 				panic("mock out the DeactivateChain method")
+// 			},
 // 			ExportGenesisFunc: func(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
 // 				panic("mock out the ExportGenesis method")
 // 			},
@@ -79,6 +82,9 @@ type NexusMock struct {
 
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
 	AddChainMaintainerFunc func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error
+
+	// DeactivateChainFunc mocks the DeactivateChain method.
+	DeactivateChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
 
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx cosmossdktypes.Context) *nexustypes.GenesisState
@@ -136,6 +142,13 @@ type NexusMock struct {
 			Chain exported.Chain
 			// Validator is the validator argument value.
 			Validator cosmossdktypes.ValAddress
+		}
+		// DeactivateChain holds details about calls to the DeactivateChain method.
+		DeactivateChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain exported.Chain
 		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
@@ -229,6 +242,7 @@ type NexusMock struct {
 	}
 	lockActivateChain         sync.RWMutex
 	lockAddChainMaintainer    sync.RWMutex
+	lockDeactivateChain       sync.RWMutex
 	lockExportGenesis         sync.RWMutex
 	lockGetChain              sync.RWMutex
 	lockGetChainMaintainers   sync.RWMutex
@@ -315,6 +329,41 @@ func (mock *NexusMock) AddChainMaintainerCalls() []struct {
 	mock.lockAddChainMaintainer.RLock()
 	calls = mock.calls.AddChainMaintainer
 	mock.lockAddChainMaintainer.RUnlock()
+	return calls
+}
+
+// DeactivateChain calls DeactivateChainFunc.
+func (mock *NexusMock) DeactivateChain(ctx cosmossdktypes.Context, chain exported.Chain) {
+	if mock.DeactivateChainFunc == nil {
+		panic("NexusMock.DeactivateChainFunc: method is nil but Nexus.DeactivateChain was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockDeactivateChain.Lock()
+	mock.calls.DeactivateChain = append(mock.calls.DeactivateChain, callInfo)
+	mock.lockDeactivateChain.Unlock()
+	mock.DeactivateChainFunc(ctx, chain)
+}
+
+// DeactivateChainCalls gets all the calls that were made to DeactivateChain.
+// Check the length with:
+//     len(mockedNexus.DeactivateChainCalls())
+func (mock *NexusMock) DeactivateChainCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain exported.Chain
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}
+	mock.lockDeactivateChain.RLock()
+	calls = mock.calls.DeactivateChain
+	mock.lockDeactivateChain.RUnlock()
 	return calls
 }
 

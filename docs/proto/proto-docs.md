@@ -231,6 +231,8 @@
 - [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
     - [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest)
     - [ActivateChainResponse](#nexus.v1beta1.ActivateChainResponse)
+    - [DeactivateChainRequest](#nexus.v1beta1.DeactivateChainRequest)
+    - [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse)
     - [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest)
     - [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse)
     - [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest)
@@ -3521,7 +3523,7 @@ address by recipient address
 <a name="nexus.v1beta1.ActivateChainRequest"></a>
 
 ### ActivateChainRequest
-
+ActivateChainRequest represents a message to activate chains
 
 
 | Field | Type | Label | Description |
@@ -3537,6 +3539,32 @@ address by recipient address
 <a name="nexus.v1beta1.ActivateChainResponse"></a>
 
 ### ActivateChainResponse
+
+
+
+
+
+
+
+<a name="nexus.v1beta1.DeactivateChainRequest"></a>
+
+### DeactivateChainRequest
+DeactivateChainRequest represents a message to deactivate chains
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.DeactivateChainResponse"></a>
+
+### DeactivateChainResponse
 
 
 
@@ -3628,6 +3656,7 @@ Msg defines the nexus Msg service.
 | `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
 | `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
 | `ActivateChain` | [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
+| `DeactivateChain` | [DeactivateChainRequest](#nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse) |  | ||
 
 
 <a name="nexus.v1beta1.QueryService"></a>
