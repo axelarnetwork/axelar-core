@@ -24,6 +24,12 @@ func (m HeartBeatRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
+	for _, keyID := range m.KeyIDs {
+		if err := keyID.Validate(); err != nil {
+			return sdkerrors.Wrapf(ErrTss, "invalid key ID '%s'", keyID, err.Error())
+		}
+	}
+
 	return nil
 }
 
