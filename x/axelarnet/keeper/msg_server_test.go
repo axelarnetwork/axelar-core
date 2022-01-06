@@ -95,10 +95,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		bankKeeper      *mock.BankKeeperMock
 		transferKeeper  *mock.IBCTransferKeeperMock
 		ctx             sdk.Context
+		amount          sdk.Int
 		msg             *types.ConfirmDepositRequest
 	)
 	setup := func() {
 		ibcPath := randomIBCPath()
+		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
 			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
@@ -122,6 +124,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			AddToChainTotalFunc:    func(_ sdk.Context, _ nexus.Chain, _ sdk.Coin) {},
 		}
 		bankKeeper = &mock.BankKeeperMock{
+			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+				return sdk.NewCoin(denom, amount)
+			},
 			BurnCoinsFunc:                    func(sdk.Context, string, sdk.Coins) error { return nil },
 			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error { return nil },
 			SendCoinsFunc:                    func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil },
@@ -149,8 +154,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsFromAccountToModuleCalls(), 1)
 		assert.Len(t, bankKeeper.BurnCoinsCalls(), 1)
-		assert.Equal(t, msg.Token.Denom, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Denom)
-		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
+		assert.Equal(t, msg.Denom, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Denom)
+		assert.Equal(t, amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
@@ -188,7 +193,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIBCDenom()
+		msg.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
@@ -196,7 +201,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
 		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
-		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
+		assert.Equal(t, amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when ICS20 token hash not found in IBCTransferKeeper", testutils.Func(func(t *testing.T) {
@@ -206,7 +211,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return ibctypes.DenomTrace{}, false
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIBCDenom()
+		msg.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -218,7 +223,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return "", false
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIBCDenom()
+		msg.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -230,7 +235,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return randomIBCPath(), true
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIBCDenom()
+		msg.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -242,7 +247,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			return fmt.Errorf("failed")
 		}
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = randomIBCDenom()
+		msg.Denom = randomIBCDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -251,22 +256,22 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = exported.Axelarnet.NativeAsset
+		msg.Denom = exported.Axelarnet.NativeAsset
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
-		assert.Equal(t, msg.Token.Denom, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Denom)
-		assert.Equal(t, msg.Token.Amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
+		assert.Equal(t, msg.Denom, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Denom)
+		assert.Equal(t, amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
 
 	t.Run("should return error when asset is not a valid IBC denom and not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
 		msg = randomMsgConfirmDeposit()
-		msg.Token.Denom = "ibc" + randomDenom()
+		msg.Denom = "ibc" + randomDenom()
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
@@ -568,7 +573,7 @@ func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 	return types.NewConfirmDepositRequest(
 		rand.AccAddr(),
 		rand.BytesBetween(5, 100),
-		sdk.NewCoin(randomDenom(), sdk.NewInt(rand.I64Between(1, 10000000000))),
+		randomDenom(),
 		rand.AccAddr())
 }
 func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {

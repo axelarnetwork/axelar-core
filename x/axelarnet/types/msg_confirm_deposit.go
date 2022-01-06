@@ -3,16 +3,17 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
-func NewConfirmDepositRequest(sender sdk.AccAddress, txID []byte, token sdk.Coin, depositAddr sdk.AccAddress) *ConfirmDepositRequest {
+func NewConfirmDepositRequest(sender sdk.AccAddress, txID []byte, denom string, depositAddr sdk.AccAddress) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
 		Sender:         sender,
 		TxID:           txID,
-		Token:          token,
+		Denom:          utils.NormalizeString(denom),
 		DepositAddress: depositAddr,
 	}
 }
@@ -37,8 +38,8 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid TxID")
 	}
 
-	if m.Token.Amount.LTE(sdk.NewInt(0)) {
-		return fmt.Errorf("amount cannot be less than or equal to 0")
+	if err := utils.ValidateString(m.Denom); err != nil {
+		return sdkerrors.Wrap(err, "invalid token denomination")
 	}
 
 	if err := sdk.VerifyAddressFormat(m.DepositAddress); err != nil {

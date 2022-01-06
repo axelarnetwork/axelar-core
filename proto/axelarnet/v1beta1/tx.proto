@@ -29,11 +29,14 @@ message ConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   bytes tx_id = 2 [ (gogoproto.customname) = "TxID" ];
-  cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin token = 3
+      [ (gogoproto.nullable) = false, deprecated = true ];
 
   bytes deposit_address = 4
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  string denom = 5;
 }
 
 message ConfirmDepositResponse {}
