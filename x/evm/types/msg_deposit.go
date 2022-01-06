@@ -9,10 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-const (
-	maxInt64 = 1<<63 - 1
-)
-
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
 func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, amount sdk.Uint, burnerAddr common.Address) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
@@ -46,10 +42,6 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 
 	if m.Amount.IsZero() {
 		return fmt.Errorf("amount cannot be equal to 0")
-	}
-
-	if m.Amount.GT(sdk.NewUint(maxInt64)) {
-		return fmt.Errorf("amount cannot be greater than int64 max")
 	}
 
 	return nil
