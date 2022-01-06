@@ -1,9 +1,9 @@
 ## axelard tx axelarnet confirm-deposit
 
-Confirm a deposit to Axelar chain that sent given amount of token to a burner address
+Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
 
 ```
-axelard tx axelarnet confirm-deposit [txID] [amount] [burnerAddr] [flags]
+axelard tx axelarnet confirm-deposit [txID] [denom] [burnerAddr] [flags]
 ```
 
 ### Options

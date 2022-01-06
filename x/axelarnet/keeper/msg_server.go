@@ -82,13 +82,17 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	ctx := sdk.UnwrapSDKContext(c)
 
 	depositAddr := nexus.CrossChainAddress{Address: req.DepositAddress.String(), Chain: exported.Axelarnet}
+	amount := s.bank.GetBalance(ctx, req.DepositAddress, req.Denom)
+	if amount.IsZero() {
+		return nil, fmt.Errorf("deposit address '%s' holds no funds for token %s", req.DepositAddress.String(), req.Denom)
+	}
 
 	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
 	switch {
 	// check if the format of token denomination is 'ibc/{hash}'
-	case isIBCDenom(req.Token.Denom):
+	case isIBCDenom(req.Denom):
 		// get base denomination and tracing path
-		denomTrace, err := s.parseIBCDenom(ctx, req.Token.Denom)
+		denomTrace, err := s.parseIBCDenom(ctx, req.Denom)
 		if err != nil {
 			return nil, err
 		}
@@ -107,37 +111,37 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		}
 
 		// lock tokens in escrow address
-		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
+		escrowAddress := types.GetEscrowAddress(req.Denom)
 		if err := s.bank.SendCoins(
-			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(amount),
 		); err != nil {
 			return nil, err
 		}
 
 		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
-		req.Token = sdk.NewCoin(denomTrace.GetBaseDenom(), req.Token.Amount)
+		amount = sdk.NewCoin(denomTrace.GetBaseDenom(), amount.Amount)
 		// TODO: make this public for now, we will refactor nexus module
-		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, req.Token)
+		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, amount)
 
-	case req.Token.Denom == exported.Axelarnet.NativeAsset:
+	case req.Denom == exported.Axelarnet.NativeAsset:
 		// lock tokens in escrow address
-		escrowAddress := types.GetEscrowAddress(req.Token.Denom)
+		escrowAddress := types.GetEscrowAddress(req.Denom)
 		if err := s.bank.SendCoins(
-			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(amount),
 		); err != nil {
 			return nil, err
 		}
 
-	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet, req.Token.Denom):
+	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet, req.Denom):
 		// transfer coins from linked address to module account and burn them
 		if err := s.bank.SendCoinsFromAccountToModule(
-			ctx, req.DepositAddress, types.ModuleName, sdk.NewCoins(req.Token),
+			ctx, req.DepositAddress, types.ModuleName, sdk.NewCoins(amount),
 		); err != nil {
 			return nil, err
 		}
 
 		if err := s.bank.BurnCoins(
-			ctx, types.ModuleName, sdk.NewCoins(req.Token),
+			ctx, types.ModuleName, sdk.NewCoins(amount),
 		); err != nil {
 			// NOTE: should not happen as the module account was
 			// retrieved on the step above and it has enough balance
@@ -147,11 +151,11 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	default:
 		return nil, sdkerrors.Wrap(types.ErrAxelarnet,
-			fmt.Sprintf("unrecognized %s token", req.Token.Denom))
+			fmt.Sprintf("unrecognized %s token", req.Denom))
 
 	}
 
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, req.Token, s.GetTransactionFeeRate(ctx)); err != nil {
+	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -160,7 +164,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, req.Token.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	return &types.ConfirmDepositResponse{}, nil

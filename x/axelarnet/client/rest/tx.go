@@ -38,7 +38,7 @@ type ReqLink struct {
 type ReqConfirmDeposit struct {
 	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID           string       `json:"tx_id" yaml:"tx_id"`
-	Amount         string       `json:"amount" yaml:"amount"`
+	Denom          string       `json:"denom" yaml:"denom"`
 	DepositAddress string       `json:"deposit_address" yaml:"deposit_address"`
 }
 
@@ -144,19 +144,13 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		coin, err := sdk.ParseCoinNormalized(req.Amount)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		depositAddr, err := sdk.AccAddressFromBech32(req.DepositAddress)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewConfirmDepositRequest(fromAddr, txID, coin, depositAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, txID, req.Denom, depositAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
