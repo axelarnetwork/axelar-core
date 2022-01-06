@@ -135,7 +135,7 @@ func RandomDeposit() types.ERC20Deposit {
 	return types.ERC20Deposit{
 		TxID:             RandomHash(),
 		Amount:           sdk.NewUint(uint64(rand.PosI64())),
-		Asset:            randomNormalizedStr(5, 10),
+		Asset:            rand.Denom(5, 10),
 		DestinationChain: randomNormalizedStr(5, 20),
 		BurnerAddress:    RandomAddress(),
 	}
@@ -216,7 +216,7 @@ func RandomTokens() []types.ERC20TokenMetadata {
 // RandomToken returns a random (valid) token for testing
 func RandomToken() types.ERC20TokenMetadata {
 	return types.ERC20TokenMetadata{
-		Asset:        randomNormalizedStr(5, 20),
+		Asset:        rand.Denom(5, 20),
 		ChainID:      sdk.NewInt(rand.PosI64()),
 		Details:      RandomTokenDetails(),
 		TokenAddress: RandomAddress(),
@@ -265,7 +265,7 @@ func RandomBurnerInfo() types.BurnerInfo {
 		TokenAddress:     RandomAddress(),
 		DestinationChain: randomNormalizedStr(5, 20),
 		Symbol:           randomNormalizedStr(5, 20),
-		Asset:            randomNormalizedStr(5, 20),
+		Asset:            rand.Denom(5, 20),
 		Salt:             RandomHash(),
 	}
 }

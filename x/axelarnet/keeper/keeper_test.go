@@ -112,7 +112,7 @@ func randomIBCPath() string {
 
 func randomAsset() types.Asset {
 	return types.Asset{
-		Denom:     rand.NormalizedStr(10),
+		Denom:     rand.Denom(5, 20),
 		MinAmount: sdk.NewInt(1000000),
 	}
 }

@@ -214,6 +214,12 @@ func Strings(minLength int, maxLength int) StringGen {
 	}
 }
 
+// Denom returns a random denom string
+func Denom(min, max int) string {
+	// first letter must be an ascii alphabet
+	return Strings(1, 1).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next() + Strings(min, max).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
+}
+
 // HexStrings returns a random hex string generator that produces hex strings with given length
 func HexStrings(length int) StringGen {
 	alphabet := []rune("0123456789abcdef")
