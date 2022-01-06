@@ -462,7 +462,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", req.TxID.Hex(), req.BurnerAddress.Hex(), req.Amount.Uint64()))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex(), req.Amount.String()))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -799,18 +799,19 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID.Hex(), req.BurnAddress.Hex()),
 		}, nil
 	}
-	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
-	amount := sdk.NewInt64Coin(pendingDeposit.Asset, pendingDeposit.Amount.BigInt().Int64())
+	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
 	feeRate, ok := keeper.GetTransactionFeeRate(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not retrieve transaction fee rate")
 	}
 
+	amount := sdk.NewCoin(pendingDeposit.Asset, sdk.NewIntFromBigInt(pendingDeposit.Amount.BigInt()))
 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
 		return nil, err
 	}
+
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
