@@ -126,7 +126,7 @@ func (q BlockHeightKVQueue) Keys() []Key {
 // WithBlockHeight returns a queue with the given block height
 func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueue {
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
+	binary.LittleEndian.PutUint64(bz, uint64(blockHeight))
 	q.blockHeight = KeyFromBz(bz)
 	return q
 }
@@ -151,13 +151,13 @@ func NewSequenceKVQueue(prefixStore KVStore, maxSize uint64, logger log.Logger) 
 	var seqNo uint64
 	bz := prefixStore.GetRaw(sequenceKey)
 	if bz != nil {
-		seqNo = binary.BigEndian.Uint64(bz)
+		seqNo = binary.LittleEndian.Uint64(bz)
 	}
 
 	var size uint64
 	bz = prefixStore.GetRaw(sizeKey)
 	if bz != nil {
-		size = binary.BigEndian.Uint64(bz)
+		size = binary.LittleEndian.Uint64(bz)
 	}
 
 	return SequenceKVQueue{store: prefixStore, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
@@ -170,7 +170,7 @@ func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
 	}
 
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.seqNo)
+	binary.LittleEndian.PutUint64(bz, q.seqNo)
 
 	q.store.Set(queueKey.Append(KeyFromBz(bz)), value)
 	q.incrSize()
@@ -221,7 +221,7 @@ func (q SequenceKVQueue) peek(n uint64, value codec.ProtoMarshaler) (Key, bool) 
 func (q *SequenceKVQueue) incrSize() {
 	q.size++
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.size)
+	binary.LittleEndian.PutUint64(bz, q.size)
 	q.store.SetRaw(sizeKey, bz)
 }
 
@@ -229,7 +229,7 @@ func (q *SequenceKVQueue) decrSize() {
 	if q.size > 0 {
 		q.size--
 		bz := make([]byte, 8)
-		binary.BigEndian.PutUint64(bz, q.size)
+		binary.LittleEndian.PutUint64(bz, q.size)
 		q.store.SetRaw(sizeKey, bz)
 	}
 }
@@ -237,6 +237,6 @@ func (q *SequenceKVQueue) decrSize() {
 func (q *SequenceKVQueue) incrSeqNo() {
 	q.seqNo++
 	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.seqNo)
+	binary.LittleEndian.PutUint64(bz, q.seqNo)
 	q.store.SetRaw(sequenceKey, bz)
 }

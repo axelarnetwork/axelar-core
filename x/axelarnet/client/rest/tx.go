@@ -139,6 +139,10 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID, err := hex.DecodeString(req.TxID)
+		if err != nil || len(txID) != 32 {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		coin, err := sdk.ParseCoinNormalized(req.Amount)
 		if err != nil {

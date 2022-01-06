@@ -76,6 +76,9 @@ func GetCmdConfirmDeposit() *cobra.Command {
 			}
 
 			txID, err := hex.DecodeString(args[0])
+			if err != nil || len(txID) != 32 {
+				return err
+			}
 
 			coin, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {

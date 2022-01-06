@@ -54,7 +54,7 @@ func (m AddChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid EVM param: %v", err)
 	}
 
-	if strings.ToLower(m.Name) != strings.ToLower(m.Params.Chain) {
+	if !strings.EqualFold(m.Name, m.Params.Chain) {
 		return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", m.Name, m.Params.Chain)
 	}
 

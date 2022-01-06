@@ -874,9 +874,11 @@ func (m Asset) Validate() error {
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
+
 	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
+
 	return nil
 }
 
@@ -895,9 +897,11 @@ func (m TokenDetails) Validate() error {
 	if err := utils.ValidateString(m.TokenName); err != nil {
 		return sdkerrors.Wrap(err, "invalid token name")
 	}
+
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid token symbol")
 	}
+
 	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
 		return fmt.Errorf("token capacity must be a non-negative number")
 	}

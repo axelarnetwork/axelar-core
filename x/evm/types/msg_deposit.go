@@ -1,10 +1,16 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+)
+
+const (
+	MaxInt64 = 1<<63 - 1
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
@@ -36,6 +42,14 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
+	}
+
+	if m.Amount.Equal(sdk.ZeroUint()) {
+		return fmt.Errorf("amount cannot be equal to 0")
+	}
+
+	if m.Amount.GT(sdk.NewUint(MaxInt64)) {
+		return fmt.Errorf("amount cannot be greater than int64")
 	}
 
 	return nil

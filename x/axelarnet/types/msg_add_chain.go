@@ -47,6 +47,10 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid chain spec: %v", err)
 	}
 
+	if m.Chain.KeyType != tss.None {
+		return fmt.Errorf("invalid key type: %s", m.Chain.KeyType.String())
+	}
+
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}

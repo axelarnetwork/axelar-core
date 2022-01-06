@@ -55,9 +55,23 @@ func (m ChainState) Validate() error {
 		return err
 	}
 
+	seenDenoms := make(map[string]bool)
+
 	for _, asset := range m.Assets {
 		if err := sdk.ValidateDenom(asset); err != nil {
 			return err
+		}
+
+		if seenDenoms[asset] {
+			return fmt.Errorf("duplicate asset found")
+		}
+
+		seenDenoms[asset] = true
+	}
+
+	for _, coin := range m.Total {
+		if !seenDenoms[coin.Denom] {
+			return fmt.Errorf("coin denom not found in assets")
 		}
 	}
 

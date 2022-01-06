@@ -80,6 +80,10 @@ type KeyID string
 
 // Validate returns an error, if the key ID is too short or too long
 func (id KeyID) Validate() error {
+	if err := utils.ValidateString(string(id)); err != nil {
+		return sdkerrors.Wrap(err, "invalid key id")
+	}
+
 	if len(id) < KeyIDLengthMin || len(id) > KeyIDLengthMax {
 		return fmt.Errorf("key id length %d not in range [%d,%d]", len(id), KeyIDLengthMin, KeyIDLengthMax)
 	}
