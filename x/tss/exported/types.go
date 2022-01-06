@@ -190,11 +190,11 @@ func (m KeyRequirement) Validate() error {
 		return err
 	}
 
-	if m.MinKeygenThreshold.Validate() != nil || m.MinKeygenThreshold.GT(utils.OneThreshold) || m.MinKeygenThreshold.LT(utils.ZeroThreshold) {
+	if m.MinKeygenThreshold.Validate() != nil {
 		return fmt.Errorf("MinKeygenThreshold must be <=1 and >0")
 	}
 
-	if m.SafetyThreshold.Validate() != nil || m.SafetyThreshold.GT(utils.OneThreshold) || m.SafetyThreshold.LT(utils.ZeroThreshold) {
+	if m.SafetyThreshold.Validate() != nil {
 		return fmt.Errorf("SafetyThreshold must be <=1 and >0")
 	}
 
@@ -202,11 +202,11 @@ func (m KeyRequirement) Validate() error {
 		return err
 	}
 
-	if m.KeygenVotingThreshold.Validate() != nil || m.KeygenVotingThreshold.GT(utils.OneThreshold) || m.KeygenVotingThreshold.LT(utils.ZeroThreshold) {
+	if m.KeygenVotingThreshold.Validate() != nil {
 		return fmt.Errorf("KeygenVotingThreshold must be <=1 and >0")
 	}
 
-	if m.SignVotingThreshold.Validate() != nil || m.SignVotingThreshold.GT(utils.OneThreshold) || m.SignVotingThreshold.LT(utils.ZeroThreshold) {
+	if m.SignVotingThreshold.Validate() != nil {
 		return fmt.Errorf("SignVotingThreshold must be <=1 and >0")
 	}
 
@@ -216,6 +216,10 @@ func (m KeyRequirement) Validate() error {
 
 	if m.SignTimeout <= 0 {
 		return fmt.Errorf("SignTimeout must be >0")
+	}
+
+	if m.MinTotalShareCount <= 0 || m.MinTotalShareCount > m.MaxTotalShareCount {
+		return fmt.Errorf("must satisfy 0 < MinTotalShareCount <= MaxTotalShareCount")
 	}
 
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {

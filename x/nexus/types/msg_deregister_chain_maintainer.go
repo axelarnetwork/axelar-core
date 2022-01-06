@@ -43,7 +43,7 @@ func (m DeregisterChainMaintainerRequest) ValidateBasic() error {
 
 	for _, chain := range m.Chains {
 		if err := utils.ValidateString(chain); err != nil {
-			return sdkerrors.Wrap(err, fmt.Sprintf("invalid chain '%s'", chain))
+			return sdkerrors.Wrap(err, "invalid chain")
 		}
 	}
 

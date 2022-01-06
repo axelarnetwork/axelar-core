@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -41,6 +40,10 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	if s.staking.Validator(ctx, validator) == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator", validator)
+	}
+
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
@@ -62,7 +65,7 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 				types.EventTypeChainMaintainer,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueRegister),
-				sdk.NewAttribute(types.AttributeKeyChain, chainStr),
+				sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 				sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, validator.String()),
 			),
 		)
@@ -84,6 +87,10 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	if s.staking.Validator(ctx, validator) == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator", validator)
+	}
+
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
@@ -99,7 +106,7 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 				types.EventTypeChainMaintainer,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
-				sdk.NewAttribute(types.AttributeKeyChain, chainStr),
+				sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 				sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, validator.String()),
 			),
 		)
@@ -126,7 +133,6 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
 			}
 			s.activateChain(ctx, chain)
-
 		}
 	}
 	return &types.ActivateChainResponse{}, nil
@@ -211,5 +217,5 @@ func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, staking types.
 		sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(staking.PowerReduction(ctx)))
 	}
 
-	return utils.NewThreshold(sumConsensusPower.Int64(), staking.GetLastTotalPower(ctx).Int64()).GTE(nexus.GetParams(ctx).ChainActivationThreshold)
+	return nexus.GetParams(ctx).ChainActivationThreshold.IsMet(sumConsensusPower, staking.GetLastTotalPower(ctx))
 }

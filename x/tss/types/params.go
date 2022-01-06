@@ -213,16 +213,8 @@ func validateMaxMissedBlocksPerWindow(maxMissedBlocksPerWindow interface{}) erro
 		return fmt.Errorf("invalid parameter type for MaxMissedBlocksPerWindow: %T", maxMissedBlocksPerWindow)
 	}
 
-	if val.Numerator <= 0 {
-		return fmt.Errorf("threshold numerator must be a positive integer for MaxMissedBlocksPerWindow")
-	}
-
-	if val.Denominator <= 0 {
-		return fmt.Errorf("threshold denominator must be a positive integer for MaxMissedBlocksPerWindow")
-	}
-
-	if val.Numerator > val.Denominator {
-		return fmt.Errorf("threshold must be <=1 for MaxMissedBlocksPerWindow")
+	if val.Validate() != nil {
+		return fmt.Errorf("MaxMissedBlocksPerWindow threshold must be >0 and <=1")
 	}
 
 	return nil
@@ -234,16 +226,8 @@ func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) er
 		return fmt.Errorf("invalid parameter type for external multisig threshold: %T", externalMultisigThreshold)
 	}
 
-	if t.Numerator <= 0 {
-		return fmt.Errorf("numerator must be greater than 0 for external multisig threshold")
-	}
-
-	if t.Denominator <= 0 {
-		return fmt.Errorf("denominator must be greater than 0 for external multisig threshold")
-	}
-
-	if t.Numerator > t.Denominator {
-		return fmt.Errorf("threshold must be <=1 for external multisig threshold")
+	if t.Validate() != nil {
+		return fmt.Errorf("ExternalMultisigThreshold must be >0 and <=1")
 	}
 
 	return nil

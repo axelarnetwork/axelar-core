@@ -216,7 +216,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 
 		p.Result = majorityVote.Data
 		p.State = exported.Completed
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) completed",
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) completed",
 			p.Key,
 			p.VotingThreshold.Numerator,
 			p.VotingThreshold.Denominator,
@@ -224,7 +224,7 @@ func (p *Poll) Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error {
 		))
 	} else if p.cannotWin(majorityVote.Tally) {
 		p.State = exported.Failed | exported.AllowOverride
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min vouter count: %d) failed, voters could not agree on single value",
+		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) failed, voters could not agree on single value",
 			p.Key,
 			p.VotingThreshold.Numerator,
 			p.VotingThreshold.Denominator,

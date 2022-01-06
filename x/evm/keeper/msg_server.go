@@ -394,7 +394,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 	votingThreshold := pendingChain.Params.VotingThreshold
 	minVoterCount := pendingChain.Params.MinVoterCount
 
-	pollKey := vote.NewPollKey(types.ModuleName, req.Name)
+	pollKey := vote.NewPollKey(types.ModuleName, pendingChain.Chain.Name)
 	if err := s.voter.InitializePollWithSnapshot(
 		ctx,
 		pollKey,
@@ -410,7 +410,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 		sdk.NewEvent(types.EventTypeChainConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
@@ -449,7 +449,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
 	}
 
 	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
@@ -538,7 +538,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", req.Chain)
+		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
 	}
 
 	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
@@ -660,11 +660,11 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", req.Name)}, nil
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", pendingChain.Chain.Name)}, nil
 	}
 
 	if poll.Is(vote.Failed) {
-		s.DeletePendingChain(ctx, req.Name)
+		s.DeletePendingChain(ctx, pendingChain.Chain.Name)
 		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
@@ -674,12 +674,12 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
-	s.DeletePendingChain(ctx, req.Name)
+	s.DeletePendingChain(ctx, pendingChain.Chain.Name)
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeChainConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+		sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
@@ -687,7 +687,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		ctx.EventManager().EmitEvent(
 			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
 		return &types.VoteConfirmChainResponse{
-			Log: fmt.Sprintf("chain %s was rejected", req.Name),
+			Log: fmt.Sprintf("chain %s was rejected", pendingChain.Chain.Name),
 		}, nil
 	}
 	ctx.EventManager().EmitEvent(
@@ -1008,7 +1008,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	keeper := s.ForChain(req.Chain)
+	keeper := s.ForChain(chain.Name)
 
 	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 	if !found {
@@ -1047,7 +1047,6 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnTokensRequest) (*types.CreateBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -1058,6 +1057,8 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, err
 	}
 
+	keeper := s.ForChain(chain.Name)
+
 	deposits := keeper.GetConfirmedDeposits(ctx)
 	if len(deposits) == 0 {
 		return &types.CreateBurnTokensResponse{}, nil
@@ -1065,7 +1066,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 	chainID, ok := keeper.GetChainID(ctx)
 	if !ok {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
 	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
@@ -1213,7 +1214,6 @@ func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -1223,6 +1223,8 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
 		return nil, err
 	}
+
+	keeper := s.ForChain(chain.Name)
 
 	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 	if len(pendingTransfers) == 0 {
@@ -1419,7 +1421,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	keeper := s.ForChain(chain.Name)
 
 	if _, ok := keeper.GetChainID(ctx); !ok {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", req.Chain)
+		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
 	commandBatch, err := getCommandBatchToSign(ctx, keeper)
@@ -1457,7 +1459,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 		),
