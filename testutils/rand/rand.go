@@ -2,6 +2,7 @@ package rand
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/store/types"
@@ -9,8 +10,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/ethereum/go-ethereum/common/math"
+)
+
+const (
+	DefaultDelimiter = "_"
 )
 
 func init() {
@@ -30,6 +36,21 @@ func PosI64() int64 {
 // It panics if  upper <= lower.
 func I64Between(lower int64, upper int64) int64 {
 	return rand.Int63n(upper-lower) + lower
+}
+
+// NormalizeString normalizes a string as NFKC
+func NormalizeString(str string) string {
+	return norm.NFKC.String(str)
+}
+
+// NormalizedStr creates a random normalized string of the provided length
+func NormalizedStr(len int) string {
+	return NormalizedStrBetween(len, len)
+}
+
+// NormalizedStrBetween creates a random normalized string in the provided range
+func NormalizedStrBetween(min, max int) string {
+	return strings.ReplaceAll(NormalizeString(StrBetween(min, max)), DefaultDelimiter, "-")
 }
 
 // I64Gen represents an random integer generator to generate a sequence of integers with the same properties.

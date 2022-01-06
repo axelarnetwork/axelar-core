@@ -116,5 +116,5 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 }
 
 func randomNormalizedStr(size int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "")
+	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "-")
 }

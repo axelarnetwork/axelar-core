@@ -29,5 +29,5 @@ func TestPollKey_Validate(t *testing.T) {
 }
 
 func randomNormalizedStr(min, max int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "")
+	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
 }
