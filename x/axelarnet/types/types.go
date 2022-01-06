@@ -135,7 +135,7 @@ func NewAsset(denom string, minAmount sdk.Int) Asset {
 
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Denom); err != nil {
+	if err := sdk.ValidateDenom(m.Denom); err != nil {
 		return sdkerrors.Wrap(err, "invalid denomination")
 	}
 

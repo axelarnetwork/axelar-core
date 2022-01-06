@@ -63,7 +63,7 @@ func (m ChainState) Validate() error {
 	seenDenoms := make(map[string]bool)
 
 	for _, asset := range m.Assets {
-		if err := utils.ValidateString(asset); err != nil {
+		if err := sdk.ValidateDenom(asset); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
 		}
 

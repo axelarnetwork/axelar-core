@@ -1173,9 +1173,11 @@ func (m *BurnerInfo) ValidateBasic() error {
 	if err := utils.ValidateString(m.DestinationChain); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
-	if err := utils.ValidateString(m.Asset); err != nil {
+
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
+
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid symbol")
 	}
@@ -1189,7 +1191,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return fmt.Errorf("token status not set")
 	}
 
-	if err := utils.ValidateString(m.Asset); err != nil {
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
@@ -1210,7 +1212,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 
 // ValidateBasic does stateless validation of the object
 func (m *ERC20Deposit) ValidateBasic() error {
-	if err := utils.ValidateString(m.Asset); err != nil {
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
@@ -1218,7 +1220,6 @@ func (m *ERC20Deposit) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	// check upper bound?
 	if m.Amount.IsZero() {
 		return fmt.Errorf("amount must be >0")
 	}

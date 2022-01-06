@@ -46,7 +46,7 @@ func (m VoteConfirmTokenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if err := utils.ValidateString(m.Asset); err != nil {
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
