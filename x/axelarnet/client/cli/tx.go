@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -76,6 +77,13 @@ func GetCmdConfirmDeposit() *cobra.Command {
 			}
 
 			txID, err := hex.DecodeString(args[0])
+			if err != nil {
+				return err
+			}
+
+			if len(txID) != common.HashLength {
+				return fmt.Errorf("txID should be %d bytes", common.HashLength)
+			}
 
 			burnerAddr, err := sdk.AccAddressFromBech32(args[2])
 			if err != nil {

@@ -71,7 +71,7 @@ func (m Chain) Validate() error {
 		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
-	if err := utils.ValidateString(m.NativeAsset); err != nil {
+	if err := sdk.ValidateDenom(m.NativeAsset); err != nil {
 		return sdkerrors.Wrap(err, "invalid native asset")
 	}
 

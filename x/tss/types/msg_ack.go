@@ -16,7 +16,7 @@ func (m HeartBeatRequest) Route() string { return RouterKey }
 
 // Type implements the sdk.Msg interface.
 // naming convention follows x/staking/types/msgs.go
-func (m HeartBeatRequest) Type() string { return "Ack" }
+func (m HeartBeatRequest) Type() string { return "HeartBeat" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m HeartBeatRequest) ValidateBasic() error {
@@ -26,7 +26,7 @@ func (m HeartBeatRequest) ValidateBasic() error {
 
 	for _, keyID := range m.KeyIDs {
 		if err := keyID.Validate(); err != nil {
-			return sdkerrors.Wrapf(ErrTss, "invalid key ID '%s': %s", keyID, err.Error())
+			return sdkerrors.Wrapf(ErrTss, "invalid key ID: %s", err.Error())
 		}
 	}
 

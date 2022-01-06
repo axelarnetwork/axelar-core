@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -95,12 +97,24 @@ func SortTransfers(transfers []IBCTransfer) {
 
 // Validate checks the stateless validity of the cosmos chain
 func (m CosmosChain) Validate() error {
-	if m.Name != ModuleName && m.IBCPath == "" {
-		return fmt.Errorf("IBC path is empty")
+	if strings.EqualFold(m.Name, exported.Axelarnet.Name) {
+		if m.IBCPath != "" {
+			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
+		}
+	} else {
+		if err := utils.ValidateString(m.IBCPath); err != nil {
+			return sdkerrors.Wrap(err, "invalid IBC path")
+		}
 	}
 
 	if len(m.Assets) == 0 {
 		return fmt.Errorf("chain must contain assets")
+	}
+
+	for _, asset := range m.Assets {
+		if err := asset.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := utils.ValidateString(m.Name); err != nil {
@@ -121,7 +135,7 @@ func NewAsset(denom string, minAmount sdk.Int) Asset {
 
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Denom); err != nil {
+	if err := sdk.ValidateDenom(m.Denom); err != nil {
 		return sdkerrors.Wrap(err, "invalid denomination")
 	}
 

@@ -2667,7 +2667,7 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
-| `amount` | [uint64](#uint64) |  |  |
+| `amount` | [string](#string) |  |  |
 
 
 

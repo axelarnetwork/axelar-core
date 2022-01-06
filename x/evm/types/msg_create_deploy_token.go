@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -45,6 +46,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
+
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
@@ -52,6 +54,11 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 	if err := m.Asset.Validate(); err != nil {
 		return err
 	}
+
+	if strings.EqualFold(m.Chain, m.Asset.Chain) {
+		return fmt.Errorf("cannot deploy token on origin chain")
+	}
+
 	if err := m.TokenDetails.Validate(); err != nil {
 		return err
 	}

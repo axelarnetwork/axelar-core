@@ -1442,5 +1442,5 @@ func createMockERC20Token(asset string, details types.TokenDetails, minAmount sd
 }
 
 func randomNormalizedStr(size int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "")
+	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "-")
 }

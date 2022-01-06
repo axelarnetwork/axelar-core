@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -36,6 +38,10 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("amount cannot be equal to 0")
 	}
 
 	return nil

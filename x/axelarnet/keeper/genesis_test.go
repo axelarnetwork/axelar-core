@@ -105,13 +105,13 @@ func randomChain() types.CosmosChain {
 	}
 
 	return types.CosmosChain{
-		Name:       strings.ReplaceAll(randomNormalizedStr(5, 20), utils.DefaultDelimiter, ""),
+		Name:       randomNormalizedStr(5, 20),
 		IBCPath:    randomIBCPath(),
 		Assets:     assets,
-		AddrPrefix: strings.ReplaceAll(randomNormalizedStr(5, 20), utils.DefaultDelimiter, ""),
+		AddrPrefix: randomNormalizedStr(5, 20),
 	}
 }
 
 func randomNormalizedStr(min, max int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "")
+	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
 }

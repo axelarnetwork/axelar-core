@@ -6,6 +6,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
@@ -34,11 +35,11 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if len(m.TxID) != 32 {
+	if len(m.TxID) != common.HashLength {
 		return fmt.Errorf("invalid TxID")
 	}
 
-	if err := utils.ValidateString(m.Denom); err != nil {
+	if err := sdk.ValidateDenom(m.Denom); err != nil {
 		return sdkerrors.Wrap(err, "invalid token denomination")
 	}
 

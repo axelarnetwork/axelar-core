@@ -3,6 +3,7 @@ package types
 import (
 	fmt "fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -55,8 +56,8 @@ func validateChainActivationThreshold(chainActivationThreshold interface{}) erro
 		return fmt.Errorf("invalid parameter type for ChainActivationThreshold: %T", chainActivationThreshold)
 	}
 
-	if val.LTE(utils.NewThreshold(0, 1)) || val.GT(utils.NewThreshold(1, 1)) {
-		return fmt.Errorf("threshold must be >0 and <=1 for ChainActivationThreshold")
+	if err := val.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid ChainActivationThreshold")
 	}
 
 	return nil

@@ -46,7 +46,7 @@ func (m VoteConfirmTransferKeyRequest) ValidateBasic() error {
 		return err
 	}
 
-	return m.PollKey.Validate()
+	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed

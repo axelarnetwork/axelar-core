@@ -150,7 +150,7 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 			params := types.QueryDepositStateParams{
 				TxID:          types.Hash(txID),
 				BurnerAddress: types.Address(burnerAddress),
-				Amount:        amount.Uint64(),
+				Amount:        amount.String(),
 			}
 			data := types.ModuleCdc.MustMarshalJSON(&params)
 
