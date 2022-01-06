@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
@@ -9,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -139,8 +141,13 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		txID, err := hex.DecodeString(req.TxID)
-		if err != nil || len(txID) != 32 {
+		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if len(txID) != common.HashLength {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("txID should be %d bytes", common.HashLength))
 			return
 		}
 

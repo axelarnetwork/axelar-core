@@ -97,9 +97,14 @@ func SortTransfers(transfers []IBCTransfer) {
 
 // Validate checks the stateless validity of the cosmos chain
 func (m CosmosChain) Validate() error {
-	err := utils.ValidateString(m.IBCPath)
-	if !strings.EqualFold(m.Name, exported.Axelarnet.Name) && err != nil {
-		return fmt.Errorf("invalid IBC path")
+	if strings.EqualFold(m.Name, exported.Axelarnet.Name) {
+		if m.IBCPath != "" {
+			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
+		}
+	} else {
+		if err := utils.ValidateString(m.IBCPath); err != nil {
+			return sdkerrors.Wrap(err, "invalid IBC path")
+		}
 	}
 
 	if len(m.Assets) == 0 {

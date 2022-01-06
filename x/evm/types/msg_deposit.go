@@ -44,7 +44,7 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if m.Amount.Equal(sdk.ZeroUint()) {
+	if m.Amount.IsZero() {
 		return fmt.Errorf("amount cannot be equal to 0")
 	}
 
