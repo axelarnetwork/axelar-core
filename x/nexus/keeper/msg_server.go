@@ -87,10 +87,6 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	if s.staking.Validator(ctx, validator) == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator", validator)
-	}
-
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
