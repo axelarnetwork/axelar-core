@@ -49,7 +49,7 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 	}
 
 	if m.Amount.GT(sdk.NewUint(maxInt64)) {
-		return fmt.Errorf("amount cannot be greater than int64")
+		return fmt.Errorf("amount cannot be greater than int64 max")
 	}
 
 	return nil

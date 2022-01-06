@@ -42,11 +42,16 @@ func (m VoteConfirmDepositRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
+
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	return m.PollKey.Validate()
+	if err := m.PollKey.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed

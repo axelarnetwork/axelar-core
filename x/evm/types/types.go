@@ -1214,6 +1214,11 @@ func (m *ERC20Deposit) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
+	}
+
+	// check upper bound?
 	if m.Amount.IsZero() {
 		return fmt.Errorf("amount must be >0")
 	}

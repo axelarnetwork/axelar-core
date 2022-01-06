@@ -22,9 +22,9 @@ func (m Threshold) SimpleString() string {
 	return fmt.Sprintf("%d/%d", m.Numerator, m.Denominator)
 }
 
-// IsMet returns true if share > threshold * total
+// IsMet returns true if share >= threshold * total
 func (m Threshold) IsMet(share sdk.Int, total sdk.Int) bool {
-	return share.MulRaw(m.Denominator).GT(total.MulRaw(m.Numerator))
+	return share.MulRaw(m.Denominator).GTE(total.MulRaw(m.Numerator))
 }
 
 // GT returns true if and only if threshold is greater than the given one
@@ -49,8 +49,16 @@ func (m Threshold) LTE(t Threshold) bool {
 
 // Validate returns an error if threshold is invalid
 func (m Threshold) Validate() error {
-	if m.Denominator == 0 {
-		return fmt.Errorf("denominator must not be 0")
+	if m.Numerator <= 0 {
+		return fmt.Errorf("threshold numerator must be a positive integer")
+	}
+
+	if m.Denominator <= 0 {
+		return fmt.Errorf("threshold denominator must be a positive integer")
+	}
+
+	if m.Numerator > m.Denominator {
+		return fmt.Errorf("threshold must be <= 1")
 	}
 
 	return nil
