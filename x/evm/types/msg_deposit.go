@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MaxInt64 = 1<<63 - 1
+	maxInt64 = 1<<63 - 1
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
@@ -48,7 +48,7 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return fmt.Errorf("amount cannot be equal to 0")
 	}
 
-	if m.Amount.GT(sdk.NewUint(MaxInt64)) {
+	if m.Amount.GT(sdk.NewUint(maxInt64)) {
 		return fmt.Errorf("amount cannot be greater than int64")
 	}
 

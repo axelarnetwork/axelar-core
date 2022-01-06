@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultDelimiter = "_"
+	defaultDelimiter = "_"
 )
 
 func init() {
@@ -50,7 +50,7 @@ func NormalizedStr(len int) string {
 
 // NormalizedStrBetween creates a random normalized string in the provided range
 func NormalizedStrBetween(min, max int) string {
-	return strings.ReplaceAll(NormalizeString(StrBetween(min, max)), DefaultDelimiter, "-")
+	return strings.ReplaceAll(NormalizeString(StrBetween(min, max)), defaultDelimiter, "-")
 }
 
 // I64Gen represents an random integer generator to generate a sequence of integers with the same properties.
