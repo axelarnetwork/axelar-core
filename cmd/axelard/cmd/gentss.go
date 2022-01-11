@@ -16,10 +16,7 @@ import (
 )
 
 const (
-	flagKeygen                = "keygen"
-	flagCorruption            = "corruption"
 	flagHeartbeatPeriod       = "heartbeat-period"
-	flagBondFraction          = "bond-fraction"
 	flagSignedBlocksPerWindow = "signed-blocks-window"
 )
 
