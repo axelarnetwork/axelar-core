@@ -236,23 +236,24 @@ func (k Keeper) GetSignedBlocksWindow(ctx sdk.Context) int64 {
 // ValidatorMissedTooManyBlocks returns true if the given validator address missed too many blocks within
 // the block window specifiec by this module
 func (k Keeper) ValidatorMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool {
-	signedBlocksWindow := k.GetSignedBlocksWindow(ctx)
-	missedBlocks := k.getMissedBlocksCount(ctx, address)
+	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
+	if !ok {
+		return false
+	}
 	maxMissedBlocks := k.GetMaxMissedBlocksPerWindow(ctx)
 
-	missedBlocksThreshold := utils.Threshold{Numerator: missedBlocks, Denominator: signedBlocksWindow}
-	return missedBlocksThreshold.GTE(maxMissedBlocks)
+	return missedBlocks.GTE(maxMissedBlocks)
 }
 
-// returns the number of blocks signed w.r.t. this module's signed blocks window parameter
-func (k Keeper) getMissedBlocksCount(ctx sdk.Context, address sdk.ConsAddress) int64 {
+// returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
+func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress) (utils.Threshold, bool) {
 	counter := int64(0)
 	tssWindow := k.GetSignedBlocksWindow(ctx)
 	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
 	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
 
 	if !ok {
-		return 0
+		return utils.Threshold{}, false
 	}
 
 	indexOffset := int64(0)
@@ -264,14 +265,14 @@ func (k Keeper) getMissedBlocksCount(ctx sdk.Context, address sdk.ConsAddress) i
 		indexOffset = signInfo.IndexOffset - window
 	}
 
-	for index := indexOffset % slasherWindow; index < signInfo.IndexOffset; index++ {
-		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, index); missed {
-			k.Logger(ctx).Debug(fmt.Sprintf("[tss] address %s missed block at index #%d", address.String(), index))
+	for ; indexOffset < signInfo.IndexOffset; indexOffset++ {
+		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, indexOffset%slasherWindow); missed {
+			k.Logger(ctx).Debug(fmt.Sprintf("address %s missed block at index #%d", address.String(), indexOffset%slasherWindow))
 			counter++
 		}
 	}
 
-	return counter
+	return utils.NewThreshold(counter, tssWindow), true
 }
 
 // SetAvailableOperator signals that a validator sent an ack
