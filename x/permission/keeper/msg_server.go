@@ -40,7 +40,7 @@ func (s msgServer) RegisterController(c context.Context, req *types.RegisterCont
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, ok := s.getGovAccount(ctx, req.Controller); ok {
-		return nil, fmt.Errorf("account is already a registered with a role")
+		return nil, fmt.Errorf("account is already registered with a role")
 	}
 
 	s.setGovAccount(ctx, types.NewGovAccount(req.Controller, exported.ROLE_CHAIN_MANAGEMENT))
