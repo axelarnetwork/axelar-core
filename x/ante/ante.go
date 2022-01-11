@@ -89,6 +89,17 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 			if err != nil {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
+
+			delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+			if err != nil {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+			}
+
+			// only restrict a validator from unbonding it's self-delegation
+			if !delegatorAddress.Equals(valAddress) {
+				continue
+			}
+
 			chains := d.nexus.GetChains(ctx)
 
 			for _, chain := range chains {
