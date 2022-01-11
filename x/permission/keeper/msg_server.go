@@ -23,7 +23,7 @@ func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGover
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, ok := s.getGovAccount(ctx, req.GovernanceKey.Address().Bytes()); ok {
-		return nil, fmt.Errorf("account is already a registered with a role")
+		return nil, fmt.Errorf("account is already registered with a role")
 	}
 
 	s.setGovernanceKey(ctx, req.GovernanceKey)
