@@ -4838,6 +4838,7 @@ Params is the parameter set for this module
 | `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `max_sign_queue_size` | [int64](#int64) |  |  |
 | `max_simultaneous_sign_shares` | [int64](#int64) |  |  |
+| `SignedBlocksWindow` | [int64](#int64) |  |  |
 
 
 

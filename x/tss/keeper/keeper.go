@@ -225,6 +225,45 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	return shares
 }
 
+// GetSignedBlocksWindow returns the max simultaneous number of sign shares
+func (k Keeper) GetSignedBlocksWindow(ctx sdk.Context) int64 {
+	var window int64
+	k.params.Get(ctx, types.KeySignedBlocksWindow, &window)
+
+	return window
+}
+
+// ValidatorMissedTooManyBlocks returns true if the given validator address missed too many blocks within
+// the block window specifiec by this module
+func (k Keeper) ValidatorMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool {
+	signedBlocksWindow := k.GetSignedBlocksWindow(ctx)
+	missedBlocks := k.getMissedBlocksCount(ctx, address)
+	maxMissedBlocks := k.GetMaxMissedBlocksPerWindow(ctx)
+
+	missedBlocksThreshold := utils.Threshold{Numerator: missedBlocks, Denominator: signedBlocksWindow}
+	return missedBlocksThreshold.GTE(maxMissedBlocks)
+}
+
+// returns the number of blocks signed w.r.t. this module's signed blocks window parameter
+func (k Keeper) getMissedBlocksCount(ctx sdk.Context, address sdk.ConsAddress) int64 {
+	counter := int64(0)
+	tssWindow := k.GetSignedBlocksWindow(ctx)
+	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
+
+	index := int64(0)
+	if slasherWindow > tssWindow {
+		index = slasherWindow - tssWindow
+	}
+
+	for ; index < slasherWindow; index++ {
+		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, index); missed {
+			counter++
+		}
+	}
+
+	return counter
+}
+
 // SetAvailableOperator signals that a validator sent an ack
 func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, presentKeys ...exported.KeyID) {
 	store := k.getStore(ctx)

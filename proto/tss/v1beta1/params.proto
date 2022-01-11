@@ -28,4 +28,5 @@ message Params {
       [ (gogoproto.nullable) = false ];
   int64 max_sign_queue_size = 7;
   int64 max_simultaneous_sign_shares = 8;
+  int64 SignedBlocksWindow = 9;
 }
