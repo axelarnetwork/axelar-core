@@ -225,7 +225,7 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	return shares
 }
 
-// returns the max simultaneous number of sign shares
+// returns the signed blocks window to be considered when calculating the missed blocks percentage
 func (k Keeper) getSignedBlocksWindow(ctx sdk.Context) int64 {
 	var window int64
 	k.params.Get(ctx, types.KeySignedBlocksWindow, &window)
