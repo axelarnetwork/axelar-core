@@ -184,7 +184,7 @@ func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.Vo
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s gateway confirmation result is %t", chain.Name, confirmed.Value))
+	s.Logger(ctx).Info(fmt.Sprintf("%s gateway confirmation result is %t", chain.Name, confirmed.GetValue()))
 
 	address, ok := keeper.GetPendingGatewayAddress(ctx)
 	if !ok {
@@ -673,7 +673,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %t", confirmed.GetValue()))
 	s.DeletePendingChain(ctx, pendingChain.Chain.Name)
 
 	// handle poll result
@@ -766,7 +766,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %t", chain.Name, confirmed.GetValue()))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
@@ -876,7 +876,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %t", confirmed.GetValue()))
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,

@@ -195,7 +195,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	eventBus := createEventBus(tmClient, startBlock, logger)
 
 	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
-	if recoveryJSON != nil && len(recoveryJSON) > 0 {
+	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
@@ -325,6 +325,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
 		if !evmChainConf.WithBridge {
+			logger.Debug(fmt.Sprintf("RPC connection is disabled for EVM chain %s. Skipping...", evmChainConf.Name))
 			continue
 		}
 
@@ -336,6 +337,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 
 		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr)
 		if err != nil {
+			err = sdkerrors.Wrap(err, fmt.Sprintf("Failed to create an RPC connection for EVM chain %s. Verify your RPC config.", evmChainConf.Name))
 			logger.Error(err.Error())
 			panic(err)
 		}
