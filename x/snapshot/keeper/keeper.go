@@ -436,7 +436,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 		illegibility |= exported.Jailed
 	}
 
-	if k.tss.ValidatorMissedTooManyBlocks(ctx, consAddr) {
+	if k.tss.HasMissedTooManyBlocks(ctx, consAddr) {
 		illegibility |= exported.MissedTooManyBlocks
 	}
 

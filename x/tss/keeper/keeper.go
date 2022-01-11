@@ -225,30 +225,30 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	return shares
 }
 
-// GetSignedBlocksWindow returns the max simultaneous number of sign shares
-func (k Keeper) GetSignedBlocksWindow(ctx sdk.Context) int64 {
+// returns the max simultaneous number of sign shares
+func (k Keeper) getSignedBlocksWindow(ctx sdk.Context) int64 {
 	var window int64
 	k.params.Get(ctx, types.KeySignedBlocksWindow, &window)
 
 	return window
 }
 
-// ValidatorMissedTooManyBlocks returns true if the given validator address missed too many blocks within
+// HasMissedTooManyBlocks returns true if the given validator address missed too many blocks within
 // the block window specifiec by this module
-func (k Keeper) ValidatorMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool {
+func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool {
 	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
 	if !ok {
 		return false
 	}
-	maxMissedBlocks := k.GetMaxMissedBlocksPerWindow(ctx)
+	maxMissedPerWindow := k.GetMaxMissedBlocksPerWindow(ctx)
 
-	return missedBlocks.GTE(maxMissedBlocks)
+	return missedBlocks.GTE(maxMissedPerWindow)
 }
 
 // returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
 func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress) (utils.Threshold, bool) {
 	counter := int64(0)
-	tssWindow := k.GetSignedBlocksWindow(ctx)
+	tssWindow := k.getSignedBlocksWindow(ctx)
 	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
 	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
 

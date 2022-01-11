@@ -835,11 +835,11 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetSuspendedUntil method")
 // 			},
+// 			HasMissedTooManyBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+// 				panic("mock out the HasMissedTooManyBlocks method")
+// 			},
 // 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
 // 				panic("mock out the IsOperatorAvailable method")
-// 			},
-// 			ValidatorMissedTooManyBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
-// 				panic("mock out the ValidatorMissedTooManyBlocks method")
 // 			},
 // 		}
 //
@@ -857,11 +857,11 @@ type TssMock struct {
 	// GetSuspendedUntilFunc mocks the GetSuspendedUntil method.
 	GetSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
+	// HasMissedTooManyBlocksFunc mocks the HasMissedTooManyBlocks method.
+	HasMissedTooManyBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
+
 	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
 	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool
-
-	// ValidatorMissedTooManyBlocksFunc mocks the ValidatorMissedTooManyBlocks method.
-	ValidatorMissedTooManyBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -890,6 +890,13 @@ type TssMock struct {
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// HasMissedTooManyBlocks holds details about calls to the HasMissedTooManyBlocks method.
+		HasMissedTooManyBlocks []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
 		// IsOperatorAvailable holds details about calls to the IsOperatorAvailable method.
 		IsOperatorAvailable []struct {
 			// Ctx is the ctx argument value.
@@ -899,19 +906,12 @@ type TssMock struct {
 			// KeyIDs is the keyIDs argument value.
 			KeyIDs []tssexported.KeyID
 		}
-		// ValidatorMissedTooManyBlocks holds details about calls to the ValidatorMissedTooManyBlocks method.
-		ValidatorMissedTooManyBlocks []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
-		}
 	}
-	lockGetKeyRequirement            sync.RWMutex
-	lockGetNextKey                   sync.RWMutex
-	lockGetSuspendedUntil            sync.RWMutex
-	lockIsOperatorAvailable          sync.RWMutex
-	lockValidatorMissedTooManyBlocks sync.RWMutex
+	lockGetKeyRequirement      sync.RWMutex
+	lockGetNextKey             sync.RWMutex
+	lockGetSuspendedUntil      sync.RWMutex
+	lockHasMissedTooManyBlocks sync.RWMutex
+	lockIsOperatorAvailable    sync.RWMutex
 }
 
 // GetKeyRequirement calls GetKeyRequirementFunc.
@@ -1027,6 +1027,41 @@ func (mock *TssMock) GetSuspendedUntilCalls() []struct {
 	return calls
 }
 
+// HasMissedTooManyBlocks calls HasMissedTooManyBlocksFunc.
+func (mock *TssMock) HasMissedTooManyBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+	if mock.HasMissedTooManyBlocksFunc == nil {
+		panic("TssMock.HasMissedTooManyBlocksFunc: method is nil but Tss.HasMissedTooManyBlocks was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockHasMissedTooManyBlocks.Lock()
+	mock.calls.HasMissedTooManyBlocks = append(mock.calls.HasMissedTooManyBlocks, callInfo)
+	mock.lockHasMissedTooManyBlocks.Unlock()
+	return mock.HasMissedTooManyBlocksFunc(ctx, address)
+}
+
+// HasMissedTooManyBlocksCalls gets all the calls that were made to HasMissedTooManyBlocks.
+// Check the length with:
+//     len(mockedTss.HasMissedTooManyBlocksCalls())
+func (mock *TssMock) HasMissedTooManyBlocksCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockHasMissedTooManyBlocks.RLock()
+	calls = mock.calls.HasMissedTooManyBlocks
+	mock.lockHasMissedTooManyBlocks.RUnlock()
+	return calls
+}
+
 // IsOperatorAvailable calls IsOperatorAvailableFunc.
 func (mock *TssMock) IsOperatorAvailable(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
 	if mock.IsOperatorAvailableFunc == nil {
@@ -1063,40 +1098,5 @@ func (mock *TssMock) IsOperatorAvailableCalls() []struct {
 	mock.lockIsOperatorAvailable.RLock()
 	calls = mock.calls.IsOperatorAvailable
 	mock.lockIsOperatorAvailable.RUnlock()
-	return calls
-}
-
-// ValidatorMissedTooManyBlocks calls ValidatorMissedTooManyBlocksFunc.
-func (mock *TssMock) ValidatorMissedTooManyBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
-	if mock.ValidatorMissedTooManyBlocksFunc == nil {
-		panic("TssMock.ValidatorMissedTooManyBlocksFunc: method is nil but Tss.ValidatorMissedTooManyBlocks was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
-	}{
-		Ctx:     ctx,
-		Address: address,
-	}
-	mock.lockValidatorMissedTooManyBlocks.Lock()
-	mock.calls.ValidatorMissedTooManyBlocks = append(mock.calls.ValidatorMissedTooManyBlocks, callInfo)
-	mock.lockValidatorMissedTooManyBlocks.Unlock()
-	return mock.ValidatorMissedTooManyBlocksFunc(ctx, address)
-}
-
-// ValidatorMissedTooManyBlocksCalls gets all the calls that were made to ValidatorMissedTooManyBlocks.
-// Check the length with:
-//     len(mockedTss.ValidatorMissedTooManyBlocksCalls())
-func (mock *TssMock) ValidatorMissedTooManyBlocksCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
-	}
-	mock.lockValidatorMissedTooManyBlocks.RLock()
-	calls = mock.calls.ValidatorMissedTooManyBlocks
-	mock.lockValidatorMissedTooManyBlocks.RUnlock()
 	return calls
 }
