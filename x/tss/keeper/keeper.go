@@ -249,14 +249,24 @@ func (k Keeper) getMissedBlocksCount(ctx sdk.Context, address sdk.ConsAddress) i
 	counter := int64(0)
 	tssWindow := k.GetSignedBlocksWindow(ctx)
 	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
+	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
 
-	index := int64(0)
-	if slasherWindow > tssWindow {
-		index = slasherWindow - tssWindow
+	if !ok {
+		return 0
 	}
 
-	for ; index < slasherWindow; index++ {
+	indexOffset := int64(0)
+	window := slasherWindow
+	if slasherWindow > tssWindow {
+		window = tssWindow
+	}
+	if signInfo.IndexOffset > window {
+		indexOffset = signInfo.IndexOffset - window
+	}
+
+	for index := indexOffset % slasherWindow; index < signInfo.IndexOffset; index++ {
 		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, index); missed {
+			k.Logger(ctx).Debug(fmt.Sprintf("[tss] address %s missed block at index #%d", address.String(), index))
 			counter++
 		}
 	}
