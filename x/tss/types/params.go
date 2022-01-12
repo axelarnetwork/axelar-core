@@ -24,6 +24,7 @@ var (
 	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
 	KeyMaxSignQueueSize                 = []byte("MaxSignQueueSize")
 	MaxSimultaneousSignShares           = []byte("MaxSimultaneousSignShares")
+	KeyTssSignedBlocksWindow            = []byte("TssSignedBlocksWindow")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -95,6 +96,7 @@ func DefaultParams() Params {
 		ExternalMultisigThreshold:        utils.Threshold{Numerator: 4, Denominator: 8},
 		MaxSignQueueSize:                 50,
 		MaxSimultaneousSignShares:        100,
+		TssSignedBlocksWindow:            100,
 	}
 }
 
@@ -116,6 +118,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyExternalMultisigThreshold, &m.ExternalMultisigThreshold, validateExternalMultisigThreshold),
 		params.NewParamSetPair(KeyMaxSignQueueSize, &m.MaxSignQueueSize, validatePosInt64("MaxSignQueueSize")),
 		params.NewParamSetPair(MaxSimultaneousSignShares, &m.MaxSimultaneousSignShares, validatePosInt64("MaxSimultaneousSignShares")),
+		params.NewParamSetPair(KeyTssSignedBlocksWindow, &m.TssSignedBlocksWindow, validatePosInt64("TssSignedBlocksWindow")),
 	}
 }
 
@@ -150,6 +153,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validatePosInt64("MaxSimultaneousSignShares")(m.MaxSimultaneousSignShares); err != nil {
+		return err
+	}
+
+	if err := validatePosInt64("TssSignedBlocksWindow")(m.TssSignedBlocksWindow); err != nil {
 		return err
 	}
 

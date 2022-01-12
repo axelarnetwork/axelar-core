@@ -33,7 +33,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 var encCfg appParams.EncodingConfig
@@ -102,8 +101,8 @@ func TestSnapshots(t *testing.T) {
 			}
 
 			tssMock := &snapshotMock.TssMock{
-				GetMaxMissedBlocksPerWindowFunc: func(sdk.Context) utils.Threshold {
-					return tsstypes.DefaultParams().MaxMissedBlocksPerWindow
+				HasMissedTooManyBlocksFunc: func(sdk.Context, sdk.ConsAddress) (bool, error) {
+					return false, nil
 				},
 				GetSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 				IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tss.KeyID) bool {

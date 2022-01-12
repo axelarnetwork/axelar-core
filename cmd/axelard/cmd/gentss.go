@@ -16,17 +16,16 @@ import (
 )
 
 const (
-	flagKeygen          = "keygen"
-	flagCorruption      = "corruption"
-	flagHeartbeatPeriod = "heartbeat-period"
-	flagBondFraction    = "bond-fraction"
+	flagHeartbeatPeriod       = "heartbeat-period"
+	flagSignedBlocksPerWindow = "signed-blocks-window"
 )
 
 // SetGenesisTSSCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisTSSCmd(defaultNodeHome string,
 ) *cobra.Command {
 	var (
-		heartbeatPeriod int64
+		heartbeatPeriod       int64
+		signedBlocksPerWindow string
 	)
 
 	cmd := &cobra.Command{
@@ -53,6 +52,15 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 				genesisTSS.Params.HeartbeatPeriodInBlocks = heartbeatPeriod
 			}
 
+			if signedBlocksPerWindow != "" {
+				threshold, err := parseThreshold(signedBlocksPerWindow)
+				if err != nil {
+					return err
+				}
+
+				genesisTSS.Params.MaxMissedBlocksPerWindow = threshold
+			}
+
 			genesisTSSBz, err := cdc.MarshalJSON(&genesisTSS)
 			if err != nil {
 				return fmt.Errorf("failed to marshal tss genesis state: %w", err)
@@ -72,5 +80,6 @@ func SetGenesisTSSCmd(defaultNodeHome string,
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 	cmd.Flags().Int64Var(&heartbeatPeriod, flagHeartbeatPeriod, 0, "time period in blocks for tss to emit the event asking validators to send their heartbeats")
+	cmd.Flags().StringVar(&signedBlocksPerWindow, flagSignedBlocksPerWindow, "", "the signed blocks window to be considered when calculating the missed blocks percentage")
 	return cmd
 }
