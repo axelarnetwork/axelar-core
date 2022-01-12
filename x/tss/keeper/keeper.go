@@ -235,14 +235,14 @@ func (k Keeper) getTssSignedBlocksWindow(ctx sdk.Context) int64 {
 
 // HasMissedTooManyBlocks returns true if the given validator address missed too many blocks within
 // the block window specifiec by this module
-func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool {
+func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error) {
 	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
 	if !ok {
-		return false
+		return false, fmt.Errorf("'%s' is not a validator", address.String())
 	}
 	maxMissedPerWindow := k.GetMaxMissedBlocksPerWindow(ctx)
 
-	return missedBlocks.GT(maxMissedPerWindow)
+	return missedBlocks.GT(maxMissedPerWindow), nil
 }
 
 // returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter

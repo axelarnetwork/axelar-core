@@ -423,6 +423,11 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 		return exported.None, err
 	}
 
+	missedTooManyBlocks, err := k.tss.HasMissedTooManyBlocks(ctx, consAddr)
+	if err != nil {
+		return exported.None, err
+	}
+
 	signingInfo, signingInfoFound := k.slasher.GetValidatorSigningInfo(ctx, consAddr)
 	proxy, hasProxyRegistered := k.GetProxy(ctx, validator.GetOperator())
 
@@ -436,7 +441,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 		illegibility |= exported.Jailed
 	}
 
-	if k.tss.HasMissedTooManyBlocks(ctx, consAddr) {
+	if missedTooManyBlocks {
 		illegibility |= exported.MissedTooManyBlocks
 	}
 

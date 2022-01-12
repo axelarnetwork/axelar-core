@@ -187,7 +187,7 @@ type Tss interface {
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
 	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) bool
+	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error)
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot

@@ -835,7 +835,7 @@ var _ snapshotexported.Tss = &TssMock{}
 // 			GetSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
 // 				panic("mock out the GetSuspendedUntil method")
 // 			},
-// 			HasMissedTooManyBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+// 			HasMissedTooManyBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error) {
 // 				panic("mock out the HasMissedTooManyBlocks method")
 // 			},
 // 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool {
@@ -858,7 +858,7 @@ type TssMock struct {
 	GetSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
 
 	// HasMissedTooManyBlocksFunc mocks the HasMissedTooManyBlocks method.
-	HasMissedTooManyBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
+	HasMissedTooManyBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error)
 
 	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
 	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...tssexported.KeyID) bool
@@ -1028,7 +1028,7 @@ func (mock *TssMock) GetSuspendedUntilCalls() []struct {
 }
 
 // HasMissedTooManyBlocks calls HasMissedTooManyBlocksFunc.
-func (mock *TssMock) HasMissedTooManyBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+func (mock *TssMock) HasMissedTooManyBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error) {
 	if mock.HasMissedTooManyBlocksFunc == nil {
 		panic("TssMock.HasMissedTooManyBlocksFunc: method is nil but Tss.HasMissedTooManyBlocks was just called")
 	}

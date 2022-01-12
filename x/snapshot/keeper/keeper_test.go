@@ -101,8 +101,8 @@ func TestSnapshots(t *testing.T) {
 			}
 
 			tssMock := &snapshotMock.TssMock{
-				HasMissedTooManyBlocksFunc: func(sdk.Context, sdk.ConsAddress) bool {
-					return false
+				HasMissedTooManyBlocksFunc: func(sdk.Context, sdk.ConsAddress) (bool, error) {
+					return false, nil
 				},
 				GetSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
 				IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tss.KeyID) bool {
