@@ -5,6 +5,7 @@ import (
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // ValdConfig contains all necessary vald configurations
@@ -26,8 +27,9 @@ func DefaultValdConfig() ValdConfig {
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {
-	MaxRetries int           `mapstructure:"max-retries"`
-	MinTimeout time.Duration `mapstructure:"min-timeout"`
+	MaxRetries int            `mapstructure:"max-retries"`
+	MinTimeout time.Duration  `mapstructure:"min-timeout"`
+	FeeGranter sdk.AccAddress `mapstructure:"fee_granter"`
 }
 
 // DefaultBroadcastConfig returns a configurations populated with default values

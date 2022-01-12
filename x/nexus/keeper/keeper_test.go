@@ -286,48 +286,6 @@ func TestEnqueueForTransfer(t *testing.T) {
 		assert.Equal(t, linkedAddr, count)
 		assert.Equal(t, 0, len(keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)))
 	}).Repeat(repeats))
-
-	t.Run("should return error when transfer more than chain total", testutils.Func(func(t *testing.T) {
-		setup()
-		btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-		err := keeper.LinkAddresses(ctx, btcSender, btcRecipient)
-		assert.NoError(t, err)
-		ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
-		err = keeper.LinkAddresses(ctx, ethSender, ethRecipient)
-		assert.NoError(t, err)
-
-		err = keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
-		assert.NoError(t, err)
-		transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
-		keeper.ArchivePendingTransfer(ctx, transfer)
-		total := transfer.Asset.Amount.Int64()
-		amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total+rand.I64Between(1, 100000)))
-		err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("should success when transfer within chain total", testutils.Func(func(t *testing.T) {
-		setup()
-		btcSender, btcRecipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-		err := keeper.LinkAddresses(ctx, btcSender, btcRecipient)
-		assert.NoError(t, err)
-
-		ethSender, ethRecipient := makeRandAddressesForChain(evm.Ethereum, btc.Bitcoin)
-		err = keeper.LinkAddresses(ctx, ethSender, ethRecipient)
-		assert.NoError(t, err)
-
-		err = keeper.EnqueueForTransfer(ctx, btcSender, makeRandAmount(btcTypes.Satoshi), feeRate)
-		assert.NoError(t, err)
-		transfer := keeper.GetTransfersForChain(ctx, evm.Ethereum, exported.Pending)[0]
-		keeper.ArchivePendingTransfer(ctx, transfer)
-		total := transfer.Asset.Amount.Int64()
-		amount := sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(rand.I64Between(1, total)))
-		err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
-		assert.NoError(t, err)
-		amount = sdk.NewCoin(btcTypes.Satoshi, sdk.NewInt(total))
-		err = keeper.EnqueueForTransfer(ctx, ethSender, amount, feeRate)
-		assert.Error(t, err)
-	}).Repeat(repeats))
 }
 
 func TestSetChainGetChain_MixCaseChainName(t *testing.T) {

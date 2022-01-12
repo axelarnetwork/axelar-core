@@ -30,29 +30,6 @@ func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState
 	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name)), &chainState)
 }
 
-func (k Keeper) subtractFromChainTotal(ctx sdk.Context, chain exported.Chain, coin sdk.Coin) {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-	chainState.Total = chainState.Total.Sub(sdk.NewCoins(coin))
-
-	k.setChainState(ctx, chainState)
-}
-
-func (k Keeper) getChainTotal(ctx sdk.Context, chain exported.Chain, denom string) sdk.Coin {
-	chainState, ok := k.getChainState(ctx, chain)
-	if !ok {
-		return sdk.NewCoin(denom, sdk.ZeroInt())
-	}
-
-	for _, coin := range chainState.Total {
-		if coin.Denom == denom {
-			return coin
-		}
-	}
-
-	return sdk.NewCoin(denom, sdk.ZeroInt())
-}
-
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, denom string) {
 	chainState, _ := k.getChainState(ctx, chain)
@@ -70,15 +47,6 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom s
 	}
 
 	return chainState.HasAsset(denom)
-}
-
-// AddToChainTotal add balance for an asset for a chain
-func (k Keeper) AddToChainTotal(ctx sdk.Context, chain exported.Chain, coin sdk.Coin) {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-	chainState.Total = chainState.Total.Add(coin)
-
-	k.setChainState(ctx, chainState)
 }
 
 // ActivateChain activates the given chain

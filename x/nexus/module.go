@@ -81,7 +81,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper      types.Nexus
+	keeper      keeper.Keeper
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
@@ -107,6 +107,8 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
+
+	cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper, am.axelarnet))
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
@@ -152,4 +154,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 { return 2 }

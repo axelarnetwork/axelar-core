@@ -64,10 +64,6 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
 
-	if sender.Chain.NativeAsset != asset.Denom && k.getChainTotal(ctx, sender.Chain, asset.Denom).IsLT(asset) {
-		return fmt.Errorf("not enough funds available for asset '%s' in chain %s", asset.Denom, sender.Chain.Name)
-	}
-
 	if !k.IsChainActivated(ctx, sender.Chain) {
 		return fmt.Errorf("source chain '%s' is not activated", sender.Chain.Name)
 	}
@@ -83,10 +79,6 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
 		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
-	}
-
-	if sender.Chain.NativeAsset != asset.Denom {
-		k.subtractFromChainTotal(ctx, sender.Chain, asset)
 	}
 
 	// collect fee
@@ -131,12 +123,6 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 
 	transfer.State = exported.Archived
 	k.setTransfer(ctx, transfer)
-
-	// Update the total nexus for the chain if it is a foreign asset
-	info, _ := k.GetChain(ctx, transfer.Recipient.Chain.Name)
-	if info.NativeAsset != transfer.Asset.Denom {
-		k.AddToChainTotal(ctx, transfer.Recipient.Chain, transfer.Asset)
-	}
 }
 
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain

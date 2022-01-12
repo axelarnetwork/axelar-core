@@ -3380,7 +3380,6 @@ ChainState represents the state of a registered blockchain
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
-| `total` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 | `assets` | [string](#string) | repeated |  |
 
 
