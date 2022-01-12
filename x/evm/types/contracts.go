@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"io/ioutil"
 	"encoding/json"
 )
@@ -10,6 +11,8 @@ func getBytecodeFromArtifact(filename string) string {
     byteValue, err := ioutil.ReadFile("../../../artifacts/" + filename)
 
     if err != nil {
+        path, _ := os.Getwd()
+        fmt.Println(path)
         panic(err)
     }
 
