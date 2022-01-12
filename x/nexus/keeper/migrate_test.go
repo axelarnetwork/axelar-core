@@ -44,7 +44,7 @@ func TestGetMigrationHandler_addTransferFee(t *testing.T) {
 		GetFeeCollectorFunc: func(ctx sdk.Context) (sdk.AccAddress, bool) { return feeCollector, true },
 	}
 
-	// archieved
+	// archived
 	keeper.setNewPendingTransfer(ctx, feeCollectorAddress, amount)
 	keeper.ArchivePendingTransfer(ctx, exported.NewPendingCrossChainTransfer(0, feeCollectorAddress, amount))
 	// not to fee collector

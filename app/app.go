@@ -401,7 +401,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 				fromVM[moduleName] = 1
 			}
 
-			// delete new modules from the map, for _new_ modules as to not skip InitGenesis
+			// delete new modules from the map so that they will not not skip InitGenesis
 			delete(fromVM, feegrant.ModuleName)
 
 			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
