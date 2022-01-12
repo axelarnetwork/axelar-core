@@ -509,7 +509,7 @@ func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr comm
 	}
 
 	if !actualAmount.Equal(amount) {
-		return fmt.Errorf("given deposit amount: %d, actual amount: %d", amount.Uint64(), actualAmount.Uint64())
+		return fmt.Errorf("given deposit amount: %s, actual amount: %s", amount.String(), actualAmount.String())
 	}
 
 	return nil

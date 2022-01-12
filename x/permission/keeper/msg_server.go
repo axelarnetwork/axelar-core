@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -21,6 +22,10 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGovernanceKeyRequest) (*types.UpdateGovernanceKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if _, ok := s.getGovAccount(ctx, req.GovernanceKey.Address().Bytes()); ok {
+		return nil, fmt.Errorf("account is already registered with a role")
+	}
+
 	s.setGovernanceKey(ctx, req.GovernanceKey)
 	// delete the existing governance account address
 	s.deleteGovAccount(ctx, req.Sender)
@@ -33,6 +38,10 @@ func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGover
 // RegisterController handles register a controller account
 func (s msgServer) RegisterController(c context.Context, req *types.RegisterControllerRequest) (*types.RegisterControllerResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if _, ok := s.getGovAccount(ctx, req.Controller); ok {
+		return nil, fmt.Errorf("account is already registered with a role")
+	}
 
 	s.setGovAccount(ctx, types.NewGovAccount(req.Controller, exported.ROLE_CHAIN_MANAGEMENT))
 

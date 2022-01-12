@@ -40,7 +40,7 @@ func (m LinkRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid recipient address")
 	}
 
-	if err := utils.ValidateString(m.Asset); err != nil {
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 

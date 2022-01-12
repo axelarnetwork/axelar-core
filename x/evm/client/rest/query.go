@@ -279,7 +279,7 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 		params := types.QueryDepositStateParams{
 			TxID:          types.Hash(txID),
 			BurnerAddress: types.Address(burnerAddress),
-			Amount:        amount.Uint64(),
+			Amount:        amount.String(),
 		}
 		data := types.ModuleCdc.MustMarshalJSON(&params)
 

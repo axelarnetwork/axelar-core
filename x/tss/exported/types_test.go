@@ -1,6 +1,7 @@
 package exported_test
 
 import (
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,17 +17,22 @@ import (
 func TestKeyID_Validate(t *testing.T) {
 	repeats := 20
 	t.Run("GIVEN a valid key ID WHEN validating THEN return no error", testutils.Func(func(t *testing.T) {
-		keyID := exported.KeyID(rand.StrBetween(exported.KeyIDLengthMin, exported.KeyIDLengthMax))
+		keyID := exported.KeyID(rand.NormalizedStrBetween(exported.KeyIDLengthMin, exported.KeyIDLengthMax))
 		assert.NoError(t, keyID.Validate())
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a short key ID WHEN validating THEN return error", testutils.Func(func(t *testing.T) {
-		keyID := exported.KeyID(rand.StrBetween(1, exported.KeyIDLengthMin-1))
+		keyID := exported.KeyID(rand.NormalizedStrBetween(1, exported.KeyIDLengthMin-1))
 		assert.Error(t, keyID.Validate())
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a long key ID WHEN validating THEN return error", testutils.Func(func(t *testing.T) {
-		keyID := exported.KeyID(rand.StrBetween(exported.KeyIDLengthMax+1, 2*exported.KeyIDLengthMax))
+		keyID := exported.KeyID(rand.NormalizedStrBetween(exported.KeyIDLengthMax+1, 2*exported.KeyIDLengthMax))
+		assert.Error(t, keyID.Validate())
+	}).Repeat(repeats))
+
+	t.Run("GIVEN a key ID with separator WHEN validating THEN return error", testutils.Func(func(t *testing.T) {
+		keyID := exported.KeyID(strings.Repeat("_", exported.KeyIDLengthMin))
 		assert.Error(t, keyID.Validate())
 	}).Repeat(repeats))
 }

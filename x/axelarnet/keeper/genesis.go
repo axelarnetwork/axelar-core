@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// InitGenesis initializes the reward module's state from a given genesis state.
+// InitGenesis initializes the axelarnet module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.GenesisState) {
 	k.setParams(ctx, nexus, genState.Params)
 	if len(genState.CollectorAddress) > 0 {

@@ -89,18 +89,29 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 			if err != nil {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
+
+			delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+			if err != nil {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+			}
+
+			// only restrict a validator from unbonding it's self-delegation
+			if !delegatorAddress.Equals(valAddress) {
+				continue
+			}
+
 			chains := d.nexus.GetChains(ctx)
 
 			for _, chain := range chains {
 				for _, keyRole := range tss.GetKeyRoles() {
 					currentKeyID, found := d.tss.GetCurrentKeyID(ctx, chain, keyRole)
 					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, currentKeyID) {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress, chain.Name, keyRole.SimpleString())
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key %s", valAddress, chain.Name, keyRole.SimpleString(), currentKeyID)
 					}
 
 					nextKeyID, found := d.tss.GetNextKeyID(ctx, chain, keyRole)
 					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, nextKeyID) {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key ", valAddress, chain.Name, keyRole.SimpleString())
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's next %s key %s", valAddress, chain.Name, keyRole.SimpleString(), nextKeyID)
 					}
 
 					oldActiveKeys, err := d.tss.GetOldActiveKeys(ctx, chain, keyRole)
@@ -110,7 +121,7 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 
 					for _, oldActiveKey := range oldActiveKeys {
 						if isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, oldActiveKey.ID) {
-							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's %s key %s", valAddress, chain.Name, keyRole.SimpleString(), oldActiveKey.ID)
+							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's old active %s key %s", valAddress, chain.Name, keyRole.SimpleString(), oldActiveKey.ID)
 						}
 					}
 				}

@@ -6,6 +6,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewLinkedAddresses is the constructor of LinkedAddresses
@@ -55,9 +56,27 @@ func (m ChainState) Validate() error {
 		return err
 	}
 
+	if len(m.Assets) == 0 {
+		return fmt.Errorf("no assets found")
+	}
+
+	seenDenoms := make(map[string]bool)
+
 	for _, asset := range m.Assets {
 		if err := sdk.ValidateDenom(asset); err != nil {
-			return err
+			return sdkerrors.Wrap(err, "invalid asset")
+		}
+
+		if seenDenoms[asset] {
+			return fmt.Errorf("duplicate asset found")
+		}
+
+		seenDenoms[asset] = true
+	}
+
+	for _, coin := range m.Total {
+		if !seenDenoms[coin.Denom] {
+			return fmt.Errorf("coin denom not found in assets")
 		}
 	}
 

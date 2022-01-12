@@ -979,8 +979,9 @@ MsgConfirmDeposit represents a deposit confirmation message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  | **Deprecated.**  |
 | `deposit_address` | [bytes](#bytes) |  |  |
+| `denom` | [string](#string) |  |  |
 
 
 
@@ -2666,7 +2667,7 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
-| `amount` | [uint64](#uint64) |  |  |
+| `amount` | [string](#string) |  |  |
 
 
 

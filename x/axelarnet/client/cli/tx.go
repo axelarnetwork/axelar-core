@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -66,8 +67,8 @@ func GetCmdLink() *cobra.Command {
 // GetCmdConfirmDeposit returns the cli command to confirm a deposit
 func GetCmdConfirmDeposit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-deposit [txID] [amount] [burnerAddr]",
-		Short: "Confirm a deposit to Axelar chain that sent given amount of token to a burner address",
+		Use:   "confirm-deposit [txID] [denom] [burnerAddr]",
+		Short: "Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -76,10 +77,12 @@ func GetCmdConfirmDeposit() *cobra.Command {
 			}
 
 			txID, err := hex.DecodeString(args[0])
-
-			coin, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return err
+			}
+
+			if len(txID) != common.HashLength {
+				return fmt.Errorf("txID should be %d bytes", common.HashLength)
 			}
 
 			burnerAddr, err := sdk.AccAddressFromBech32(args[2])
@@ -87,7 +90,7 @@ func GetCmdConfirmDeposit() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), txID, coin, burnerAddr)
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), txID, args[1], burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

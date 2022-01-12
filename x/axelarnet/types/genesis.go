@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -25,10 +26,10 @@ func DefaultGenesisState() *GenesisState {
 		Params:           DefaultParams(),
 		CollectorAddress: nil,
 		Chains: []CosmosChain{{
-			Name:       ModuleName,
+			Name:       exported.Axelarnet.Name,
 			AddrPrefix: "axelar",
 			Assets: []Asset{{
-				Denom:     "uaxl",
+				Denom:     exported.Axelarnet.NativeAsset,
 				MinAmount: sdk.NewInt(100000),
 			}},
 		}},

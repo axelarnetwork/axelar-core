@@ -191,16 +191,8 @@ func validateVotingThreshold(votingThreshold interface{}) error {
 		return fmt.Errorf("invalid parameter type for VotingThreshold: %T", votingThreshold)
 	}
 
-	if val.Numerator <= 0 {
-		return fmt.Errorf("threshold numerator must be a positive integer for VotingThreshold")
-	}
-
-	if val.Denominator <= 0 {
-		return fmt.Errorf("threshold denominator must be a positive integer for VotingThreshold")
-	}
-
-	if val.Numerator > val.Denominator {
-		return fmt.Errorf("threshold must be <=1 for VotingThreshold")
+	if err := val.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid VotingThreshold")
 	}
 
 	return nil
