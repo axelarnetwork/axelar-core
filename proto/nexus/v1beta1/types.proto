@@ -11,7 +11,7 @@ option (gogoproto.goproto_getters_all) = false;
 
 // ChainState represents the state of a registered blockchain
 message ChainState {
-  reserved 4; // total was removed in v0.12
+  reserved 4; // total was removed in v0.13
 
   nexus.exported.v1beta1.Chain chain = 1 [ (gogoproto.nullable) = false ];
   repeated bytes maintainers = 2

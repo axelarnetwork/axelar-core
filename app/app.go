@@ -2,11 +2,13 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	stdlog "log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -16,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+	"golang.org/x/mod/semver"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -120,9 +123,6 @@ import (
 
 // Name is the name of the application
 const Name = "axelar"
-
-// upgradeName is the major-minor version of the application
-const upgradeName = "v0.12"
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
@@ -390,19 +390,46 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
 	)
 
+	semverVersion := app.Version()
+	if !strings.HasPrefix(semverVersion, "v") {
+		semverVersion = fmt.Sprintf("v%s", semverVersion)
+	}
+
+	upgradeName := semver.MajorMinor(semverVersion)
+	if upgradeName == "" {
+		panic(fmt.Errorf("invalid app version %s", app.Version()))
+	}
+
 	upgradeK.SetUpgradeHandler(
 		upgradeName,
 		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
-			// TODO: add new param in https://github.com/axelarnetwork/axelar-core/pull/1198
-			tssK.SetParams(ctx, tssK.GetParams(ctx))
+			tssK.SetParams(ctx, tssTypes.DefaultParams())
 
 			fromVM := make(map[string]uint64)
-			for moduleName := range app.mm.Modules {
-				fromVM[moduleName] = 1
-			}
 
-			// delete new modules from the map so that they will not not skip InitGenesis
-			delete(fromVM, feegrant.ModuleName)
+			fromVM[capabilitytypes.ModuleName] = app.mm.Modules[capabilitytypes.ModuleName].ConsensusVersion()
+			fromVM[authtypes.ModuleName] = app.mm.Modules[authtypes.ModuleName].ConsensusVersion()
+			fromVM[banktypes.ModuleName] = app.mm.Modules[banktypes.ModuleName].ConsensusVersion()
+			fromVM[distrtypes.ModuleName] = app.mm.Modules[distrtypes.ModuleName].ConsensusVersion()
+			fromVM[stakingtypes.ModuleName] = app.mm.Modules[stakingtypes.ModuleName].ConsensusVersion()
+			fromVM[slashingtypes.ModuleName] = app.mm.Modules[slashingtypes.ModuleName].ConsensusVersion()
+			fromVM[govtypes.ModuleName] = app.mm.Modules[govtypes.ModuleName].ConsensusVersion()
+			fromVM[minttypes.ModuleName] = app.mm.Modules[minttypes.ModuleName].ConsensusVersion()
+			fromVM[crisistypes.ModuleName] = app.mm.Modules[crisistypes.ModuleName].ConsensusVersion()
+			fromVM[genutiltypes.ModuleName] = app.mm.Modules[genutiltypes.ModuleName].ConsensusVersion()
+			fromVM[evidencetypes.ModuleName] = app.mm.Modules[evidencetypes.ModuleName].ConsensusVersion()
+			fromVM[ibchost.ModuleName] = app.mm.Modules[ibchost.ModuleName].ConsensusVersion()
+			fromVM[evidencetypes.ModuleName] = app.mm.Modules[evidencetypes.ModuleName].ConsensusVersion()
+			fromVM[ibctransfertypes.ModuleName] = app.mm.Modules[ibctransfertypes.ModuleName].ConsensusVersion()
+
+			fromVM[snapTypes.ModuleName] = 1
+			fromVM[tssTypes.ModuleName] = 1
+			fromVM[evmTypes.ModuleName] = 1
+			fromVM[nexusTypes.ModuleName] = 1
+			fromVM[voteTypes.ModuleName] = 1
+			fromVM[axelarnetTypes.ModuleName] = 1
+			fromVM[rewardTypes.ModuleName] = 1
+			fromVM[permissionTypes.ModuleName] = 1
 
 			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
 		},

@@ -10,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-// GetMigrationHandler returns the handler that performs in-place store migrations from v0.11 to v0.12. The
+// GetMigrationHandler returns the handler that performs in-place store migrations from v0.11 to v0.13. The
 // migration includes:
 // - Activate all cosmos chains
 // - Delete pending transfers to fee collector and instead add those to transfer fee
