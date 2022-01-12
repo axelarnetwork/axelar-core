@@ -1,8 +1,6 @@
 package types
 
 import (
-	"os"
-	"fmt"
 	"io/ioutil"
 	"encoding/json"
 )
@@ -12,8 +10,6 @@ func getBytecodeFromArtifact(filename string) string {
     byteValue, err := ioutil.ReadFile("../../../artifacts/" + filename)
 
     if err != nil {
-        path, _ := os.Getwd()
-        fmt.Println(path)
         panic(err)
     }
 
@@ -22,9 +18,11 @@ func getBytecodeFromArtifact(filename string) string {
     return compiled["bytecode"].(string)
 }
 
+// TODO: use templating for this file instead of dynamic import
+// so imported bytecode will be a part of go binary
 var (
 	singlesigGateway = getBytecodeFromArtifact("AxelarGatewaySinglesig.json")
-	multisigGateway  = getBytecodeFromArtifact("AxelarGatewaySinglesig.json")
-	token            = getBytecodeFromArtifact("ERC20.json")
+	multisigGateway  = getBytecodeFromArtifact("AxelarGatewayMultisig.json")
+	token            = getBytecodeFromArtifact("BurnableMintableCappedERC20.json")
 	burnable         = getBytecodeFromArtifact("Burner.json")
 )
