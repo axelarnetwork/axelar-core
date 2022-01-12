@@ -226,9 +226,9 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 }
 
 // returns the signed blocks window to be considered when calculating the missed blocks percentage
-func (k Keeper) getSignedBlocksWindow(ctx sdk.Context) int64 {
+func (k Keeper) getTssSignedBlocksWindow(ctx sdk.Context) int64 {
 	var window int64
-	k.params.Get(ctx, types.KeySignedBlocksWindow, &window)
+	k.params.Get(ctx, types.KeyTssSignedBlocksWindow, &window)
 
 	return window
 }
@@ -248,7 +248,7 @@ func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress)
 // returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
 func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress) (utils.Threshold, bool) {
 	counter := int64(0)
-	tssWindow := k.getSignedBlocksWindow(ctx)
+	tssWindow := k.getTssSignedBlocksWindow(ctx)
 	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
 	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
 
