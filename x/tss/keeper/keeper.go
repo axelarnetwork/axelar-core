@@ -242,7 +242,7 @@ func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress)
 	}
 	maxMissedPerWindow := k.GetMaxMissedBlocksPerWindow(ctx)
 
-	return missedBlocks.GTE(maxMissedPerWindow)
+	return missedBlocks.GT(maxMissedPerWindow)
 }
 
 // returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
