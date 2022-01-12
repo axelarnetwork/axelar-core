@@ -45,7 +45,7 @@ func getCmdKeygenStart() *cobra.Command {
 		panic("flag not set")
 	}
 
-	keyRoleStr := cmd.Flags().String("key-role", exported.MasterKey.SimpleString(), "role of the key to be generated")
+	keyRoleStr := cmd.Flags().String("key-role", "", "role of the key to be generated")
 	keyTypeStr := cmd.Flags().String("key-type", exported.Multisig.SimpleString(), "type of the key to be generated")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {

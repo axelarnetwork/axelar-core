@@ -189,14 +189,14 @@ func timeoutMultisigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 				participant := v.GetSDKValidator().GetOperator()
 
 				if !multisigKeyInfo.DoesParticipate(participant) {
-					ctx.Logger().Debug(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
+					ctx.Logger().Info(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
 					k.PenalizeCriminal(ctx, participant, tofnd.CRIME_TYPE_NON_MALICIOUS)
 				}
 			}
 
 			k.DeleteSnapshotCounterForKeyID(ctx, keyID)
 			k.DeleteMultisigKeygen(ctx, keyID)
-			ctx.Logger().Debug(fmt.Sprintf("multisig keygen %s timed out", keyID))
+			ctx.Logger().Info(fmt.Sprintf("multisig keygen %s timed out", keyID))
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
 					types.EventTypeKeygen,
@@ -209,6 +209,7 @@ func timeoutMultisigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 		multiSigKeygenQueue.Dequeue(0, &keyIDStr)
 	}
 }
+
 func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k types.TSSKeeper) {
 	var sigIDStr gogoprototypes.StringValue
 	i := uint64(0)
@@ -242,7 +243,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				SigStatus: exported.SigStatus_Signed,
 			})
 
-			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s completed", sigID))
+			ctx.Logger().Info(fmt.Sprintf("multisig sign %s completed", sigID))
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
 					types.EventTypeSign,
@@ -259,7 +260,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 			for _, participant := range participants {
 				val, _ := sdk.ValAddressFromBech32(participant)
 				if !multisigSignInfo.DoesParticipate(val) {
-					ctx.Logger().Debug(fmt.Sprintf("signatures from %s absent for multisig sign %s", participant, sigID))
+					ctx.Logger().Info(fmt.Sprintf("signatures from %s absent for multisig sign %s", participant, sigID))
 					k.PenalizeCriminal(ctx, val, tofnd.CRIME_TYPE_NON_MALICIOUS)
 				}
 			}
@@ -276,7 +277,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				}
 			}
 
-			ctx.Logger().Debug(fmt.Sprintf("multisig sign %s timed out", sigID))
+			ctx.Logger().Info(fmt.Sprintf("multisig sign %s timed out", sigID))
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
 				types.EventTypeSign,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),

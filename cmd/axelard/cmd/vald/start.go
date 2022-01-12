@@ -95,8 +95,8 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			valAddr := serverCtx.Viper.GetString("validator-addr")
-			if valAddr == "" {
-				return fmt.Errorf("validator address not set")
+			if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
+				return sdkerrors.Wrap(err, "invalid validator operator address")
 			}
 
 			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
@@ -158,7 +158,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
-	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 

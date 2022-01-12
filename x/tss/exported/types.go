@@ -40,11 +40,19 @@ func (m Signature) Validate() error {
 	}
 
 	if sig := m.GetMultiSig(); sig != nil {
+		if len(sig.SigKeyPairs) == 0 {
+			return fmt.Errorf("SigKeyPairs cannot be empty")
+		}
+
 		for _, sigKeyPair := range sig.SigKeyPairs {
 			if err := sigKeyPair.Validate(); err != nil {
 				return err
 			}
 		}
+	}
+
+	if m.GetSingleSig() == nil && m.GetMultiSig() == nil {
+		return fmt.Errorf("signature cannot be nil")
 	}
 
 	return nil
@@ -64,8 +72,36 @@ func (m Key) Validate() error {
 		return err
 	}
 
+	if pub := m.GetECDSAKey(); pub != nil {
+		if _, err := pub.GetPubKey(); err != nil {
+			return fmt.Errorf("invalid pub key")
+		}
+	}
+
+	if pubkeys := m.GetMultisigKey(); pubkeys != nil {
+		if pubkeys.GetThreshold() <= 0 {
+			return fmt.Errorf("invalid threshold")
+		}
+
+		if _, err := pubkeys.GetPubKey(); err != nil {
+			return fmt.Errorf("invalid multisig pub key")
+		}
+	}
+
+	if m.GetECDSAKey() == nil && m.GetMultisigKey() == nil {
+		return fmt.Errorf("pubkey cannot be nil")
+	}
+
+	if m.RotatedAt == nil || m.RotatedAt.IsZero() {
+		return fmt.Errorf("invalid rotation timestamp")
+	}
+
 	if m.RotationCount < 0 {
 		return fmt.Errorf("rotation count must be >=0")
+	}
+
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if m.SnapshotCounter < 0 {
