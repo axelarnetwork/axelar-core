@@ -120,8 +120,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
 		amount = sdk.NewCoin(denomTrace.GetBaseDenom(), amount.Amount)
-		// TODO: make this public for now, we will refactor nexus module
-		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, amount)
 
 	case req.Denom == exported.Axelarnet.NativeAsset:
 		// lock tokens in escrow address

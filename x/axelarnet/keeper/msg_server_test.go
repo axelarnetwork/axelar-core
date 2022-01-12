@@ -121,7 +121,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
-			AddToChainTotalFunc:    func(_ sdk.Context, _ nexus.Chain, _ sdk.Coin) {},
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
@@ -199,7 +198,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
 		assert.Equal(t, amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
