@@ -812,7 +812,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	if err != nil {
 		return nil, err
 	}
-	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, strconv.FormatUint(transferID, 10)))
+	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", depositAddr.Address, transferID))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
@@ -1457,12 +1457,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
-	commandIDs := commandBatch.GetCommandIDs()
-	commandList := make([]string, len(commandIDs))
-	for i, commandID := range commandIDs {
-		commandList[i] = commandID.Hex()
-	}
-
+	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	s.Logger(ctx).Debug(fmt.Sprintf("signing batched command %s with commands %v", batchedCommandsIDHex, commandList))
 
 	ctx.EventManager().EmitEvent(

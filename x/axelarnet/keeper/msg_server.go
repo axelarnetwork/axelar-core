@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -158,6 +157,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	if err != nil {
 		return nil, err
 	}
+
 	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", req.DepositAddress.String(), transferID))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
@@ -166,7 +166,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeTransferID, strconv.FormatUint(transferID, 10)),
+			sdk.NewAttribute(types.AttributeTransferID, transferID.String()),
 		))
 
 	return &types.ConfirmDepositResponse{}, nil

@@ -139,13 +139,9 @@ func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainT
 	return CreateMintTokenCommand(key, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
 }
 
-func transferIDtoCommandID(transferID uint64) CommandID {
+func transferIDtoCommandID(transferID nexus.TransferID) CommandID {
 	var commandID CommandID
-
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, transferID)
-
-	copy(commandID[:], common.LeftPadBytes(bz, 32)[:32])
+	copy(commandID[:], common.LeftPadBytes(transferID.Bytes(), 32)[:32])
 
 	return commandID
 }
@@ -1225,4 +1221,18 @@ func (m *ERC20Deposit) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// CommandIDsToStrings converts a slice of type CommandID to a slice of strings
+func CommandIDsToStrings(commandIDs []CommandID) []string {
+	if commandIDs == nil {
+		return nil
+	}
+
+	commandList := make([]string, len(commandIDs))
+	for i, commandID := range commandIDs {
+		commandList[i] = commandID.Hex()
+	}
+
+	return commandList
 }

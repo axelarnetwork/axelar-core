@@ -29,7 +29,8 @@ message CrossChainAddress {
 message CrossChainTransfer {
   CrossChainAddress recipient = 1 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin asset = 2 [ (gogoproto.nullable) = false ];
-  uint64 id = 3 [ (gogoproto.customname) = "ID" ];
+  uint64 id = 3
+      [ (gogoproto.customname) = "ID", (gogoproto.casttype) = "TransferID" ];
   TransferState state = 4;
 }
 

@@ -3,8 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 // InitGenesis initializes the reward module's state from a given genesis state.
@@ -38,7 +40,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		k.setLinkedAddresses(ctx, linkedAddresses)
 	}
 
-	transferSeen := make(map[uint64]bool)
+	transferSeen := make(map[exported.TransferID]bool)
 	for _, transfer := range genState.Transfers {
 		if transferSeen[transfer.ID] {
 			panic(fmt.Errorf("transfer %d already set", transfer.ID))

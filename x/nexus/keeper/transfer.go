@@ -2,8 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -18,7 +16,7 @@ func getTransferPrefix(chain string, state exported.TransferState) utils.Key {
 
 func getTransferKey(transfer exported.CrossChainTransfer) utils.Key {
 	return getTransferPrefix(transfer.Recipient.Chain.Name, transfer.State).
-		Append(utils.KeyFromStr(strconv.FormatUint(transfer.ID, 10)))
+		Append(utils.KeyFromStr(transfer.ID.String()))
 }
 
 func (k Keeper) getTransfers(ctx sdk.Context) (transfers []exported.CrossChainTransfer) {
@@ -43,11 +41,11 @@ func (k Keeper) deleteTransfer(ctx sdk.Context, transfer exported.CrossChainTran
 	k.getStore(ctx).Delete(getTransferKey(transfer))
 }
 
-func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) uint64 {
+func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
 	id := k.getNonce(ctx)
 	k.setTransfer(ctx, exported.NewPendingCrossChainTransfer(id, recipient, amount))
 	k.setNonce(ctx, id+1)
-	return id
+	return exported.TransferID(id)
 }
 
 func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
@@ -60,7 +58,7 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (uint64, error) {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (exported.TransferID, error) {
 	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
