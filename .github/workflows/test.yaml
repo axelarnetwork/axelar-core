@@ -26,6 +26,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Download Bytecode
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          repo: axelarnetwork/solidity-cgp-gateway
+          workflow: publish-bytecode.yaml
+          branch: main
+          name: Bytecode
+          path: artifacts
+
       - name: Test
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
