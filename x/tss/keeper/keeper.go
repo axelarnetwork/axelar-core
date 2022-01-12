@@ -234,7 +234,8 @@ func (k Keeper) getTssSignedBlocksWindow(ctx sdk.Context) int64 {
 }
 
 // HasMissedTooManyBlocks returns true if the given validator address missed too many blocks within
-// the block window specifiec by this module
+// the block window specifiec by this module. The block window used by this function is either the
+// cosmos slashing module window or this own module's window, depending on which one is shorter.
 func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error) {
 	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
 	if !ok {
@@ -257,6 +258,8 @@ func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress)
 	}
 
 	indexOffset := int64(0)
+	// TODO: In order to avoid having to pick the shorter of these two windows, we should implement
+	// our own bit arrawy for missed blocks instead of re-purposing the one from cosmos
 	window := slasherWindow
 	if slasherWindow > tssWindow {
 		window = tssWindow
