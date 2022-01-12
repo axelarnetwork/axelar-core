@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"io/ioutil"
 	"encoding/json"
 )
