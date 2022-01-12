@@ -22,6 +22,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Download Bytecode
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          repo: axelarnetwork/solidity-cgp-gateway
+          workflow: publish-bytecode.yaml
+          branch: main
+          name: Bytecode
+          path: artifacts
+
       - uses: nelonoel/branch-name@v1.0.1
 
       - id: set-tag
