@@ -7,7 +7,11 @@ import (
 
 func getBytecodeFromArtifact(filename string) string {
     var compiled map[string]interface{}
-    byteValue, _ := ioutil.ReadFile("artifacts/" + filename)
+    byteValue, err := ioutil.ReadFile("../../../artifacts/" + filename)
+
+    if err != nil {
+        panic(err)
+    }
 
     json.Unmarshal(byteValue, &compiled)
 
