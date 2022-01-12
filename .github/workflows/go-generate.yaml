@@ -34,7 +34,7 @@ jobs:
         with:
           repo: axelarnetwork/solidity-cgp-gateway
           workflow: publish-bytecode.yaml
-          branch: main
+          #branch: main
           name: Bytecode
           path: artifacts
 
