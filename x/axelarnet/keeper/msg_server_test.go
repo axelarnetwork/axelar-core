@@ -102,6 +102,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ibcPath := randomIBCPath()
 		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
@@ -120,7 +121,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (uint64, error) { return mathRand.Uint64(), nil },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
@@ -160,8 +161,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgConfirmDeposit()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error {
-			return fmt.Errorf("failed")
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (uint64, error) {
+			return 0, fmt.Errorf("failed")
 		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -326,7 +327,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (uint64, error) { return mathRand.Uint64(), nil },
 			GetTransferFeesFunc:    func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
 			SubTransferFeeFunc:     func(sdk.Context, sdk.Coin) {},
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -153,17 +154,20 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	}
 
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx)); err != nil {
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx))
+	if err != nil {
 		return nil, err
 	}
-
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", req.DepositAddress.String(), transferID))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+			sdk.NewAttribute(types.AttributeTransferID, strconv.FormatUint(transferID, 10)),
+		))
 
 	return &types.ConfirmDepositResponse{}, nil
 }

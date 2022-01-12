@@ -43,10 +43,11 @@ func (k Keeper) deleteTransfer(ctx sdk.Context, transfer exported.CrossChainTran
 	k.getStore(ctx).Delete(getTransferKey(transfer))
 }
 
-func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) {
+func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) uint64 {
 	id := k.getNonce(ctx)
 	k.setTransfer(ctx, exported.NewPendingCrossChainTransfer(id, recipient, amount))
 	k.setNonce(ctx, id+1)
+	return id
 }
 
 func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
@@ -59,26 +60,26 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) error {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (uint64, error) {
 	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
-		return fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
+		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
 
 	if !k.IsChainActivated(ctx, sender.Chain) {
-		return fmt.Errorf("source chain '%s' is not activated", sender.Chain.Name)
+		return 0, fmt.Errorf("source chain '%s' is not activated", sender.Chain.Name)
 	}
 
 	recipient, ok := k.GetRecipient(ctx, sender)
 	if !ok {
-		return fmt.Errorf("no recipient linked to sender %s", sender.String())
+		return 0, fmt.Errorf("no recipient linked to sender %s", sender.String())
 	}
 
 	if !k.IsChainActivated(ctx, recipient.Chain) {
-		return fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
+		return 0, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
 	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
-		return fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
+		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
 	// collect fee
@@ -94,11 +95,10 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
-	k.setNewPendingTransfer(ctx, recipient, asset)
 	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
 		asset.String(), recipient.Address, recipient.Chain.Name))
 
-	return nil
+	return k.setNewPendingTransfer(ctx, recipient, asset), nil
 }
 
 func (k Keeper) getPendingTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string) (exported.CrossChainTransfer, bool) {
