@@ -46,7 +46,21 @@ func (m RefundMsgRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid inner message")
 	}
 
-	return innerMessage.ValidateBasic()
+	if err := innerMessage.ValidateBasic(); err != nil {
+		return err
+	}
+
+	signers := innerMessage.GetSigners()
+
+	if len(signers) != 1 {
+		return fmt.Errorf("invalid number of signers for inner message")
+	}
+
+	if !m.GetSigners()[0].Equals(signers[0]) {
+		return fmt.Errorf("refund msg and inner message signers do not match")
+	}
+
+	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed
