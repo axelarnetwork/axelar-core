@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -54,7 +52,6 @@ func addTransferFee(ctx sdk.Context, k Keeper, a types.AxelarnetKeeper) {
 		if recipient.Chain.Name != axelarnet.Axelarnet.Name {
 			continue
 		}
-		fmt.Printf("transfer %#v\n", transfer)
 
 		k.deleteTransfer(ctx, transfer)
 		k.addTransferFee(ctx, transfer.Asset)
