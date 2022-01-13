@@ -2008,14 +2008,11 @@ func randomCrossChainTransfer(maxAmount int64) nexus.CrossChainTransfer {
 
 	secondaryConsolidationAddress, _ := types.NewSecondaryConsolidationAddress(createRandomKey(tss.SecondaryKey), types.DefaultParams().Network)
 
-	return nexus.CrossChainTransfer{
-		ID:    uint64(rand.PosI64()),
-		Asset: sdk.NewCoin(asset.Denom, asset.Amount.TruncateInt()),
-		Recipient: nexus.CrossChainAddress{
-			Chain:   exported.Bitcoin,
-			Address: secondaryConsolidationAddress.Address,
-		},
-	}
+	return nexus.NewPendingCrossChainTransfer(
+		mathRand.Uint64(),
+		nexus.CrossChainAddress{Chain: exported.Bitcoin, Address: secondaryConsolidationAddress.Address},
+		sdk.NewCoin(asset.Denom, asset.Amount.TruncateInt()),
+	)
 }
 
 func randomAddress() *btcutil.AddressWitnessScriptHash {

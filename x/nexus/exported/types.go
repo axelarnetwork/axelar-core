@@ -1,11 +1,14 @@
 package exported
 
 import (
+	"encoding/binary"
 	"fmt"
+	"strconv"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses
@@ -55,10 +58,26 @@ func (m CrossChainAddress) Validate() error {
 	return nil
 }
 
+// TransferID represents the unique cross transfer identifier
+type TransferID uint64
+
+// String returns a string representation of TransferID
+func (t TransferID) String() string {
+	return strconv.FormatUint(uint64(t), 10)
+}
+
+// Bytes returns the byte array of TransferID
+func (t TransferID) Bytes() []byte {
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, uint64(t))
+
+	return bz
+}
+
 // NewPendingCrossChainTransfer returns a pending CrossChainTransfer
 func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin) CrossChainTransfer {
 	return CrossChainTransfer{
-		ID:        id,
+		ID:        TransferID(id),
 		Recipient: recipient,
 		Asset:     asset,
 		State:     Pending,

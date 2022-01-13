@@ -808,10 +808,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	amount := sdk.NewCoin(pendingDeposit.Asset, sdk.NewIntFromBigInt(pendingDeposit.Amount.BigInt()))
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate)
+	if err != nil {
 		return nil, err
 	}
-
+	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", depositAddr.Address, transferID))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1455,6 +1457,11 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
+	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
+	for _, commandID := range commandList {
+		s.Logger(ctx).Debug("signing command batch", "commandBatchID", batchedCommandsIDHex, "commandID", commandID)
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -1462,6 +1469,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
+			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
 		),
 	)
 
