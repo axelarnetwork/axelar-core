@@ -120,8 +120,11 @@ func GetValdCommand() *cobra.Command {
 				}
 			}
 
+			fPath := filepath.Join(valdHome, "state.json")
+			stateSource := NewRWFile(fPath)
+
 			logger.Info("start listening to events")
-			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, logger)
+			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -159,7 +162,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, logger log.Logger) {
+func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := ctx.Keyring.Key(ctx.From)
@@ -172,6 +175,13 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	bc := createBroadcaster(txf, axelarCfg, logger)
 
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := stateStore.GetState()
+	if err != nil {
+		logger.Error(err.Error())
+		startBlock = 0
+	}
+
 	tmClient, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
@@ -182,7 +192,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 			panic(fmt.Errorf("unable to start client: %v", err))
 		}
 	}
-	eventBus := createEventBus(tmClient, logger)
+	eventBus := createEventBus(tmClient, startBlock, logger)
 
 	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
@@ -195,6 +205,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	// we have two processes listening to block headers
 	blockHeaderForTSS := tmEvents.MustSubscribeBlockHeader(eventBus)
+	blockHeaderForStateUpdate := tmEvents.MustSubscribeBlockHeader(eventBus)
 
 	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
 		return tmEvents.MustSubscribeWithAttributes(eventBus,
@@ -240,6 +251,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	fetchEvents := func(errChan chan<- error) { errChan <- <-eventBus.FetchEvents(eventCtx) }
 	js := []jobs.Job{
 		fetchEvents,
+		tmEvents.Consume(blockHeaderForStateUpdate, tmEvents.OnlyBlockHeight(stateStore.SetState)),
 		tmEvents.Consume(blockHeaderForTSS, tmEvents.OnlyBlockHeight(func(height int64) error {
 			tssMgr.ProcessNewBlockHeader(height)
 			return nil
@@ -274,8 +286,8 @@ func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 	}
 }
 
-func createEventBus(client rpcclient.Client, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(tmEvents.NewBlockClient(client), logger)
+func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(tmEvents.NewBlockClient(client), logger).StartingAt(startBlock)
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
