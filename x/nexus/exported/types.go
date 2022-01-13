@@ -61,6 +61,7 @@ func (m CrossChainAddress) Validate() error {
 // TransferID represents the unique cross transfer identifier
 type TransferID uint64
 
+// String returns a string representation of TransferID
 func (t TransferID) String() string {
 	return strconv.FormatUint(uint64(t), 10)
 }

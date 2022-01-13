@@ -1458,7 +1458,9 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
-	s.Logger(ctx).Debug(fmt.Sprintf("signing batched command %s with commands %v", batchedCommandsIDHex, commandList))
+	for _, commandID := range commandList {
+		s.Logger(ctx).Debug("signing command batch", "commandBatchID", batchedCommandsIDHex, "commandID", commandID)
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(

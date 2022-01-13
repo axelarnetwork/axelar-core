@@ -1225,10 +1225,6 @@ func (m *ERC20Deposit) ValidateBasic() error {
 
 // CommandIDsToStrings converts a slice of type CommandID to a slice of strings
 func CommandIDsToStrings(commandIDs []CommandID) []string {
-	if commandIDs == nil {
-		return nil
-	}
-
 	commandList := make([]string, len(commandIDs))
 	for i, commandID := range commandIDs {
 		commandList[i] = commandID.Hex()
