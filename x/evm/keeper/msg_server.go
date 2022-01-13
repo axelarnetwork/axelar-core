@@ -660,7 +660,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", pendingChain.Chain.Name)}, nil
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain %s yet", pendingChain.Chain.Name)}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -673,7 +673,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %t", confirmed.Value))
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain %s confirmation result is %t", pendingChain.Chain.Name, confirmed.Value))
 	s.DeletePendingChain(ctx, pendingChain.Chain.Name)
 
 	// handle poll result
@@ -876,7 +876,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %t", confirmed.Value))
+	s.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmation result on chain %s is %t", req.Asset, chain.Name, confirmed.Value))
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
