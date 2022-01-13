@@ -31,7 +31,7 @@ axelard vald-start [flags]
       --tofnd-host string        host name for tss daemon (default "localhost")
       --tofnd-port string        port for tss daemon (default "50051")
       --tofnd-recovery string    json file with recovery request
-      --validator-addr string    the address of the validator operator
+      --validator-addr string    the address of the validator operator, i.e axelarvaloper1..
   -y, --yes                      Skip tx broadcasting prompt confirmation
 ```
 
