@@ -42,10 +42,14 @@ func getCmdKeygenStart() *cobra.Command {
 
 	keyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
 	if cmd.MarkFlagRequired("id") != nil {
-		panic("flag not set")
+		panic("id flag not set")
 	}
 
 	keyRoleStr := cmd.Flags().String("key-role", "", "role of the key to be generated")
+	if cmd.MarkFlagRequired("key-role") != nil {
+		panic("key-role flag not set")
+	}
+
 	keyTypeStr := cmd.Flags().String("key-type", exported.Multisig.SimpleString(), "type of the key to be generated")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
