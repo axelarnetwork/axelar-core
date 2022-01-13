@@ -16,12 +16,12 @@ const (
 
 // Parameter keys
 var (
-	KeyKeyRequirements                  = []byte("keyRequirements")
+	KeyKeyRequirements                  = []byte("KeyRequirements")
 	KeySuspendDurationInBlocks          = []byte("SuspendDurationInBlocks")
 	KeyHeartbeatPeriodInBlocks          = []byte("HeartbeatPeriodInBlocks")
 	KeyMaxMissedBlocksPerWindow         = []byte("MaxMissedBlocksPerWindow")
 	KeyUnbondingLockingKeyRotationCount = []byte("UnbondingLockingKeyRotationCount")
-	KeyExternalMultisigThreshold        = []byte("externalMultisigThreshold")
+	KeyExternalMultisigThreshold        = []byte("ExternalMultisigThreshold")
 	KeyMaxSignQueueSize                 = []byte("MaxSignQueueSize")
 	MaxSimultaneousSignShares           = []byte("MaxSimultaneousSignShares")
 	KeyTssSignedBlocksWindow            = []byte("TssSignedBlocksWindow")
