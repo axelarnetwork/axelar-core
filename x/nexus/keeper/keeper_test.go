@@ -144,7 +144,7 @@ func TestLinkAddress(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
@@ -153,14 +153,14 @@ func TestLinkAddress(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 		assert.NoError(t, err)
 		recp, ok := keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
 		assert.Equal(t, recipient, recp)
 
 		sender.Address = rand.Str(20)
-		err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 		assert.Error(t, err)
 		recp, ok = keeper.GetRecipient(ctx, sender)
 		assert.False(t, ok)
@@ -184,7 +184,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 	t.Run("should return error when no recipient linked to sender", testutils.Func(func(t *testing.T) {
 		setup()
 		sender, _ := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
-		err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err := keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
@@ -196,7 +196,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 			amounts[recipient] = makeRandAmount(btcTypes.Satoshi)
 			err := keeper.LinkAddresses(ctx, sender, recipient)
 			assert.NoError(t, err)
-			err = keeper.EnqueueForTransfer(ctx, sender, amounts[recipient], feeRate)
+			_, err = keeper.EnqueueForTransfer(ctx, sender, amounts[recipient], feeRate)
 			assert.NoError(t, err)
 		}
 
@@ -221,7 +221,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		keeper.LinkAddresses(ctx, sender, recipient)
 		firstAmount := makeRandAmount(btcTypes.Satoshi)
-		err := keeper.EnqueueForTransfer(ctx, sender, firstAmount, feeRate)
+		_, err := keeper.EnqueueForTransfer(ctx, sender, firstAmount, feeRate)
 		assert.NoError(t, err)
 		recp, ok := keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
@@ -232,7 +232,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 		assert.Equal(t, firstAmount.Amount.Sub(firstFeeDue), transfers[0].Asset.Amount)
 
 		secondAmount := makeRandAmount(btcTypes.Satoshi)
-		err = keeper.EnqueueForTransfer(ctx, sender, secondAmount, feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, secondAmount, feeRate)
 		assert.NoError(t, err)
 		recp, ok = keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
@@ -246,7 +246,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 		// new transfer from some other sender
 		sender, recipient = makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		keeper.LinkAddresses(ctx, sender, recipient)
-		err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
 		assert.NoError(t, err)
 		recp, ok = keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
@@ -261,7 +261,7 @@ func TestEnqueueForTransfer(t *testing.T) {
 			err := keeper.LinkAddresses(ctx, sender, recipient)
 			assert.NoError(t, err)
 			amount := makeRandAmount(btcTypes.Satoshi)
-			err = keeper.EnqueueForTransfer(ctx, sender, amount, feeRate)
+			_, err = keeper.EnqueueForTransfer(ctx, sender, amount, feeRate)
 			assert.NoError(t, err)
 		}
 

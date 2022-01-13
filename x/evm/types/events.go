@@ -33,6 +33,8 @@ const (
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyValue              = "value"
+	AttributeKeyCommandsIDs        = "commandIDs"
+	AttributeKeyTransferID         = "transferID"
 )
 
 // Event attribute values
