@@ -175,23 +175,24 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	bc := createBroadcaster(txf, axelarCfg, logger)
 
-	stateStore := NewStateStore(stateSource)
-	startBlock, err := stateStore.GetState()
-	if err != nil {
-		logger.Error(err.Error())
-		startBlock = 0
-	}
-
 	tmClient, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
+
 	// in order to subscribe to events, the client needs to be running
 	if !tmClient.IsRunning() {
 		if err := tmClient.Start(); err != nil {
 			panic(fmt.Errorf("unable to start client: %v", err))
 		}
 	}
+
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := getStartBlock(stateStore, tmClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
 	eventBus := createEventBus(tmClient, startBlock, logger)
 
 	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
@@ -275,6 +276,32 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	mgr := jobs.NewMgr(logErr)
 	mgr.AddJobs(js...)
 	mgr.Wait()
+}
+
+func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.Logger) (int64, error) {
+	startBlock, err := stateStore.GetState()
+	if err != nil {
+		logger.Error(err.Error())
+
+		return 0, nil
+	}
+
+	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	status, err := tmClient.Status(rpcCtx)
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO: Make it configurable instead of a hardcoded 100
+	if status.SyncInfo.LatestBlockHeight-startBlock > 100 {
+		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
+
+		return 0, nil
+	}
+
+	return startBlock + 1, nil
 }
 
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
