@@ -1,8 +1,10 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"hash"
 	"math/big"
 	mathRand "math/rand"
 	"strconv"
@@ -14,9 +16,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
@@ -28,6 +32,30 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
+
+// testHasher is the helper tool for transaction/receipt list hashing.
+// The original hasher is trie, in order to get rid of import cycle,
+// use the testing hasher instead.
+type testHasher struct {
+	hasher hash.Hash
+}
+
+func newHasher() *testHasher {
+	return &testHasher{hasher: sha3.NewLegacyKeccak256()}
+}
+
+func (h *testHasher) Reset() {
+	h.hasher.Reset()
+}
+
+func (h *testHasher) Update(key, val []byte) {
+	h.hasher.Write(key)
+	h.hasher.Write(val)
+}
+
+func (h *testHasher) Hash() common.Hash {
+	return common.BytesToHash(h.hasher.Sum(nil))
+}
 
 func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
@@ -175,6 +203,59 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 	}))
 }
 
+func TestMgr_validate(t *testing.T) {
+	t.Run("should work for moonbeam", testutils.Func(func(t *testing.T) {
+		mgr := Mgr{logger: log.TestingLogger()}
+
+		latestFinalizedBlockHash := common.BytesToHash(rand.Bytes(common.HashLength))
+		latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
+		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(rand.PosI64()), uint64(rand.PosI64()), big.NewInt(rand.PosI64()), rand.Bytes(int(rand.I64Between(100, 1000))))
+		receipt := &geth.Receipt{
+			BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+			TxHash:      tx.Hash(),
+			Status:      1,
+		}
+
+		rpc := &mock.ClientMock{
+			TransactionByHashFunc: func(_ context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
+				if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
+					return tx, false, nil
+				}
+
+				return nil, false, fmt.Errorf("not found")
+			},
+			TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+					return receipt, nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			},
+			IsMoonbeamFunc:            func() bool { return true },
+			ChainGetFinalizedHeadFunc: func(_ context.Context) (common.Hash, error) { return latestFinalizedBlockHash, nil },
+			ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*evmRpc.MoonbeamHeader, error) {
+				if bytes.Equal(hash.Bytes(), latestFinalizedBlockHash.Bytes()) {
+					blockNumber := hexutil.Big(*big.NewInt(latestFinalizedBlockNumber))
+
+					return &evmRpc.MoonbeamHeader{Number: &blockNumber}, nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			},
+			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+				if number.Cmp(receipt.BlockNumber) == 0 {
+					return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			},
+		}
+
+		isFinalized := mgr.validate(rpc, tx.Hash(), 0, func(_ *geth.Transaction, _ *geth.Receipt) bool { return true })
+		assert.True(t, isFinalized)
+	}))
+}
+
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr         *Mgr
@@ -201,7 +282,58 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
+		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
+		receipt := &geth.Receipt{
+			TxHash:      tx.Hash(),
+			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
+			Logs: []*geth.Log{
+				/* ERC20 transfer to burner address of a random token */
+				{
+					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
+					Topics: []common.Hash{
+						ERC20TransferSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+				},
+				/* not a ERC20 transfer */
+				{
+					Address: common.BytesToAddress(tokenAddrBytes),
+					Topics: []common.Hash{
+						common.BytesToHash(rand.Bytes(common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+				},
+				/* an invalid ERC20 transfer */
+				{
+					Address: common.BytesToAddress(tokenAddrBytes),
+					Topics: []common.Hash{
+						ERC20TransferSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+				},
+				/* an ERC20 transfer of our concern */
+				{
+					Address: common.BytesToAddress(tokenAddrBytes),
+					Topics: []common.Hash{
+						ERC20TransferSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(amount).Bytes(), common.HashLength),
+				},
+			},
+			Status: 1,
+		}
 		rpc = &mock.ClientMock{
+			IsMoonbeamFunc: func() bool { return false },
+			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+			},
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
@@ -209,51 +341,6 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 				return &geth.Transaction{}, false, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				receipt := &geth.Receipt{
-					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
-					Logs: []*geth.Log{
-						/* ERC20 transfer to burner address of a random token */
-						{
-							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-							Topics: []common.Hash{
-								ERC20TransferSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-							},
-							Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
-						},
-						/* not a ERC20 transfer */
-						{
-							Address: common.BytesToAddress(tokenAddrBytes),
-							Topics: []common.Hash{
-								common.BytesToHash(rand.Bytes(common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-							},
-							Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
-						},
-						/* an invalid ERC20 transfer */
-						{
-							Address: common.BytesToAddress(tokenAddrBytes),
-							Topics: []common.Hash{
-								ERC20TransferSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-							},
-							Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
-						},
-						/* an ERC20 transfer of our concern */
-						{
-							Address: common.BytesToAddress(tokenAddrBytes),
-							Topics: []common.Hash{
-								ERC20TransferSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-							},
-							Data: common.LeftPadBytes(big.NewInt(amount).Bytes(), common.HashLength),
-						},
-					},
-					Status: 1,
-				}
 				return receipt, nil
 			},
 		}
@@ -353,7 +440,24 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
+		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
+		receipt := &geth.Receipt{
+			TxHash:      tx.Hash(),
+			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
+			Logs: createTokenLogs(
+				symbol,
+				common.BytesToAddress(gatewayAddrBytes),
+				common.BytesToAddress(tokenAddrBytes),
+				ERC20TokenDeploymentSig,
+				true,
+			),
+			Status: 1,
+		}
 		rpc = &mock.ClientMock{
+			IsMoonbeamFunc: func() bool { return false },
+			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+			},
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
@@ -361,17 +465,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 				return &geth.Transaction{}, false, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				receipt := &geth.Receipt{
-					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
-					Logs: createTokenLogs(
-						symbol,
-						common.BytesToAddress(gatewayAddrBytes),
-						common.BytesToAddress(tokenAddrBytes),
-						ERC20TokenDeploymentSig,
-						true,
-					),
-					Status: 1,
-				}
 				return receipt, nil
 			},
 		}
@@ -502,7 +595,68 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
 		}
 
+		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
+		receipt := &geth.Receipt{
+			TxHash:      tx.Hash(),
+			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
+			Logs: []*geth.Log{
+				/* previous transfer ownership event */
+				{
+					Address: common.BytesToAddress(gatewayAddrBytes),
+					Topics: []common.Hash{
+						SinglesigTransferOwnershipSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
+					},
+					Data: nil,
+				},
+				/* a transfer ownership of our concern */
+				{
+					Address: common.BytesToAddress(gatewayAddrBytes),
+					Topics: []common.Hash{
+						SinglesigTransferOwnershipSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+					},
+					Data: nil,
+				},
+				/* an invalid transfer ownership */
+				{
+					Address: common.BytesToAddress(gatewayAddrBytes),
+					Topics: []common.Hash{
+						SinglesigTransferOwnershipSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+					},
+					Data: nil,
+				},
+				/* not a transfer ownership event */
+				{
+					Address: common.BytesToAddress(gatewayAddrBytes),
+					Topics: []common.Hash{
+						common.BytesToHash(rand.Bytes(common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+					},
+					Data: nil,
+				},
+				/* transfer ownership event from a random address */
+				{
+					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
+					Topics: []common.Hash{
+						SinglesigTransferOwnershipSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
+					},
+					Data: nil,
+				},
+			},
+			Status: 1,
+		}
 		rpc = &mock.ClientMock{
+			IsMoonbeamFunc: func() bool { return false },
+			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+			},
 			BlockNumberFunc: func(context.Context) (uint64, error) {
 				return uint64(blockNumber), nil
 			},
@@ -510,61 +664,6 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				return &geth.Transaction{}, false, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				receipt := &geth.Receipt{
-					BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
-					Logs: []*geth.Log{
-						/* previous transfer ownership event */
-						{
-							Address: common.BytesToAddress(gatewayAddrBytes),
-							Topics: []common.Hash{
-								SinglesigTransferOwnershipSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
-							},
-							Data: nil,
-						},
-						/* a transfer ownership of our concern */
-						{
-							Address: common.BytesToAddress(gatewayAddrBytes),
-							Topics: []common.Hash{
-								SinglesigTransferOwnershipSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-							},
-							Data: nil,
-						},
-						/* an invalid transfer ownership */
-						{
-							Address: common.BytesToAddress(gatewayAddrBytes),
-							Topics: []common.Hash{
-								SinglesigTransferOwnershipSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-							},
-							Data: nil,
-						},
-						/* not a transfer ownership event */
-						{
-							Address: common.BytesToAddress(gatewayAddrBytes),
-							Topics: []common.Hash{
-								common.BytesToHash(rand.Bytes(common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-							},
-							Data: nil,
-						},
-						/* transfer ownership event from a random address */
-						{
-							Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-							Topics: []common.Hash{
-								SinglesigTransferOwnershipSig,
-								common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-								common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-							},
-							Data: nil,
-						},
-					},
-					Status: 1,
-				}
 				return receipt, nil
 			},
 		}

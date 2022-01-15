@@ -453,33 +453,74 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		nil
 }
 
-func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
-	blockNumber, err := rpc.BlockNumber(context.Background())
-	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "checking block number failed").Error())
-		// TODO: this error is not the caller's fault, so we should implement a retry here instead of voting against
-		return false
+func getLatestFinalizedBlockNumber(rpc rpc.Client, confHeight uint64) (*big.Int, error) {
+	if rpc.IsMoonbeam() {
+		finalizedBlockHash, err := rpc.ChainGetFinalizedHead(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		header, err := rpc.ChainGetHeader(context.Background(), finalizedBlockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		return header.Number.ToInt(), nil
 	}
 
+	blockNumber, err := rpc.BlockNumber(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
+}
+
+func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
 	tx, _, err := rpc.TransactionByHash(context.Background(), txID)
 	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "transaction by hash call failed").Error())
+		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction by hash call failed").Error())
 		return false
 	}
 
 	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
 	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "transaction receipt call failed").Error())
-		return false
-	}
-
-	if !isTxFinalized(txReceipt, blockNumber, confHeight) {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s does not have enough confirmations yet", txReceipt.TxHash.String()))
+		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction receipt call failed").Error())
 		return false
 	}
 
 	if !isTxSuccessful(txReceipt) {
 		mgr.logger.Debug(fmt.Sprintf("transaction %s failed", txReceipt.TxHash.String()))
+		return false
+	}
+
+	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(rpc, confHeight)
+	if err != nil {
+		mgr.logger.Debug(sdkerrors.Wrap(err, "get latest finalized block number failed").Error())
+		return false
+	}
+
+	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+		mgr.logger.Debug(fmt.Sprintf("transaction %s is not finalized yet", txReceipt.TxHash.String()))
+		return false
+	}
+
+	txBlock, err := rpc.BlockByNumber(context.Background(), txReceipt.BlockNumber)
+	if err != nil {
+		mgr.logger.Debug(sdkerrors.Wrap(err, "get block by number call failed").Error())
+		return false
+	}
+
+	txFound := false
+	for _, tx := range txBlock.Body().Transactions {
+		if bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) {
+			txFound = true
+			break
+		}
+	}
+
+	if !txFound {
+		mgr.logger.Debug(fmt.Sprintf("transaction %s is not found in block number %d and hash %s", txReceipt.TxHash.String(), txBlock.NumberU64(), txBlock.Hash().String()))
 		return false
 	}
 
@@ -626,10 +667,6 @@ func confirmMultisigTransferKey(txReceipt *geth.Receipt, transferKeyType evmType
 	}
 
 	return fmt.Errorf("failed to confirm %s transfer for new addresses '%s' and threshold '%d' at contract address '%s'", transferKeyType.SimpleString(), strings.Join(addressesToHexes(expectedNewAddrs), ","), expectedNewThreshold, gatewayAddr.String())
-}
-
-func isTxFinalized(txReceipt *geth.Receipt, blockNumber uint64, confirmationHeight uint64) bool {
-	return blockNumber-txReceipt.BlockNumber.Uint64()+1 >= confirmationHeight
 }
 
 func isTxSuccessful(txReceipt *geth.Receipt) bool {

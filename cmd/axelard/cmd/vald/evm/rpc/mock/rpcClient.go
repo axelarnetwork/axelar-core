@@ -8,6 +8,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"math/big"
 	"sync"
 )
 
@@ -21,8 +22,23 @@ var _ rpc.Client = &ClientMock{}
 //
 // 		// make and configure a mocked rpc.Client
 // 		mockedClient := &ClientMock{
+// 			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*types.Block, error) {
+// 				panic("mock out the BlockByNumber method")
+// 			},
 // 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 // 				panic("mock out the BlockNumber method")
+// 			},
+// 			ChainGetFinalizedHeadFunc: func(ctx context.Context) (common.Hash, error) {
+// 				panic("mock out the ChainGetFinalizedHead method")
+// 			},
+// 			ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*rpc.MoonbeamHeader, error) {
+// 				panic("mock out the ChainGetHeader method")
+// 			},
+// 			CloseFunc: func()  {
+// 				panic("mock out the Close method")
+// 			},
+// 			IsMoonbeamFunc: func() bool {
+// 				panic("mock out the IsMoonbeam method")
 // 			},
 // 			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
 // 				panic("mock out the TransactionByHash method")
@@ -37,8 +53,23 @@ var _ rpc.Client = &ClientMock{}
 //
 // 	}
 type ClientMock struct {
+	// BlockByNumberFunc mocks the BlockByNumber method.
+	BlockByNumberFunc func(ctx context.Context, number *big.Int) (*types.Block, error)
+
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
+
+	// ChainGetFinalizedHeadFunc mocks the ChainGetFinalizedHead method.
+	ChainGetFinalizedHeadFunc func(ctx context.Context) (common.Hash, error)
+
+	// ChainGetHeaderFunc mocks the ChainGetHeader method.
+	ChainGetHeaderFunc func(ctx context.Context, hash common.Hash) (*rpc.MoonbeamHeader, error)
+
+	// CloseFunc mocks the Close method.
+	CloseFunc func()
+
+	// IsMoonbeamFunc mocks the IsMoonbeam method.
+	IsMoonbeamFunc func() bool
 
 	// TransactionByHashFunc mocks the TransactionByHash method.
 	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error)
@@ -48,10 +79,35 @@ type ClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BlockByNumber holds details about calls to the BlockByNumber method.
+		BlockByNumber []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Number is the number argument value.
+			Number *big.Int
+		}
 		// BlockNumber holds details about calls to the BlockNumber method.
 		BlockNumber []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+		}
+		// ChainGetFinalizedHead holds details about calls to the ChainGetFinalizedHead method.
+		ChainGetFinalizedHead []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
+		// ChainGetHeader holds details about calls to the ChainGetHeader method.
+		ChainGetHeader []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash common.Hash
+		}
+		// Close holds details about calls to the Close method.
+		Close []struct {
+		}
+		// IsMoonbeam holds details about calls to the IsMoonbeam method.
+		IsMoonbeam []struct {
 		}
 		// TransactionByHash holds details about calls to the TransactionByHash method.
 		TransactionByHash []struct {
@@ -68,9 +124,49 @@ type ClientMock struct {
 			TxHash common.Hash
 		}
 	}
-	lockBlockNumber        sync.RWMutex
-	lockTransactionByHash  sync.RWMutex
-	lockTransactionReceipt sync.RWMutex
+	lockBlockByNumber         sync.RWMutex
+	lockBlockNumber           sync.RWMutex
+	lockChainGetFinalizedHead sync.RWMutex
+	lockChainGetHeader        sync.RWMutex
+	lockClose                 sync.RWMutex
+	lockIsMoonbeam            sync.RWMutex
+	lockTransactionByHash     sync.RWMutex
+	lockTransactionReceipt    sync.RWMutex
+}
+
+// BlockByNumber calls BlockByNumberFunc.
+func (mock *ClientMock) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+	if mock.BlockByNumberFunc == nil {
+		panic("ClientMock.BlockByNumberFunc: method is nil but Client.BlockByNumber was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Number *big.Int
+	}{
+		Ctx:    ctx,
+		Number: number,
+	}
+	mock.lockBlockByNumber.Lock()
+	mock.calls.BlockByNumber = append(mock.calls.BlockByNumber, callInfo)
+	mock.lockBlockByNumber.Unlock()
+	return mock.BlockByNumberFunc(ctx, number)
+}
+
+// BlockByNumberCalls gets all the calls that were made to BlockByNumber.
+// Check the length with:
+//     len(mockedClient.BlockByNumberCalls())
+func (mock *ClientMock) BlockByNumberCalls() []struct {
+	Ctx    context.Context
+	Number *big.Int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Number *big.Int
+	}
+	mock.lockBlockByNumber.RLock()
+	calls = mock.calls.BlockByNumber
+	mock.lockBlockByNumber.RUnlock()
+	return calls
 }
 
 // BlockNumber calls BlockNumberFunc.
@@ -101,6 +197,124 @@ func (mock *ClientMock) BlockNumberCalls() []struct {
 	mock.lockBlockNumber.RLock()
 	calls = mock.calls.BlockNumber
 	mock.lockBlockNumber.RUnlock()
+	return calls
+}
+
+// ChainGetFinalizedHead calls ChainGetFinalizedHeadFunc.
+func (mock *ClientMock) ChainGetFinalizedHead(ctx context.Context) (common.Hash, error) {
+	if mock.ChainGetFinalizedHeadFunc == nil {
+		panic("ClientMock.ChainGetFinalizedHeadFunc: method is nil but Client.ChainGetFinalizedHead was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockChainGetFinalizedHead.Lock()
+	mock.calls.ChainGetFinalizedHead = append(mock.calls.ChainGetFinalizedHead, callInfo)
+	mock.lockChainGetFinalizedHead.Unlock()
+	return mock.ChainGetFinalizedHeadFunc(ctx)
+}
+
+// ChainGetFinalizedHeadCalls gets all the calls that were made to ChainGetFinalizedHead.
+// Check the length with:
+//     len(mockedClient.ChainGetFinalizedHeadCalls())
+func (mock *ClientMock) ChainGetFinalizedHeadCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockChainGetFinalizedHead.RLock()
+	calls = mock.calls.ChainGetFinalizedHead
+	mock.lockChainGetFinalizedHead.RUnlock()
+	return calls
+}
+
+// ChainGetHeader calls ChainGetHeaderFunc.
+func (mock *ClientMock) ChainGetHeader(ctx context.Context, hash common.Hash) (*rpc.MoonbeamHeader, error) {
+	if mock.ChainGetHeaderFunc == nil {
+		panic("ClientMock.ChainGetHeaderFunc: method is nil but Client.ChainGetHeader was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockChainGetHeader.Lock()
+	mock.calls.ChainGetHeader = append(mock.calls.ChainGetHeader, callInfo)
+	mock.lockChainGetHeader.Unlock()
+	return mock.ChainGetHeaderFunc(ctx, hash)
+}
+
+// ChainGetHeaderCalls gets all the calls that were made to ChainGetHeader.
+// Check the length with:
+//     len(mockedClient.ChainGetHeaderCalls())
+func (mock *ClientMock) ChainGetHeaderCalls() []struct {
+	Ctx  context.Context
+	Hash common.Hash
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}
+	mock.lockChainGetHeader.RLock()
+	calls = mock.calls.ChainGetHeader
+	mock.lockChainGetHeader.RUnlock()
+	return calls
+}
+
+// Close calls CloseFunc.
+func (mock *ClientMock) Close() {
+	if mock.CloseFunc == nil {
+		panic("ClientMock.CloseFunc: method is nil but Client.Close was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockClose.Lock()
+	mock.calls.Close = append(mock.calls.Close, callInfo)
+	mock.lockClose.Unlock()
+	mock.CloseFunc()
+}
+
+// CloseCalls gets all the calls that were made to Close.
+// Check the length with:
+//     len(mockedClient.CloseCalls())
+func (mock *ClientMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockClose.RLock()
+	calls = mock.calls.Close
+	mock.lockClose.RUnlock()
+	return calls
+}
+
+// IsMoonbeam calls IsMoonbeamFunc.
+func (mock *ClientMock) IsMoonbeam() bool {
+	if mock.IsMoonbeamFunc == nil {
+		panic("ClientMock.IsMoonbeamFunc: method is nil but Client.IsMoonbeam was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsMoonbeam.Lock()
+	mock.calls.IsMoonbeam = append(mock.calls.IsMoonbeam, callInfo)
+	mock.lockIsMoonbeam.Unlock()
+	return mock.IsMoonbeamFunc()
+}
+
+// IsMoonbeamCalls gets all the calls that were made to IsMoonbeam.
+// Check the length with:
+//     len(mockedClient.IsMoonbeamCalls())
+func (mock *ClientMock) IsMoonbeamCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsMoonbeam.RLock()
+	calls = mock.calls.IsMoonbeam
+	mock.lockIsMoonbeam.RUnlock()
 	return calls
 }
 
