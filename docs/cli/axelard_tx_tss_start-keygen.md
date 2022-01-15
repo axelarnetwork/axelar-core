@@ -21,7 +21,7 @@ axelard tx tss start-keygen [flags]
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                     help for start-keygen
       --id string                unique ID for new key (required)
-      --key-role string          role of the key to be generated (default "master")
+      --key-role string          role of the key to be generated
       --key-type string          type of the key to be generated (default "multisig")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used

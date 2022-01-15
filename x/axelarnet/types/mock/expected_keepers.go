@@ -846,13 +846,10 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			ActivateChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
 // 				panic("mock out the ActivateChain method")
 // 			},
-// 			AddToChainTotalFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, amount cosmossdktypes.Coin)  {
-// 				panic("mock out the AddToChainTotal method")
-// 			},
 // 			ArchivePendingTransferFunc: func(ctx cosmossdktypes.Context, transfer exported.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error {
+// 			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) (exported.TransferID, error) {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
 // 			GetChainFunc: func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool) {
@@ -892,14 +889,11 @@ type NexusMock struct {
 	// ActivateChainFunc mocks the ActivateChain method.
 	ActivateChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
 
-	// AddToChainTotalFunc mocks the AddToChainTotal method.
-	AddToChainTotalFunc func(ctx cosmossdktypes.Context, chain exported.Chain, amount cosmossdktypes.Coin)
-
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
 	ArchivePendingTransferFunc func(ctx cosmossdktypes.Context, transfer exported.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error
+	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) (exported.TransferID, error)
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool)
@@ -936,15 +930,6 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
-		}
-		// AddToChainTotal holds details about calls to the AddToChainTotal method.
-		AddToChainTotal []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain exported.Chain
-			// Amount is the amount argument value.
-			Amount cosmossdktypes.Coin
 		}
 		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
 		ArchivePendingTransfer []struct {
@@ -1035,7 +1020,6 @@ type NexusMock struct {
 		}
 	}
 	lockActivateChain          sync.RWMutex
-	lockAddToChainTotal        sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
@@ -1084,45 +1068,6 @@ func (mock *NexusMock) ActivateChainCalls() []struct {
 	return calls
 }
 
-// AddToChainTotal calls AddToChainTotalFunc.
-func (mock *NexusMock) AddToChainTotal(ctx cosmossdktypes.Context, chain exported.Chain, amount cosmossdktypes.Coin) {
-	if mock.AddToChainTotalFunc == nil {
-		panic("NexusMock.AddToChainTotalFunc: method is nil but Nexus.AddToChainTotal was just called")
-	}
-	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Chain  exported.Chain
-		Amount cosmossdktypes.Coin
-	}{
-		Ctx:    ctx,
-		Chain:  chain,
-		Amount: amount,
-	}
-	mock.lockAddToChainTotal.Lock()
-	mock.calls.AddToChainTotal = append(mock.calls.AddToChainTotal, callInfo)
-	mock.lockAddToChainTotal.Unlock()
-	mock.AddToChainTotalFunc(ctx, chain, amount)
-}
-
-// AddToChainTotalCalls gets all the calls that were made to AddToChainTotal.
-// Check the length with:
-//     len(mockedNexus.AddToChainTotalCalls())
-func (mock *NexusMock) AddToChainTotalCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Chain  exported.Chain
-	Amount cosmossdktypes.Coin
-} {
-	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Chain  exported.Chain
-		Amount cosmossdktypes.Coin
-	}
-	mock.lockAddToChainTotal.RLock()
-	calls = mock.calls.AddToChainTotal
-	mock.lockAddToChainTotal.RUnlock()
-	return calls
-}
-
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
 func (mock *NexusMock) ArchivePendingTransfer(ctx cosmossdktypes.Context, transfer exported.CrossChainTransfer) {
 	if mock.ArchivePendingTransferFunc == nil {
@@ -1159,7 +1104,7 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, amount cosmossdktypes.Coin, feeRate cosmossdktypes.Dec) (exported.TransferID, error) {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}

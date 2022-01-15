@@ -52,10 +52,6 @@ func (m ChainState) Validate() error {
 		}
 	}
 
-	if err := m.Total.Validate(); err != nil {
-		return err
-	}
-
 	if len(m.Assets) == 0 {
 		return fmt.Errorf("no assets found")
 	}
@@ -72,12 +68,6 @@ func (m ChainState) Validate() error {
 		}
 
 		seenDenoms[asset] = true
-	}
-
-	for _, coin := range m.Total {
-		if !seenDenoms[coin.Denom] {
-			return fmt.Errorf("coin denom not found in assets")
-		}
 	}
 
 	return nil

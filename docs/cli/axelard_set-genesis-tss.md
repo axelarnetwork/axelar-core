@@ -9,8 +9,9 @@ axelard set-genesis-tss [flags]
 ### Options
 
 ```
-      --heartbeat-period int   time period in blocks for tss to emit the event asking validators to send their heartbeats
-  -h, --help                   help for set-genesis-tss
+      --heartbeat-period int          time period in blocks for tss to emit the event asking validators to send their heartbeats
+  -h, --help                          help for set-genesis-tss
+      --signed-blocks-window string   the signed blocks window to be considered when calculating the missed blocks percentage
 ```
 
 ### Options inherited from parent commands

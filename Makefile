@@ -15,6 +15,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
 BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
+USER_ID := $(shell id -u)
+GROUP_ID := $(shell id -g)
 
 .PHONY: all
 all: generate lint build docker-image docker-image-debug
@@ -60,6 +62,15 @@ debug: go.sum
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
+
+# Build a release image
+.PHONY: docker-image-local-user
+docker-image-local-user: guard-VERSION guard-GROUP_ID guard-USER_ID
+	@DOCKER_BUILDKIT=1 docker build \
+		--ssh default \
+		--build-arg USER_ID=${USER_ID} \
+		--build-arg GROUP_ID=${GROUP_ID} \
+		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
 build-push-docker-images: guard-SEMVER

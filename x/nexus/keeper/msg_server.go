@@ -13,7 +13,7 @@ import (
 
 var _ types.MsgServiceServer = msgServer{}
 
-const allChain = "*"
+const allChain = ":all:"
 
 type msgServer struct {
 	types.Nexus

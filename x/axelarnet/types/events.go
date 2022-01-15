@@ -14,6 +14,7 @@ const (
 	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyDestinationChain   = "destinationChain"
+	AttributeTransferID            = "transferID"
 )
 
 // Event attribute values

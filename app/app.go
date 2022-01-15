@@ -2,11 +2,13 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	stdlog "log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -16,7 +18,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+	"golang.org/x/mod/semver"
 
+	store "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/ibc-go/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
@@ -54,7 +59,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -66,7 +70,6 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -193,7 +196,7 @@ func init() {
 
 // AxelarApp defines the axelar Cosmos app that runs all modules
 type AxelarApp struct {
-	*baseapp.BaseApp
+	*bam.BaseApp
 
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
@@ -216,8 +219,11 @@ type AxelarApp struct {
 	tkeys   map[string]*sdk.TransientStoreKey
 	memKeys map[string]*sdk.MemoryStoreKey
 
-	mm           *module.Manager
-	paramsKeeper paramskeeper.Keeper
+	mm            *module.Manager
+	paramsKeeper  paramskeeper.Keeper
+	upgradeKeeper upgradekeeper.Keeper
+
+	configurator module.Configurator
 }
 
 // NewAxelarApp is a constructor function for axelar
@@ -278,7 +284,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 	app.paramsKeeper = paramsK
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(app.getSubspace(baseapp.Paramspace))
+	bApp.SetParamStore(app.getSubspace(bam.Paramspace))
 
 	// add keepers
 	accountK := authkeeper.NewAccountKeeper(
@@ -383,6 +389,66 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	permissionK := permissionKeeper.NewKeeper(
 		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
 	)
+
+	semverVersion := app.Version()
+	if !strings.HasPrefix(semverVersion, "v") {
+		semverVersion = fmt.Sprintf("v%s", semverVersion)
+	}
+
+	upgradeName := semver.MajorMinor(semverVersion)
+	if upgradeName == "" {
+		panic(fmt.Errorf("invalid app version %s", app.Version()))
+	}
+
+	upgradeK.SetUpgradeHandler(
+		upgradeName,
+		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
+			tssK.SetParams(ctx, tssTypes.DefaultParams())
+
+			fromVM := make(map[string]uint64)
+
+			fromVM[capabilitytypes.ModuleName] = app.mm.Modules[capabilitytypes.ModuleName].ConsensusVersion()
+			fromVM[authtypes.ModuleName] = app.mm.Modules[authtypes.ModuleName].ConsensusVersion()
+			fromVM[banktypes.ModuleName] = app.mm.Modules[banktypes.ModuleName].ConsensusVersion()
+			fromVM[distrtypes.ModuleName] = app.mm.Modules[distrtypes.ModuleName].ConsensusVersion()
+			fromVM[stakingtypes.ModuleName] = app.mm.Modules[stakingtypes.ModuleName].ConsensusVersion()
+			fromVM[slashingtypes.ModuleName] = app.mm.Modules[slashingtypes.ModuleName].ConsensusVersion()
+			fromVM[govtypes.ModuleName] = app.mm.Modules[govtypes.ModuleName].ConsensusVersion()
+			fromVM[minttypes.ModuleName] = app.mm.Modules[minttypes.ModuleName].ConsensusVersion()
+			fromVM[crisistypes.ModuleName] = app.mm.Modules[crisistypes.ModuleName].ConsensusVersion()
+			fromVM[genutiltypes.ModuleName] = app.mm.Modules[genutiltypes.ModuleName].ConsensusVersion()
+			fromVM[evidencetypes.ModuleName] = app.mm.Modules[evidencetypes.ModuleName].ConsensusVersion()
+			fromVM[ibchost.ModuleName] = app.mm.Modules[ibchost.ModuleName].ConsensusVersion()
+			fromVM[evidencetypes.ModuleName] = app.mm.Modules[evidencetypes.ModuleName].ConsensusVersion()
+			fromVM[ibctransfertypes.ModuleName] = app.mm.Modules[ibctransfertypes.ModuleName].ConsensusVersion()
+
+			fromVM[snapTypes.ModuleName] = 1
+			fromVM[tssTypes.ModuleName] = 1
+			fromVM[evmTypes.ModuleName] = 1
+			fromVM[nexusTypes.ModuleName] = 1
+			fromVM[voteTypes.ModuleName] = 1
+			fromVM[axelarnetTypes.ModuleName] = 1
+			fromVM[rewardTypes.ModuleName] = 1
+			fromVM[permissionTypes.ModuleName] = 1
+
+			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+		},
+	)
+	app.upgradeKeeper = upgradeK
+
+	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{
+			Added: []string{feegrant.ModuleName},
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
 
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
@@ -502,7 +568,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)
-	app.mm.RegisterServices(module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
+	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	app.mm.RegisterServices(app.configurator)
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -551,7 +618,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
-	paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable())
+	paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable())
 
 	paramsKeeper.Subspace(authtypes.ModuleName)
 	paramsKeeper.Subspace(banktypes.ModuleName)
@@ -581,10 +648,12 @@ type GenesisState map[string]json.RawMessage
 // InitChainer handles the chain initialization from a genesis file
 func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
-
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
+
+	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 

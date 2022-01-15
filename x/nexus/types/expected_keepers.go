@@ -2,6 +2,7 @@ package types
 
 import (
 	context "context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -9,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -49,4 +50,5 @@ type StakingKeeper interface {
 // AxelarnetKeeper procides functionality  to the axelarnet module
 type AxelarnetKeeper interface {
 	IsCosmosChain(ctx sdk.Context, chain string) bool
+	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
 }

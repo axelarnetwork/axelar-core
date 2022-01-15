@@ -660,7 +660,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	))
 
 	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain in %s yet", pendingChain.Chain.Name)}, nil
+		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain %s yet", pendingChain.Chain.Name)}, nil
 	}
 
 	if poll.Is(vote.Failed) {
@@ -673,7 +673,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain confirmation result is %s", poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("EVM chain %s confirmation result is %t", pendingChain.Chain.Name, confirmed.Value))
 	s.DeletePendingChain(ctx, pendingChain.Chain.Name)
 
 	// handle poll result
@@ -766,7 +766,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %s", chain.Name, poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %t", chain.Name, confirmed.Value))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
@@ -808,10 +808,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	}
 
 	amount := sdk.NewCoin(pendingDeposit.Asset, sdk.NewIntFromBigInt(pendingDeposit.Amount.BigInt()))
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate); err != nil {
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, feeRate)
+	if err != nil {
 		return nil, err
 	}
-
+	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", depositAddr.Address, transferID))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -876,7 +878,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("token deployment confirmation result is %s", poll.GetResult()))
+	s.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmation result on chain %s is %t", req.Asset, chain.Name, confirmed.Value))
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -1455,6 +1457,11 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
+	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
+	for _, commandID := range commandList {
+		s.Logger(ctx).Debug("signing command batch", "commandBatchID", batchedCommandsIDHex, "commandID", commandID)
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -1462,6 +1469,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
+			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
 		),
 	)
 
