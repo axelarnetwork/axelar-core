@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -164,7 +163,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
