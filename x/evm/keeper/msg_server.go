@@ -783,11 +783,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
 		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
+		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
 	if burnerInfo != nil {
-		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
 	}
 
 	defer func() { ctx.EventManager().EmitEvent(event) }()
@@ -812,8 +813,10 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	if err != nil {
 		return nil, err
 	}
-	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
-	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", depositAddr.Address, transferID))
+
+	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
+
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit %s for %s with transfer ID %d", pendingDeposit.TxID.Hex(), depositAddr.Address, transferID))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1459,7 +1462,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
-		s.Logger(ctx).Debug("signing command batch", "commandBatchID", batchedCommandsIDHex, "commandID", commandID)
+		s.Logger(ctx).Debug("signing command %s in batch %s", commandID, batchedCommandsIDHex)
 	}
 
 	ctx.EventManager().EmitEvent(
