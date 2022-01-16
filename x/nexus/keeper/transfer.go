@@ -2,7 +2,10 @@ package keeper
 
 import (
 	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -140,6 +143,26 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	}
 
 	return transfers
+}
+
+func (k Keeper) GetTransfersForChainPaginated(ctx sdk.Context, chain exported.Chain, state exported.TransferState, pageRequest *query.PageRequest) ([]exported.CrossChainTransfer, *query.PageResponse, error) {
+	var transfers []exported.CrossChainTransfer
+	if !k.IsChainActivated(ctx, chain) {
+		return transfers, &query.PageResponse{}, nil
+	}
+
+	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, getTransferPrefix(chain.Name, state).AsKey()), pageRequest, func(key []byte, value []byte) error {
+		var transfer exported.CrossChainTransfer
+		k.cdc.MustUnmarshalLengthPrefixed(value, &transfer)
+
+		transfers = append(transfers, transfer)
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return transfers, resp, nil
 }
 
 // addTransferFee adds transfer fee

@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 
-	exported_0 "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -228,41 +227,20 @@ func local_request_QueryService_LatestDepositAddress_0(ctx context.Context, mars
 
 }
 
+var (
+	filter_QueryService_TransfersForChain_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
 func request_QueryService_TransfersForChain_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq TransfersForChainRequest
 	var metadata runtime.ServerMetadata
 
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.Chain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_TransfersForChain_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	val, ok = pathParams["state"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "state")
-	}
-
-	e, err = runtime.Enum(val, exported_0.TransferState_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "state", err)
-	}
-
-	protoReq.State = exported_0.TransferState(e)
 
 	msg, err := client.TransfersForChain(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -273,37 +251,12 @@ func local_request_QueryService_TransfersForChain_0(ctx context.Context, marshal
 	var protoReq TransfersForChainRequest
 	var metadata runtime.ServerMetadata
 
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.Chain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_TransfersForChain_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	val, ok = pathParams["state"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "state")
-	}
-
-	e, err = runtime.Enum(val, exported_0.TransferState_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "state", err)
-	}
-
-	protoReq.State = exported_0.TransferState(e)
 
 	msg, err := server.TransfersForChain(ctx, &protoReq)
 	return msg, metadata, err
@@ -629,7 +582,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 var (
 	pattern_QueryService_LatestDepositAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"nexus", "v1beta1", "latest_deposit_address", "recipient_chain", "recipient_addr"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_TransfersForChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"nexus", "v1beta1", "transfers_for_chain", "chain", "state"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_TransfersForChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"nexus", "v1beta1", "transfers_for_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

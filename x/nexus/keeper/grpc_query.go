@@ -20,7 +20,8 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
-	return &types.TransfersForChainResponse{Transfers: k.GetTransfersForChain(ctx, chain, req.State)}, nil
+	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
+	return &types.TransfersForChainResponse{Transfers: transfers, Pagination: pagination}, err
 }
 
 // LatestDepositAddress returns the deposit address for the provided recipient

@@ -96,7 +96,7 @@ func GetCommandLatestDepositAddress() *cobra.Command {
 // GetCommandTransfersForChain returns the query for the transfers for a given chain
 func GetCommandTransfersForChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfers-for-chain [chain] [state]",
+		Use:   "transfers-for-chain [chain] [state (pending|archived)]",
 		Short: "Query for account by address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -107,10 +107,21 @@ func GetCommandTransfersForChain() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
+			pageReq, err := client.ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			// the Key field is read as []byte{""} if the key flag is not set, so need to reset it manually
+			if len(pageReq.Key) == 0 && pageReq.Offset > 0 {
+				pageReq.Key = nil
+			}
+
 			res, err := queryClient.TransfersForChain(cmd.Context(),
 				&types.TransfersForChainRequest{
-					Chain: args[0],
-					State: nexus.TransferStateFromString(args[1]),
+					Chain:      args[0],
+					State:      nexus.TransferStateFromString(args[1]),
+					Pagination: pageReq,
 				})
 			if err != nil {
 				return err
@@ -121,6 +132,7 @@ func GetCommandTransfersForChain() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "transfers")
 
 	return cmd
 }

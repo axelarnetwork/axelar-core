@@ -54,7 +54,6 @@ service QueryService {
   // TransfersForChain queries transfers by chain
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain/"
-                                   "{chain}/{state}";
+    option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain";
   }
 }
