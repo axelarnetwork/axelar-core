@@ -32,6 +32,7 @@ message TransfersForChainRequest {
 
 message TransfersForChainResponse {
   repeated Transfer transfers = 1 [ (gogoproto.nullable) = false ];
+  int32 count = 2;
 
   message Transfer {
     string id = 1 [(gogoproto.customname) = "ID" ];

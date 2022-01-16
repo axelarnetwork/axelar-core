@@ -3533,6 +3533,7 @@ transfers for the specified chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `transfers` | [TransfersForChainResponse.Transfer](#nexus.v1beta1.TransfersForChainResponse.Transfer) | repeated |  |
+| `count` | [int32](#int32) |  |  |
 
 
 

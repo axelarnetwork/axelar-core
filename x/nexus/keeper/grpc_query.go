@@ -43,7 +43,7 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 		})
 	}
 
-	return &types.TransfersForChainResponse{Transfers: transfersResp}, nil
+	return &types.TransfersForChainResponse{Transfers: transfersResp, Count: int32(len(transfers))}, nil
 }
 
 // LatestDepositAddress returns the deposit address for the provided recipient
