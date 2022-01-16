@@ -2,9 +2,7 @@ package keeper
 
 import (
 	"context"
-	"strings"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,28 +20,7 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
-	var state exported.TransferState
-	switch strings.ToLower(req.State) {
-	case "pending":
-		state = exported.Pending
-	case "archived":
-		state = exported.Archived
-	default:
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "unknown transfer state '%s'", req.State)
-	}
-
-	transfers := k.GetTransfersForChain(ctx, chain, state)
-	transfersResp := make([]types.TransfersForChainResponse_Transfer, 0)
-
-	for _, transfer := range transfers {
-		transfersResp = append(transfersResp, types.TransfersForChainResponse_Transfer{
-			ID:        transfer.ID.String(),
-			Recipient: transfer.Recipient.Address,
-			Asset:     transfer.Asset.String(),
-		})
-	}
-
-	return &types.TransfersForChainResponse{Transfers: transfersResp, Count: int32(len(transfers))}, nil
+	return &types.TransfersForChainResponse{Transfers: k.GetTransfersForChain(ctx, chain, req.State)}, nil
 }
 
 // LatestDepositAddress returns the deposit address for the provided recipient

@@ -4,6 +4,7 @@ package nexus.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
+import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -27,16 +28,10 @@ message LatestDepositAddressResponse { string deposit_addr = 1; };
 // transfers for the specified chain
 message TransfersForChainRequest {
   string chain = 1;
-  string state = 2;
+  exported.v1beta1.TransferState state = 2;
 }
 
 message TransfersForChainResponse {
-  repeated Transfer transfers = 1 [ (gogoproto.nullable) = false ];
-  int32 count = 2;
-
-  message Transfer {
-    string id = 1 [ (gogoproto.customname) = "ID" ];
-    string recipient = 2;
-    string asset = 3;
-  }
+  repeated exported.v1beta1.CrossChainTransfer transfers = 1
+      [ (gogoproto.nullable) = false ];
 }

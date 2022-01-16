@@ -229,7 +229,6 @@
     - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
     - [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest)
     - [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse)
-    - [TransfersForChainResponse.Transfer](#nexus.v1beta1.TransfersForChainResponse.Transfer)
   
 - [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
     - [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest)
@@ -3517,7 +3516,7 @@ transfers for the specified chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `state` | [string](#string) |  |  |
+| `state` | [nexus.exported.v1beta1.TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
 
 
 
@@ -3532,25 +3531,7 @@ transfers for the specified chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `transfers` | [TransfersForChainResponse.Transfer](#nexus.v1beta1.TransfersForChainResponse.Transfer) | repeated |  |
-| `count` | [int32](#int32) |  |  |
-
-
-
-
-
-
-<a name="nexus.v1beta1.TransfersForChainResponse.Transfer"></a>
-
-### TransfersForChainResponse.Transfer
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `recipient` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
 
 
 

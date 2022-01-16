@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -109,7 +110,7 @@ func GetCommandTransfersForChain() *cobra.Command {
 			res, err := queryClient.TransfersForChain(cmd.Context(),
 				&types.TransfersForChainRequest{
 					Chain: args[0],
-					State: args[1],
+					State: nexus.TransferStateFromString(args[1]),
 				})
 			if err != nil {
 				return err
