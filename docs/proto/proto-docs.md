@@ -227,6 +227,9 @@
     - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
+    - [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest)
+    - [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse)
+    - [TransfersForChainResponse.Transfer](#nexus.v1beta1.TransfersForChainResponse.Transfer)
   
 - [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
     - [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest)
@@ -3503,6 +3506,55 @@ address by recipient address
 
 
 
+
+<a name="nexus.v1beta1.TransfersForChainRequest"></a>
+
+### TransfersForChainRequest
+TransfersForChainRequest represents a message that queries the
+transfers for the specified chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `state` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransfersForChainResponse"></a>
+
+### TransfersForChainResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfers` | [TransfersForChainResponse.Transfer](#nexus.v1beta1.TransfersForChainResponse.Transfer) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransfersForChainResponse.Transfer"></a>
+
+### TransfersForChainResponse.Transfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `recipient` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -3667,6 +3719,7 @@ QueryService defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
+| `TransfersForChain` | [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/nexus/v1beta1/transfers_for_chain/{chain}/{state}|
 
  <!-- end services -->
 

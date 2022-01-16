@@ -22,3 +22,20 @@ message LatestDepositAddressRequest {
 }
 
 message LatestDepositAddressResponse { string deposit_addr = 1; };
+
+// TransfersForChainRequest represents a message that queries the
+// transfers for the specified chain
+message TransfersForChainRequest {
+  string chain = 1;
+  string state = 2;
+}
+
+message TransfersForChainResponse {
+  repeated Transfer transfers = 1 [ (gogoproto.nullable) = false ];
+
+  message Transfer {
+    string id = 1 [(gogoproto.customname) = "ID" ];
+    string recipient = 2;
+    string asset = 3;
+  }
+}
