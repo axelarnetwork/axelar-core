@@ -35,7 +35,7 @@ message TransfersForChainResponse {
   int32 count = 2;
 
   message Transfer {
-    string id = 1 [(gogoproto.customname) = "ID" ];
+    string id = 1 [ (gogoproto.customname) = "ID" ];
     string recipient = 2;
     string asset = 3;
   }
