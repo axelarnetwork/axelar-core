@@ -136,10 +136,10 @@ func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainT
 		return Command{}, err
 	}
 
-	return CreateMintTokenCommand(key, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
+	return CreateMintTokenCommand(key, TransferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
 }
 
-func transferIDtoCommandID(transferID nexus.TransferID) CommandID {
+func TransferIDtoCommandID(transferID nexus.TransferID) CommandID {
 	var commandID CommandID
 	copy(commandID[:], common.LeftPadBytes(transferID.Bytes(), 32)[:32])
 

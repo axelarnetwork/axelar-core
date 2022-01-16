@@ -816,7 +816,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit %s for %s with transfer ID %d", pendingDeposit.TxID.Hex(), depositAddr.Address, transferID))
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit %s for %s with transfer ID %d (command ID %s)", pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID)))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
