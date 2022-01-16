@@ -1464,11 +1464,14 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
 		s.Logger(ctx).Info(fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())))
+		s.Logger(ctx).Debug("signing command batch", "commandBatchID", batchedCommandsIDHex, "commandIDHex", commandIDHex, "commandID", commandID)
+		s.Logger(ctx).Debug(fmt.Sprintf("signing command batch %s", batchedCommandsIDHex), "commandBatchID", batchedCommandsIDHex, "commandIDHex", commandIDHex, "commandID",
+		s.Logger(ctx).Debug(fmt.Sprintf("signing command batch %s", batchedCommandsIDHex), "commandBatchID", batchedCommandsIDHex, "commandID", commandID)
 	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypeStartedSigning,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
