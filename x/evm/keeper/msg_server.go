@@ -783,7 +783,6 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
 		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
-		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
@@ -795,7 +794,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
 			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID.Hex(), req.BurnAddress.Hex()),
 		}, nil
@@ -814,7 +813,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, err
 	}
 
-	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
+	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
 	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit %s for %s with transfer ID %d (command ID %s)", pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID)))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
