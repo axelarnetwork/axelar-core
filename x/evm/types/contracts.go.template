@@ -1,0 +1,10 @@
+package types
+
+// contracts.go is getting generated from contracts.go.template by scripts/populate-bytecode.sh
+
+const (
+	singlesigGateway = "%AxelarGatewayProxySinglesig_bytecode%"
+	multisigGateway  = "%AxelarGatewayProxyMultisig_bytecode%"
+	token            = "%BurnableMintableCappedERC20_bytecode%"
+	burnable         = "%Burner_bytecode%"
+)

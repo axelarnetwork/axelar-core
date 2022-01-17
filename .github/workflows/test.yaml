@@ -35,6 +35,10 @@ jobs:
           name: Bytecode
           path: artifacts
 
+      - name: Populate Bytecode
+        run: |
+          sh scripts/populate-bytecode.sh
+
       - name: Test
         run: |
           git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork

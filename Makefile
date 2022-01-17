@@ -33,16 +33,21 @@ lint:
 	@golangci-lint run
 	@go mod verify
 
+# Populate bytecode before building anything
+.PHONY: populate-bytecode
+populate-bytecode:
+	@sh scripts/populate-bytecode.sh
+
 # Build the project with release flags
 .PHONY: build
-build: go.sum
+build: populate-bytecode go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
-build-binaries: guard-SEMVER
+build-binaries: populate-bytecode guard-SEMVER
 	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
-.PHONY: build-binaries-in-docker
+.PHONY: populate-bytecode build-binaries-in-docker
 build-binaries-in-docker: guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
 		--ssh default \
@@ -53,16 +58,16 @@ build-binaries-in-docker: guard-SEMVER
 
 # Build the project with debug flags
 .PHONY: debug
-debug: go.sum
+debug: populate-bytecode go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 
 # Build a release image
 .PHONY: docker-image
-docker-image:
+docker-image: populate-bytecode
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
 
 .PHONY: build-push-docker-image
-build-push-docker-images: guard-SEMVER
+build-push-docker-images: populate-bytecode guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
 		--ssh default \
@@ -71,7 +76,7 @@ build-push-docker-images: guard-SEMVER
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
-docker-image-debug:
+docker-image-debug: populate-bytecode
 	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
@@ -89,7 +94,7 @@ endif
 
 # Run all the code generators in the project
 .PHONY: generate
-generate:
+generate: populate-bytecode
 	go generate -x ./...
 
 
