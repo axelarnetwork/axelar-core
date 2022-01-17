@@ -145,6 +145,7 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 	return transfers
 }
 
+// GetTransfersForChainPaginated returns the current set of transfers with the given state for the given chain with the given pagination properties
 func (k Keeper) GetTransfersForChainPaginated(ctx sdk.Context, chain exported.Chain, state exported.TransferState, pageRequest *query.PageRequest) ([]exported.CrossChainTransfer, *query.PageResponse, error) {
 	var transfers []exported.CrossChainTransfer
 	if !k.IsChainActivated(ctx, chain) {
