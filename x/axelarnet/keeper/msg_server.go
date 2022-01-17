@@ -120,8 +120,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
 		amount = sdk.NewCoin(denomTrace.GetBaseDenom(), amount.Amount)
-		// TODO: make this public for now, we will refactor nexus module
-		s.nexus.AddToChainTotal(ctx, exported.Axelarnet, amount)
 
 	case req.Denom == exported.Axelarnet.NativeAsset:
 		// lock tokens in escrow address
@@ -155,17 +153,21 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	}
 
-	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx)); err != nil {
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx))
+	if err != nil {
 		return nil, err
 	}
 
+	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", req.DepositAddress.String(), transferID))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyTxID, hex.EncodeToString(req.TxID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+			sdk.NewAttribute(types.AttributeTransferID, transferID.String()),
+		))
 
 	return &types.ConfirmDepositResponse{}, nil
 }

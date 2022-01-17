@@ -225,6 +225,59 @@ func (k Keeper) GetMaxSimultaneousSignShares(ctx sdk.Context) int64 {
 	return shares
 }
 
+// returns the signed blocks window to be considered when calculating the missed blocks percentage
+func (k Keeper) getTssSignedBlocksWindow(ctx sdk.Context) int64 {
+	var window int64
+	k.params.Get(ctx, types.KeyTssSignedBlocksWindow, &window)
+
+	return window
+}
+
+// HasMissedTooManyBlocks returns true if the given validator address missed too many blocks within
+// the block window specifiec by this module. The block window used by this function is either the
+// cosmos slashing module window or this own module's window, depending on which one is shorter.
+func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error) {
+	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
+	if !ok {
+		return false, fmt.Errorf("'%s' is not a validator", address.String())
+	}
+	maxMissedPerWindow := k.GetMaxMissedBlocksPerWindow(ctx)
+
+	return missedBlocks.GT(maxMissedPerWindow), nil
+}
+
+// returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
+func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress) (utils.Threshold, bool) {
+	counter := int64(0)
+	tssWindow := k.getTssSignedBlocksWindow(ctx)
+	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
+	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
+
+	if !ok {
+		return utils.Threshold{}, false
+	}
+
+	indexOffset := int64(0)
+	// TODO: In order to avoid having to pick the shorter of these two windows, we should implement
+	// our own bit arrawy for missed blocks instead of re-purposing the one from cosmos
+	window := slasherWindow
+	if slasherWindow > tssWindow {
+		window = tssWindow
+	}
+	if signInfo.IndexOffset > window {
+		indexOffset = signInfo.IndexOffset - window
+	}
+
+	for ; indexOffset < signInfo.IndexOffset; indexOffset++ {
+		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, indexOffset%slasherWindow); missed {
+			k.Logger(ctx).Debug(fmt.Sprintf("address %s missed block at index #%d", address.String(), indexOffset%slasherWindow))
+			counter++
+		}
+	}
+
+	return utils.NewThreshold(counter, tssWindow), true
+}
+
 // SetAvailableOperator signals that a validator sent an ack
 func (k Keeper) SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, presentKeys ...exported.KeyID) {
 	store := k.getStore(ctx)

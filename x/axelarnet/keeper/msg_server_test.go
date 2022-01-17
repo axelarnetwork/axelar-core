@@ -102,6 +102,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ibcPath := randomIBCPath()
 		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
@@ -120,8 +121,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
-			AddToChainTotalFunc:    func(_ sdk.Context, _ nexus.Chain, _ sdk.Coin) {},
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) { return nexus.TransferID(mathRand.Uint64()), nil },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
@@ -161,8 +161,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgConfirmDeposit()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error {
-			return fmt.Errorf("failed")
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+			return 0, fmt.Errorf("failed")
 		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -199,7 +199,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(events).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
 		assert.Len(t, nexusKeeper.EnqueueForTransferCalls(), 1)
-		assert.Len(t, nexusKeeper.AddToChainTotalCalls(), 1)
 		assert.Len(t, bankKeeper.SendCoinsCalls(), 1)
 		assert.Equal(t, amount, nexusKeeper.EnqueueForTransferCalls()[0].Amount.Amount)
 	}).Repeat(repeatCount))
@@ -328,7 +327,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) { return nexus.TransferID(mathRand.Uint64()), nil },
 			GetTransferFeesFunc:    func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
 			SubTransferFeeFunc:     func(sdk.Context, sdk.Coin) {},
 		}
@@ -590,11 +589,11 @@ func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossCh
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 	c := nexus.Chain{Name: chain, NativeAsset: "cosmos", SupportsForeignAssets: true, Module: rand.Str(10)}
 
-	return nexus.CrossChainTransfer{
-		Recipient: nexus.CrossChainAddress{Chain: c, Address: ranAddr},
-		Asset:     sdk.NewInt64Coin(asset, rand.I64Between(minAmount.Int64(), minAmount.Int64()+10000000000)),
-		ID:        mathRand.Uint64(),
-	}
+	return nexus.NewPendingCrossChainTransfer(
+		mathRand.Uint64(),
+		nexus.CrossChainAddress{Chain: c, Address: ranAddr},
+		sdk.NewInt64Coin(asset, rand.I64Between(minAmount.Int64(), minAmount.Int64()+10000000000)),
+	)
 }
 
 func randomIBCDenom() string {

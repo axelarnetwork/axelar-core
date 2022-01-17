@@ -28,6 +28,7 @@ func DefaultValdConfig() ValdConfig {
 type BroadcastConfig struct {
 	MaxRetries int           `mapstructure:"max-retries"`
 	MinTimeout time.Duration `mapstructure:"min-timeout"`
+	FeeGranter string        `mapstructure:"fee_granter"`
 }
 
 // DefaultBroadcastConfig returns a configurations populated with default values

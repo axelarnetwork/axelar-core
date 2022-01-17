@@ -6,213 +6,213 @@ package mock
 import (
 	context "context"
 	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
-	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 
-// Ensure, that NexusMock does implement nexustypes.Nexus.
+// Ensure, that NexusMock does implement types.Nexus.
 // If this is not the case, regenerate this file with moq.
-var _ nexustypes.Nexus = &NexusMock{}
+var _ types.Nexus = &NexusMock{}
 
-// NexusMock is a mock implementation of nexustypes.Nexus.
+// NexusMock is a mock implementation of types.Nexus.
 //
 // 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked nexustypes.Nexus
+// 		// make and configure a mocked types.Nexus
 // 		mockedNexus := &NexusMock{
-// 			ActivateChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
+// 			ActivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)  {
 // 				panic("mock out the ActivateChain method")
 // 			},
-// 			AddChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error {
+// 			AddChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the AddChainMaintainer method")
 // 			},
-// 			DeactivateChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
+// 			DeactivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)  {
 // 				panic("mock out the DeactivateChain method")
 // 			},
-// 			ExportGenesisFunc: func(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
+// 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState {
 // 				panic("mock out the ExportGenesis method")
 // 			},
-// 			GetChainFunc: func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool) {
+// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetChainMaintainersFunc: func(ctx cosmossdktypes.Context, chain exported.Chain) []cosmossdktypes.ValAddress {
+// 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
 // 			},
-// 			GetChainsFunc: func(ctx cosmossdktypes.Context) []exported.Chain {
+// 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
-// 			GetParamsFunc: func(ctx cosmossdktypes.Context) nexustypes.Params {
+// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
 // 				panic("mock out the GetParams method")
 // 			},
-// 			InitGenesisFunc: func(ctx cosmossdktypes.Context, genState *nexustypes.GenesisState)  {
+// 			InitGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, genState *types.GenesisState)  {
 // 				panic("mock out the InitGenesis method")
 // 			},
-// 			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain exported.Chain) bool {
+// 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool {
 // 				panic("mock out the IsChainActivated method")
 // 			},
-// 			IsChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, maintainer cosmossdktypes.ValAddress) bool {
+// 			IsChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the IsChainMaintainer method")
 // 			},
-// 			LatestDepositAddressFunc: func(c context.Context, req *nexustypes.LatestDepositAddressRequest) (*nexustypes.LatestDepositAddressResponse, error) {
+// 			LatestDepositAddressFunc: func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 // 				panic("mock out the LatestDepositAddress method")
 // 			},
-// 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+// 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
+// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RemoveChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error {
+// 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the RemoveChainMaintainer method")
 // 			},
-// 			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
+// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
 // 		}
 //
-// 		// use mockedNexus in code that requires nexustypes.Nexus
+// 		// use mockedNexus in code that requires types.Nexus
 // 		// and then make assertions.
 //
 // 	}
 type NexusMock struct {
 	// ActivateChainFunc mocks the ActivateChain method.
-	ActivateChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
+	ActivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)
 
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
-	AddChainMaintainerFunc func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error
+	AddChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// DeactivateChainFunc mocks the DeactivateChain method.
-	DeactivateChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
+	DeactivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)
 
 	// ExportGenesisFunc mocks the ExportGenesis method.
-	ExportGenesisFunc func(ctx cosmossdktypes.Context) *nexustypes.GenesisState
+	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool)
+	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool)
 
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
-	GetChainMaintainersFunc func(ctx cosmossdktypes.Context, chain exported.Chain) []cosmossdktypes.ValAddress
+	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
 
 	// GetChainsFunc mocks the GetChains method.
-	GetChainsFunc func(ctx cosmossdktypes.Context) []exported.Chain
+	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain
 
 	// GetParamsFunc mocks the GetParams method.
-	GetParamsFunc func(ctx cosmossdktypes.Context) nexustypes.Params
+	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
 
 	// InitGenesisFunc mocks the InitGenesis method.
-	InitGenesisFunc func(ctx cosmossdktypes.Context, genState *nexustypes.GenesisState)
+	InitGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, genState *types.GenesisState)
 
 	// IsChainActivatedFunc mocks the IsChainActivated method.
-	IsChainActivatedFunc func(ctx cosmossdktypes.Context, chain exported.Chain) bool
+	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool
 
 	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
-	IsChainMaintainerFunc func(ctx cosmossdktypes.Context, chain exported.Chain, maintainer cosmossdktypes.ValAddress) bool
+	IsChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// LatestDepositAddressFunc mocks the LatestDepositAddress method.
-	LatestDepositAddressFunc func(c context.Context, req *nexustypes.LatestDepositAddressRequest) (*nexustypes.LatestDepositAddressResponse, error)
+	LatestDepositAddressFunc func(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error)
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
+	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// LoggerFunc mocks the Logger method.
-	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
-	RemoveChainMaintainerFunc func(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error
+	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
+	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ActivateChain holds details about calls to the ActivateChain method.
 		ActivateChain []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
 		// AddChainMaintainer holds details about calls to the AddChainMaintainer method.
 		AddChainMaintainer []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 			// Validator is the validator argument value.
-			Validator cosmossdktypes.ValAddress
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// DeactivateChain holds details about calls to the DeactivateChain method.
 		DeactivateChain []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain string
 		}
 		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
 		GetChainMaintainers []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// InitGenesis holds details about calls to the InitGenesis method.
 		InitGenesis []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// GenState is the genState argument value.
-			GenState *nexustypes.GenesisState
+			GenState *types.GenesisState
 		}
 		// IsChainActivated holds details about calls to the IsChainActivated method.
 		IsChainActivated []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 		}
 		// IsChainMaintainer holds details about calls to the IsChainMaintainer method.
 		IsChainMaintainer []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 			// Maintainer is the maintainer argument value.
-			Maintainer cosmossdktypes.ValAddress
+			Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// LatestDepositAddress holds details about calls to the LatestDepositAddress method.
 		LatestDepositAddress []struct {
 			// C is the c argument value.
 			C context.Context
 			// Req is the req argument value.
-			Req *nexustypes.LatestDepositAddressRequest
+			Req *types.LatestDepositAddressRequest
 		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Sender is the sender argument value.
 			Sender exported.CrossChainAddress
 			// Recipient is the recipient argument value.
@@ -221,23 +221,23 @@ type NexusMock struct {
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// RemoveChainMaintainer holds details about calls to the RemoveChainMaintainer method.
 		RemoveChainMaintainer []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
 			// Validator is the validator argument value.
-			Validator cosmossdktypes.ValAddress
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// SetParams holds details about calls to the SetParams method.
 		SetParams []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// P is the p argument value.
-			P nexustypes.Params
+			P types.Params
 		}
 	}
 	lockActivateChain         sync.RWMutex
@@ -259,12 +259,12 @@ type NexusMock struct {
 }
 
 // ActivateChain calls ActivateChainFunc.
-func (mock *NexusMock) ActivateChain(ctx cosmossdktypes.Context, chain exported.Chain) {
+func (mock *NexusMock) ActivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) {
 	if mock.ActivateChainFunc == nil {
 		panic("NexusMock.ActivateChainFunc: method is nil but Nexus.ActivateChain was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}{
 		Ctx:   ctx,
@@ -280,11 +280,11 @@ func (mock *NexusMock) ActivateChain(ctx cosmossdktypes.Context, chain exported.
 // Check the length with:
 //     len(mockedNexus.ActivateChainCalls())
 func (mock *NexusMock) ActivateChainCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain exported.Chain
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}
 	mock.lockActivateChain.RLock()
@@ -294,14 +294,14 @@ func (mock *NexusMock) ActivateChainCalls() []struct {
 }
 
 // AddChainMaintainer calls AddChainMaintainerFunc.
-func (mock *NexusMock) AddChainMaintainer(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error {
+func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.AddChainMaintainerFunc == nil {
 		panic("NexusMock.AddChainMaintainerFunc: method is nil but Nexus.AddChainMaintainer was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Chain     exported.Chain
-		Validator cosmossdktypes.ValAddress
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
 		Chain:     chain,
@@ -317,14 +317,14 @@ func (mock *NexusMock) AddChainMaintainer(ctx cosmossdktypes.Context, chain expo
 // Check the length with:
 //     len(mockedNexus.AddChainMaintainerCalls())
 func (mock *NexusMock) AddChainMaintainerCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Chain     exported.Chain
-	Validator cosmossdktypes.ValAddress
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Chain     exported.Chain
-		Validator cosmossdktypes.ValAddress
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockAddChainMaintainer.RLock()
 	calls = mock.calls.AddChainMaintainer
@@ -333,12 +333,12 @@ func (mock *NexusMock) AddChainMaintainerCalls() []struct {
 }
 
 // DeactivateChain calls DeactivateChainFunc.
-func (mock *NexusMock) DeactivateChain(ctx cosmossdktypes.Context, chain exported.Chain) {
+func (mock *NexusMock) DeactivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) {
 	if mock.DeactivateChainFunc == nil {
 		panic("NexusMock.DeactivateChainFunc: method is nil but Nexus.DeactivateChain was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}{
 		Ctx:   ctx,
@@ -354,11 +354,11 @@ func (mock *NexusMock) DeactivateChain(ctx cosmossdktypes.Context, chain exporte
 // Check the length with:
 //     len(mockedNexus.DeactivateChainCalls())
 func (mock *NexusMock) DeactivateChainCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain exported.Chain
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}
 	mock.lockDeactivateChain.RLock()
@@ -368,12 +368,12 @@ func (mock *NexusMock) DeactivateChainCalls() []struct {
 }
 
 // ExportGenesis calls ExportGenesisFunc.
-func (mock *NexusMock) ExportGenesis(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
+func (mock *NexusMock) ExportGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState {
 	if mock.ExportGenesisFunc == nil {
 		panic("NexusMock.ExportGenesisFunc: method is nil but Nexus.ExportGenesis was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -387,10 +387,10 @@ func (mock *NexusMock) ExportGenesis(ctx cosmossdktypes.Context) *nexustypes.Gen
 // Check the length with:
 //     len(mockedNexus.ExportGenesisCalls())
 func (mock *NexusMock) ExportGenesisCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockExportGenesis.RLock()
 	calls = mock.calls.ExportGenesis
@@ -399,12 +399,12 @@ func (mock *NexusMock) ExportGenesisCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx cosmossdktypes.Context, chain string) (exported.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain string
 	}{
 		Ctx:   ctx,
@@ -420,11 +420,11 @@ func (mock *NexusMock) GetChain(ctx cosmossdktypes.Context, chain string) (expor
 // Check the length with:
 //     len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain string
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain string
 	}
 	mock.lockGetChain.RLock()
@@ -434,12 +434,12 @@ func (mock *NexusMock) GetChainCalls() []struct {
 }
 
 // GetChainMaintainers calls GetChainMaintainersFunc.
-func (mock *NexusMock) GetChainMaintainers(ctx cosmossdktypes.Context, chain exported.Chain) []cosmossdktypes.ValAddress {
+func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetChainMaintainersFunc == nil {
 		panic("NexusMock.GetChainMaintainersFunc: method is nil but Nexus.GetChainMaintainers was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}{
 		Ctx:   ctx,
@@ -455,11 +455,11 @@ func (mock *NexusMock) GetChainMaintainers(ctx cosmossdktypes.Context, chain exp
 // Check the length with:
 //     len(mockedNexus.GetChainMaintainersCalls())
 func (mock *NexusMock) GetChainMaintainersCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain exported.Chain
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}
 	mock.lockGetChainMaintainers.RLock()
@@ -469,12 +469,12 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 }
 
 // GetChains calls GetChainsFunc.
-func (mock *NexusMock) GetChains(ctx cosmossdktypes.Context) []exported.Chain {
+func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain {
 	if mock.GetChainsFunc == nil {
 		panic("NexusMock.GetChainsFunc: method is nil but Nexus.GetChains was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -488,10 +488,10 @@ func (mock *NexusMock) GetChains(ctx cosmossdktypes.Context) []exported.Chain {
 // Check the length with:
 //     len(mockedNexus.GetChainsCalls())
 func (mock *NexusMock) GetChainsCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetChains.RLock()
 	calls = mock.calls.GetChains
@@ -500,12 +500,12 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 }
 
 // GetParams calls GetParamsFunc.
-func (mock *NexusMock) GetParams(ctx cosmossdktypes.Context) nexustypes.Params {
+func (mock *NexusMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
 	if mock.GetParamsFunc == nil {
 		panic("NexusMock.GetParamsFunc: method is nil but Nexus.GetParams was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -519,10 +519,10 @@ func (mock *NexusMock) GetParams(ctx cosmossdktypes.Context) nexustypes.Params {
 // Check the length with:
 //     len(mockedNexus.GetParamsCalls())
 func (mock *NexusMock) GetParamsCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockGetParams.RLock()
 	calls = mock.calls.GetParams
@@ -531,13 +531,13 @@ func (mock *NexusMock) GetParamsCalls() []struct {
 }
 
 // InitGenesis calls InitGenesisFunc.
-func (mock *NexusMock) InitGenesis(ctx cosmossdktypes.Context, genState *nexustypes.GenesisState) {
+func (mock *NexusMock) InitGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context, genState *types.GenesisState) {
 	if mock.InitGenesisFunc == nil {
 		panic("NexusMock.InitGenesisFunc: method is nil but Nexus.InitGenesis was just called")
 	}
 	callInfo := struct {
-		Ctx      cosmossdktypes.Context
-		GenState *nexustypes.GenesisState
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		GenState *types.GenesisState
 	}{
 		Ctx:      ctx,
 		GenState: genState,
@@ -552,12 +552,12 @@ func (mock *NexusMock) InitGenesis(ctx cosmossdktypes.Context, genState *nexusty
 // Check the length with:
 //     len(mockedNexus.InitGenesisCalls())
 func (mock *NexusMock) InitGenesisCalls() []struct {
-	Ctx      cosmossdktypes.Context
-	GenState *nexustypes.GenesisState
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	GenState *types.GenesisState
 } {
 	var calls []struct {
-		Ctx      cosmossdktypes.Context
-		GenState *nexustypes.GenesisState
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		GenState *types.GenesisState
 	}
 	mock.lockInitGenesis.RLock()
 	calls = mock.calls.InitGenesis
@@ -566,12 +566,12 @@ func (mock *NexusMock) InitGenesisCalls() []struct {
 }
 
 // IsChainActivated calls IsChainActivatedFunc.
-func (mock *NexusMock) IsChainActivated(ctx cosmossdktypes.Context, chain exported.Chain) bool {
+func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool {
 	if mock.IsChainActivatedFunc == nil {
 		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}{
 		Ctx:   ctx,
@@ -587,11 +587,11 @@ func (mock *NexusMock) IsChainActivated(ctx cosmossdktypes.Context, chain export
 // Check the length with:
 //     len(mockedNexus.IsChainActivatedCalls())
 func (mock *NexusMock) IsChainActivatedCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain exported.Chain
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain exported.Chain
 	}
 	mock.lockIsChainActivated.RLock()
@@ -601,14 +601,14 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 }
 
 // IsChainMaintainer calls IsChainMaintainerFunc.
-func (mock *NexusMock) IsChainMaintainer(ctx cosmossdktypes.Context, chain exported.Chain, maintainer cosmossdktypes.ValAddress) bool {
+func (mock *NexusMock) IsChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 	if mock.IsChainMaintainerFunc == nil {
 		panic("NexusMock.IsChainMaintainerFunc: method is nil but Nexus.IsChainMaintainer was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
 		Chain      exported.Chain
-		Maintainer cosmossdktypes.ValAddress
+		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:        ctx,
 		Chain:      chain,
@@ -624,14 +624,14 @@ func (mock *NexusMock) IsChainMaintainer(ctx cosmossdktypes.Context, chain expor
 // Check the length with:
 //     len(mockedNexus.IsChainMaintainerCalls())
 func (mock *NexusMock) IsChainMaintainerCalls() []struct {
-	Ctx        cosmossdktypes.Context
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	Chain      exported.Chain
-	Maintainer cosmossdktypes.ValAddress
+	Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
 		Chain      exported.Chain
-		Maintainer cosmossdktypes.ValAddress
+		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockIsChainMaintainer.RLock()
 	calls = mock.calls.IsChainMaintainer
@@ -640,13 +640,13 @@ func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 }
 
 // LatestDepositAddress calls LatestDepositAddressFunc.
-func (mock *NexusMock) LatestDepositAddress(c context.Context, req *nexustypes.LatestDepositAddressRequest) (*nexustypes.LatestDepositAddressResponse, error) {
+func (mock *NexusMock) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 	if mock.LatestDepositAddressFunc == nil {
 		panic("NexusMock.LatestDepositAddressFunc: method is nil but Nexus.LatestDepositAddress was just called")
 	}
 	callInfo := struct {
 		C   context.Context
-		Req *nexustypes.LatestDepositAddressRequest
+		Req *types.LatestDepositAddressRequest
 	}{
 		C:   c,
 		Req: req,
@@ -662,11 +662,11 @@ func (mock *NexusMock) LatestDepositAddress(c context.Context, req *nexustypes.L
 //     len(mockedNexus.LatestDepositAddressCalls())
 func (mock *NexusMock) LatestDepositAddressCalls() []struct {
 	C   context.Context
-	Req *nexustypes.LatestDepositAddressRequest
+	Req *types.LatestDepositAddressRequest
 } {
 	var calls []struct {
 		C   context.Context
-		Req *nexustypes.LatestDepositAddressRequest
+		Req *types.LatestDepositAddressRequest
 	}
 	mock.lockLatestDepositAddress.RLock()
 	calls = mock.calls.LatestDepositAddress
@@ -675,12 +675,12 @@ func (mock *NexusMock) LatestDepositAddressCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Sender    exported.CrossChainAddress
 		Recipient exported.CrossChainAddress
 	}{
@@ -698,12 +698,12 @@ func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender exported
 // Check the length with:
 //     len(mockedNexus.LinkAddressesCalls())
 func (mock *NexusMock) LinkAddressesCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Sender    exported.CrossChainAddress
 	Recipient exported.CrossChainAddress
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Sender    exported.CrossChainAddress
 		Recipient exported.CrossChainAddress
 	}
@@ -714,12 +714,12 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // Logger calls LoggerFunc.
-func (mock *NexusMock) Logger(ctx cosmossdktypes.Context) log.Logger {
+func (mock *NexusMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
 		panic("NexusMock.LoggerFunc: method is nil but Nexus.Logger was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
 		Ctx: ctx,
 	}
@@ -733,10 +733,10 @@ func (mock *NexusMock) Logger(ctx cosmossdktypes.Context) log.Logger {
 // Check the length with:
 //     len(mockedNexus.LoggerCalls())
 func (mock *NexusMock) LoggerCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
@@ -745,14 +745,14 @@ func (mock *NexusMock) LoggerCalls() []struct {
 }
 
 // RemoveChainMaintainer calls RemoveChainMaintainerFunc.
-func (mock *NexusMock) RemoveChainMaintainer(ctx cosmossdktypes.Context, chain exported.Chain, validator cosmossdktypes.ValAddress) error {
+func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.RemoveChainMaintainerFunc == nil {
 		panic("NexusMock.RemoveChainMaintainerFunc: method is nil but Nexus.RemoveChainMaintainer was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Chain     exported.Chain
-		Validator cosmossdktypes.ValAddress
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
 		Chain:     chain,
@@ -768,14 +768,14 @@ func (mock *NexusMock) RemoveChainMaintainer(ctx cosmossdktypes.Context, chain e
 // Check the length with:
 //     len(mockedNexus.RemoveChainMaintainerCalls())
 func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
-	Ctx       cosmossdktypes.Context
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Chain     exported.Chain
-	Validator cosmossdktypes.ValAddress
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		Chain     exported.Chain
-		Validator cosmossdktypes.ValAddress
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockRemoveChainMaintainer.RLock()
 	calls = mock.calls.RemoveChainMaintainer
@@ -784,13 +784,13 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 }
 
 // SetParams calls SetParamsFunc.
-func (mock *NexusMock) SetParams(ctx cosmossdktypes.Context, p nexustypes.Params) {
+func (mock *NexusMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
 	if mock.SetParamsFunc == nil {
 		panic("NexusMock.SetParamsFunc: method is nil but Nexus.SetParams was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
-		P   nexustypes.Params
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		P   types.Params
 	}{
 		Ctx: ctx,
 		P:   p,
@@ -805,12 +805,12 @@ func (mock *NexusMock) SetParams(ctx cosmossdktypes.Context, p nexustypes.Params
 // Check the length with:
 //     len(mockedNexus.SetParamsCalls())
 func (mock *NexusMock) SetParamsCalls() []struct {
-	Ctx cosmossdktypes.Context
-	P   nexustypes.Params
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	P   types.Params
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
-		P   nexustypes.Params
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		P   types.Params
 	}
 	mock.lockSetParams.RLock()
 	calls = mock.calls.SetParams
@@ -818,50 +818,50 @@ func (mock *NexusMock) SetParamsCalls() []struct {
 	return calls
 }
 
-// Ensure, that SnapshotterMock does implement nexustypes.Snapshotter.
+// Ensure, that SnapshotterMock does implement types.Snapshotter.
 // If this is not the case, regenerate this file with moq.
-var _ nexustypes.Snapshotter = &SnapshotterMock{}
+var _ types.Snapshotter = &SnapshotterMock{}
 
-// SnapshotterMock is a mock implementation of nexustypes.Snapshotter.
+// SnapshotterMock is a mock implementation of types.Snapshotter.
 //
 // 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-// 		// make and configure a mocked nexustypes.Snapshotter
+// 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetOperatorFunc: func(ctx cosmossdktypes.Context, proxy cosmossdktypes.AccAddress) cosmossdktypes.ValAddress {
+// 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
 // 		}
 //
-// 		// use mockedSnapshotter in code that requires nexustypes.Snapshotter
+// 		// use mockedSnapshotter in code that requires types.Snapshotter
 // 		// and then make assertions.
 //
 // 	}
 type SnapshotterMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
-	GetOperatorFunc func(ctx cosmossdktypes.Context, proxy cosmossdktypes.AccAddress) cosmossdktypes.ValAddress
+	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Proxy is the proxy argument value.
-			Proxy cosmossdktypes.AccAddress
+			Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
 		}
 	}
 	lockGetOperator sync.RWMutex
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *SnapshotterMock) GetOperator(ctx cosmossdktypes.Context, proxy cosmossdktypes.AccAddress) cosmossdktypes.ValAddress {
+func (mock *SnapshotterMock) GetOperator(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetOperatorFunc == nil {
 		panic("SnapshotterMock.GetOperatorFunc: method is nil but Snapshotter.GetOperator was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Proxy cosmossdktypes.AccAddress
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
 	}{
 		Ctx:   ctx,
 		Proxy: proxy,
@@ -876,15 +876,129 @@ func (mock *SnapshotterMock) GetOperator(ctx cosmossdktypes.Context, proxy cosmo
 // Check the length with:
 //     len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Proxy cosmossdktypes.AccAddress
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Proxy cosmossdktypes.AccAddress
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
 	}
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// Ensure, that AxelarnetKeeperMock does implement types.AxelarnetKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.AxelarnetKeeper = &AxelarnetKeeperMock{}
+
+// AxelarnetKeeperMock is a mock implementation of types.AxelarnetKeeper.
+//
+// 	func TestSomethingThatUsesAxelarnetKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.AxelarnetKeeper
+// 		mockedAxelarnetKeeper := &AxelarnetKeeperMock{
+// 			GetFeeCollectorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+// 				panic("mock out the GetFeeCollector method")
+// 			},
+// 			IsCosmosChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+// 				panic("mock out the IsCosmosChain method")
+// 			},
+// 		}
+//
+// 		// use mockedAxelarnetKeeper in code that requires types.AxelarnetKeeper
+// 		// and then make assertions.
+//
+// 	}
+type AxelarnetKeeperMock struct {
+	// GetFeeCollectorFunc mocks the GetFeeCollector method.
+	GetFeeCollectorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
+
+	// IsCosmosChainFunc mocks the IsCosmosChain method.
+	IsCosmosChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetFeeCollector holds details about calls to the GetFeeCollector method.
+		GetFeeCollector []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// IsCosmosChain holds details about calls to the IsCosmosChain method.
+		IsCosmosChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+		}
+	}
+	lockGetFeeCollector sync.RWMutex
+	lockIsCosmosChain   sync.RWMutex
+}
+
+// GetFeeCollector calls GetFeeCollectorFunc.
+func (mock *AxelarnetKeeperMock) GetFeeCollector(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+	if mock.GetFeeCollectorFunc == nil {
+		panic("AxelarnetKeeperMock.GetFeeCollectorFunc: method is nil but AxelarnetKeeper.GetFeeCollector was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetFeeCollector.Lock()
+	mock.calls.GetFeeCollector = append(mock.calls.GetFeeCollector, callInfo)
+	mock.lockGetFeeCollector.Unlock()
+	return mock.GetFeeCollectorFunc(ctx)
+}
+
+// GetFeeCollectorCalls gets all the calls that were made to GetFeeCollector.
+// Check the length with:
+//     len(mockedAxelarnetKeeper.GetFeeCollectorCalls())
+func (mock *AxelarnetKeeperMock) GetFeeCollectorCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetFeeCollector.RLock()
+	calls = mock.calls.GetFeeCollector
+	mock.lockGetFeeCollector.RUnlock()
+	return calls
+}
+
+// IsCosmosChain calls IsCosmosChainFunc.
+func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+	if mock.IsCosmosChainFunc == nil {
+		panic("AxelarnetKeeperMock.IsCosmosChainFunc: method is nil but AxelarnetKeeper.IsCosmosChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockIsCosmosChain.Lock()
+	mock.calls.IsCosmosChain = append(mock.calls.IsCosmosChain, callInfo)
+	mock.lockIsCosmosChain.Unlock()
+	return mock.IsCosmosChainFunc(ctx, chain)
+}
+
+// IsCosmosChainCalls gets all the calls that were made to IsCosmosChain.
+// Check the length with:
+//     len(mockedAxelarnetKeeper.IsCosmosChainCalls())
+func (mock *AxelarnetKeeperMock) IsCosmosChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockIsCosmosChain.RLock()
+	calls = mock.calls.IsCosmosChain
+	mock.lockIsCosmosChain.RUnlock()
 	return calls
 }

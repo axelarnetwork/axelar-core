@@ -94,7 +94,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	expected.LinkedAddresses = expectedLinkedAddresses
 
 	expected.Nonce = uint64(linkedAddressesCount)
-	expectedEthereumTotal := sdk.NewCoins()
 	for i, linkedAddress := range expectedLinkedAddresses {
 		depositAddress := linkedAddress.DepositAddress
 		recipientAddress := linkedAddress.RecipientAddress
@@ -111,7 +110,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		if rand.Bools(0.5).Next() {
 			keeper.ArchivePendingTransfer(ctx, expectedTransfer)
 			expectedTransfer.State = exported.Archived
-			expectedEthereumTotal = expectedEthereumTotal.Add(expectedTransfer.Asset)
 		}
 
 		expected.Transfers = append(expected.Transfers, expectedTransfer)
@@ -126,7 +124,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		{
 			Chain:     evm.Ethereum,
 			Assets:    []string{evm.Ethereum.NativeAsset, axelarnet.Axelarnet.NativeAsset},
-			Total:     expectedEthereumTotal,
 			Activated: true,
 		},
 		{

@@ -37,7 +37,7 @@ type BaseKeeper interface {
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
-	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error
+	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) (nexus.TransferID, error)
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
@@ -45,7 +45,6 @@ type Nexus interface {
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, denom string)
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
-	AddToChainTotal(ctx sdk.Context, chain nexus.Chain, amount sdk.Coin)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)

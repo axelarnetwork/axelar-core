@@ -11,7 +11,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/gogo/protobuf/proto"
@@ -179,6 +178,7 @@ func GetValidatorIllegibilities() []ValidatorIllegibility {
 type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info slashingtypes.ValidatorSigningInfo, found bool)
 	SignedBlocksWindow(ctx sdk.Context) (res int64)
+	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
 }
 
 // Tss provides functionality to tss module
@@ -186,8 +186,8 @@ type Tss interface {
 	GetSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
 	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
 	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
-	GetMaxMissedBlocksPerWindow(ctx sdk.Context) utils.Threshold
 	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
+	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error)
 }
 
 // GetValidator returns the validator for a given address, if it is part of the snapshot

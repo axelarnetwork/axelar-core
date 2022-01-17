@@ -95,8 +95,8 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			valAddr := serverCtx.Viper.GetString("validator-addr")
-			if valAddr == "" {
-				return fmt.Errorf("validator address not set")
+			if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
+				return sdkerrors.Wrap(err, "invalid validator operator address")
 			}
 
 			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
@@ -158,7 +158,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
-	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
@@ -175,27 +175,28 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 
 	bc := createBroadcaster(txf, axelarCfg, logger)
 
-	stateStore := NewStateStore(stateSource)
-	startBlock, err := stateStore.GetState()
-	if err != nil {
-		logger.Error(err.Error())
-		startBlock = 0
-	}
-
 	tmClient, err := ctx.GetNode()
 	if err != nil {
 		panic(err)
 	}
+
 	// in order to subscribe to events, the client needs to be running
 	if !tmClient.IsRunning() {
 		if err := tmClient.Start(); err != nil {
 			panic(fmt.Errorf("unable to start client: %v", err))
 		}
 	}
+
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := getStartBlock(stateStore, tmClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
 	eventBus := createEventBus(tmClient, startBlock, logger)
 
 	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
-	if recoveryJSON != nil && len(recoveryJSON) > 0 {
+	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
@@ -277,6 +278,32 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 	mgr.Wait()
 }
 
+func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.Logger) (int64, error) {
+	startBlock, err := stateStore.GetState()
+	if err != nil {
+		logger.Error(err.Error())
+
+		return 0, nil
+	}
+
+	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	status, err := tmClient.Status(rpcCtx)
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO: Make it configurable instead of a hardcoded 100
+	if status.SyncInfo.LatestBlockHeight-startBlock > 100 {
+		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
+
+		return 0, nil
+	}
+
+	return startBlock + 1, nil
+}
+
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 	return tmEvents.Query{
 		TMQuery: tmEvents.NewBlockHeaderEventQuery(eventType).MatchModule(module).MatchAction(action).Build(),
@@ -325,6 +352,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
 		if !evmChainConf.WithBridge {
+			logger.Debug(fmt.Sprintf("RPC connection is disabled for EVM chain %s. Skipping...", evmChainConf.Name))
 			continue
 		}
 
@@ -336,6 +364,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 
 		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr)
 		if err != nil {
+			err = sdkerrors.Wrap(err, fmt.Sprintf("Failed to create an RPC connection for EVM chain %s. Verify your RPC config.", evmChainConf.Name))
 			logger.Error(err.Error())
 			panic(err)
 		}
