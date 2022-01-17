@@ -7,9 +7,9 @@ burnable="$(cat artifacts/Burner.json | jq -r '.bytecode')"
 
 cp x/evm/types/contracts.go.template x/evm/types/contracts.go
 
-sed -i '' "s/%AxelarGatewayProxySinglesig_bytecode%/$singlesigGateway/g" x/evm/types/contracts.go
-sed -i '' "s/%AxelarGatewayProxyMultisig_bytecode%/$multisigGateway/g" x/evm/types/contracts.go
-sed -i '' "s/%BurnableMintableCappedERC20_bytecode%/$token/g" x/evm/types/contracts.go
-sed -i '' "s/%Burner_bytecode%/$burnable/g" x/evm/types/contracts.go
+sed -i.bak "s/%AxelarGatewayProxySinglesig_bytecode%/$singlesigGateway/g" x/evm/types/contracts.go
+sed -i.bak "s/%AxelarGatewayProxyMultisig_bytecode%/$multisigGateway/g" x/evm/types/contracts.go
+sed -i.bak "s/%BurnableMintableCappedERC20_bytecode%/$token/g" x/evm/types/contracts.go
+sed -i.bak "s/%Burner_bytecode%/$burnable/g" x/evm/types/contracts.go
 
 cat x/evm/types/contracts.go
