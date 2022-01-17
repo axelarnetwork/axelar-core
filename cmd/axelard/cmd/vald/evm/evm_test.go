@@ -216,7 +216,7 @@ func TestMgr_validate(t *testing.T) {
 			Status:      1,
 		}
 
-		rpc := &mock.ClientMock{
+		rpc := &mock.MoonbeamClientMock{
 			TransactionByHashFunc: func(_ context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
 				if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
 					return tx, false, nil
@@ -231,7 +231,6 @@ func TestMgr_validate(t *testing.T) {
 
 				return nil, fmt.Errorf("not found")
 			},
-			IsMoonbeamFunc:            func() bool { return true },
 			ChainGetFinalizedHeadFunc: func(_ context.Context) (common.Hash, error) { return latestFinalizedBlockHash, nil },
 			ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*evmRpc.MoonbeamHeader, error) {
 				if bytes.Equal(hash.Bytes(), latestFinalizedBlockHash.Bytes()) {
@@ -330,7 +329,6 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			Status: 1,
 		}
 		rpc = &mock.ClientMock{
-			IsMoonbeamFunc: func() bool { return false },
 			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
 				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
 			},
@@ -454,7 +452,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			Status: 1,
 		}
 		rpc = &mock.ClientMock{
-			IsMoonbeamFunc: func() bool { return false },
 			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
 				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
 			},
@@ -653,7 +650,6 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			Status: 1,
 		}
 		rpc = &mock.ClientMock{
-			IsMoonbeamFunc: func() bool { return false },
 			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
 				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
 			},

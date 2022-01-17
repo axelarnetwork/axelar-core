@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-//go:generate moq -out ./mock/rpcClient.go -pkg mock . Client
+//go:generate moq -out ./mock/rpcClient.go -pkg mock . Client MoonbeamClient
 
 const codeMethodNotFound = -32601
 
@@ -21,21 +21,23 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 	Close()
+}
+
+type MoonbeamClient interface {
+	Client
 
 	ChainGetFinalizedHead(ctx context.Context) (common.Hash, error)
 	ChainGetHeader(ctx context.Context, hash common.Hash) (*MoonbeamHeader, error)
-	IsMoonbeam() bool
 }
 
-// ClientImpl implements Client
-type ClientImpl struct {
+// MoonbeamClientImpl implements MoonbeamClient
+type MoonbeamClientImpl struct {
 	*evmClient.Client
-	url        string
-	isMoonbeam bool
+	url string
 }
 
 // ChainGetFinalizedHead returns the hash of the latest finalized block
-func (c ClientImpl) ChainGetFinalizedHead(ctx context.Context) (common.Hash, error) {
+func (c MoonbeamClientImpl) ChainGetFinalizedHead(ctx context.Context) (common.Hash, error) {
 	rpc, err := rpc.DialContext(ctx, c.url)
 	if err != nil {
 		return common.Hash{}, err
@@ -50,7 +52,7 @@ func (c ClientImpl) ChainGetFinalizedHead(ctx context.Context) (common.Hash, err
 }
 
 // ChainGetHeader returns the moonbeam block header of the given hash
-func (c ClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash) (*MoonbeamHeader, error) {
+func (c MoonbeamClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash) (*MoonbeamHeader, error) {
 	rpc, err := rpc.DialContext(ctx, c.url)
 	if err != nil {
 		return nil, err
@@ -64,34 +66,25 @@ func (c ClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash) (*Moon
 	return &result, nil
 }
 
-// IsMoonbeam returns true if the rpc client is connected to a moonbeam node; false otherwise
-func (c ClientImpl) IsMoonbeam() bool {
-	return c.isMoonbeam
-}
-
 // NewClient returns an EVM rpc client
 func NewClient(url string) (Client, error) {
-	c, err := evmClient.Dial(url)
+	evmClient, err := evmClient.Dial(url)
 	if err != nil {
 		return nil, err
 	}
 
-	client := ClientImpl{
-		Client: c,
+	client := MoonbeamClientImpl{
+		Client: evmClient,
 		url:    url,
 	}
 
 	_, err = client.ChainGetFinalizedHead(context.Background())
 	switch err := err.(type) {
 	case nil:
-		client.isMoonbeam = true
-
 		return client, nil
 	case rpc.Error:
 		if err.ErrorCode() == codeMethodNotFound {
-			client.isMoonbeam = false
-
-			return client, nil
+			return evmClient, nil
 		}
 
 		return nil, err

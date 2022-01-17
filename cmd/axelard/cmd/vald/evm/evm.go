@@ -453,37 +453,38 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		nil
 }
 
-func getLatestFinalizedBlockNumber(rpc rpc.Client, confHeight uint64) (*big.Int, error) {
-	if rpc.IsMoonbeam() {
-		finalizedBlockHash, err := rpc.ChainGetFinalizedHead(context.Background())
+func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.Int, error) {
+	switch client := client.(type) {
+	case rpc.MoonbeamClient:
+		finalizedBlockHash, err := client.ChainGetFinalizedHead(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
-		header, err := rpc.ChainGetHeader(context.Background(), finalizedBlockHash)
+		header, err := client.ChainGetHeader(context.Background(), finalizedBlockHash)
 		if err != nil {
 			return nil, err
 		}
 
 		return header.Number.ToInt(), nil
-	}
+	default:
+		blockNumber, err := client.BlockNumber(context.Background())
+		if err != nil {
+			return nil, err
+		}
 
-	blockNumber, err := rpc.BlockNumber(context.Background())
-	if err != nil {
-		return nil, err
+		return big.NewInt(int64(blockNumber - confHeight + 1)), nil
 	}
-
-	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
 }
 
-func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
-	tx, _, err := rpc.TransactionByHash(context.Background(), txID)
+func (mgr Mgr) validate(client rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
+	tx, _, err := client.TransactionByHash(context.Background(), txID)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction by hash call failed").Error())
 		return false
 	}
 
-	txReceipt, err := rpc.TransactionReceipt(context.Background(), txID)
+	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction receipt call failed").Error())
 		return false
@@ -494,7 +495,7 @@ func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, val
 		return false
 	}
 
-	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(rpc, confHeight)
+	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(client, confHeight)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "get latest finalized block number failed").Error())
 		return false
@@ -505,7 +506,7 @@ func (mgr Mgr) validate(rpc rpc.Client, txID common.Hash, confHeight uint64, val
 		return false
 	}
 
-	txBlock, err := rpc.BlockByNumber(context.Background(), txReceipt.BlockNumber)
+	txBlock, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "get block by number call failed").Error())
 		return false
