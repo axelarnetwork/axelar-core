@@ -14,7 +14,7 @@ import (
 
 const codeMethodNotFound = -32601
 
-// Client provides calls to an EVM RPC endpoint
+// Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
@@ -23,6 +23,7 @@ type Client interface {
 	Close()
 }
 
+// MoonbeamClient provides calls to Moonbeam JSON-RPC endpoints
 type MoonbeamClient interface {
 	Client
 
@@ -73,15 +74,15 @@ func NewClient(url string) (Client, error) {
 		return nil, err
 	}
 
-	client := MoonbeamClientImpl{
+	moonbeamClient := MoonbeamClientImpl{
 		Client: evmClient,
 		url:    url,
 	}
 
-	_, err = client.ChainGetFinalizedHead(context.Background())
+	_, err = moonbeamClient.ChainGetFinalizedHead(context.Background())
 	switch err := err.(type) {
 	case nil:
-		return client, nil
+		return moonbeamClient, nil
 	case rpc.Error:
 		if err.ErrorCode() == codeMethodNotFound {
 			return evmClient, nil
