@@ -787,14 +787,14 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
 	if burnerInfo != nil {
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
+		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
 	}
 
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
 		poll.AllowOverride()
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
 			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID.Hex(), req.BurnAddress.Hex()),
 		}, nil
