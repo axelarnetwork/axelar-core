@@ -12,3 +12,4 @@ sed -i.bak "s/%AxelarGatewayProxyMultisig_bytecode%/$multisigGateway/g" x/evm/ty
 sed -i.bak "s/%BurnableMintableCappedERC20_bytecode%/$token/g" x/evm/types/contracts.go
 sed -i.bak "s/%Burner_bytecode%/$burnable/g" x/evm/types/contracts.go
 
+rm x/evm/types/contracts.go.bak

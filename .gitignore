@@ -22,4 +22,3 @@
 *.DS_Store
 /artifacts/
 /x/evm/types/contracts.go
-/x/evm/types/contracts.go.bak
