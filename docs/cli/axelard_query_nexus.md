@@ -28,3 +28,4 @@ axelard query nexus [flags]
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query nexus chain-maintainers](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
 - [axelard query nexus latest-deposit-address](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+- [axelard query nexus transfers-for-chain](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
