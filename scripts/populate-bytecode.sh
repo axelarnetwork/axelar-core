@@ -7,7 +7,7 @@ multisigGatewayFile="$artefactsPath/AxelarGatewayProxyMultisig.json"
 tokenFile="$artefactsPath/BurnableMintableCappedERC20.json"
 burnableFile="$artefactsPath/Burner.json"
 
-if [[ ! -f $singlesigGatewayFile || ! -f $multisigGatewayFile || ! -f $tokenFile || ! -f $burnableFile ]]; then
+if [ ! -f $singlesigGatewayFile ] || [ ! -f $multisigGatewayFile ] || [ ! -f $tokenFile ] || [ ! -f $burnableFile ]; then
     echo "Error: Contract files not found in $artefactsPath"
     exit 1
 fi
