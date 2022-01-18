@@ -49,8 +49,8 @@ build: populate-bytecode go.sum
 build-binaries: populate-bytecode guard-SEMVER
 	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
-.PHONY: populate-bytecode build-binaries-in-docker
-build-binaries-in-docker: guard-SEMVER
+.PHONY: build-binaries-in-docker
+build-binaries-in-docker: populate-bytecode guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
 		--ssh default \
 		--build-arg SEMVER=${SEMVER} \
