@@ -158,7 +158,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit for %s with transfer ID %d", req.DepositAddress.String(), transferID))
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed to %s with transfer ID %d", req.DepositAddress.String(), transferID))
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
