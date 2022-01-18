@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-artefactsPath="contract-artifacts/gateway"
+artifactsPath="contract-artifacts/gateway"
 
-singlesigGatewayFile="$artefactsPath/AxelarGatewayProxySinglesig.json"
-multisigGatewayFile="$artefactsPath/AxelarGatewayProxyMultisig.json"
-tokenFile="$artefactsPath/BurnableMintableCappedERC20.json"
-burnableFile="$artefactsPath/Burner.json"
+singlesigGatewayFile="$artifactsPath/AxelarGatewayProxySinglesig.json"
+multisigGatewayFile="$artifactsPath/AxelarGatewayProxyMultisig.json"
+tokenFile="$artifactsPath/BurnableMintableCappedERC20.json"
+burnableFile="$artifactsPath/Burner.json"
 
 if [ ! -f $singlesigGatewayFile ] || [ ! -f $multisigGatewayFile ] || [ ! -f $tokenFile ] || [ ! -f $burnableFile ]; then
-    echo "Error: Contract files not found in $artefactsPath"
+    echo "Error: Contract files not found in $artifactsPath"
     exit 1
 fi
 
