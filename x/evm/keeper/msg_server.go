@@ -816,7 +816,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Debug(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d (command ID %s)", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID)))
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d and command ID %s", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID).Hex()))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1462,7 +1462,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
-		s.Logger(ctx).Debug(fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())))
+		s.Logger(ctx).Info(fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())))
 	}
 
 	ctx.EventManager().EmitEvent(
