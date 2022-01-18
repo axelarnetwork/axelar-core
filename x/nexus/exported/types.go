@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strconv"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -13,6 +14,17 @@ import (
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses
 type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
+
+// TransferStateFromString converts a describing state string to the corresponding TransferState
+func TransferStateFromString(s string) TransferState {
+	state, ok := TransferState_value["TRANSFER_STATE_"+strings.ToUpper(s)]
+
+	if !ok {
+		return TRANSFER_STATE_UNSPECIFIED
+	}
+
+	return TransferState(state)
+}
 
 // Validate validates the TransferState
 func (m TransferState) Validate() error {
