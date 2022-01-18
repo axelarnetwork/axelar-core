@@ -11,6 +11,19 @@ import (
 
 var _ types.QueryServiceServer = Keeper{}
 
+// TransfersForChain returns the transfers for a given chain
+func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChainRequest) (*types.TransfersForChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+	}
+
+	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
+	return &types.TransfersForChainResponse{Transfers: transfers, Pagination: pagination}, err
+}
+
 // LatestDepositAddress returns the deposit address for the provided recipient
 func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

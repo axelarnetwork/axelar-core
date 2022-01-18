@@ -4,6 +4,8 @@ package nexus.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
+import "nexus/exported/v1beta1/types.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -22,3 +24,17 @@ message LatestDepositAddressRequest {
 }
 
 message LatestDepositAddressResponse { string deposit_addr = 1; };
+
+// TransfersForChainRequest represents a message that queries the
+// transfers for the specified chain
+message TransfersForChainRequest {
+  string chain = 1;
+  exported.v1beta1.TransferState state = 2;
+  cosmos.base.query.v1beta1.PageRequest pagination = 3;
+}
+
+message TransfersForChainResponse {
+  repeated exported.v1beta1.CrossChainTransfer transfers = 1
+      [ (gogoproto.nullable) = false ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
