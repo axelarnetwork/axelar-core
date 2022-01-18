@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-singlesigGateway="$(cat artifacts/AxelarGatewayProxySinglesig.json | jq -r '.bytecode')"
-multisigGateway="$(cat artifacts/AxelarGatewayProxyMultisig.json | jq -r '.bytecode')"
-token="$(cat artifacts/BurnableMintableCappedERC20.json | jq -r '.bytecode')"
-burnable="$(cat artifacts/Burner.json | jq -r '.bytecode')"
+singlesigGateway="$(cat contract-artifacts/gateway/AxelarGatewayProxySinglesig.json | jq -r '.bytecode')"
+multisigGateway="$(cat contract-artifacts/gateway/AxelarGatewayProxyMultisig.json | jq -r '.bytecode')"
+token="$(cat contract-artifacts/gateway/BurnableMintableCappedERC20.json | jq -r '.bytecode')"
+burnable="$(cat contract-artifacts/gateway/Burner.json | jq -r '.bytecode')"
 
 cp x/evm/types/contracts.go.template x/evm/types/contracts.go
 

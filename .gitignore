@@ -20,5 +20,5 @@
 /x/evm/client/cli/testdata/
 /node_modules/
 *.DS_Store
-/artifacts/
+/contract-artifacts/*/*.json
 /x/evm/types/contracts.go
