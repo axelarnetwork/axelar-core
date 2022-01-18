@@ -270,7 +270,6 @@ func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress)
 
 	for ; indexOffset < signInfo.IndexOffset; indexOffset++ {
 		if missed := k.slasher.GetValidatorMissedBlockBitArray(ctx, address, indexOffset%slasherWindow); missed {
-			k.Logger(ctx).Debug(fmt.Sprintf("address %s missed block at index #%d", address.String(), indexOffset%slasherWindow))
 			counter++
 		}
 	}
@@ -348,7 +347,7 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID)
 		}
 
 		if !k.operatorHasKeys(ctx, address, keyIDs...) {
-			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due absent keys", validator))
+			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to absent keys", validator))
 			continue
 		}
 
