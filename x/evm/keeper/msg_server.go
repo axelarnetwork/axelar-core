@@ -766,7 +766,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result is %t", chain.Name, confirmed.Value))
+	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result for %s to %s is %t", chain.Name, pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex(), confirmed.Value))
 	keeper.DeletePendingDeposit(ctx, req.PollKey)
 
 	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
@@ -815,7 +815,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Debug(fmt.Sprintf("confirmed deposit %s for %s with transfer ID %d (command ID %s)", pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID)))
+	s.Logger(ctx).Debug(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d (command ID %s)", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID)))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1461,7 +1461,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
-		s.Logger(ctx).Debug("signing command %s in batch %s", commandID, batchedCommandsIDHex)
+		s.Logger(ctx).Debug("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID()))
 	}
 
 	ctx.EventManager().EmitEvent(
