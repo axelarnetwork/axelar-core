@@ -1462,7 +1462,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
-		s.Logger(ctx).Debug("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID()))
+		s.Logger(ctx).Debug(fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())))
 	}
 
 	ctx.EventManager().EmitEvent(
