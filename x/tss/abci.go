@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -147,13 +148,13 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
 	))
 
-	k.Logger(ctx).Info(fmt.Sprintf("next sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, string(info.Msg)),
+	k.Logger(ctx).Info(fmt.Sprintf("next sign: sig_id [%s] key_id [%s] message [%s]", info.SigID, info.KeyID, common.Bytes2Hex(info.Msg)),
 		types.AttributeKeySigID, info.SigID,
 		types.AttributeKeyParticipants, string(k.GetSignParticipantsAsJSON(ctx, info.SigID)),
 		types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID)),
 		types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants)),
 		types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts)),
-		types.AttributeKeyPayload, string(info.Msg),
+		types.AttributeKeyPayload, common.Bytes2Hex(info.Msg),
 		types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10))
 }
 
