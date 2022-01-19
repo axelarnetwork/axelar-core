@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -83,6 +84,17 @@ func NewClient(url string) (Client, error) {
 	switch err := err.(type) {
 	case nil:
 		return moonbeamClient, nil
+	case rpc.HTTPError:
+		var jsonrpcMsg jsonrpcMessage
+		if json.Unmarshal(err.Body, &jsonrpcMsg) != nil {
+			return nil, err
+		}
+
+		if jsonrpcMsg.Error != nil && jsonrpcMsg.Error.Code == codeMethodNotFound {
+			return evmClient, nil
+		}
+
+		return nil, err
 	case rpc.Error:
 		if err.ErrorCode() == codeMethodNotFound {
 			return evmClient, nil
