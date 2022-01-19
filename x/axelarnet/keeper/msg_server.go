@@ -68,9 +68,11 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
+			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
 	)
 

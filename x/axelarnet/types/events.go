@@ -9,8 +9,9 @@ const (
 // Event attribute keys
 const (
 	AttributeKeyChain              = "chain"
+	AttributeKeySourceChain        = "sourceChain"
 	AttributeKeyTxID               = "txID"
-	AttributeKeyAmount             = "amount"
+	AttributeKeyAsset              = "asset"
 	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyDestinationChain   = "destinationChain"

@@ -278,11 +278,12 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, senderChain.Name),
+			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
 	)
 

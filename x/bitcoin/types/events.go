@@ -23,9 +23,11 @@ const (
 	AttributeKeyMasterKeyID        = "masterKeyId"
 	AttributeKeySecondaryKeyID     = "secondaryKeyId"
 	AttributeKeyDepositAddress     = "depositAddress"
+	AttributeKeySourceChain        = "sourceChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyValue              = "value"
+	AttributeKeyAsset              = "asset"
 )
 
 // Event attribute values
