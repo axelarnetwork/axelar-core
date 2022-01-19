@@ -15,6 +15,7 @@ const (
 const (
 	AttributeKeyBatchedCommandsID  = "batchedCommandID"
 	AttributeKeyChain              = "chain"
+	AttributeKeySourceChain        = "sourceChain"
 	AttributeKeyAddress            = "address"
 	AttributeKeyThreshold          = "threshold"
 	AttributeKeyPoll               = "poll"

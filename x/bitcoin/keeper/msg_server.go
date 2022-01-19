@@ -158,8 +158,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			sdk.NewAttribute(types.AttributeKeyMasterKeyID, string(masterKey.ID)),
 			sdk.NewAttribute(types.AttributeKeySecondaryKeyID, string(secondaryKey.ID)),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddressInfo.Address),
+			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Bitcoin.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+			sdk.NewAttribute(types.AttributeKeyAsset, exported.Bitcoin.NativeAsset),
 		),
 	)
 
