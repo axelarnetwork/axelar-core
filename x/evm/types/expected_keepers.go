@@ -74,7 +74,7 @@ type ChainKeeper interface {
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 
-	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, minDeposit sdk.Int, address Address) (ERC20Token, error)
+	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, address Address) (ERC20Token, error)
 	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token
 	GetERC20TokenBySymbol(ctx sdk.Context, symbol string) ERC20Token
 	GetTokens(ctx sdk.Context) []ERC20Token
@@ -120,7 +120,7 @@ type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, denom string)
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset)
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }

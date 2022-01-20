@@ -304,9 +304,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetCosmosChainByNameFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
-			GetAssetFunc: func(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
-				return types.Asset{Denom: testToken, MinAmount: sdk.NewInt(1000000)}, true
-			},
 			GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -355,26 +352,6 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers))
 		assert.Len(t, bankKeeper.SendCoinsCalls(), len(transfers))
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-	}).Repeat(repeatCount))
-
-	t.Run("should not mint any tokens due to no transfer meeting the minimum deposit amount", testutils.Func(func(t *testing.T) {
-		setup()
-		nexusKeeper.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
-			transfers = []nexus.CrossChainTransfer{}
-			for i := int64(0); i < rand.I64Between(1, 50); i++ {
-				transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
-				transfer.Asset.Amount = sdk.NewInt(100000)
-				transfers = append(transfers, transfer)
-			}
-			randTransferIdx = mathRand.Intn(len(transfers))
-			return transfers
-		}
-		msg = types.NewExecutePendingTransfersRequest(rand.AccAddr())
-		_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
-		assert.NoError(t, err)
-		assert.Len(t, bankKeeper.MintCoinsCalls(), 0)
-		assert.Len(t, bankKeeper.SendCoinsCalls(), 0)
-		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), 0)
 	}).Repeat(repeatCount))
 
 	t.Run("should continue when MintCoins in bank keeper failed", testutils.Func(func(t *testing.T) {

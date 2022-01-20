@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -38,7 +39,10 @@ func DefaultGenesisState() *GenesisState {
 		DefaultParams(),
 		0,
 		[]exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
-		[]ChainState{},
+		[]ChainState{{
+			Chain:  axelarnet.Axelarnet,
+			Assets: []exported.Asset{exported.NewAsset(axelarnet.Axelarnet.NativeAsset, sdk.NewInt(100000))},
+		}},
 		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},
 		exported.TransferFee{},

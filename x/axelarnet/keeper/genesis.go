@@ -15,10 +15,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 	}
 
 	for _, chain := range genState.Chains {
-		k.SetCosmosChain(ctx, types.CosmosChain{
-			Name:       chain.Name,
-			AddrPrefix: chain.AddrPrefix,
-		})
+		k.SetCosmosChain(ctx, chain)
 
 		if err := k.RegisterIBCPath(ctx, chain.Name, chain.IBCPath); err != nil {
 			panic(err)
@@ -38,25 +35,12 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 
 // ExportGenesis returns the reward module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
-	var chains []types.CosmosChain
-	for _, chainName := range k.GetCosmosChains(ctx) {
-		ibcPath, _ := k.GetIBCPath(ctx, chainName)
-		assets := k.getAssets(ctx, chainName)
-		chain, _ := k.GetCosmosChainByName(ctx, chainName)
-
-		chains = append(chains, types.CosmosChain{
-			Name:       chainName,
-			Assets:     assets,
-			IBCPath:    ibcPath,
-			AddrPrefix: chain.AddrPrefix,
-		})
-	}
-
-	var transfers []types.IBCTransfer
-	for _, transfer := range k.getPendingIBCTransfers(ctx) {
-		transfers = append(transfers, transfer)
-	}
-
 	collector, _ := k.GetFeeCollector(ctx)
-	return types.NewGenesisState(k.getParams(ctx), collector, chains, transfers)
+
+	return types.NewGenesisState(
+		k.getParams(ctx),
+		collector,
+		k.getCosmosChains(ctx),
+		k.getPendingIBCTransfers(ctx),
+	)
 }

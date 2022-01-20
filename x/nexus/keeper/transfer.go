@@ -134,10 +134,22 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
+	minAmountCache := map[string]sdk.Int{}
 
 	for ; iter.Valid(); iter.Next() {
 		var transfer exported.CrossChainTransfer
 		iter.UnmarshalValue(&transfer)
+
+		asset := transfer.Asset.Denom
+		if minAmountCache[asset].IsNil() {
+			minAmountCache[asset] = k.GetMinAmount(ctx, chain, asset)
+		}
+
+		if transfer.Asset.Amount.LT(minAmountCache[asset]) {
+			k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
+				"minimum amount for asset %s", chain.Name, transfer.Recipient.Address, asset))
+			continue
+		}
 
 		transfers = append(transfers, transfer)
 	}

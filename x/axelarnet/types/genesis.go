@@ -28,10 +28,7 @@ func DefaultGenesisState() *GenesisState {
 		Chains: []CosmosChain{{
 			Name:       exported.Axelarnet.Name,
 			AddrPrefix: "axelar",
-			Assets: []Asset{{
-				Denom:     exported.Axelarnet.NativeAsset,
-				MinAmount: sdk.NewInt(100000),
-			}},
+			Assets: []string{exported.Axelarnet.NativeAsset},
 		}},
 		PendingTransfers: []IBCTransfer{},
 	}

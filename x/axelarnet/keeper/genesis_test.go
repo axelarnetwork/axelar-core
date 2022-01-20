@@ -43,7 +43,7 @@ func TestGenesis(t *testing.T) {
 					GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 						return nexus.Chain{}, false
 					},
-					RegisterAssetFunc: func(sdk.Context, nexus.Chain, string) {},
+					RegisterAssetFunc: func(sdk.Context, nexus.Chain, nexus.Asset) {},
 				}
 
 				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -99,7 +99,7 @@ func randomChains() []types.CosmosChain {
 }
 
 func randomChain() types.CosmosChain {
-	assets := make([]types.Asset, rand.I64Between(5, 20))
+	assets := make([]string, rand.I64Between(5, 20))
 	for i := range assets {
 		assets[i] = randomAsset()
 	}

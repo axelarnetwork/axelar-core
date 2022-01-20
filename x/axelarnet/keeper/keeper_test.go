@@ -97,7 +97,8 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 	t.Run("should empty list when no chain registered", testutils.Func(func(t *testing.T) {
 		setup()
-		var empty []string
+		empty := make([]string, 0)
+
 		assert.Equal(t, empty, keeper.GetCosmosChains(ctx))
 
 	}).Repeat(repeats))
@@ -110,9 +111,6 @@ func randomIBCPath() string {
 	return port + "/" + identifier
 }
 
-func randomAsset() types.Asset {
-	return types.Asset{
-		Denom:     rand.Denom(5, 20),
-		MinAmount: sdk.NewInt(1000000),
-	}
+func randomAsset() string {
+	return rand.Denom(5, 20)
 }

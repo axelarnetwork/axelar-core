@@ -8,7 +8,6 @@
     - [Params](#axelarnet.v1beta1.Params)
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
-    - [Asset](#axelarnet.v1beta1.Asset)
     - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
@@ -36,6 +35,7 @@
     - [SigStatus](#tss.exported.v1beta1.SigStatus)
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Asset](#nexus.exported.v1beta1.Asset)
     - [Chain](#nexus.exported.v1beta1.Chain)
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
     - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
@@ -466,22 +466,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelarnet.v1beta1.Asset"></a>
-
-### Asset
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `denom` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="axelarnet.v1beta1.CosmosChain"></a>
 
 ### CosmosChain
@@ -492,7 +476,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
-| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated |  |
+| `assets` | [string](#string) | repeated |  |
 | `addr_prefix` | [string](#string) |  |  |
 
 
@@ -851,6 +835,22 @@ Signature holds public key and ECDSA signature
 
 
 
+<a name="nexus.exported.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="nexus.exported.v1beta1.Chain"></a>
 
 ### Chain
@@ -1077,7 +1077,7 @@ based chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `asset` | [Asset](#axelarnet.v1beta1.Asset) |  |  |
+| `asset` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) |  |  |
 
 
 
@@ -2180,7 +2180,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 | `is_external` | [bool](#bool) |  |  |
 | `burner_code` | [bytes](#bytes) |  |  |
@@ -3495,7 +3494,7 @@ ChainState represents the state of a registered blockchain
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
-| `assets` | [string](#string) | repeated |  |
+| `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
 
 
 

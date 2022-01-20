@@ -31,10 +31,10 @@ func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
-func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, denom string) {
+func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset) {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
-	chainState.AddAsset(denom)
+	chainState.AddAsset(asset)
 
 	k.setChainState(ctx, chainState)
 }
@@ -123,6 +123,16 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, mai
 	k.setChainState(ctx, chainState)
 
 	return nil
+}
+
+// GetMinAmount returns true if the given address is one of the given chain's maintainers; false otherwise
+func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) sdk.Int {
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return sdk.ZeroInt()
+	}
+
+	return chainState.AssetMinAmount(asset)
 }
 
 // GetChains retrieves the specification for all supported blockchains

@@ -20,14 +20,6 @@ message IBCTransfer {
 message CosmosChain {
   string name = 1;
   string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
-  repeated Asset assets = 3 [ (gogoproto.nullable) = false ];
+  repeated string assets = 3;
   string addr_prefix = 4;
-}
-
-message Asset {
-  string denom = 1;
-  bytes min_amount = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
 }

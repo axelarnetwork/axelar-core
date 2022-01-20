@@ -50,3 +50,11 @@ message TransferFee {
     (gogoproto.nullable) = false
   ];
 }
+
+message Asset {
+  string denom = 1;
+  bytes min_amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}

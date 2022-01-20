@@ -28,9 +28,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
 // 				panic("mock out the DeletePendingIBCTransfer method")
 // 			},
-// 			GetAssetFunc: func(ctx cosmossdktypes.Context, chain string, denom string) (axelarnettypes.Asset, bool) {
-// 				panic("mock out the GetAsset method")
-// 			},
 // 			GetCosmosChainByAssetFunc: func(ctx cosmossdktypes.Context, asset string) (axelarnettypes.CosmosChain, bool) {
 // 				panic("mock out the GetCosmosChainByAsset method")
 // 			},
@@ -58,7 +55,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error {
+// 			RegisterAssetToCosmosChainFunc: func(ctx cosmossdktypes.Context, asset string, chain string) error {
 // 				panic("mock out the RegisterAssetToCosmosChain method")
 // 			},
 // 			RegisterIBCPathFunc: func(ctx cosmossdktypes.Context, asset string, path string) error {
@@ -82,9 +79,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 type BaseKeeperMock struct {
 	// DeletePendingIBCTransferFunc mocks the DeletePendingIBCTransfer method.
 	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
-
-	// GetAssetFunc mocks the GetAsset method.
-	GetAssetFunc func(ctx cosmossdktypes.Context, chain string, denom string) (axelarnettypes.Asset, bool)
 
 	// GetCosmosChainByAssetFunc mocks the GetCosmosChainByAsset method.
 	GetCosmosChainByAssetFunc func(ctx cosmossdktypes.Context, asset string) (axelarnettypes.CosmosChain, bool)
@@ -114,7 +108,7 @@ type BaseKeeperMock struct {
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
 	// RegisterAssetToCosmosChainFunc mocks the RegisterAssetToCosmosChain method.
-	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error
+	RegisterAssetToCosmosChainFunc func(ctx cosmossdktypes.Context, asset string, chain string) error
 
 	// RegisterIBCPathFunc mocks the RegisterIBCPath method.
 	RegisterIBCPathFunc func(ctx cosmossdktypes.Context, asset string, path string) error
@@ -140,15 +134,6 @@ type BaseKeeperMock struct {
 			ChannelID string
 			// Sequence is the sequence argument value.
 			Sequence uint64
-		}
-		// GetAsset holds details about calls to the GetAsset method.
-		GetAsset []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain string
-			// Denom is the denom argument value.
-			Denom string
 		}
 		// GetCosmosChainByAsset holds details about calls to the GetCosmosChainByAsset method.
 		GetCosmosChainByAsset []struct {
@@ -212,7 +197,7 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Asset is the asset argument value.
-			Asset axelarnettypes.Asset
+			Asset string
 			// Chain is the chain argument value.
 			Chain string
 		}
@@ -248,7 +233,6 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockDeletePendingIBCTransfer   sync.RWMutex
-	lockGetAsset                   sync.RWMutex
 	lockGetCosmosChainByAsset      sync.RWMutex
 	lockGetCosmosChainByName       sync.RWMutex
 	lockGetCosmosChains            sync.RWMutex
@@ -305,45 +289,6 @@ func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
 	mock.lockDeletePendingIBCTransfer.RLock()
 	calls = mock.calls.DeletePendingIBCTransfer
 	mock.lockDeletePendingIBCTransfer.RUnlock()
-	return calls
-}
-
-// GetAsset calls GetAssetFunc.
-func (mock *BaseKeeperMock) GetAsset(ctx cosmossdktypes.Context, chain string, denom string) (axelarnettypes.Asset, bool) {
-	if mock.GetAssetFunc == nil {
-		panic("BaseKeeperMock.GetAssetFunc: method is nil but BaseKeeper.GetAsset was just called")
-	}
-	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Chain string
-		Denom string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-		Denom: denom,
-	}
-	mock.lockGetAsset.Lock()
-	mock.calls.GetAsset = append(mock.calls.GetAsset, callInfo)
-	mock.lockGetAsset.Unlock()
-	return mock.GetAssetFunc(ctx, chain, denom)
-}
-
-// GetAssetCalls gets all the calls that were made to GetAsset.
-// Check the length with:
-//     len(mockedBaseKeeper.GetAssetCalls())
-func (mock *BaseKeeperMock) GetAssetCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Chain string
-	Denom string
-} {
-	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Chain string
-		Denom string
-	}
-	mock.lockGetAsset.RLock()
-	calls = mock.calls.GetAsset
-	mock.lockGetAsset.RUnlock()
 	return calls
 }
 
@@ -651,13 +596,13 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 }
 
 // RegisterAssetToCosmosChain calls RegisterAssetToCosmosChainFunc.
-func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset axelarnettypes.Asset, chain string) error {
+func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Context, asset string, chain string) error {
 	if mock.RegisterAssetToCosmosChainFunc == nil {
 		panic("BaseKeeperMock.RegisterAssetToCosmosChainFunc: method is nil but BaseKeeper.RegisterAssetToCosmosChain was just called")
 	}
 	callInfo := struct {
 		Ctx   cosmossdktypes.Context
-		Asset axelarnettypes.Asset
+		Asset string
 		Chain string
 	}{
 		Ctx:   ctx,
@@ -675,12 +620,12 @@ func (mock *BaseKeeperMock) RegisterAssetToCosmosChain(ctx cosmossdktypes.Contex
 //     len(mockedBaseKeeper.RegisterAssetToCosmosChainCalls())
 func (mock *BaseKeeperMock) RegisterAssetToCosmosChainCalls() []struct {
 	Ctx   cosmossdktypes.Context
-	Asset axelarnettypes.Asset
+	Asset string
 	Chain string
 } {
 	var calls []struct {
 		Ctx   cosmossdktypes.Context
-		Asset axelarnettypes.Asset
+		Asset string
 		Chain string
 	}
 	mock.lockRegisterAssetToCosmosChain.RLock()
@@ -870,7 +815,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, denom string)  {
+// 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, asset exported.Asset)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
@@ -914,7 +859,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain exported.Chain, denom string)
+	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain exported.Chain, asset exported.Asset)
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
@@ -1001,8 +946,8 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
-			// Denom is the denom argument value.
-			Denom string
+			// Asset is the asset argument value.
+			Asset exported.Asset
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -1365,23 +1310,23 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain exported.Chain, denom string) {
+func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain exported.Chain, asset exported.Asset) {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
 		Ctx   cosmossdktypes.Context
 		Chain exported.Chain
-		Denom string
+		Asset exported.Asset
 	}{
 		Ctx:   ctx,
 		Chain: chain,
-		Denom: denom,
+		Asset: asset,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	mock.RegisterAssetFunc(ctx, chain, denom)
+	mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
@@ -1390,12 +1335,12 @@ func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain exported.
 func (mock *NexusMock) RegisterAssetCalls() []struct {
 	Ctx   cosmossdktypes.Context
 	Chain exported.Chain
-	Denom string
+	Asset exported.Asset
 } {
 	var calls []struct {
 		Ctx   cosmossdktypes.Context
 		Chain exported.Chain
-		Denom string
+		Asset exported.Asset
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset

@@ -420,7 +420,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount, types.ZeroAddress)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, types.ZeroAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -826,7 +826,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)), sdk.NewInt(1000000))
+		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
@@ -1251,12 +1251,12 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
 
-			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int, address types.Address) (types.ERC20Token, error) {
+			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
 
-				return createMockERC20Token(asset, details, minDeposit), nil
+				return createMockERC20Token(asset, details), nil
 			},
 
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
@@ -1270,6 +1270,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) {},
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -1427,11 +1428,10 @@ func createDetails(name, symbol string) types.TokenDetails {
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
 
-func createMockERC20Token(asset string, details types.TokenDetails, minAmount sdk.Int) types.ERC20Token {
+func createMockERC20Token(asset string, details types.TokenDetails) types.ERC20Token {
 	meta := types.ERC20TokenMetadata{
 		Asset:        asset,
 		Details:      details,
-		MinAmount:    minAmount,
 		Status:       types.Initialized,
 		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),

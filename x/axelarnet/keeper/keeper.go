@@ -56,14 +56,6 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
-// GetMinAmount returns the minimum deposit amount
-func (k Keeper) GetMinAmount(ctx sdk.Context) sdk.Int {
-	var result sdk.Int
-	k.params.Get(ctx, types.KeyMinAmount, &result)
-
-	return result
-}
-
 // GetTransactionFeeRate returns the transaction fee rate for axelarnet and cosmos chains
 func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
 	var result sdk.Dec
@@ -180,17 +172,28 @@ func (k Keeper) GetCosmosChainByAsset(ctx sdk.Context, asset string) (types.Cosm
 
 // GetCosmosChains retrieves all registered cosmos chains
 func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
-	var results []string
+	cosmosChains := k.getCosmosChains(ctx)
+	chains := make([]string, len(cosmosChains))
+
+	for i, chain := range cosmosChains {
+		chains[i] = chain.Name
+	}
+
+	return chains
+}
+
+func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosChain) {
 	iter := k.getStore(ctx).Iterator(cosmosChainPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		var value types.CosmosChain
-		iter.UnmarshalValue(&value)
-		results = append(results, value.Name)
+		var cosmosChain types.CosmosChain
+		iter.UnmarshalValue(&cosmosChain)
+
+		cosmosChains = append(cosmosChains, cosmosChain)
 	}
 
-	return results
+	return cosmosChains
 }
 
 func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types.CosmosChain, ok bool) {
@@ -198,21 +201,20 @@ func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types
 }
 
 // RegisterAssetToCosmosChain sets an asset's original cosmos chain
-func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset types.Asset, chain string) error {
-	value, ok := k.getCosmosChain(ctx, chain)
+func (k Keeper) RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) error {
+	cosmosChain, ok := k.getCosmosChain(ctx, chain)
 	if !ok {
 		return fmt.Errorf("unknown cosmos chain %s", chain)
 	}
 
-	value.Assets = append(value.Assets, asset)
-	k.SetCosmosChain(ctx, value)
+	cosmosChain.Assets = append(cosmosChain.Assets, asset)
+	k.SetCosmosChain(ctx, cosmosChain)
 
-	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset.Denom); ok && registeredChain.Name != chain {
-		k.deleteAssetByChain(ctx, registeredChain.Name, asset.Denom)
+	if registeredChain, ok := k.GetCosmosChainByAsset(ctx, asset); ok && registeredChain.Name != chain {
+		k.deleteAssetByChain(ctx, registeredChain.Name, asset)
 	}
 
-	k.setAssetByChain(ctx, chain, asset)
-	k.setChainByAsset(ctx, asset.Denom, chain)
+	k.setChainByAsset(ctx, asset, chain)
 
 	return nil
 }
@@ -223,36 +225,8 @@ func (k Keeper) deleteAssetByChain(ctx sdk.Context, chain string, asset string) 
 		Append(utils.LowerCaseKey(asset)))
 }
 
-func (k Keeper) setAssetByChain(ctx sdk.Context, chain string, asset types.Asset) {
-	k.getStore(ctx).Set(assetByChainPrefix.
-		Append(utils.LowerCaseKey(chain)).
-		Append(utils.LowerCaseKey(asset.Denom)), &asset)
-}
-
 func (k Keeper) setChainByAsset(ctx sdk.Context, asset string, chain string) {
 	k.getStore(ctx).SetRaw(chainByAssetPrefix.Append(utils.LowerCaseKey(asset)), []byte(chain))
-}
-
-// GetAsset retrieves an asset by chain and denom
-func (k Keeper) GetAsset(ctx sdk.Context, chain, denom string) (types.Asset, bool) {
-	var asset types.Asset
-	return asset, k.getStore(ctx).Get(assetByChainPrefix.
-		Append(utils.LowerCaseKey(chain)).
-		Append(utils.LowerCaseKey(denom)), &asset)
-}
-
-func (k Keeper) getAssets(ctx sdk.Context, chain string) []types.Asset {
-	iter := k.getStore(ctx).Iterator(assetByChainPrefix.Append(utils.LowerCaseKey(chain)))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var assets []types.Asset
-	for ; iter.Valid(); iter.Next() {
-		var asset types.Asset
-		iter.UnmarshalValue(&asset)
-		assets = append(assets, asset)
-	}
-
-	return assets
 }
 
 // SetCosmosChain sets the address prefix for the given cosmos chain

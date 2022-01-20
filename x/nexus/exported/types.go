@@ -116,3 +116,21 @@ func (m Chain) Validate() error {
 
 	return nil
 }
+
+// NewAsset returns an asset struct
+func NewAsset(denom string, minAmount sdk.Int) Asset {
+	return Asset{Denom: utils.NormalizeString(denom), MinAmount: minAmount}
+}
+
+// Validate checks the stateless validity of the asset
+func (m Asset) Validate() error {
+	if err := sdk.ValidateDenom(m.Denom); err != nil {
+		return sdkerrors.Wrap(err, "invalid denomination")
+	}
+
+	if m.MinAmount.LTE(sdk.ZeroInt()) {
+		return fmt.Errorf("minimum amount must be greater than zero")
+	}
+
+	return nil
+}

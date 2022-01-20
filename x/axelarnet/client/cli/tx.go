@@ -11,6 +11,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -191,7 +192,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, types.NewAsset(denom, minAmount))
+			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

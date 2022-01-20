@@ -2,8 +2,6 @@ package types
 
 import (
 	fmt "fmt"
-
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,6 +38,16 @@ func (m ChainState) indexOfMaintainer(maintainer sdk.ValAddress) int {
 	return -1
 }
 
+func (m ChainState) indexOfAsset(asset string) int {
+	for i := range m.Assets {
+		if m.Assets[i].Denom == asset {
+			return i
+		}
+	}
+
+	return -1
+}
+
 // Validate validates the ChainState
 func (m ChainState) Validate() error {
 	if err := m.Chain.Validate(); err != nil {
@@ -59,15 +67,15 @@ func (m ChainState) Validate() error {
 	seenDenoms := make(map[string]bool)
 
 	for _, asset := range m.Assets {
-		if err := sdk.ValidateDenom(asset); err != nil {
+		if err := asset.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
 		}
 
-		if seenDenoms[asset] {
+		if seenDenoms[asset.Denom] {
 			return fmt.Errorf("duplicate asset found")
 		}
 
-		seenDenoms[asset] = true
+		seenDenoms[asset.Denom] = true
 	}
 
 	return nil
@@ -75,13 +83,13 @@ func (m ChainState) Validate() error {
 
 // HasAsset returns true if the chain state has the given asset registered; false otherwise
 func (m ChainState) HasAsset(asset string) bool {
-	return utils.IndexOf(m.Assets, asset) != -1
+	return m.indexOfAsset(asset) != -1
 }
 
 // AddAsset registers the given asset in chain state
-func (m *ChainState) AddAsset(asset string) error {
-	if m.HasAsset(asset) {
-		return fmt.Errorf("asset %s is already registered for chain %s", asset, m.Chain.Name)
+func (m *ChainState) AddAsset(asset exported.Asset) error {
+	if m.HasAsset(asset.Denom) {
+		return fmt.Errorf("asset %s is already registered for chain %s", asset.Denom, m.Chain.Name)
 	}
 
 	m.Assets = append(m.Assets, asset)
@@ -116,4 +124,14 @@ func (m *ChainState) RemoveMaintainer(maintainer sdk.ValAddress) error {
 	m.Maintainers = m.Maintainers[:len(m.Maintainers)-1]
 
 	return nil
+}
+
+// AssetMinAmount returns the minimum transfer amount for the chain
+func (m ChainState) AssetMinAmount(asset string) sdk.Int {
+	i := m.indexOfAsset(asset)
+	if i == -1 {
+		return sdk.ZeroInt()
+	}
+
+	return m.Assets[i].MinAmount
 }

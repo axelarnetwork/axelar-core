@@ -84,7 +84,7 @@ message RegisterAssetRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  axelarnet.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
 }
 
 message RegisterAssetResponse {}

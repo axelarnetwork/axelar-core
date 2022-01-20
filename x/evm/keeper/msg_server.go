@@ -695,7 +695,6 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.SetChain(ctx, pendingChain.Chain)
-	s.nexus.RegisterAsset(ctx, pendingChain.Chain, pendingChain.Chain.NativeAsset)
 	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
@@ -909,7 +908,6 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain, req.Asset)
 	token.ConfirmDeployment()
 
 	return &types.VoteConfirmTokenResponse{
@@ -1055,7 +1053,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinAmount, req.Address)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
@@ -1068,6 +1066,8 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 		return nil, err
 	}
+
+	s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, req.MinAmount))
 
 	return &types.CreateDeployTokenResponse{}, nil
 }
@@ -1268,14 +1268,8 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	var transfersToArchive []nexus.CrossChainTransfer
 	for _, transfer := range pendingTransfers {
 		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
-		if transfer.Asset.Amount.LT(token.GetMinAmount()) {
-			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
-				"minimum amount for token %s (%s)", chain.Name, transfer.Recipient.Address, token.GetDetails().TokenName, token.GetDetails().Symbol))
-			continue
-		}
 
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
@@ -1285,16 +1279,11 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
-		transfersToArchive = append(transfersToArchive, transfer)
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
-	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("%d pending transfers ready for processing out of %d total", len(transfersToArchive), len(pendingTransfers)))
-
-	for _, pendingTransfer := range transfersToArchive {
-		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
+		s.nexus.ArchivePendingTransfer(ctx, transfer)
 	}
 
 	return &types.CreatePendingTransfersResponse{}, nil
