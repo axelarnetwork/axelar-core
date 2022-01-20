@@ -776,10 +776,13 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("cross-chain sender has no recipient")
 	}
 
+	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
+
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
