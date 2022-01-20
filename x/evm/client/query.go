@@ -70,7 +70,7 @@ func QueryBurnerInfo(clientCtx client.Context, chain, address string) (types.Que
 	err = res.Unmarshal(bz)
 
 	if err != nil {
-		return types.QueryBurnerInfoResponse{}, sdkerrors.Wrap(err, "could not get burner address")
+		return types.QueryBurnerInfoResponse{}, sdkerrors.Wrap(err, "could not get deposit address")
 	}
 	return res, nil
 }
