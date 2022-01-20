@@ -335,6 +335,30 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 	return cmd
 }
 
+// GetCmdBurnerInfo returns the query to get the burner info for the specified address
+func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "command [chain] [burner address]",
+		Short: "Get information about a burner address",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, err := evmclient.QueryBurnerInfo(clientCtx, args[0], args[1])
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdChains returns the query to get all EVM chains
 func GetCmdChains(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{

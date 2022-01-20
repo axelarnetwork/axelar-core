@@ -164,6 +164,7 @@
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
+    - [QueryBurnerInfoResponse](#evm.v1beta1.QueryBurnerInfoResponse)
     - [QueryChainsResponse](#evm.v1beta1.QueryChainsResponse)
     - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
@@ -2603,6 +2604,21 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryBurnerInfoResponse"></a>
+
+### QueryBurnerInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
 
 
 

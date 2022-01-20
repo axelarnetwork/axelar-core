@@ -32,6 +32,7 @@ const (
 	QBatchedCommands       = "batched-commands"
 	QPendingCommands       = "pending-commands"
 	QCommand               = "command"
+	QBurnerInfo            = "burner-info"
 	QChains                = "chains"
 )
 
@@ -87,6 +88,8 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
+		case QBurnerInfo:
+			return queryBurnerInfo(ctx, chainKeeper, n, path[2])
 		case QChains:
 			return queryChains(ctx, n)
 		default:
@@ -479,6 +482,22 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&depositState)
+}
+
+func queryBurnerInfo(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, addr string) ([]byte, error) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
+
+	address := common.HexToAddress(addr)
+
+	burnerInfo := k.GetBurnerInfo(ctx, address)
+	if burnerInfo == nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("unknown burner addres '%s'", addr))
+	}
+
+	return types.ModuleCdc.MarshalLengthPrefixed(burnerInfo)
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
