@@ -1,9 +1,9 @@
 ## axelard query evm command
 
-Get information about an EVM gateway command given a chain and the command ID
+Get information about a burner address
 
 ```
-axelard query evm command [chain] [id] [flags]
+axelard query evm command [chain] [burner address] [flags]
 ```
 
 ### Options
