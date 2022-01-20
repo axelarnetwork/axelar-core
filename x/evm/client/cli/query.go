@@ -339,7 +339,7 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 // GetCmdBurnerInfo returns the query to get the burner info for the specified address
 func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-info [chain] [deposit address]",
+		Use:   "burner-info [chain] [deposit address]",
 		Short: "Get information about a burner address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

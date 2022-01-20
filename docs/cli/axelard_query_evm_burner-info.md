@@ -1,16 +1,16 @@
-## axelard query evm deposit-info
+## axelard query evm burner-info
 
 Get information about a burner address
 
 ```
-axelard query evm deposit-info [chain] [deposit address] [flags]
+axelard query evm burner-info [chain] [deposit address] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for deposit-info
+  -h, --help          help for burner-info
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
