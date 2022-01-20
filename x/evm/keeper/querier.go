@@ -494,7 +494,7 @@ func queryBurnerInfo(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, addr s
 
 	burnerInfo := k.GetBurnerInfo(ctx, address)
 	if burnerInfo == nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("unknown burner addres '%s'", addr))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("unknown burner address '%s'", addr))
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(burnerInfo)
