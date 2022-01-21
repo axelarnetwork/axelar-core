@@ -91,28 +91,6 @@ func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryBurnerInfo returns the query to get the burner info for the specified address
-func GetHandlerQueryBurnerInfo(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		address := mux.Vars(r)[utils.PathVarEthereumAddress]
-
-		res, err := evmclient.QueryBurnerInfo(cliCtx, chain, address)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryBatchedCommands returns a handler to query batched commands by ID
 func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

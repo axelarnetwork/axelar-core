@@ -348,12 +348,18 @@ func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryBurnerInfo(clientCtx, args[0], args[1])
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BurnerInfo(cmd.Context(),
+				&types.BurnerInfoRequest{
+					Chain:   args[0],
+					Address: args[1],
+				})
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

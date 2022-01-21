@@ -1,6 +1,7 @@
 package types
 
 import (
+	context "context"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,6 +30,7 @@ type BaseKeeper interface {
 	DeletePendingChain(ctx sdk.Context, chain string)
 	InitGenesis(ctx sdk.Context, state GenesisState)
 	ExportGenesis(ctx sdk.Context) GenesisState
+	BurnerInfo(c context.Context, req *BurnerInfoRequest) (*BurnerInfoResponse, error)
 }
 
 // ChainKeeper is implemented by this module's chain keeper

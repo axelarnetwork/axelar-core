@@ -57,20 +57,3 @@ func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryComman
 	}
 	return res, nil
 }
-
-// QueryBurnerInfo returns the specified command for the given chain
-func QueryBurnerInfo(clientCtx client.Context, chain, address string) (types.QueryBurnerInfoResponse, error) {
-	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBurnerInfo, chain, address)
-	bz, _, err := clientCtx.Query(path)
-	if err != nil {
-		return types.QueryBurnerInfoResponse{}, sdkerrors.Wrapf(err, "could not get address for chain %s", chain)
-	}
-
-	var res types.QueryBurnerInfoResponse
-	err = res.Unmarshal(bz)
-
-	if err != nil {
-		return types.QueryBurnerInfoResponse{}, sdkerrors.Wrap(err, "could not get deposit address")
-	}
-	return res, nil
-}

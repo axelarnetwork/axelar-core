@@ -41,7 +41,6 @@ const (
 	QueryTokenAddress         = "token-address"
 	QueryPendingCommands      = keeper.QPendingCommands
 	QueryCommand              = keeper.QCommand
-	QueryBurnerInfo           = keeper.QBurnerInfo
 	QueryNextMasterAddress    = keeper.QNextMasterAddress
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryBytecode             = keeper.QBytecode
@@ -72,7 +71,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryLatestBatchedCommands(cliCtx), QueryBatchedCommands, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryPendingCommands(cliCtx), QueryPendingCommands, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryCommand(cliCtx), QueryCommand, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
-	registerQuery(GetHandlerQueryBurnerInfo(cliCtx), QueryBurnerInfo, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 	registerQuery(GetHandlerQueryAddress(cliCtx), QueryAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryTokenAddress(cliCtx), QueryTokenAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryNextMasterAddress(cliCtx), QueryNextMasterAddress, clientUtils.PathVarChain)

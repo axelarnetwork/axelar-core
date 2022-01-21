@@ -85,4 +85,9 @@ message QueryCommandResponse {
   uint32 max_gas_cost = 5;
 }
 
-message QueryBurnerInfoResponse { BurnerInfo burner_info = 1; }
+message BurnerInfoRequest {
+  string chain = 1;
+  string address = 2;
+}
+
+message BurnerInfoResponse { BurnerInfo burner_info = 1; }
