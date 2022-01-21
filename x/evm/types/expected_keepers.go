@@ -23,6 +23,7 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
+	HasChain(ctx sdk.Context, chain string) bool
 	ForChain(chain string) ChainKeeper
 
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)

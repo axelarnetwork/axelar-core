@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +15,7 @@ var _ types.QueryServiceServer = baseKeeper{}
 func (k baseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(req.Chain))) {
+	if !k.HasChain(ctx, req.Chain) {
 		return nil, sdkerrors.Wrapf(types.ErrEVM, "unkown chain '%s'", req.Chain)
 	}
 

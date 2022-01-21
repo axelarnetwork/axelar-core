@@ -85,3 +85,7 @@ func (k baseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
 	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
 }
+
+func (k baseKeeper) HasChain(ctx sdk.Context, chain string) bool {
+	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain)))
+}

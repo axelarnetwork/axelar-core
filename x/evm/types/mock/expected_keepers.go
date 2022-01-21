@@ -2153,6 +2153,9 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 // 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool) {
 // 				panic("mock out the GetPendingChain method")
 // 			},
+// 			HasChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+// 				panic("mock out the HasChain method")
+// 			},
 // 			InitGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)  {
 // 				panic("mock out the InitGenesis method")
 // 			},
@@ -2183,6 +2186,9 @@ type BaseKeeperMock struct {
 
 	// GetPendingChainFunc mocks the GetPendingChain method.
 	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool)
+
+	// HasChainFunc mocks the HasChain method.
+	HasChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool
 
 	// InitGenesisFunc mocks the InitGenesis method.
 	InitGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)
@@ -2226,6 +2232,13 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// HasChain holds details about calls to the HasChain method.
+		HasChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain string
+		}
 		// InitGenesis holds details about calls to the InitGenesis method.
 		InitGenesis []struct {
 			// Ctx is the ctx argument value.
@@ -2253,6 +2266,7 @@ type BaseKeeperMock struct {
 	lockExportGenesis      sync.RWMutex
 	lockForChain           sync.RWMutex
 	lockGetPendingChain    sync.RWMutex
+	lockHasChain           sync.RWMutex
 	lockInitGenesis        sync.RWMutex
 	lockLogger             sync.RWMutex
 	lockSetPendingChain    sync.RWMutex
@@ -2422,6 +2436,41 @@ func (mock *BaseKeeperMock) GetPendingChainCalls() []struct {
 	mock.lockGetPendingChain.RLock()
 	calls = mock.calls.GetPendingChain
 	mock.lockGetPendingChain.RUnlock()
+	return calls
+}
+
+// HasChain calls HasChainFunc.
+func (mock *BaseKeeperMock) HasChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+	if mock.HasChainFunc == nil {
+		panic("BaseKeeperMock.HasChainFunc: method is nil but BaseKeeper.HasChain was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockHasChain.Lock()
+	mock.calls.HasChain = append(mock.calls.HasChain, callInfo)
+	mock.lockHasChain.Unlock()
+	return mock.HasChainFunc(ctx, chain)
+}
+
+// HasChainCalls gets all the calls that were made to HasChain.
+// Check the length with:
+//     len(mockedBaseKeeper.HasChainCalls())
+func (mock *BaseKeeperMock) HasChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain string
+	}
+	mock.lockHasChain.RLock()
+	calls = mock.calls.HasChain
+	mock.lockHasChain.RUnlock()
 	return calls
 }
 
