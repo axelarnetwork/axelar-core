@@ -40,10 +40,14 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
+      - name: fetch tags
+        run: |
+          git fetch
+          
       - name: Build docker image (normal)
         run: |
           make docker-image
-
+          
       - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
         with:
