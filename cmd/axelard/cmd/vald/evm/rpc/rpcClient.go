@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -77,7 +76,7 @@ func (c MoonbeamClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash
 func NewClient(url string) (Client, error) {
 	evmClient, err := evmClient.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("error 0: %s", err.Error())
+		return nil, err
 	}
 
 	moonbeamClient := MoonbeamClientImpl{
@@ -87,7 +86,7 @@ func NewClient(url string) (Client, error) {
 
 	chainID, err := evmClient.ChainID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("error 0: %s", err.Error())
+		return nil, err
 	}
 
 	_, err = moonbeamClient.ChainGetFinalizedHead(context.Background())
@@ -97,14 +96,14 @@ func NewClient(url string) (Client, error) {
 	case rpc.HTTPError:
 		var jsonrpcMsg jsonrpcMessage
 		if json.Unmarshal(err.Body, &jsonrpcMsg) != nil {
-			return nil, fmt.Errorf("error 1: %s", err.Error())
+			return nil, err
 		}
 
 		if jsonrpcMsg.Error != nil && jsonrpcMsg.Error.Code == codeMethodNotFound {
 			return evmClient, nil
 		}
 
-		return nil, fmt.Errorf("error 2, code %d: %s", jsonrpcMsg.Error.Code, err.Error())
+		return nil, err
 	case rpc.Error:
 		switch {
 		case err.ErrorCode() >= codeServerError && chainID.Int64() == ganacheChainID:
@@ -112,9 +111,9 @@ func NewClient(url string) (Client, error) {
 		case err.ErrorCode() == codeMethodNotFound:
 			return evmClient, nil
 		default:
-			return nil, fmt.Errorf("error 3, code %d: %s", err.ErrorCode(), err.Error())
+			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("error 4: %s", err.Error())
+		return nil, err
 	}
 }
