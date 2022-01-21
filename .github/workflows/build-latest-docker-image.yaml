@@ -43,6 +43,7 @@ jobs:
       - name: Build docker image (normal)
         run: |
           git fetch
+          git describe --tags
           make docker-image
           
       - name: Push to ECR (normal)
