@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -37,6 +38,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdPendingCommands(queryRoute),
 		GetCmdCommand(queryRoute),
 		GetCmdChains(queryRoute),
+		GetCmdConfirmationHeight(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -354,6 +356,33 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 			return clientCtx.PrintProto(&res)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
+func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirmation-height [chain]",
+		Short: "Returns the minimum confirmation height for the given chain",
+		Args:  cobra.ExactArgs(1),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		height, err := evmclient.QueryConfirmationHeight(clientCtx, args[0])
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(strconv.FormatUint(height, 10))
+		return nil
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
