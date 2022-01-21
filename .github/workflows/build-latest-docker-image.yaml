@@ -41,9 +41,11 @@ jobs:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
       - name: Build docker image (normal)
+        env:
+          SEMVER: ${{ steps.set-tag.outputs.TAG }}
         run: |
           make docker-image
-
+          
       - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
         with:
