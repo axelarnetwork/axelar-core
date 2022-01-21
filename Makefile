@@ -60,8 +60,8 @@ debug: go.sum
 
 # Build a release image
 .PHONY: docker-image
-docker-image:
-	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
+docker-image: guard-SEMVER
+	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core --build-arg SEMVER=${SEMVER} .
 
 # Build a release image
 .PHONY: docker-image-local-user
@@ -82,8 +82,8 @@ build-push-docker-images: guard-SEMVER
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
-docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
+docker-image-debug: guard-SEMVER
+	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug --build-arg SEMVER=${SEMVER} .
 
 # Install all generate prerequisites
 .Phony: prereqs
