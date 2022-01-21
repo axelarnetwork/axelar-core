@@ -106,7 +106,7 @@ func NewClient(url string) (Client, error) {
 		return nil, err
 	case rpc.Error:
 		switch {
-		case err.ErrorCode() >= codeServerError && chainID.Int64() == ganacheChainID:
+		case err.ErrorCode() <= codeServerError && chainID.Int64() == ganacheChainID:
 			fallthrough
 		case err.ErrorCode() == codeMethodNotFound:
 			return evmClient, nil
