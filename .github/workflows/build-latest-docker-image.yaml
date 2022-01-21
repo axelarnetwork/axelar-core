@@ -42,7 +42,7 @@ jobs:
 
       - name: fetch tags
         run: |
-          git fetch
+          git fetch --unshallow
           
       - name: Build docker image (normal)
         run: |
