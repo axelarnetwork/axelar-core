@@ -40,10 +40,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
-      - name: Build docker image (normal)
+      - name: fetch tags
         run: |
           git fetch
-          git describe --tags
+          
+      - name: Build docker image (normal)
+        run: |
           make docker-image
           
       - name: Push to ECR (normal)
