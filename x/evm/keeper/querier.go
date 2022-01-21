@@ -580,7 +580,7 @@ func queryChains(ctx sdk.Context, n types.Nexus) ([]byte, error) {
 	return response.Marshal()
 }
 
-// QueryConfirmationHeight returns the minimum confirmation height for given given chain
+// QueryConfirmationHeight returns the minimum confirmation height for the given chain
 func QueryConfirmationHeight(ctx sdk.Context, n types.Nexus, k types.ChainKeeper, chainName string) ([]byte, error) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {

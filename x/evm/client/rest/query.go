@@ -316,7 +316,7 @@ func GetHandlerQueryChains(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryConfirmationHeight returns a handler to query the confirmation height for a given chain
+// GetHandlerQueryConfirmationHeight returns a handler to query the confirmation height for the given chain
 func GetHandlerQueryConfirmationHeight(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
