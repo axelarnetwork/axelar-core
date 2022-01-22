@@ -353,7 +353,7 @@ func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
 			res, err := queryClient.BurnerInfo(cmd.Context(),
 				&types.BurnerInfoRequest{
 					Chain:   args[0],
-					Address: args[1],
+					Address: types.Address(common.HexToAddress(args[1])),
 				})
 			if err != nil {
 				return err

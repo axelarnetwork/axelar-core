@@ -87,7 +87,7 @@ message QueryCommandResponse {
 
 message BurnerInfoRequest {
   string chain = 1;
-  string address = 2;
+  bytes address = 2 [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 message BurnerInfoResponse { BurnerInfo burner_info = 1; }

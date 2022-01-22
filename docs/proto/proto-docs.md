@@ -2518,7 +2518,7 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `address` | [string](#string) |  |  |
+| `address` | [bytes](#bytes) |  |  |
 
 
 
@@ -3371,7 +3371,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info/{chain}/{address}|
+| `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 
  <!-- end services -->
 

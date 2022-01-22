@@ -2631,7 +2631,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBurnerByteCodesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetBurnerByteCodes method")
 // 			},
-// 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
+// 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo {
 // 				panic("mock out the GetBurnerInfo method")
 // 			},
 // 			GetChainIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (*big.Int, bool) {
@@ -2780,7 +2780,7 @@ type ChainKeeperMock struct {
 	GetBurnerByteCodesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
 
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
-	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo
+	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo
 
 	// GetChainIDFunc mocks the GetChainID method.
 	GetChainIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (*big.Int, bool)
@@ -2981,7 +2981,7 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Address is the address argument value.
-			Address common.Address
+			Address types.Address
 		}
 		// GetChainID holds details about calls to the GetChainID method.
 		GetChainID []struct {
@@ -3716,13 +3716,13 @@ func (mock *ChainKeeperMock) GetBurnerByteCodesCalls() []struct {
 }
 
 // GetBurnerInfo calls GetBurnerInfoFunc.
-func (mock *ChainKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address common.Address) *types.BurnerInfo {
+func (mock *ChainKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo {
 	if mock.GetBurnerInfoFunc == nil {
 		panic("ChainKeeperMock.GetBurnerInfoFunc: method is nil but ChainKeeper.GetBurnerInfo was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address common.Address
+		Address types.Address
 	}{
 		Ctx:     ctx,
 		Address: address,
@@ -3738,11 +3738,11 @@ func (mock *ChainKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_type
 //     len(mockedChainKeeper.GetBurnerInfoCalls())
 func (mock *ChainKeeperMock) GetBurnerInfoCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Address common.Address
+	Address types.Address
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address common.Address
+		Address types.Address
 	}
 	mock.lockGetBurnerInfo.RLock()
 	calls = mock.calls.GetBurnerInfo

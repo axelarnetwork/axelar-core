@@ -7,7 +7,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var _ types.QueryServiceServer = baseKeeper{}
@@ -19,7 +18,7 @@ func (k baseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) 
 		return nil, sdkerrors.Wrapf(types.ErrBurnerInfoNotFound, "unkown chain '%s'", req.Chain)
 	}
 
-	burnerInfo := k.ForChain(req.Chain).GetBurnerInfo(ctx, common.HexToAddress(req.Address))
+	burnerInfo := k.ForChain(req.Chain).GetBurnerInfo(ctx, req.Address)
 	if burnerInfo == nil {
 		return nil, sdkerrors.Wrap(types.ErrBurnerInfoNotFound, fmt.Sprintf("unknown address '%s'", req.Address))
 	}

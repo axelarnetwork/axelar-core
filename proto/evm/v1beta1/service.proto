@@ -155,7 +155,6 @@ service MsgService {
 service QueryService {
   // BurnerInfo queries the burner info for the specified address
   rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
-    option (google.api.http).get = "/evm/v1beta1/burner_info/"
-                                   "{chain}/{address}";
+    option (google.api.http).get = "/evm/v1beta1/burner_info";
   }
 }

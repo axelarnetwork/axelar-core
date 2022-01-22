@@ -182,7 +182,7 @@ func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerInfo types.BurnerInfo)
 }
 
 // GetBurnerInfo retrieves the burner info for a given address
-func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types.BurnerInfo {
+func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *types.BurnerInfo {
 	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
 	var result types.BurnerInfo
 	if !k.getStore(ctx, k.chainLowerKey).Get(key, &result) {
