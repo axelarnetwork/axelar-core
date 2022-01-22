@@ -46,6 +46,8 @@ const (
 	QueryBytecode             = keeper.QBytecode
 	QueryDepositState         = keeper.QDepositState
 	QueryChains               = keeper.QChains
+	QueryBurnerInfo           = keeper.QBurnerInfo
+	QueryBurnerExists         = "burner-exists"
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -78,6 +80,8 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
 	registerQuery(GetHandlerQueryChains(cliCtx), QueryChains)
+	registerQuery(GetHandlerQueryBurnerInfo(cliCtx), QueryBurnerInfo, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
+	registerQuery(GetHandlerQueryBurnerExists(cliCtx), QueryBurnerExists, clientUtils.PathVarChain, clientUtils.PathVarEthereumAddress)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address

@@ -33,7 +33,7 @@ const (
 	QPendingCommands       = "pending-commands"
 	QCommand               = "command"
 	QChains                = "chains"
-	QBurner                = "burner"
+	QBurnerInfo            = "burner"
 )
 
 //Bytecode labels
@@ -90,7 +90,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QChains:
 			return queryChains(ctx, n)
-		case QBurner:
+		case QBurnerInfo:
 			return QueryBurnerInfo(ctx, n, chainKeeper, common.HexToAddress(path[2]))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
@@ -590,5 +590,5 @@ func QueryBurnerInfo(ctx sdk.Context, n types.Nexus, k types.ChainKeeper, burner
 		return info.Marshal()
 	}
 
-	return nil, fmt.Errorf("burner info not found")
+	return nil, nil
 }

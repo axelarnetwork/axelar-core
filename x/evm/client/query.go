@@ -59,12 +59,16 @@ func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryComman
 	return res, nil
 }
 
-// QueryBurnerInfo returns the information for the given address
+// QueryBurnerInfo returns the burner information for the given address
 func QueryBurnerInfo(clientCtx client.Context, chain string, burnerAddress common.Address) (types.BurnerInfo, error) {
-	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBurner, chain, burnerAddress.Hex())
+	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBurnerInfo, chain, burnerAddress.Hex())
 	bz, _, err := clientCtx.Query(path)
 	if err != nil {
 		return types.BurnerInfo{}, sdkerrors.Wrapf(err, "could not get burner info for chain %s", chain)
+	}
+
+	if len(bz) == 0 {
+		return types.BurnerInfo{}, fmt.Errorf("burner info not found")
 	}
 
 	var res types.BurnerInfo
@@ -74,4 +78,25 @@ func QueryBurnerInfo(clientCtx client.Context, chain string, burnerAddress commo
 		return types.BurnerInfo{}, sdkerrors.Wrap(err, "could not get burner info")
 	}
 	return res, nil
+}
+
+// QueryBurnerExists returns whether or not the given address is a burner address
+func QueryBurnerExists(clientCtx client.Context, chain string, burnerAddress common.Address) (bool, error) {
+	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBurnerInfo, chain, burnerAddress.Hex())
+	bz, _, err := clientCtx.Query(path)
+	if err != nil {
+		return false, sdkerrors.Wrapf(err, "could not get burner info for chain %s", chain)
+	}
+
+	if len(bz) == 0 {
+		return false, nil
+	}
+
+	var res types.BurnerInfo
+	err = res.Unmarshal(bz)
+	if err != nil {
+		return false, sdkerrors.Wrap(err, "could not get burner info")
+	}
+
+	return true, nil
 }

@@ -335,3 +335,24 @@ func GetHandlerQueryBurnerInfo(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
+
+// GetHandlerQueryBurnerExists returns a handler to check if the given address is a burner
+func GetHandlerQueryBurnerExists(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		burnerAddress := common.HexToAddress(mux.Vars(r)[utils.PathVarEthereumAddress])
+		res, err := evmclient.QueryBurnerExists(cliCtx, chain, burnerAddress)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
