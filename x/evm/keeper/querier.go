@@ -33,6 +33,7 @@ const (
 	QPendingCommands       = "pending-commands"
 	QCommand               = "command"
 	QChains                = "chains"
+	QBurner                = "burner"
 )
 
 //Bytecode labels
@@ -89,6 +90,8 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		case QChains:
 			return queryChains(ctx, n)
+		case QBurner:
+			return QueryBurnerInfo(ctx, n, chainKeeper, common.HexToAddress(path[2]))
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -574,4 +577,18 @@ func queryChains(ctx sdk.Context, n types.Nexus) ([]byte, error) {
 
 	response := types.QueryChainsResponse{Chains: evmChains}
 	return response.Marshal()
+}
+
+// QueryBurnerInfo returns the burner info for the given burner address
+func QueryBurnerInfo(ctx sdk.Context, n types.Nexus, k types.ChainKeeper, burnerAddress common.Address) ([]byte, error) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	}
+
+	if info := k.GetBurnerInfo(ctx, burnerAddress); info != nil {
+		return info.Marshal()
+	}
+
+	return nil, fmt.Errorf("burner info not found")
 }

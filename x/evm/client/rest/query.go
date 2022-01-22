@@ -314,3 +314,24 @@ func GetHandlerQueryChains(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
+
+// GetHandlerQueryBurnerInfo returns a handler to get burner info for the given address
+func GetHandlerQueryBurnerInfo(cliCtx client.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		chain := mux.Vars(r)[utils.PathVarChain]
+		burnerAddress := common.HexToAddress(mux.Vars(r)[utils.PathVarEthereumAddress])
+		res, err := evmclient.QueryBurnerInfo(cliCtx, chain, burnerAddress)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}

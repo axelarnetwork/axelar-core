@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -54,6 +55,23 @@ func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryComman
 
 	if err != nil {
 		return types.QueryCommandResponse{}, sdkerrors.Wrap(err, "could not get pending commands")
+	}
+	return res, nil
+}
+
+// QueryBurnerInfo returns the information for the given address
+func QueryBurnerInfo(clientCtx client.Context, chain string, burnerAddress common.Address) (types.BurnerInfo, error) {
+	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBurner, chain, burnerAddress.Hex())
+	bz, _, err := clientCtx.Query(path)
+	if err != nil {
+		return types.BurnerInfo{}, sdkerrors.Wrapf(err, "could not get burner info for chain %s", chain)
+	}
+
+	var res types.BurnerInfo
+	err = res.Unmarshal(bz)
+
+	if err != nil {
+		return types.BurnerInfo{}, sdkerrors.Wrap(err, "could not get burner info")
 	}
 	return res, nil
 }
