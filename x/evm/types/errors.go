@@ -9,4 +9,5 @@ var (
 	ErrEVM                    = sdkerrors.Register(ModuleName, 2, "bridge error")
 	ErrRotationInProgress     = sdkerrors.Register(ModuleName, 3, "key rotation in progress")
 	ErrSignCommandsInProgress = sdkerrors.Register(ModuleName, 4, "signing for command batch in progress")
+	ErrBurnerInfoNotFound     = sdkerrors.Register(ModuleName, 5, "burner info not found")
 )

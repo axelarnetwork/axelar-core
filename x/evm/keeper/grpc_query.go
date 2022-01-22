@@ -16,12 +16,12 @@ func (k baseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) 
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if !k.HasChain(ctx, req.Chain) {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "unkown chain '%s'", req.Chain)
+		return nil, sdkerrors.Wrapf(types.ErrBurnerInfoNotFound, "unkown chain '%s'", req.Chain)
 	}
 
 	burnerInfo := k.ForChain(req.Chain).GetBurnerInfo(ctx, common.HexToAddress(req.Address))
 	if burnerInfo == nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("unknown burner address '%s'", req.Address))
+		return nil, sdkerrors.Wrap(types.ErrBurnerInfoNotFound, fmt.Sprintf("unknown address '%s'", req.Address))
 	}
 
 	return &types.BurnerInfoResponse{BurnerInfo: burnerInfo}, nil
