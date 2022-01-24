@@ -1025,14 +1025,8 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 	} else {
 		for _, c := range s.nexus.GetChains(ctx) {
-			// ignore non-evm chains
-			if c.Module != types.ModuleName {
-				continue
-			}
-
-			// fail if token already created on any evm chain
-			if token := s.ForChain(c.Name).GetERC20TokenByAsset(ctx, req.Asset.Name); !token.Is(types.NonExistent) {
-				return nil, fmt.Errorf("token with asset %s already registered on chain %s", req.Asset.Name, c.Name)
+			if s.nexus.IsAssetRegistered(ctx, c, req.Asset.Name) {
+				return nil, fmt.Errorf("asset %s already registered on chain %s", req.Asset.Name, c.Name)
 			}
 		}
 	}
