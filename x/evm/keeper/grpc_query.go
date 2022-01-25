@@ -9,9 +9,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ types.QueryServiceServer = baseKeeper{}
+var _ types.QueryServiceServer = BaseKeeper{}
 
-func (k baseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
+func (k BaseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if !k.HasChain(ctx, req.Chain) {

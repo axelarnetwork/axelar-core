@@ -4,7 +4,6 @@
 package mock
 
 import (
-	context "context"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -2138,9 +2137,6 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked types.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			BurnerInfoFunc: func(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
-// 				panic("mock out the BurnerInfo method")
-// 			},
 // 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
 // 				panic("mock out the DeletePendingChain method")
 // 			},
@@ -2172,9 +2168,6 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// BurnerInfoFunc mocks the BurnerInfo method.
-	BurnerInfoFunc func(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error)
-
 	// DeletePendingChainFunc mocks the DeletePendingChain method.
 	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
 
@@ -2201,13 +2194,6 @@ type BaseKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// BurnerInfo holds details about calls to the BurnerInfo method.
-		BurnerInfo []struct {
-			// C is the c argument value.
-			C context.Context
-			// Req is the req argument value.
-			Req *types.BurnerInfoRequest
-		}
 		// DeletePendingChain holds details about calls to the DeletePendingChain method.
 		DeletePendingChain []struct {
 			// Ctx is the ctx argument value.
@@ -2261,7 +2247,6 @@ type BaseKeeperMock struct {
 			P types.Params
 		}
 	}
-	lockBurnerInfo         sync.RWMutex
 	lockDeletePendingChain sync.RWMutex
 	lockExportGenesis      sync.RWMutex
 	lockForChain           sync.RWMutex
@@ -2270,41 +2255,6 @@ type BaseKeeperMock struct {
 	lockInitGenesis        sync.RWMutex
 	lockLogger             sync.RWMutex
 	lockSetPendingChain    sync.RWMutex
-}
-
-// BurnerInfo calls BurnerInfoFunc.
-func (mock *BaseKeeperMock) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
-	if mock.BurnerInfoFunc == nil {
-		panic("BaseKeeperMock.BurnerInfoFunc: method is nil but BaseKeeper.BurnerInfo was just called")
-	}
-	callInfo := struct {
-		C   context.Context
-		Req *types.BurnerInfoRequest
-	}{
-		C:   c,
-		Req: req,
-	}
-	mock.lockBurnerInfo.Lock()
-	mock.calls.BurnerInfo = append(mock.calls.BurnerInfo, callInfo)
-	mock.lockBurnerInfo.Unlock()
-	return mock.BurnerInfoFunc(c, req)
-}
-
-// BurnerInfoCalls gets all the calls that were made to BurnerInfo.
-// Check the length with:
-//     len(mockedBaseKeeper.BurnerInfoCalls())
-func (mock *BaseKeeperMock) BurnerInfoCalls() []struct {
-	C   context.Context
-	Req *types.BurnerInfoRequest
-} {
-	var calls []struct {
-		C   context.Context
-		Req *types.BurnerInfoRequest
-	}
-	mock.lockBurnerInfo.RLock()
-	calls = mock.calls.BurnerInfo
-	mock.lockBurnerInfo.RUnlock()
-	return calls
 }
 
 // DeletePendingChain calls DeletePendingChainFunc.

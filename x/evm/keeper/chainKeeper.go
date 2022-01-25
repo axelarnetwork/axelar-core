@@ -43,7 +43,7 @@ var (
 var _ types.ChainKeeper = chainKeeper{}
 
 type chainKeeper struct {
-	baseKeeper
+	BaseKeeper
 	chainLowerKey string
 }
 

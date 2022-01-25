@@ -88,7 +88,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	logger      log.Logger
-	keeper      types.BaseKeeper
+	keeper      keeper.BaseKeeper
 	tss         types.TSS
 	voter       types.Voter
 	nexus       types.Nexus
@@ -98,7 +98,7 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
-	k types.BaseKeeper,
+	k keeper.BaseKeeper,
 	tss types.TSS,
 	voter types.Voter,
 	signer types.Signer,
