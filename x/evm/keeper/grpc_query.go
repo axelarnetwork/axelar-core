@@ -11,6 +11,7 @@ import (
 
 var _ types.QueryServiceServer = BaseKeeper{}
 
+// BurnerInfo implements the burner info grpc query
 func (k BaseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

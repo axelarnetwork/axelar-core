@@ -86,6 +86,7 @@ func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
 }
 
+// HasChain returns true of the chain has been set up
 func (k BaseKeeper) HasChain(ctx sdk.Context, chain string) bool {
 	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain)))
 }

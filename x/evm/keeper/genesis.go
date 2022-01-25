@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// InitGenesis initializes the state from a genesis file
 func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 	for _, chain := range state.Chains {
 		ck := k.ForChain(chain.Params.Chain).(chainKeeper)
@@ -45,6 +46,7 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 	}
 }
 
+// ExportGenesis generates a genesis file from the state
 func (k BaseKeeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
 	return types.NewGenesisState(k.getChains(ctx))
 }
