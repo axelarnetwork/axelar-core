@@ -75,7 +75,7 @@ func NewClient(url string, rpcModuleSupport bool) (Client, error) {
 		return nil, err
 	}
 
-	if !rpcModuleSupport {
+	if !enableRPCDetection {
 		return evmClient, nil
 	}
 
