@@ -1095,6 +1095,7 @@ based chain
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `asset` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) |  |  |
+| `is_native_asset` | [bool](#bool) |  |  |
 
 
 
@@ -3512,6 +3513,7 @@ ChainState represents the state of a registered blockchain
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
 | `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
+| `native_assets` | [string](#string) | repeated |  |
 
 
 
