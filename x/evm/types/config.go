@@ -2,10 +2,10 @@ package types
 
 // EVMConfig contains all EVM module configuration values
 type EVMConfig struct {
-	Name             string `mapstructure:"name"`
-	RPCAddr          string `mapstructure:"rpc_addr"`
-	WithBridge       bool   `mapstructure:"start-with-bridge"`
-	RPCModuleSupport bool   `mapstructure:"rpc-module-support"`
+	Name               string `mapstructure:"name"`
+	RPCAddr            string `mapstructure:"rpc_addr"`
+	WithBridge         bool   `mapstructure:"start-with-bridge"`
+	EnableRPCDetection bool   `mapstructure:"enable-rpc-detection"`
 }
 
 // DefaultConfig returns a configuration populated with default values
