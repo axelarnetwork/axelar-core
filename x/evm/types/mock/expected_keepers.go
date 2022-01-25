@@ -1196,6 +1196,9 @@ var _ types.Nexus = &NexusMock{}
 // 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
+// 			GetChainByNativeAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (nexus.Chain, bool) {
+// 				panic("mock out the GetChainByNativeAsset method")
+// 			},
 // 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
 // 			},
@@ -1217,7 +1220,7 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string)  {
+// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset)  {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
@@ -1238,6 +1241,9 @@ type NexusMock struct {
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
+
+	// GetChainByNativeAssetFunc mocks the GetChainByNativeAsset method.
+	GetChainByNativeAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (nexus.Chain, bool)
 
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -1261,7 +1267,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string)
+	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset)
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
@@ -1292,6 +1298,13 @@ type NexusMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain string
+		}
+		// GetChainByNativeAsset holds details about calls to the GetChainByNativeAsset method.
+		GetChainByNativeAsset []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Asset is the asset argument value.
+			Asset string
 		}
 		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
 		GetChainMaintainers []struct {
@@ -1352,8 +1365,8 @@ type NexusMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain nexus.Chain
-			// Denom is the denom argument value.
-			Denom string
+			// Asset is the asset argument value.
+			Asset nexus.Asset
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -1366,6 +1379,7 @@ type NexusMock struct {
 	lockArchivePendingTransfer sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
+	lockGetChainByNativeAsset  sync.RWMutex
 	lockGetChainMaintainers    sync.RWMutex
 	lockGetChains              sync.RWMutex
 	lockGetRecipient           sync.RWMutex
@@ -1487,6 +1501,41 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetChainByNativeAsset calls GetChainByNativeAssetFunc.
+func (mock *NexusMock) GetChainByNativeAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (nexus.Chain, bool) {
+	if mock.GetChainByNativeAssetFunc == nil {
+		panic("NexusMock.GetChainByNativeAssetFunc: method is nil but Nexus.GetChainByNativeAsset was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Asset string
+	}{
+		Ctx:   ctx,
+		Asset: asset,
+	}
+	mock.lockGetChainByNativeAsset.Lock()
+	mock.calls.GetChainByNativeAsset = append(mock.calls.GetChainByNativeAsset, callInfo)
+	mock.lockGetChainByNativeAsset.Unlock()
+	return mock.GetChainByNativeAssetFunc(ctx, asset)
+}
+
+// GetChainByNativeAssetCalls gets all the calls that were made to GetChainByNativeAsset.
+// Check the length with:
+//     len(mockedNexus.GetChainByNativeAssetCalls())
+func (mock *NexusMock) GetChainByNativeAssetCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Asset string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Asset string
+	}
+	mock.lockGetChainByNativeAsset.RLock()
+	calls = mock.calls.GetChainByNativeAsset
+	mock.lockGetChainByNativeAsset.RUnlock()
 	return calls
 }
 
@@ -1744,23 +1793,23 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, denom string) {
+func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain nexus.Chain
-		Denom string
+		Asset nexus.Asset
 	}{
 		Ctx:   ctx,
 		Chain: chain,
-		Denom: denom,
+		Asset: asset,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	mock.RegisterAssetFunc(ctx, chain, denom)
+	mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
@@ -1769,12 +1818,12 @@ func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Cont
 func (mock *NexusMock) RegisterAssetCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain nexus.Chain
-	Denom string
+	Asset nexus.Asset
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain nexus.Chain
-		Denom string
+		Asset nexus.Asset
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
@@ -2545,7 +2594,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			ConfirmPendingGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) error {
 // 				panic("mock out the ConfirmPendingGateway method")
 // 			},
-// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int, address types.Address) (types.ERC20Token, error) {
+// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
 // 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error) {
@@ -2697,7 +2746,7 @@ type ChainKeeperMock struct {
 	ConfirmPendingGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) error
 
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
-	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int, address types.Address) (types.ERC20Token, error)
+	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error)
 
 	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
 	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error)
@@ -2856,8 +2905,6 @@ type ChainKeeperMock struct {
 			Asset string
 			// Details is the details argument value.
 			Details types.TokenDetails
-			// MinDeposit is the minDeposit argument value.
-			MinDeposit github_com_cosmos_cosmos_sdk_types.Int
 			// Address is the address argument value.
 			Address types.Address
 		}
@@ -3262,45 +3309,41 @@ func (mock *ChainKeeperMock) ConfirmPendingGatewayCalls() []struct {
 }
 
 // CreateERC20Token calls CreateERC20TokenFunc.
-func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int, address types.Address) (types.ERC20Token, error) {
+func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 	if mock.CreateERC20TokenFunc == nil {
 		panic("ChainKeeperMock.CreateERC20TokenFunc: method is nil but ChainKeeper.CreateERC20Token was just called")
 	}
 	callInfo := struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Asset      string
-		Details    types.TokenDetails
-		MinDeposit github_com_cosmos_cosmos_sdk_types.Int
-		Address    types.Address
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Asset   string
+		Details types.TokenDetails
+		Address types.Address
 	}{
-		Ctx:        ctx,
-		Asset:      asset,
-		Details:    details,
-		MinDeposit: minDeposit,
-		Address:    address,
+		Ctx:     ctx,
+		Asset:   asset,
+		Details: details,
+		Address: address,
 	}
 	mock.lockCreateERC20Token.Lock()
 	mock.calls.CreateERC20Token = append(mock.calls.CreateERC20Token, callInfo)
 	mock.lockCreateERC20Token.Unlock()
-	return mock.CreateERC20TokenFunc(ctx, asset, details, minDeposit, address)
+	return mock.CreateERC20TokenFunc(ctx, asset, details, address)
 }
 
 // CreateERC20TokenCalls gets all the calls that were made to CreateERC20Token.
 // Check the length with:
 //     len(mockedChainKeeper.CreateERC20TokenCalls())
 func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
-	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	Asset      string
-	Details    types.TokenDetails
-	MinDeposit github_com_cosmos_cosmos_sdk_types.Int
-	Address    types.Address
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Asset   string
+	Details types.TokenDetails
+	Address types.Address
 } {
 	var calls []struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Asset      string
-		Details    types.TokenDetails
-		MinDeposit github_com_cosmos_cosmos_sdk_types.Int
-		Address    types.Address
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Asset   string
+		Details types.TokenDetails
+		Address types.Address
 	}
 	mock.lockCreateERC20Token.RLock()
 	calls = mock.calls.CreateERC20Token

@@ -48,7 +48,7 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully added chain %s with native asset %s", msg.Chain.Name, msg.Chain.NativeAsset)
+				result.Log = fmt.Sprintf("successfully added chain %s", msg.Chain.Name)
 			}
 			return result, err
 		case *types.RegisterAssetRequest:

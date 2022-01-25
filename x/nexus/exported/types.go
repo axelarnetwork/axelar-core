@@ -102,10 +102,6 @@ func (m Chain) Validate() error {
 		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
-	if err := sdk.ValidateDenom(m.NativeAsset); err != nil {
-		return sdkerrors.Wrap(err, "invalid native asset")
-	}
-
 	if err := m.KeyType.Validate(); err != nil {
 		return err
 	}

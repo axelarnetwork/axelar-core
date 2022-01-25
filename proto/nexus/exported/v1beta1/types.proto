@@ -11,8 +11,9 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Chain represents the properties of a registered blockchain
 message Chain {
+  reserved 2; // native_asset was removed in 0.14
+
   string name = 1;
-  string native_asset = 2;
   bool supports_foreign_assets = 3;
   tss.exported.v1beta1.KeyType key_type = 4;
   string module = 5;

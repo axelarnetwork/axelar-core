@@ -66,14 +66,14 @@ message RegisterIBCPathResponse {}
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 message AddCosmosBasedChainRequest {
+  reserved 4; // min_amount is removed in v0.14
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
   string addr_prefix = 3;
-  bytes min_amount = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+  repeated nexus.exported.v1beta1.Asset native_assets = 5
+      [ (gogoproto.nullable) = false ];
 }
 
 message AddCosmosBasedChainResponse {}
@@ -85,6 +85,7 @@ message RegisterAssetRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
+  bool is_native_asset = 4;
 }
 
 message RegisterAssetResponse {}

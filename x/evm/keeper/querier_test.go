@@ -43,7 +43,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		evmChain = rand.StrBetween(5, 10)
-		asset = btc.Bitcoin.NativeAsset
+		asset = btc.Satoshi
 		symbol = "axelarBTC"
 		chainID = big.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
@@ -69,7 +69,6 @@ func TestQueryPendingCommands(t *testing.T) {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
-						NativeAsset:           rand.StrBetween(5, 20),
 						SupportsForeignAssets: true,
 						Module:                rand.Str(10),
 					}, true
@@ -118,7 +117,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	setup := func() {
 		evmChain = rand.StrBetween(5, 10)
 		expectedAddress = evmTest.RandomAddress()
-		asset = btc.Bitcoin.NativeAsset
+		asset = btc.Satoshi
 		symbol = "axelarBTC"
 
 		chainKeeper = &mock.ChainKeeperMock{
@@ -141,8 +140,7 @@ func TestQueryTokenAddress(t *testing.T) {
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return nexus.Chain{
-						Name:                  chain,
-						NativeAsset:           rand.StrBetween(5, 20),
+						Name:                  evmChain,
 						SupportsForeignAssets: true,
 						Module:                rand.Str(10),
 					}, true
@@ -239,8 +237,7 @@ func TestQueryDepositState(t *testing.T) {
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				if strings.ToLower(chain) == strings.ToLower(evmChain) {
 					return nexus.Chain{
-						Name:                  chain,
-						NativeAsset:           rand.StrBetween(5, 20),
+						Name:                  evmChain,
 						SupportsForeignAssets: true,
 						Module:                rand.Str(10),
 					}, true

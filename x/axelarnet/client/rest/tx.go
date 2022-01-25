@@ -55,19 +55,19 @@ type ReqRegisterIBCPath struct {
 
 // ReqAddCosmosBasedChain represents a request to add a cosmos based chain to nexus
 type ReqAddCosmosBasedChain struct {
-	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Name        string       `json:"name" yaml:"name"`
-	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
-	AddrPrefix  string       `json:"addr_prefix" yaml:"addr_prefix"`
-	MinAmount   string       `json:"min_amount" yaml:"min_amount"`
+	BaseReq      rest.BaseReq  `json:"base_req" yaml:"base_req"`
+	Name         string        `json:"name" yaml:"name"`
+	AddrPrefix   string        `json:"addr_prefix" yaml:"addr_prefix"`
+	NativeAssets []nexus.Asset `json:"native_assets" yaml:"native_assets"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain
 type ReqRegisterAsset struct {
-	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain     string       `json:"chain" yaml:"chain"`
-	Denom     string       `json:"denom" yaml:"denom"`
-	MinAmount string       `json:"min_amount" yaml:"min_amount"`
+	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Chain         string       `json:"chain" yaml:"chain"`
+	Denom         string       `json:"denom" yaml:"denom"`
+	MinAmount     string       `json:"min_amount" yaml:"min_amount"`
+	IsNativeAsset bool         `json:"is_native_asset" yaml:"is_native_asset"`
 }
 
 // ReqRegisterFeeCollector represents a request to register axelarnet fee collector account
@@ -223,12 +223,7 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		minAmount, ok := sdk.NewIntFromString(req.MinAmount)
-		if !ok {
-			return
-		}
-
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.NativeAsset, req.AddrPrefix, minAmount)
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.AddrPrefix, req.NativeAssets)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -260,7 +255,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, amount))
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, amount), req.IsNativeAsset)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

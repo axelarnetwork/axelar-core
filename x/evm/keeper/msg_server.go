@@ -1028,7 +1028,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 
 		if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
-			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
+			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", req.Asset.Name, originChain.Name)
 		}
 	case false:
 		for _, c := range s.nexus.GetChains(ctx) {
@@ -1270,6 +1270,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	for _, transfer := range pendingTransfers {
 		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
+		if !token.Is(types.Confirmed) {
+			s.Logger(ctx).Debug(fmt.Sprintf("token %s is not confirmed on %s", token.GetAsset(), chain.Name))
+			continue
+		}
 
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
 
@@ -1514,7 +1518,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	s.SetPendingChain(
 		ctx,
-		nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
+		nexus.Chain{Name: req.Name, Module: types.ModuleName, KeyType: req.KeyType, SupportsForeignAssets: true},
 		req.Params,
 	)
 
@@ -1523,7 +1527,6 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
-			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
 		),
 	)
 

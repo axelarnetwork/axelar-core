@@ -3,26 +3,20 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewAddressValidator returns the callback for validating cosmos SDK addresses
-func NewAddressValidator(k Keeper) nexus.AddressValidator {
+func NewAddressValidator(k types.CosmosChainGetter) nexus.AddressValidator {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
-		var addrPrefix string
-		if address.Chain == exported.Axelarnet {
-			addrPrefix = sdk.GetConfig().GetBech32AccountAddrPrefix()
-		} else {
-			chain, ok := k.GetCosmosChainByName(ctx, address.Chain.Name)
-			if !ok {
-				return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
-			}
-			addrPrefix = chain.AddrPrefix
+		chain, ok := k.GetCosmosChainByName(ctx, address.Chain.Name)
+		if !ok {
+			return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
 		}
 
-		bz, err := sdk.GetFromBech32(address.Address, addrPrefix)
+		bz, err := sdk.GetFromBech32(address.Address, chain.AddrPrefix)
 		if err != nil {
 			return err
 		}

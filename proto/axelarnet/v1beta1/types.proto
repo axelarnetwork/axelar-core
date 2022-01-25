@@ -18,8 +18,9 @@ message IBCTransfer {
 }
 
 message CosmosChain {
+  reserved 3; // assets was removed in v0.14
+
   string name = 1;
   string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
-  repeated string assets = 3;
   string addr_prefix = 4;
 }

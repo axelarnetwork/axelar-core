@@ -15,20 +15,24 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	k.setNonce(ctx, genState.Nonce)
 
-	for _, chainState := range genState.ChainStates {
-		if _, ok := k.getChainState(ctx, chainState.Chain); ok {
-			panic(fmt.Errorf("chain state %s already set", chainState.Chain.Name))
-		}
-
-		k.setChainState(ctx, chainState)
-	}
-
 	for _, chain := range genState.Chains {
 		if _, ok := k.GetChain(ctx, chain.Name); ok {
 			panic(fmt.Errorf("chain %s already set", chain.Name))
 		}
 
 		k.SetChain(ctx, chain)
+	}
+
+	for _, chainState := range genState.ChainStates {
+		if _, ok := k.getChainState(ctx, chainState.Chain); ok {
+			panic(fmt.Errorf("chain state %s already set", chainState.Chain.Name))
+		}
+		for _, nativeAsset := range chainState.NativeAssets {
+			if err := k.RegisterNativeAsset(ctx, chainState.Chain, nativeAsset); err != nil {
+				panic(err)
+			}
+		}
+		k.setChainState(ctx, chainState)
 	}
 
 	for _, linkedAddresses := range genState.LinkedAddresses {

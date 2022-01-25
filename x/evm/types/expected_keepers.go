@@ -123,6 +123,7 @@ type Nexus interface {
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset)
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
+	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

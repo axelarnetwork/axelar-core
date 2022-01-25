@@ -28,8 +28,6 @@ type BaseKeeper interface {
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []string
-	RegisterAssetToCosmosChain(ctx sdk.Context, asset string, chain string) error
-	GetCosmosChainByAsset(ctx sdk.Context, asset string) (CosmosChain, bool)
 	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
 }
@@ -48,6 +46,8 @@ type Nexus interface {
 	GetTransferFees(ctx sdk.Context) sdk.Coins
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
+	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
+	RegisterNativeAsset(ctx sdk.Context, chain nexus.Chain, nativeAsset string) error
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires
@@ -77,4 +77,9 @@ type ChannelKeeper interface {
 // creating a x/bank keeper.
 type AccountKeeper interface {
 	GetModuleAddress(moduleName string) sdk.AccAddress
+}
+
+// CosmosChainGetter exposes GetCosmosChainByName
+type CosmosChainGetter interface {
+	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
 }

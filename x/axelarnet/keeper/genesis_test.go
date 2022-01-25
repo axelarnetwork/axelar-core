@@ -4,20 +4,19 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	. "github.com/axelarnetwork/utils/test"
-	"github.com/axelarnetwork/utils/test/rand"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestGenesis(t *testing.T) {
@@ -39,15 +38,8 @@ func TestGenesis(t *testing.T) {
 				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransfers())
 				assert.NoError(t, initialGenesis.Validate())
 
-				n := &mock.NexusMock{
-					GetChainFunc: func(sdk.Context, string) (nexus.Chain, bool) {
-						return nexus.Chain{}, false
-					},
-					RegisterAssetFunc: func(sdk.Context, nexus.Chain, nexus.Asset) {},
-				}
-
 				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-				k.InitGenesis(ctx, n, initialGenesis)
+				k.InitGenesis(ctx, initialGenesis)
 			}).
 		Then("export the identical state",
 			func(t *testing.T) {
@@ -63,7 +55,6 @@ func TestGenesis(t *testing.T) {
 					assert.Equal(t, initialGenesis.Chains[i].Name, exportedGenesis.Chains[i].Name)
 					assert.Equal(t, initialGenesis.Chains[i].IBCPath, exportedGenesis.Chains[i].IBCPath)
 					assert.Equal(t, initialGenesis.Chains[i].AddrPrefix, exportedGenesis.Chains[i].AddrPrefix)
-					assert.ElementsMatch(t, initialGenesis.Chains[i].Assets, exportedGenesis.Chains[i].Assets)
 				}
 			}).Run(t, 10)
 }
@@ -99,15 +90,9 @@ func randomChains() []types.CosmosChain {
 }
 
 func randomChain() types.CosmosChain {
-	assets := make([]string, rand.I64Between(5, 20))
-	for i := range assets {
-		assets[i] = randomAsset()
-	}
-
 	return types.CosmosChain{
 		Name:       randomNormalizedStr(5, 20),
 		IBCPath:    randomIBCPath(),
-		Assets:     assets,
 		AddrPrefix: randomNormalizedStr(5, 20),
 	}
 }

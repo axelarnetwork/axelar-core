@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -125,7 +126,7 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, mai
 	return nil
 }
 
-// GetMinAmount returns true if the given address is one of the given chain's maintainers; false otherwise
+// GetMinAmount returns the asset's minimum transferable amount for the given chain
 func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) sdk.Int {
 	chainState, ok := k.getChainState(ctx, chain)
 	if !ok {
@@ -158,4 +159,32 @@ func (k Keeper) GetChain(ctx sdk.Context, chainName string) (chain exported.Chai
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
 	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name)), &chain)
+}
+
+// RegisterNativeAsset register a native asset to the given chain
+func (k Keeper) RegisterNativeAsset(ctx sdk.Context, chain exported.Chain, nativeAsset string) error {
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
+
+	if c, ok := k.GetChainByNativeAsset(ctx, nativeAsset); ok {
+		return fmt.Errorf("native asset %s already set for chain %s", nativeAsset, c.Name)
+	}
+
+	if err := chainState.AddNativeAsset(nativeAsset); err != nil {
+		return err
+	}
+
+	k.setChainState(ctx, chainState)
+	k.setChainByNativeAsset(ctx, nativeAsset, chain)
+
+	return nil
+}
+
+func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain exported.Chain) {
+	k.getStore(ctx).Set(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
+}
+
+// GetChainByNativeAsset gets a chain by the native asset
+func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool) {
+	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
 }

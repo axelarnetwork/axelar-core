@@ -69,9 +69,6 @@ func (s sortedChains) Swap(i, j int) {
 // SortChains sorts the given slice
 func SortChains(chains []CosmosChain) {
 	sort.Stable(sortedChains(chains))
-	for _, chain := range chains {
-		sort.Strings(chain.Assets)
-	}
 }
 
 type sortedTransfers []IBCTransfer
@@ -102,16 +99,6 @@ func (m CosmosChain) Validate() error {
 	} else {
 		if err := utils.ValidateString(m.IBCPath); err != nil {
 			return sdkerrors.Wrap(err, "invalid IBC path")
-		}
-	}
-
-	if len(m.Assets) == 0 {
-		return fmt.Errorf("chain must contain assets")
-	}
-
-	for _, asset := range m.Assets {
-		if err := sdk.ValidateDenom(asset); err != nil {
-			return err
 		}
 	}
 

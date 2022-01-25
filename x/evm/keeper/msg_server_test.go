@@ -420,7 +420,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, types.ZeroAddress)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Satoshi, tokenDetails, types.ZeroAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -460,7 +460,7 @@ func TestLink_Success(t *testing.T) {
 		},
 	}
 	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
-	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: btc.Bitcoin.NativeAsset})
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: btc.Satoshi})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -469,7 +469,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}
+	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Satoshi, Salt: types.Hash(salt)}
 	actual := *k.ForChain(chain).GetBurnerInfo(ctx, types.Address(burnAddr))
 	assert.Equal(t, expected, actual)
 }
@@ -596,7 +596,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
 					return types.PendingChain{
-						Chain:  nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true, Module: rand.Str(10)},
+						Chain:  nexus.Chain{Name: msg.Name, SupportsForeignAssets: true, Module: rand.Str(10)},
 						Params: evmTestUtils.RandomParams(),
 					}, true
 				}
@@ -826,12 +826,12 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
+		token = createMockERC20Token(btc.Satoshi, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset),
+			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Satoshi),
 		}
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -847,7 +847,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.Bitcoin.NativeAsset))
+		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.Satoshi))
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
@@ -857,8 +857,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.Bitcoin.NativeAsset)
-		voteReq.Asset = btc.Bitcoin.NativeAsset
+		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.Satoshi)
+		voteReq.Asset = btc.Satoshi
 		voteReq.PollKey = pollKey
 
 		_, err = server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
@@ -931,14 +931,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 func TestAddChain(t *testing.T) {
 	var (
-		ctx         sdk.Context
-		basek       *mock.BaseKeeperMock
-		tssMock     *mock.TSSMock
-		n           *mock.NexusMock
-		msg         *types.AddChainRequest
-		server      types.MsgServiceServer
-		name        string
-		nativeAsset string
+		ctx     sdk.Context
+		basek   *mock.BaseKeeperMock
+		tssMock *mock.TSSMock
+		n       *mock.NexusMock
+		msg     *types.AddChainRequest
+		server  types.MsgServiceServer
+		name    string
+		params  types.Params
 	)
 
 	setup := func() {
@@ -960,17 +960,16 @@ func TestAddChain(t *testing.T) {
 				c, ok := chains[chain]
 				return c, ok
 			},
+			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 		}
 
 		name = rand.StrBetween(5, 20)
-		nativeAsset = rand.StrBetween(3, 10)
-		params := types.DefaultParams()[0]
+		params = types.DefaultParams()[0]
 		params.Chain = name
 		msg = &types.AddChainRequest{
-			Sender:      rand.AccAddr(),
-			Name:        name,
-			NativeAsset: nativeAsset,
-			Params:      params,
+			Sender: rand.AccAddr(),
+			Name:   name,
+			Params: params,
 		}
 
 		server = keeper.NewMsgServerImpl(basek, tssMock, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
@@ -985,7 +984,7 @@ func TestAddChain(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
 		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
-		assert.Equal(t, nativeAsset, basek.SetPendingChainCalls()[0].Chain.NativeAsset)
+		assert.Equal(t, params, basek.SetPendingChainCalls()[0].P)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
@@ -995,7 +994,6 @@ func TestAddChain(t *testing.T) {
 		setup()
 
 		msg.Name = "Bitcoin"
-		msg.NativeAsset = nativeAsset
 
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -1270,7 +1268,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) {},
+			RegisterAssetFunc:     func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) {},
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -1417,7 +1415,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenRequest {
 	account := rand.AccAddr()
 
-	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
+	asset := types.NewAsset(btc.Bitcoin.Name, btc.Satoshi)
 	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinAmount: sdk.NewInt(1000000)}
 }
 

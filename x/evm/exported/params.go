@@ -9,7 +9,6 @@ var (
 	// Ethereum defines properties of the Ethereum chain
 	Ethereum = exported.Chain{
 		Name:                  "Ethereum",
-		NativeAsset:           "wei",
 		SupportsForeignAssets: true,
 		KeyType:               tss.Multisig,
 		Module:                "evm", // cannot use constant due to import cycle

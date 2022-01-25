@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -12,6 +13,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+)
+
+const (
+	flagIsNativeAsset = "is-native-asset"
+	flagNativeAsset   = "native-asset"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -143,31 +149,47 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [native asset] [min amount] [address prefix]",
+		Use:   "add-cosmos-based-chain [name] [address prefix]",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.ExactArgs(4),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-			name := args[0]
-			nativeAsset := args[1]
+		Args:  cobra.ExactArgs(2),
+	}
 
-			minAmount, ok := sdk.NewIntFromString(args[2])
+	nativeAssets := cmd.Flags().StringSlice(flagNativeAsset, []string{}, "denom and minimum transferable amount, e.g. uaxl:1000000")
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		if len(*nativeAssets) == 0 {
+			return fmt.Errorf("nativeAssets are required")
+		}
+
+		assets := make([]nexus.Asset, len(*nativeAssets))
+		for i, asset := range *nativeAssets {
+			assetInto := strings.Split(asset, ":")
+			if len(assetInto) != 2 {
+				return fmt.Errorf("denom and minimum amount have to be separated by \":\"")
+			}
+
+			denom := utils.NormalizeString(assetInto[0])
+			minAmount, ok := sdk.NewIntFromString(assetInto[1])
 			if !ok {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			addrPrefix := args[3]
+			assets[i] = nexus.Asset{Denom: denom, MinAmount: minAmount}
+		}
 
-			msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, nativeAsset, addrPrefix, minAmount)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
+		name := args[0]
+		addrPrefix := args[1]
 
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
+		msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, addrPrefix, assets)
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
@@ -179,27 +201,35 @@ func GetCmdRegisterAsset() *cobra.Command {
 		Use:   "register-asset [chain] [denom] [min amount]",
 		Short: "Register a new asset to a cosmos based chain",
 		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-			chain := args[0]
-			denom := utils.NormalizeString(args[1])
-
-			minAmount, ok := sdk.NewIntFromString(args[2])
-			if !ok {
-				return fmt.Errorf("could not convert string to integer")
-			}
-
-			msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount))
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
 	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cliCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+		chain := args[0]
+		denom := utils.NormalizeString(args[1])
+
+		minAmount, ok := sdk.NewIntFromString(args[2])
+		if !ok {
+			return fmt.Errorf("could not convert string to integer")
+		}
+
+		isNativeAsset, err := cmd.Flags().GetBool(flagIsNativeAsset)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount), isNativeAsset)
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+	}
+
+	cmd.Flags().Bool(flagIsNativeAsset, false, "is it a native asset from cosmos chain")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

@@ -6,8 +6,8 @@ import (
 )
 
 // InitGenesis initializes the axelarnet module's state from a given genesis state.
-func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.GenesisState) {
-	k.setParams(ctx, nexus, genState.Params)
+func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
+	k.setParams(ctx, genState.Params)
 	if len(genState.CollectorAddress) > 0 {
 		if err := k.SetFeeCollector(ctx, genState.CollectorAddress); err != nil {
 			panic(err)
@@ -16,16 +16,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, nexus types.Nexus, genState *types.
 
 	for _, chain := range genState.Chains {
 		k.SetCosmosChain(ctx, chain)
-
-		if err := k.RegisterIBCPath(ctx, chain.Name, chain.IBCPath); err != nil {
-			panic(err)
-		}
-
-		for _, asset := range chain.Assets {
-			if err := k.RegisterAssetToCosmosChain(ctx, asset, chain.Name); err != nil {
-				panic(err)
-			}
-		}
 	}
 
 	for _, transfer := range genState.PendingTransfers {
