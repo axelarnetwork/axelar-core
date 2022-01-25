@@ -443,7 +443,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("already burned")
 	}
 
-	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnerAddress))
+	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
@@ -787,7 +787,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
-	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
+	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnAddress)
 	if burnerInfo != nil {
 		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
 	}
@@ -1095,7 +1095,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			continue
 		}
 
-		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
+		burnerInfo := keeper.GetBurnerInfo(ctx, deposit.BurnerAddress)
 		if burnerInfo == nil {
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
