@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
@@ -1014,7 +1015,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if req.Address.IsZeroAddress() {
+	keeper := s.ForChain(chain.Name)
+
+	switch req.Address.IsZeroAddress() {
+	case true:
 		originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
 		if !found {
 			return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
@@ -1023,15 +1027,19 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
 			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
 		}
-	} else {
+	case false:
 		for _, c := range s.nexus.GetChains(ctx) {
 			if s.nexus.IsAssetRegistered(ctx, c, req.Asset.Name) {
 				return nil, fmt.Errorf("asset %s already registered on chain %s", req.Asset.Name, c.Name)
 			}
 		}
-	}
 
-	keeper := s.ForChain(chain.Name)
+		for _, token := range keeper.GetTokens(ctx) {
+			if bytes.Equal(token.GetAddress().Bytes(), req.Address.Bytes()) {
+				return nil, fmt.Errorf("token %s already created for chain %s", token.GetAddress().Hex(), chain.Name)
+			}
+		}
+	}
 
 	if _, nextMasterKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
 		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)

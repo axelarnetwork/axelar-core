@@ -775,6 +775,19 @@ func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (t
 	return result, found
 }
 
+func (k chainKeeper) GetTokens(ctx sdk.Context) []types.ERC20Token {
+	tokensMetadata := k.getTokensMetadata(ctx)
+	tokens := make([]types.ERC20Token, len(tokensMetadata))
+
+	for i, tokenMetadata := range tokensMetadata {
+		tokens[i] = types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+			k.setTokenMetadata(ctx, m)
+		}, tokenMetadata)
+	}
+
+	return tokens
+}
+
 func (k chainKeeper) getTokensMetadata(ctx sdk.Context) []types.ERC20TokenMetadata {
 	iter := k.getStore(ctx, k.chainLowerKey).Iterator(tokenMetadataByAssetPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
