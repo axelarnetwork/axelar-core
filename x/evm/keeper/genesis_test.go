@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -12,10 +13,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
+
+func TestAddr(t *testing.T) {
+	addr := common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")
+	t.Logf("%s as base64: %s", addr.Hex(), base64.StdEncoding.EncodeToString(addr.Bytes()))
+}
 
 func TestGenesis(t *testing.T) {
 	var (
