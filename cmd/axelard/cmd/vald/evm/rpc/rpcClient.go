@@ -69,7 +69,7 @@ func (c MoonbeamClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash
 }
 
 // NewClient returns an EVM rpc client
-func NewClient(url string, rpcModuleSupport bool) (Client, error) {
+func NewClient(url string, enableRPCDetection bool) (Client, error) {
 	evmClient, err := evmClient.Dial(url)
 	if err != nil {
 		return nil, err
