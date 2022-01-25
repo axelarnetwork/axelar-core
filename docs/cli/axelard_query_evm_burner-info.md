@@ -3,7 +3,7 @@
 Get information about a burner address
 
 ```
-axelard query evm burner-info [chain] [deposit address] [flags]
+axelard query evm burner-info [deposit address] [flags]
 ```
 
 ### Options

@@ -45,7 +45,7 @@
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
       - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-      - [burner-info \[chain\] \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
+      - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID

@@ -2517,7 +2517,6 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
 | `address` | [bytes](#bytes) |  |  |
 
 
@@ -2533,6 +2532,7 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
 | `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
 
 
