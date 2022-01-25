@@ -14,6 +14,6 @@ func DefaultConfig() []EVMConfig {
 		Name:             "Ethereum",
 		RPCAddr:          "http://127.0.0.1:7545",
 		WithBridge:       true,
-		RPCModuleSupport: true,
+		EnableRPCDetection: true,
 	}}
 }
