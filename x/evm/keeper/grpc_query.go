@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"context"
-	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ types.QueryServiceServer = BaseKeeper{}
@@ -27,5 +28,5 @@ func (k BaseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) 
 		}
 	}
 
-	return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("unknown address '%s'", req.Address))
+	return nil, status.Error(codes.NotFound, "unknown address")
 }
