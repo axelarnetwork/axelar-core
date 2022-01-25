@@ -2,16 +2,18 @@ package types
 
 // EVMConfig contains all EVM module configuration values
 type EVMConfig struct {
-	Name       string `mapstructure:"name"`
-	RPCAddr    string `mapstructure:"rpc_addr"`
-	WithBridge bool   `mapstructure:"start-with-bridge"`
+	Name               string `mapstructure:"name"`
+	RPCAddr            string `mapstructure:"rpc_addr"`
+	WithBridge         bool   `mapstructure:"start-with-bridge"`
+	EnableRPCDetection bool   `mapstructure:"enable-rpc-detection"`
 }
 
 // DefaultConfig returns a configuration populated with default values
 func DefaultConfig() []EVMConfig {
 	return []EVMConfig{{
-		Name:       "Ethereum",
-		RPCAddr:    "http://127.0.0.1:7545",
-		WithBridge: true,
+		Name:               "Ethereum",
+		RPCAddr:            "http://127.0.0.1:7545",
+		WithBridge:         true,
+		EnableRPCDetection: true,
 	}}
 }
