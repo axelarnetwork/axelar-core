@@ -82,7 +82,7 @@ type ChainKeeper interface {
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
 	GetPendingCommands(ctx sdk.Context) []Command
-	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
+	CreateNewBatchToSign(ctx sdk.Context, signer Signer) (CommandBatch, error)
 	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
