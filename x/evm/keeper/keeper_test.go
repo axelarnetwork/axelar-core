@@ -106,7 +106,7 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		}
 
 		keeper.ForChain(chain).SetBurnerInfo(ctx, burnerInfo)
-		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, common.Address(burnerInfo.BurnerAddress))
+		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, burnerInfo.BurnerAddress)
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)

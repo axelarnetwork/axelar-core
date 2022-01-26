@@ -158,6 +158,8 @@
     - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
+    - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
@@ -212,6 +214,7 @@
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
+    - [QueryService](#evm.v1beta1.QueryService)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -2506,6 +2509,37 @@ GenesisState represents the genesis state
 
 
 
+<a name="evm.v1beta1.BurnerInfoRequest"></a>
+
+### BurnerInfoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfoResponse"></a>
+
+### BurnerInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.DepositQueryParams"></a>
 
 ### DepositQueryParams
@@ -3328,6 +3362,16 @@ Msg defines the evm Msg service.
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
 | `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
+
+
+<a name="evm.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 
  <!-- end services -->
 
