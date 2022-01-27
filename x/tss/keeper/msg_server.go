@@ -109,7 +109,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	for _, k := range req.KeyIDs {
 		_, ok := s.GetKey(ctx, k)
 		if !ok {
-			return nil, fmt.Errorf("operator '%s' sent heartbeat for unknown key ID '%s'", valAddr.String(), k)
+			return nil, fmt.Errorf("operator %s sent heartbeat for unknown key ID %s", valAddr.String(), k)
 		}
 	}
 
