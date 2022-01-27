@@ -10,6 +10,7 @@ axelard tx evm create-deploy-token [evm chain] [origin chain] [origin asset] [to
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
+      --address string           existing ERC20 token's address (default "0x0000000000000000000000000000000000000000")
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer

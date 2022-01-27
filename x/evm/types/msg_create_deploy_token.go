@@ -10,13 +10,14 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, minAmount sdk.Int) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, minAmount sdk.Int, address Address) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:       sender,
 		Chain:        utils.NormalizeString(chain),
 		Asset:        asset,
 		TokenDetails: tokenDetails,
 		MinAmount:    minAmount,
+		Address:      address,
 	}
 }
 
@@ -55,8 +56,15 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return err
 	}
 
-	if strings.EqualFold(m.Chain, m.Asset.Chain) {
-		return fmt.Errorf("cannot deploy token on origin chain")
+	switch m.Address.IsZeroAddress() {
+	case true:
+		if strings.EqualFold(m.Chain, m.Asset.Chain) {
+			return fmt.Errorf("cannot deploy token on the origin chain")
+		}
+	case false:
+		if !strings.EqualFold(m.Chain, m.Asset.Chain) {
+			return fmt.Errorf("cannot link token on a different chain")
+		}
 	}
 
 	if err := m.TokenDetails.Validate(); err != nil {

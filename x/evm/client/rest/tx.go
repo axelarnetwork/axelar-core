@@ -140,6 +140,7 @@ type ReqCreateDeployToken struct {
 	Decimals    string       `json:"decimals" yaml:"decimals"`
 	Capacity    string       `json:"capacity" yaml:"capacity"`
 	MinDeposit  string       `json:"min_deposit" yaml:"min_deposit"`
+	Address     string       `json:"address" yaml:"address"`
 }
 
 // ReqCreateBurnTokens represents a request to create commands for all outstanding burns
@@ -393,23 +394,38 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 		decs, err := strconv.ParseUint(req.Decimals, 10, 8)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse decimals").Error())
+			return
 		}
+
 		capacity, ok := sdk.NewIntFromString(req.Capacity)
 		if !ok {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse capacity").Error())
+			return
 		}
+
 		minDeposit, ok := sdk.NewIntFromString(req.MinDeposit)
 		if !ok {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse minimum deposit amount").Error())
+			return
+		}
+
+		if req.Address == "" {
+			req.Address = types.ZeroAddress.Hex()
+		}
+
+		if !common.IsHexAddress(req.Address) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse address").Error())
+			return
 		}
 
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
 		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, minDeposit)
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, minDeposit, types.Address(common.HexToAddress(req.Address)))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+
 		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
 	}
 }
