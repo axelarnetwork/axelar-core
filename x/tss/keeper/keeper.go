@@ -15,6 +15,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 var (
@@ -234,30 +235,27 @@ func (k Keeper) getTssSignedBlocksWindow(ctx sdk.Context) int64 {
 }
 
 // HasMissedTooManyBlocks returns true if the given validator address missed too many blocks within
-// the block window specifiec by this module. The block window used by this function is either the
+// the block window specified by this module. The block window used by this function is either the
 // cosmos slashing module window or this own module's window, depending on which one is shorter.
 func (k Keeper) HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error) {
-	missedBlocks, ok := k.getMissedBlocksPercent(ctx, address)
+	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
 	if !ok {
-		return false, fmt.Errorf("'%s' is not a validator", address.String())
+		return false, fmt.Errorf("signing info not found for validator %s", address.String())
 	}
+
+	missedBlocks := k.getMissedBlocksPercent(ctx, address, signInfo)
 	maxMissedPerWindow := k.GetMaxMissedBlocksPerWindow(ctx)
 
 	return missedBlocks.GT(maxMissedPerWindow), nil
 }
 
 // returns the percentage of blocks signed w.r.t. this module's signed blocks window parameter
-func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress) (utils.Threshold, bool) {
+func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress, signInfo slashingtypes.ValidatorSigningInfo) utils.Threshold {
 	counter := int64(0)
 	tssWindow := k.getTssSignedBlocksWindow(ctx)
 	slasherWindow := k.slasher.SignedBlocksWindow(ctx)
-	signInfo, ok := k.slasher.GetValidatorSigningInfo(ctx, address)
-
-	if !ok {
-		return utils.Threshold{}, false
-	}
-
 	indexOffset := int64(0)
+
 	// TODO: In order to avoid having to pick the shorter of these two windows, we should implement
 	// our own bit arrawy for missed blocks instead of re-purposing the one from cosmos
 	window := slasherWindow
@@ -274,7 +272,7 @@ func (k Keeper) getMissedBlocksPercent(ctx sdk.Context, address sdk.ConsAddress)
 		}
 	}
 
-	return utils.NewThreshold(counter, tssWindow), true
+	return utils.NewThreshold(counter, tssWindow)
 }
 
 // SetAvailableOperator signals that a validator sent an ack

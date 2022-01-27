@@ -983,7 +983,6 @@ MsgConfirmDeposit represents a deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
 | `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  | **Deprecated.**  |
 | `deposit_address` | [bytes](#bytes) |  |  |
 | `denom` | [string](#string) |  |  |
@@ -2179,6 +2178,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `tx_hash` | [string](#string) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
+| `is_external` | [bool](#bool) |  |  |
 
 
 
@@ -2402,6 +2402,7 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `transaction_fee_rate` | [string](#string) |  |  |
+| `absorber` | [bytes](#bytes) |  |  |
 
 
 
@@ -2982,6 +2983,7 @@ command for AxelarGateway
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
+| `address` | [bytes](#bytes) |  |  |
 
 
 
