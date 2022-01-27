@@ -120,8 +120,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) { return nexus.TransferID(mathRand.Uint64()), nil },
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+				return nexus.TransferID(mathRand.Uint64()), nil
+			},
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
@@ -326,10 +328,12 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 					Module:                rand.Str(10),
 				}, true
 			},
-			IsAssetRegisteredFunc:  func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) { return nexus.TransferID(mathRand.Uint64()), nil },
-			GetTransferFeesFunc:    func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
-			SubTransferFeeFunc:     func(sdk.Context, sdk.Coin) {},
+			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+				return nexus.TransferID(mathRand.Uint64()), nil
+			},
+			GetTransferFeesFunc: func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
+			SubTransferFeeFunc:  func(sdk.Context, sdk.Coin) {},
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
@@ -571,7 +575,6 @@ func randomMsgLink() *types.LinkRequest {
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 	return types.NewConfirmDepositRequest(
 		rand.AccAddr(),
-		rand.BytesBetween(5, 100),
 		randomDenom(),
 		rand.AccAddr())
 }

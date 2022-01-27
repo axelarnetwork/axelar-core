@@ -3,7 +3,7 @@
 Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
 
 ```
-axelard tx axelarnet confirm-deposit [txID] [denom] [burnerAddr] [flags]
+axelard tx axelarnet confirm-deposit [denom] [burnerAddr] [flags]
 ```
 
 ### Options

@@ -983,7 +983,6 @@ MsgConfirmDeposit represents a deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
 | `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  | **Deprecated.**  |
 | `deposit_address` | [bytes](#bytes) |  |  |
 | `denom` | [string](#string) |  |  |
