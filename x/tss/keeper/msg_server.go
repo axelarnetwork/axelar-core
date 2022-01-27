@@ -106,6 +106,13 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
 	}
 
+	for _, k := range req.KeyIDs {
+		_, ok := s.GetKey(ctx, k)
+		if !ok {
+			return nil, fmt.Errorf("operator '%s' sent heartbeat for unknown key ID '%s'", valAddr.String(), k)
+		}
+	}
+
 	// this could happen after register proxy but before create validator
 	validatorI := s.staker.Validator(ctx, valAddr)
 	if validatorI == nil {
