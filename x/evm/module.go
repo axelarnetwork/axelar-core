@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -67,7 +68,10 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
+		panic(err)
+	}
 }
 
 // GetTxCmd returns all CLI tx commands for this module
@@ -84,7 +88,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	logger      log.Logger
-	keeper      types.BaseKeeper
+	keeper      keeper.BaseKeeper
 	tss         types.TSS
 	voter       types.Voter
 	nexus       types.Nexus
@@ -94,7 +98,7 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
-	k types.BaseKeeper,
+	k keeper.BaseKeeper,
 	tss types.TSS,
 	voter types.Voter,
 	signer types.Signer,
@@ -150,7 +154,8 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
