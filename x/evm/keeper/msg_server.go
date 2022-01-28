@@ -1416,7 +1416,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (types.CommandBatch, error) {
 	latest := keeper.GetLatestCommandBatch(ctx)
 
 	switch latest.GetStatus() {
@@ -1425,7 +1425,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 	case types.BatchAborted:
 		return latest, nil
 	default:
-		return keeper.CreateNewBatchToSign(ctx)
+		return keeper.CreateNewBatchToSign(ctx, signer)
 	}
 }
 
@@ -1446,7 +1446,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper, s.signer)
 	if err != nil {
 		return nil, err
 	}
