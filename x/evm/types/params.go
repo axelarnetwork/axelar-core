@@ -25,6 +25,7 @@ var (
 	KeyGateway             = []byte("gateway")
 	KeyToken               = []byte("token")
 	KeyBurnable            = []byte("burnable")
+	KeyAbsorber            = []byte("absorber")
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
 	KeyTransactionFeeRate  = []byte("transactionFeeRate")
@@ -41,11 +42,18 @@ func DefaultParams() []Params {
 	if err != nil {
 		panic(err)
 	}
+
 	bzToken, err := hex.DecodeString(token)
 	if err != nil {
 		panic(err)
 	}
+
 	bzBurnable, err := hex.DecodeString(burnable)
+	if err != nil {
+		panic(err)
+	}
+
+	bzAbsorber, err := hex.DecodeString(Absorber)
 	if err != nil {
 		panic(err)
 	}
@@ -57,6 +65,7 @@ func DefaultParams() []Params {
 		GatewayCode:         bzGateway,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
+		Absorber:            bzAbsorber,
 		RevoteLockingPeriod: 50,
 		Networks: []NetworkInfo{
 			{
@@ -88,7 +97,7 @@ func DefaultParams() []Params {
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
-// pairs of tss module's parameters.
+// pairs of evm module's parameters.
 func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	/*
 		because the subspace package makes liberal use of pointers to set and get values from the store,
@@ -103,6 +112,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyGateway, &m.GatewayCode, validateBytes),
 		params.NewParamSetPair(KeyToken, &m.TokenCode, validateBytes),
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
+		params.NewParamSetPair(KeyAbsorber, &m.Absorber, validateBytes),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),
 		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
@@ -276,6 +286,22 @@ func (m Params) Validate() error {
 		if n.Name == m.Network {
 			return nil
 		}
+	}
+
+	if err := validateBytes(m.GatewayCode); err != nil {
+		return err
+	}
+
+	if err := validateBytes(m.TokenCode); err != nil {
+		return err
+	}
+
+	if err := validateBytes(m.Burnable); err != nil {
+		return err
+	}
+
+	if err := validateBytes(m.Absorber); err != nil {
+		return err
 	}
 
 	return fmt.Errorf("'%s' not part of the network list", m.Network)

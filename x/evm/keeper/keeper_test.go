@@ -48,7 +48,7 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
-			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails)
+			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails, types.ZeroAddress)
 			assert.NoError(t, err)
 
 			err = chainKeeper.EnqueueCommand(ctx, cmd)
