@@ -776,7 +776,10 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("cross-chain sender has no recipient")
 	}
 
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
+	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not find EVM subspace")
+	}
 
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
