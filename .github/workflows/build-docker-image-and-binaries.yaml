@@ -50,6 +50,13 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
 
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
       - name: Set up ssh agent
         uses: webfactory/ssh-agent@v0.5.2
         with:
@@ -87,6 +94,17 @@ jobs:
           SEMVER: ${{ github.event.inputs.tag }}
         run: |
           make build-binaries-in-docker
+
+      - name: Sign Binaries
+        working-directory: ./bin
+        env:
+          SEMVER: ${{ github.event.inputs.tag }}
+        run: |
+          gpg --armor --detach-sign  axelard-darwin-amd64-v${SEMVER}
+          gpg --armor --detach-sign  axelard-darwin-arm64-v${SEMVER}
+          gpg --armor --detach-sign  axelard-linux-amd64-v${SEMVER}
+          gpg --armor --detach-sign  axelard-linux-arm-v${SEMVER}
+          gpg --armor --detach-sign  axelard-linux-arm64-v${SEMVER}
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2

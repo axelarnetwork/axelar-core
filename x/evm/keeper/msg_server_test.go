@@ -49,6 +49,7 @@ var (
 	bytecodes   = common.FromHex(MymintableBin)
 	tokenBC     = rand.Bytes(64)
 	burnerBC    = rand.Bytes(64)
+	absorberBC  = rand.Bytes(64)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
@@ -83,7 +84,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			},
 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit) {},
 			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
-			GetBurnerInfoFunc: func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
+			GetBurnerInfoFunc: func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{}
 			},
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
@@ -177,7 +178,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
 			return deposits
 		}
-		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
+		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 			if burnerInfo, ok := burnerInfos[address.Hex()]; ok {
 				return &burnerInfo
 			}
@@ -241,7 +242,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
 			return []types.ERC20Deposit{deposit1, deposit2, deposit3}
 		}
-		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address common.Address) *types.BurnerInfo {
+		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 			return &burnerInfo
 		}
 
@@ -268,6 +269,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
+		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
@@ -305,6 +307,7 @@ func TestLink_NoGateway(t *testing.T) {
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
+		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
@@ -420,7 +423,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount, types.ZeroAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -435,7 +438,7 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token.GetAddress(), recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token.GetAddress(), recipient.Address, common.HexToAddress(gateway), false)
 	if err != nil {
 		panic(err)
 	}
@@ -470,7 +473,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
 	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}
-	actual := *k.ForChain(chain).GetBurnerInfo(ctx, burnAddr)
+	actual := *k.ForChain(chain).GetBurnerInfo(ctx, types.Address(burnAddr))
 	assert.Equal(t, expected, actual)
 }
 
@@ -1031,7 +1034,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
-			GetBurnerInfoFunc: func(sdk.Context, common.Address) *types.BurnerInfo {
+			GetBurnerInfoFunc: func(sdk.Context, types.Address) *types.BurnerInfo {
 				return &types.BurnerInfo{
 					TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 					Symbol:       rand.StrBetween(5, 10),
@@ -1187,7 +1190,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("burner address unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		chaink.GetBurnerInfoFunc = func(sdk.Context, common.Address) *types.BurnerInfo { return nil }
+		chaink.GetBurnerInfoFunc = func(sdk.Context, types.Address) *types.BurnerInfo { return nil }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1238,6 +1241,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 					GatewayCode:         bytecodes,
 					TokenCode:           tokenBC,
 					Burnable:            burnerBC,
+					Absorber:            absorberBC,
 					RevoteLockingPeriod: 50,
 					VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 					MinVoterCount:       15,
@@ -1251,10 +1255,11 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
 
-			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20Token, error) {
+			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int, address types.Address) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
+
 				return createMockERC20Token(asset, details, minDeposit), nil
 			},
 
@@ -1396,6 +1401,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
+		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
