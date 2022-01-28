@@ -7,4 +7,5 @@ const (
 	multisigGateway  = "%AxelarGatewayProxyMultisig_bytecode%"
 	token            = "%BurnableMintableCappedERC20_bytecode%"
 	burnable         = "%Burner_bytecode%"
+	Absorber         = "%Absorber_bytecode%"
 )
