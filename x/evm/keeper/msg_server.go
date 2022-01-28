@@ -1489,7 +1489,8 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			types.EventTypeStartedSigning,
+			types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
