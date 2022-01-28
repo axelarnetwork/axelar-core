@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"encoding/hex"
-	"fmt"
 	"net/http"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
@@ -10,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -39,7 +36,6 @@ type ReqLink struct {
 // ReqConfirmDeposit represents a request to confirm a deposit
 type ReqConfirmDeposit struct {
 	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxID           string       `json:"tx_id" yaml:"tx_id"`
 	Denom          string       `json:"denom" yaml:"denom"`
 	DepositAddress string       `json:"deposit_address" yaml:"deposit_address"`
 }
@@ -140,24 +136,13 @@ func TxHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		txID, err := hex.DecodeString(req.TxID)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		if len(txID) != common.HashLength {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("txID should be %d bytes", common.HashLength))
-			return
-		}
-
 		depositAddr, err := sdk.AccAddressFromBech32(req.DepositAddress)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewConfirmDepositRequest(fromAddr, txID, req.Denom, depositAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, req.Denom, depositAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -84,3 +84,13 @@ message QueryCommandResponse {
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
   uint32 max_gas_cost = 5;
 }
+
+message BurnerInfoRequest {
+  bytes address = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message BurnerInfoResponse {
+  string chain = 1;
+  BurnerInfo burner_info = 2;
+}

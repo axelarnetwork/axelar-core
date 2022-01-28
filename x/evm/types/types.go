@@ -107,6 +107,11 @@ func (t *ERC20Token) Is(status Status) bool {
 	return status&t.metadata.Status == status
 }
 
+// IsExternal returns true if the given token is external; false otherwise
+func (t ERC20Token) IsExternal() bool {
+	return t.metadata.IsExternal
+}
+
 // CreateDeployCommand returns a token deployment command for the token
 func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	switch {
@@ -119,10 +124,20 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		return Command{}, err
 	}
 
+	if t.IsExternal() {
+		return CreateDeployTokenCommand(
+			t.metadata.ChainID.BigInt(),
+			key,
+			t.metadata.Details,
+			t.GetAddress(),
+		)
+	}
+
 	return CreateDeployTokenCommand(
 		t.metadata.ChainID.BigInt(),
 		key,
 		t.metadata.Details,
+		ZeroAddress,
 	)
 }
 
@@ -216,6 +231,14 @@ func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
 
 // Address wraps EVM Address
 type Address common.Address
+
+// ZeroAddress represents an evm address with all bytes being zero
+var ZeroAddress = Address{}
+
+// IsZeroAddress returns true if the address contains only zero bytes; false otherwise
+func (a Address) IsZeroAddress() bool {
+	return bytes.Equal(a.Bytes(), ZeroAddress.Bytes())
+}
 
 // Bytes returns the actual byte array of the address
 func (a Address) Bytes() []byte {
@@ -452,8 +475,8 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, bur
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails TokenDetails) (Command, error) {
-	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity.BigInt())
+func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails TokenDetails, address Address) (Command, error) {
+	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity.BigInt(), address)
 	if err != nil {
 		return Command{}, err
 	}
@@ -996,7 +1019,7 @@ func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity *big.Int) ([]byte, error) {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity *big.Int, address Address) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -1012,12 +1035,18 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
 	result, err := arguments.Pack(
 		tokenName,
 		symbol,
 		decimals,
 		capacity,
+		address,
 	)
 	if err != nil {
 		return nil, err

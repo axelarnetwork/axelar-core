@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
@@ -249,7 +250,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	}
 
 	tokenAddr := token.GetAddress()
-	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr)
+	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr, token.IsExternal())
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +444,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("already burned")
 	}
 
-	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnerAddress))
+	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
@@ -787,7 +788,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
-	burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(req.BurnAddress))
+	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnAddress)
 	if burnerInfo != nil {
 		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
 	}
@@ -1016,13 +1017,28 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	keeper := s.ForChain(chain.Name)
 
-	originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
-	if !found {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
-	}
+	switch req.Address.IsZeroAddress() {
+	case true:
+		originChain, found := s.nexus.GetChain(ctx, req.Asset.Chain)
+		if !found {
+			return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
+		}
 
-	if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
-		return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
+		if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
+			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
+		}
+	case false:
+		for _, c := range s.nexus.GetChains(ctx) {
+			if s.nexus.IsAssetRegistered(ctx, c, req.Asset.Name) {
+				return nil, fmt.Errorf("asset %s already registered on chain %s", req.Asset.Name, c.Name)
+			}
+		}
+
+		for _, token := range keeper.GetTokens(ctx) {
+			if bytes.Equal(token.GetAddress().Bytes(), req.Address.Bytes()) {
+				return nil, fmt.Errorf("token %s already created for chain %s", token.GetAddress().Hex(), chain.Name)
+			}
+		}
 	}
 
 	if _, nextMasterKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
@@ -1034,7 +1050,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinAmount)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinAmount, req.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
@@ -1095,7 +1111,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			continue
 		}
 
-		burnerInfo := keeper.GetBurnerInfo(ctx, common.Address(deposit.BurnerAddress))
+		burnerInfo := keeper.GetBurnerInfo(ctx, deposit.BurnerAddress)
 		if burnerInfo == nil {
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
@@ -1162,7 +1178,7 @@ func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.
 	externalKeyAddresses := types.KeysToAddresses(externalPubKeys...)
 	externalKeyThreshold := getMultisigThreshold(len(externalKeyAddresses), s.GetExternalMultisigThreshold(ctx))
 
-	bz, _ := k.GetGatewayByteCodes(ctx)
+	bz, _ := k.GetGatewayByteCode(ctx)
 
 	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
 	if !ok {

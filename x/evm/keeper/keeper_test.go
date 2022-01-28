@@ -48,7 +48,7 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
-			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails)
+			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails, types.ZeroAddress)
 			assert.NoError(t, err)
 
 			err = chainKeeper.EnqueueCommand(ctx, cmd)
@@ -106,7 +106,7 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		}
 
 		keeper.ForChain(chain).SetBurnerInfo(ctx, burnerInfo)
-		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, common.Address(burnerInfo.BurnerAddress))
+		actual := keeper.ForChain(chain).GetBurnerInfo(ctx, burnerInfo.BurnerAddress)
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, *actual, burnerInfo)
