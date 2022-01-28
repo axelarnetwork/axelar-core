@@ -38,7 +38,7 @@ lint:
 # Populate bytecode before building anything
 .PHONY: populate-bytecode
 populate-bytecode:
-	@sh scripts/populate-bytecode.sh
+	@bash scripts/populate-bytecode.sh
 
 # Build the project with release flags
 .PHONY: build

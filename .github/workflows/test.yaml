@@ -40,7 +40,7 @@ jobs:
 
       - name: Populate Bytecode
         run: |
-          sh scripts/populate-bytecode.sh
+          bash scripts/populate-bytecode.sh
 
       - name: Test
         run: |
