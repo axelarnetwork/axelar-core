@@ -158,6 +158,8 @@
     - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
+    - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
@@ -212,6 +214,7 @@
   
 - [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
     - [MsgService](#evm.v1beta1.MsgService)
+    - [QueryService](#evm.v1beta1.QueryService)
   
 - [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
     - [Params](#nexus.v1beta1.Params)
@@ -980,7 +983,6 @@ MsgConfirmDeposit represents a deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
 | `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  | **Deprecated.**  |
 | `deposit_address` | [bytes](#bytes) |  |  |
 | `denom` | [string](#string) |  |  |
@@ -2176,6 +2178,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `tx_hash` | [string](#string) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
+| `is_external` | [bool](#bool) |  |  |
 
 
 
@@ -2399,6 +2402,7 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `transaction_fee_rate` | [string](#string) |  |  |
+| `absorber` | [bytes](#bytes) |  |  |
 
 
 
@@ -2503,6 +2507,37 @@ GenesisState represents the genesis state
 <p align="right"><a href="#top">Top</a></p>
 
 ## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.BurnerInfoRequest"></a>
+
+### BurnerInfoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfoResponse"></a>
+
+### BurnerInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
+
+
+
 
 
 
@@ -2948,6 +2983,7 @@ command for AxelarGateway
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
+| `address` | [bytes](#bytes) |  |  |
 
 
 
@@ -3328,6 +3364,16 @@ Msg defines the evm Msg service.
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
 | `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
 | `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
+
+
+<a name="evm.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 
  <!-- end services -->
 

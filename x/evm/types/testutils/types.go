@@ -280,6 +280,7 @@ func RandomParams() types.Params {
 		GatewayCode:         rand.Bytes(int(rand.I64Between(10, 100))),
 		TokenCode:           rand.Bytes(int(rand.I64Between(10, 100))),
 		Burnable:            rand.Bytes(int(rand.I64Between(10, 100))),
+		Absorber:            rand.Bytes(int(rand.I64Between(10, 100))),
 		RevoteLockingPeriod: rand.PosI64(),
 		Networks:            RandomNetworks(),
 		VotingThreshold:     utils.NewThreshold(nominator, denominator),

@@ -32,6 +32,9 @@ var _ snapshotexported.SDKValidator = &SDKValidatorMock{}
 // 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
+// 			IsBondedFunc: func() bool {
+// 				panic("mock out the IsBonded method")
+// 			},
 // 			IsJailedFunc: func() bool {
 // 				panic("mock out the IsJailed method")
 // 			},
@@ -63,6 +66,9 @@ type SDKValidatorMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
 
+	// IsBondedFunc mocks the IsBonded method.
+	IsBondedFunc func() bool
+
 	// IsJailedFunc mocks the IsJailed method.
 	IsJailedFunc func() bool
 
@@ -91,6 +97,9 @@ type SDKValidatorMock struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 		}
+		// IsBonded holds details about calls to the IsBonded method.
+		IsBonded []struct {
+		}
 		// IsJailed holds details about calls to the IsJailed method.
 		IsJailed []struct {
 		}
@@ -112,6 +121,7 @@ type SDKValidatorMock struct {
 	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
+	lockIsBonded          sync.RWMutex
 	lockIsJailed          sync.RWMutex
 	lockProtoMessage      sync.RWMutex
 	lockReset             sync.RWMutex
@@ -199,6 +209,32 @@ func (mock *SDKValidatorMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// IsBonded calls IsBondedFunc.
+func (mock *SDKValidatorMock) IsBonded() bool {
+	if mock.IsBondedFunc == nil {
+		panic("SDKValidatorMock.IsBondedFunc: method is nil but SDKValidator.IsBonded was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsBonded.Lock()
+	mock.calls.IsBonded = append(mock.calls.IsBonded, callInfo)
+	mock.lockIsBonded.Unlock()
+	return mock.IsBondedFunc()
+}
+
+// IsBondedCalls gets all the calls that were made to IsBonded.
+// Check the length with:
+//     len(mockedSDKValidator.IsBondedCalls())
+func (mock *SDKValidatorMock) IsBondedCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsBonded.RLock()
+	calls = mock.calls.IsBonded
+	mock.lockIsBonded.RUnlock()
 	return calls
 }
 

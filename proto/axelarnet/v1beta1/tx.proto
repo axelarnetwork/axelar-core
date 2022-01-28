@@ -28,7 +28,9 @@ message LinkResponse { string deposit_addr = 1; };
 message ConfirmDepositRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes tx_id = 2 [ (gogoproto.customname) = "TxID" ];
+
+  reserved 2; // tx_id was removed in v0.14
+
   cosmos.base.v1beta1.Coin token = 3
       [ (gogoproto.nullable) = false, deprecated = true ];
 

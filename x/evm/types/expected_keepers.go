@@ -22,6 +22,7 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
+	HasChain(ctx sdk.Context, chain string) bool
 	ForChain(chain string) ChainKeeper
 
 	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)
@@ -44,9 +45,9 @@ type ChainKeeper interface {
 	GetChainID(ctx sdk.Context) (*big.Int, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
-	GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool)
-	GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool)
-	GetTokenByteCodes(ctx sdk.Context) ([]byte, bool)
+	GetGatewayByteCode(ctx sdk.Context) ([]byte, bool)
+	GetBurnerByteCode(ctx sdk.Context) ([]byte, bool)
+	GetTokenByteCode(ctx sdk.Context) ([]byte, bool)
 	GetTransactionFeeRate(ctx sdk.Context) (sdk.Dec, bool)
 	SetPendingGateway(ctx sdk.Context, address common.Address)
 	ConfirmPendingGateway(ctx sdk.Context) error
@@ -54,9 +55,9 @@ type ChainKeeper interface {
 	GetPendingGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
-	GetBurnerInfo(ctx sdk.Context, address common.Address) *BurnerInfo
+	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr Address, recipient string, gatewayAddr common.Address, isExternalToken bool) (common.Address, common.Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
@@ -73,9 +74,10 @@ type ChainKeeper interface {
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 
-	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, minDeposit sdk.Int) (ERC20Token, error)
+	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, minDeposit sdk.Int, address Address) (ERC20Token, error)
 	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token
 	GetERC20TokenBySymbol(ctx sdk.Context, symbol string) ERC20Token
+	GetTokens(ctx sdk.Context) []ERC20Token
 
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
