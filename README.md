@@ -60,3 +60,7 @@ For the full list of available CLI commands for `axelard` see [here](docs/cli/to
 Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download``
 or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for
 interfaces.
+
+## Bug bounty and disclosure of vulnerabilities
+
+See the [Axelar documentation website](https://docs.axelar.dev/#/bug-bounty).
