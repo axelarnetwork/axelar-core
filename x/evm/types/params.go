@@ -281,13 +281,6 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	// ensure that the network is one of the supported ones
-	for _, n := range m.Networks {
-		if n.Name == m.Network {
-			return nil
-		}
-	}
-
 	if err := validateBytes(m.GatewayCode); err != nil {
 		return err
 	}
@@ -302,6 +295,13 @@ func (m Params) Validate() error {
 
 	if err := validateBytes(m.Absorber); err != nil {
 		return err
+	}
+
+	// ensure that the network is one of the supported ones
+	for _, n := range m.Networks {
+		if n.Name == m.Network {
+			return nil
+		}
 	}
 
 	return fmt.Errorf("'%s' not part of the network list", m.Network)
