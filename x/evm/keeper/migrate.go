@@ -50,7 +50,7 @@ func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context
 			keeper.SetParams(ctx, params)
 
 			for _, token := range keeper.GetTokens(ctx) {
-				token.SetBurnerCode(bzLegacyBurnable)
+				token.SaveBurnerCode(bzLegacyBurnable)
 			}
 		}
 
