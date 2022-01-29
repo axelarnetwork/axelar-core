@@ -31,8 +31,11 @@ const (
 	Ganache = "ganache"
 )
 
+// Burner code hashes
 const (
+	// BurnerCodeHashV1 is the hash of the bytecode of burner v1
 	BurnerCodeHashV1 = "0x70be6eedec1d63b7cf8b9233615e4e408c99e0753be123b605aa5d53ed4a8670"
+	// BurnerCodeHashV2 is the hash of the bytecode of burner v2
 	BurnerCodeHashV2 = "0xf34c56593ef4a993c05acac98bf4ae170ee322068752b49fb44ce545d29c3c6f"
 )
 
@@ -136,13 +139,14 @@ func (t ERC20Token) IsExternal() bool {
 	return t.metadata.IsExternal
 }
 
-// SetBurnerCode sets the burner code; panic if already set since it should only be used during in-place storage migration
-func (t ERC20Token) SetBurnerCode(burnerCode []byte) {
+// SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
+func (t ERC20Token) SaveBurnerCode(burnerCode []byte) {
 	if len(t.metadata.BurnerCode) > 0 {
 		panic(fmt.Errorf("burner code already set"))
 	}
 
 	t.metadata.BurnerCode = burnerCode
+	t.setMeta(t.metadata)
 }
 
 // GetBurnerCode returns the version of the burner the token is deployed with

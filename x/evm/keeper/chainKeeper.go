@@ -232,12 +232,12 @@ func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails
 		return common.Address{}, err
 	}
 
-	bytecodes, ok := k.GetTokenByteCode(ctx)
+	bytecode, ok := k.GetTokenByteCode(ctx)
 	if !ok {
-		return common.Address{}, fmt.Errorf("bytecodes for token contract not found")
+		return common.Address{}, fmt.Errorf("bytecode for token contract not found")
 	}
 
-	tokenInitCode := append(bytecodes, packed...)
+	tokenInitCode := append(bytecode, packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
