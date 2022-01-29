@@ -49,16 +49,18 @@ func NewLogMsgDecorator(cdc codec.Codec) LogMsgDecorator {
 
 // AnteHandle logs all messages in blocks
 func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	if !simulate {
-		msgs := tx.GetMsgs()
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
 
-		for _, msg := range msgs {
-			logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %s",
-				proto.MessageName(msg),
-				ctx.BlockHeight(),
-				string(d.cdc.MustMarshalJSON(msg)),
-			))
-		}
+	msgs := tx.GetMsgs()
+
+	for _, msg := range msgs {
+		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %s",
+			proto.MessageName(msg),
+			ctx.BlockHeight(),
+			string(d.cdc.MustMarshalJSON(msg)),
+		))
 	}
 
 	return next(ctx, tx, simulate)
