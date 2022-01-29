@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"encoding/hex"
 	"math/big"
 	"strconv"
 	"strings"
@@ -215,6 +216,11 @@ func RandomTokens() []types.ERC20TokenMetadata {
 
 // RandomToken returns a random (valid) token for testing
 func RandomToken() types.ERC20TokenMetadata {
+	bzBurnable, err := hex.DecodeString(types.Burnable)
+	if err != nil {
+		panic(err)
+	}
+
 	return types.ERC20TokenMetadata{
 		Asset:        rand.Denom(5, 20),
 		ChainID:      sdk.NewInt(rand.PosI64()),
@@ -223,6 +229,8 @@ func RandomToken() types.ERC20TokenMetadata {
 		TxHash:       RandomHash(),
 		Status:       1 << rand.I64Between(0, int64(len(types.Status_name))),
 		MinAmount:    sdk.NewInt(rand.PosI64()),
+		IsExternal:   rand.Bools(0.5).Next(),
+		BurnerCode:   bzBurnable,
 	}
 }
 
@@ -272,6 +280,11 @@ func RandomBurnerInfo() types.BurnerInfo {
 
 // RandomParams returns a random (valid) params instance for testing
 func RandomParams() types.Params {
+	bzBurnable, err := hex.DecodeString(types.Burnable)
+	if err != nil {
+		panic(err)
+	}
+
 	nominator := rand.I64Between(1, 100)
 	denominator := rand.I64Between(nominator, 101)
 	params := types.Params{
@@ -279,8 +292,7 @@ func RandomParams() types.Params {
 		ConfirmationHeight:  uint64(rand.PosI64()),
 		GatewayCode:         rand.Bytes(int(rand.I64Between(10, 100))),
 		TokenCode:           rand.Bytes(int(rand.I64Between(10, 100))),
-		Burnable:            rand.Bytes(int(rand.I64Between(10, 100))),
-		Absorber:            rand.Bytes(int(rand.I64Between(10, 100))),
+		Burnable:            bzBurnable,
 		RevoteLockingPeriod: rand.PosI64(),
 		Networks:            RandomNetworks(),
 		VotingThreshold:     utils.NewThreshold(nominator, denominator),
