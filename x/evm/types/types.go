@@ -62,6 +62,13 @@ const (
 	axelarGatewayFuncExecute                 = "execute"
 )
 
+type role uint8
+
+const (
+	roleOwner    role = 1
+	roleOperator role = 2
+)
+
 // ERC20Token represents an ERC20 token and its respective state
 type ERC20Token struct {
 	metadata ERC20TokenMetadata
@@ -760,10 +767,20 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+	var r role
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
+
+	switch keyRole {
+	case tss.MasterKey:
+		r = roleOwner
+	case tss.SecondaryKey:
+		r = roleOperator
+	default:
+		return CommandBatchMetadata{}, fmt.Errorf("cannot sign command batch with a key of role %s", keyRole.SimpleString())
+	}
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
@@ -771,7 +788,7 @@ func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) 
 		commandParams = append(commandParams, cmd.Params)
 	}
 
-	data, err := packArguments(chainID, commandIDs, commands, commandParams)
+	data, err := packArguments(chainID, r, commandIDs, commands, commandParams)
 	if err != nil {
 		return CommandBatchMetadata{}, err
 	}
@@ -929,12 +946,17 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID *big.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -954,9 +976,10 @@ func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, 
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: uint8Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
 		chainID,
+		r,
 		commandIDs,
 		commands,
 		commandParams,

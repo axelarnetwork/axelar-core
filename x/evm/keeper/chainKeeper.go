@@ -652,7 +652,7 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 }
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
-func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
 	command, ok := k.popCommand(ctx)
 	if !ok {
 		return types.CommandBatch{}, nil
@@ -678,7 +678,8 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, 
 		commands = append(commands, cmd.Clone())
 	}
 
-	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
+	keyRole := signer.GetKeyRole(ctx, keyID)
+	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, keyRole, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}
