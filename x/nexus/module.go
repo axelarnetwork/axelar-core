@@ -85,16 +85,18 @@ type AppModule struct {
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
+	evm         types.EVMBaseKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		snapshotter:    snapshotter,
 		staking:        staking,
 		axelarnet:      axelarnet,
+		evm:            evm,
 	}
 }
 
@@ -108,7 +110,10 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
 
-	cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper, am.axelarnet))
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper, am.axelarnet, am.evm))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
@@ -154,4 +159,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }

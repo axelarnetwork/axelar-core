@@ -717,9 +717,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, asset exported.Asset) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
-// 			RegisterNativeAssetFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, nativeAsset string) error {
-// 				panic("mock out the RegisterNativeAsset method")
-// 			},
 // 			SetChainFunc: func(ctx cosmossdktypes.Context, chain exported.Chain)  {
 // 				panic("mock out the SetChain method")
 // 			},
@@ -765,9 +762,6 @@ type NexusMock struct {
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain exported.Chain, asset exported.Asset) error
-
-	// RegisterNativeAssetFunc mocks the RegisterNativeAsset method.
-	RegisterNativeAssetFunc func(ctx cosmossdktypes.Context, chain exported.Chain, nativeAsset string) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain exported.Chain)
@@ -864,15 +858,6 @@ type NexusMock struct {
 			// Asset is the asset argument value.
 			Asset exported.Asset
 		}
-		// RegisterNativeAsset holds details about calls to the RegisterNativeAsset method.
-		RegisterNativeAsset []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain exported.Chain
-			// NativeAsset is the nativeAsset argument value.
-			NativeAsset string
-		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
 			// Ctx is the ctx argument value.
@@ -899,7 +884,6 @@ type NexusMock struct {
 	lockIsAssetRegistered      sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
-	lockRegisterNativeAsset    sync.RWMutex
 	lockSetChain               sync.RWMutex
 	lockSubTransferFee         sync.RWMutex
 }
@@ -1306,45 +1290,6 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
-	return calls
-}
-
-// RegisterNativeAsset calls RegisterNativeAssetFunc.
-func (mock *NexusMock) RegisterNativeAsset(ctx cosmossdktypes.Context, chain exported.Chain, nativeAsset string) error {
-	if mock.RegisterNativeAssetFunc == nil {
-		panic("NexusMock.RegisterNativeAssetFunc: method is nil but Nexus.RegisterNativeAsset was just called")
-	}
-	callInfo := struct {
-		Ctx         cosmossdktypes.Context
-		Chain       exported.Chain
-		NativeAsset string
-	}{
-		Ctx:         ctx,
-		Chain:       chain,
-		NativeAsset: nativeAsset,
-	}
-	mock.lockRegisterNativeAsset.Lock()
-	mock.calls.RegisterNativeAsset = append(mock.calls.RegisterNativeAsset, callInfo)
-	mock.lockRegisterNativeAsset.Unlock()
-	return mock.RegisterNativeAssetFunc(ctx, chain, nativeAsset)
-}
-
-// RegisterNativeAssetCalls gets all the calls that were made to RegisterNativeAsset.
-// Check the length with:
-//     len(mockedNexus.RegisterNativeAssetCalls())
-func (mock *NexusMock) RegisterNativeAssetCalls() []struct {
-	Ctx         cosmossdktypes.Context
-	Chain       exported.Chain
-	NativeAsset string
-} {
-	var calls []struct {
-		Ctx         cosmossdktypes.Context
-		Chain       exported.Chain
-		NativeAsset string
-	}
-	mock.lockRegisterNativeAsset.RLock()
-	calls = mock.calls.RegisterNativeAsset
-	mock.lockRegisterNativeAsset.RUnlock()
 	return calls
 }
 
