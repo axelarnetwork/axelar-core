@@ -7,9 +7,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -1284,4 +1286,21 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 	}
 
 	return commandList
+}
+
+// ValidateCommandQueueState checks if the keys of the given map have the correct format to be imported as command queue state.
+// The expected format is {block height}_{[a-zA-Z0-9]+}
+func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
+	for key := range state {
+		keyParticles := strings.Split(key, utils.DefaultDelimiter)
+		if len(keyParticles) != 2 {
+			return fmt.Errorf("expected key %s to consist of two parts", key)
+		}
+
+		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
+			return fmt.Errorf("expected first key part of %s to be a block height", key)
+		}
+	}
+
+	return nil
 }

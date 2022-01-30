@@ -3,8 +3,6 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,57 +22,36 @@ type KVQueue interface {
 	Keys() []Key
 }
 
-// BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
-// the order of items that are enqueued at the same block height is deterministically based on their actual key
-// in the KVStore
-type BlockHeightKVQueue struct {
-	store       KVStore
-	blockHeight Key
+var _ KVQueue = GeneralKVQueue{}
+var _ KVQueue = BlockHeightKVQueue{}
+
+// GeneralKVQueue is a queue that orders items based on the given prioritizer function
+type GeneralKVQueue struct {
 	name        StringKey
+	store       KVStore
 	logger      log.Logger
+	prioritizer func(value codec.ProtoMarshaler) Key
 }
 
-// NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
-func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
-	return BlockHeightKVQueue{store: store, name: KeyFromStr(name), logger: logger}.WithBlockHeight(blockHeight)
-}
-
-// ImportState should only be used to populate state at genesis. Panics if the given state is invalid
-func (q BlockHeightKVQueue) ImportState(state map[string]codec.ProtoMarshaler) {
-	if err := ValidateQueueState(state); err != nil {
-		panic(err)
+// NewGeneralKVQueue is the contructor for GeneralKVQueue
+func NewGeneralKVQueue(name string, store KVStore, logger log.Logger, prioritizer func(value codec.ProtoMarshaler) Key) GeneralKVQueue {
+	return GeneralKVQueue{
+		name:        KeyFromStr(name),
+		store:       store,
+		logger:      logger,
+		prioritizer: prioritizer,
 	}
-
-	for key, value := range state {
-		q.store.Set(q.name.AppendStr(key), value)
-	}
-}
-
-// ValidateQueueState checks if the keys of the given map have the correct format to be imported as queue state.
-// The expected format is {block height}_{[a-zA-Z0-9]+}
-func ValidateQueueState(state map[string]codec.ProtoMarshaler) error {
-	for key := range state {
-		keyParticles := strings.Split(key, DefaultDelimiter)
-		if len(keyParticles) != 2 {
-			return fmt.Errorf("expected key %s to consist of two parts", key)
-		}
-
-		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
-			return fmt.Errorf("expected first key part of %s to be a block height", key)
-		}
-	}
-	return nil
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key
-func (q BlockHeightKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
-	q.store.Set(q.name.Append(q.blockHeight).Append(key), &gogoprototypes.BytesValue{Value: key.AsKey()})
+func (q GeneralKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
+	q.store.Set(q.name.Append(q.prioritizer(value)).Append(key), &gogoprototypes.BytesValue{Value: key.AsKey()})
 	q.store.Set(key, value)
 }
 
 // Dequeue pops the bottom of the queue and unmarshals it into the given object, and return true if anything
 // in the queue is found and the value passes the optional filter function
-func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
@@ -99,16 +76,15 @@ func (q BlockHeightKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(v
 }
 
 // IsEmpty returns true if the queue is empty; otherwise, false
-func (q BlockHeightKVQueue) IsEmpty() bool {
+func (q GeneralKVQueue) IsEmpty() bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
-	//goland:noinspection GoUnhandledErrorResult
-	defer iter.Close()
+	defer CloseLogError(iter, q.logger)
 
 	return !iter.Valid()
 }
 
 // Keys returns a list with the keys for the values still enqueued
-func (q BlockHeightKVQueue) Keys() []Key {
+func (q GeneralKVQueue) Keys() []Key {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
@@ -123,12 +99,36 @@ func (q BlockHeightKVQueue) Keys() []Key {
 	return keys
 }
 
-// WithBlockHeight returns a queue with the given block height
-func (q BlockHeightKVQueue) WithBlockHeight(blockHeight int64) BlockHeightKVQueue {
+// ImportState should only be used to populate state at genesis. Panics if the given state is invalid
+func (q GeneralKVQueue) ImportState(state map[string]codec.ProtoMarshaler, validator ...func(map[string]codec.ProtoMarshaler) error) {
+	if len(validator) > 0 {
+		if err := validator[0](state); err != nil {
+			panic(err)
+		}
+	}
+
+	for key, value := range state {
+		q.store.Set(q.name.AppendStr(key), value)
+	}
+}
+
+// BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
+// the order of items that are enqueued at the same block height is deterministically based on their actual key
+// in the KVStore
+type BlockHeightKVQueue struct {
+	GeneralKVQueue
+}
+
+// NewBlockHeightKVQueue is the constructor of BlockHeightKVQueue
+func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger log.Logger) BlockHeightKVQueue {
 	bz := make([]byte, 8)
 	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
-	q.blockHeight = KeyFromBz(bz)
-	return q
+
+	return BlockHeightKVQueue{
+		GeneralKVQueue: NewGeneralKVQueue(name, store, logger, func(_ codec.ProtoMarshaler) Key {
+			return KeyFromBz(bz)
+		}),
+	}
 }
 
 // SequenceKVQueue is a queue that orders items with the sequence number at which the items are enqueued;
