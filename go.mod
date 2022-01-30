@@ -149,16 +149,26 @@ require (
 	golang.org/x/mod v0.5.0
 )
 
-replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
+replace (
 
-replace github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
+	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
+	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
+	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 
-replace github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.0.3
+	// Use cosmos-flavored protocol buffers
+	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
-replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	// use an updated go-keychain
+	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
+	// use newer image-spec because of a vulnerability
+	github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 
-replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // https://github.com/axelarnetwork/axelar-core/issues/36
+	// use newer runc because of a vulnerability
+	github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.0.3
 
-// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
-// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
-replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+	// enable building with rocksdb
+	github.com/tecbot/gorockdb => github.com/cosmos/gorocksdb v1.2.0
+
+	// use grpc compatible wiht cosmos-flavored protocol buffers
+	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+)
