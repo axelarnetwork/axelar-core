@@ -249,8 +249,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	tokenAddr := token.GetAddress()
-	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr, token.IsExternal())
+	burnerAddress, salt, err := keeper.GetBurnerAddressAndSalt(ctx, token, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -259,19 +258,19 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
 	err = s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.Hex()},
+		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddress.Hex()},
 		recipient)
 	if err != nil {
 		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
 	}
 
 	burnerInfo := types.BurnerInfo{
-		BurnerAddress:    types.Address(burnerAddr),
-		TokenAddress:     tokenAddr,
+		BurnerAddress:    burnerAddress,
+		TokenAddress:     token.GetAddress(),
 		DestinationChain: req.RecipientChain,
 		Symbol:           symbol,
 		Asset:            req.Asset,
-		Salt:             types.Hash(salt),
+		Salt:             salt,
 	}
 	keeper.SetBurnerInfo(ctx, burnerInfo)
 
@@ -280,15 +279,15 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
 	)
 
-	return &types.LinkResponse{DepositAddr: burnerAddr.Hex()}, nil
+	return &types.LinkResponse{DepositAddr: burnerAddress.Hex()}, nil
 }
 
 // ConfirmToken handles token deployment confirmation
@@ -777,10 +776,16 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("cross-chain sender has no recipient")
 	}
 
+	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not find EVM subspace")
+	}
+
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
@@ -1416,7 +1421,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (types.CommandBatch, error) {
 	latest := keeper.GetLatestCommandBatch(ctx)
 
 	switch latest.GetStatus() {
@@ -1425,7 +1430,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 	case types.BatchAborted:
 		return latest, nil
 	default:
-		return keeper.CreateNewBatchToSign(ctx)
+		return keeper.CreateNewBatchToSign(ctx, signer)
 	}
 }
 
@@ -1446,7 +1451,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper, s.signer)
 	if err != nil {
 		return nil, err
 	}

@@ -7,9 +7,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -30,6 +32,26 @@ const (
 	Goerli  = "goerli"
 	Ganache = "ganache"
 )
+
+// Burner code hashes
+const (
+	// BurnerCodeHashV1 is the hash of the bytecode of burner v1
+	BurnerCodeHashV1 = "0x70be6eedec1d63b7cf8b9233615e4e408c99e0753be123b605aa5d53ed4a8670"
+	// BurnerCodeHashV2 is the hash of the bytecode of burner v2
+	BurnerCodeHashV2 = "0xf34c56593ef4a993c05acac98bf4ae170ee322068752b49fb44ce545d29c3c6f"
+)
+
+func validateBurnerCode(burnerCode []byte) error {
+	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
+	switch burnerCodeHash {
+	case BurnerCodeHashV1:
+	case BurnerCodeHashV2:
+	default:
+		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
+	}
+
+	return nil
+}
 
 // AxelarGateway contract ABI and command selectors
 const (
@@ -60,6 +82,13 @@ const (
 	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
 	transferOperatorshipMaxGasCost           = 150000
 	axelarGatewayFuncExecute                 = "execute"
+)
+
+type role uint8
+
+const (
+	roleOwner    role = 1
+	roleOperator role = 2
 )
 
 // ERC20Token represents an ERC20 token and its respective state
@@ -110,6 +139,26 @@ func (t *ERC20Token) Is(status Status) bool {
 // IsExternal returns true if the given token is external; false otherwise
 func (t ERC20Token) IsExternal() bool {
 	return t.metadata.IsExternal
+}
+
+// SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
+func (t ERC20Token) SaveBurnerCode(burnerCode []byte) {
+	if len(t.metadata.BurnerCode) > 0 {
+		panic(fmt.Errorf("burner code already set"))
+	}
+
+	t.metadata.BurnerCode = burnerCode
+	t.setMeta(t.metadata)
+}
+
+// GetBurnerCode returns the version of the burner the token is deployed with
+func (t ERC20Token) GetBurnerCode() []byte {
+	return t.metadata.BurnerCode
+}
+
+// GetBurnerCodeHash returns the version of the burner the token is deployed with
+func (t ERC20Token) GetBurnerCodeHash() Hash {
+	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode))
 }
 
 // CreateDeployCommand returns a token deployment command for the token
@@ -760,10 +809,20 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+	var r role
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
+
+	switch keyRole {
+	case tss.MasterKey:
+		r = roleOwner
+	case tss.SecondaryKey:
+		r = roleOperator
+	default:
+		return CommandBatchMetadata{}, fmt.Errorf("cannot sign command batch with a key of role %s", keyRole.SimpleString())
+	}
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
@@ -771,7 +830,7 @@ func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, cmds []Command) 
 		commandParams = append(commandParams, cmd.Params)
 	}
 
-	data, err := packArguments(chainID, commandIDs, commands, commandParams)
+	data, err := packArguments(chainID, r, commandIDs, commands, commandParams)
 	if err != nil {
 		return CommandBatchMetadata{}, err
 	}
@@ -929,12 +988,17 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID *big.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -954,9 +1018,10 @@ func packArguments(chainID *big.Int, commandIDs []CommandID, commands []string, 
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: uint8Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
 		chainID,
+		r,
 		commandIDs,
 		commands,
 		commandParams,
@@ -1233,6 +1298,10 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return fmt.Errorf("minimum amount not set")
 	}
 
+	if err := validateBurnerCode(m.BurnerCode); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1261,4 +1330,21 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 	}
 
 	return commandList
+}
+
+// ValidateCommandQueueState checks if the keys of the given map have the correct format to be imported as command queue state.
+// The expected format is {block height}_{[a-zA-Z0-9]+}
+func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
+	for key := range state {
+		keyParticles := strings.Split(key, utils.DefaultDelimiter)
+		if len(keyParticles) != 2 {
+			return fmt.Errorf("expected key %s to consist of two parts", key)
+		}
+
+		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
+			return fmt.Errorf("expected first key part of %s to be a block height", key)
+		}
+	}
+
+	return nil
 }

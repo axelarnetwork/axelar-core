@@ -25,7 +25,6 @@ var (
 	KeyGateway             = []byte("gateway")
 	KeyToken               = []byte("token")
 	KeyBurnable            = []byte("burnable")
-	KeyAbsorber            = []byte("absorber")
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
 	KeyTransactionFeeRate  = []byte("transactionFeeRate")
@@ -38,22 +37,17 @@ func KeyTable() params.KeyTable {
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() []Params {
-	bzGateway, err := hex.DecodeString(multisigGateway)
+	bzGateway, err := hex.DecodeString(MultisigGateway)
 	if err != nil {
 		panic(err)
 	}
 
-	bzToken, err := hex.DecodeString(token)
+	bzToken, err := hex.DecodeString(Token)
 	if err != nil {
 		panic(err)
 	}
 
-	bzBurnable, err := hex.DecodeString(burnable)
-	if err != nil {
-		panic(err)
-	}
-
-	bzAbsorber, err := hex.DecodeString(Absorber)
+	bzBurnable, err := hex.DecodeString(Burnable)
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +59,6 @@ func DefaultParams() []Params {
 		GatewayCode:         bzGateway,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
-		Absorber:            bzAbsorber,
 		RevoteLockingPeriod: 50,
 		Networks: []NetworkInfo{
 			{
@@ -111,8 +104,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
 		params.NewParamSetPair(KeyGateway, &m.GatewayCode, validateBytes),
 		params.NewParamSetPair(KeyToken, &m.TokenCode, validateBytes),
-		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBytes),
-		params.NewParamSetPair(KeyAbsorber, &m.Absorber, validateBytes),
+		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBurnable),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
 		params.NewParamSetPair(KeyNetworks, &m.Networks, validateNetworks),
 		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
@@ -251,6 +243,18 @@ func validateTransactionFeeRate(i interface{}) error {
 	return nil
 }
 
+func validateBurnable(i interface{}) error {
+	if err := validateBytes(i); err != nil {
+		return err
+	}
+
+	if err := validateBurnerCode(i.([]byte)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -282,10 +286,16 @@ func (m Params) Validate() error {
 	}
 
 	// ensure that the network is one of the supported ones
+	found := false
 	for _, n := range m.Networks {
 		if n.Name == m.Network {
-			return nil
+			found = true
+			break
 		}
+	}
+
+	if !found {
+		return fmt.Errorf("'%s' not part of the network list", m.Network)
 	}
 
 	if err := validateBytes(m.GatewayCode); err != nil {
@@ -296,13 +306,9 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateBytes(m.Burnable); err != nil {
+	if err := validateBurnable(m.Burnable); err != nil {
 		return err
 	}
 
-	if err := validateBytes(m.Absorber); err != nil {
-		return err
-	}
-
-	return fmt.Errorf("'%s' not part of the network list", m.Network)
+	return nil
 }

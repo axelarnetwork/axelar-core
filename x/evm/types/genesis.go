@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -130,7 +129,8 @@ func (m GenesisState) Validate() error {
 		for key, value := range chain.CommandQueue {
 			queueState[key] = &value
 		}
-		if err := utils.ValidateQueueState(queueState); err != nil {
+
+		if err := ValidateCommandQueueState(queueState); err != nil {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command queue state"))
 		}
 	}
