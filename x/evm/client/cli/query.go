@@ -37,6 +37,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdLatestBatchedCommands(queryRoute),
 		GetCmdPendingCommands(queryRoute),
 		GetCmdCommand(queryRoute),
+		GetCmdBurnerInfo(queryRoute),
 		GetCmdChains(queryRoute),
 		GetCmdConfirmationHeight(queryRoute),
 	)
@@ -331,6 +332,35 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 			}
 
 			return clientCtx.PrintProto(&res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdBurnerInfo returns the query to get the burner info for the specified address
+func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "burner-info [deposit address]",
+		Short: "Get information about a burner address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BurnerInfo(cmd.Context(),
+				&types.BurnerInfoRequest{
+					Address: types.Address(common.HexToAddress(args[0])),
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

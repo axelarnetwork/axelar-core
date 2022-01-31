@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -43,7 +44,7 @@ var (
 var _ types.ChainKeeper = chainKeeper{}
 
 type chainKeeper struct {
-	baseKeeper
+	BaseKeeper
 	chainLowerKey string
 }
 
@@ -182,7 +183,7 @@ func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerInfo types.BurnerInfo)
 }
 
 // GetBurnerInfo retrieves the burner info for a given address
-func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr common.Address) *types.BurnerInfo {
+func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *types.BurnerInfo {
 	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
 	var result types.BurnerInfo
 	if !k.getStore(ctx, k.chainLowerKey).Get(key, &result) {
@@ -232,12 +233,12 @@ func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails
 		return common.Address{}, err
 	}
 
-	bytecodes, ok := k.GetTokenByteCodes(ctx)
+	bytecode, ok := k.GetTokenByteCode(ctx)
 	if !ok {
-		return common.Address{}, fmt.Errorf("bytecodes for token contract not found")
+		return common.Address{}, fmt.Errorf("bytecode for token contract not found")
 	}
 
-	tokenInitCode := append(bytecodes, packed...)
+	tokenInitCode := append(bytecode, packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
 	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
@@ -245,41 +246,44 @@ func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address) (common.Address, common.Hash, error) {
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return common.Address{}, common.Hash{}, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return common.Address{}, common.Hash{}, err
-	}
-
+func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
 	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	bz := []byte(recipient)
 	bz = append(bz, nonce[:]...)
-	saltBurn := common.BytesToHash(crypto.Keccak256Hash(bz).Bytes())
+	salt := types.Hash(common.BytesToHash(crypto.Keccak256Hash(bz).Bytes()))
 
-	arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
-	packed, err := arguments.Pack(tokenAddr, saltBurn)
-	if err != nil {
-		return common.Address{}, common.Hash{}, err
+	var initCodeHash types.Hash
+	tokenBurnerCodeHash := token.GetBurnerCodeHash().Hex()
+	switch tokenBurnerCodeHash {
+	case types.BurnerCodeHashV1:
+		addressType, err := abi.NewType("address", "address", nil)
+		if err != nil {
+			return types.Address{}, types.Hash{}, err
+		}
+
+		bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+		if err != nil {
+			return types.Address{}, types.Hash{}, err
+		}
+
+		arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
+		params, err := arguments.Pack(token.GetAddress(), salt)
+		if err != nil {
+			return types.Address{}, types.Hash{}, err
+		}
+
+		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
+	case types.BurnerCodeHashV2:
+		initCodeHash = token.GetBurnerCodeHash()
+	default:
+		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
 	}
 
-	bytecodes, ok := k.GetBurnerByteCodes(ctx)
-	if !ok {
-		return common.Address{}, common.Hash{}, fmt.Errorf("bytecodes for burner address no found")
-	}
-
-	burnerInitCode := append(bytecodes, packed...)
-	burnerInitCodeHash := crypto.Keccak256Hash(burnerInitCode)
-
-	return crypto.CreateAddress2(gatewayAddr, saltBurn, burnerInitCodeHash.Bytes()), saltBurn, nil
+	return types.Address(crypto.CreateAddress2(gatewayAddr, salt, initCodeHash.Bytes())), salt, nil
 }
 
-// GetBurnerByteCodes returns the bytecodes for the burner contract
-func (k chainKeeper) GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool) {
+// GetBurnerByteCode returns the bytecode for the burner contract
+func (k chainKeeper) GetBurnerByteCode(ctx sdk.Context) ([]byte, bool) {
 	var b []byte
 	subspace, ok := k.getSubspace(ctx)
 	if !ok {
@@ -289,8 +293,8 @@ func (k chainKeeper) GetBurnerByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, true
 }
 
-// GetTokenByteCodes returns the bytecodes for the token contract
-func (k chainKeeper) GetTokenByteCodes(ctx sdk.Context) ([]byte, bool) {
+// GetTokenByteCode returns the bytecodes for the token contract
+func (k chainKeeper) GetTokenByteCode(ctx sdk.Context) ([]byte, bool) {
 	var b []byte
 	subspace, ok := k.getSubspace(ctx)
 	if !ok {
@@ -300,8 +304,8 @@ func (k chainKeeper) GetTokenByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, ok
 }
 
-// GetGatewayByteCodes retrieves the byte codes for the Axelar Gateway smart contract
-func (k chainKeeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
+// GetGatewayByteCode retrieves the byte codes for the Axelar Gateway smart contract
+func (k chainKeeper) GetGatewayByteCode(ctx sdk.Context) ([]byte, bool) {
 	var b []byte
 	subspace, ok := k.getSubspace(ctx)
 	if !ok {
@@ -312,8 +316,8 @@ func (k chainKeeper) GetGatewayByteCodes(ctx sdk.Context) ([]byte, bool) {
 	return b, true
 }
 
-func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int) (types.ERC20Token, error) {
-	metadata, err := k.initTokenMetadata(ctx, asset, details, minDeposit)
+func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int, address types.Address) (types.ERC20Token, error) {
+	metadata, err := k.initTokenMetadata(ctx, asset, details, minDeposit, address)
 	if err != nil {
 		return types.NilToken, err
 	}
@@ -644,7 +648,7 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 }
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
-func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
 	command, ok := k.popCommand(ctx)
 	if !ok {
 		return types.CommandBatch{}, nil
@@ -670,7 +674,8 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, 
 		commands = append(commands, cmd.Clone())
 	}
 
-	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, commands)
+	keyRole := signer.GetKeyRole(ctx, keyID)
+	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, keyRole, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}
@@ -708,8 +713,28 @@ func (k chainKeeper) setUnsignedCommandBatchID(ctx sdk.Context, id []byte) {
 }
 
 // returns the queue of commands
-func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
-	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chainLowerKey), ctx.BlockHeight(), k.Logger(ctx))
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.GeneralKVQueue {
+	return utils.NewGeneralKVQueue(
+		commandQueueName,
+		k.getStore(ctx, k.chainLowerKey),
+		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			command, ok := value.(*types.Command)
+			if !ok {
+				panic(fmt.Errorf("unexpected type of command %T", command))
+			}
+
+			bz := make([]byte, 8)
+
+			switch command.Command {
+			case types.AxelarGatewayCommandBurnToken:
+			default:
+				binary.BigEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
+			}
+
+			return utils.KeyFromBz(bz)
+		},
+	)
 }
 
 func (k chainKeeper) serializeCommandQueue(ctx sdk.Context) map[string]types.Command {
@@ -738,7 +763,7 @@ func (k chainKeeper) setCommandQueue(ctx sdk.Context, queueState map[string]type
 		state[key] = &v
 	}
 
-	k.getCommandQueue(ctx).ImportState(state)
+	k.getCommandQueue(ctx).ImportState(state, types.ValidateCommandQueueState)
 }
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {
@@ -767,6 +792,19 @@ func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (t
 	return result, found
 }
 
+func (k chainKeeper) GetTokens(ctx sdk.Context) []types.ERC20Token {
+	tokensMetadata := k.getTokensMetadata(ctx)
+	tokens := make([]types.ERC20Token, len(tokensMetadata))
+
+	for i, tokenMetadata := range tokensMetadata {
+		tokens[i] = types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+			k.setTokenMetadata(ctx, m)
+		}, tokenMetadata)
+	}
+
+	return tokens
+}
+
 func (k chainKeeper) getTokensMetadata(ctx sdk.Context) []types.ERC20TokenMetadata {
 	iter := k.getStore(ctx, k.chainLowerKey).Iterator(tokenMetadataByAssetPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -780,7 +818,11 @@ func (k chainKeeper) getTokensMetadata(ctx sdk.Context) []types.ERC20TokenMetada
 	return tokens
 }
 
-func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, minAmount sdk.Int) (types.ERC20TokenMetadata, error) {
+func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, minAmount sdk.Int, address types.Address) (types.ERC20TokenMetadata, error) {
+	if err := details.Validate(); err != nil {
+		return types.ERC20TokenMetadata{}, err
+	}
+
 	// perform a few checks now, so that it is impossible to get errors later
 	if token := k.GetERC20TokenByAsset(ctx, asset); !token.Is(types.NonExistent) {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("token for asset '%s' already set", asset)
@@ -790,21 +832,39 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		return types.ERC20TokenMetadata{}, fmt.Errorf("token with symbol '%s' already set", details.Symbol)
 	}
 
+	chainID := k.getSigner(ctx).ChainID()
+
+	burnerCode, ok := k.GetBurnerByteCode(ctx)
+	if !ok {
+		return types.ERC20TokenMetadata{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
+	}
+
+	if !address.IsZeroAddress() {
+		meta := types.ERC20TokenMetadata{
+			Asset:        asset,
+			Details:      details,
+			TokenAddress: address,
+			ChainID:      sdk.NewIntFromBigInt(chainID),
+			MinAmount:    minAmount,
+			Status:       types.Initialized,
+			IsExternal:   true,
+			BurnerCode:   burnerCode,
+		}
+		k.setTokenMetadata(ctx, meta)
+
+		return meta, nil
+	}
+
 	gatewayAddr, found := k.GetGatewayAddress(ctx)
 	if !found {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("axelar gateway address for chain '%s' not set", k.chainLowerKey)
 	}
 
-	_, found = k.GetTokenByteCodes(ctx)
+	_, found = k.GetTokenByteCode(ctx)
 	if !found {
 		return types.ERC20TokenMetadata{}, fmt.Errorf("bytecodes for token contract for chain '%s' not found", k.chainLowerKey)
 	}
 
-	if err := details.Validate(); err != nil {
-		return types.ERC20TokenMetadata{}, err
-	}
-
-	chainID := k.getSigner(ctx).ChainID()
 	tokenAddr, err := k.getTokenAddress(ctx, details, gatewayAddr)
 	if err != nil {
 		return types.ERC20TokenMetadata{}, err
@@ -818,8 +878,11 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		ChainID:      sdk.NewIntFromBigInt(chainID),
 		MinAmount:    minAmount,
 		Status:       types.Initialized,
+		IsExternal:   false,
+		BurnerCode:   burnerCode,
 	}
 	k.setTokenMetadata(ctx, meta)
+
 	return meta, nil
 }
 

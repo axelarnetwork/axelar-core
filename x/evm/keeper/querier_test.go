@@ -47,7 +47,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		symbol = "axelarBTC"
 		chainID = big.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
-		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, createDetails(asset, symbol))
+		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, createDetails(asset, symbol), types.ZeroAddress)
 		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn, _ := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),

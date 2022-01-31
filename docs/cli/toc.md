@@ -45,6 +45,7 @@
     - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
       - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
@@ -177,7 +178,7 @@
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
       - [add-cosmos-based-chain \[name\] \[native asset\] \[min amount\] \[address prefix\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
-      - [confirm-deposit \[txID\] \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
+      - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\] \[min amount\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain

@@ -494,7 +494,7 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 	var bz []byte
 	switch strings.ToLower(contract) {
 	case BCGateway:
-		bz, _ = k.GetGatewayByteCodes(ctx)
+		bz, _ = k.GetGatewayByteCode(ctx)
 	case BCGatewayDeployment:
 		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, k, s, chain)
 		if err != nil {
@@ -503,9 +503,9 @@ func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types
 
 		return deploymentBytecode, nil
 	case BCToken:
-		bz, _ = k.GetTokenByteCodes(ctx)
+		bz, _ = k.GetTokenByteCode(ctx)
 	case BCBurner:
-		bz, _ = k.GetBurnerByteCodes(ctx)
+		bz, _ = k.GetBurnerByteCode(ctx)
 	}
 
 	if bz == nil {

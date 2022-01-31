@@ -98,6 +98,7 @@ type SDKValidator interface {
 	GetConsAddr() (sdk.ConsAddress, error)
 	GetConsensusPower(sdk.Int) int64
 	IsJailed() bool
+	IsBonded() bool
 }
 
 // NewValidator is the constructor for Validator
