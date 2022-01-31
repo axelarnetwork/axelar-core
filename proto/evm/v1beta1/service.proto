@@ -159,7 +159,8 @@ service QueryService {
   }
 
   // ConfirmationHeight queries the confirmation height for the specified chain
-  rpc ConfirmationHeight(ConfirmationHeightRequest) returns (ConfirmationHeightResponse) {
-    option (google.api.http).get = "/evm/v1beta1/confirmation_height";
-  }
+  rpc ConfirmationHeight(ConfirmationHeightRequest)
+     returns (ConfirmationHeightResponse) {
+     option (google.api.http).get = "/evm/v1beta1/confirmation_height";
+   }
 }

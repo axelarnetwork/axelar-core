@@ -95,10 +95,6 @@ message BurnerInfoResponse {
   BurnerInfo burner_info = 2;
 }
 
-message ConfirmationHeightRequest {
-  string chain = 1;
-}
+message ConfirmationHeightRequest { string chain = 1; }
 
-message ConfirmationHeightResponse {
-  uint64 height = 1;
-}
+message ConfirmationHeightResponse { uint64 height = 1; }
