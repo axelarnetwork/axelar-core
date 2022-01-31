@@ -27,7 +27,6 @@ message Params {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];
-  bytes absorber = 13 [ (gogoproto.nullable) = true ];
 }
 
 message PendingChain {
