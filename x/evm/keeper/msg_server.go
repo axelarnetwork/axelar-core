@@ -777,10 +777,16 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, fmt.Errorf("cross-chain sender has no recipient")
 	}
 
+	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not find EVM subspace")
+	}
+
 	// handle poll result
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
@@ -1416,7 +1422,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (types.CommandBatch, error) {
 	latest := keeper.GetLatestCommandBatch(ctx)
 
 	switch latest.GetStatus() {
@@ -1425,7 +1431,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 	case types.BatchAborted:
 		return latest, nil
 	default:
-		return keeper.CreateNewBatchToSign(ctx)
+		return keeper.CreateNewBatchToSign(ctx, signer)
 	}
 }
 
@@ -1446,7 +1452,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper, s.signer)
 	if err != nil {
 		return nil, err
 	}
