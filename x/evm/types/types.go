@@ -31,6 +31,26 @@ const (
 	Ganache = "ganache"
 )
 
+// Burner code hashes
+const (
+	// BurnerCodeHashV1 is the hash of the bytecode of burner v1
+	BurnerCodeHashV1 = "0x70be6eedec1d63b7cf8b9233615e4e408c99e0753be123b605aa5d53ed4a8670"
+	// BurnerCodeHashV2 is the hash of the bytecode of burner v2
+	BurnerCodeHashV2 = "0xf34c56593ef4a993c05acac98bf4ae170ee322068752b49fb44ce545d29c3c6f"
+)
+
+func validateBurnerCode(burnerCode []byte) error {
+	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
+	switch burnerCodeHash {
+	case BurnerCodeHashV1:
+	case BurnerCodeHashV2:
+	default:
+		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
+	}
+
+	return nil
+}
+
 // AxelarGateway contract ABI and command selectors
 const (
 	// TODO: Check if there's a way to install the smart contract module with compiled ABI files
@@ -117,6 +137,26 @@ func (t *ERC20Token) Is(status Status) bool {
 // IsExternal returns true if the given token is external; false otherwise
 func (t ERC20Token) IsExternal() bool {
 	return t.metadata.IsExternal
+}
+
+// SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
+func (t ERC20Token) SaveBurnerCode(burnerCode []byte) {
+	if len(t.metadata.BurnerCode) > 0 {
+		panic(fmt.Errorf("burner code already set"))
+	}
+
+	t.metadata.BurnerCode = burnerCode
+	t.setMeta(t.metadata)
+}
+
+// GetBurnerCode returns the version of the burner the token is deployed with
+func (t ERC20Token) GetBurnerCode() []byte {
+	return t.metadata.BurnerCode
+}
+
+// GetBurnerCodeHash returns the version of the burner the token is deployed with
+func (t ERC20Token) GetBurnerCodeHash() Hash {
+	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode))
 }
 
 // CreateDeployCommand returns a token deployment command for the token
@@ -1254,6 +1294,10 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 
 	if m.MinAmount.IsNil() || !m.MinAmount.IsPositive() {
 		return fmt.Errorf("minimum amount not set")
+	}
+
+	if err := validateBurnerCode(m.BurnerCode); err != nil {
+		return err
 	}
 
 	return nil

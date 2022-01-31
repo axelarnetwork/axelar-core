@@ -57,7 +57,7 @@ type ChainKeeper interface {
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
 	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
-	GetBurnerAddressAndSalt(ctx sdk.Context, tokenAddr Address, recipient string, gatewayAddr common.Address, isExternalToken bool) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr common.Address) (Address, Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
 	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)

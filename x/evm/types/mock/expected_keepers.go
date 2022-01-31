@@ -2575,7 +2575,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
 // 				panic("mock out the GetBatchByID method")
 // 			},
-// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, isExternalToken bool) (common.Address, common.Hash, error) {
+// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
 // 			},
 // 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
@@ -2727,7 +2727,7 @@ type ChainKeeperMock struct {
 	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
-	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, isExternalToken bool) (common.Address, common.Hash, error)
+	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error)
 
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
 	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -2924,14 +2924,12 @@ type ChainKeeperMock struct {
 		GetBurnerAddressAndSalt []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// TokenAddr is the tokenAddr argument value.
-			TokenAddr types.Address
+			// Token is the token argument value.
+			Token types.ERC20Token
 			// Recipient is the recipient argument value.
 			Recipient string
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr common.Address
-			// IsExternalToken is the isExternalToken argument value.
-			IsExternalToken bool
 		}
 		// GetBurnerByteCode holds details about calls to the GetBurnerByteCode method.
 		GetBurnerByteCode []struct {
@@ -3618,45 +3616,41 @@ func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 }
 
 // GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
-func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, tokenAddr types.Address, recipient string, gatewayAddr common.Address, isExternalToken bool) (common.Address, common.Hash, error) {
+func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
 	if mock.GetBurnerAddressAndSaltFunc == nil {
 		panic("ChainKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but ChainKeeper.GetBurnerAddressAndSalt was just called")
 	}
 	callInfo := struct {
-		Ctx             github_com_cosmos_cosmos_sdk_types.Context
-		TokenAddr       types.Address
-		Recipient       string
-		GatewayAddr     common.Address
-		IsExternalToken bool
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Token       types.ERC20Token
+		Recipient   string
+		GatewayAddr common.Address
 	}{
-		Ctx:             ctx,
-		TokenAddr:       tokenAddr,
-		Recipient:       recipient,
-		GatewayAddr:     gatewayAddr,
-		IsExternalToken: isExternalToken,
+		Ctx:         ctx,
+		Token:       token,
+		Recipient:   recipient,
+		GatewayAddr: gatewayAddr,
 	}
 	mock.lockGetBurnerAddressAndSalt.Lock()
 	mock.calls.GetBurnerAddressAndSalt = append(mock.calls.GetBurnerAddressAndSalt, callInfo)
 	mock.lockGetBurnerAddressAndSalt.Unlock()
-	return mock.GetBurnerAddressAndSaltFunc(ctx, tokenAddr, recipient, gatewayAddr, isExternalToken)
+	return mock.GetBurnerAddressAndSaltFunc(ctx, token, recipient, gatewayAddr)
 }
 
 // GetBurnerAddressAndSaltCalls gets all the calls that were made to GetBurnerAddressAndSalt.
 // Check the length with:
 //     len(mockedChainKeeper.GetBurnerAddressAndSaltCalls())
 func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
-	Ctx             github_com_cosmos_cosmos_sdk_types.Context
-	TokenAddr       types.Address
-	Recipient       string
-	GatewayAddr     common.Address
-	IsExternalToken bool
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Token       types.ERC20Token
+	Recipient   string
+	GatewayAddr common.Address
 } {
 	var calls []struct {
-		Ctx             github_com_cosmos_cosmos_sdk_types.Context
-		TokenAddr       types.Address
-		Recipient       string
-		GatewayAddr     common.Address
-		IsExternalToken bool
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Token       types.ERC20Token
+		Recipient   string
+		GatewayAddr common.Address
 	}
 	mock.lockGetBurnerAddressAndSalt.RLock()
 	calls = mock.calls.GetBurnerAddressAndSalt

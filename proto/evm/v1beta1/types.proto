@@ -68,6 +68,7 @@ message ERC20TokenMetadata {
   ];
   Status status = 7;
   bool is_external = 8;
+  bytes burner_code = 9;
 }
 
 enum Status {
