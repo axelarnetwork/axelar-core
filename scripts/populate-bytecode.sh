@@ -5,8 +5,7 @@ artifactsPath="contract-artifacts/gateway"
 declare -a contracts=("AxelarGatewayProxySinglesig"
                       "AxelarGatewayProxyMultisig"
                       "BurnableMintableCappedERC20"
-                      "Burner"
-                      "Absorber"
+                      "DepositHandler"
                       )
 
 cp x/evm/types/contracts.go.template x/evm/types/contracts.go
