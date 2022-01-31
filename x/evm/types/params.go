@@ -38,17 +38,17 @@ func KeyTable() params.KeyTable {
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() []Params {
-	bzGateway, err := hex.DecodeString(multisigGateway)
+	bzGateway, err := hex.DecodeString(MultisigGateway)
 	if err != nil {
 		panic(err)
 	}
 
-	bzToken, err := hex.DecodeString(token)
+	bzToken, err := hex.DecodeString(Token)
 	if err != nil {
 		panic(err)
 	}
 
-	bzBurnable, err := hex.DecodeString(burnable)
+	bzBurnable, err := hex.DecodeString(Burnable)
 	if err != nil {
 		panic(err)
 	}
@@ -282,10 +282,16 @@ func (m Params) Validate() error {
 	}
 
 	// ensure that the network is one of the supported ones
+	found := false
 	for _, n := range m.Networks {
 		if n.Name == m.Network {
-			return nil
+			found = true
+			break
 		}
+	}
+
+	if !found {
+		return fmt.Errorf("'%s' not part of the network list", m.Network)
 	}
 
 	if err := validateBytes(m.GatewayCode); err != nil {
@@ -304,5 +310,5 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	return fmt.Errorf("'%s' not part of the network list", m.Network)
+	return nil
 }

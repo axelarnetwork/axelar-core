@@ -2548,7 +2548,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int, address types.Address) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
-// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
+// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error) {
 // 				panic("mock out the CreateNewBatchToSign method")
 // 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
@@ -2700,7 +2700,7 @@ type ChainKeeperMock struct {
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, minDeposit github_com_cosmos_cosmos_sdk_types.Int, address types.Address) (types.ERC20Token, error)
 
 	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
-	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error)
+	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error)
 
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)
@@ -2865,6 +2865,8 @@ type ChainKeeperMock struct {
 		CreateNewBatchToSign []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Signer is the signer argument value.
+			Signer types.Signer
 		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
@@ -3309,29 +3311,33 @@ func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
 }
 
 // CreateNewBatchToSign calls CreateNewBatchToSignFunc.
-func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
+func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error) {
 	if mock.CreateNewBatchToSignFunc == nil {
 		panic("ChainKeeperMock.CreateNewBatchToSignFunc: method is nil but ChainKeeper.CreateNewBatchToSign was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Signer types.Signer
 	}{
-		Ctx: ctx,
+		Ctx:    ctx,
+		Signer: signer,
 	}
 	mock.lockCreateNewBatchToSign.Lock()
 	mock.calls.CreateNewBatchToSign = append(mock.calls.CreateNewBatchToSign, callInfo)
 	mock.lockCreateNewBatchToSign.Unlock()
-	return mock.CreateNewBatchToSignFunc(ctx)
+	return mock.CreateNewBatchToSignFunc(ctx, signer)
 }
 
 // CreateNewBatchToSignCalls gets all the calls that were made to CreateNewBatchToSign.
 // Check the length with:
 //     len(mockedChainKeeper.CreateNewBatchToSignCalls())
 func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Signer types.Signer
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Signer types.Signer
 	}
 	mock.lockCreateNewBatchToSign.RLock()
 	calls = mock.calls.CreateNewBatchToSign

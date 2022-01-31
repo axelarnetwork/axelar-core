@@ -14,9 +14,24 @@ import (
 // - Add default absorber bytecode for every existing evm chain
 func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		bzGateway, err := hex.DecodeString(types.MultisigGateway)
+		if err != nil {
+			panic(err)
+		}
+
+		bzToken, err := hex.DecodeString(types.Token)
+		if err != nil {
+			panic(err)
+		}
+
+		bzBurnable, err := hex.DecodeString(types.Burnable)
+		if err != nil {
+			panic(err)
+		}
+
 		bzAbsorber, err := hex.DecodeString(types.Absorber)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		for _, chain := range n.GetChains(ctx) {
@@ -35,6 +50,9 @@ func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context
 			subspace.GetParamSet(ctx, &legacyParams)
 
 			params := legacyParams.Params
+			params.GatewayCode = bzGateway
+			params.TokenCode = bzToken
+			params.Burnable = bzBurnable
 			params.Absorber = bzAbsorber
 			subspace.SetParamSet(ctx, &params)
 		}
