@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -712,8 +713,28 @@ func (k chainKeeper) setUnsignedCommandBatchID(ctx sdk.Context, id []byte) {
 }
 
 // returns the queue of commands
-func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
-	return utils.NewBlockHeightKVQueue(commandQueueName, k.getStore(ctx, k.chainLowerKey), ctx.BlockHeight(), k.Logger(ctx))
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.GeneralKVQueue {
+	return utils.NewGeneralKVQueue(
+		commandQueueName,
+		k.getStore(ctx, k.chainLowerKey),
+		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			command, ok := value.(*types.Command)
+			if !ok {
+				panic(fmt.Errorf("unexpected type of command %T", command))
+			}
+
+			bz := make([]byte, 8)
+
+			switch command.Command {
+			case types.AxelarGatewayCommandBurnToken:
+			default:
+				binary.BigEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
+			}
+
+			return utils.KeyFromBz(bz)
+		},
+	)
 }
 
 func (k chainKeeper) serializeCommandQueue(ctx sdk.Context) map[string]types.Command {
@@ -742,7 +763,7 @@ func (k chainKeeper) setCommandQueue(ctx sdk.Context, queueState map[string]type
 		state[key] = &v
 	}
 
-	k.getCommandQueue(ctx).ImportState(state)
+	k.getCommandQueue(ctx).ImportState(state, types.ValidateCommandQueueState)
 }
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {

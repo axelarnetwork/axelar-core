@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -9,6 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -39,6 +41,52 @@ func TestCommands(t *testing.T) {
 		keeper = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
 		chain = "Ethereum"
 	}
+
+	repeats := 20
+
+	t.Run("command queue should prioritize burn commands", testutils.Func(func(t *testing.T) {
+		setup()
+		chainKeeper := keeper.ForChain(chain)
+		chainKeeper.SetParams(ctx, types.DefaultParams()[0])
+		chainID, ok := chainKeeper.GetChainID(ctx)
+		assert.True(t, ok)
+
+		keyID := tssTestUtils.RandKeyID()
+
+		ctx = ctx.WithBlockHeight(rand.I64Between(1, 1000))
+		tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
+		deployTokenCommand, err := types.CreateDeployTokenCommand(chainID, keyID, tokenDetails, types.ZeroAddress)
+		assert.NoError(t, err)
+		err = chainKeeper.EnqueueCommand(ctx, deployTokenCommand)
+		assert.NoError(t, err)
+
+		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand.I64Between(1, 1000))
+		mintTokenCommand, err := types.CreateMintTokenCommand(keyID, types.CommandID(common.BytesToHash(rand.Bytes(common.HashLength))), rand.Str(3), common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.PosI64()))
+		assert.NoError(t, err)
+		err = chainKeeper.EnqueueCommand(ctx, mintTokenCommand)
+		assert.NoError(t, err)
+
+		ctx = ctx.WithBlockHeight(ctx.BlockHeight() + rand.I64Between(1, 1000))
+		burnTokenCommand, err := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
+			BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			TokenAddress:     types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			DestinationChain: chain,
+			Symbol:           rand.Str(3),
+			Asset:            rand.Str(3),
+			Salt:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+		})
+		assert.NoError(t, err)
+		err = chainKeeper.EnqueueCommand(ctx, burnTokenCommand)
+		assert.NoError(t, err)
+
+		actual, err := chainKeeper.CreateNewBatchToSign(ctx, &mock.SignerMock{
+			GetKeyRoleFunc: func(_ sdk.Context, _ tss.KeyID) tss.KeyRole { return tss.MasterKey },
+		})
+		assert.NoError(t, err)
+
+		assert.Len(t, actual.GetCommandIDs(), 3)
+		assert.Equal(t, []types.CommandID{burnTokenCommand.ID, deployTokenCommand.ID, mintTokenCommand.ID}, actual.GetCommandIDs())
+	}).Repeat(repeats))
 
 	t.Run("enqueue and then batch commands", testutils.Func(func(t *testing.T) {
 		setup()
@@ -83,7 +131,7 @@ func TestCommands(t *testing.T) {
 				break
 			}
 		}
-	}).Repeat(20))
+	}).Repeat(repeats))
 }
 
 func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
