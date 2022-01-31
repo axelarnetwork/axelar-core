@@ -2179,6 +2179,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `min_amount` | [bytes](#bytes) |  |  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 | `is_external` | [bool](#bool) |  |  |
+| `burner_code` | [bytes](#bytes) |  |  |
 
 
 
@@ -2402,7 +2403,6 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `transaction_fee_rate` | [string](#string) |  |  |
-| `absorber` | [bytes](#bytes) |  |  |
 
 
 

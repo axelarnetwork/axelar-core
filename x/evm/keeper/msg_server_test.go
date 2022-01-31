@@ -48,8 +48,7 @@ var (
 	networkConf = evmParams.RinkebyChainConfig
 	bytecodes   = common.FromHex(MymintableBin)
 	tokenBC     = rand.Bytes(64)
-	burnerBC    = rand.Bytes(64)
-	absorberBC  = rand.Bytes(64)
+	burnerBC    = common.Hex2Bytes(types.Burnable)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
@@ -269,7 +268,6 @@ func TestLink_UnknownChain(t *testing.T) {
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
-		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
@@ -307,7 +305,6 @@ func TestLink_NoGateway(t *testing.T) {
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
-		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
@@ -438,11 +435,11 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
-	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token.GetAddress(), recipient.Address, common.HexToAddress(gateway), false)
+	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token, recipient.Address, common.HexToAddress(gateway))
 	if err != nil {
 		panic(err)
 	}
-	sender := nexus.CrossChainAddress{Address: burnAddr.String(), Chain: exported.Ethereum}
+	sender := nexus.CrossChainAddress{Address: burnAddr.Hex(), Chain: exported.Ethereum}
 
 	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
@@ -1241,7 +1238,6 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 					GatewayCode:         bytecodes,
 					TokenCode:           tokenBC,
 					Burnable:            burnerBC,
-					Absorber:            absorberBC,
 					RevoteLockingPeriod: 50,
 					VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 					MinVoterCount:       15,
@@ -1401,7 +1397,6 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
-		Absorber:            absorberBC,
 		RevoteLockingPeriod: 50,
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,

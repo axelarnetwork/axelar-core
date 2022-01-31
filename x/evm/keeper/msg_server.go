@@ -249,8 +249,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	tokenAddr := token.GetAddress()
-	burnerAddr, salt, err := keeper.GetBurnerAddressAndSalt(ctx, tokenAddr, req.RecipientAddr, gatewayAddr, token.IsExternal())
+	burnerAddress, salt, err := keeper.GetBurnerAddressAndSalt(ctx, token, req.RecipientAddr, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -259,19 +258,19 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
 	err = s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddr.Hex()},
+		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddress.Hex()},
 		recipient)
 	if err != nil {
 		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
 	}
 
 	burnerInfo := types.BurnerInfo{
-		BurnerAddress:    types.Address(burnerAddr),
-		TokenAddress:     tokenAddr,
+		BurnerAddress:    burnerAddress,
+		TokenAddress:     token.GetAddress(),
 		DestinationChain: req.RecipientChain,
 		Symbol:           symbol,
 		Asset:            req.Asset,
-		Salt:             types.Hash(salt),
+		Salt:             salt,
 	}
 	keeper.SetBurnerInfo(ctx, burnerInfo)
 
@@ -280,15 +279,15 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
 	)
 
-	return &types.LinkResponse{DepositAddr: burnerAddr.Hex()}, nil
+	return &types.LinkResponse{DepositAddr: burnerAddress.Hex()}, nil
 }
 
 // ConfirmToken handles token deployment confirmation
