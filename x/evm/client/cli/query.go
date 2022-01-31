@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -404,13 +403,17 @@ func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
 			return err
 		}
 
-		height, err := evmclient.QueryConfirmationHeight(clientCtx, args[0])
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.ConfirmationHeight(cmd.Context(),
+			&types.ConfirmationHeightRequest{
+				Chain: args[0],
+			})
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(strconv.FormatUint(height, 10))
-		return nil
+		return clientCtx.PrintProto(res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)

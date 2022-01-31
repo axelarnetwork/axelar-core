@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -57,15 +56,4 @@ func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryComman
 		return types.QueryCommandResponse{}, sdkerrors.Wrap(err, "could not get pending commands")
 	}
 	return res, nil
-}
-
-// QueryConfirmationHeight returns the confirmation height for the given chain
-func QueryConfirmationHeight(clientCtx client.Context, chain string) (uint64, error) {
-	path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QConfirmationHeight, chain)
-	bz, _, err := clientCtx.Query(path)
-	if err != nil {
-		return 0, sdkerrors.Wrapf(err, "could not get the confirmation height for chain %s", chain)
-	}
-
-	return binary.LittleEndian.Uint64(bz), nil
 }

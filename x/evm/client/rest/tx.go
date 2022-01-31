@@ -46,7 +46,6 @@ const (
 	QueryBytecode             = keeper.QBytecode
 	QueryDepositState         = keeper.QDepositState
 	QueryChains               = keeper.QChains
-	QueryConfirmationHeight   = keeper.QConfirmationHeight
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -79,7 +78,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
 	registerQuery(GetHandlerQueryChains(cliCtx), QueryChains)
-	registerQuery(GetHandlerQueryConfirmationHeight(cliCtx), QueryConfirmationHeight, clientUtils.PathVarChain)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address
