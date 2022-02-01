@@ -64,6 +64,14 @@ message QueryDepositStateParams {
   string amount = 3;
 }
 
+message DepositStateRequest {
+  string chain = 1;
+  QueryDepositStateParams params = 2;
+}
+
+message DepositStateResponse { DepositStatus status = 2; }
+
+// QueryDepositStateResponse is used by the legacy querier
 message QueryDepositStateResponse {
   string log = 1;
   DepositStatus status = 2;
