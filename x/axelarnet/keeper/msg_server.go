@@ -237,13 +237,14 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterNativeAsset(ctx, req.Chain, asset.Denom); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, req.Chain, asset); err != nil {
 			return nil, err
 		}
 
-		s.nexus.RegisterAsset(ctx, req.Chain, asset)
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		s.nexus.RegisterAsset(ctx, exported.Axelarnet, asset)
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, asset.MinAmount, false)); err != nil {
+			return nil, err
+		}
 	}
 
 	s.BaseKeeper.SetCosmosChain(ctx, types.CosmosChain{
@@ -263,17 +264,18 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
-	if req.IsNativeAsset {
-		if err := s.nexus.RegisterNativeAsset(ctx, chain, req.Asset.Denom); err != nil {
-			return nil, err
-		}
+	if _, found := s.BaseKeeper.GetCosmosChainByName(ctx, req.Chain); !found {
+		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
 	}
 
 	// register asset in chain state
-	s.nexus.RegisterAsset(ctx, chain, req.Asset)
+	err := s.nexus.RegisterAsset(ctx, chain, req.Asset)
+	if err != nil {
+		return nil, err
+	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
-	s.nexus.RegisterAsset(ctx, exported.Axelarnet, req.Asset)
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, req.Asset.MinAmount, false))
 
 	return &types.RegisterAssetResponse{}, nil
 }
@@ -420,8 +422,8 @@ func toICS20(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, coin sdk.Coin) 
 	return sdk.NewCoin(denomTrace.IBCDenom(), coin.Amount)
 }
 
-// isFromCosmosChain returns true if the asset origins from cosmos chains
-func isFromCosmosChain(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, coin sdk.Coin) bool {
+// isFromExternalCosmosChain returns true if the asset origins from cosmos chains
+func isFromExternalCosmosChain(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, coin sdk.Coin) bool {
 	chain, ok := n.GetChainByNativeAsset(ctx, coin.GetDenom())
 	if !ok {
 		return false
@@ -456,7 +458,7 @@ func prepareTransfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types
 	// pending transfer can be either of cosmos chains assets, Axelarnet native asset, assets from supported chain
 	switch {
 	// asset origins from cosmos chains, it will be converted to ICS20 token
-	case isFromCosmosChain(ctx, k, n, coin):
+	case isFromExternalCosmosChain(ctx, k, n, coin):
 		coin = toICS20(ctx, k, n, coin)
 		sender = types.GetEscrowAddress(coin.GetDenom())
 	case isNativeAssetOnAxelarnet(ctx, n, coin.Denom):

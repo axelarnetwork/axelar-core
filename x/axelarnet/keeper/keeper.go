@@ -67,7 +67,7 @@ func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain, path string) error {
 		return fmt.Errorf("unknown cosmos chain %s", chain)
 	}
 
-	if cosmosChain.IBCPath != "" {
+	if _, ok := k.GetIBCPath(ctx, chain); ok {
 		return fmt.Errorf("path %s already registered for cosmos chain %s", path, chain)
 	}
 

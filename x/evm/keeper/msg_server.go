@@ -1067,7 +1067,9 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, req.MinAmount))
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, req.MinAmount, false)); err != nil {
+		return nil, err
+	}
 
 	return &types.CreateDeployTokenResponse{}, nil
 }
@@ -1518,7 +1520,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	s.SetPendingChain(
 		ctx,
-		nexus.Chain{Name: req.Name, Module: types.ModuleName, KeyType: req.KeyType, SupportsForeignAssets: true},
+		nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
 		req.Params,
 	)
 

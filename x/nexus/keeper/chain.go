@@ -32,12 +32,24 @@ func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
-func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset) {
+func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset) error {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
-	chainState.AddAsset(asset)
+
+	if asset.IsNativeAsset {
+		if c, ok := k.GetChainByNativeAsset(ctx, asset.Denom); ok {
+			return fmt.Errorf("native asset %s already set for chain %s", asset.Denom, c.Name)
+		}
+		k.setChainByNativeAsset(ctx, asset.Denom, chain)
+	}
+
+	if err := chainState.AddAsset(asset); err != nil {
+		return err
+	}
 
 	k.setChainState(ctx, chainState)
+
+	return nil
 }
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
@@ -127,13 +139,13 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, mai
 }
 
 // GetMinAmount returns the asset's minimum transferable amount for the given chain
-func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) sdk.Int {
+func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) (sdk.Int, bool) {
 	chainState, ok := k.getChainState(ctx, chain)
 	if !ok {
-		return sdk.ZeroInt()
+		return sdk.ZeroInt(), false
 	}
 
-	return chainState.AssetMinAmount(asset)
+	return chainState.AssetMinAmount(asset), true
 }
 
 // GetChains retrieves the specification for all supported blockchains
@@ -159,25 +171,6 @@ func (k Keeper) GetChain(ctx sdk.Context, chainName string) (chain exported.Chai
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
 	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name)), &chain)
-}
-
-// RegisterNativeAsset register a native asset to the given chain
-func (k Keeper) RegisterNativeAsset(ctx sdk.Context, chain exported.Chain, nativeAsset string) error {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-
-	if c, ok := k.GetChainByNativeAsset(ctx, nativeAsset); ok {
-		return fmt.Errorf("native asset %s already set for chain %s", nativeAsset, c.Name)
-	}
-
-	if err := chainState.AddNativeAsset(nativeAsset); err != nil {
-		return err
-	}
-
-	k.setChainState(ctx, chainState)
-	k.setChainByNativeAsset(ctx, nativeAsset, chain)
-
-	return nil
 }
 
 func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain exported.Chain) {

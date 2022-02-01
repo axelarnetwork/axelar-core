@@ -39,12 +39,8 @@ func DefaultGenesisState() *GenesisState {
 		0,
 		[]exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
 		[]ChainState{{
-			Chain: axelarnet.Axelarnet,
-			Assets: []exported.Asset{{
-				Denom:     axelarnet.Uaxl,
-				MinAmount: sdk.NewInt(100000),
-			}},
-			NativeAssets: []string{axelarnet.Uaxl},
+			Chain:  axelarnet.Axelarnet,
+			Assets: []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
 		}},
 		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},

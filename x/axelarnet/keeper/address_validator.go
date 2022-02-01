@@ -9,9 +9,9 @@ import (
 )
 
 // NewAddressValidator returns the callback for validating cosmos SDK addresses
-func NewAddressValidator(k types.CosmosChainGetter) nexus.AddressValidator {
+func NewAddressValidator(getter types.CosmosChainGetter) nexus.AddressValidator {
 	return func(ctx sdk.Context, address nexus.CrossChainAddress) error {
-		chain, ok := k.GetCosmosChainByName(ctx, address.Chain.Name)
+		chain, ok := getter(ctx, address.Chain.Name)
 		if !ok {
 			return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
 		}

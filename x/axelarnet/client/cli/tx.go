@@ -178,7 +178,7 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 				return fmt.Errorf("could not convert string to integer")
 			}
 
-			assets[i] = nexus.Asset{Denom: denom, MinAmount: minAmount}
+			assets[i] = nexus.NewAsset(denom, minAmount, true)
 		}
 
 		name := args[0]
@@ -221,7 +221,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount), isNativeAsset)
+		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount, isNativeAsset))
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

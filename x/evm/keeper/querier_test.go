@@ -43,7 +43,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		evmChain = rand.StrBetween(5, 10)
-		asset = btc.Satoshi
+		asset = btc.NativeAsset
 		symbol = "axelarBTC"
 		chainID = big.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
@@ -117,7 +117,7 @@ func TestQueryTokenAddress(t *testing.T) {
 	setup := func() {
 		evmChain = rand.StrBetween(5, 10)
 		expectedAddress = evmTest.RandomAddress()
-		asset = btc.Satoshi
+		asset = btc.NativeAsset
 		symbol = "axelarBTC"
 
 		chainKeeper = &mock.ChainKeeperMock{

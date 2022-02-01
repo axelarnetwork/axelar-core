@@ -40,14 +40,13 @@ type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset)
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
-	RegisterNativeAsset(ctx sdk.Context, chain nexus.Chain, nativeAsset string) error
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires
@@ -80,6 +79,4 @@ type AccountKeeper interface {
 }
 
 // CosmosChainGetter exposes GetCosmosChainByName
-type CosmosChainGetter interface {
-	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
-}
+type CosmosChainGetter func(ctx sdk.Context, chain string) (CosmosChain, bool)

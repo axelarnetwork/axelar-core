@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	// Satoshi is the native asset on Bitcoin
-	Satoshi = "satoshi"
+	// NativeAsset is the native asset on Bitcoin
+	NativeAsset = "satoshi"
 	// Bitcoin defines properties of the Bitcoin chain
 	Bitcoin = exported.Chain{
 		Name:                  "Bitcoin",

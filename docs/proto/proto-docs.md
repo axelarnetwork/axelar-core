@@ -8,6 +8,7 @@
     - [Params](#axelarnet.v1beta1.Params)
   
 - [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [Asset](#axelarnet.v1beta1.Asset)
     - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
   
@@ -466,6 +467,22 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelarnet.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelarnet.v1beta1.CosmosChain"></a>
 
 ### CosmosChain
@@ -476,6 +493,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
+| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
 | `addr_prefix` | [string](#string) |  |  |
 
 
@@ -844,6 +862,7 @@ Signature holds public key and ECDSA signature
 | ----- | ---- | ----- | ----------- |
 | `denom` | [string](#string) |  |  |
 | `min_amount` | [bytes](#bytes) |  |  |
+| `is_native_asset` | [bool](#bool) |  |  |
 
 
 
@@ -1076,7 +1095,6 @@ based chain
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `asset` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) |  |  |
-| `is_native_asset` | [bool](#bool) |  |  |
 
 
 
@@ -2179,6 +2197,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  | **Deprecated.**  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 | `is_external` | [bool](#bool) |  |  |
 | `burner_code` | [bytes](#bytes) |  |  |
@@ -3493,7 +3512,6 @@ ChainState represents the state of a registered blockchain
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
 | `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
-| `native_assets` | [string](#string) | repeated |  |
 
 
 

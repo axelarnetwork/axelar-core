@@ -120,7 +120,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return nexus.TransferID(mathRand.Uint64()), nil
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) {
-				if denom == exported.Uaxl {
+				if denom == exported.NativeAsset {
 					return exported.Axelarnet, true
 				}
 				return nexus.Chain{}, true
@@ -258,7 +258,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 
 		msg = randomMsgConfirmDeposit()
-		msg.Denom = exported.Uaxl
+		msg.Denom = exported.NativeAsset
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 		events := ctx.EventManager().ABCIEvents()
 		assert.NoError(t, err)
@@ -329,7 +329,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetTransferFeesFunc: func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
 			SubTransferFeeFunc:  func(sdk.Context, sdk.Coin) {},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) {
-				if denom == exported.Uaxl {
+				if denom == exported.NativeAsset {
 					return exported.Axelarnet, true
 				}
 				return nexus.Chain{}, true
@@ -399,7 +399,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 		transfers = []nexus.CrossChainTransfer{}
 		for i := int64(0); i < rand.I64Between(1, 50); i++ {
-			transfer := randomTransfer(exported.Uaxl, testChain, sdk.NewInt(1000000))
+			transfer := randomTransfer(exported.NativeAsset, testChain, sdk.NewInt(1000000))
 			transfers = append(transfers, transfer)
 		}
 
@@ -498,7 +498,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) {
-				if denom == exported.Uaxl {
+				if denom == exported.NativeAsset {
 					return exported.Axelarnet, true
 				}
 				return nexus.Chain{}, true

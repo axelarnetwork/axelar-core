@@ -58,4 +58,5 @@ message Asset {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
+  bool is_native_asset = 3;
 }

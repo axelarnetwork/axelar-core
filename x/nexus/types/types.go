@@ -2,7 +2,6 @@ package types
 
 import (
 	fmt "fmt"
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -61,12 +60,6 @@ func (m ChainState) Validate() error {
 		}
 	}
 
-	for _, asset := range m.NativeAssets {
-		if err := sdk.ValidateDenom(asset); err != nil {
-			return sdkerrors.Wrap(err, "invalid native asset")
-		}
-	}
-
 	if len(m.Assets) == 0 {
 		return fmt.Errorf("no assets found")
 	}
@@ -74,6 +67,10 @@ func (m ChainState) Validate() error {
 	seenDenoms := make(map[string]bool)
 
 	for _, asset := range m.Assets {
+		if !asset.IsNativeAsset && !m.Chain.SupportsForeignAssets {
+			return fmt.Errorf("chain does not support foreign assets")
+		}
+
 		if err := asset.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
 		}
@@ -141,19 +138,4 @@ func (m ChainState) AssetMinAmount(asset string) sdk.Int {
 	}
 
 	return m.Assets[i].MinAmount
-}
-
-// AddNativeAsset registers the native asset for the chain
-func (m *ChainState) AddNativeAsset(asset string) error {
-	if m.HasNativeAsset(asset) {
-		return fmt.Errorf("native asset %s is already registered for chain %s", asset, m.Chain.Name)
-	}
-	m.NativeAssets = append(m.NativeAssets, asset)
-
-	return nil
-}
-
-// HasNativeAsset returns true if the chain has the given native asset ; false otherwise
-func (m ChainState) HasNativeAsset(asset string) bool {
-	return utils.IndexOf(m.NativeAssets, asset) != -1
 }

@@ -122,6 +122,14 @@ func (t *ERC20Token) GetDetails() TokenDetails {
 	return t.metadata.Details
 }
 
+// GetMinAmount returns the minimum amount allowed for mint/withdrawals.
+//
+// Deprecated: Minimum amount was moved to nexus keeper. Function will be removed in future version.
+func (t *ERC20Token) GetMinAmount() sdk.Int {
+	return t.metadata.MinAmount
+}
+
+
 // Is returns true if the given status matches the token's status
 func (t *ERC20Token) Is(status Status) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x

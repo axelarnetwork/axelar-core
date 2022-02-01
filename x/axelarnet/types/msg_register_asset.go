@@ -9,12 +9,11 @@ import (
 )
 
 // NewRegisterAssetRequest is the constructor for RegisterAssetRequest
-func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset, isNativeAsset bool) *RegisterAssetRequest {
+func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
-		Sender:        sender,
-		Chain:         utils.NormalizeString(chain),
-		Asset:         asset,
-		IsNativeAsset: isNativeAsset,
+		Sender: sender,
+		Chain:  utils.NormalizeString(chain),
+		Asset:  asset,
 	}
 }
 

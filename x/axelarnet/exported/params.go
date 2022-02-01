@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	// Uaxl is the native asset on Axelarnet
-	Uaxl = "uaxl"
+	// NativeAsset is the native asset on Axelarnet
+	NativeAsset = "uaxl"
 	// Axelarnet defines properties of the Axelar chain
 	Axelarnet = exported.Chain{
 		Name:                  "Axelarnet",

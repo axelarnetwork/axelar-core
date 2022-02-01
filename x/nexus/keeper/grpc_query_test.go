@@ -74,7 +74,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 							Address: rand.AccAddr().String(),
 						},
 					))
-				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.Uaxl, sdk.NewInt(rand.PosI64())), sdk.NewDec(0))
+				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64())), sdk.NewDec(0))
 				assert.NoError(t, err)
 			}
 		}).And().

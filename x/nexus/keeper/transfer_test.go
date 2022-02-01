@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	mathrand "math/rand"
 	"testing"
 
@@ -25,12 +26,13 @@ import (
 )
 
 var (
-	linkedAddr = 50
-	terra      = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
-	avalanche  = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
-	minAmount  = sdk.NewInt(10000000)
-	chains     = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
-	assets     = []string{"uaxl", "uusd", "uluna", "external-erc-20"}
+	linkedAddr  = 50
+	terra       = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
+	terraAssets = []string{"uluna", "uusd"}
+	avalanche   = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
+	minAmount   = sdk.NewInt(10000000)
+	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
+	assets      = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
 )
 
 func TestTransfer(t *testing.T) {
@@ -98,7 +100,8 @@ func TestTransfer(t *testing.T) {
 		When("transfer amounts are smaller than min amount", func(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
-				min := k.GetMinAmount(ctx, r.Chain, asset)
+				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
+				assert.True(t, ok)
 				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, min.Int64())))
 				transfers = append(transfers, randAmt)
 			}
@@ -132,7 +135,8 @@ func TestTransfer(t *testing.T) {
 		When("transfer amounts are greater than min amount", func(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
-				min := k.GetMinAmount(ctx, r.Chain, asset)
+				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
+				assert.True(t, ok)
 				transfers = append(transfers, makeRandAmount(asset).AddAmount(min))
 			}
 		}).And().
@@ -267,16 +271,18 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 	k.SetParams(ctx, types.DefaultParams())
 	k.SetRouter(addressValidator())
 
-	// register native asset
-	_ = k.RegisterNativeAsset(ctx, axelarnet.Axelarnet, axelarnet.Uaxl)
-	_ = k.RegisterNativeAsset(ctx, terra, "uusd")
-	_ = k.RegisterNativeAsset(ctx, terra, "uluna")
-
 	// register asset in ChainState
 	for _, chain := range chains {
 		k.SetChain(ctx, chain)
 		for _, asset := range assets {
-			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, minAmount))
+			isNative := false
+			if chain.Name == axelarnet.Axelarnet.Name && asset == axelarnet.NativeAsset {
+				isNative = true
+			}
+			if chain.Name == terra.Name && utils.IndexOf(terraAssets, asset) != -1 {
+				isNative = true
+			}
+			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, minAmount, isNative))
 		}
 		k.ActivateChain(ctx, chain)
 	}

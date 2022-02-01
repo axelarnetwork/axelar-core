@@ -144,7 +144,8 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 
 		asset := transfer.Asset.Denom
 		if _, ok := minAmounts[asset]; !ok {
-			minAmounts[asset] = k.GetMinAmount(ctx, chain, asset)
+			amount, _ := k.GetMinAmount(ctx, chain, asset)
+			minAmounts[asset] = amount
 		}
 
 		if transfer.Asset.Amount.LT(minAmounts[asset]) {

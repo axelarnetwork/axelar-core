@@ -255,7 +255,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, amount), req.IsNativeAsset)
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, amount, req.IsNativeAsset))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

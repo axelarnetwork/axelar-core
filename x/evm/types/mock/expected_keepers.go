@@ -1220,7 +1220,7 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset)  {
+// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)  {
@@ -1267,7 +1267,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset)
+	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain)
@@ -1793,7 +1793,7 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) {
+func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
@@ -1809,7 +1809,7 @@ func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Cont
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	mock.RegisterAssetFunc(ctx, chain, asset)
+	return mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.

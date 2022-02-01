@@ -34,7 +34,7 @@ func TestGetMigrationHandler_activateCosmosChains(t *testing.T) {
 
 func TestGetMigrationHandler_addTransferFee(t *testing.T) {
 	feeCollector := rand.AccAddr()
-	amount := sdk.NewCoin(axelarnet.Uaxl, sdk.NewInt(rand.PosI64()))
+	amount := sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64()))
 	feeCollectorAddress := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: feeCollector.String()}
 	nonFeeCollectorAddress := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()}
 	nonAxelarnetAddress := exported.CrossChainAddress{Chain: evm.Ethereum, Address: feeCollector.String()}
