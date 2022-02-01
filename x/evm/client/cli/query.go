@@ -149,24 +149,21 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 			burnerAddress := common.HexToAddress(args[2])
 			amount := sdk.NewUintFromString(args[3])
 
-			params := types.QueryDepositStateParams{
-				TxID:          types.Hash(txID),
-				BurnerAddress: types.Address(burnerAddress),
-				Amount:        amount.String(),
-			}
-			data := types.ModuleCdc.MustMarshalJSON(&params)
+			queryClient := types.NewQueryServiceClient(cliCtx)
 
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositState, chain), data)
+			res, err := queryClient.DepositState(cmd.Context(), &types.DepositStateRequest{
+				Chain: chain,
+				Params: &types.QueryDepositStateParams{
+					TxID:          types.Hash(txID),
+					BurnerAddress: types.Address(burnerAddress),
+					Amount:        amount.String(),
+				},
+			})
 			if err != nil {
-				fmt.Printf(types.ErrFTokenAddress, err.Error())
-
-				return nil
+				return err
 			}
 
-			var res types.QueryDepositStateResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return cliCtx.PrintProto(&res)
+			return cliCtx.PrintProto(res)
 		},
 	}
 
