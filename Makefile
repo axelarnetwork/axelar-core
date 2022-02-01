@@ -114,7 +114,7 @@ tofnd-client:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-proto-all: proto-update-deps proto-format proto-lint proto-gen
+proto-all: proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"

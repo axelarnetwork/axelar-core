@@ -34,6 +34,12 @@ type BaseKeeper struct {
 	// Use getSubspace to access a subspace.
 	paramsKeeper types.ParamsKeeper
 	subspaces    map[string]params.Subspace
+	nexus        types.Nexus
+}
+
+func (k BaseKeeper) WithNexus(n types.Nexus) BaseKeeper {
+	k.nexus = n
+	return k
 }
 
 // NewKeeper returns a new EVM base keeper

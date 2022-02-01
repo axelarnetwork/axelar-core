@@ -450,14 +450,23 @@ func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nex
 
 // QueryDepositState returns the state of an ERC20 deposit confirmation
 func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
 	var params types.QueryDepositStateParams
 	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, "could not unmarshal parameters")
+	}
+
+	depositState, err := queryDepositState(ctx, k, n, &params)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.ModuleCdc.MarshalLengthPrefixed(depositState)
+}
+
+func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (*types.QueryDepositStateResponse, error) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
@@ -478,7 +487,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit is in an unexpected state")
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(&depositState)
+	return &depositState, nil
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {

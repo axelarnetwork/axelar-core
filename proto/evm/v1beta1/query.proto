@@ -64,6 +64,11 @@ message QueryDepositStateParams {
   string amount = 3;
 }
 
+message DepositStateRequest {
+  string chain = 1;
+  QueryDepositStateParams params = 2;
+}
+
 message QueryDepositStateResponse {
   string log = 1;
   DepositStatus status = 2;
