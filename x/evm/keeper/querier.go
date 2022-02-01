@@ -458,10 +458,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	}
 
 	status, log, code := queryDepositState(ctx, k, n, &params)
-	switch code {
-	case codes.NotFound:
-		return nil, sdkerrors.Wrap(types.ErrEVM, log)
-	case codes.Internal:
+	if code != codes.OK {
 		return nil, sdkerrors.Wrap(types.ErrEVM, log)
 	}
 
