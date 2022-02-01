@@ -20,7 +20,6 @@ message ChainState {
   bool activated = 3;
   repeated nexus.exported.v1beta1.Asset assets = 5
       [ (gogoproto.nullable) = false ];
-  repeated string native_assets = 6;
 }
 
 message LinkedAddresses {

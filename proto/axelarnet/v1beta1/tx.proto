@@ -85,7 +85,6 @@ message RegisterAssetRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
-  bool is_native_asset = 4;
 }
 
 message RegisterAssetResponse {}
