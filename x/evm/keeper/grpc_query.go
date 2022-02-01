@@ -65,9 +65,14 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 }
 
 // DepositState fetches the state of a deposit confirmation using a grpc query
-func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.QueryDepositStateResponse, error) {
+func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	ck := q.keeper.ForChain(req.Chain)
 
-	return queryDepositState(ctx, ck, q.nexus, req.Params)
+	s, _, code := queryDepositState(ctx, ck, q.nexus, req.Params)
+	if code != codes.OK {
+		return nil, status.Error(code, "could not get deposit state")
+	}
+
+	return &types.DepositStateResponse{Status: s}, nil
 }

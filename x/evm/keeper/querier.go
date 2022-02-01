@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -455,39 +457,39 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 		return nil, sdkerrors.Wrap(types.ErrEVM, "could not unmarshal parameters")
 	}
 
-	depositState, err := queryDepositState(ctx, k, n, &params)
-	if err != nil {
-		return nil, err
+	status, log, code := queryDepositState(ctx, k, n, &params)
+	switch code {
+	case codes.NotFound:
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+	case codes.Internal:
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
 	}
 
-	return types.ModuleCdc.MarshalLengthPrefixed(depositState)
+	return types.ModuleCdc.MarshalLengthPrefixed(&types.QueryDepositStateResponse{Status: status, Log: log})
 }
 
-func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (*types.QueryDepositStateResponse, error) {
+func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+		return -1, "", codes.NotFound
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
 	_, isPending := k.GetPendingDeposit(ctx, pollKey)
 	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
 
-	var depositState types.QueryDepositStateResponse
 	switch {
 	case isPending:
-		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Pending, Log: "deposit transaction is waiting for confirmation"}
+		return types.DepositStatus_Pending, "deposit transaction is waiting for confirmation", codes.OK
 	case !isPending && !ok:
-		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_None, Log: "deposit transaction is not confirmed"}
+		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
 	case state == types.DepositStatus_Confirmed:
-		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Confirmed, Log: "deposit transaction is confirmed"}
+		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
 	case state == types.DepositStatus_Burned:
-		depositState = types.QueryDepositStateResponse{Status: types.DepositStatus_Burned, Log: "deposit has been transferred to the destination chain"}
+		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
 	default:
-		return nil, sdkerrors.Wrap(types.ErrEVM, "deposit is in an unexpected state")
+		return -1, "", codes.Internal
 	}
-
-	return &depositState, nil
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {

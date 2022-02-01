@@ -355,7 +355,7 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("chain not registered", testutils.Func(func(t *testing.T) {
 		setup()
-		data := rand.BytesBetween(10, 50)
+		data := types.ModuleCdc.MustMarshalJSON(&expectedDeposit)
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
