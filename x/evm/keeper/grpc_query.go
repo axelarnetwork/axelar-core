@@ -30,3 +30,21 @@ func (k BaseKeeper) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) 
 
 	return nil, status.Error(codes.NotFound, "unknown address")
 }
+
+// ConfirmationHeight implements the confirmation height grpc query
+func (k BaseKeeper) ConfirmationHeight(c context.Context, req *types.ConfirmationHeightRequest) (*types.ConfirmationHeightResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if !k.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, "unknown chain")
+
+	}
+
+	ck := k.ForChain(string(req.Chain))
+	height, ok := ck.GetRequiredConfirmationHeight(ctx)
+	if !ok {
+		return nil, status.Error(codes.NotFound, "could not get confirmation height")
+	}
+
+	return &types.ConfirmationHeightResponse{Height: height}, nil
+}

@@ -160,6 +160,8 @@
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
     - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
+    - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
+    - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
@@ -2540,6 +2542,36 @@ GenesisState represents the genesis state
 
 
 
+<a name="evm.v1beta1.ConfirmationHeightRequest"></a>
+
+### ConfirmationHeightRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmationHeightResponse"></a>
+
+### ConfirmationHeightResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.DepositQueryParams"></a>
 
 ### DepositQueryParams
@@ -3372,6 +3404,7 @@ QueryService defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
+| `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
 
  <!-- end services -->
 

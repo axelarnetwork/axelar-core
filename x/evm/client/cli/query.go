@@ -38,6 +38,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdCommand(queryRoute),
 		GetCmdBurnerInfo(queryRoute),
 		GetCmdChains(queryRoute),
+		GetCmdConfirmationHeight(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -384,6 +385,37 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 			return clientCtx.PrintProto(&res)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
+func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirmation-height [chain]",
+		Short: "Returns the minimum confirmation height for the given chain",
+		Args:  cobra.ExactArgs(1),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.ConfirmationHeight(cmd.Context(),
+			&types.ConfirmationHeightRequest{
+				Chain: args[0],
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
