@@ -157,4 +157,10 @@ service QueryService {
   rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
     option (google.api.http).get = "/evm/v1beta1/burner_info";
   }
+
+  // ConfirmationHeight queries the confirmation height for the specified chain
+  rpc ConfirmationHeight(ConfirmationHeightRequest)
+      returns (ConfirmationHeightResponse) {
+    option (google.api.http).get = "/evm/v1beta1/confirmation_height";
+  }
 }
