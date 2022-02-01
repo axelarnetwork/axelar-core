@@ -69,9 +69,9 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 	ctx := sdk.UnwrapSDKContext(c)
 	ck := q.keeper.ForChain(req.Chain)
 
-	s, _, code := queryDepositState(ctx, ck, q.nexus, req.Params)
+	s, log, code := queryDepositState(ctx, ck, q.nexus, req.Params)
 	if code != codes.OK {
-		return nil, status.Error(code, "could not get deposit state")
+		return nil, status.Error(code, log)
 	}
 
 	return &types.DepositStateResponse{Status: s}, nil

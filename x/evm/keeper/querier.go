@@ -460,9 +460,9 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 	status, log, code := queryDepositState(ctx, k, n, &params)
 	switch code {
 	case codes.NotFound:
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
+		return nil, sdkerrors.Wrap(types.ErrEVM, log)
 	case codes.Internal:
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("deposit is in an unexpected state"))
+		return nil, sdkerrors.Wrap(types.ErrEVM, log)
 	}
 
 	return types.ModuleCdc.MarshalLengthPrefixed(&types.QueryDepositStateResponse{Status: status, Log: log})
@@ -471,7 +471,7 @@ func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
-		return -1, "", codes.NotFound
+		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
 	}
 
 	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
@@ -488,7 +488,7 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	case state == types.DepositStatus_Burned:
 		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
 	default:
-		return -1, "", codes.Internal
+		return -1, "deposit is in an unexpected state", codes.Internal
 	}
 }
 
