@@ -163,6 +163,8 @@
     - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
     - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
+    - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
@@ -2590,6 +2592,37 @@ deposit address
 
 
 
+<a name="evm.v1beta1.DepositStateRequest"></a>
+
+### DepositStateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `params` | [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.DepositStateResponse"></a>
+
+### DepositStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.QueryAddressResponse"></a>
 
 ### QueryAddressResponse
@@ -2745,7 +2778,7 @@ deposit address
 <a name="evm.v1beta1.QueryDepositStateResponse"></a>
 
 ### QueryDepositStateResponse
-
+QueryDepositStateResponse is used by the legacy querier
 
 
 | Field | Type | Label | Description |
@@ -3405,6 +3438,7 @@ QueryService defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
+| `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
 
  <!-- end services -->
 
