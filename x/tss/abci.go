@@ -270,14 +270,6 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 			k.DeleteInfoForSig(ctx, sigID)
 			k.DeleteMultisigSign(ctx, sigID)
 
-			if router := k.GetRouter(); router.HasRoute(info.RequestModule) {
-				handler := router.GetRoute(info.RequestModule)
-				err := handler(ctx, info)
-				if err != nil {
-					panic(sdkerrors.Wrapf(err, "error while routing signature to module %s", info.RequestModule))
-				}
-			}
-
 			ctx.Logger().Info(fmt.Sprintf("multisig sign %s timed out", sigID))
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
 				types.EventTypeSign,
