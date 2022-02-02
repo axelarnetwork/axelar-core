@@ -11,6 +11,7 @@ import (
 	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -80,7 +81,7 @@ func parseSignStartParams(cdc *codec.LegacyAmino, attributes map[string]string) 
 			return participantShareCounts, nil
 		}},
 		{Key: tss.AttributeKeyPayload, Map: func(s string) (interface{}, error) {
-			return []byte(s), nil
+			return common.Hex2Bytes(s), nil
 		}},
 		{Key: tss.AttributeKeyTimeout, Map: func(s string) (interface{}, error) {
 			return strconv.ParseInt(s, 10, 64)
