@@ -163,4 +163,9 @@ service QueryService {
       returns (ConfirmationHeightResponse) {
     option (google.api.http).get = "/evm/v1beta1/confirmation_height";
   }
+
+  // DepositState queries the state of the specified deposit
+  rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
+    option (google.api.http).get = "/evm/v1beta1/deposit_state";
+  }
 }
