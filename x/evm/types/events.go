@@ -9,6 +9,7 @@ const (
 	EventTypeTokenConfirmation             = "tokenConfirmation"
 	EventTypeTransferKeyConfirmation       = "transferKeyConfirmation"
 	EventTypeLink                          = "link"
+	EventTypeSign                          = "sign"
 )
 
 // Event attribute keys
