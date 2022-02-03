@@ -38,6 +38,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdCommand(queryRoute),
 		GetCmdBurnerInfo(queryRoute),
 		GetCmdChains(queryRoute),
+		GetCmdConfirmationHeight(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -148,24 +149,21 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 			burnerAddress := common.HexToAddress(args[2])
 			amount := sdk.NewUintFromString(args[3])
 
-			params := types.QueryDepositStateParams{
-				TxID:          types.Hash(txID),
-				BurnerAddress: types.Address(burnerAddress),
-				Amount:        amount.String(),
-			}
-			data := types.ModuleCdc.MustMarshalJSON(&params)
+			queryClient := types.NewQueryServiceClient(cliCtx)
 
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QDepositState, chain), data)
+			res, err := queryClient.DepositState(cmd.Context(), &types.DepositStateRequest{
+				Chain: chain,
+				Params: &types.QueryDepositStateParams{
+					TxID:          types.Hash(txID),
+					BurnerAddress: types.Address(burnerAddress),
+					Amount:        amount.String(),
+				},
+			})
 			if err != nil {
-				fmt.Printf(types.ErrFTokenAddress, err.Error())
-
-				return nil
+				return err
 			}
 
-			var res types.QueryDepositStateResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return cliCtx.PrintProto(&res)
+			return cliCtx.PrintProto(res)
 		},
 	}
 
@@ -384,6 +382,37 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 			return clientCtx.PrintProto(&res)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
+func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirmation-height [chain]",
+		Short: "Returns the minimum confirmation height for the given chain",
+		Args:  cobra.ExactArgs(1),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.ConfirmationHeight(cmd.Context(),
+			&types.ConfirmationHeightRequest{
+				Chain: args[0],
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

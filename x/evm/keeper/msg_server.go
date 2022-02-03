@@ -790,12 +790,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
 		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
-		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnAddress)
 	if burnerInfo != nil {
-		event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
 	}
 
 	defer func() { ctx.EventManager().EmitEvent(event) }()
@@ -804,7 +804,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		poll.AllowOverride()
 		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 		return &types.VoteConfirmDepositResponse{
-			Log: fmt.Sprintf("deposit in %s to %s was discarded", req.TxID.Hex(), req.BurnAddress.Hex()),
+			Log: fmt.Sprintf("deposit in %s to %s was discarded", pendingDeposit.TxID.Hex(), req.BurnAddress.Hex()),
 		}, nil
 	}
 
@@ -821,7 +821,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		return nil, err
 	}
 
-	event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
+	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
 	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d and command ID %s", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID).Hex()))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
@@ -1484,12 +1484,19 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
-		s.Logger(ctx).Info(fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())))
+		s.Logger(ctx).Info(
+			fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())),
+			types.AttributeKeyChain, chain.Name,
+			tsstypes.AttributeKeyKeyID, string(commandBatch.GetKeyID()),
+			"commandBatchID", batchedCommandsIDHex,
+			"commandID", commandID,
+		)
 	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			sdk.EventTypeMessage,
+			types.EventTypeSign,
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),

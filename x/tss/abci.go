@@ -73,7 +73,7 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 	var signInfo exported.SignInfo
 
 	defer func() {
-		ctx.Logger().Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size()))
+		k.Logger(ctx).Debug(fmt.Sprintf("%d active sign shares, %d signatures in queue", signShares, signQueue.Size()))
 	}()
 
 	maxSignShares := k.GetMaxSimultaneousSignShares(ctx)
@@ -91,15 +91,15 @@ func sequentialSign(ctx sdk.Context, signQueue utils.SequenceKVQueue, k types.TS
 			emitSignStartEvent(ctx, k, voter, signInfo, snap)
 			k.SetInfoForSig(ctx, signInfo.SigID, signInfo)
 			k.SetSigStatus(ctx, signInfo.SigID, exported.SigStatus_Signing)
-			ctx.Logger().Debug(fmt.Sprintf("starting sign %s", signInfo.SigID))
+			k.Logger(ctx).Debug(fmt.Sprintf("starting sign %s", signInfo.SigID))
 			i++
 		case exported.SigStatus_Signing:
 			signShares += snap.CorruptionThreshold + 1
-			ctx.Logger().Debug(fmt.Sprintf("signing %s in progress", signInfo.SigID))
+			k.Logger(ctx).Debug(fmt.Sprintf("signing %s in progress", signInfo.SigID))
 			i++
 		case exported.SigStatus_Signed, exported.SigStatus_Aborted, exported.SigStatus_Invalid:
 			signQueue.Dequeue(i, &signInfo)
-			ctx.Logger().Debug(fmt.Sprintf("dequeque %s, sign status %s", signInfo.SigID, sigStatus))
+			k.Logger(ctx).Debug(fmt.Sprintf("dequeque %s, sign status %s", signInfo.SigID, sigStatus))
 		default:
 			panic("invalid sig status type")
 		}
@@ -144,7 +144,7 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(k.GetSignParticipantsSharesAsJSON(ctx, info.SigID))),
 		sdk.NewAttribute(types.AttributeKeyNonParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipants))),
 		sdk.NewAttribute(types.AttributeKeyNonParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(nonParticipantShareCounts))),
-		sdk.NewAttribute(types.AttributeKeyPayload, string(info.Msg)),
+		sdk.NewAttribute(types.AttributeKeyPayload, common.Bytes2Hex(info.Msg)),
 		sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.SignTimeout, 10)),
 	))
 
@@ -190,14 +190,14 @@ func timeoutMultisigKeygen(ctx sdk.Context, multiSigKeygenQueue utils.SequenceKV
 				participant := v.GetSDKValidator().GetOperator()
 
 				if !multisigKeyInfo.DoesParticipate(participant) {
-					ctx.Logger().Info(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
+					k.Logger(ctx).Info(fmt.Sprintf("absent pub keys from %s for multisig keygen %s", participant, keyID))
 					k.PenalizeCriminal(ctx, participant, tofnd.CRIME_TYPE_NON_MALICIOUS)
 				}
 			}
 
 			k.DeleteSnapshotCounterForKeyID(ctx, keyID)
 			k.DeleteMultisigKeygen(ctx, keyID)
-			ctx.Logger().Info(fmt.Sprintf("multisig keygen %s timed out", keyID))
+			k.Logger(ctx).Info(fmt.Sprintf("multisig keygen %s timed out", keyID))
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
 					types.EventTypeKeygen,
@@ -244,7 +244,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				SigStatus: exported.SigStatus_Signed,
 			})
 
-			ctx.Logger().Info(fmt.Sprintf("multisig sign %s completed", sigID))
+			k.Logger(ctx).Info(fmt.Sprintf("multisig sign %s completed", sigID))
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
 					types.EventTypeSign,
@@ -261,7 +261,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 			for _, participant := range participants {
 				val, _ := sdk.ValAddressFromBech32(participant)
 				if !multisigSignInfo.DoesParticipate(val) {
-					ctx.Logger().Info(fmt.Sprintf("signatures from %s absent for multisig sign %s", participant, sigID))
+					k.Logger(ctx).Info(fmt.Sprintf("signatures from %s absent for multisig sign %s", participant, sigID))
 					k.PenalizeCriminal(ctx, val, tofnd.CRIME_TYPE_NON_MALICIOUS)
 				}
 			}
@@ -270,15 +270,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 			k.DeleteInfoForSig(ctx, sigID)
 			k.DeleteMultisigSign(ctx, sigID)
 
-			if router := k.GetRouter(); router.HasRoute(info.RequestModule) {
-				handler := router.GetRoute(info.RequestModule)
-				err := handler(ctx, info)
-				if err != nil {
-					panic(sdkerrors.Wrapf(err, "error while routing signature to module %s", info.RequestModule))
-				}
-			}
-
-			ctx.Logger().Info(fmt.Sprintf("multisig sign %s timed out", sigID))
+			k.Logger(ctx).Info(fmt.Sprintf("multisig sign %s timed out", sigID))
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
 				types.EventTypeSign,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
