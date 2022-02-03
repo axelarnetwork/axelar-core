@@ -8,12 +8,9 @@ RUN chown -R axelard:axelard /axelar
 
 RUN go get github.com/go-delve/delve/cmd/dlv
 
-RUN git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
 COPY ./go.mod .
 COPY ./go.sum .
-RUN --mount=type=ssh go mod download
+RUN go mod download
 
 COPY . .
 RUN make debug
