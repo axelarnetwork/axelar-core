@@ -18,55 +18,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-type backlog struct {
-	tail chan broadcastTask
-	head broadcastTask
-}
-
-func (bl *backlog) Pop() broadcastTask {
-	bl.loadHead()
-
-	next := bl.head
-	bl.head = broadcastTask{}
-	return next
-}
-
-func (bl *backlog) loadHead() {
-	if len(bl.head.Msgs) == 0 {
-		bl.head = <-bl.tail
-	}
-}
-
-func (bl *backlog) Push(task broadcastTask) <-chan struct{} {
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		if len(task.Msgs) == 0 {
-			return
-		}
-		bl.tail <- task
-	}()
-
-	return done
-}
-
-func (bl *backlog) Peek() broadcastTask {
-	bl.loadHead()
-
-	return bl.head
-}
-
-func (bl *backlog) Len() int {
-	bl.loadHead()
-
-	if len(bl.head.Msgs) == 0 {
-		return 0
-	}
-
-	return 1 + len(bl.tail)
-}
-
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
 	logger         log.Logger
@@ -128,18 +79,7 @@ func (b *Broadcaster) processBacklog() {
 	}
 }
 
-type broadcastResult struct {
-	Response *sdk.TxResponse
-	Err      error
-}
-
-type broadcastTask struct {
-	Ctx      context.Context
-	Msgs     []sdk.Msg
-	Callback chan<- broadcastResult
-}
-
-// Broadcast sends the passed messages to the network. This function in thread-safe.
+// Broadcast queues up the given messages for broadcast to the network. This function in thread-safe, blocks until it gets a response.
 func (b *Broadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	if len(msgs) == 0 {
 		return nil, fmt.Errorf("no messages to broadcast")
@@ -176,7 +116,8 @@ func (b *Broadcaster) broadcastWithRetry(tasks ...broadcastTask) {
 
 	err := b.retryPipeline.Push(
 		func() error {
-			b.logger.Debug("starting to broadcast message batch", "batch_size", len(msgs))
+			logger := b.logger.With("batch_size", len(msgs))
+			logger.Debug("starting to broadcast message batch")
 			txf, err := prepareFactory(b.clientCtx, b.txFactory)
 			if err != nil {
 				return err
@@ -191,11 +132,11 @@ func (b *Broadcaster) broadcastWithRetry(tasks ...broadcastTask) {
 				return err
 			}
 
-			b.logger.Debug("received tx response",
+			logger.Debug("received tx response",
 				"hash", response.TxHash,
 				"op_code", response.Code,
 				"raw_log", response.RawLog,
-				"batch_size", len(msgs))
+			)
 
 			// broadcast has been successful, so increment sequence number
 			b.txFactory = txf.WithSequence(txf.Sequence() + 1)
@@ -203,8 +144,10 @@ func (b *Broadcaster) broadcastWithRetry(tasks ...broadcastTask) {
 			return nil
 		},
 		func(err error) bool {
+			logger := b.logger.With("batch_size", len(msgs))
 			i, ok := tryParseErrorMsgIndex(err)
 			if ok && len(msgs) > 1 {
+				logger.Debug(fmt.Sprintf("excluding message at index %d due to error", i))
 				msgs = append(msgs[:i], msgs[i+1:]...)
 				return true
 			}
@@ -344,7 +287,7 @@ func (p RetryPipeline) retry(f func() error, retryOnError func(error) bool) erro
 		err = f()
 		if err == nil {
 			if i > 0 {
-				p.logger.Info("successful broadcast after backoff")
+				p.logger.Info("successful execution after backoff")
 			}
 			return nil
 		}
@@ -374,7 +317,7 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 		c:          make(chan func(), cap),
 		backOff:    backOffStrategy,
 		maxRetries: maxRetries,
-		logger:     logger,
+		logger:     logger.With("process", "retry pipeline"),
 	}
 
 	go func() {
@@ -384,4 +327,64 @@ func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 	}()
 
 	return p
+}
+
+type backlog struct {
+	tail chan broadcastTask
+	head broadcastTask
+}
+
+func (bl *backlog) Pop() broadcastTask {
+	bl.loadHead()
+
+	next := bl.head
+	bl.head = broadcastTask{}
+	return next
+}
+
+func (bl *backlog) loadHead() {
+	if len(bl.head.Msgs) == 0 {
+		bl.head = <-bl.tail
+	}
+}
+
+func (bl *backlog) Push(task broadcastTask) <-chan struct{} {
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		if len(task.Msgs) == 0 {
+			return
+		}
+		bl.tail <- task
+	}()
+
+	return done
+}
+
+func (bl *backlog) Peek() broadcastTask {
+	bl.loadHead()
+
+	return bl.head
+}
+
+func (bl *backlog) Len() int {
+	bl.loadHead()
+
+	if len(bl.head.Msgs) == 0 {
+		return 0
+	}
+
+	return 1 + len(bl.tail)
+}
+
+type broadcastResult struct {
+	Response *sdk.TxResponse
+	Err      error
+}
+
+type broadcastTask struct {
+	Ctx      context.Context
+	Msgs     []sdk.Msg
+	Callback chan<- broadcastResult
 }
