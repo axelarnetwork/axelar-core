@@ -1,7 +1,10 @@
 package broadcaster
 
 import (
+	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -15,62 +18,229 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
+type backlog struct {
+	tail chan broadcastTask
+	head broadcastTask
+}
+
+func (bl *backlog) Pop() broadcastTask {
+	bl.loadHead()
+
+	next := bl.head
+	bl.head = broadcastTask{}
+	return next
+}
+
+func (bl *backlog) loadHead() {
+	if len(bl.head.Msgs) == 0 {
+		bl.head = <-bl.tail
+	}
+}
+
+func (bl *backlog) Push(task broadcastTask) <-chan struct{} {
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		if len(task.Msgs) == 0 {
+			return
+		}
+		bl.tail <- task
+	}()
+
+	return done
+}
+
+func (bl *backlog) Peek() broadcastTask {
+	bl.loadHead()
+
+	return bl.head
+}
+
+func (bl *backlog) Len() int {
+	bl.loadHead()
+
+	if len(bl.head.Msgs) == 0 {
+		return 0
+	}
+
+	return 1 + len(bl.tail)
+}
+
 // Broadcaster submits transactions to a tendermint node
 type Broadcaster struct {
-	logger    log.Logger
-	pipeline  types.Pipeline
-	txFactory tx.Factory
+	logger         log.Logger
+	retryPipeline  types.Pipeline
+	backlog        backlog
+	nextTask       broadcastTask
+	txFactory      tx.Factory
+	clientCtx      sdkClient.Context
+	batchThreshold int
+	batchSizeLimit int
 }
 
 // NewBroadcaster returns a broadcaster to submit transactions to the blockchain.
 // Only one instance of a broadcaster should be run for a given account, otherwise risk conflicting sequence numbers for submitted transactions.
-func NewBroadcaster(txf tx.Factory, pipeline types.Pipeline, logger log.Logger) *Broadcaster {
-	return &Broadcaster{
-		logger:    logger,
-		pipeline:  pipeline,
-		txFactory: txf,
+func NewBroadcaster(txf tx.Factory, clientCtx sdkClient.Context, pipeline types.Pipeline, batchThreshold, batchSizeLimit int, logger log.Logger) *Broadcaster {
+	b := &Broadcaster{
+		logger:         logger.With("process", "broadcast"),
+		retryPipeline:  pipeline,
+		txFactory:      txf,
+		clientCtx:      clientCtx,
+		batchThreshold: batchThreshold,
+		batchSizeLimit: batchSizeLimit,
+		backlog:        backlog{tail: make(chan broadcastTask, 10000)},
+	}
+
+	go b.processBacklog()
+	return b
+}
+
+func (b *Broadcaster) processBacklog() {
+	for {
+		// do not batch if there is no backlog pressure to minimize the risk of broadcast errors (and subsequent retries)
+		if b.backlog.Len() < b.batchThreshold {
+			task := b.backlog.Pop()
+
+			b.logger.Debug("low traffic; no batch merging", "batch_size", len(task.Msgs))
+			b.broadcastWithRetry(task)
+			continue
+		}
+
+		var batch []broadcastTask
+		msgCount := 0
+		for {
+			// we cannot split a single task, so take at least on task and then fill up the batch
+			// until the size limit is reached or no new tasks are in the backlog
+			batchWouldBeTooLarge := len(batch) > 0 && msgCount+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
+			if batchWouldBeTooLarge || b.backlog.Len() == 0 {
+				break
+			}
+
+			task := b.backlog.Pop()
+
+			batch = append(batch, task)
+			msgCount += len(task.Msgs)
+		}
+
+		b.logger.Debug("high traffic; merging batches", "batch_size", msgCount)
+		b.broadcastWithRetry(batch...)
 	}
 }
 
+type broadcastResult struct {
+	Response *sdk.TxResponse
+	Err      error
+}
+
+type broadcastTask struct {
+	Ctx      context.Context
+	Msgs     []sdk.Msg
+	Callback chan<- broadcastResult
+}
+
 // Broadcast sends the passed messages to the network. This function in thread-safe.
-func (b *Broadcaster) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	var response *sdk.TxResponse
+func (b *Broadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	if len(msgs) == 0 {
+		return nil, fmt.Errorf("no messages to broadcast")
+	}
+
 	// serialize concurrent calls to broadcast
-	err := b.pipeline.Push(func() error {
+	callback := make(chan broadcastResult, 1)
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-b.backlog.Push(broadcastTask{ctx, msgs, callback}):
+		b.logger.Debug("queuing up messages", "msg_count", len(msgs))
+		break
+	}
 
-		txf, err := prepareFactory(ctx, b.txFactory)
-		if err != nil {
-			return err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-callback:
+		return res.Response, res.Err
+	}
+}
+
+func (b *Broadcaster) broadcastWithRetry(tasks ...broadcastTask) {
+	var response *sdk.TxResponse
+
+	var msgs []sdk.Msg
+	for _, task := range tasks {
+		if task.Ctx.Err() != nil {
+			continue
 		}
+		msgs = append(msgs, task.Msgs...)
+	}
 
-		response, err = Broadcast(ctx, txf, msgs)
-		if err != nil {
-			// reset account and sequence number in case they were the issue
-			b.txFactory = b.txFactory.
-				WithAccountNumber(0).
-				WithSequence(0)
-			return err
+	err := b.retryPipeline.Push(
+		func() error {
+			b.logger.Debug("starting to broadcast message batch", "batch_size", len(msgs))
+			txf, err := prepareFactory(b.clientCtx, b.txFactory)
+			if err != nil {
+				return err
+			}
+
+			response, err = Broadcast(b.clientCtx, txf, msgs)
+			if err != nil {
+				// reset account and sequence number in case they were the issue
+				b.txFactory = b.txFactory.
+					WithAccountNumber(0).
+					WithSequence(0)
+				return err
+			}
+
+			b.logger.Debug("received tx response",
+				"hash", response.TxHash,
+				"op_code", response.Code,
+				"raw_log", response.RawLog,
+				"batch_size", len(msgs))
+
+			// broadcast has been successful, so increment sequence number
+			b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+
+			return nil
+		},
+		func(err error) bool {
+			i, ok := tryParseErrorMsgIndex(err)
+			if ok && len(msgs) > 1 {
+				msgs = append(msgs[:i], msgs[i+1:]...)
+				return true
+			}
+
+			if !utils.IsABCIError(err) {
+				return true
+			}
+
+			if sdkerrors.ErrWrongSequence.Is(err) || sdkerrors.ErrOutOfGas.Is(err) {
+				return true
+			}
+
+			return false
+		})
+
+	for _, task := range tasks {
+		task.Callback <- broadcastResult{
+			Response: response,
+			Err:      err,
 		}
+	}
+}
 
-		b.logger.Debug(fmt.Sprintf("tx response with hash [%s] and opcode [%d]: %s",
-			response.TxHash, response.Code, response.RawLog))
+func tryParseErrorMsgIndex(err error) (int, bool) {
+	split := strings.SplitAfter(err.Error(), "failed to execute message; message index: ")
+	if len(split) < 2 {
+		return 0, false
+	}
 
-		// broadcast has been successful, so increment sequence number
-		b.txFactory = txf.WithSequence(txf.Sequence() + 1)
+	index := strings.Split(split[1], ":")[0]
 
-		return nil
-	}, func(err error) bool {
-		if !utils.IsABCIError(err) {
-			return true
-		}
-
-		if sdkerrors.ErrWrongSequence.Is(err) || sdkerrors.ErrOutOfGas.Is(err) {
-			return true
-		}
-
-		return false
-	})
-	return response, err
+	i, err := strconv.Atoi(index)
+	if err != nil {
+		return 0, false
+	}
+	return i, true
 }
 
 // prepareFactory ensures the account defined by ctx.GetFromAddress() exists and
@@ -161,7 +331,7 @@ type RetryPipeline struct {
 	logger     log.Logger
 }
 
-// Push adds the given function to the serialized execution pipeline
+// Push adds the given function to the serialized execution retryPipeline
 func (p RetryPipeline) Push(f func() error, retryOnError func(error) bool) error {
 	e := make(chan error, 1)
 	p.c <- func() { e <- p.retry(f, retryOnError) }
@@ -193,12 +363,12 @@ func (p RetryPipeline) retry(f func() error, retryOnError func(error) bool) erro
 	return sdkerrors.Wrap(err, fmt.Sprintf("aborting after %d retries", p.maxRetries))
 }
 
-// Close closes the pipeline
+// Close closes the retryPipeline
 func (p RetryPipeline) Close() {
 	close(p.c)
 }
 
-// NewPipelineWithRetry returns a pipeline with the given configuration
+// NewPipelineWithRetry returns a retryPipeline with the given configuration
 func NewPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff, logger log.Logger) *RetryPipeline {
 	p := &RetryPipeline{
 		c:          make(chan func(), cap),

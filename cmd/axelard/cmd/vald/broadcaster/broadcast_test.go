@@ -37,46 +37,56 @@ import (
 
 func TestBroadcast(t *testing.T) {
 	t.Run("called sequentially", func(t *testing.T) {
-		b, ctx := setup()
+		b, clientCtx := setup()
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(20, 100))
 		for i := 0; i < iterations; i++ {
-			msgs := createMsgsWithRandomSigner()
+			msgs := createMsgsWithRandomSigner(signer)
 
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			_, err := b.Broadcast(ctx, msgs...)
+			cancel()
+
 			assert.NoError(t, err)
 		}
 
-		assert.Len(t, ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls(), iterations)
+		assert.Len(t, clientCtx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls(), iterations)
 	})
 
 	t.Run("sequence number updated correctly", func(t *testing.T) {
-		b, ctx := setup()
+		b, clientCtx := setup()
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(200, 1000))
 		wg := &sync.WaitGroup{}
 		wg.Add(iterations)
 		for i := 0; i < iterations; i++ {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
-				msgs := createMsgsWithRandomSigner()
+				msgs := createMsgsWithRandomSigner(signer)
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 				_, err := broadcaster.Broadcast(ctx, msgs...)
+				cancel()
+
 				assert.NoError(t, err)
 			}(b)
 		}
 		wg.Wait()
 
-		foundSeqNo := make([]bool, iterations)
-		for _, call := range ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
-			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
+		foundSeqNo := map[uint64]bool{}
+		maxSeqNo := uint64(0)
+		for _, call := range clientCtx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
+			decodedTx, err := clientCtx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
 			sigs, err := decodedTx.(authsigning.SigVerifiableTx).GetSignaturesV2()
 			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
+				maxSeqNo = sig.Sequence
 			}
 		}
-		assert.Equal(t, iterations, int(b.txFactory.Sequence()))
+		assert.Equal(t, maxSeqNo+1, b.txFactory.Sequence())
 		assert.NotContains(t, foundSeqNo, false)
 	})
 
@@ -92,20 +102,22 @@ func TestBroadcast(t *testing.T) {
 			return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 		}
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(200, 1000))
 		wg := &sync.WaitGroup{}
 		wg.Add(iterations)
 		for i := 0; i < iterations; i++ {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
-				msgs := createMsgsWithRandomSigner()
-				_, err := broadcaster.Broadcast(ctx, msgs...)
+				msgs := createMsgsWithRandomSigner(signer)
+				_, err := broadcaster.Broadcast(context.TODO(), msgs...)
 				assert.NoError(t, err)
 			}(b)
 		}
 		wg.Wait()
 
-		foundSeqNo := make([]bool, iterations)
+		foundSeqNo := map[uint64]bool{}
+		maxSeqNo := uint64(0)
 		for _, call := range ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
 			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
@@ -113,9 +125,10 @@ func TestBroadcast(t *testing.T) {
 			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
+				maxSeqNo = sig.Sequence
 			}
 		}
-		assert.Equal(t, iterations, int(b.txFactory.Sequence()))
+		assert.Equal(t, maxSeqNo+1, b.txFactory.Sequence())
 		assert.NotContains(t, foundSeqNo, false)
 	})
 }
@@ -246,13 +259,12 @@ func setup() (*Broadcaster, client.Context) {
 		return 0
 	}, log.TestingLogger())
 
-	b := NewBroadcaster(txf, p, log.TestingLogger())
+	b := NewBroadcaster(txf, ctx, p, 3, 15, log.TestingLogger())
 	return b, ctx
 }
 
-func createMsgsWithRandomSigner() []sdk.Msg {
+func createMsgsWithRandomSigner(signer sdk.AccAddress) []sdk.Msg {
 	var msgs []sdk.Msg
-	signer := rand.AccAddr()
 	for i := int64(0); i < rand.I64Between(1, 20); i++ {
 
 		msg := evm.NewVoteConfirmDepositRequest(
