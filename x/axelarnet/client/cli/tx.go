@@ -67,7 +67,7 @@ func GetCmdConfirmDeposit() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirm-deposit [denom] [burnerAddr]",
 		Short: "Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
