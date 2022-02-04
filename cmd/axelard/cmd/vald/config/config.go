@@ -11,8 +11,8 @@ import (
 type ValdConfig struct {
 	tss.TssConfig   `mapstructure:",squash"`
 	BroadcastConfig `mapstructure:",squash"`
-	BatchSizeLimit  int `mapstructure:",max_batch_size"`
-	BatchThreshold  int `mapstructure:",batch_threshold"`
+	BatchSizeLimit  int `mapstructure:"max_batch_size"`
+	BatchThreshold  int `mapstructure:"batch_threshold"`
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
