@@ -89,7 +89,7 @@ func DefaultParams() Params {
 				SignTimeout:                20,
 			},
 		},
-		SuspendDurationInBlocks:          8500,
+		SuspendDurationInBlocks:          680,
 		HeartbeatPeriodInBlocks:          50,
 		MaxMissedBlocksPerWindow:         utils.Threshold{Numerator: 5, Denominator: 100},
 		UnbondingLockingKeyRotationCount: 4,
