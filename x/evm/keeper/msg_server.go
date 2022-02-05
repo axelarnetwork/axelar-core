@@ -1428,6 +1428,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer typ
 	case types.BatchSigning:
 		return types.CommandBatch{}, sdkerrors.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
 	case types.BatchAborted:
+		latest.SetStatus(types.BatchSigning)
 		return latest, nil
 	default:
 		return keeper.CreateNewBatchToSign(ctx, signer)
