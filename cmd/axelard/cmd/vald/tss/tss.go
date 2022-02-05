@@ -296,34 +296,50 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}
 
-	refundRes, err := mgr.extractRefundMsgResponse(txRes)
+	heartbeats, err := mgr.extractHeartBeatResponses(txRes)
 	if err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve refund reply")
+		return err
 	}
 
-	var heartbeatRes tss.HeartBeatResponse
-	err = heartbeatRes.Unmarshal(refundRes.Data)
-	if err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to retrieve heartbeat reply")
-	}
+	for _, heartbeat := range heartbeats {
+		allGood := true
+		if !heartbeat.KeygenIllegibility.Is(snapshot.None) {
+			mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in keygen due to: %s",
+				mgr.principalAddr, heartbeat.KeygenIllegibility.String()))
+			allGood = false
+		}
+		if !heartbeat.SigningIllegibility.Is(snapshot.None) {
+			mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in signing due to: %s",
+				mgr.principalAddr, heartbeat.SigningIllegibility.String()))
+			allGood = false
+		}
 
-	allGood := true
-	if !heartbeatRes.KeygenIllegibility.Is(snapshot.None) {
-		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in keygen due to: %s",
-			mgr.principalAddr, heartbeatRes.KeygenIllegibility.String()))
-		allGood = false
+		if allGood {
+			mgr.Logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
+		}
 	}
-	if !heartbeatRes.SigningIllegibility.Is(snapshot.None) {
-		mgr.Logger.Error(fmt.Sprintf("operator %s unable to participate in signing due to: %s",
-			mgr.principalAddr, heartbeatRes.SigningIllegibility.String()))
-		allGood = false
-	}
-
-	if allGood {
-		mgr.Logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
-	}
-
 	return nil
+}
+
+func (mgr *Mgr) extractHeartBeatResponses(txRes *sdk.TxResponse) ([]tss.HeartBeatResponse, error) {
+	responses, err := mgr.extractRefundMsgResponses(txRes)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "handler goroutine: failure to retrieve refund reply")
+	}
+
+	var heartbeatRes []tss.HeartBeatResponse
+	for _, res := range responses {
+		var heartBeat tss.HeartBeatResponse
+		if err := mgr.cliCtx.Codec.Unmarshal(res.Data, &heartBeat); err != nil {
+			continue
+		}
+		heartbeatRes = append(heartbeatRes, heartBeat)
+	}
+
+	if len(heartbeatRes) == 0 {
+		return nil, fmt.Errorf("handler goroutine: failure to retrieve heartbeat reply")
+	}
+	return heartbeatRes, nil
 }
 
 func (mgr *Mgr) abortSign(sigID string) (err error) {
@@ -344,30 +360,31 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 	return abort(stream)
 }
 
-func (mgr *Mgr) extractRefundMsgResponse(res *sdk.TxResponse) (rewardtypes.RefundMsgResponse, error) {
+func (mgr *Mgr) extractRefundMsgResponses(res *sdk.TxResponse) ([]rewardtypes.RefundMsgResponse, error) {
 	var txMsg sdk.TxMsgData
-	var refundReply rewardtypes.RefundMsgResponse
+	var refundReply []rewardtypes.RefundMsgResponse
 
 	bz, err := hex.DecodeString(res.Data)
 	if err != nil {
-		return rewardtypes.RefundMsgResponse{}, err
+		return nil, err
 	}
 
 	err = mgr.cdc.Unmarshal(bz, &txMsg)
 	if err != nil {
-		return rewardtypes.RefundMsgResponse{}, err
+		return nil, err
 	}
 
 	for _, msg := range txMsg.Data {
-		err = refundReply.Unmarshal(msg.Data)
+		var refund rewardtypes.RefundMsgResponse
+		err = refund.Unmarshal(msg.Data)
 		if err != nil {
 			mgr.Logger.Debug(fmt.Sprintf("not a refund response: %v", err))
 			continue
 		}
-		return refundReply, nil
+		refundReply = append(refundReply, refund)
 	}
 
-	return rewardtypes.RefundMsgResponse{}, fmt.Errorf("no refund response found in tx response")
+	return refundReply, nil
 }
 
 func abort(stream Stream) error {
