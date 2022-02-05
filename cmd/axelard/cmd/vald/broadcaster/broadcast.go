@@ -61,7 +61,7 @@ func (b *Broadcaster) processBacklog() {
 		var batch []broadcastTask
 		msgCount := 0
 		for {
-			// we cannot split a single task, so take at least on task and then fill up the batch
+			// we cannot split a single task, so take at least one task and then fill up the batch
 			// until the size limit is reached or no new tasks are in the backlog
 			batchWouldBeTooLarge := len(batch) > 0 && msgCount+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
 			if batchWouldBeTooLarge || b.backlog.Len() == 0 {
