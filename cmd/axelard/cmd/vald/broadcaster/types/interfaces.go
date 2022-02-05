@@ -1,8 +1,6 @@
 package types
 
 import (
-	"context"
-
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,11 +24,11 @@ type (
 
 // Broadcaster interface allows the submission of messages to the axelar network
 type Broadcaster interface {
-	Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
+	Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
 }
 
 // Pipeline represents an execution pipeline
 type Pipeline interface {
-	Push(f func() error, retryOnError func(error) bool) error
+	Push(func() error, func(error) bool) error
 	Close()
 }
