@@ -10,7 +10,6 @@ import (
 	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcec"
-	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -127,7 +126,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)
 	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
-	if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+	if _, err := mgr.broadcaster.Broadcast(context.TODO(), refundableMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing multisig keys msg")
 	}
 
@@ -222,7 +221,7 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 		// sender is set by broadcaster
 		tssMsg := &tss.ProcessKeygenTrafficRequest{Sender: mgr.cliCtx.FromAddress, SessionID: keyID, Payload: *msg}
 		refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
-		if _, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastSync), refundableMsg); err != nil {
+		if _, err := mgr.broadcaster.Broadcast(context.TODO(), refundableMsg); err != nil {
 			return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing keygen msg")
 		}
 	}
@@ -280,7 +279,7 @@ func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) 
 	vote := &tss.VotePubKeyRequest{Sender: mgr.cliCtx.FromAddress, PollKey: pollKey, Result: *result}
 	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, vote)
 
-	_, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	_, err := mgr.broadcaster.Broadcast(context.TODO(), refundableMsg)
 	return err
 }
 

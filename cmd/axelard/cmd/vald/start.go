@@ -133,13 +133,13 @@ func GetValdCommand() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	values := map[string]string{
 		flags.FlagGasAdjustment: "4",
-		flags.FlagBroadcastMode: flags.BroadcastSync,
 		flags.FlagGasPrices:     "0.05uaxl",
 	}
 	utils.OverwriteFlagDefaults(cmd, values, true)
 
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
+		flags.FlagBroadcastMode:  flags.BroadcastBlock,
 		flags.FlagChainID:        app.Name,
 		flags.FlagKeyringBackend: "file",
 	}, false)
@@ -173,7 +173,7 @@ func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, 
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	bc := createBroadcaster(txf, axelarCfg, logger)
+	bc := createBroadcaster(txf, ctx, axelarCfg, logger)
 
 	tmClient, err := ctx.GetNode()
 	if err != nil {
@@ -318,9 +318,9 @@ func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
-func createBroadcaster(txf tx.Factory, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
+func createBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcaster.NewBroadcaster(txf, pipeline, logger)
+	return broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
 }
 
 func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
