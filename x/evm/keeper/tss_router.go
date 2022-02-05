@@ -35,8 +35,15 @@ func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, si
 	}
 
 	commandBatch := keeper.GetLatestCommandBatch(ctx)
-	if !commandBatch.Is(types.BatchSigning) {
-		return false
+
+	if ctx.BlockHeight() >= 690489 {
+		if !(commandBatch.Is(types.BatchSigning) || commandBatch.Is(types.BatchAborted)) {
+			return false
+		}
+	} else {
+		if !commandBatch.Is(types.BatchSigning) {
+			return false
+		}
 	}
 
 	_, sigStatus := signer.GetSig(ctx, hex.EncodeToString(commandBatch.GetID()))
