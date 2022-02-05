@@ -2084,7 +2084,7 @@ var _ types.Broadcaster = &BroadcasterMock{}
 //
 // 		// make and configure a mocked types.Broadcaster
 // 		mockedBroadcaster := &BroadcasterMock{
-// 			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+// 			BroadcastFunc: func(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 // 				panic("mock out the Broadcast method")
 // 			},
 // 		}
@@ -2095,14 +2095,14 @@ var _ types.Broadcaster = &BroadcasterMock{}
 // 	}
 type BroadcasterMock struct {
 	// BroadcastFunc mocks the Broadcast method.
-	BroadcastFunc func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
+	BroadcastFunc func(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Broadcast holds details about calls to the Broadcast method.
 		Broadcast []struct {
 			// Ctx is the ctx argument value.
-			Ctx context.Context
+			Ctx sdkClient.Context
 			// Msgs is the msgs argument value.
 			Msgs []sdk.Msg
 		}
@@ -2111,9 +2111,9 @@ type BroadcasterMock struct {
 }
 
 // Broadcast calls BroadcastFunc.
-func (mock *BroadcasterMock) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+func (mock *BroadcasterMock) Broadcast(ctx sdkClient.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	callInfo := struct {
-		Ctx  context.Context
+		Ctx  sdkClient.Context
 		Msgs []sdk.Msg
 	}{
 		Ctx:  ctx,
@@ -2136,11 +2136,11 @@ func (mock *BroadcasterMock) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*s
 // Check the length with:
 //     len(mockedBroadcaster.BroadcastCalls())
 func (mock *BroadcasterMock) BroadcastCalls() []struct {
-	Ctx  context.Context
+	Ctx  sdkClient.Context
 	Msgs []sdk.Msg
 } {
 	var calls []struct {
-		Ctx  context.Context
+		Ctx  sdkClient.Context
 		Msgs []sdk.Msg
 	}
 	mock.lockBroadcast.RLock()
@@ -3692,7 +3692,7 @@ var _ types.Pipeline = &PipelineMock{}
 // 			CloseFunc: func()  {
 // 				panic("mock out the Close method")
 // 			},
-// 			PushFunc: func(f func() error, retryOnError func(error) bool) error {
+// 			PushFunc: func(fn1 func() error, fn2 func(error) bool) error {
 // 				panic("mock out the Push method")
 // 			},
 // 		}
@@ -3706,7 +3706,7 @@ type PipelineMock struct {
 	CloseFunc func()
 
 	// PushFunc mocks the Push method.
-	PushFunc func(f func() error, retryOnError func(error) bool) error
+	PushFunc func(fn1 func() error, fn2 func(error) bool) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3715,10 +3715,10 @@ type PipelineMock struct {
 		}
 		// Push holds details about calls to the Push method.
 		Push []struct {
-			// F is the f argument value.
-			F func() error
-			// RetryOnError is the retryOnError argument value.
-			RetryOnError func(error) bool
+			// Fn1 is the fn1 argument value.
+			Fn1 func() error
+			// Fn2 is the fn2 argument value.
+			Fn2 func(error) bool
 		}
 	}
 	lockClose sync.RWMutex
@@ -3752,13 +3752,13 @@ func (mock *PipelineMock) CloseCalls() []struct {
 }
 
 // Push calls PushFunc.
-func (mock *PipelineMock) Push(f func() error, retryOnError func(error) bool) error {
+func (mock *PipelineMock) Push(fn1 func() error, fn2 func(error) bool) error {
 	callInfo := struct {
-		F            func() error
-		RetryOnError func(error) bool
+		Fn1 func() error
+		Fn2 func(error) bool
 	}{
-		F:            f,
-		RetryOnError: retryOnError,
+		Fn1: fn1,
+		Fn2: fn2,
 	}
 	mock.lockPush.Lock()
 	mock.calls.Push = append(mock.calls.Push, callInfo)
@@ -3769,19 +3769,19 @@ func (mock *PipelineMock) Push(f func() error, retryOnError func(error) bool) er
 		)
 		return errOut
 	}
-	return mock.PushFunc(f, retryOnError)
+	return mock.PushFunc(fn1, fn2)
 }
 
 // PushCalls gets all the calls that were made to Push.
 // Check the length with:
 //     len(mockedPipeline.PushCalls())
 func (mock *PipelineMock) PushCalls() []struct {
-	F            func() error
-	RetryOnError func(error) bool
+	Fn1 func() error
+	Fn2 func(error) bool
 } {
 	var calls []struct {
-		F            func() error
-		RetryOnError func(error) bool
+		Fn1 func() error
+		Fn2 func(error) bool
 	}
 	mock.lockPush.RLock()
 	calls = mock.calls.Push
