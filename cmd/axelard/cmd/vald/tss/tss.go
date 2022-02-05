@@ -10,7 +10,6 @@ import (
 
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
-	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -292,7 +291,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	refundableMsg := rewardtypes.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
-	txRes, err := mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	txRes, err := mgr.broadcaster.Broadcast(context.TODO(), refundableMsg)
 	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	. "github.com/axelarnetwork/utils/test"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -37,46 +38,56 @@ import (
 
 func TestBroadcast(t *testing.T) {
 	t.Run("called sequentially", func(t *testing.T) {
-		b, ctx := setup()
+		b, clientCtx := setup()
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(20, 100))
 		for i := 0; i < iterations; i++ {
-			msgs := createMsgsWithRandomSigner()
+			msgs := createMsgsWithRandomSigner(signer, rand.I64Between(1, 20))
 
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			_, err := b.Broadcast(ctx, msgs...)
+			cancel()
+
 			assert.NoError(t, err)
 		}
 
-		assert.Len(t, ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls(), iterations)
+		assert.Len(t, clientCtx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls(), iterations)
 	})
 
 	t.Run("sequence number updated correctly", func(t *testing.T) {
-		b, ctx := setup()
+		b, clientCtx := setup()
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(200, 1000))
 		wg := &sync.WaitGroup{}
 		wg.Add(iterations)
 		for i := 0; i < iterations; i++ {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
-				msgs := createMsgsWithRandomSigner()
+				msgs := createMsgsWithRandomSigner(signer, rand.I64Between(1, 20))
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 				_, err := broadcaster.Broadcast(ctx, msgs...)
+				cancel()
+
 				assert.NoError(t, err)
 			}(b)
 		}
 		wg.Wait()
 
-		foundSeqNo := make([]bool, iterations)
-		for _, call := range ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
-			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
+		foundSeqNo := map[uint64]bool{}
+		maxSeqNo := uint64(0)
+		for _, call := range clientCtx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
+			decodedTx, err := clientCtx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
 			sigs, err := decodedTx.(authsigning.SigVerifiableTx).GetSignaturesV2()
 			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
+				maxSeqNo = sig.Sequence
 			}
 		}
-		assert.Equal(t, iterations, int(b.txFactory.Sequence()))
+		assert.Equal(t, maxSeqNo+1, b.txFactory.Sequence())
 		assert.NotContains(t, foundSeqNo, false)
 	})
 
@@ -92,20 +103,22 @@ func TestBroadcast(t *testing.T) {
 			return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
 		}
 
+		signer := rand.AccAddr()
 		iterations := int(rand.I64Between(200, 1000))
 		wg := &sync.WaitGroup{}
 		wg.Add(iterations)
 		for i := 0; i < iterations; i++ {
 			go func(broadcaster *Broadcaster) {
 				defer wg.Done()
-				msgs := createMsgsWithRandomSigner()
-				_, err := broadcaster.Broadcast(ctx, msgs...)
+				msgs := createMsgsWithRandomSigner(signer, rand.I64Between(1, 20))
+				_, err := broadcaster.Broadcast(context.TODO(), msgs...)
 				assert.NoError(t, err)
 			}(b)
 		}
 		wg.Wait()
 
-		foundSeqNo := make([]bool, iterations)
+		foundSeqNo := map[uint64]bool{}
+		maxSeqNo := uint64(0)
 		for _, call := range ctx.Client.(*mock2.ClientMock).BroadcastTxSyncCalls() {
 			decodedTx, err := ctx.TxConfig.TxDecoder()(call.Tx)
 			assert.NoError(t, err)
@@ -113,11 +126,42 @@ func TestBroadcast(t *testing.T) {
 			assert.NoError(t, err)
 			for _, sig := range sigs {
 				foundSeqNo[sig.Sequence] = true
+				maxSeqNo = sig.Sequence
 			}
 		}
-		assert.Equal(t, iterations, int(b.txFactory.Sequence()))
+		assert.Equal(t, maxSeqNo+1, b.txFactory.Sequence())
 		assert.NotContains(t, foundSeqNo, false)
 	})
+
+	var (
+		broadcaster *Broadcaster
+		ctx         client.Context
+		msgs        []sdk.Msg
+	)
+
+	Given("a broadcaster", func(t *testing.T) {
+		broadcaster, ctx = setup()
+	}).
+		And().Given("a batch of multiple messages", func(t *testing.T) {
+		msgs = createMsgsWithRandomSigner(rand.AccAddr(), rand.I64Between(2, 20))
+	}).
+		When("the broadcaster returns a message specific error", func(t *testing.T) {
+			attempt := 0
+			ctx.Client.(*mock2.ClientMock).BroadcastTxSyncFunc = func(context.Context, types.Tx) (*coretypes.ResultBroadcastTx, error) {
+				if attempt == 0 {
+					attempt++
+					return nil, fmt.Errorf("backing off (retry in 6.590290871s ): rpc error: code = InvalidArgument desc = failed to execute message; message index: %d: "+
+						"failed to execute message: voter axelarvaloper1qy9uq03rkpqkzwsa4fz7xxetkxttdcj6tf09pg has already voted: bridge error: reward module error: invalid request", rand.I64Between(0, int64(len(msgs))))
+				}
+				return &coretypes.ResultBroadcastTx{}, nil
+			}
+		}).
+		Then("exclude the specific message and try the batch again", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+			_, err := broadcaster.Broadcast(ctx, msgs...)
+			assert.NoError(t, err)
+		}).Run(t, 20)
 }
 
 func TestRetryPipeline_Push(t *testing.T) {
@@ -242,18 +286,18 @@ func setup() (*Broadcaster, client.Context) {
 
 	fs := pflag.NewFlagSet("test", pflag.PanicOnError)
 	txf := tx.NewFactoryCLI(ctx, fs).WithSignMode(txsigning.SignMode_SIGN_MODE_UNSPECIFIED)
-	p := NewPipelineWithRetry(100000, 1, func(int) time.Duration {
+	p := NewPipelineWithRetry(100000, 10, func(int) time.Duration {
 		return 0
 	}, log.TestingLogger())
 
-	b := NewBroadcaster(txf, p, log.TestingLogger())
+	b := NewBroadcaster(txf, ctx, p, 3, 15, log.TestingLogger())
 	return b, ctx
 }
 
-func createMsgsWithRandomSigner() []sdk.Msg {
+func createMsgsWithRandomSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
 	var msgs []sdk.Msg
-	signer := rand.AccAddr()
-	for i := int64(0); i < rand.I64Between(1, 20); i++ {
+
+	for i := int64(0); i < count; i++ {
 
 		msg := evm.NewVoteConfirmDepositRequest(
 			signer,

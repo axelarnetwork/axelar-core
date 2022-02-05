@@ -1,15 +1,14 @@
 package btc
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
-	sdkClient "github.com/cosmos/cosmos-sdk/client"
-	sdkFlags "github.com/cosmos/cosmos-sdk/client/flags"
-
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcutil"
+	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -61,7 +60,7 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	_, err = mgr.broadcaster.Broadcast(mgr.cliCtx.WithBroadcastMode(sdkFlags.BroadcastBlock), refundableMsg)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), refundableMsg)
 	return err
 }
 
