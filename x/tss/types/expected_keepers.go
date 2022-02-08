@@ -101,7 +101,6 @@ type TSSKeeper interface {
 	DeleteSnapshotCounterForKeyID(ctx sdk.Context, keyID exported.KeyID)
 	SetSigStatus(ctx sdk.Context, sigID string, status exported.SigStatus)
 	GetSignParticipants(ctx sdk.Context, sigID string) []string
-	SelectSignParticipants(ctx sdk.Context, snapshotter Snapshotter, info exported.SignInfo, snap snapshot.Snapshot, keyType exported.KeyType) ([]snapshot.Validator, []snapshot.Validator, error)
 	GetSignParticipantsAsJSON(ctx sdk.Context, sigID string) []byte
 	GetSignParticipantsSharesAsJSON(ctx sdk.Context, sigID string) []byte
 	SetInfoForSig(ctx sdk.Context, sigID string, info exported.SignInfo)
