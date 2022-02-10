@@ -140,8 +140,9 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr)
 
 	response := &types.HeartBeatResponse{
-		KeygenIllegibility:  illegibility.FilterIllegibilityForNewKey(),
-		SigningIllegibility: illegibility.FilterIllegibilityForSigning(),
+		KeygenIllegibility: illegibility.FilterIllegibilityForNewKey(),
+		// TODO: split into TssSigningIllegibility and MultisigSigningIllegibility
+		SigningIllegibility: illegibility.FilterIllegibilityForMultisigSigning(),
 	}
 
 	if !response.KeygenIllegibility.Is(snapshot.None) {
@@ -153,7 +154,8 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 
 	// metrics
 	keygenIll := illegibility.FilterIllegibilityForNewKey()
-	signIll := illegibility.FilterIllegibilityForSigning()
+	// TODO: split into TssSigningIllegibility and MultisigSigningIllegibility
+	signIll := illegibility.FilterIllegibilityForMultisigSigning()
 	for _, ill := range snapshot.GetValidatorIllegibilities() {
 		gauge := float32(0)
 		if keygenIll.Is(ill) {

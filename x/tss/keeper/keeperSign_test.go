@@ -114,7 +114,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
 	assert.NoError(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
+	participants, active, err := s.Keeper.selectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {
@@ -210,7 +210,7 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 	err = s.Keeper.StartSign(s.Ctx, sigInfo, s.Snapshotter, s.Voter)
 	assert.Error(t, err)
 
-	participants, active, err := s.Keeper.SelectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
+	participants, active, err := s.Keeper.selectSignParticipants(s.Ctx, s.Snapshotter, sigInfo, snap, keyInfo.KeyType)
 
 	signingShareCount := sdk.ZeroInt()
 	for _, p := range participants {

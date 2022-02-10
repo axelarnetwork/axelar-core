@@ -160,9 +160,22 @@ func (v ValidatorIllegibility) FilterIllegibilityForNewKey() ValidatorIllegibili
 	return v & mask
 }
 
-// FilterIllegibilityForSigning filters the illegibility to only leave those ones related to handling of signing
-func (v ValidatorIllegibility) FilterIllegibilityForSigning() ValidatorIllegibility {
-	return v & ^NoProxyRegistered
+// FilterIllegibilityForTssSigning filters the illegibility to only leave those ones related to handling of signing
+func (v ValidatorIllegibility) FilterIllegibilityForTssSigning() ValidatorIllegibility {
+	mask := None
+
+	for _, illegibility := range GetValidatorIllegibilities() {
+		mask |= illegibility
+	}
+
+	return v & mask
+}
+
+// FilterIllegibilityForMultisigSigning filters the illegibility to only leave those ones related to handling of signing
+// - filter out MissedTooManyBlocks so that even potentially offline validators can submit signature(s)
+// - filter out ProxyInsuficientFunds so that validators with proxy account having low balance can submit signature(s)
+func (v ValidatorIllegibility) FilterIllegibilityForMultisigSigning() ValidatorIllegibility {
+	return v & ^MissedTooManyBlocks & ^ProxyInsuficientFunds
 }
 
 // GetValidatorIllegibilities returns all validator illegibilities
