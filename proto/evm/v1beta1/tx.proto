@@ -216,10 +216,11 @@ message SignCommandsResponse {
 }
 
 message AddChainRequest {
+  reserved 3; // native_asset was removed in v0.14
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2;
-  string native_asset = 3;
   tss.exported.v1beta1.KeyType key_type = 4;
   bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];

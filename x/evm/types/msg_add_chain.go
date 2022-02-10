@@ -12,11 +12,10 @@ import (
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name, nativeAsset string, keyType tss.KeyType, params Params) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name string, keyType tss.KeyType, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:      sender,
 		Name:        utils.NormalizeString(name),
-		NativeAsset: utils.NormalizeString(nativeAsset),
 		KeyType:     keyType,
 		Params:      params,
 	}
@@ -40,7 +39,6 @@ func (m AddChainRequest) ValidateBasic() error {
 
 	chain := nexus.Chain{
 		Name:                  m.Name,
-		NativeAsset:           m.NativeAsset,
 		SupportsForeignAssets: true,
 		KeyType:               m.KeyType,
 		Module:                ModuleName,

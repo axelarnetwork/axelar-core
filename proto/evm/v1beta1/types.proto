@@ -64,7 +64,8 @@ message ERC20TokenMetadata {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   bytes min_amount = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
+    (gogoproto.nullable) = false,
+    deprecated = true
   ];
   Status status = 7;
   bool is_external = 8;

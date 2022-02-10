@@ -19,9 +19,9 @@ import (
 // AddGenesisEVMChainCmd returns set-genesis-chain cobra Command.
 func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-genesis-evm-chain [name] [native asset]",
+		Use:   "add-genesis-evm-chain [name]",
 		Short: "Adds an EVM chain in genesis.json",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			cdc := clientCtx.Codec
@@ -32,7 +32,6 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 			config.SetRoot(clientCtx.HomeDir)
 
 			name := args[0]
-			nativeAsset := args[1]
 
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)
@@ -42,7 +41,6 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 
 			chain := nexusExported.Chain{
 				Name:                  name,
-				NativeAsset:           nativeAsset,
 				SupportsForeignAssets: true,
 				KeyType:               tss.Multisig,
 				Module:                types.ModuleName,

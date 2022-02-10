@@ -1,12 +1,13 @@
 package types
 
 import (
-	context "context"
+	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -51,4 +52,5 @@ type StakingKeeper interface {
 type AxelarnetKeeper interface {
 	IsCosmosChain(ctx sdk.Context, chain string) bool
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
+	GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool)
 }

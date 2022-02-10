@@ -2,7 +2,7 @@
 
 - [axelard](axelard.md)	 - Axelar App
   - [add-genesis-account \[address_or_key_name\] \[coin\]\[,\[coin\]\]](axelard_add-genesis-account.md)	 - Add a genesis account to genesis.json
-  - [add-genesis-evm-chain \[name\] \[native asset\]](axelard_add-genesis-evm-chain.md)	 - Adds an EVM chain in genesis.json
+  - [add-genesis-evm-chain \[name\]](axelard_add-genesis-evm-chain.md)	 - Adds an EVM chain in genesis.json
   - [collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
   - [debug](axelard_debug.md)	 - Tool for helping with debugging your application
     - [addr \[address\]](axelard_debug_addr.md)	 - Convert an address between hex and bech32
@@ -178,7 +178,7 @@
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
-      - [add-cosmos-based-chain \[name\] \[native asset\] \[min amount\] \[address prefix\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
+      - [add-cosmos-based-chain \[name\] \[address prefix\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
       - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
@@ -201,7 +201,7 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[name\] \[native asset\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [add-chain \[name\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address

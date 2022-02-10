@@ -15,11 +15,12 @@ import (
 var (
 	nonceKey = utils.KeyFromStr("nonce")
 
-	chainPrefix           = utils.KeyFromStr("chain")
-	chainStatePrefix      = utils.KeyFromStr("state")
-	linkedAddressesPrefix = utils.KeyFromStr("linked_addresses")
-	transferPrefix        = utils.KeyFromStr("transfer")
-	transferFee           = utils.KeyFromStr("fee")
+	chainPrefix              = utils.KeyFromStr("chain")
+	chainStatePrefix         = utils.KeyFromStr("state")
+	chainByNativeAssetPrefix = utils.KeyFromStr("native_asset_chain")
+	linkedAddressesPrefix    = utils.KeyFromStr("linked_addresses")
+	transferPrefix           = utils.KeyFromStr("transfer")
+	transferFee              = utils.KeyFromStr("fee")
 	// temporary
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
 )
