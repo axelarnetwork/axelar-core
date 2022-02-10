@@ -362,7 +362,7 @@ func (mgr *Mgr) abortKeygen(keyID string) (err error) {
 
 func (mgr *Mgr) extractRefundMsgResponses(res *sdk.TxResponse) ([]rewardtypes.RefundMsgResponse, error) {
 	var txMsg sdk.TxMsgData
-	var refundReply []rewardtypes.RefundMsgResponse
+	var refundResponses []rewardtypes.RefundMsgResponse
 
 	bz, err := hex.DecodeString(res.Data)
 	if err != nil {
@@ -381,10 +381,10 @@ func (mgr *Mgr) extractRefundMsgResponses(res *sdk.TxResponse) ([]rewardtypes.Re
 			mgr.Logger.Debug(fmt.Sprintf("not a refund response: %v", err))
 			continue
 		}
-		refundReply = append(refundReply, refund)
+		refundResponses = append(refundResponses, refund)
 	}
 
-	return refundReply, nil
+	return refundResponses, nil
 }
 
 func abort(stream Stream) error {
