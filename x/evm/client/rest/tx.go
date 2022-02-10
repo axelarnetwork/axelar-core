@@ -167,11 +167,10 @@ type ReqSignCommands struct {
 
 // ReqAddChain represents a request to add a new evm chain command
 type ReqAddChain struct {
-	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Name        string       `json:"name" yaml:"name"`
-	NativeAsset string       `json:"native_asset" yaml:"native_asset"`
-	KeyType     string       `json:"key_type" yaml:"key_type"`
-	Params      types.Params `json:"params" yaml:"params"`
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Name    string       `json:"name" yaml:"name"`
+	KeyType string       `json:"key_type" yaml:"key_type"`
+	Params  types.Params `json:"params" yaml:"params"`
 }
 
 // GetHandlerLink returns the handler to link addresses
@@ -556,7 +555,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, req.NativeAsset, keyType, req.Params)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, keyType, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

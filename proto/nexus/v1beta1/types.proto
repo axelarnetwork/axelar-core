@@ -18,7 +18,8 @@ message ChainState {
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bool activated = 3;
-  repeated string assets = 5;
+  repeated nexus.exported.v1beta1.Asset assets = 5
+      [ (gogoproto.nullable) = false ];
 }
 
 message LinkedAddresses {

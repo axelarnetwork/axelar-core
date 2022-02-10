@@ -3,7 +3,7 @@
 Adds an EVM chain in genesis.json
 
 ```
-axelard add-genesis-evm-chain [name] [native asset] [flags]
+axelard add-genesis-evm-chain [name] [flags]
 ```
 
 ### Options

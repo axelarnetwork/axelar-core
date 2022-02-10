@@ -6,10 +6,11 @@ import (
 )
 
 var (
+	// NativeAsset is the native asset on Axelarnet
+	NativeAsset = "uaxl"
 	// Axelarnet defines properties of the Axelar chain
 	Axelarnet = exported.Chain{
 		Name:                  "Axelarnet",
-		NativeAsset:           "uaxl",
 		SupportsForeignAssets: true,
 		KeyType:               tss.None,
 		Module:                "axelarnet", // cannot use constant due to import cycle

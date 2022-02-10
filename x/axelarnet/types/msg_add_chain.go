@@ -7,23 +7,23 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
-func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, nativeAsset, addrPrefix string, minAmount sdk.Int) *AddCosmosBasedChainRequest {
+func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, addrPrefix string, assets []nexus.Asset) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
 			Name:                  utils.NormalizeString(name),
-			NativeAsset:           utils.NormalizeString(nativeAsset),
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
-			Module:                "axelarnet", // cannot use constant due to import cycle
+			Module:                exported.Axelarnet.Module,
 		},
-		AddrPrefix: utils.NormalizeString(addrPrefix),
-		MinAmount:  minAmount,
+		AddrPrefix:   utils.NormalizeString(addrPrefix),
+		NativeAssets: assets,
 	}
 }
 
@@ -55,8 +55,10 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
-	if m.MinAmount.LTE(sdk.ZeroInt()) {
-		return fmt.Errorf("minimum mint/withdrawal amount must be greater than zero")
+	for _, asset := range m.NativeAssets {
+		if err := asset.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid asset")
+		}
 	}
 
 	return nil

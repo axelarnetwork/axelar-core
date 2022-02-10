@@ -36,6 +36,7 @@
     - [SigStatus](#tss.exported.v1beta1.SigStatus)
   
 - [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Asset](#nexus.exported.v1beta1.Asset)
     - [Chain](#nexus.exported.v1beta1.Chain)
     - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
     - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
@@ -492,7 +493,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
-| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated |  |
+| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
 | `addr_prefix` | [string](#string) |  |  |
 
 
@@ -851,6 +852,23 @@ Signature holds public key and ECDSA signature
 
 
 
+<a name="nexus.exported.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
+| `is_native_asset` | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="nexus.exported.v1beta1.Chain"></a>
 
 ### Chain
@@ -860,7 +878,6 @@ Chain represents the properties of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 | `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `module` | [string](#string) |  |  |
@@ -961,7 +978,7 @@ to nexus
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `addr_prefix` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
+| `native_assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
 
 
 
@@ -1077,7 +1094,7 @@ based chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `asset` | [Asset](#axelarnet.v1beta1.Asset) |  |  |
+| `asset` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) |  |  |
 
 
 
@@ -2180,7 +2197,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
+| `min_amount` | [bytes](#bytes) |  | **Deprecated.**  |
 | `status` | [Status](#evm.v1beta1.Status) |  |  |
 | `is_external` | [bool](#bool) |  |  |
 | `burner_code` | [bytes](#bytes) |  |  |
@@ -2848,7 +2865,6 @@ QueryDepositStateResponse is used by the legacy querier
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `native_asset` | [string](#string) |  |  |
 | `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
@@ -3495,7 +3511,7 @@ ChainState represents the state of a registered blockchain
 | `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `maintainers` | [bytes](#bytes) | repeated |  |
 | `activated` | [bool](#bool) |  |  |
-| `assets` | [string](#string) | repeated |  |
+| `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
 
 
 

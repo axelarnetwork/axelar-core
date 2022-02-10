@@ -233,7 +233,7 @@ func TestGetTokenAddress(t *testing.T) {
 	keeper.SetPendingGateway(ctx, axelarGateway)
 	keeper.ConfirmPendingGateway(ctx)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
-	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails, sdk.NewInt(1000000), types.ZeroAddress)
+	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails, types.ZeroAddress)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, token.GetAddress())
 }

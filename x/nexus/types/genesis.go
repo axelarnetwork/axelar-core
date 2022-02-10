@@ -2,8 +2,8 @@ package types
 
 import (
 	"encoding/json"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -38,7 +38,10 @@ func DefaultGenesisState() *GenesisState {
 		DefaultParams(),
 		0,
 		[]exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
-		[]ChainState{},
+		[]ChainState{{
+			Chain:  axelarnet.Axelarnet,
+			Assets: []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
+		}},
 		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},
 		exported.TransferFee{},

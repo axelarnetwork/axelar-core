@@ -69,11 +69,6 @@ func (s sortedChains) Swap(i, j int) {
 // SortChains sorts the given slice
 func SortChains(chains []CosmosChain) {
 	sort.Stable(sortedChains(chains))
-	for _, chain := range chains {
-		sort.SliceStable(chain.Assets, func(i int, j int) bool {
-			return chain.Assets[i].Denom < chain.Assets[j].Denom
-		})
-	}
 }
 
 type sortedTransfers []IBCTransfer
@@ -107,40 +102,12 @@ func (m CosmosChain) Validate() error {
 		}
 	}
 
-	if len(m.Assets) == 0 {
-		return fmt.Errorf("chain must contain assets")
-	}
-
-	for _, asset := range m.Assets {
-		if err := asset.Validate(); err != nil {
-			return err
-		}
-	}
-
 	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
 
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
-	}
-
-	return nil
-}
-
-// NewAsset returns an asset struct
-func NewAsset(denom string, minAmount sdk.Int) Asset {
-	return Asset{Denom: utils.NormalizeString(denom), MinAmount: minAmount}
-}
-
-// Validate checks the stateless validity of the asset
-func (m Asset) Validate() error {
-	if err := sdk.ValidateDenom(m.Denom); err != nil {
-		return sdkerrors.Wrap(err, "invalid denomination")
-	}
-
-	if m.MinAmount.LTE(sdk.ZeroInt()) {
-		return fmt.Errorf("minimum amount must be greater than zero")
 	}
 
 	return nil

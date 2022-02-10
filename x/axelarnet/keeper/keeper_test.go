@@ -37,7 +37,6 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 		setup()
 		path := randomIBCPath()
 		chain := randomChain()
-		chain.Assets = nil
 		chain.IBCPath = ""
 		keeper.SetCosmosChain(ctx, chain)
 		err := keeper.RegisterIBCPath(ctx, chain.Name, path)
@@ -51,7 +50,6 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 		setup()
 		path := randomIBCPath()
 		chain := randomChain()
-		chain.Assets = nil
 		chain.IBCPath = ""
 		keeper.SetCosmosChain(ctx, chain)
 		err := keeper.RegisterIBCPath(ctx, chain.Name, path)
@@ -88,7 +86,6 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 				Name:       chains[i],
 				AddrPrefix: rand.NormalizedStr(5),
 			})
-			keeper.RegisterAssetToCosmosChain(ctx, randomAsset(), chains[i])
 		}
 		sort.Strings(chains)
 		assert.Equal(t, chains, keeper.GetCosmosChains(ctx))
@@ -97,7 +94,8 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 	t.Run("should empty list when no chain registered", testutils.Func(func(t *testing.T) {
 		setup()
-		var empty []string
+		empty := make([]string, 0)
+
 		assert.Equal(t, empty, keeper.GetCosmosChains(ctx))
 
 	}).Repeat(repeats))
@@ -110,9 +108,3 @@ func randomIBCPath() string {
 	return port + "/" + identifier
 }
 
-func randomAsset() types.Asset {
-	return types.Asset{
-		Denom:     rand.Denom(5, 20),
-		MinAmount: sdk.NewInt(1000000),
-	}
-}

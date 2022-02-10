@@ -127,8 +127,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("unknown recipient chain")
 	}
 
-	if !s.nexus.IsAssetRegistered(ctx, recipientChain, exported.Bitcoin.NativeAsset) {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", exported.Bitcoin.NativeAsset, recipientChain.Name)
+	if !s.nexus.IsAssetRegistered(ctx, recipientChain, types.Satoshi) {
+		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", types.Satoshi, recipientChain.Name)
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
@@ -161,7 +161,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Bitcoin.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-			sdk.NewAttribute(types.AttributeKeyAsset, exported.Bitcoin.NativeAsset),
+			sdk.NewAttribute(types.AttributeKeyAsset, types.Satoshi),
 		),
 	)
 
@@ -339,7 +339,7 @@ func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirm
 	case types.Deposit:
 		// handle cross-chain transfer
 		depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
-		amount := sdk.NewInt64Coin(exported.Bitcoin.NativeAsset, int64(pendingOutPointInfo.Amount))
+		amount := sdk.NewInt64Coin(types.Satoshi, int64(pendingOutPointInfo.Amount))
 		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx)); err != nil {
 			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
 		}

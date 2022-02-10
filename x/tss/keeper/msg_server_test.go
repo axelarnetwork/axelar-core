@@ -43,8 +43,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
-					NativeAsset:           rand.StrBetween(5, 10),
-					SupportsForeignAssets: rand.Bools(0.5).Next(),
+					SupportsForeignAssets: true,
 					Module:                rand.Str(10),
 				}, true
 			},

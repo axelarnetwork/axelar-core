@@ -28,11 +28,8 @@ type BaseKeeper interface {
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []string
-	RegisterAssetToCosmosChain(ctx sdk.Context, asset Asset, chain string) error
-	GetCosmosChainByAsset(ctx sdk.Context, asset string) (CosmosChain, bool)
 	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
-	GetAsset(ctx sdk.Context, chain, denom string) (Asset, bool)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -43,12 +40,13 @@ type Nexus interface {
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, denom string)
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
+	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires
@@ -79,3 +77,6 @@ type ChannelKeeper interface {
 type AccountKeeper interface {
 	GetModuleAddress(moduleName string) sdk.AccAddress
 }
+
+// CosmosChainGetter exposes GetCosmosChainByName
+type CosmosChainGetter func(ctx sdk.Context, chain string) (CosmosChain, bool)

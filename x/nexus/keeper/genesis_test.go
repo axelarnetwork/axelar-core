@@ -41,6 +41,7 @@ func setup() (sdk.Context, Keeper) {
 }
 
 func getRandomAxelarnetAddress() exported.CrossChainAddress {
+	sdk.GetConfig().SetBech32PrefixForAccount("axelar", "axelar")
 	return exported.CrossChainAddress{
 		Chain:   axelarnet.Axelarnet,
 		Address: rand.AccAddr().String(),
@@ -65,18 +66,24 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 
 func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
+
+	getter := func (sdk.Context, string) (axelarnetTypes.CosmosChain, bool) {
+		return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
+	}
+
 	keeper.InitGenesis(ctx, types.DefaultGenesisState())
 
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetkeeper.Keeper{}))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(getter))
 	keeper.SetRouter(router)
 
 	expected := types.DefaultGenesisState()
 
 	keeper.SetChain(ctx, bitcoin.Bitcoin)
-	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, bitcoin.Bitcoin.NativeAsset)
-	keeper.RegisterAsset(ctx, evm.Ethereum, axelarnet.Axelarnet.NativeAsset)
+	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true))
+	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(1000000), false))
+
 	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
 	for _, chain := range expected.Chains {
 		keeper.ActivateChain(ctx, chain)
@@ -97,7 +104,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	for i, linkedAddress := range expectedLinkedAddresses {
 		depositAddress := linkedAddress.DepositAddress
 		recipientAddress := linkedAddress.RecipientAddress
-		asset := sdk.NewCoin(axelarnet.Axelarnet.NativeAsset, sdk.NewInt(rand.PosI64()))
+		asset := sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64()))
 
 		keeper.EnqueueForTransfer(
 			ctx,
@@ -117,19 +124,19 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	expected.ChainStates = []types.ChainState{
 		{
-			Chain:     axelarnet.Axelarnet,
-			Assets:    []string{axelarnet.Axelarnet.NativeAsset},
-			Activated: true,
+			Chain:        axelarnet.Axelarnet,
+			Assets:       []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
+			Activated:    true,
 		},
 		{
 			Chain:     evm.Ethereum,
-			Assets:    []string{evm.Ethereum.NativeAsset, axelarnet.Axelarnet.NativeAsset},
+			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(1000000), false)},
 			Activated: true,
 		},
 		{
-			Chain:     bitcoin.Bitcoin,
-			Assets:    []string{bitcoin.Bitcoin.NativeAsset},
-			Activated: true,
+			Chain:        bitcoin.Bitcoin,
+			Assets:       []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true)},
+			Activated:    true,
 		},
 	}
 
