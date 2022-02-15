@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -35,62 +36,69 @@ func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetype
 func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
-	// reject unregistered refundable msg
-	for _, msg := range msgs {
-		switch msg := msg.(type) {
-		case *rewardtypes.RefundMsgRequest:
-			if !msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("%T is not refundable", msg))
-			}
-		}
+	if !anyRefundable(msgs) {
+		return next(ctx, tx, simulate)
 	}
 
-	if d.qualifyForRefund(ctx, msgs) {
-		feeTx, ok := tx.(sdk.FeeTx)
-		if !ok {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
-		}
+	if err := d.qualifyForRefund(ctx, msgs); err != nil {
+		return ctx, err
+	}
 
-		fee := feeTx.GetFee()
-		if len(fee) > 0 {
-			req := msgs[0].(*rewardtypes.RefundMsgRequest)
-			err := d.reward.SetPendingRefund(ctx, *req, fee[0])
-			if err != nil {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
-			}
-		}
+	feeTx, ok := tx.(sdk.FeeTx)
+	if !ok {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+	}
 
+	fee := feeTx.GetFee()
+	if len(fee) > 0 {
+		req := msgs[0].(*rewardtypes.RefundMsgRequest)
+		err := d.reward.SetPendingRefund(ctx, *req, fee[0])
+		if err != nil {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+		}
 	}
 
 	return next(ctx, tx, simulate)
 }
 
-func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Msg) bool {
-	if len(msgs) != 1 {
+func anyRefundable(msgs []sdk.Msg) bool {
+	if len(msgs) == 0 {
 		return false
 	}
 
-	switch msg := msgs[0].(type) {
-	case *rewardtypes.RefundMsgRequest:
-		if !msgRegistered(d.registry, msg.InnerMessage.GetTypeUrl()) {
-			return false
+	for _, msg := range msgs {
+		switch msg.(type) {
+		case *rewardtypes.RefundMsgRequest:
+			return true
 		}
+	}
+	return false
+}
 
-		// Validator must be bonded
-		sender := msg.GetSigners()[0]
-		validatorAddr := d.snapshotter.GetOperator(ctx, sender)
-		if validatorAddr == nil {
-			return false
-		}
-		validator := d.staking.Validator(ctx, validatorAddr)
-		if validator == nil || !validator.IsBonded() {
-			return false
-		}
+func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Msg) error {
+	for _, msg := range msgs {
+		switch msg := msg.(type) {
+		case *rewardtypes.RefundMsgRequest:
+			if !msgRegistered(d.registry, msg.InnerMessage.TypeUrl) {
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %s is not refundable", msg.InnerMessage.TypeUrl))
+			}
 
-		return true
+			sender := msg.GetSigners()[0]
+			validatorAddr := d.snapshotter.GetOperator(ctx, sender)
+			if validatorAddr == nil {
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer does not belong to a validator")
+			}
+
+			validator := d.staking.Validator(ctx, validatorAddr)
+			if validator == nil || !validator.IsBonded() {
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is not bonded")
+			}
+		default:
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %T is not refundable", msg))
+		}
 	}
 
-	return false
+	return nil
 }
 
 func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
