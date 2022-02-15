@@ -249,12 +249,12 @@ func (k Keeper) selectSignParticipants(ctx sdk.Context, snapshotter types.Snapsh
 		activeValidators = append(activeValidators, validator)
 	}
 
-	set := optimizedSigningSet(keyType, activeValidators, snap.CorruptionThreshold)
-	for _, signer := range set {
-		k.setParticipateInSign(ctx, info.SigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
+	participants := optimizedSigningSet(keyType, activeValidators, snap.CorruptionThreshold)
+	for _, participant := range participants {
+		k.setParticipateInSign(ctx, info.SigID, participant.GetSDKValidator().GetOperator(), participant.ShareCount)
 	}
 
-	return set, activeValidators, nil
+	return participants, activeValidators, nil
 }
 
 // optimizedSigningSet selects a subset of the given participants whose total number of shares
