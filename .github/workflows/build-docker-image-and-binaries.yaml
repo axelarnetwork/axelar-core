@@ -45,11 +45,6 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.5.2
-        with:
-          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 

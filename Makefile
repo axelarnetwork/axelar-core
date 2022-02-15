@@ -47,7 +47,6 @@ build-binaries: guard-SEMVER
 .PHONY: build-binaries-in-docker
 build-binaries-in-docker: guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
-		--ssh default \
 		--build-arg SEMVER=${SEMVER} \
 		-t axelar/core:binaries \
 		-f Dockerfile.binaries .
@@ -61,13 +60,12 @@ debug: go.sum
 # Build a release image
 .PHONY: docker-image
 docker-image:
-	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core .
+	@DOCKER_BUILDKIT=1 docker build -t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user
 docker-image-local-user: guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
-		--ssh default \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
 		-t axelarnet/axelar-core:${VERSION}-local .
@@ -76,14 +74,13 @@ docker-image-local-user: guard-VERSION guard-GROUP_ID guard-USER_ID
 build-push-docker-images: guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
-		--ssh default \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		-t axelarnet/axelar-core:${SEMVER} .
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .Phony: prereqs
@@ -118,7 +115,7 @@ proto-all: proto-update-deps proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	@DOCKER_BUILDKIT=1 docker build --ssh default -t axelar/proto-gen -f ./Dockerfile.protocgen .
+	@DOCKER_BUILDKIT=1 docker build -t axelar/proto-gen -f ./Dockerfile.protocgen .
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protocgen.sh
 
 proto-format:
