@@ -6,6 +6,7 @@ package mock
 import (
 	context "context"
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
@@ -903,6 +904,9 @@ var _ nexustypes.AxelarnetKeeper = &AxelarnetKeeperMock{}
 // 			GetCosmosChainByNameFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (axelarnettypes.CosmosChain, bool) {
 // 				panic("mock out the GetCosmosChainByName method")
 // 			},
+// 			GetCosmosChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []string {
+// 				panic("mock out the GetCosmosChains method")
+// 			},
 // 			GetFeeCollectorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
 // 				panic("mock out the GetFeeCollector method")
 // 			},
@@ -919,6 +923,9 @@ type AxelarnetKeeperMock struct {
 	// GetCosmosChainByNameFunc mocks the GetCosmosChainByName method.
 	GetCosmosChainByNameFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (axelarnettypes.CosmosChain, bool)
 
+	// GetCosmosChainsFunc mocks the GetCosmosChains method.
+	GetCosmosChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []string
+
 	// GetFeeCollectorFunc mocks the GetFeeCollector method.
 	GetFeeCollectorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
 
@@ -934,6 +941,11 @@ type AxelarnetKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain string
 		}
+		// GetCosmosChains holds details about calls to the GetCosmosChains method.
+		GetCosmosChains []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetFeeCollector holds details about calls to the GetFeeCollector method.
 		GetFeeCollector []struct {
 			// Ctx is the ctx argument value.
@@ -948,6 +960,7 @@ type AxelarnetKeeperMock struct {
 		}
 	}
 	lockGetCosmosChainByName sync.RWMutex
+	lockGetCosmosChains      sync.RWMutex
 	lockGetFeeCollector      sync.RWMutex
 	lockIsCosmosChain        sync.RWMutex
 }
@@ -984,6 +997,37 @@ func (mock *AxelarnetKeeperMock) GetCosmosChainByNameCalls() []struct {
 	mock.lockGetCosmosChainByName.RLock()
 	calls = mock.calls.GetCosmosChainByName
 	mock.lockGetCosmosChainByName.RUnlock()
+	return calls
+}
+
+// GetCosmosChains calls GetCosmosChainsFunc.
+func (mock *AxelarnetKeeperMock) GetCosmosChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []string {
+	if mock.GetCosmosChainsFunc == nil {
+		panic("AxelarnetKeeperMock.GetCosmosChainsFunc: method is nil but AxelarnetKeeper.GetCosmosChains was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetCosmosChains.Lock()
+	mock.calls.GetCosmosChains = append(mock.calls.GetCosmosChains, callInfo)
+	mock.lockGetCosmosChains.Unlock()
+	return mock.GetCosmosChainsFunc(ctx)
+}
+
+// GetCosmosChainsCalls gets all the calls that were made to GetCosmosChains.
+// Check the length with:
+//     len(mockedAxelarnetKeeper.GetCosmosChainsCalls())
+func (mock *AxelarnetKeeperMock) GetCosmosChainsCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetCosmosChains.RLock()
+	calls = mock.calls.GetCosmosChains
+	mock.lockGetCosmosChains.RUnlock()
 	return calls
 }
 
@@ -1050,5 +1094,70 @@ func (mock *AxelarnetKeeperMock) IsCosmosChainCalls() []struct {
 	mock.lockIsCosmosChain.RLock()
 	calls = mock.calls.IsCosmosChain
 	mock.lockIsCosmosChain.RUnlock()
+	return calls
+}
+
+// Ensure, that EVMBaseKeeperMock does implement nexustypes.EVMBaseKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ nexustypes.EVMBaseKeeper = &EVMBaseKeeperMock{}
+
+// EVMBaseKeeperMock is a mock implementation of nexustypes.EVMBaseKeeper.
+//
+// 	func TestSomethingThatUsesEVMBaseKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked nexustypes.EVMBaseKeeper
+// 		mockedEVMBaseKeeper := &EVMBaseKeeperMock{
+// 			ForChainFunc: func(chain string) evm.ChainKeeper {
+// 				panic("mock out the ForChain method")
+// 			},
+// 		}
+//
+// 		// use mockedEVMBaseKeeper in code that requires nexustypes.EVMBaseKeeper
+// 		// and then make assertions.
+//
+// 	}
+type EVMBaseKeeperMock struct {
+	// ForChainFunc mocks the ForChain method.
+	ForChainFunc func(chain string) evm.ChainKeeper
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// ForChain holds details about calls to the ForChain method.
+		ForChain []struct {
+			// Chain is the chain argument value.
+			Chain string
+		}
+	}
+	lockForChain sync.RWMutex
+}
+
+// ForChain calls ForChainFunc.
+func (mock *EVMBaseKeeperMock) ForChain(chain string) evm.ChainKeeper {
+	if mock.ForChainFunc == nil {
+		panic("EVMBaseKeeperMock.ForChainFunc: method is nil but EVMBaseKeeper.ForChain was just called")
+	}
+	callInfo := struct {
+		Chain string
+	}{
+		Chain: chain,
+	}
+	mock.lockForChain.Lock()
+	mock.calls.ForChain = append(mock.calls.ForChain, callInfo)
+	mock.lockForChain.Unlock()
+	return mock.ForChainFunc(chain)
+}
+
+// ForChainCalls gets all the calls that were made to ForChain.
+// Check the length with:
+//     len(mockedEVMBaseKeeper.ForChainCalls())
+func (mock *EVMBaseKeeperMock) ForChainCalls() []struct {
+	Chain string
+} {
+	var calls []struct {
+		Chain string
+	}
+	mock.lockForChain.RLock()
+	calls = mock.calls.ForChain
+	mock.lockForChain.RUnlock()
 	return calls
 }
