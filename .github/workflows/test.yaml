@@ -18,16 +18,9 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.5.2
-        with:
-          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Test
         run: |
-          git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
-
           go test ./...
