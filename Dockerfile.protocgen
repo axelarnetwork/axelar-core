@@ -3,6 +3,7 @@
 FROM tendermintdev/sdk-proto-gen as build
 
 RUN apk add --no-cache --update \
+  git \
   ca-certificates
 
 WORKDIR /workspace
