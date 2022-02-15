@@ -117,22 +117,16 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
 			continue
 		}
-
-		// metrics for sign participation
-		metrics.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"}, 0,
-			[]metrics.Label{
-				telemetry.NewLabel("sigID", info.SigID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
-			})
 	}
 
 	// no need to check if these exists again, sanity checks for that passed at this point
 	key, _ := k.GetKey(ctx, info.KeyID)
 	keyType := k.GetKeyType(ctx, info.KeyID)
 	keyRequirement, _ := k.GetKeyRequirement(ctx, key.Role, keyType)
+
+	// sign participation
+	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"},
+		float32(len(k.GetSignParticipants(ctx, info.SigID))), []metrics.Label{telemetry.NewLabel("keyID", string(info.KeyID))})
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
