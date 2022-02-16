@@ -112,7 +112,7 @@ func TestSignCommands(t *testing.T) {
 		assert.Len(t, signerKeeper.StartSignCalls(), 1)
 	}))
 
-	t.Run("should create get the latest if it is aborted", testutils.Func(func(t *testing.T) {
+	t.Run("should get the latest if it is aborted", testutils.Func(func(t *testing.T) {
 		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
