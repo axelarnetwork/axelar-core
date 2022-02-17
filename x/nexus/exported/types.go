@@ -96,6 +96,16 @@ func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset 
 	}
 }
 
+// NewIncompleteCrossChainTransfer returns a pending CrossChainTransfer
+func NewIncompleteCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin) CrossChainTransfer {
+	return CrossChainTransfer{
+		ID:        TransferID(id),
+		Recipient: recipient,
+		Asset:     asset,
+		State:     Incomplete,
+	}
+}
+
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
 	if err := utils.ValidateString(m.Name); err != nil {

@@ -38,3 +38,35 @@ message TransfersForChainResponse {
       [ (gogoproto.nullable) = false ];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
+
+// FeeInfoRequest represents a message that queries the transfer fees associated
+// to an asset on a chain
+message FeeInfoRequest {
+  string chain = 1;
+  string asset = 2;
+}
+
+message FeeInfoResponse { exported.v1beta1.FeeInfo fee_info = 1; }
+
+// TransferFeeRequest represents a message that queries the fees charged by
+// the network for a cross-chain transfer
+message TransferFeeRequest {
+  string deposit_chain = 1;
+  string recipient_chain = 2;
+  bytes amount = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  string asset = 4;
+}
+
+message TransferFeeResponse {
+  bytes fees = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes amount_received = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+};

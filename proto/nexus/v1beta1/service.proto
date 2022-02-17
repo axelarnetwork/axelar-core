@@ -15,7 +15,7 @@ service MsgService {
   rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
       returns (RegisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/registerChainMaintainer"
+      post : "/axelar/nexus/register-chain-maintainer"
       body : "*"
     };
   }
@@ -23,14 +23,14 @@ service MsgService {
   rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
       returns (DeregisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deregisterChainMaintainer"
+      post : "/axelar/nexus/deregister-chain-maintainer"
       body : "*"
     };
   }
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/registerChainMaintainer"
+      post : "/axelar/nexus/activate-chain-request"
       body : "*"
     };
   }
@@ -38,6 +38,16 @@ service MsgService {
   rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
       returns (nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
+      post : "/axelar/nexus/deactivate-chain-request"
+      body : "*"
+    };
+  }
+
+  rpc RegisterAssetFeeInfo(RegisterAssetFeeInfoRequest)
+      returns (RegisterAssetFeeInfoResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/register-asset-fee-info"
+      body : "*"
     };
   }
 }
@@ -55,5 +65,16 @@ service QueryService {
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
     option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain";
+  }
+
+  // FeeInfo queries the fee info by chain and asset
+  rpc FeeInfo(FeeInfoRequest) returns (FeeInfoResponse) {
+    option (google.api.http).get = "/nexus/v1beta1/fee_info";
+  }
+
+  // TransferFee queries the transfer fee by the source, destination chain,
+  // asset and amount
+  rpc TransferFee(TransferFeeRequest) returns (TransferFeeResponse) {
+    option (google.api.http).get = "/nexus/v1beta1/transfer_fee";
   }
 }

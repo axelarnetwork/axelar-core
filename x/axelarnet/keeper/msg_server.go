@@ -448,7 +448,7 @@ func transfer(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, b types.BankKe
 	); err != nil {
 		return fmt.Errorf("failed to send %s from %s to %s: %s", coin, escrowAddress, recipient, err)
 	}
-	k.Logger(ctx).Debug(fmt.Sprintf("successfully sent %s from %s to %s", coin, escrowAddress, recipient))
+	k.Logger(ctx).Debug(fmt.Sprintf("successfully sent fees worth %s from %s to %s", coin, escrowAddress, recipient))
 
 	return nil
 }
