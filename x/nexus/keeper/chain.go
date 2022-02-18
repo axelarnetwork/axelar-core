@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -60,6 +61,27 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom s
 	}
 
 	return chainState.HasAsset(denom)
+}
+
+func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) {
+	k.getStore(ctx).Set(assetFeeInfoPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+}
+
+func (k Keeper) getFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, ok bool) {
+	return feeInfo, k.getStore(ctx).Get(assetFeeInfoPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+}
+
+// RegisterFeeInfo registers the fee info for an asset on a chain
+func (k Keeper) RegisterFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error {
+	if !k.IsAssetRegistered(ctx, chain, asset) {
+		return fmt.Errorf("%s is not a registered asset for chain %s", asset, chain.Name)
+	}
+
+	k.setFeeInfo(ctx, chain, asset, feeInfo)
+
+	ctx.Logger().Info(fmt.Sprintf("registering fee info for asset %s on chain %s", asset, chain.Name), types.AttributeKeyChain, chain.Name, types.AttributeKeyAsset, asset)
+
+	return nil
 }
 
 // ActivateChain activates the given chain

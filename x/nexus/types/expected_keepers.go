@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -35,6 +36,7 @@ type Nexus interface {
 	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
+	RegisterFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error
 }
 
 // Snapshotter provides functionality to the snapshot module

@@ -46,3 +46,56 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 
 	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
 }
+
+// FeeInfo returns the fee info for an asset on a specific chain
+func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.FeeInfoResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+	}
+
+	if !k.IsAssetRegistered(ctx, chain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
+	}
+
+	feeInfo, ok := k.getFeeInfo(ctx, chain, req.Asset)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
+	}
+
+	return &types.FeeInfoResponse{FeeInfo: &feeInfo}, nil
+}
+
+// TransferFee returns the transfer fee for a cross chain transfer
+func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	depositChain, ok := k.GetChain(ctx, req.DepositChain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
+	}
+
+	recipientChain, ok := k.GetChain(ctx, req.RecipientChain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
+	}
+
+	if !k.IsAssetRegistered(ctx, depositChain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, depositChain.Name)
+	}
+
+	if !k.IsAssetRegistered(ctx, recipientChain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, recipientChain.Name)
+	}
+
+	fees := sdk.Uint(k.computeTransferFee(ctx, depositChain, recipientChain, sdk.NewCoin(req.Asset, sdk.Int(req.Amount))).Amount)
+
+	amount := sdk.ZeroUint()
+	if fees.LT(req.Amount) {
+		amount = req.Amount.Sub(fees)
+	}
+
+	return &types.TransferFeeResponse{Fees: fees, AmountReceived: amount}, nil
+}

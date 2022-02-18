@@ -215,3 +215,18 @@ func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, staking types.
 
 	return nexus.GetParams(ctx).ChainActivationThreshold.IsMet(sumConsensusPower, staking.GetLastTotalPower(ctx))
 }
+
+func (s msgServer) RegisterAssetFeeInfo(c context.Context, req *types.RegisterAssetFeeInfoRequest) (*types.RegisterAssetFeeInfoResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := s.RegisterFeeInfo(ctx, chain, req.Asset, req.FeeInfo); err != nil {
+		return nil, err
+	}
+
+	return &types.RegisterAssetFeeInfoResponse{}, nil
+}

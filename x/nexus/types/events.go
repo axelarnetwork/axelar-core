@@ -10,6 +10,7 @@ const (
 const (
 	AttributeKeyChain                  = "chain"
 	AttributeKeyChainMaintainerAddress = "chainMaintainerAddress"
+	AttributeKeyAsset                  = "asset"
 )
 
 // Event attribute values

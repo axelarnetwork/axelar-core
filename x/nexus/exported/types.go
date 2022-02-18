@@ -140,3 +140,33 @@ func (m Asset) Validate() error {
 
 	return nil
 }
+
+// NewFeeInfo returns a FeeInfo struct
+func NewFeeInfo(feeRate sdk.Dec, minFee sdk.Uint, maxFee sdk.Uint) FeeInfo {
+	return FeeInfo{FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
+}
+
+// Validate checks the stateless validity of fee info
+func (m FeeInfo) Validate() error {
+	if m.MinFee.GT(m.MaxFee) {
+		return fmt.Errorf("min fee should not be greater than max fee")
+	}
+
+	if m.FeeRate.IsNil() {
+		return fmt.Errorf("fee rate should not be nil")
+	}
+
+	if m.FeeRate.IsNegative() {
+		return fmt.Errorf("fee rate should not be negative")
+	}
+
+	if m.FeeRate.GT(sdk.OneDec()) {
+		return fmt.Errorf("fee rate should not be greater than one")
+	}
+
+	if !m.FeeRate.IsZero() && m.MaxFee.IsZero() {
+		return fmt.Errorf("fee rate is non zero while max fee is zero")
+	}
+
+	return nil
+}

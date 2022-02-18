@@ -21,6 +21,7 @@ var (
 	linkedAddressesPrefix    = utils.KeyFromStr("linked_addresses")
 	transferPrefix           = utils.KeyFromStr("transfer")
 	transferFee              = utils.KeyFromStr("fee")
+	assetFeeInfoPrefix       = utils.KeyFromStr("asset_fee_info")
 	// temporary
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
 )

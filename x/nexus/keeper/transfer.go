@@ -44,6 +44,13 @@ func (k Keeper) deleteTransfer(ctx sdk.Context, transfer exported.CrossChainTran
 	k.getStore(ctx).Delete(getTransferKey(transfer))
 }
 
+func (k Keeper) setNewIncompleteTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
+	id := k.getNonce(ctx)
+	k.setTransfer(ctx, exported.NewIncompleteCrossChainTransfer(id, recipient, amount))
+	k.setNonce(ctx, id+1)
+	return exported.TransferID(id)
+}
+
 func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
 	id := k.getNonce(ctx)
 	k.setTransfer(ctx, exported.NewPendingCrossChainTransfer(id, recipient, amount))
@@ -58,6 +65,42 @@ func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
 func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	k.getStore(ctx).Get(transferFee, &fee)
 	return fee
+}
+
+func (k Keeper) computeChainFee(ctx sdk.Context, chain exported.Chain, asset sdk.Coin) sdk.Coin {
+	feeInfo, ok := k.getFeeInfo(ctx, chain, asset.Denom)
+	if !ok {
+		feeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+	}
+
+	amount := asset.Amount
+	fee := sdk.Int(feeInfo.MinFee)
+
+	remaining := sdk.ZeroInt()
+	if fee.LT(amount) {
+		remaining = amount.Sub(fee)
+	}
+
+	fee = fee.Add(sdk.NewDecFromInt(remaining).Mul(feeInfo.FeeRate).TruncateInt())
+
+	if feeInfo.MaxFee.LT(sdk.Uint(fee)) {
+		return sdk.NewCoin(asset.Denom, sdk.Int(feeInfo.MaxFee))
+	}
+
+	return sdk.NewCoin(asset.Denom, fee)
+}
+
+// computeTransferFee computes the fee for a cross-chain transfer
+// If fee_info is not set for an asset on a chain, default of zero is used
+// chain_fee = min(chain.max_fee, chain.min_fee + chain.fee_rate * max(0, amount - chain.min_fee))
+// transfer_fee = deposit_chain_fee + recipient_chain_fee
+func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain, recipientChain exported.Chain, asset sdk.Coin) sdk.Coin {
+	depositChainFee := k.computeChainFee(ctx, depositChain, asset)
+	recipientChainFee := k.computeChainFee(ctx, recipientChain, asset)
+
+	fees := depositChainFee.Add(recipientChainFee)
+
+	return fees
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
@@ -84,14 +127,29 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
+	// merging incomplete transfers for the specified recipient
+	incompleteTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.Incomplete)
+	if found {
+		asset = asset.Add(incompleteTransfer.Asset)
+		k.deleteTransfer(ctx, incompleteTransfer)
+	}
+
 	// collect fee
-	if feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt(); feeDue.IsPositive() {
-		k.addTransferFee(ctx, sdk.NewCoin(asset.Denom, feeDue))
-		asset = asset.SubAmount(feeDue)
+	fees := k.computeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	if fees.Amount.GTE(asset.Amount) {
+		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below "+
+			"fees %s for asset %s", sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
+
+		return k.setNewIncompleteTransfer(ctx, recipient, asset), nil
+	}
+
+	if fees.IsPositive() {
+		k.addTransferFee(ctx, fees)
+		asset = asset.Sub(fees)
 	}
 
 	// merging transfers for the specified recipient
-	previousTransfer, found := k.getPendingTransferForRecipientAndAsset(ctx, recipient, asset.Denom)
+	previousTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.Pending)
 	if found {
 		asset = asset.Add(previousTransfer.Asset)
 		k.deleteTransfer(ctx, previousTransfer)
@@ -103,8 +161,8 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	return k.setNewPendingTransfer(ctx, recipient, asset), nil
 }
 
-func (k Keeper) getPendingTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string) (exported.CrossChainTransfer, bool) {
-	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, exported.Pending))
+func (k Keeper) getTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
+	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
