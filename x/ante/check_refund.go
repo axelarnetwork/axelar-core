@@ -86,7 +86,7 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 			sender := msg.GetSigners()[0]
 			validatorAddr := d.snapshotter.GetOperator(ctx, sender)
 			if validatorAddr == nil {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer does not belong to a validator")
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer does not belong to an active validator")
 			}
 
 			validator := d.staking.Validator(ctx, validatorAddr)
