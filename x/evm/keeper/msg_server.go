@@ -893,6 +893,10 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
+		sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
+		sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
@@ -1475,6 +1479,10 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 	}, s.snapshotter, s.voter)
 	if err != nil {
 		return nil, err
+	}
+
+	if !commandBatch.SetStatus(types.BatchSigning) {
+		return nil, fmt.Errorf("failed setting status of command batch %s to be signing", hex.EncodeToString(commandBatch.GetID()))
 	}
 
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())

@@ -52,6 +52,107 @@ var (
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
+func TestSignCommands(t *testing.T) {
+	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.SignerMock) {
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		evmBaseKeeper := &mock.BaseKeeperMock{}
+		tssKeeper := &mock.TSSMock{}
+		nexusKeeper := &mock.NexusMock{}
+		signerKeeper := &mock.SignerMock{}
+		voteKeeper := &mock.VoterMock{}
+		snapshotKeeper := &mock.SnapshotterMock{}
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper)
+
+		return ctx, msgServer, evmBaseKeeper, signerKeeper
+	}
+
+	t.Run("should create a new command batch to sign if the latest is not being signed or aborted", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
+
+		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
+		for i := range expectedCommandIDs {
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+		}
+		expected := types.CommandBatchMetadata{
+			ID:         rand.Bytes(common.HashLength),
+			CommandIDs: expectedCommandIDs,
+			Status:     types.BatchSigning,
+			KeyID:      tssTestUtils.RandKeyID(),
+		}
+
+		chainKeeper := &mock.ChainKeeperMock{}
+		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
+			return types.NonExistentCommand
+		}
+		chainKeeper.CreateNewBatchToSignFunc = func(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
+			return types.NewCommandBatch(expected, func(batch types.CommandBatchMetadata) {}), nil
+		}
+		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
+		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}) error {
+			return nil
+		}
+
+		res, err := msgServer.SignCommands(sdk.WrapSDKContext(ctx), types.NewSignCommandsRequest(rand.AccAddr(), rand.Str(5)))
+
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(len(expected.CommandIDs)), res.CommandCount)
+		assert.Equal(t, expected.ID, res.BatchedCommandsID)
+
+		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 1)
+		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+	}))
+
+	t.Run("should get the latest if it is aborted", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
+
+		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
+		for i := range expectedCommandIDs {
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+		}
+		commandBatch := types.CommandBatchMetadata{
+			ID:         rand.Bytes(common.HashLength),
+			CommandIDs: expectedCommandIDs,
+			Status:     types.BatchAborted,
+			KeyID:      tssTestUtils.RandKeyID(),
+		}
+
+		chainKeeper := &mock.ChainKeeperMock{}
+		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
+			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
+				assert.Equal(t, types.BatchSigning, batch.Status)
+			})
+		}
+		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
+		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}) error {
+			return nil
+		}
+
+		res, err := msgServer.SignCommands(sdk.WrapSDKContext(ctx), types.NewSignCommandsRequest(rand.AccAddr(), rand.Str(5)))
+
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(len(commandBatch.CommandIDs)), res.CommandCount)
+		assert.Equal(t, commandBatch.ID, res.BatchedCommandsID)
+
+		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 0)
+		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+	}))
+}
+
 func TestCreateBurnTokens(t *testing.T) {
 	var (
 		evmBaseKeeper  *mock.BaseKeeperMock
