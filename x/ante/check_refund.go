@@ -90,8 +90,13 @@ func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Ms
 			}
 
 			validator := d.staking.Validator(ctx, validatorAddr)
-			if validator == nil || !validator.IsBonded() {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is not bonded")
+			switch {
+			case validator == nil:
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator not found")
+			case validator.IsUnbonded():
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is unbonded")
+			case validator.IsJailed():
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is jailed")
 			}
 		default:
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %T is not refundable", msg))
