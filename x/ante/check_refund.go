@@ -40,7 +40,7 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 		return next(ctx, tx, simulate)
 	}
 
-	if err := d.qualifyForRefund(ctx, msgs); err != nil {
+	if err := d.validateRefundQualification(ctx, msgs); err != nil {
 		return ctx, err
 	}
 
@@ -75,7 +75,9 @@ func anyRefundable(msgs []sdk.Msg) bool {
 	return false
 }
 
-func (d CheckRefundFeeDecorator) qualifyForRefund(ctx sdk.Context, msgs []sdk.Msg) error {
+func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, msgs []sdk.Msg) error {
+	// If we allow txs to be refunded when there are msgs that are not RefundMsgRequests we open the door to slip all kinds of msgs in to get them refunded.
+	// So we need to make sure that all msgs in the batch are refundable, otherwise reject the tx.
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *rewardtypes.RefundMsgRequest:
