@@ -21,11 +21,6 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
 
-      - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.5.2
-        with:
-          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -43,7 +38,6 @@ jobs:
 
       - name: Install moq
         run: |
-          git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
           go get github.com/matryer/moq
 
       - name: Install mdformat

@@ -7,7 +7,7 @@ Add a new EVM chain
 Add a new EVM chain. The chain config parameter should be the path to a json file containing the key requirements and the evm module parameters
 
 ```
-axelard tx evm add-chain [name] [native asset] [key type] [chain config] [flags]
+axelard tx evm add-chain [name] [key type] [chain config] [flags]
 ```
 
 ### Options

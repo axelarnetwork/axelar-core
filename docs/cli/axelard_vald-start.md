@@ -8,7 +8,7 @@ axelard vald-start [flags]
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --chain-id string          The network chain ID (default "axelar")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
@@ -16,7 +16,7 @@ axelard vald-start [flags]
       --from string              Name or address of private key with which to sign
       --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 4)
-      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.00005uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                     help for vald-start
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")

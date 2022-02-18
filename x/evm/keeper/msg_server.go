@@ -695,7 +695,6 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	s.nexus.SetChain(ctx, pendingChain.Chain)
-	s.nexus.RegisterAsset(ctx, pendingChain.Chain, pendingChain.Chain.NativeAsset)
 	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
@@ -894,6 +893,10 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
+		sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
+		sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
 
 	if !confirmed.Value {
@@ -909,7 +912,6 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	s.nexus.RegisterAsset(ctx, chain, req.Asset)
 	token.ConfirmDeployment()
 
 	return &types.VoteConfirmTokenResponse{
@@ -1030,7 +1032,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 
 		if !s.nexus.IsAssetRegistered(ctx, originChain, req.Asset.Name) {
-			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", originChain.NativeAsset, originChain.Name)
+			return nil, fmt.Errorf("asset %s is not registered on the origin chain %s", req.Asset.Name, originChain.Name)
 		}
 	case false:
 		for _, c := range s.nexus.GetChains(ctx) {
@@ -1055,7 +1057,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
 	}
 
-	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.MinAmount, req.Address)
+	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
@@ -1066,6 +1068,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	}
 
 	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
+		return nil, err
+	}
+
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, req.MinAmount, false)); err != nil {
 		return nil, err
 	}
 
@@ -1268,12 +1274,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
 	}
 
-	var transfersToArchive []nexus.CrossChainTransfer
 	for _, transfer := range pendingTransfers {
 		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
-		if transfer.Asset.Amount.LT(token.GetMinAmount()) {
-			s.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
-				"minimum amount for token %s (%s)", chain.Name, transfer.Recipient.Address, token.GetDetails().TokenName, token.GetDetails().Symbol))
+		if !token.Is(types.Confirmed) {
+			s.Logger(ctx).Debug(fmt.Sprintf("token %s is not confirmed on %s", token.GetAsset(), chain.Name))
 			continue
 		}
 
@@ -1285,16 +1289,11 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
 
-		transfersToArchive = append(transfersToArchive, transfer)
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
-	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("%d pending transfers ready for processing out of %d total", len(transfersToArchive), len(pendingTransfers)))
-
-	for _, pendingTransfer := range transfersToArchive {
-		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
+		s.nexus.ArchivePendingTransfer(ctx, transfer)
 	}
 
 	return &types.CreatePendingTransfersResponse{}, nil
@@ -1482,6 +1481,10 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
+	if !commandBatch.SetStatus(types.BatchSigning) {
+		return nil, fmt.Errorf("failed setting status of command batch %s to be signing", hex.EncodeToString(commandBatch.GetID()))
+	}
+
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
 		s.Logger(ctx).Info(
@@ -1525,7 +1528,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	s.SetPendingChain(
 		ctx,
-		nexus.Chain{Name: req.Name, NativeAsset: req.NativeAsset, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
+		nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
 		req.Params,
 	)
 
@@ -1534,7 +1537,6 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
 			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
-			sdk.NewAttribute(types.AttributeKeyNativeAsset, req.NativeAsset),
 		),
 	)
 

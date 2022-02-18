@@ -1,16 +1,18 @@
 package types
 
 import (
-	context "context"
+	"context"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -47,8 +49,15 @@ type StakingKeeper interface {
 	GetLastTotalPower(sdk.Context) sdk.Int
 }
 
-// AxelarnetKeeper procides functionality  to the axelarnet module
+// AxelarnetKeeper provides functionality to the axelarnet module
 type AxelarnetKeeper interface {
 	IsCosmosChain(ctx sdk.Context, chain string) bool
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
+	GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool)
+	GetCosmosChains(ctx sdk.Context) []string
+}
+
+// EVMBaseKeeper provides functionality to get evm chain keeper
+type EVMBaseKeeper interface {
+	ForChain(chain string) evm.ChainKeeper
 }

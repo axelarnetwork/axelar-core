@@ -7,6 +7,7 @@
 - [ ] Documentation
 - [ ] Connect epics/issues
 - [ ] Tag type of change
+- [ ] Upgrade handler
 
 ## Steps to Test
 

@@ -40,7 +40,7 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 		return fmt.Errorf("could not find snapshot with sequence number #%d", info.SnapshotCounter)
 	}
 
-	participants, active, err := k.SelectSignParticipants(ctx, snapshotter, info, snap, key.Type)
+	participants, active, err := k.selectSignParticipants(ctx, snapshotter, info, snap, key.Type)
 	if err != nil {
 		return err
 	}
@@ -195,66 +195,81 @@ func (k Keeper) getSigStatus(ctx sdk.Context, sigID string) exported.SigStatus {
 	return sig.SigStatus
 }
 
-// SelectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
+// selectSignParticipants appoints a subset of the specified validators to participate in sign ID and returns
 // the active share count and excluded validators if no error
-func (k Keeper) SelectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, info exported.SignInfo, snap snapshot.Snapshot, keyType exported.KeyType) ([]snapshot.Validator, []snapshot.Validator, error) {
-	var activeValidators, excludedValidators []snapshot.Validator
-	available := k.GetAvailableOperators(ctx, info.KeyID)
-	validatorAvailable := make(map[string]bool)
-	for _, validator := range available {
-		validatorAvailable[validator.String()] = true
-	}
-
+func (k Keeper) selectSignParticipants(ctx sdk.Context, snapshotter types.Snapshotter, info exported.SignInfo, snap snapshot.Snapshot, keyType exported.KeyType) ([]snapshot.Validator, []snapshot.Validator, error) {
+	var activeValidators []snapshot.Validator
 	for _, validator := range snap.Validators {
 		illegibility, err := snapshotter.GetValidatorIllegibility(ctx, validator.GetSDKValidator())
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if illegibility = illegibility.FilterIllegibilityForSigning(); !illegibility.Is(snapshot.None) {
-			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
-				validator.GetSDKValidator().GetOperator().String(),
-				info.SigID,
-				illegibility.String(),
-			))
-			excludedValidators = append(excludedValidators, validator)
-			continue
-		}
+		switch keyType {
+		case exported.Threshold:
+			if illegibility = illegibility.FilterIllegibilityForTssSigning(); !illegibility.Is(snapshot.None) {
+				k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
+					validator.GetSDKValidator().GetOperator().String(),
+					info.SigID,
+					illegibility.String(),
+				))
 
-		if !validatorAvailable[validator.GetSDKValidator().GetOperator().String()] {
-			k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
-				validator.GetSDKValidator().GetOperator().String(),
-				info.SigID,
-			))
-			excludedValidators = append(excludedValidators, validator)
-			continue
+				continue
+			}
+
+			// Check heartbeat
+			availableOperators := make(map[string]bool)
+			for _, validator := range k.GetAvailableOperators(ctx, info.KeyID) {
+				availableOperators[validator.String()] = true
+			}
+
+			if !availableOperators[validator.GetSDKValidator().GetOperator().String()] {
+				k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [not-available]",
+					validator.GetSDKValidator().GetOperator().String(),
+					info.SigID,
+				))
+
+				continue
+			}
+
+		case exported.Multisig:
+			if illegibility = illegibility.FilterIllegibilityForMultisigSigning(); !illegibility.Is(snapshot.None) {
+				k.Logger(ctx).Error(fmt.Sprintf("excluding validator %s from signing %s due to [%s]",
+					validator.GetSDKValidator().GetOperator().String(),
+					info.SigID,
+					illegibility.String(),
+				))
+
+				continue
+			}
+		default:
+			return nil, nil, fmt.Errorf("invalid key type %s", keyType.SimpleString())
 		}
 
 		activeValidators = append(activeValidators, validator)
 	}
 
-	selectedSigners := activeValidators
-	if keyType == exported.Threshold {
-		// optimize signing set for threshold
-		selectedSigners = k.optimizedSigningSet(activeValidators, snap.CorruptionThreshold)
+	participants := optimizedSigningSet(keyType, activeValidators, snap.CorruptionThreshold)
+	for _, participant := range participants {
+		k.setParticipateInSign(ctx, info.SigID, participant.GetSDKValidator().GetOperator(), participant.ShareCount)
 	}
 
-	for _, signer := range selectedSigners {
-		k.setParticipateInSign(ctx, info.SigID, signer.GetSDKValidator().GetOperator(), signer.ShareCount)
-	}
-
-	return selectedSigners, activeValidators, nil
+	return participants, activeValidators, nil
 }
 
-// selects a subset of the given participants whose total number of shares
+// optimizedSigningSet selects a subset of the given participants whose total number of shares
 // represent the top of the list and amount to at least threshold+1.
-func (k Keeper) optimizedSigningSet(activeValidators []snapshot.Validator, threshold int64) []snapshot.Validator {
-	if len(activeValidators) == 0 {
+func optimizedSigningSet(keyType exported.KeyType, validators []snapshot.Validator, threshold int64) []snapshot.Validator {
+	if len(validators) == 0 {
 		return []snapshot.Validator{}
 	}
 
-	sorted := make([]snapshot.Validator, len(activeValidators))
-	copy(sorted, activeValidators)
+	if keyType == exported.Multisig {
+		return validators
+	}
+
+	sorted := make([]snapshot.Validator, len(validators))
+	copy(sorted, validators)
 
 	sort.SliceStable(sorted, func(i, j int) bool {
 		return sorted[i].ShareCount > sorted[j].ShareCount

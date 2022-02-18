@@ -1345,9 +1345,6 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the RotateKey method")
 // 			},
-// 			SelectSignParticipantsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
-// 				panic("mock out the SelectSignParticipants method")
-// 			},
 // 			SetAvailableOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)  {
 // 				panic("mock out the SetAvailableOperator method")
 // 			},
@@ -1519,9 +1516,6 @@ type TSSKeeperMock struct {
 
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error
-
-	// SelectSignParticipantsFunc mocks the SelectSignParticipants method.
-	SelectSignParticipantsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error)
 
 	// SetAvailableOperatorFunc mocks the SetAvailableOperator method.
 	SetAvailableOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID)
@@ -1880,19 +1874,6 @@ type TSSKeeperMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
-		// SelectSignParticipants holds details about calls to the SelectSignParticipants method.
-		SelectSignParticipants []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Snapshotter is the snapshotter argument value.
-			Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
-			// Info is the info argument value.
-			Info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-			// Snap is the snap argument value.
-			Snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
-			// KeyType is the keyType argument value.
-			KeyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-		}
 		// SetAvailableOperator holds details about calls to the SetAvailableOperator method.
 		SetAvailableOperator []struct {
 			// Ctx is the ctx argument value.
@@ -2059,7 +2040,6 @@ type TSSKeeperMock struct {
 	lockLogger                          sync.RWMutex
 	lockPenalizeCriminal                sync.RWMutex
 	lockRotateKey                       sync.RWMutex
-	lockSelectSignParticipants          sync.RWMutex
 	lockSetAvailableOperator            sync.RWMutex
 	lockSetExternalKeyIDs               sync.RWMutex
 	lockSetGroupRecoveryInfo            sync.RWMutex
@@ -3581,53 +3561,6 @@ func (mock *TSSKeeperMock) RotateKeyCalls() []struct {
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
 	mock.lockRotateKey.RUnlock()
-	return calls
-}
-
-// SelectSignParticipants calls SelectSignParticipantsFunc.
-func (mock *TSSKeeperMock) SelectSignParticipants(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snap github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, keyType github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType) ([]github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, []github_com_axelarnetwork_axelar_core_x_snapshot_exported.Validator, error) {
-	if mock.SelectSignParticipantsFunc == nil {
-		panic("TSSKeeperMock.SelectSignParticipantsFunc: method is nil but TSSKeeper.SelectSignParticipants was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
-		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
-		KeyType     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-	}{
-		Ctx:         ctx,
-		Snapshotter: snapshotter,
-		Info:        info,
-		Snap:        snap,
-		KeyType:     keyType,
-	}
-	mock.lockSelectSignParticipants.Lock()
-	mock.calls.SelectSignParticipants = append(mock.calls.SelectSignParticipants, callInfo)
-	mock.lockSelectSignParticipants.Unlock()
-	return mock.SelectSignParticipantsFunc(ctx, snapshotter, info, snap, keyType)
-}
-
-// SelectSignParticipantsCalls gets all the calls that were made to SelectSignParticipants.
-// Check the length with:
-//     len(mockedTSSKeeper.SelectSignParticipantsCalls())
-func (mock *TSSKeeperMock) SelectSignParticipantsCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
-	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-	Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
-	KeyType     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
-		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
-		Snap        github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
-		KeyType     github_com_axelarnetwork_axelar_core_x_tss_exported.KeyType
-	}
-	mock.lockSelectSignParticipants.RLock()
-	calls = mock.calls.SelectSignParticipants
-	mock.lockSelectSignParticipants.RUnlock()
 	return calls
 }
 

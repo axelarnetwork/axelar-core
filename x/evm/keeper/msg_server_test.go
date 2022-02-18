@@ -52,6 +52,107 @@ var (
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
+func TestSignCommands(t *testing.T) {
+	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.SignerMock) {
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		evmBaseKeeper := &mock.BaseKeeperMock{}
+		tssKeeper := &mock.TSSMock{}
+		nexusKeeper := &mock.NexusMock{}
+		signerKeeper := &mock.SignerMock{}
+		voteKeeper := &mock.VoterMock{}
+		snapshotKeeper := &mock.SnapshotterMock{}
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper)
+
+		return ctx, msgServer, evmBaseKeeper, signerKeeper
+	}
+
+	t.Run("should create a new command batch to sign if the latest is not being signed or aborted", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
+
+		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
+		for i := range expectedCommandIDs {
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+		}
+		expected := types.CommandBatchMetadata{
+			ID:         rand.Bytes(common.HashLength),
+			CommandIDs: expectedCommandIDs,
+			Status:     types.BatchSigning,
+			KeyID:      tssTestUtils.RandKeyID(),
+		}
+
+		chainKeeper := &mock.ChainKeeperMock{}
+		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
+			return types.NonExistentCommand
+		}
+		chainKeeper.CreateNewBatchToSignFunc = func(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
+			return types.NewCommandBatch(expected, func(batch types.CommandBatchMetadata) {}), nil
+		}
+		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
+		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}) error {
+			return nil
+		}
+
+		res, err := msgServer.SignCommands(sdk.WrapSDKContext(ctx), types.NewSignCommandsRequest(rand.AccAddr(), rand.Str(5)))
+
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(len(expected.CommandIDs)), res.CommandCount)
+		assert.Equal(t, expected.ID, res.BatchedCommandsID)
+
+		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 1)
+		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+	}))
+
+	t.Run("should get the latest if it is aborted", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
+
+		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
+		for i := range expectedCommandIDs {
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+		}
+		commandBatch := types.CommandBatchMetadata{
+			ID:         rand.Bytes(common.HashLength),
+			CommandIDs: expectedCommandIDs,
+			Status:     types.BatchAborted,
+			KeyID:      tssTestUtils.RandKeyID(),
+		}
+
+		chainKeeper := &mock.ChainKeeperMock{}
+		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
+			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
+				assert.Equal(t, types.BatchSigning, batch.Status)
+			})
+		}
+		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
+		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
+			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+		}) error {
+			return nil
+		}
+
+		res, err := msgServer.SignCommands(sdk.WrapSDKContext(ctx), types.NewSignCommandsRequest(rand.AccAddr(), rand.Str(5)))
+
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(len(commandBatch.CommandIDs)), res.CommandCount)
+		assert.Equal(t, commandBatch.ID, res.BatchedCommandsID)
+
+		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 0)
+		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+	}))
+}
+
 func TestCreateBurnTokens(t *testing.T) {
 	var (
 		evmBaseKeeper  *mock.BaseKeeperMock
@@ -420,7 +521,7 @@ func TestLink_Success(t *testing.T) {
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.Bitcoin.NativeAsset, tokenDetails, msg.MinAmount, types.ZeroAddress)
+	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.NativeAsset, tokenDetails, types.ZeroAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -460,7 +561,7 @@ func TestLink_Success(t *testing.T) {
 		},
 	}
 	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
-	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: btc.Bitcoin.NativeAsset})
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: btc.NativeAsset})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -469,7 +570,7 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.Bitcoin.NativeAsset, Salt: types.Hash(salt)}
+	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: btc.NativeAsset, Salt: types.Hash(salt)}
 	actual := *k.ForChain(chain).GetBurnerInfo(ctx, types.Address(burnAddr))
 	assert.Equal(t, expected, actual)
 }
@@ -596,7 +697,7 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
 				if strings.EqualFold(chain, msg.Name) {
 					return types.PendingChain{
-						Chain:  nexus.Chain{Name: msg.Name, NativeAsset: rand.StrBetween(3, 5), SupportsForeignAssets: true, Module: rand.Str(10)},
+						Chain:  nexus.Chain{Name: msg.Name, SupportsForeignAssets: true, Module: rand.Str(10)},
 						Params: evmTestUtils.RandomParams(),
 					}, true
 				}
@@ -826,12 +927,12 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			},
 		}
 
-		token = createMockERC20Token(btc.Bitcoin.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)), sdk.NewInt(1000000))
+		token = createMockERC20Token(btc.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 		msg = &types.ConfirmTokenRequest{
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset),
+			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.NativeAsset),
 		}
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -847,7 +948,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.Bitcoin.NativeAsset))
+		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.NativeAsset))
 	}).Repeat(repeats))
 
 	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
@@ -857,8 +958,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.Bitcoin.NativeAsset)
-		voteReq.Asset = btc.Bitcoin.NativeAsset
+		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.NativeAsset)
+		voteReq.Asset = btc.NativeAsset
 		voteReq.PollKey = pollKey
 
 		_, err = server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
@@ -931,14 +1032,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 func TestAddChain(t *testing.T) {
 	var (
-		ctx         sdk.Context
-		basek       *mock.BaseKeeperMock
-		tssMock     *mock.TSSMock
-		n           *mock.NexusMock
-		msg         *types.AddChainRequest
-		server      types.MsgServiceServer
-		name        string
-		nativeAsset string
+		ctx     sdk.Context
+		basek   *mock.BaseKeeperMock
+		tssMock *mock.TSSMock
+		n       *mock.NexusMock
+		msg     *types.AddChainRequest
+		server  types.MsgServiceServer
+		name    string
+		params  types.Params
 	)
 
 	setup := func() {
@@ -960,17 +1061,16 @@ func TestAddChain(t *testing.T) {
 				c, ok := chains[chain]
 				return c, ok
 			},
+			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 		}
 
 		name = rand.StrBetween(5, 20)
-		nativeAsset = rand.StrBetween(3, 10)
-		params := types.DefaultParams()[0]
+		params = types.DefaultParams()[0]
 		params.Chain = name
 		msg = &types.AddChainRequest{
-			Sender:      rand.AccAddr(),
-			Name:        name,
-			NativeAsset: nativeAsset,
-			Params:      params,
+			Sender: rand.AccAddr(),
+			Name:   name,
+			Params: params,
 		}
 
 		server = keeper.NewMsgServerImpl(basek, tssMock, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
@@ -985,7 +1085,7 @@ func TestAddChain(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
 		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
-		assert.Equal(t, nativeAsset, basek.SetPendingChainCalls()[0].Chain.NativeAsset)
+		assert.Equal(t, params, basek.SetPendingChainCalls()[0].P)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
@@ -995,7 +1095,6 @@ func TestAddChain(t *testing.T) {
 		setup()
 
 		msg.Name = "Bitcoin"
-		msg.NativeAsset = nativeAsset
 
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
@@ -1251,12 +1350,12 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return big.NewInt(rand.I64Between(1, 1000))
 			},
 
-			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, minDeposit sdk.Int, address types.Address) (types.ERC20Token, error) {
+			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 				if _, found := chaink.GetGatewayAddress(ctx); !found {
 					return types.NilToken, fmt.Errorf("gateway address not set")
 				}
 
-				return createMockERC20Token(asset, details, minDeposit), nil
+				return createMockERC20Token(asset, details), nil
 			},
 
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
@@ -1270,6 +1369,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+			RegisterAssetFunc:     func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error { return nil },
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -1416,7 +1516,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenRequest {
 	account := rand.AccAddr()
 
-	asset := types.NewAsset(btc.Bitcoin.Name, btc.Bitcoin.NativeAsset)
+	asset := types.NewAsset(btc.Bitcoin.Name, btc.NativeAsset)
 	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinAmount: sdk.NewInt(1000000)}
 }
 
@@ -1427,11 +1527,10 @@ func createDetails(name, symbol string) types.TokenDetails {
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
 
-func createMockERC20Token(asset string, details types.TokenDetails, minAmount sdk.Int) types.ERC20Token {
+func createMockERC20Token(asset string, details types.TokenDetails) types.ERC20Token {
 	meta := types.ERC20TokenMetadata{
 		Asset:        asset,
 		Details:      details,
-		MinAmount:    minAmount,
 		Status:       types.Initialized,
 		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),

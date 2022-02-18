@@ -47,19 +47,14 @@ jobs:
 
           echo '::set-output name=TAG::'$TAG
 
-      - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.5.2
-        with:
-          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
-
       - name: fetch tags
         run: |
           git fetch --unshallow
-          
+
       - name: Build docker image (normal)
         run: |
           make docker-image
-          
+
       - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
         with:

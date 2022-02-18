@@ -62,7 +62,8 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
 func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (exported.TransferID, error) {
-	if !sender.Chain.SupportsForeignAssets && sender.Chain.NativeAsset != asset.Denom {
+	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
+	if !sender.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
 	}
 
@@ -79,7 +80,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return 0, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	if !recipient.Chain.SupportsForeignAssets && recipient.Chain.NativeAsset != asset.Denom {
+	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
@@ -134,10 +135,24 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
+	// cache min amount
+	minAmounts := map[string]sdk.Int{}
 
 	for ; iter.Valid(); iter.Next() {
 		var transfer exported.CrossChainTransfer
 		iter.UnmarshalValue(&transfer)
+
+		asset := transfer.Asset.Denom
+		if _, ok := minAmounts[asset]; !ok {
+			amount, _ := k.GetMinAmount(ctx, chain, asset)
+			minAmounts[asset] = amount
+		}
+
+		if transfer.Asset.Amount.LT(minAmounts[asset]) {
+			k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
+				"minimum amount for asset %s", chain.Name, transfer.Recipient.Address, asset))
+			continue
+		}
 
 		transfers = append(transfers, transfer)
 	}

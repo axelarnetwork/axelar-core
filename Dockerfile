@@ -3,19 +3,15 @@
 FROM golang:1.17.5-alpine3.15 as build
 
 RUN apk add --no-cache --update \
-  openssh-client \
-  git \
   ca-certificates \
+  git \
   make
 
 WORKDIR axelar
 
-RUN git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
 COPY ./go.mod .
 COPY ./go.sum .
-RUN --mount=type=ssh go mod download
+RUN go mod download
 
 COPY . .
 ENV CGO_ENABLED=0
@@ -38,7 +34,7 @@ ENV TOFND_HOST ""
 # The keyring backend type https://docs.cosmos.network/master/run-node/keyring.html
 ENV AXELARD_KEYRING_BACKEND file
 # The chain ID
-ENV AXELARD_CHAIN_ID axelar-testnet-lisbon-2
+ENV AXELARD_CHAIN_ID axelar-testnet-lisbon-3
 # The file with the peer list to connect to the network
 ENV PEERS_FILE ""
 # Path of an existing configuration file to use (optional)

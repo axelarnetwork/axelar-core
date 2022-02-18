@@ -5,35 +5,17 @@
 The axelar-core app based on the Cosmos SDK is the main application of the axelar network. This repository is used to
 build the necessary binaries and docker image to run a core node.
 
-## Smart contracts bytecode dependency
+### Smart contracts bytecode dependency
 
 In order to run/build the project locally we need to import the bytecode from gateway smart contracts.
 1. Find the specific version of the bytecode here `contract-artifacts/version-config.json`
 2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
-Example: `Bytecode-v2.0.0`
+   Example: `Bytecode-v2.0.0`
 3. Unzip the json files under `contract-artifacts/gateway/`
 4. Run the script to generate `x/evm/types/contracts.go`
 ```shell
-sh scripts/populate-bytecode.sh
+bash scripts/populate-bytecode.sh
 ```
-
-## Prerequisites for building binaries and docker images
-
-1. Have a SSH key on your machine
-2. Add your public key to your Github account for authentication
-3. Run `ssh-add ~/.ssh/{private key file name}` to add your private key to your ssh agent. **IMPORTANT**: the ssh agent
-   only keeps your priate key in memory so you have to repeat this step every time you restart your machine. You can
-   automate this step in two ways as
-   described [here](https://apple.stackexchange.com/questions/254468/macos-sierra-doesn-t-seem-to-remember-ssh-keys-between-reboots/264974#264974):
-    * Add the following to your `~/.ssh/config` file:
-    ```
-    Host *
-       AddKeysToAgent yes
-       UseKeychain yes     
-    ```
-    * Add `ssh-add ~/.ssh/{private key file name} &>/dev/null` in your shell's .rc file (eg. `~/.bash_profile`).
-4. Run `git config --global url."git@github.com:axelarnetwork".insteadOf https://github.com/axelarnetwork` to
-   force `go get` to authenticate via ssh
 
 ## Building binaries locally
 

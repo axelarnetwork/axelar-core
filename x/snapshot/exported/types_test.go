@@ -23,12 +23,22 @@ func TestFilterIllegibilityForNewKey(t *testing.T) {
 	}
 }
 
-func TestFilterIllegibilityForSigning(t *testing.T) {
+func TestFilterIllegibilityForTssSigning(t *testing.T) {
 	for _, illegibility := range exported.GetValidatorIllegibilities() {
-		actual := illegibility.FilterIllegibilityForSigning()
+		actual := illegibility.FilterIllegibilityForTssSigning()
+
+		assert.NotEqual(t, exported.None, actual)
+	}
+}
+
+func TestFilterIllegibilityForMultisigSigning(t *testing.T) {
+	for _, illegibility := range exported.GetValidatorIllegibilities() {
+		actual := illegibility.FilterIllegibilityForMultisigSigning()
 
 		switch illegibility {
-		case exported.NoProxyRegistered:
+		case exported.MissedTooManyBlocks:
+			assert.Equal(t, exported.None, actual)
+		case exported.ProxyInsuficientFunds:
 			assert.Equal(t, exported.None, actual)
 		default:
 			assert.NotEqual(t, exported.None, actual)

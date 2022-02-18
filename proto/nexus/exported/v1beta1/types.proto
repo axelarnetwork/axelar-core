@@ -11,8 +11,9 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Chain represents the properties of a registered blockchain
 message Chain {
+  reserved 2; // native_asset was removed in 0.14
+
   string name = 1;
-  string native_asset = 2;
   bool supports_foreign_assets = 3;
   tss.exported.v1beta1.KeyType key_type = 4;
   string module = 5;
@@ -49,4 +50,13 @@ message TransferFee {
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false
   ];
+}
+
+message Asset {
+  string denom = 1;
+  bytes min_amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  bool is_native_asset = 3;
 }
