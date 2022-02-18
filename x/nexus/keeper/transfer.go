@@ -67,40 +67,47 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
-func (k Keeper) computeChainFee(ctx sdk.Context, chain exported.Chain, asset sdk.Coin) sdk.Coin {
-	feeInfo, ok := k.getFeeInfo(ctx, chain, asset.Denom)
-	if !ok {
-		feeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
-	}
-
-	amount := asset.Amount
-	fee := sdk.Int(feeInfo.MinFee)
+// computeChainSurcharge computes the max surcharge fee over the baseFee
+// max_surcharge = chain.max_fee - chain.min_fee
+// surcharge = min(max_surcharge, chain.fee_rate * (amount - baseFee))
+func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo, baseFee sdk.Int, amount sdk.Int) sdk.Int {
+	maxSurcharge := sdk.Int(feeInfo.MaxFee.Sub(feeInfo.MinFee))
 
 	remaining := sdk.ZeroInt()
-	if fee.LT(amount) {
-		remaining = amount.Sub(fee)
+	if baseFee.LT(amount) {
+		remaining = amount.Sub(baseFee)
 	}
 
-	fee = fee.Add(sdk.NewDecFromInt(remaining).Mul(feeInfo.FeeRate).TruncateInt())
+	surcharge := sdk.NewDecFromInt(remaining).Mul(feeInfo.FeeRate).TruncateInt()
+	surcharge = sdk.MinInt(maxSurcharge, surcharge)
 
-	if feeInfo.MaxFee.LT(sdk.Uint(fee)) {
-		return sdk.NewCoin(asset.Denom, sdk.Int(feeInfo.MaxFee))
-	}
-
-	return sdk.NewCoin(asset.Denom, fee)
+	return surcharge
 }
 
 // computeTransferFee computes the fee for a cross-chain transfer
 // If fee_info is not set for an asset on a chain, default of zero is used
-// chain_fee = min(chain.max_fee, chain.min_fee + chain.fee_rate * max(0, amount - chain.min_fee))
-// transfer_fee = deposit_chain_fee + recipient_chain_fee
+// base_fee = deposit_chain.min_fee + recipient_chain.min_fee
+// transfer_fee = baseFee + deposit_chain_surcharge + recipient_chain_surcharge
+// INVARIANT: deposit_chain.min_fee + recipient_chain.min_fee <= transfer_fee <= deposit_chain.max_fee + recipient_chain.max_fee
 func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain, recipientChain exported.Chain, asset sdk.Coin) sdk.Coin {
-	depositChainFee := k.computeChainFee(ctx, depositChain, asset)
-	recipientChainFee := k.computeChainFee(ctx, recipientChain, asset)
+	depositChainFeeInfo, ok := k.getFeeInfo(ctx, depositChain, asset.Denom)
+	if !ok {
+		depositChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+	}
 
-	fees := depositChainFee.Add(recipientChainFee)
+	recipientChainFeeInfo, ok := k.getFeeInfo(ctx, recipientChain, asset.Denom)
+	if !ok {
+		recipientChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+	}
 
-	return fees
+	baseFee := sdk.Int(depositChainFeeInfo.MinFee.Add(recipientChainFeeInfo.MinFee))
+
+	depositChainSurcharge := k.computeChainSurcharge(ctx, depositChainFeeInfo, baseFee, asset.Amount)
+	recipientChainSurcharge := k.computeChainSurcharge(ctx, recipientChainFeeInfo, baseFee, asset.Amount)
+
+	fees := baseFee.Add(depositChainSurcharge.Add(recipientChainSurcharge))
+
+	return sdk.NewCoin(asset.Denom, fees)
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
