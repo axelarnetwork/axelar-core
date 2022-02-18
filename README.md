@@ -10,7 +10,7 @@ build the necessary binaries and docker image to run a core node.
 In order to run/build the project locally we need to import the bytecode from gateway smart contracts.
 1. Find the specific version of the bytecode here `contract-artifacts/version-config.json`
 2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
-   Example: `Bytecode-v2.0.0`
+   Example: `Bytecode-v2.1.0`
 3. Unzip the json files under `contract-artifacts/gateway/`
 4. Run the script to generate `x/evm/types/contracts.go`
 ```shell
