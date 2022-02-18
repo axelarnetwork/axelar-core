@@ -229,7 +229,6 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 
 	minKeygenThreshold := keyRequirement.MinKeygenThreshold
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
-	telemetry.SetGauge(float32(len(snapshot.Validators)), types.ModuleName, "keygen", "participation")
 
 	return &types.StartKeygenResponse{}, nil
 }

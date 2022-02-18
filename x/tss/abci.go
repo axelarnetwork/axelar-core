@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/armon/go-metrics"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -123,10 +121,6 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 	key, _ := k.GetKey(ctx, info.KeyID)
 	keyType := k.GetKeyType(ctx, info.KeyID)
 	keyRequirement, _ := k.GetKeyRequirement(ctx, key.Role, keyType)
-
-	// sign participation
-	telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"},
-		float32(len(k.GetSignParticipants(ctx, info.SigID))), []metrics.Label{telemetry.NewLabel("keyID", string(info.KeyID))})
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeSign,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
