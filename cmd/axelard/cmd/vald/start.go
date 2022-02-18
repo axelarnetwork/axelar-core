@@ -133,7 +133,6 @@ func GetValdCommand() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	values := map[string]string{
 		flags.FlagGasAdjustment: "4",
-		flags.FlagGasPrices:     "0.05uaxl",
 	}
 	utils.OverwriteFlagDefaults(cmd, values, true)
 
@@ -141,6 +140,7 @@ func GetValdCommand() *cobra.Command {
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
 		flags.FlagBroadcastMode:  flags.BroadcastBlock,
 		flags.FlagChainID:        app.Name,
+		flags.FlagGasPrices:      "0.00005uaxl",
 		flags.FlagKeyringBackend: "file",
 	}, false)
 
