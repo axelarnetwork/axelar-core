@@ -84,12 +84,15 @@ func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo,
 	return surcharge
 }
 
-// computeTransferFee computes the fee for a cross-chain transfer
+// computeTransferFee computes the fee for a cross-chain transfer.
 // If fee_info is not set for an asset on a chain, default of zero is used
+//
 // base_fee = deposit_chain.min_fee + recipient_chain.min_fee
+//
 // transfer_fee = baseFee + deposit_chain_surcharge + recipient_chain_surcharge
+//
 // INVARIANT: deposit_chain.min_fee + recipient_chain.min_fee <= transfer_fee <= deposit_chain.max_fee + recipient_chain.max_fee
-func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain, recipientChain exported.Chain, asset sdk.Coin) sdk.Coin {
+func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain, recipientChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
 	depositChainFeeInfo, ok := k.getFeeInfo(ctx, depositChain, asset.Denom)
 	if !ok {
 		depositChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
@@ -107,7 +110,13 @@ func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain,
 
 	fees := baseFee.Add(depositChainSurcharge.Add(recipientChainSurcharge))
 
-	return sdk.NewCoin(asset.Denom, fees)
+	feeInfo := exported.NewFeeInfo(
+		depositChainFeeInfo.FeeRate.Add(recipientChainFeeInfo.FeeRate),
+		sdk.Uint(baseFee),
+		depositChainFeeInfo.MaxFee.Add(recipientChainFeeInfo.MaxFee),
+	)
+
+	return sdk.NewCoin(asset.Denom, fees), feeInfo
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
@@ -142,7 +151,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// collect fee
-	fees := k.computeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	fees, _ := k.computeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
 	if fees.Amount.GTE(asset.Amount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below "+
 			"fees %s for asset %s", sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))

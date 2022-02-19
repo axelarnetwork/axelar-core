@@ -3720,7 +3720,8 @@ the network for a cross-chain transfer
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `fees` | [bytes](#bytes) |  |  |
-| `amount_received` | [bytes](#bytes) |  |  |
+| `received` | [bytes](#bytes) |  |  |
+| `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
 
 
 

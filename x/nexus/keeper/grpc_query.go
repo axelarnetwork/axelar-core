@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -18,6 +19,10 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 	chain, ok := k.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+	}
+
+	if req.State == nexus.TRANSFER_STATE_UNSPECIFIED {
+		return nil, fmt.Errorf("invalid transfer state")
 	}
 
 	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
@@ -90,12 +95,14 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, recipientChain.Name)
 	}
 
-	fees := sdk.Uint(k.computeTransferFee(ctx, depositChain, recipientChain, sdk.NewCoin(req.Asset, sdk.Int(req.Amount))).Amount)
+	asset := sdk.NewCoin(req.Asset, sdk.Int(req.Amount))
+	transferFees, feeInfo := k.computeTransferFee(ctx, depositChain, recipientChain, asset)
+	fees := sdk.Uint(transferFees.Amount)
 
 	amount := sdk.ZeroUint()
 	if fees.LT(req.Amount) {
 		amount = req.Amount.Sub(fees)
 	}
 
-	return &types.TransferFeeResponse{Fees: fees, AmountReceived: amount}, nil
+	return &types.TransferFeeResponse{Fees: fees, Received: amount, FeeInfo: &feeInfo}, nil
 }

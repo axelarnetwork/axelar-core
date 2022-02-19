@@ -107,7 +107,7 @@
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
-      - [transfers-for-chain \[chain\] \[state (pending|archived)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
+      - [transfers-for-chain \[chain\] \[state (pending|archived|incomplete)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
     - [permission](axelard_query_permission.md)	 - Querying commands for the permission module

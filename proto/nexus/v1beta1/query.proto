@@ -65,8 +65,9 @@ message TransferFeeResponse {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  bytes amount_received = 2 [
+  bytes received = 2 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
+  exported.v1beta1.FeeInfo fee_info = 3;
 };
