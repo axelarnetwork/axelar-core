@@ -173,7 +173,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	bc := createBroadcaster(txf, clientCtx, axelarCfg, logger)
+	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
 
 	tmClient, err := clientCtx.GetNode()
 	if err != nil {
@@ -357,9 +357,9 @@ func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
 }
 
-func createBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
+func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
+	return broadcaster.WithRefund(broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger))
 }
 
 func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
