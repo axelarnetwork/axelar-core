@@ -103,7 +103,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 
 	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
 	if valAddr.Empty() {
-		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
+		return nil, fmt.Errorf("sender [%s] is not a registered proxy", req.Sender)
 	}
 
 	for _, k := range req.KeyIDs {
@@ -116,8 +116,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	// this could happen after register proxy but before create validator
 	validatorI := s.staker.Validator(ctx, valAddr)
 	if validatorI == nil {
-		s.Logger(ctx).Info(fmt.Sprintf("%s is not a validator", valAddr))
-		return &types.HeartBeatResponse{}, nil
+		return nil, fmt.Errorf("%s is not a validator", valAddr)
 	}
 
 	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
