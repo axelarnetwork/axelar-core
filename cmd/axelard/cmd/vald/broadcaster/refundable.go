@@ -18,7 +18,7 @@ func (b *RefundableBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) 
 	for _, msg := range msgs {
 		refundables = append(refundables, types.NewRefundMsgRequest(b.broadcaster.clientCtx.FromAddress, msg))
 	}
-	return b.Broadcast(ctx, refundables...)
+	return b.broadcaster.Broadcast(ctx, refundables...)
 }
 
 // WithRefund wraps a broadcaster into a RefundableBroadcaster

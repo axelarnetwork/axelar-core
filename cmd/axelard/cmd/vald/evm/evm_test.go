@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"testing"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -355,7 +354,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.True(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -378,7 +377,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -392,7 +391,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -404,7 +403,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
 	}).Repeat(repeats))
 }
@@ -479,7 +478,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.True(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -502,7 +501,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -516,7 +515,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -538,7 +537,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -557,7 +556,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
 	}).Repeat(repeats))
 }
@@ -677,7 +676,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.True(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -700,7 +699,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -714,7 +713,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -727,7 +726,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -745,7 +744,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 
@@ -758,7 +757,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
 	}).Repeat(repeats))
 }
@@ -802,8 +801,4 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 	}
 
 	return logs
-}
-
-func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
-	return msg.(*rewardtypes.RefundMsgRequest).GetInnerMessage()
 }
