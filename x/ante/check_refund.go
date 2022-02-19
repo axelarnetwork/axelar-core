@@ -86,19 +86,14 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 			}
 
 			sender := msg.GetSigners()[0]
-			validatorAddr := d.snapshotter.GetOperator(ctx, sender)
-			if validatorAddr == nil {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer does not belong to an active validator")
+			operatorAddr := d.snapshotter.GetOperator(ctx, sender)
+			if operatorAddr == nil {
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not a registered proxy")
 			}
 
-			validator := d.staking.Validator(ctx, validatorAddr)
-			switch {
-			case validator == nil:
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator not found")
-			case validator.IsUnbonded():
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is unbonded")
-			case validator.IsJailed():
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "associated validator is jailed")
+			validator := d.staking.Validator(ctx, operatorAddr)
+			if validator == nil {
+				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not associated with a validator")
 			}
 		default:
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %T is not refundable", msg))
