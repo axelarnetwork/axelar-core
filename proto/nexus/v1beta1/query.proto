@@ -51,8 +51,8 @@ message FeeInfoResponse { exported.v1beta1.FeeInfo fee_info = 1; }
 // TransferFeeRequest represents a message that queries the fees charged by
 // the network for a cross-chain transfer
 message TransferFeeRequest {
-  string deposit_chain = 1;
-  string recipient_chain = 2;
+  string source_chain = 1;
+  string destination_chain = 2;
   bytes amount = 3 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false

@@ -77,26 +77,26 @@ func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.Fe
 func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	depositChain, ok := k.GetChain(ctx, req.DepositChain)
+	sourceChain, ok := k.GetChain(ctx, req.SourceChain)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
 	}
 
-	recipientChain, ok := k.GetChain(ctx, req.RecipientChain)
+	destinationChain, ok := k.GetChain(ctx, req.DestinationChain)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
 
-	if !k.IsAssetRegistered(ctx, depositChain, req.Asset) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, depositChain.Name)
+	if !k.IsAssetRegistered(ctx, sourceChain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, sourceChain.Name)
 	}
 
-	if !k.IsAssetRegistered(ctx, recipientChain, req.Asset) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, recipientChain.Name)
+	if !k.IsAssetRegistered(ctx, destinationChain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, destinationChain.Name)
 	}
 
 	asset := sdk.NewCoin(req.Asset, sdk.Int(req.Amount))
-	transferFees, feeInfo := k.computeTransferFee(ctx, depositChain, recipientChain, asset)
+	transferFees, feeInfo := k.computeTransferFee(ctx, sourceChain, destinationChain, asset)
 	fees := sdk.Uint(transferFees.Amount)
 
 	amount := sdk.ZeroUint()

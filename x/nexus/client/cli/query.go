@@ -28,6 +28,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandChainMaintainers(queryRoute),
 		GetCommandLatestDepositAddress(),
 		GetCommandTransfersForChain(),
+		GetCommandFeeInfo(),
+		GetCommandTransferFee(),
 	)
 
 	return queryCmd
@@ -175,7 +177,7 @@ func GetCommandFeeInfo() *cobra.Command {
 	return cmd
 }
 
-// GetCommandTransfersForChain returns the query for the transfers for a given chain
+// GetCommandTransferFee returns the query for the transfers for a given chain
 func GetCommandTransferFee() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-fee [source-chain] [destination-chain] [amount] [asset]",
@@ -193,10 +195,10 @@ func GetCommandTransferFee() *cobra.Command {
 
 			res, err := queryClient.TransferFee(cmd.Context(),
 				&types.TransferFeeRequest{
-					DepositChain:   args[0],
-					RecipientChain: args[1],
-					Amount:         amount,
-					Asset:          args[3],
+					SourceChain:      args[0],
+					DestinationChain: args[1],
+					Amount:           amount,
+					Asset:            args[3],
 				})
 			if err != nil {
 				return err

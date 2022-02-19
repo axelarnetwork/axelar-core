@@ -3701,8 +3701,8 @@ the network for a cross-chain transfer
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `deposit_chain` | [string](#string) |  |  |
-| `recipient_chain` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 | `asset` | [string](#string) |  |  |
 

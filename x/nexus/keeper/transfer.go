@@ -87,33 +87,33 @@ func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo,
 // computeTransferFee computes the fee for a cross-chain transfer.
 // If fee_info is not set for an asset on a chain, default of zero is used
 //
-// base_fee = deposit_chain.min_fee + recipient_chain.min_fee
+// base_fee = source_chain.min_fee + destination_chain.min_fee
 //
-// transfer_fee = baseFee + deposit_chain_surcharge + recipient_chain_surcharge
+// transfer_fee = baseFee + source_chain_surcharge + destination_chain_surcharge
 //
-// INVARIANT: deposit_chain.min_fee + recipient_chain.min_fee <= transfer_fee <= deposit_chain.max_fee + recipient_chain.max_fee
-func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain, recipientChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
-	depositChainFeeInfo, ok := k.getFeeInfo(ctx, depositChain, asset.Denom)
+// INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
+func (k Keeper) computeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
+	sourceChainFeeInfo, ok := k.getFeeInfo(ctx, sourceChain, asset.Denom)
 	if !ok {
-		depositChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+		sourceChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
 	}
 
-	recipientChainFeeInfo, ok := k.getFeeInfo(ctx, recipientChain, asset.Denom)
+	destinationChainFeeInfo, ok := k.getFeeInfo(ctx, destinationChain, asset.Denom)
 	if !ok {
-		recipientChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+		destinationChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
 	}
 
-	baseFee := sdk.Int(depositChainFeeInfo.MinFee.Add(recipientChainFeeInfo.MinFee))
+	baseFee := sdk.Int(sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee))
 
-	depositChainSurcharge := k.computeChainSurcharge(ctx, depositChainFeeInfo, baseFee, asset.Amount)
-	recipientChainSurcharge := k.computeChainSurcharge(ctx, recipientChainFeeInfo, baseFee, asset.Amount)
+	sourceChainSurcharge := k.computeChainSurcharge(ctx, sourceChainFeeInfo, baseFee, asset.Amount)
+	destinationChainSurcharge := k.computeChainSurcharge(ctx, destinationChainFeeInfo, baseFee, asset.Amount)
 
-	fees := baseFee.Add(depositChainSurcharge.Add(recipientChainSurcharge))
+	fees := baseFee.Add(sourceChainSurcharge.Add(destinationChainSurcharge))
 
 	feeInfo := exported.NewFeeInfo(
-		depositChainFeeInfo.FeeRate.Add(recipientChainFeeInfo.FeeRate),
+		sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate),
 		sdk.Uint(baseFee),
-		depositChainFeeInfo.MaxFee.Add(recipientChainFeeInfo.MaxFee),
+		sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee),
 	)
 
 	return sdk.NewCoin(asset.Denom, fees), feeInfo

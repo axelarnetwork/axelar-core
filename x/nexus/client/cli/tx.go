@@ -28,6 +28,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdDeregisterChainMaintainer(),
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
+		GetCmdRegisterAssetFeeInfo(),
 	)
 
 	return txCmd

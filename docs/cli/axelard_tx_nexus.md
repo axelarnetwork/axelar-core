@@ -29,4 +29,5 @@ axelard tx nexus [flags]
 - [axelard tx nexus activate-chain](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
 - [axelard tx nexus deactivate-chain](axelard_tx_nexus_deactivate-chain.md)	 - deactivate the given chains
 - [axelard tx nexus deregister-chain-maintainer](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
+- [axelard tx nexus register-asset-fee-info](axelard_tx_nexus_register-asset-fee-info.md)	 - register fee info for an asset on a chain
 - [axelard tx nexus register-chain-maintainer](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
