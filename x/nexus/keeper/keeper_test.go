@@ -32,7 +32,6 @@ import (
 const maxAmount int64 = 100000000000
 
 var keeper nexusKeeper.Keeper
-var feeRate = sdk.NewDecWithPrec(25, 5)
 
 func addressValidator() types.Router {
 	router := types.NewRouter()
@@ -149,7 +148,7 @@ func TestLinkAddress(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
@@ -158,14 +157,14 @@ func TestLinkAddress(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
 		assert.NoError(t, err)
 		recp, ok := keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
 		assert.Equal(t, recipient, recp)
 
 		sender.Address = rand.Str(20)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi), feeRate)
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
 		assert.Error(t, err)
 		recp, ok = keeper.GetRecipient(ctx, sender)
 		assert.False(t, ok)

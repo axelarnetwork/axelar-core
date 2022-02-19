@@ -154,7 +154,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx))
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return nil, err
 	}

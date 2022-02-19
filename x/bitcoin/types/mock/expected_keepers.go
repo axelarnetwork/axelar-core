@@ -1378,7 +1378,7 @@ var _ types.Nexus = &NexusMock{}
 // 			ArchivePendingTransferFunc: func(ctx sdk.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error {
+// 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
 // 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
@@ -1413,7 +1413,7 @@ type NexusMock struct {
 	ArchivePendingTransferFunc func(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error
+	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
@@ -1453,8 +1453,6 @@ type NexusMock struct {
 			Sender nexus.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount sdk.Coin
-			// FeeRate is the feeRate argument value.
-			FeeRate sdk.Dec
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
@@ -1559,41 +1557,37 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error {
+func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx     sdk.Context
-		Sender  nexus.CrossChainAddress
-		Amount  sdk.Coin
-		FeeRate sdk.Dec
+		Ctx    sdk.Context
+		Sender nexus.CrossChainAddress
+		Amount sdk.Coin
 	}{
-		Ctx:     ctx,
-		Sender:  sender,
-		Amount:  amount,
-		FeeRate: feeRate,
+		Ctx:    ctx,
+		Sender: sender,
+		Amount: amount,
 	}
 	mock.lockEnqueueForTransfer.Lock()
 	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
 	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount, feeRate)
+	return mock.EnqueueForTransferFunc(ctx, sender, amount)
 }
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx     sdk.Context
-	Sender  nexus.CrossChainAddress
-	Amount  sdk.Coin
-	FeeRate sdk.Dec
+	Ctx    sdk.Context
+	Sender nexus.CrossChainAddress
+	Amount sdk.Coin
 } {
 	var calls []struct {
-		Ctx     sdk.Context
-		Sender  nexus.CrossChainAddress
-		Amount  sdk.Coin
-		FeeRate sdk.Dec
+		Ctx    sdk.Context
+		Sender nexus.CrossChainAddress
+		Amount sdk.Coin
 	}
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer

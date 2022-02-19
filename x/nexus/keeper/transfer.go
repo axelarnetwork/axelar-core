@@ -111,7 +111,7 @@ func (k Keeper) computeTransferFee(ctx sdk.Context, depositChain exported.Chain,
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (exported.TransferID, error) {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
 	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
 	if !sender.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)

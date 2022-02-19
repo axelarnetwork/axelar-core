@@ -1,9 +1,10 @@
 package keeper_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
 	mathrand "math/rand"
 	"testing"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -72,7 +73,7 @@ func TestTransfer(t *testing.T) {
 			}).
 		Then("enqueue transfer should return error",
 			func(t *testing.T) {
-				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()), feeRate)
+				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()))
 				assert.Error(t, err)
 			},
 		).Run(t, repeated)
@@ -108,14 +109,14 @@ func TestTransfer(t *testing.T) {
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer, feeRate)
+					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
-					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					// feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
+					// c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
+					// c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
 				}
 			}).
@@ -142,14 +143,14 @@ func TestTransfer(t *testing.T) {
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer, feeRate)
+					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
-					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					// feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
+					// c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
+					// c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
 				}
 			}).
@@ -186,7 +187,7 @@ func TestTransfer(t *testing.T) {
 
 				asset = randAsset()
 				firstAmount := makeAmountAboveMin(asset)
-				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount, feeRate)
+				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount)
 				assert.NoError(t, err)
 
 				actualRecipient, ok := k.GetRecipient(ctx, sender)
@@ -199,7 +200,7 @@ func TestTransfer(t *testing.T) {
 		When("enqueue transfer second time",
 			func(t *testing.T) {
 				secondAmount := makeAmountAboveMin(asset)
-				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount, feeRate)
+				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount)
 				assert.NoError(t, err)
 			}).
 		Then("should merge transfers to the same recipient",
@@ -226,7 +227,7 @@ func TestTransfer(t *testing.T) {
 					err := k.LinkAddresses(ctx, s, r)
 					assert.NoError(t, err)
 
-					_, err = k.EnqueueForTransfer(ctx, s, makeAmountAboveMin(randAsset()), feeRate)
+					_, err = k.EnqueueForTransfer(ctx, s, makeAmountAboveMin(randAsset()))
 					assert.NoError(t, err)
 
 					c := expectedTransfers[recipients[i].Chain.Name]

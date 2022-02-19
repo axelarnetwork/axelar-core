@@ -116,7 +116,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				return nexus.TransferID(mathRand.Uint64()), nil
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) {
@@ -164,7 +164,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgConfirmDeposit()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 			return 0, fmt.Errorf("failed")
 		}
 
@@ -323,7 +323,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				return nexus.TransferID(mathRand.Uint64()), nil
 			},
 			GetTransferFeesFunc: func(sdk.Context) sdk.Coins { return sdk.NewCoins() },

@@ -67,7 +67,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
 
-	getter := func (sdk.Context, string) (axelarnetTypes.CosmosChain, bool) {
+	getter := func(sdk.Context, string) (axelarnetTypes.CosmosChain, bool) {
 		return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
 	}
 
@@ -110,7 +110,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 			ctx,
 			depositAddress,
 			asset,
-			sdk.ZeroDec(),
 		)
 
 		expectedTransfer := exported.NewPendingCrossChainTransfer(uint64(i), recipientAddress, asset)
@@ -124,9 +123,9 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	expected.ChainStates = []types.ChainState{
 		{
-			Chain:        axelarnet.Axelarnet,
-			Assets:       []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
-			Activated:    true,
+			Chain:     axelarnet.Axelarnet,
+			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
+			Activated: true,
 		},
 		{
 			Chain:     evm.Ethereum,
@@ -134,9 +133,9 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 			Activated: true,
 		},
 		{
-			Chain:        bitcoin.Bitcoin,
-			Assets:       []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true)},
-			Activated:    true,
+			Chain:     bitcoin.Bitcoin,
+			Assets:    []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true)},
+			Activated: true,
 		},
 	}
 
