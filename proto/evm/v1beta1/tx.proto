@@ -105,8 +105,9 @@ message CreateDeployTokenRequest {
   TokenDetails token_details = 4 [ (gogoproto.nullable) = false ];
   bytes min_amount = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+    (gogoproto.nullable) = false,
+    deprecated = true
+  ]; // deprecated in v0.14
   bytes address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }

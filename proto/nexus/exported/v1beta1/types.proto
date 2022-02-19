@@ -71,9 +71,5 @@ message FeeInfo {
 
 message Asset {
   string denom = 1;
-  bytes min_amount = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
-  bool is_native_asset = 3;
+  bool is_native_asset = 2;
 }

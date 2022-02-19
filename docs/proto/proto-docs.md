@@ -868,7 +868,6 @@ Signature holds public key and ECDSA signature
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `denom` | [string](#string) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
 | `is_native_asset` | [bool](#bool) |  |  |
 
 
@@ -3088,7 +3087,7 @@ command for AxelarGateway
 | `chain` | [string](#string) |  |  |
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
-| `min_amount` | [bytes](#bytes) |  |  |
+| `min_amount` | [bytes](#bytes) |  | **Deprecated.** deprecated in v0.14 |
 | `address` | [bytes](#bytes) |  |  |
 
 
