@@ -20,6 +20,7 @@ import (
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -27,13 +28,13 @@ import (
 )
 
 var (
-	linkedAddr  = 50
-	terra       = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
-	terraAssets = []string{"uluna", "uusd"}
-	avalanche   = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
-	minAmount   = sdk.NewInt(10000000)
-	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
-	assets      = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
+	linkedAddr      = 50
+	terra           = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
+	terraAssets     = []string{"uluna", "uusd"}
+	avalanche       = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
+	chains          = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
+	assets          = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
+	transferFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.NewUint(50000), sdk.NewUint(5000000000))
 )
 
 func TestTransfer(t *testing.T) {
@@ -101,9 +102,9 @@ func TestTransfer(t *testing.T) {
 		When("transfer amounts are smaller than min amount", func(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
-				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
+				feeInfo, ok := k.GetFeeInfo(ctx, r.Chain, asset)
 				assert.True(t, ok)
-				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, min.Int64())))
+				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
 				transfers = append(transfers, randAmt)
 			}
 		}).And().
@@ -114,9 +115,9 @@ func TestTransfer(t *testing.T) {
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					// feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
-					// c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					// c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					feeDue := sdk.ZeroInt()
+					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
+					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
 				}
 			}).
@@ -136,9 +137,9 @@ func TestTransfer(t *testing.T) {
 		When("transfer amounts are greater than min amount", func(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
-				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
+				feeInfo, ok := k.GetFeeInfo(ctx, r.Chain, asset)
 				assert.True(t, ok)
-				transfers = append(transfers, makeRandAmount(asset).AddAmount(min))
+				transfers = append(transfers, makeRandAmount(asset).AddAmount(sdk.Int(feeInfo.MinFee)))
 			}
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
@@ -148,9 +149,9 @@ func TestTransfer(t *testing.T) {
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					// feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
-					// c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					// c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					feeDue := sdk.Int(transferFeeInfo.MinFee.MulUint64(2))
+					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
+					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
 				}
 			}).
@@ -247,7 +248,6 @@ func TestTransfer(t *testing.T) {
 						k.ArchivePendingTransfer(ctx, transfer)
 					}
 				}
-
 			}).
 		Then("should return 0 pending transfer",
 			func(t *testing.T) {
@@ -283,7 +283,9 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 			if chain.Name == terra.Name && utils.IndexOf(terraAssets, asset) != -1 {
 				isNative = true
 			}
-			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, minAmount, isNative))
+			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative))
+
+			k.RegisterFeeInfo(ctx, chain, asset, transferFeeInfo)
 		}
 		k.ActivateChain(ctx, chain)
 	}
@@ -301,5 +303,5 @@ func randAsset() string {
 }
 
 func makeAmountAboveMin(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount.Int64(), maxAmount)))
+	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(transferFeeInfo.MinFee.BigInt().Int64()*2, maxAmount)))
 }

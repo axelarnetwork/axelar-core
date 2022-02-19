@@ -65,7 +65,7 @@ func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.Fe
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
 	}
 
-	feeInfo, ok := k.getFeeInfo(ctx, chain, req.Asset)
+	feeInfo, ok := k.GetFeeInfo(ctx, chain, req.Asset)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
 	}

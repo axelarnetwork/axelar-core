@@ -93,12 +93,12 @@ func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo,
 //
 // INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
 func (k Keeper) computeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
-	sourceChainFeeInfo, ok := k.getFeeInfo(ctx, sourceChain, asset.Denom)
+	sourceChainFeeInfo, ok := k.GetFeeInfo(ctx, sourceChain, asset.Denom)
 	if !ok {
 		sourceChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
 	}
 
-	destinationChainFeeInfo, ok := k.getFeeInfo(ctx, destinationChain, asset.Denom)
+	destinationChainFeeInfo, ok := k.GetFeeInfo(ctx, destinationChain, asset.Denom)
 	if !ok {
 		destinationChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
 	}

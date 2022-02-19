@@ -45,6 +45,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
+// 			GetFeeInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool) {
+// 				panic("mock out the GetFeeInfo method")
+// 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) nexustypes.Params {
 // 				panic("mock out the GetParams method")
 // 			},
@@ -102,6 +105,9 @@ type NexusMock struct {
 
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain
+
+	// GetFeeInfoFunc mocks the GetFeeInfo method.
+	GetFeeInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) nexustypes.Params
@@ -181,6 +187,15 @@ type NexusMock struct {
 		GetChains []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetFeeInfo holds details about calls to the GetFeeInfo method.
+		GetFeeInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain exported.Chain
+			// Asset is the asset argument value.
+			Asset string
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
@@ -266,6 +281,7 @@ type NexusMock struct {
 	lockGetChain              sync.RWMutex
 	lockGetChainMaintainers   sync.RWMutex
 	lockGetChains             sync.RWMutex
+	lockGetFeeInfo            sync.RWMutex
 	lockGetParams             sync.RWMutex
 	lockInitGenesis           sync.RWMutex
 	lockIsChainActivated      sync.RWMutex
@@ -516,6 +532,45 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	mock.lockGetChains.RLock()
 	calls = mock.calls.GetChains
 	mock.lockGetChains.RUnlock()
+	return calls
+}
+
+// GetFeeInfo calls GetFeeInfoFunc.
+func (mock *NexusMock) GetFeeInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool) {
+	if mock.GetFeeInfoFunc == nil {
+		panic("NexusMock.GetFeeInfoFunc: method is nil but Nexus.GetFeeInfo was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain exported.Chain
+		Asset string
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Asset: asset,
+	}
+	mock.lockGetFeeInfo.Lock()
+	mock.calls.GetFeeInfo = append(mock.calls.GetFeeInfo, callInfo)
+	mock.lockGetFeeInfo.Unlock()
+	return mock.GetFeeInfoFunc(ctx, chain, asset)
+}
+
+// GetFeeInfoCalls gets all the calls that were made to GetFeeInfo.
+// Check the length with:
+//     len(mockedNexus.GetFeeInfoCalls())
+func (mock *NexusMock) GetFeeInfoCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain exported.Chain
+	Asset string
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain exported.Chain
+		Asset string
+	}
+	mock.lockGetFeeInfo.RLock()
+	calls = mock.calls.GetFeeInfo
+	mock.lockGetFeeInfo.RUnlock()
 	return calls
 }
 

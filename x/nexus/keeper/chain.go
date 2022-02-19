@@ -67,7 +67,7 @@ func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, 
 	k.getStore(ctx).Set(assetFeeInfoPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
-func (k Keeper) getFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, ok bool) {
+func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, ok bool) {
 	return feeInfo, k.getStore(ctx).Get(assetFeeInfoPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
