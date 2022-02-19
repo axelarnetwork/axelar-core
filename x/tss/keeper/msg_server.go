@@ -103,7 +103,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 
 	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
 	if valAddr.Empty() {
-		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
+		return nil, fmt.Errorf("sender [%s] is not a registered proxy", req.Sender)
 	}
 
 	for _, k := range req.KeyIDs {
@@ -116,8 +116,7 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	// this could happen after register proxy but before create validator
 	validatorI := s.staker.Validator(ctx, valAddr)
 	if validatorI == nil {
-		s.Logger(ctx).Info(fmt.Sprintf("%s is not a validator", valAddr))
-		return &types.HeartBeatResponse{}, nil
+		return nil, fmt.Errorf("%s is not a validator", valAddr)
 	}
 
 	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
@@ -221,6 +220,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 
 	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyInfo.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
 
+	// keygen metrics
 	telemetry.SetGaugeWithLabels(
 		[]string{types.ModuleName, "corruption", "threshold"},
 		float32(snapshot.CorruptionThreshold),
@@ -228,18 +228,6 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 
 	minKeygenThreshold := keyRequirement.MinKeygenThreshold
 	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
-
-	// metrics for keygen participation
-	for _, validator := range snapshot.Validators {
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen", "participation"}, 0,
-			[]metrics.Label{
-				telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID)),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
-			})
-	}
 
 	return &types.StartKeygenResponse{}, nil
 }
