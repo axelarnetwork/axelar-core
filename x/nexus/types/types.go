@@ -130,13 +130,3 @@ func (m *ChainState) RemoveMaintainer(maintainer sdk.ValAddress) error {
 
 	return nil
 }
-
-// AssetMinAmount returns the minimum transfer amount for the chain
-func (m ChainState) AssetMinAmount(asset string) sdk.Int {
-	i := m.indexOfAsset(asset)
-	if i == -1 {
-		return sdk.ZeroInt()
-	}
-
-	return m.Assets[i].MinAmount
-}

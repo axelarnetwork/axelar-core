@@ -139,7 +139,6 @@ type ReqCreateDeployToken struct {
 	TokenName   string       `json:"token_name" yaml:"token_name"`
 	Decimals    string       `json:"decimals" yaml:"decimals"`
 	Capacity    string       `json:"capacity" yaml:"capacity"`
-	MinDeposit  string       `json:"min_deposit" yaml:"min_deposit"`
 	Address     string       `json:"address" yaml:"address"`
 }
 
@@ -402,12 +401,6 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		minDeposit, ok := sdk.NewIntFromString(req.MinDeposit)
-		if !ok {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, errors.New("could not parse minimum deposit amount").Error())
-			return
-		}
-
 		if req.Address == "" {
 			req.Address = types.ZeroAddress.Hex()
 		}
@@ -419,7 +412,7 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
 		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, minDeposit, types.Address(common.HexToAddress(req.Address)))
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, types.Address(common.HexToAddress(req.Address)))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

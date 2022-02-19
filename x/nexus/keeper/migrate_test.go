@@ -102,7 +102,6 @@ func TestGetMigrationHandler_migrateCosmosChainState(t *testing.T) {
 		oldAssets := oldCosmosChains[i].Assets
 		for j, asset := range newState.Assets {
 			assert.Equal(t, oldAssets[j].Denom, asset.Denom)
-			assert.Equal(t, oldAssets[j].MinAmount, asset.MinAmount)
 			assert.True(t, asset.IsNativeAsset)
 		}
 	}
@@ -115,8 +114,10 @@ func TestGetMigrationHandler_migrateEVMChainState(t *testing.T) {
 	metaData := testutils.RandomTokens()
 
 	axelarnetKeeper := mock.AxelarnetKeeperMock{
-		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain string) (axelarnetTypes.CosmosChain, bool) { return axelarnetTypes.CosmosChain{}, true },
-		GetCosmosChainsFunc:      func(ctx sdk.Context) []string { return nil },
+		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain string) (axelarnetTypes.CosmosChain, bool) {
+			return axelarnetTypes.CosmosChain{}, true
+		},
+		GetCosmosChainsFunc: func(ctx sdk.Context) []string { return nil },
 	}
 
 	evmChainKeeper := &evmMock.ChainKeeperMock{
@@ -191,7 +192,6 @@ func TestGetMigrationHandler_migrateEVMChainState(t *testing.T) {
 
 		for j, asset := range newState.Assets {
 			assert.Equal(t, metaData[j].Asset, asset.Denom)
-			assert.Equal(t, metaData[j].MinAmount, asset.MinAmount)
 			assert.False(t, asset.IsNativeAsset)
 		}
 	}

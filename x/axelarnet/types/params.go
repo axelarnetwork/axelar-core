@@ -14,10 +14,8 @@ const (
 
 // Parameter keys
 var (
-	KeyAssets             = []byte("assetInfo")
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
 	KeyTransactionFeeRate = []byte("transactionFeeRate")
-	KeyMinAmount          = []byte("minAmount")
 )
 
 // KeyTable retrieves a subspace table for the module

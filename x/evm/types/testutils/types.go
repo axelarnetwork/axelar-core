@@ -228,7 +228,7 @@ func RandomToken() types.ERC20TokenMetadata {
 		TokenAddress: RandomAddress(),
 		TxHash:       RandomHash(),
 		Status:       1 << rand.I64Between(0, int64(len(types.Status_name))),
-		MinAmount:    sdk.NewInt(rand.PosI64()),
+		MinAmount:    sdk.ZeroInt(),
 		IsExternal:   rand.Bools(0.5).Next(),
 		BurnerCode:   bzBurnable,
 	}

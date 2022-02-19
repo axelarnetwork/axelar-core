@@ -1066,7 +1066,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, req.MinAmount, false)); err != nil {
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false)); err != nil {
 		return nil, err
 	}
 

@@ -80,14 +80,14 @@ func migrateCosmosChainAssets(ctx sdk.Context, k Keeper, a types.AxelarnetKeeper
 
 		for _, asset := range cosmosChain.Assets {
 			// register asset as native asset in chain state
-			err := k.RegisterAsset(ctx, chain, exported.NewAsset(asset.Denom, asset.MinAmount, true))
+			err := k.RegisterAsset(ctx, chain, exported.NewAsset(asset.Denom, true))
 			if err != nil {
 				return err
 			}
 
 			// register native assets from cosmos chains to Axelarnet. Axelarnet is a router between EVM <-> Cosmos chains
 			if chain.Name != axelarnet.Axelarnet.Name {
-				err = k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(asset.Denom, asset.MinAmount, false))
+				err = k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(asset.Denom, false))
 				if err != nil {
 					return err
 				}
@@ -110,7 +110,7 @@ func migrateEvmAssets(ctx sdk.Context, k Keeper, e types.EVMBaseKeeper) error {
 
 		for _, token := range chainK.GetTokens(ctx) {
 			// register to chain stats
-			err := k.RegisterAsset(ctx, chain, exported.NewAsset(token.GetAsset(), token.GetMinAmount(), false))
+			err := k.RegisterAsset(ctx, chain, exported.NewAsset(token.GetAsset(), false))
 			if err != nil {
 				return err
 			}

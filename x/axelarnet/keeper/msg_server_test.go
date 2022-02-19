@@ -308,7 +308,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
+					transfer := randomTransfer(testToken, testChain)
 					transfers = append(transfers, transfer)
 				}
 				randTransferIdx = mathRand.Intn(len(transfers))
@@ -399,7 +399,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 		transfers = []nexus.CrossChainTransfer{}
 		for i := int64(0); i < rand.I64Between(1, 50); i++ {
-			transfer := randomTransfer(exported.NativeAsset, testChain, sdk.NewInt(1000000))
+			transfer := randomTransfer(exported.NativeAsset, testChain)
 			transfers = append(transfers, transfer)
 		}
 
@@ -483,7 +483,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
+					transfer := randomTransfer(testToken, testChain)
 					transfers = append(transfers, transfer)
 				}
 				return transfers
@@ -583,7 +583,7 @@ func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
 
 }
 
-func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossChainTransfer {
+func randomTransfer(asset string, chain string) nexus.CrossChainTransfer {
 	hash := sha256.Sum256(rand.BytesBetween(20, 50))
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 
@@ -597,7 +597,7 @@ func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossCh
 			},
 			Address: ranAddr,
 		},
-		sdk.NewInt64Coin(asset, rand.I64Between(minAmount.Int64(), minAmount.Int64()+10000000000)),
+		sdk.NewInt64Coin(asset, rand.I64Between(1, 10000000000)),
 	)
 }
 

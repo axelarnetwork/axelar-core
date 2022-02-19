@@ -160,16 +160,6 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, mai
 	return nil
 }
 
-// GetMinAmount returns the asset's minimum transferable amount for the given chain
-func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) (sdk.Int, bool) {
-	chainState, ok := k.getChainState(ctx, chain)
-	if !ok {
-		return sdk.ZeroInt(), false
-	}
-
-	return chainState.AssetMinAmount(asset), true
-}
-
 // GetChains retrieves the specification for all supported blockchains
 func (k Keeper) GetChains(ctx sdk.Context) (chains []exported.Chain) {
 	iter := k.getStore(ctx).Iterator(chainPrefix)

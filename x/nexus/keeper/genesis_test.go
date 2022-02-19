@@ -81,8 +81,8 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	expected := types.DefaultGenesisState()
 
 	keeper.SetChain(ctx, bitcoin.Bitcoin)
-	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true))
-	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(1000000), false))
+	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, true))
+	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false))
 
 	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
 	for _, chain := range expected.Chains {
@@ -124,17 +124,17 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	expected.ChainStates = []types.ChainState{
 		{
 			Chain:     axelarnet.Axelarnet,
-			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
+			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, true)},
 			Activated: true,
 		},
 		{
 			Chain:     evm.Ethereum,
-			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(1000000), false)},
+			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, false)},
 			Activated: true,
 		},
 		{
 			Chain:     bitcoin.Bitcoin,
-			Assets:    []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, sdk.NewInt(1000000), true)},
+			Assets:    []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, true)},
 			Activated: true,
 		},
 	}

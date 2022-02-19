@@ -85,7 +85,7 @@ func TestLinkAddress(t *testing.T) {
 			keeper.ActivateChain(ctx, chain)
 		}
 
-		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, nexus.NewAsset(btc.NativeAsset, sdk.NewInt(10000), true))
+		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, nexus.NewAsset(btc.NativeAsset, true))
 	}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
