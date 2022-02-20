@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -277,7 +278,11 @@ func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBa
 		case *tss.Signature_MultiSig_:
 			var batchedCmdSigs []types.Signature
 			var err error
-			for _, pair := range signature.MultiSig.SigKeyPairs {
+
+			sigKeyPairs := types.SigKeyPairs(signature.MultiSig.SigKeyPairs)
+			sort.Stable(sigKeyPairs)
+
+			for _, pair := range sigKeyPairs {
 				batchedCommandsSig, err := getBatchedCommandsSig(pair, batchedCommands.GetSigHash())
 				if err != nil {
 					return resp, err

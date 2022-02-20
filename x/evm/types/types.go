@@ -38,7 +38,7 @@ const (
 	// BurnerCodeHashV1 is the hash of the bytecode of burner v1
 	BurnerCodeHashV1 = "0x70be6eedec1d63b7cf8b9233615e4e408c99e0753be123b605aa5d53ed4a8670"
 	// BurnerCodeHashV2 is the hash of the bytecode of burner v2
-	BurnerCodeHashV2 = "0xf34c56593ef4a993c05acac98bf4ae170ee322068752b49fb44ce545d29c3c6f"
+	BurnerCodeHashV2 = "0x49c166661e31e0bf5434d891dea1448dc35f6ecd54a0d88594df06e24effe7c2"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
@@ -72,15 +72,15 @@ const (
 		}
 	]`
 	AxelarGatewayCommandMintToken            = "mintToken"
-	mintTokenMaxGasCost                      = 200000
+	mintTokenMaxGasCost                      = 150000
 	AxelarGatewayCommandDeployToken          = "deployToken"
-	deployTokenMaxGasCost                    = 1500000
+	deployTokenMaxGasCost                    = 1400000
 	AxelarGatewayCommandBurnToken            = "burnToken"
-	burnTokenMaxGasCost                      = 200000
+	burnTokenMaxGasCost                      = 400000
 	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
-	transferOwnershipMaxGasCost              = 150000
+	transferOwnershipMaxGasCost              = 120000
 	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
-	transferOperatorshipMaxGasCost           = 150000
+	transferOperatorshipMaxGasCost           = 120000
 	axelarGatewayFuncExecute                 = "execute"
 )
 
@@ -258,6 +258,31 @@ func (t *ERC20Token) ConfirmDeployment() error {
 	t.setMeta(t.metadata)
 
 	return nil
+}
+
+// SigKeyPairs is an array of SigKeyPair
+type SigKeyPairs []tss.SigKeyPair
+
+func (s SigKeyPairs) Len() int {
+	return len(s)
+}
+
+func (s SigKeyPairs) Less(i, j int) bool {
+	pubKeyI, err := btcec.ParsePubKey(s[i].PubKey, btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+
+	pubKeyJ, err := btcec.ParsePubKey(s[j].PubKey, btcec.S256())
+	if err != nil {
+		panic(err)
+	}
+
+	return bytes.Compare(crypto.PubkeyToAddress(*pubKeyI.ToECDSA()).Bytes(), crypto.PubkeyToAddress(*pubKeyJ.ToECDSA()).Bytes()) < 0
+}
+
+func (s SigKeyPairs) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
 // NilToken is a nil erc20 token
