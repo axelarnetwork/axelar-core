@@ -106,7 +106,7 @@
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
-      - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Query for fee info for an asset on a chain
+      - [fee \[chain\] \[asset\]](axelard_query_nexus_fee.md)	 - Query for fees registered for an asset on a chain
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\] \[asset\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfers-for-chain \[chain\] \[state (pending|archived|incomplete)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
@@ -246,7 +246,7 @@
       - [activate-chain \[chain\]...](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
       - [deactivate-chain \[chain\]...](axelard_tx_nexus_deactivate-chain.md)	 - deactivate the given chains
       - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
-      - [register-asset-fee-info \[chain\] \[asset\] \[min-fee\] \[max-fee\] \[fee-rate\]](axelard_tx_nexus_register-asset-fee-info.md)	 - register fee info for an asset on a chain
+      - [register-asset-fee \[chain\] \[asset\] \[min-fee\] \[max-fee\] \[fee-rate\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
       - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
     - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
       - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account

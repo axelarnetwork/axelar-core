@@ -233,8 +233,8 @@
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
 - [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
-    - [FeeInfoRequest](#nexus.v1beta1.FeeInfoRequest)
-    - [FeeInfoResponse](#nexus.v1beta1.FeeInfoResponse)
+    - [FeeRequest](#nexus.v1beta1.FeeRequest)
+    - [FeeResponse](#nexus.v1beta1.FeeResponse)
     - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
@@ -250,8 +250,8 @@
     - [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse)
     - [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest)
     - [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse)
-    - [RegisterAssetFeeInfoRequest](#nexus.v1beta1.RegisterAssetFeeInfoRequest)
-    - [RegisterAssetFeeInfoResponse](#nexus.v1beta1.RegisterAssetFeeInfoResponse)
+    - [RegisterAssetFeeRequest](#nexus.v1beta1.RegisterAssetFeeRequest)
+    - [RegisterAssetFeeResponse](#nexus.v1beta1.RegisterAssetFeeResponse)
     - [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest)
     - [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse)
   
@@ -3087,7 +3087,6 @@ command for AxelarGateway
 | `chain` | [string](#string) |  |  |
 | `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
-| `min_amount` | [bytes](#bytes) |  | **Deprecated.** deprecated in v0.14 |
 | `address` | [bytes](#bytes) |  |  |
 
 
@@ -3611,10 +3610,10 @@ GenesisState represents the genesis state
 
 
 
-<a name="nexus.v1beta1.FeeInfoRequest"></a>
+<a name="nexus.v1beta1.FeeRequest"></a>
 
-### FeeInfoRequest
-FeeInfoRequest represents a message that queries the transfer fees associated
+### FeeRequest
+FeeRequest represents a message that queries the transfer fees associated
 to an asset on a chain
 
 
@@ -3628,9 +3627,9 @@ to an asset on a chain
 
 
 
-<a name="nexus.v1beta1.FeeInfoResponse"></a>
+<a name="nexus.v1beta1.FeeResponse"></a>
 
-### FeeInfoResponse
+### FeeResponse
 
 
 
@@ -3855,10 +3854,10 @@ DeactivateChainRequest represents a message to deactivate chains
 
 
 
-<a name="nexus.v1beta1.RegisterAssetFeeInfoRequest"></a>
+<a name="nexus.v1beta1.RegisterAssetFeeRequest"></a>
 
-### RegisterAssetFeeInfoRequest
-RegisterAssetFeeInfoRequest represents a message to register the transfer fee
+### RegisterAssetFeeRequest
+RegisterAssetFeeRequest represents a message to register the transfer fee
 info associated to an asset on a chain
 
 
@@ -3874,9 +3873,9 @@ info associated to an asset on a chain
 
 
 
-<a name="nexus.v1beta1.RegisterAssetFeeInfoResponse"></a>
+<a name="nexus.v1beta1.RegisterAssetFeeResponse"></a>
 
-### RegisterAssetFeeInfoResponse
+### RegisterAssetFeeResponse
 
 
 
@@ -3943,7 +3942,7 @@ Msg defines the nexus Msg service.
 | `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregister-chain-maintainer|
 | `ActivateChain` | [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate-chain-request|
 | `DeactivateChain` | [DeactivateChainRequest](#nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate-chain-request|
-| `RegisterAssetFeeInfo` | [RegisterAssetFeeInfoRequest](#nexus.v1beta1.RegisterAssetFeeInfoRequest) | [RegisterAssetFeeInfoResponse](#nexus.v1beta1.RegisterAssetFeeInfoResponse) |  | POST|/axelar/axelarnet/register-asset-fee-info|
+| `RegisterAssetFee` | [RegisterAssetFeeRequest](#nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/axelarnet/register-asset-fee|
 
 
 <a name="nexus.v1beta1.QueryService"></a>
@@ -3955,7 +3954,7 @@ QueryService defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
 | `TransfersForChain` | [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/nexus/v1beta1/transfers_for_chain|
-| `FeeInfo` | [FeeInfoRequest](#nexus.v1beta1.FeeInfoRequest) | [FeeInfoResponse](#nexus.v1beta1.FeeInfoResponse) | FeeInfo queries the fee info by chain and asset | GET|/nexus/v1beta1/fee_info|
+| `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/nexus/v1beta1/fee|
 | `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/nexus/v1beta1/transfer_fee|
 
  <!-- end services -->

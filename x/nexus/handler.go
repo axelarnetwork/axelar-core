@@ -28,7 +28,7 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, staking types.Stak
 		case *types.DeactivateChainRequest:
 			res, err := server.DeactivateChain(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.RegisterAssetFeeInfoRequest:
+		case *types.RegisterAssetFeeRequest:
 			res, err := server.RegisterAssetFee(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:

@@ -66,7 +66,7 @@ message RegisterIBCPathResponse {}
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 message AddCosmosBasedChainRequest {
-  reserved 4; // min_amount is removed in v0.14
+  reserved 4; // min_amount was deprecated in v0.14
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];

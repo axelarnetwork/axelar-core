@@ -98,16 +98,13 @@ message CreateBurnTokensResponse {}
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 message CreateDeployTokenRequest {
+  reserved 5; // min_amount was deprecated in v0.14
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
   Asset asset = 3 [ (gogoproto.nullable) = false ];
   TokenDetails token_details = 4 [ (gogoproto.nullable) = false ];
-  bytes min_amount = 5 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ]; // deprecated in v0.14
   bytes address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }

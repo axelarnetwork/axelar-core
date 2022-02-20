@@ -284,7 +284,7 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 				isNative = true
 			}
 			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative))
-			k.RegisterFeeInfo(ctx, chain, asset, transferFeeInfo)
+			k.RegisterFee(ctx, chain, asset, transferFeeInfo)
 		}
 		k.ActivateChain(ctx, chain)
 	}

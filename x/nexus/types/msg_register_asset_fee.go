@@ -7,12 +7,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewRegisterAssetFeeInfoRequest creates a message of type RegisterAssetFeeInfoRequest
-func NewRegisterAssetFeeInfoRequest(sender sdk.AccAddress, chain string, asset string, feeInfo exported.FeeInfo) *RegisterAssetFeeInfoRequest {
+// NewRegisterAssetFeeRequest creates a message of type RegisterAssetFeeRequest
+func NewRegisterAssetFeeRequest(sender sdk.AccAddress, chain string, asset string, feeInfo exported.FeeInfo) *RegisterAssetFeeRequest {
 	chain = utils.NormalizeString(chain)
 	asset = utils.NormalizeString(asset)
 
-	return &RegisterAssetFeeInfoRequest{
+	return &RegisterAssetFeeRequest{
 		Sender:  sender,
 		Chain:   chain,
 		Asset:   asset,
@@ -21,17 +21,17 @@ func NewRegisterAssetFeeInfoRequest(sender sdk.AccAddress, chain string, asset s
 }
 
 // Route implements sdk.Msg
-func (m RegisterAssetFeeInfoRequest) Route() string {
+func (m RegisterAssetFeeRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m RegisterAssetFeeInfoRequest) Type() string {
-	return "RegisterAssetFeeInfo"
+func (m RegisterAssetFeeRequest) Type() string {
+	return "RegisterAssetFee"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m RegisterAssetFeeInfoRequest) ValidateBasic() error {
+func (m RegisterAssetFeeRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -52,12 +52,12 @@ func (m RegisterAssetFeeInfoRequest) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m RegisterAssetFeeInfoRequest) GetSignBytes() []byte {
+func (m RegisterAssetFeeRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m RegisterAssetFeeInfoRequest) GetSigners() []sdk.AccAddress {
+func (m RegisterAssetFeeRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

@@ -28,7 +28,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdDeregisterChainMaintainer(),
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
-		GetCmdRegisterAssetFeeInfo(),
+		GetCmdRegisterAssetFee(),
 	)
 
 	return txCmd
@@ -138,11 +138,11 @@ func GetCmdDeactivateChain() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterAssetFeeInfo returns the cli command to register an asset fee
-func GetCmdRegisterAssetFeeInfo() *cobra.Command {
+// GetCmdRegisterAssetFee returns the cli command to register an asset fee
+func GetCmdRegisterAssetFee() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "register-asset-fee [chain] [asset] [min-fee] [max-fee] [fee-rate]",
-		Short: "register fee info for an asset on a chain",
+		Short: "register fees for an asset on a chain",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -156,7 +156,7 @@ func GetCmdRegisterAssetFeeInfo() *cobra.Command {
 
 			feeInfo := exported.NewFeeInfo(feeRate, minFee, maxFee)
 
-			msg := types.NewRegisterAssetFeeInfoRequest(cliCtx.GetFromAddress(), args[0], args[1], feeInfo)
+			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), args[0], args[1], feeInfo)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

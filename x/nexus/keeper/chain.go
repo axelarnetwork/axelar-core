@@ -72,7 +72,7 @@ func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) 
 	return feeInfo, k.getStore(ctx).Get(assetFeeInfoPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
-// RegisterFeeInfo registers the fee info for an asset on a chain
+// RegisterFee registers the fee info for an asset on a chain
 func (k Keeper) RegisterFee(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error {
 	if !k.IsAssetRegistered(ctx, chain, asset) {
 		return fmt.Errorf("%s is not a registered asset for chain %s", asset, chain.Name)

@@ -52,8 +52,8 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
 }
 
-// FeeInfo returns the fee info for an asset on a specific chain
-func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.FeeInfoResponse, error) {
+// Fee returns the fee info for an asset on a specific chain
+func (k Keeper) Fee(c context.Context, req *types.FeeRequest) (*types.FeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	chain, ok := k.GetChain(ctx, req.Chain)
@@ -67,10 +67,10 @@ func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.Fe
 
 	feeInfo, ok := k.GetFeeInfo(ctx, chain, req.Asset)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee registered for asset %s on chain %s", req.Asset, chain.Name)
 	}
 
-	return &types.FeeInfoResponse{FeeInfo: &feeInfo}, nil
+	return &types.FeeResponse{FeeInfo: &feeInfo}, nil
 }
 
 // TransferFee returns the transfer fee for a cross chain transfer

@@ -32,7 +32,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *permissionTypes.UpdateGovernanceKeyRequest, *permissionTypes.RegisterControllerRequest,
-			*axelarnet.RegisterFeeCollectorRequest, *nexus.ActivateChainRequest, *nexus.DeactivateChainRequest, *nexus.RegisterAssetFeeInfoRequest:
+			*axelarnet.RegisterFeeCollectorRequest, *nexus.ActivateChainRequest, *nexus.DeactivateChainRequest, *nexus.RegisterAssetFeeRequest:
 
 			signer := msg.GetSigners()[0]
 			if permission.ROLE_ACCESS_CONTROL != d.permission.GetRole(ctx, signer) {

@@ -44,18 +44,15 @@ func (k Keeper) deleteTransfer(ctx sdk.Context, transfer exported.CrossChainTran
 	k.getStore(ctx).Delete(getTransferKey(transfer))
 }
 
-func (k Keeper) setNewIncompleteTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
+func (k Keeper) setNewTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin, state exported.TransferState) exported.TransferID {
 	id := k.getNonce(ctx)
-	k.setTransfer(ctx, exported.NewIncompleteCrossChainTransfer(id, recipient, amount))
+	k.setTransfer(ctx, exported.NewCrossChainTransfer(id, recipient, amount, state))
 	k.setNonce(ctx, id+1)
 	return exported.TransferID(id)
 }
 
 func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
-	id := k.getNonce(ctx)
-	k.setTransfer(ctx, exported.NewPendingCrossChainTransfer(id, recipient, amount))
-	k.setNonce(ctx, id+1)
-	return exported.TransferID(id)
+	return k.setNewTransfer(ctx, recipient, amount, exported.Pending)
 }
 
 func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
@@ -156,7 +153,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below "+
 			"fees %s for asset %s", sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
 
-		return k.setNewIncompleteTransfer(ctx, recipient, asset), nil
+		return k.setNewTransfer(ctx, recipient, asset, exported.Incomplete), nil
 	}
 
 	if fees.IsPositive() {
@@ -171,8 +168,8 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		asset.String(), recipient.Address, recipient.Chain.Name))
+	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s from %s in %s to cross chain address %s in %s successfully prepared",
+		asset.String(), sender.Address, sender.Chain.Name, recipient.Address, recipient.Chain.Name))
 
 	return k.setNewPendingTransfer(ctx, recipient, asset), nil
 }

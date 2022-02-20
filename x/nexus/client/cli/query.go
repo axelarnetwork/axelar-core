@@ -28,7 +28,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandChainMaintainers(queryRoute),
 		GetCommandLatestDepositAddress(),
 		GetCommandTransfersForChain(),
-		GetCommandFeeInfo(),
+		GetCommandFee(),
 		GetCommandTransferFee(),
 	)
 
@@ -145,11 +145,11 @@ func GetCommandTransfersForChain() *cobra.Command {
 	return cmd
 }
 
-// GetCommandFeeInfo returns the query for the fee info of an asset registered on a chain
-func GetCommandFeeInfo() *cobra.Command {
+// GetCommandFee returns the query for the fee info of an asset registered on a chain
+func GetCommandFee() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fee-info [chain] [asset]",
-		Short: "Query for fee info for an asset on a chain",
+		Use:   "fee [chain] [asset]",
+		Short: "Query for fees registered for an asset on a chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -159,8 +159,8 @@ func GetCommandFeeInfo() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
-			res, err := queryClient.FeeInfo(cmd.Context(),
-				&types.FeeInfoRequest{
+			res, err := queryClient.Fee(cmd.Context(),
+				&types.FeeRequest{
 					Chain: args[0],
 					Asset: args[1],
 				})

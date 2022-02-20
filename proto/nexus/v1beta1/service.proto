@@ -43,10 +43,10 @@ service MsgService {
     };
   }
 
-  rpc RegisterAssetFeeInfo(RegisterAssetFeeInfoRequest)
-      returns (RegisterAssetFeeInfoResponse) {
+  rpc RegisterAssetFee(RegisterAssetFeeRequest)
+      returns (RegisterAssetFeeResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register-asset-fee-info"
+      post : "/axelar/axelarnet/register-asset-fee"
       body : "*"
     };
   }
@@ -67,9 +67,9 @@ service QueryService {
     option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain";
   }
 
-  // FeeInfo queries the fee info by chain and asset
-  rpc FeeInfo(FeeInfoRequest) returns (FeeInfoResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/fee_info";
+  // Fee queries the fee info by chain and asset
+  rpc Fee(FeeRequest) returns (FeeResponse) {
+    option (google.api.http).get = "/nexus/v1beta1/fee";
   }
 
   // TransferFee queries the transfer fee by the source, destination chain,

@@ -88,21 +88,16 @@ func (t TransferID) Bytes() []byte {
 
 // NewPendingCrossChainTransfer returns a pending CrossChainTransfer
 func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin) CrossChainTransfer {
-	return CrossChainTransfer{
-		ID:        TransferID(id),
-		Recipient: recipient,
-		Asset:     asset,
-		State:     Pending,
-	}
+	return NewCrossChainTransfer(id, recipient, asset, Pending)
 }
 
-// NewIncompleteCrossChainTransfer returns a pending CrossChainTransfer
-func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin, state string) CrossChainTransfer {
+// NewCrossChainTransfer returns a CrossChainTransfer
+func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin, state TransferState) CrossChainTransfer {
 	return CrossChainTransfer{
 		ID:        TransferID(id),
 		Recipient: recipient,
 		Asset:     asset,
-		State:     TransferStateFromString(state),
+		State:     state,
 	}
 }
 
