@@ -101,8 +101,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ibcPath := randomIBCPath()
 		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},

@@ -46,9 +46,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetRouteTimeoutWindow method")
 // 			},
-// 			GetTransactionFeeRateFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Dec {
-// 				panic("mock out the GetTransactionFeeRate method")
-// 			},
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -91,9 +88,6 @@ type BaseKeeperMock struct {
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
-
-	// GetTransactionFeeRateFunc mocks the GetTransactionFeeRate method.
-	GetTransactionFeeRateFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Dec
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -163,11 +157,6 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// GetTransactionFeeRate holds details about calls to the GetTransactionFeeRate method.
-		GetTransactionFeeRate []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -211,7 +200,6 @@ type BaseKeeperMock struct {
 	lockGetIBCPath               sync.RWMutex
 	lockGetPendingIBCTransfer    sync.RWMutex
 	lockGetRouteTimeoutWindow    sync.RWMutex
-	lockGetTransactionFeeRate    sync.RWMutex
 	lockLogger                   sync.RWMutex
 	lockRegisterIBCPath          sync.RWMutex
 	lockSetCosmosChain           sync.RWMutex
@@ -465,37 +453,6 @@ func (mock *BaseKeeperMock) GetRouteTimeoutWindowCalls() []struct {
 	mock.lockGetRouteTimeoutWindow.RLock()
 	calls = mock.calls.GetRouteTimeoutWindow
 	mock.lockGetRouteTimeoutWindow.RUnlock()
-	return calls
-}
-
-// GetTransactionFeeRate calls GetTransactionFeeRateFunc.
-func (mock *BaseKeeperMock) GetTransactionFeeRate(ctx cosmossdktypes.Context) cosmossdktypes.Dec {
-	if mock.GetTransactionFeeRateFunc == nil {
-		panic("BaseKeeperMock.GetTransactionFeeRateFunc: method is nil but BaseKeeper.GetTransactionFeeRate was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetTransactionFeeRate.Lock()
-	mock.calls.GetTransactionFeeRate = append(mock.calls.GetTransactionFeeRate, callInfo)
-	mock.lockGetTransactionFeeRate.Unlock()
-	return mock.GetTransactionFeeRateFunc(ctx)
-}
-
-// GetTransactionFeeRateCalls gets all the calls that were made to GetTransactionFeeRate.
-// Check the length with:
-//     len(mockedBaseKeeper.GetTransactionFeeRateCalls())
-func (mock *BaseKeeperMock) GetTransactionFeeRateCalls() []struct {
-	Ctx cosmossdktypes.Context
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-	}
-	mock.lockGetTransactionFeeRate.RLock()
-	calls = mock.calls.GetTransactionFeeRate
-	mock.lockGetTransactionFeeRate.RUnlock()
 	return calls
 }
 

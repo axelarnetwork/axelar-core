@@ -10,8 +10,5 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   // IBC packet route timeout window
   uint64 route_timeout_window = 1;
-  string transaction_fee_rate = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
+  reserved 2; // transaction_fee_rate was removed in v0.14
 }

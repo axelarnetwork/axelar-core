@@ -48,7 +48,6 @@ type ChainKeeper interface {
 	GetGatewayByteCode(ctx sdk.Context) ([]byte, bool)
 	GetBurnerByteCode(ctx sdk.Context) ([]byte, bool)
 	GetTokenByteCode(ctx sdk.Context) ([]byte, bool)
-	GetTransactionFeeRate(ctx sdk.Context) (sdk.Dec, bool)
 	SetPendingGateway(ctx sdk.Context, address common.Address)
 	ConfirmPendingGateway(ctx sdk.Context) error
 	DeletePendingGateway(ctx sdk.Context) error

@@ -288,7 +288,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			KeyID:        tssTestUtils.RandKeyID(),
 		}
 		btcKeeper = &mock.BTCKeeperMock{
-			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
 			},

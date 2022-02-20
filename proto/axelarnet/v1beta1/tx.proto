@@ -31,8 +31,7 @@ message ConfirmDepositRequest {
 
   reserved 2; // tx_id was removed in v0.14
 
-  cosmos.base.v1beta1.Coin token = 3
-      [ (gogoproto.nullable) = false, deprecated = true ];
+  reserved 3; // token was removed in v0.13
 
   bytes deposit_address = 4
       [ (gogoproto.casttype) =
@@ -66,12 +65,11 @@ message RegisterIBCPathResponse {}
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 message AddCosmosBasedChainRequest {
-  reserved 4; // min_amount was deprecated in v0.14
-
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
   string addr_prefix = 3;
+  reserved 4; // min_amount was removed in v0.14
   repeated nexus.exported.v1beta1.Asset native_assets = 5
       [ (gogoproto.nullable) = false ];
 }

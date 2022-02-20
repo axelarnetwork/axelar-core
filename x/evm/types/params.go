@@ -27,7 +27,6 @@ var (
 	KeyBurnable            = []byte("burnable")
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
-	KeyTransactionFeeRate  = []byte("transactionFeeRate")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -82,10 +81,9 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
-		VotingThreshold:    utils.Threshold{Numerator: 51, Denominator: 100},
-		MinVoterCount:      1,
-		CommandsGasLimit:   5000000,
-		TransactionFeeRate: sdk.NewDecWithPrec(1, 3), // 0.1%
+		VotingThreshold:  utils.Threshold{Numerator: 51, Denominator: 100},
+		MinVoterCount:    1,
+		CommandsGasLimit: 5000000,
 	}}
 }
 
@@ -110,7 +108,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		params.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 		params.NewParamSetPair(KeyCommandsGasLimit, &m.CommandsGasLimit, validateCommandsGasLimit),
-		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
 	}
 }
 
@@ -226,23 +223,6 @@ func validateCommandsGasLimit(commandsGasLimit interface{}) error {
 	return nil
 }
 
-func validateTransactionFeeRate(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("transaction fee rate must be positive: %s", v)
-	}
-
-	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("transaction fee rate %s must be <= 1", v)
-	}
-
-	return nil
-}
-
 func validateBurnable(i interface{}) error {
 	if err := validateBytes(i); err != nil {
 		return err
@@ -278,10 +258,6 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateCommandsGasLimit(m.CommandsGasLimit); err != nil {
-		return err
-	}
-
-	if err := validateTransactionFeeRate(m.TransactionFeeRate); err != nil {
 		return err
 	}
 

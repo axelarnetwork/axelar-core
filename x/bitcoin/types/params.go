@@ -30,7 +30,6 @@ var (
 	KeyVotingThreshold                      = []byte("votingThreshold")
 	KeyMinVoterCount                        = []byte("minVoterCount")
 	KeyMaxTxSize                            = []byte("maxTxSize")
-	KeyTransactionFeeRate                   = []byte("transactionFeeRate")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -53,8 +52,7 @@ func DefaultParams() Params {
 		MasterAddressExternalKeyLockDuration: 28 * 24 * time.Hour, // 28 days
 		VotingThreshold:                      utils.Threshold{Numerator: 33, Denominator: 100},
 		MinVoterCount:                        1,
-		MaxTxSize:                            1024 * 1024 / 3,                // 1/3 MiB
-		TransactionFeeRate:                   sdktypes.NewDecWithPrec(25, 5), // 0.025%
+		MaxTxSize:                            1024 * 1024 / 3, // 1/3 MiB
 	}
 }
 
@@ -81,7 +79,6 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		paramtypes.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 		paramtypes.NewParamSetPair(KeyMaxTxSize, &m.MaxTxSize, validateMaxTxSize),
-		paramtypes.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
 	}
 }
 
@@ -260,23 +257,6 @@ func validateMaxTxSize(maxTxSize interface{}) error {
 	return nil
 }
 
-func validateTransactionFeeRate(i interface{}) error {
-	v, ok := i.(sdktypes.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("transaction fee rate must be positive: %s", v)
-	}
-
-	if v.GT(sdktypes.OneDec()) {
-		return fmt.Errorf("transaction fee rate %s must be <= 1", v)
-	}
-
-	return nil
-}
-
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -331,10 +311,6 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateMasterAddressLockDurations(m.MasterAddressInternalKeyLockDuration, m.MasterAddressExternalKeyLockDuration); err != nil {
-		return err
-	}
-
-	if err := validateTransactionFeeRate(m.TransactionFeeRate); err != nil {
 		return err
 	}
 

@@ -2696,9 +2696,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetTokensFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token {
 // 				panic("mock out the GetTokens method")
 // 			},
-// 			GetTransactionFeeRateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool) {
-// 				panic("mock out the GetTransactionFeeRate method")
-// 			},
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
 // 			},
@@ -2846,9 +2843,6 @@ type ChainKeeperMock struct {
 
 	// GetTokensFunc mocks the GetTokens method.
 	GetTokensFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token
-
-	// GetTransactionFeeRateFunc mocks the GetTransactionFeeRate method.
-	GetTransactionFeeRateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool)
 
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
@@ -3115,11 +3109,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetTransactionFeeRate holds details about calls to the GetTransactionFeeRate method.
-		GetTransactionFeeRate []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetVotingThreshold holds details about calls to the GetVotingThreshold method.
 		GetVotingThreshold []struct {
 			// Ctx is the ctx argument value.
@@ -3224,7 +3213,6 @@ type ChainKeeperMock struct {
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenByteCode              sync.RWMutex
 	lockGetTokens                     sync.RWMutex
-	lockGetTransactionFeeRate         sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
@@ -4502,37 +4490,6 @@ func (mock *ChainKeeperMock) GetTokensCalls() []struct {
 	mock.lockGetTokens.RLock()
 	calls = mock.calls.GetTokens
 	mock.lockGetTokens.RUnlock()
-	return calls
-}
-
-// GetTransactionFeeRate calls GetTransactionFeeRateFunc.
-func (mock *ChainKeeperMock) GetTransactionFeeRate(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool) {
-	if mock.GetTransactionFeeRateFunc == nil {
-		panic("ChainKeeperMock.GetTransactionFeeRateFunc: method is nil but ChainKeeper.GetTransactionFeeRate was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetTransactionFeeRate.Lock()
-	mock.calls.GetTransactionFeeRate = append(mock.calls.GetTransactionFeeRate, callInfo)
-	mock.lockGetTransactionFeeRate.Unlock()
-	return mock.GetTransactionFeeRateFunc(ctx)
-}
-
-// GetTransactionFeeRateCalls gets all the calls that were made to GetTransactionFeeRate.
-// Check the length with:
-//     len(mockedChainKeeper.GetTransactionFeeRateCalls())
-func (mock *ChainKeeperMock) GetTransactionFeeRateCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetTransactionFeeRate.RLock()
-	calls = mock.calls.GetTransactionFeeRate
-	mock.lockGetTransactionFeeRate.RUnlock()
 	return calls
 }
 

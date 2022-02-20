@@ -18,7 +18,6 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
-	GetTransactionFeeRate(ctx sdk.Context) sdk.Dec
 
 	RegisterIBCPath(ctx sdk.Context, asset, path string) error
 	GetIBCPath(ctx sdk.Context, chain string) (string, bool)

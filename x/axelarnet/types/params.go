@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -15,7 +14,6 @@ const (
 // Parameter keys
 var (
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
-	KeyTransactionFeeRate = []byte("transactionFeeRate")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -27,7 +25,6 @@ func KeyTable() params.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		RouteTimeoutWindow: 17000,
-		TransactionFeeRate: sdktypes.NewDecWithPrec(1, 3), // 0.1%
 	}
 }
 
@@ -42,17 +39,12 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validatePosUInt64("RouteTimeoutWindow")),
-		params.NewParamSetPair(KeyTransactionFeeRate, &m.TransactionFeeRate, validateTransactionFeeRate),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
 	if err := validatePosUInt64("RouteTimeoutWindow")(m.RouteTimeoutWindow); err != nil {
-		return err
-	}
-
-	if err := validateTransactionFeeRate(m.TransactionFeeRate); err != nil {
 		return err
 	}
 
@@ -72,21 +64,4 @@ func validatePosUInt64(field string) func(value interface{}) error {
 
 		return nil
 	}
-}
-
-func validateTransactionFeeRate(i interface{}) error {
-	v, ok := i.(sdktypes.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("transaction fee rate must be positive: %s", v)
-	}
-
-	if v.GT(sdktypes.OneDec()) {
-		return fmt.Errorf("transaction fee rate %s must be <= 1", v)
-	}
-
-	return nil
 }

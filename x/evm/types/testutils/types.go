@@ -81,11 +81,6 @@ func getConfirmedTokens(tokens []types.ERC20TokenMetadata) []types.ERC20TokenMet
 	return confirmedTokens
 }
 
-// RandomTransactionFeeRate returns a random (valid) transaction fee for testing
-func RandomTransactionFeeRate() sdk.Dec {
-	return sdk.NewDecWithPrec(rand.I64Between(0, 1000), 4)
-}
-
 // RandomCommandQueue returns a random (valid) command queue state for testing
 func RandomCommandQueue() map[string]types.Command {
 	queue := make(map[string]types.Command)
@@ -298,7 +293,6 @@ func RandomParams() types.Params {
 		VotingThreshold:     utils.NewThreshold(nominator, denominator),
 		MinVoterCount:       rand.PosI64(),
 		CommandsGasLimit:    uint32(rand.I64Between(0, 10000000)),
-		TransactionFeeRate:  RandomTransactionFeeRate(),
 	}
 
 	params.Network = params.Networks[int(rand.I64Between(0, int64(len(params.Networks))))].Name
