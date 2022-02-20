@@ -97,12 +97,12 @@ func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset 
 }
 
 // NewIncompleteCrossChainTransfer returns a pending CrossChainTransfer
-func NewIncompleteCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin) CrossChainTransfer {
+func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin, state string) CrossChainTransfer {
 	return CrossChainTransfer{
 		ID:        TransferID(id),
 		Recipient: recipient,
 		Asset:     asset,
-		State:     Incomplete,
+		State:     TransferStateFromString(state),
 	}
 }
 

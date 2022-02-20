@@ -138,10 +138,10 @@ func GetCmdDeactivateChain() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterAssetFeeInfo returns the cli command to activate the given chains
+// GetCmdRegisterAssetFeeInfo returns the cli command to register an asset fee
 func GetCmdRegisterAssetFeeInfo() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-asset-fee-info [chain] [asset] [min-fee] [max-fee] [fee-rate]",
+		Use:   "register-asset-fee [chain] [asset] [min-fee] [max-fee] [fee-rate]",
 		Short: "register fee info for an asset on a chain",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -150,9 +150,9 @@ func GetCmdRegisterAssetFeeInfo() *cobra.Command {
 				return err
 			}
 
-			feeRate := sdk.MustNewDecFromStr(args[2])
-			minFee := sdk.NewUintFromString(args[3])
-			maxFee := sdk.NewUintFromString(args[4])
+			minFee := sdk.NewUintFromString(args[2])
+			maxFee := sdk.NewUintFromString(args[3])
+			feeRate := sdk.MustNewDecFromStr(args[4])
 
 			feeInfo := exported.NewFeeInfo(feeRate, minFee, maxFee)
 
