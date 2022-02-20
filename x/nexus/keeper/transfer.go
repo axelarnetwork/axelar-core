@@ -64,10 +64,12 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
-// computeChainSurcharge computes the max surcharge fee over the baseFee
+// computeChainSurcharge computes the surcharge fee over the base fee
+//
 // max_surcharge = chain.max_fee - chain.min_fee
+//
 // surcharge = min(max_surcharge, chain.fee_rate * (amount - baseFee))
-func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo, baseFee sdk.Int, amount sdk.Int) sdk.Int {
+func computeChainSurcharge(feeInfo exported.FeeInfo, baseFee sdk.Int, amount sdk.Int) sdk.Int {
 	maxSurcharge := sdk.Int(feeInfo.MaxFee.Sub(feeInfo.MinFee))
 
 	remaining := sdk.ZeroInt()
@@ -81,7 +83,7 @@ func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo,
 	return surcharge
 }
 
-// computeTransferFee computes the fee for a cross-chain transfer.
+// ComputeTransferFee computes the fee for a cross-chain transfer.
 // If fee_info is not set for an asset on a chain, default of zero is used
 //
 // base_fee = source_chain.min_fee + destination_chain.min_fee
@@ -89,21 +91,14 @@ func (k Keeper) computeChainSurcharge(ctx sdk.Context, feeInfo exported.FeeInfo,
 // transfer_fee = baseFee + source_chain_surcharge + destination_chain_surcharge
 //
 // INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
-func (k Keeper) computeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
-	sourceChainFeeInfo, ok := k.GetFeeInfo(ctx, sourceChain, asset.Denom)
-	if !ok {
-		sourceChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
-	}
-
-	destinationChainFeeInfo, ok := k.GetFeeInfo(ctx, destinationChain, asset.Denom)
-	if !ok {
-		destinationChainFeeInfo = exported.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
-	}
+func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
+	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset.Denom)
+	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset.Denom)
 
 	baseFee := sdk.Int(sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee))
 
-	sourceChainSurcharge := k.computeChainSurcharge(ctx, sourceChainFeeInfo, baseFee, asset.Amount)
-	destinationChainSurcharge := k.computeChainSurcharge(ctx, destinationChainFeeInfo, baseFee, asset.Amount)
+	sourceChainSurcharge := computeChainSurcharge(sourceChainFeeInfo, baseFee, asset.Amount)
+	destinationChainSurcharge := computeChainSurcharge(destinationChainFeeInfo, baseFee, asset.Amount)
 
 	fees := baseFee.Add(sourceChainSurcharge.Add(destinationChainSurcharge))
 
@@ -148,7 +143,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// collect fee
-	fees, _ := k.computeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	fees, _ := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
 	if fees.Amount.GTE(asset.Amount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below "+
 			"fees %s for asset %s", sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))

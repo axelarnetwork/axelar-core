@@ -96,7 +96,7 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 	}
 
 	asset := sdk.NewCoin(req.Asset, sdk.Int(req.Amount))
-	transferFees, feeInfo := k.computeTransferFee(ctx, sourceChain, destinationChain, asset)
+	transferFees, feeInfo := k.ComputeTransferFee(ctx, sourceChain, destinationChain, asset)
 	fees := sdk.Uint(transferFees.Amount)
 
 	amount := sdk.ZeroUint()

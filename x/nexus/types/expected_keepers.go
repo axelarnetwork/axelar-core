@@ -37,7 +37,7 @@ type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error
-	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, ok bool)
+	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool)
 }
 
 // Snapshotter provides functionality to the snapshot module

@@ -16,7 +16,7 @@ import (
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.13 to v0.14. The
 // migration includes:
 // - migrate assets from CosmosChain struct to ChainState
-// - migrate token min amount from TokenMetaData to ChainState
+// - migrate assets from EVM TokenMetaData to ChainState
 func GetMigrationHandler(k Keeper, a types.AxelarnetKeeper, e types.EVMBaseKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		err := migrateChainState(ctx, k)

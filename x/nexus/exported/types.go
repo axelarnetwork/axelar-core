@@ -137,6 +137,11 @@ func NewFeeInfo(feeRate sdk.Dec, minFee sdk.Uint, maxFee sdk.Uint) FeeInfo {
 	return FeeInfo{FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
 }
 
+// ZeroFee returns a FeeInfo struct with zero fees
+func ZeroFee() FeeInfo {
+	return NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+}
+
 // Validate checks the stateless validity of fee info
 func (m FeeInfo) Validate() error {
 	if m.MinFee.GT(m.MaxFee) {
