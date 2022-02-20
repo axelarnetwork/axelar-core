@@ -37,7 +37,7 @@ var (
 	minAmount    = maxAmount / 2
 )
 
-func TestFeeCalculation(t *testing.T) {
+func TestComputeTransferFee(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	repeated := 10
 	k, ctx := setup(cfg)

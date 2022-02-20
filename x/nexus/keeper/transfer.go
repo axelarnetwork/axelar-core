@@ -145,8 +145,8 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	// collect fee
 	fees, _ := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
 	if fees.Amount.GTE(asset.Amount) {
-		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below "+
-			"fees %s for asset %s", sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
+		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below fees %s for asset %s",
+			sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
 
 		return k.setNewTransfer(ctx, recipient, asset, exported.Incomplete), nil
 	}

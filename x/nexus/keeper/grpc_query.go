@@ -21,7 +21,7 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
-	if req.State == nexus.TRANSFER_STATE_UNSPECIFIED {
+	if err := req.State.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid transfer state")
 	}
 
@@ -67,7 +67,7 @@ func (k Keeper) Fee(c context.Context, req *types.FeeRequest) (*types.FeeRespons
 
 	feeInfo, ok := k.GetFeeInfo(ctx, chain, req.Asset)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee registered for asset %s on chain %s", req.Asset, chain.Name)
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
 	}
 
 	return &types.FeeResponse{FeeInfo: &feeInfo}, nil
@@ -96,13 +96,13 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 	}
 
 	asset := sdk.NewCoin(req.Asset, sdk.Int(req.Amount))
-	transferFees, feeInfo := k.ComputeTransferFee(ctx, sourceChain, destinationChain, asset)
-	fees := sdk.Uint(transferFees.Amount)
+	transferFee, feeInfo := k.ComputeTransferFee(ctx, sourceChain, destinationChain, asset)
+	fee := sdk.Uint(transferFee.Amount)
 
 	amount := sdk.ZeroUint()
-	if fees.LT(req.Amount) {
-		amount = req.Amount.Sub(fees)
+	if fee.LT(req.Amount) {
+		amount = req.Amount.Sub(fee)
 	}
 
-	return &types.TransferFeeResponse{Fees: fees, Received: amount, FeeInfo: &feeInfo}, nil
+	return &types.TransferFeeResponse{Fee: fee, Received: amount, FeeInfo: &feeInfo}, nil
 }

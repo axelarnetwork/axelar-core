@@ -228,5 +228,7 @@ func (s msgServer) RegisterAssetFee(c context.Context, req *types.RegisterAssetF
 		return nil, err
 	}
 
+	s.Logger(ctx).Info(fmt.Sprintf("registered fee info for asset %s on chain %s", req.Asset, chain.Name), types.AttributeKeyChain, chain.Name, types.AttributeKeyAsset, req.Asset)
+
 	return &types.RegisterAssetFeeResponse{}, nil
 }

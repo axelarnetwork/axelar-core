@@ -137,8 +137,8 @@ func NewFeeInfo(feeRate sdk.Dec, minFee sdk.Uint, maxFee sdk.Uint) FeeInfo {
 	return FeeInfo{FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
 }
 
-// ZeroFee returns a FeeInfo struct with zero fees
-func ZeroFee() FeeInfo {
+// ZeroFeeInfo returns a FeeInfo struct with zero fees
+func ZeroFeeInfo() FeeInfo {
 	return NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
 }
 

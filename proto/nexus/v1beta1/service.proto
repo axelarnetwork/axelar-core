@@ -15,7 +15,7 @@ service MsgService {
   rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
       returns (RegisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/register-chain-maintainer"
+      post : "/axelar/nexus/registerChainMaintainer"
       body : "*"
     };
   }
@@ -23,14 +23,14 @@ service MsgService {
   rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
       returns (DeregisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deregister-chain-maintainer"
+      post : "/axelar/nexus/deregisterChainMaintainer"
       body : "*"
     };
   }
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/activate-chain-request"
+      post : "/axelar/nexus/registerChainMaintainer"
       body : "*"
     };
   }
@@ -38,8 +38,6 @@ service MsgService {
   rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
       returns (nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deactivate-chain-request"
-      body : "*"
     };
   }
 
