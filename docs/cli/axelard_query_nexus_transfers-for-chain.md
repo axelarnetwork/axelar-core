@@ -3,7 +3,7 @@
 Query for account by address
 
 ```
-axelard query nexus transfers-for-chain [chain] [state (pending|archived|incomplete)] [flags]
+axelard query nexus transfers-for-chain [chain] [state (pending|archived|insufficient_amount)] [flags]
 ```
 
 ### Options

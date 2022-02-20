@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -22,7 +21,7 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 	}
 
 	if err := req.State.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid transfer state")
+		return nil, err
 	}
 
 	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)

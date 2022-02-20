@@ -135,11 +135,11 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
-	// merging incomplete transfers for the specified recipient
-	incompleteTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.Incomplete)
+	// merging transfers below minimum for the specified recipient
+	insufficientAmountTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.InsufficientAmount)
 	if found {
-		asset = asset.Add(incompleteTransfer.Asset)
-		k.deleteTransfer(ctx, incompleteTransfer)
+		asset = asset.Add(insufficientAmountTransfer.Asset)
+		k.deleteTransfer(ctx, insufficientAmountTransfer)
 	}
 
 	// collect fee
@@ -148,7 +148,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below fees %s for asset %s",
 			sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
 
-		return k.setNewTransfer(ctx, recipient, asset, exported.Incomplete), nil
+		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
 	}
 
 	if fees.IsPositive() {

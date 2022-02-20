@@ -99,7 +99,7 @@ func GetCommandLatestDepositAddress() *cobra.Command {
 // GetCommandTransfersForChain returns the query for the transfers for a given chain
 func GetCommandTransfersForChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfers-for-chain [chain] [state (pending|archived|incomplete)]",
+		Use:   "transfers-for-chain [chain] [state (pending|archived|insufficient_amount)]",
 		Short: "Query for account by address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

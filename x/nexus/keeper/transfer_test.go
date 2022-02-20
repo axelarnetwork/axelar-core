@@ -227,18 +227,18 @@ func TestTransfer(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
 						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
-						incompleteTransfers := k.GetTransfersForChain(ctx, chain, nexus.Incomplete)
+						insufficientAmountTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
 
 						// total number of pending transfer match
 						assert.Equal(t, 0, len(pendingTransfers))
-						// total number of incomplete transfer match
-						assert.Equal(t, len(transfers), len(incompleteTransfers))
+						// total number of insufficient amount transfer match
+						assert.Equal(t, len(transfers), len(insufficientAmountTransfers))
 						// total fees match
 						assert.Equal(t, expected.fees, k.GetTransferFees(ctx))
 
 						// total transfer amount match
 						total := sdk.Coins{}
-						for _, transfer := range incompleteTransfers {
+						for _, transfer := range insufficientAmountTransfers {
 							total = total.Add(sdk.NewCoin(transfer.Asset.Denom, transfer.Asset.Amount))
 						}
 						assert.Equal(t, expected.coins, total)
@@ -272,10 +272,10 @@ func TestTransfer(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
 						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
-						incompleteTransfers := k.GetTransfersForChain(ctx, chain, nexus.Incomplete)
+						insufficientTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
 
-						// total number of incomplete transfer match
-						assert.Equal(t, 0, len(incompleteTransfers))
+						// total number of insufficient amount transfer match
+						assert.Equal(t, 0, len(insufficientTransfers))
 						// total number of pending transfer match
 						assert.Equal(t, expected.count, len(pendingTransfers))
 						// total amount match
