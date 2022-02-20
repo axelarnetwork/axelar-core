@@ -5,14 +5,12 @@ import (
 	"strconv"
 	"testing"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -76,7 +74,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
@@ -89,7 +87,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
@@ -106,7 +104,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 
@@ -124,7 +122,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.False(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	})
 
@@ -141,7 +139,7 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 		err := mgr.ProcessConfirmation(tmEvents.Event{Attributes: attributes})
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := unwrapRefundMsg(broadcaster.BroadcastCalls()[0].Msgs[0])
+		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
 		assert.True(t, msg.(*btc.VoteConfirmOutpointRequest).Confirmed)
 	}).Repeat(repetitionCount))
 }
@@ -158,8 +156,4 @@ func randomOutpointInfo() btc.OutPointInfo {
 		Amount:   btcutil.Amount(rand.I64Between(1, 10000000)),
 		Address:  rand.StrBetween(1, 100),
 	}
-}
-
-func unwrapRefundMsg(msg sdk.Msg) sdk.Msg {
-	return msg.(*rewardtypes.RefundMsgRequest).GetInnerMessage()
 }

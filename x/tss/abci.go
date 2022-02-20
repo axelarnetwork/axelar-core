@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/armon/go-metrics"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -117,16 +115,6 @@ func emitSignStartEvent(ctx sdk.Context, k types.TSSKeeper, voter types.InitPoll
 			nonParticipantShareCounts = append(nonParticipantShareCounts, validator.ShareCount)
 			continue
 		}
-
-		// metrics for sign participation
-		metrics.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participation"}, 0,
-			[]metrics.Label{
-				telemetry.NewLabel("sigID", info.SigID),
-				telemetry.NewLabel("address", validator.GetSDKValidator().GetOperator().String()),
-				telemetry.NewLabel("share_count", strconv.FormatInt(validator.ShareCount, 10)),
-				telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-				telemetry.NewLabel("block", strconv.FormatInt(ctx.BlockHeight(), 10)),
-			})
 	}
 
 	// no need to check if these exists again, sanity checks for that passed at this point
