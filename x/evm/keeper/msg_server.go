@@ -122,7 +122,7 @@ func (s msgServer) ConfirmGatewayDeployment(c context.Context, req *types.Confir
 			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
 			sdk.NewAttribute(types.AttributeKeyBytecodeHash, hex.EncodeToString(crypto.Keccak256(deploymentBytecode))),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey)),
 		),
 	)
 
@@ -359,7 +359,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey)),
 		),
 	)
 
@@ -412,7 +412,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey)),
 		),
 	)
 
@@ -496,7 +496,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey)),
 		),
 	)
 
@@ -583,7 +583,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-		sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey)),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
