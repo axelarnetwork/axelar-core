@@ -829,7 +829,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d and command ID %s", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID).Hex()))
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed on chain %s for %s to %s on %s with tx ID %s and transfer ID %d", chain.Name, depositAddr.Address, recipient.Address, recipient.Chain.Name, pendingDeposit.TxID.Hex(), transferID))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1293,7 +1293,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
-		s.Logger(ctx).Info(fmt.Sprintf("storing mint command ID %s and transfer ID %s for %s to recipient %s on %s", cmd.ID.Hex(), transfer.ID.String(), transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name))
+		s.Logger(ctx).Info(fmt.Sprintf("minting %s to recipient %s on %s with transfer ID %s and command ID %s", transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name, transfer.ID.String(), cmd.ID.Hex()))
 
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
