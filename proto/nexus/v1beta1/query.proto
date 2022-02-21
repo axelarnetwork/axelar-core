@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 import "gogoproto/gogo.proto";
 import "nexus/exported/v1beta1/types.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -53,21 +54,9 @@ message FeeResponse { exported.v1beta1.FeeInfo fee_info = 1; }
 message TransferFeeRequest {
   string source_chain = 1;
   string destination_chain = 2;
-  bytes amount = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  string asset = 4;
+  cosmos.base.v1beta1.Coin amount = 3 [ (gogoproto.nullable) = false ];
 }
 
 message TransferFeeResponse {
-  bytes fee = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  bytes received = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  exported.v1beta1.FeeInfo fee_info = 3;
+  cosmos.base.v1beta1.Coin fee = 1 [ (gogoproto.nullable) = false ];
 };

@@ -3,7 +3,7 @@
 Returns the fee incurred on a cross-chain transfer
 
 ```
-axelard query nexus transfer-fee [source-chain] [destination-chain] [amount] [asset] [flags]
+axelard query nexus transfer-fee [source-chain] [destination-chain] [amount] [flags]
 ```
 
 ### Options

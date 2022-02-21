@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -86,22 +87,19 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
 
-	if !k.IsAssetRegistered(ctx, sourceChain, req.Asset) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, sourceChain.Name)
+	if !k.IsAssetRegistered(ctx, sourceChain, req.Amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, sourceChain.Name)
 	}
 
-	if !k.IsAssetRegistered(ctx, destinationChain, req.Asset) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, destinationChain.Name)
+	if !k.IsAssetRegistered(ctx, destinationChain, req.Amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, destinationChain.Name)
 	}
 
-	asset := sdk.NewCoin(req.Asset, sdk.Int(req.Amount))
-	transferFee, feeInfo := k.ComputeTransferFee(ctx, sourceChain, destinationChain, asset)
-	fee := sdk.Uint(transferFee.Amount)
-
-	amount := sdk.ZeroUint()
-	if fee.LT(req.Amount) {
-		amount = req.Amount.Sub(fee)
+	if req.Amount.IsNegative() {
+		return nil, fmt.Errorf("amount cannot be negative")
 	}
 
-	return &types.TransferFeeResponse{Fee: fee, Received: amount, FeeInfo: &feeInfo}, nil
+	fee := k.ComputeTransferFee(ctx, sourceChain, destinationChain, req.Amount)
+
+	return &types.TransferFeeResponse{Fee: fee}, nil
 }

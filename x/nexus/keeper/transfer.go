@@ -91,7 +91,7 @@ func computeChainSurcharge(feeInfo exported.FeeInfo, baseFee sdk.Int, amount sdk
 // transfer_fee = baseFee + source_chain_surcharge + destination_chain_surcharge
 //
 // INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
-func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, exported.FeeInfo) {
+func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) sdk.Coin {
 	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset.Denom)
 	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset.Denom)
 
@@ -100,15 +100,9 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 	sourceChainSurcharge := computeChainSurcharge(sourceChainFeeInfo, baseFee, asset.Amount)
 	destinationChainSurcharge := computeChainSurcharge(destinationChainFeeInfo, baseFee, asset.Amount)
 
-	fees := baseFee.Add(sourceChainSurcharge.Add(destinationChainSurcharge))
+	fee := baseFee.Add(sourceChainSurcharge.Add(destinationChainSurcharge))
 
-	feeInfo := exported.NewFeeInfo(
-		sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate),
-		sdk.Uint(baseFee),
-		sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee),
-	)
-
-	return sdk.NewCoin(asset.Denom, fees), feeInfo
+	return sdk.NewCoin(asset.Denom, fee)
 }
 
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
@@ -136,28 +130,28 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// merging transfers below minimum for the specified recipient
-	insufficientAmountTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.InsufficientAmount)
+	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
 	if found {
 		asset = asset.Add(insufficientAmountTransfer.Asset)
 		k.deleteTransfer(ctx, insufficientAmountTransfer)
 	}
 
 	// collect fee
-	fees, _ := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
-	if fees.Amount.GTE(asset.Amount) {
+	fee := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	if fee.Amount.GTE(asset.Amount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below fees %s for asset %s",
-			sender.Chain.Name, sender.Address, recipient.Address, fees.String(), asset.String()))
+			sender.Chain.Name, sender.Address, recipient.Address, fee.String(), asset.String()))
 
 		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
 	}
 
-	if fees.IsPositive() {
-		k.addTransferFee(ctx, fees)
-		asset = asset.Sub(fees)
+	if fee.IsPositive() {
+		k.addTransferFee(ctx, fee)
+		asset = asset.Sub(fee)
 	}
 
 	// merging transfers for the specified recipient
-	previousTransfer, found := k.getTransferForRecipientAndAsset(ctx, recipient, asset.Denom, exported.Pending)
+	previousTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.Pending)
 	if found {
 		asset = asset.Add(previousTransfer.Asset)
 		k.deleteTransfer(ctx, previousTransfer)
@@ -169,7 +163,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	return k.setNewPendingTransfer(ctx, recipient, asset), nil
 }
 
-func (k Keeper) getTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
+func (k Keeper) getTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 

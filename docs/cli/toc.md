@@ -108,7 +108,7 @@
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
       - [fee \[chain\] \[asset\]](axelard_query_nexus_fee.md)	 - Query for fees registered for an asset on a chain
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
-      - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\] \[asset\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
+      - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfers-for-chain \[chain\] \[state (pending|archived|insufficient_amount)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key

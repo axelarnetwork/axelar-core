@@ -98,21 +98,19 @@ func TestComputeTransferFee(t *testing.T) {
 							coin := sdk.NewCoin(asset, sdk.Int(randUint(0, uint64(maxAmount)*2)))
 							amount := sdk.Uint(coin.Amount)
 
-							fees, feeInfo := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
+							fees := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
 
-							assert.Equal(t, feeInfo.MinFee, sourceChainFee.MinFee.Add(destinationChainFee.MinFee))
-							assert.Equal(t, feeInfo.MaxFee, sourceChainFee.MaxFee.Add(destinationChainFee.MaxFee))
-							assert.Equal(t, feeInfo.FeeRate, sourceChainFee.FeeRate.Add(destinationChainFee.FeeRate))
+							baseFee := sourceChainFee.MinFee.Add(destinationChainFee.MinFee)
 
-							if amount.LTE(feeInfo.MinFee) {
-								assert.Equal(t, sdk.Uint(fees.Amount), feeInfo.MinFee)
+							if amount.LTE(baseFee) {
+								assert.Equal(t, sdk.Uint(fees.Amount), baseFee)
 							} else {
 								assert.Less(t, fees.Amount.Int64(), coin.Amount.Int64())
 
-								remaining := sdk.NewDecFromInt(coin.Amount.Sub(sdk.Int(feeInfo.MinFee)))
+								remaining := sdk.NewDecFromInt(coin.Amount.Sub(sdk.Int(baseFee)))
 								sourceSurcharge := sdk.MinUint(sourceChainFee.MaxFee.Sub(sourceChainFee.MinFee), sdk.Uint(sourceChainFee.FeeRate.Mul(remaining).TruncateInt()))
 								destinationSurcharge := sdk.MinUint(destinationChainFee.MaxFee.Sub(destinationChainFee.MinFee), sdk.Uint(destinationChainFee.FeeRate.Mul(remaining).TruncateInt()))
-								total := feeInfo.MinFee.Add(sourceSurcharge).Add(destinationSurcharge)
+								total := baseFee.Add(sourceSurcharge).Add(destinationSurcharge)
 
 								assert.Equal(t, sdk.Uint(fees.Amount), total)
 							}

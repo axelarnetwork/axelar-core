@@ -180,9 +180,9 @@ func GetCommandFee() *cobra.Command {
 // GetCommandTransferFee returns the query for the transfers for a given chain
 func GetCommandTransferFee() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfer-fee [source-chain] [destination-chain] [amount] [asset]",
+		Use:   "transfer-fee [source-chain] [destination-chain] [amount]",
 		Short: "Returns the fee incurred on a cross-chain transfer",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -191,14 +191,16 @@ func GetCommandTransferFee() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
-			amount := sdk.NewUintFromString(args[2])
+			amount, err := sdk.ParseCoinNormalized(args[2])
+			if err != nil {
+				return err
+			}
 
 			res, err := queryClient.TransferFee(cmd.Context(),
 				&types.TransferFeeRequest{
 					SourceChain:      args[0],
 					DestinationChain: args[1],
 					Amount:           amount,
-					Asset:            args[3],
 				})
 			if err != nil {
 				return err

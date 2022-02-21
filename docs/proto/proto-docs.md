@@ -3697,8 +3697,7 @@ the network for a cross-chain transfer
 | ----- | ---- | ----- | ----------- |
 | `source_chain` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `asset` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
@@ -3713,9 +3712,7 @@ the network for a cross-chain transfer
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `fee` | [bytes](#bytes) |  |  |
-| `received` | [bytes](#bytes) |  |  |
-| `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
