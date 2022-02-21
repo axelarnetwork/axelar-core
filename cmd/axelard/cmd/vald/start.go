@@ -14,6 +14,7 @@ import (
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/jobs"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -23,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -175,25 +177,25 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
 
-	tmClient, err := clientCtx.GetNode()
-	if err != nil {
-		panic(err)
-	}
-
-	// in order to subscribe to events, the client needs to be running
-	if !tmClient.IsRunning() {
-		if err := tmClient.Start(); err != nil {
-			panic(fmt.Errorf("unable to start client: %v", err))
+	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
+		cl, err := sdkClient.NewClientFromNode(clientCtx.NodeURI)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create a new client")
 		}
-	}
 
+		err = cl.Start()
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to start client")
+		}
+		return cl, nil
+	})
 	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(stateStore, tmClient, logger)
+	startBlock, err := getStartBlock(stateStore, robustClient, logger)
 	if err != nil {
 		panic(err)
 	}
 
-	eventBus := createEventBus(tmClient, startBlock, logger)
+	eventBus := createEventBus(robustClient, startBlock, logger)
 
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
@@ -317,7 +319,7 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
-func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.Logger) (int64, error) {
+func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
 	startBlock, err := stateStore.GetState()
 	if err != nil {
 		logger.Error(err.Error())
@@ -328,13 +330,13 @@ func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	status, err := tmClient.Status(rpcCtx)
+	height, err := tmClient.LatestBlockHeight(rpcCtx)
 	if err != nil {
 		return 0, err
 	}
 
 	// TODO: Make it configurable instead of a hardcoded 100
-	if status.SyncInfo.LatestBlockHeight-startBlock > 100 {
+	if height-startBlock > 100 {
 		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
 
 		return 0, nil
@@ -352,9 +354,9 @@ func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 	}
 }
 
-func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(tmEvents.NewBlockClient(client), logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
+func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus, logger)
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
