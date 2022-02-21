@@ -159,12 +159,19 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed to %s with transfer ID %d", req.DepositAddress.String(), transferID))
+	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil, fmt.Errorf("no recipient linked to deposit address %s", req.DepositAddress.String())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on %s to %s on %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, transferID))
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyAsset, amount.Denom),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 			sdk.NewAttribute(types.AttributeTransferID, transferID.String()),
 		))
