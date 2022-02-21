@@ -170,7 +170,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(types.AttributeKeyAsset, amount.Denom),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 			sdk.NewAttribute(types.AttributeTransferID, transferID.String()),
