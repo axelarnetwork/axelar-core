@@ -823,7 +823,7 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient address %s on chain %s with tx ID %s and transfer ID %d", depositAddr.Address, chain.Name, recipient.Address, recipient.Chain.Name, pendingDeposit.TxID.Hex(), transferID))
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d and tx ID %s", depositAddr.Address, chain.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID, pendingDeposit.TxID.Hex()))
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
