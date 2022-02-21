@@ -33,8 +33,8 @@ var (
 	avalanche    = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
 	chains       = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
 	assets       = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
-	chainFeeInfo = nexus.NewFeeInfo(sdk.ZeroDec(), sdk.NewUint(50000), sdk.NewUint(5000000000))
 	minAmount    = maxAmount / 2
+	chainFeeInfo = nexus.NewFeeInfo(sdk.ZeroDec(), sdk.NewUint(uint64(minAmount)), sdk.NewUint(uint64(maxAmount)))
 )
 
 func TestComputeTransferFee(t *testing.T) {
@@ -96,24 +96,20 @@ func TestComputeTransferFee(t *testing.T) {
 							assert.Equal(t, sourceChainFee, assetFee)
 
 							coin := sdk.NewCoin(asset, sdk.Int(randUint(0, uint64(maxAmount)*2)))
-							amount := sdk.Uint(coin.Amount)
+							amount := coin.Amount
 
-							fees := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
+							fees, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
+							assert.Nil(t, err)
 
-							baseFee := sourceChainFee.MinFee.Add(destinationChainFee.MinFee)
+							minFee := sourceChainFee.MinFee.Add(destinationChainFee.MinFee)
+							feeRate := sourceChainFee.FeeRate.Add(destinationChainFee.FeeRate)
+							maxFee := sourceChainFee.MaxFee.Add(destinationChainFee.MaxFee)
 
-							if amount.LTE(baseFee) {
-								assert.Equal(t, sdk.Uint(fees.Amount), baseFee)
-							} else {
-								assert.Less(t, fees.Amount.Int64(), coin.Amount.Int64())
+							fee := sdk.NewDecFromInt(amount).Mul(feeRate).TruncateInt()
+							fee = sdk.MaxInt(sdk.Int(minFee), fee)
+							fee = sdk.MinInt(sdk.Int(maxFee), fee)
 
-								remaining := sdk.NewDecFromInt(coin.Amount.Sub(sdk.Int(baseFee)))
-								sourceSurcharge := sdk.MinUint(sourceChainFee.MaxFee.Sub(sourceChainFee.MinFee), sdk.Uint(sourceChainFee.FeeRate.Mul(remaining).TruncateInt()))
-								destinationSurcharge := sdk.MinUint(destinationChainFee.MaxFee.Sub(destinationChainFee.MinFee), sdk.Uint(destinationChainFee.FeeRate.Mul(remaining).TruncateInt()))
-								total := baseFee.Add(sourceSurcharge).Add(destinationSurcharge)
-
-								assert.Equal(t, sdk.Uint(fees.Amount), total)
-							}
+							assert.Equal(t, fees.Amount, fee)
 						}
 					}
 				}
@@ -244,11 +240,9 @@ func TestTransfer(t *testing.T) {
 				}),
 
 		When("transfer amounts are greater than min amount", func(t *testing.T) {
-			for _, r := range recipients {
+			for i := 0; i < len(recipients); i++ {
 				asset := randAsset()
-				feeInfo, found := k.GetFeeInfo(ctx, r.Chain, asset)
-				assert.True(t, found)
-				transfers = append(transfers, makeRandAmount(asset).AddAmount(sdk.Int(feeInfo.MinFee)))
+				transfers = append(transfers, makeAmountAboveMin(asset))
 			}
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
@@ -258,10 +252,10 @@ func TestTransfer(t *testing.T) {
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					baseFee := chainFeeInfo.MinFee.MulUint64(2)
-					feeDue := sdk.Int(baseFee)
-					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					feeDue, err := k.ComputeTransferFee(ctx, senders[i].Chain, recipients[i].Chain, transfer)
+					assert.Nil(t, err)
+					c.fees.Add(feeDue)
+					c.coins.Add(transfer.Sub(feeDue))
 					c.count += 1
 				}
 			}).
@@ -416,7 +410,7 @@ func randAsset() string {
 }
 
 func makeAmountAboveMin(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(chainFeeInfo.MinFee.BigInt().Int64()*2, maxAmount)))
+	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(chainFeeInfo.MinFee.BigInt().Int64()*2, chainFeeInfo.MaxFee.BigInt().Int64()*2)))
 }
 
 func randFee() nexus.FeeInfo {

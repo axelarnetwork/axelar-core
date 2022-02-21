@@ -99,7 +99,10 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, fmt.Errorf("amount cannot be negative")
 	}
 
-	fee := k.ComputeTransferFee(ctx, sourceChain, destinationChain, req.Amount)
+	fee, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, req.Amount)
+	if err != nil {
+		return nil, err
+	}
 
 	return &types.TransferFeeResponse{Fee: fee}, nil
 }
