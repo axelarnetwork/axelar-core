@@ -22,7 +22,7 @@ func NewHandler(k types.BTCKeeper, v types.Voter, signer types.Signer, n types.N
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully linked deposit %s on %s to recipient %s on %s for %s", res.DepositAddr, exported.Bitcoin.Name, msg.RecipientAddr, msg.RecipientChain, exported.NativeAsset)
+				result.Log = fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on recipient chain %s for asset '%s'", res.DepositAddr, exported.Bitcoin.Name, msg.RecipientAddr, msg.RecipientChain, exported.NativeAsset)
 			}
 			return result, err
 		case *types.ConfirmOutpointRequest:
