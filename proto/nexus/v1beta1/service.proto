@@ -30,7 +30,7 @@ service MsgService {
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/registerChainMaintainer"
+      post : "/axelar/nexus/activate-chain"
       body : "*"
     };
   }
@@ -38,6 +38,8 @@ service MsgService {
   rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
       returns (nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
+      post : "/axelar/nexus/deactivate-chain"
+      body : "*"
     };
   }
 }

@@ -55,9 +55,17 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
+	if len(m.NativeAssets) == 0 {
+		return fmt.Errorf("no native assets provided")
+	}
+
 	for _, asset := range m.NativeAssets {
 		if err := asset.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
+		}
+
+		if !asset.IsNativeAsset {
+			return fmt.Errorf("%s is not specified as a native asset", asset.Denom)
 		}
 	}
 

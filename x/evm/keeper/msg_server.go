@@ -122,7 +122,7 @@ func (s msgServer) ConfirmGatewayDeployment(c context.Context, req *types.Confir
 			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
 			sdk.NewAttribute(types.AttributeKeyBytecodeHash, hex.EncodeToString(crypto.Keccak256(deploymentBytecode))),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
 		),
 	)
 
@@ -198,7 +198,7 @@ func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.Vo
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyAddress, address.Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()))
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	if !confirmed.Value {
@@ -359,7 +359,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
 		),
 	)
 
@@ -412,7 +412,7 @@ func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainReques
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
 		),
 	)
 
@@ -496,7 +496,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
 		),
 	)
 
@@ -583,7 +583,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+		sdk.NewAttribute(types.AttributeKeyPoll, pollKey.String()),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
@@ -681,7 +681,7 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	event := sdk.NewEvent(types.EventTypeChainConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()))
 
 	if !confirmed.Value {
 		poll.AllowOverride()
@@ -750,6 +750,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
 		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
+		sdk.NewAttribute(types.AttributeKeyAsset, pendingDeposit.Asset),
+		sdk.NewAttribute(types.AttributeKeyDepositAddress, pendingDeposit.BurnerAddress.Hex()),
+		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
 	))
 
 	if poll.Is(vote.Pending) {
@@ -788,9 +794,10 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
+		sdk.NewAttribute(types.AttributeKeyAsset, pendingDeposit.Asset),
 		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()))
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnAddress)
 	if burnerInfo != nil {
@@ -897,7 +904,7 @@ func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTok
 		sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
 		sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 		sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()))
 
 	if !confirmed.Value {
 		poll.AllowOverride()
@@ -985,7 +992,7 @@ func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConf
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyTransferKeyType, pendingTransfer.Type.SimpleString()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()))
 
 	if !confirmed.Value {
 		poll.AllowOverride()
@@ -1282,12 +1289,11 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		}
 
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
-
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
-		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
+		s.Logger(ctx).Info(fmt.Sprintf("storing mint command ID %s and transfer ID %s for %s to recipient %s on %s", cmd.ID.Hex(), transfer.ID.String(), transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name))
 
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
