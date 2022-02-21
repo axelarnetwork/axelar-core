@@ -282,7 +282,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
-	// ignore the error in case chain is axelarnet, or if the asset if already registered
+	// ignore the error in case above chain is axelarnet, or if the asset is already registered
 	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, req.Asset.MinAmount, false))
 
 	return &types.RegisterAssetResponse{}, nil
