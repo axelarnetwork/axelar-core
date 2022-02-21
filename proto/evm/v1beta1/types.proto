@@ -62,11 +62,7 @@ message ERC20TokenMetadata {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string tx_hash = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  bytes min_amount = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 6; // min_amount was removed in v0.14
   Status status = 7;
   bool is_external = 8;
   bytes burner_code = 9;
