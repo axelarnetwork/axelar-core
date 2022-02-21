@@ -125,6 +125,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}
 				return nexus.Chain{}, true
 			},
+			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+				return nexus.CrossChainAddress{}, true
+			},
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
