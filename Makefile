@@ -42,7 +42,7 @@ populate-bytecode:
 
 # Build the project with release flags
 .PHONY: build
-build: populate-bytecode go.sum
+build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
@@ -69,7 +69,7 @@ docker-image: populate-bytecode
 
 # Build a release image
 .PHONY: docker-image-local-user
-docker-image-local-user: guard-VERSION guard-GROUP_ID guard-USER_ID
+docker-image-local-user: populate-bytecode guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
