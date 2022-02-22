@@ -99,7 +99,7 @@ func TestCommands(t *testing.T) {
 		var commands []types.Command
 
 		for i := 0; i < numCmds; i++ {
-			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
+			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(10))
 			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), tokenDetails, types.ZeroAddress)
 			assert.NoError(t, err)
 

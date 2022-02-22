@@ -288,10 +288,9 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	}
 
 	tssMsg := tss.NewHeartBeatRequest(mgr.cliCtx.FromAddress, present)
-	refundableMsg := rewardtypes.NewRefundMsgRequest(mgr.cliCtx.FromAddress, tssMsg)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
-	txRes, err := mgr.broadcaster.Broadcast(context.TODO(), refundableMsg)
+	txRes, err := mgr.broadcaster.Broadcast(context.TODO(), tssMsg)
 	if err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}

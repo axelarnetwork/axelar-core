@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	reward "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcutil"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -57,10 +56,9 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 		mgr.logger.Debug(sdkerrors.Wrap(err, "tx outpoint confirmation failed").Error())
 	}
 	msg := btc.NewVoteConfirmOutpointRequest(mgr.cliCtx.FromAddress, pollKey, outPointInfo.GetOutPoint(), err == nil)
-	refundableMsg := reward.NewRefundMsgRequest(mgr.cliCtx.FromAddress, msg)
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), refundableMsg)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 

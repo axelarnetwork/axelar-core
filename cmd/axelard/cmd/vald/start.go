@@ -14,6 +14,7 @@ import (
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/jobs"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -23,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -162,123 +164,162 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
-	sender, err := ctx.Keyring.Key(ctx.From)
+	sender, err := clientCtx.Keyring.Key(clientCtx.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
 	}
-	ctx = ctx.
+	clientCtx = clientCtx.
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	bc := createBroadcaster(txf, ctx, axelarCfg, logger)
+	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
 
-	tmClient, err := ctx.GetNode()
-	if err != nil {
-		panic(err)
-	}
-
-	// in order to subscribe to events, the client needs to be running
-	if !tmClient.IsRunning() {
-		if err := tmClient.Start(); err != nil {
-			panic(fmt.Errorf("unable to start client: %v", err))
+	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
+		cl, err := sdkClient.NewClientFromNode(clientCtx.NodeURI)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create a new client")
 		}
-	}
 
+		err = cl.Start()
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to start client")
+		}
+		return cl, nil
+	})
 	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(stateStore, tmClient, logger)
+	startBlock, err := getStartBlock(stateStore, robustClient, logger)
 	if err != nil {
 		panic(err)
 	}
 
-	eventBus := createEventBus(tmClient, startBlock, logger)
+	eventBus := createEventBus(robustClient, startBlock, logger)
 
-	tssMgr := createTSSMgr(bc, ctx, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
 	}
 
-	evmMgr := createEVMMgr(axelarCfg, ctx, bc, logger, cdc)
+	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
-	// we have two processes listening to block headers
-	blockHeaderForTSS := tmEvents.MustSubscribeBlockHeader(eventBus)
-	blockHeaderForStateUpdate := tmEvents.MustSubscribeBlockHeader(eventBus)
-
+	var subscriptions []tmEvents.FilteredSubscriber
 	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
 		return tmEvents.MustSubscribeWithAttributes(eventBus,
 			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
 	}
+
+	blockHeaderSub := tmEvents.MustSubscribeBlockHeader(eventBus)
+	subscriptions = append(subscriptions, blockHeaderSub)
 
 	queryHeartBeat := createNewBlockEventQuery(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 	heartbeat, err := tmEvents.Subscribe(eventBus, queryHeartBeat)
 	if err != nil {
 		panic(fmt.Errorf("unable to subscribe with ack event query: %v", err))
 	}
+	subscriptions = append(subscriptions, heartbeat)
 
 	keygenStart := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, keygenStart)
 
 	querySign := createNewBlockEventQuery(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 	signStart, err := tmEvents.Subscribe(eventBus, querySign)
 	if err != nil {
 		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
 	}
+	subscriptions = append(subscriptions, signStart)
 
 	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	subscriptions = append(subscriptions, keygenMsg)
 	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
+	subscriptions = append(subscriptions, signMsg)
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
+	subscriptions = append(subscriptions, evmNewChain)
 	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmNewChain)
 	evmGatewayDeploymentConf := subscribe(evmTypes.EventTypeGatewayDeploymentConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmGatewayDeploymentConf)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmDepConf)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmTokConf)
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmTraConf)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
-		logger.Info("stopping listening for blocks...")
-		blockHeaderForTSS.Close()
-		logger.Info("block listener stopped")
 		logger.Info("stop listening for events...")
 		cancelEventCtx()
 		<-eventBus.Done()
 		logger.Info("event listener stopped")
+		logger.Info("stopping subscribers...")
+		for _, subscription := range subscriptions {
+			<-subscription.Done()
+		}
+		logger.Info("subscriptions stopped")
 	})
 
-	fetchEvents := func(errChan chan<- error) { errChan <- <-eventBus.FetchEvents(eventCtx) }
-	js := []jobs.Job{
-		fetchEvents,
-		tmEvents.Consume(blockHeaderForStateUpdate, tmEvents.OnlyBlockHeight(stateStore.SetState)),
-		tmEvents.Consume(blockHeaderForTSS, tmEvents.OnlyBlockHeight(func(height int64) error {
-			tssMgr.ProcessNewBlockHeader(height)
+	fetchEvents := func(ctx context.Context) error {
+		select {
+		case <-ctx.Done():
 			return nil
-		})),
-		tmEvents.Consume(heartbeat, tssMgr.ProcessHeartBeatEvent),
-		tmEvents.Consume(keygenStart, tssMgr.ProcessKeygenStart),
-		tmEvents.Consume(keygenMsg, tssMgr.ProcessKeygenMsg),
-		tmEvents.Consume(signStart, tssMgr.ProcessSignStart),
-		tmEvents.Consume(signMsg, tssMgr.ProcessSignMsg),
-		tmEvents.Consume(evmNewChain, evmMgr.ProcessNewChain),
-		tmEvents.Consume(evmChainConf, evmMgr.ProcessChainConfirmation),
-		tmEvents.Consume(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation),
-		tmEvents.Consume(evmDepConf, evmMgr.ProcessDepositConfirmation),
-		tmEvents.Consume(evmTokConf, evmMgr.ProcessTokenConfirmation),
-		tmEvents.Consume(evmTraConf, evmMgr.ProcessTransferKeyConfirmation),
+		case err := <-eventBus.FetchEvents(ctx):
+			cancelEventCtx()
+			return err
+		}
 	}
 
-	// errGroup runs async processes and cancels their context if ANY of them returns an error.
-	// Here, we don't want to stop on errors, but simply log it and continue, so errGroup doesn't cut it
-	logErr := func(err error) { logger.Error(err.Error()) }
-	mgr := jobs.NewMgr(logErr)
+	processBlockHeader := func(event tmEvents.Event) error {
+		tssMgr.ProcessNewBlockHeader(event.Height)
+		return stateStore.SetState(event.Height)
+	}
+
+	js := []jobs.Job{
+		fetchEvents,
+		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
+		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
+		createJob(keygenStart, tssMgr.ProcessKeygenStart, cancelEventCtx, logger),
+		createJob(keygenMsg, tssMgr.ProcessKeygenMsg, cancelEventCtx, logger),
+		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
+		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
+		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
+		createJob(evmChainConf, evmMgr.ProcessChainConfirmation, cancelEventCtx, logger),
+		createJob(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation, cancelEventCtx, logger),
+		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
+		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
+		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
+	}
+
+	mgr := jobs.NewMgr(eventCtx)
 	mgr.AddJobs(js...)
-	mgr.Wait()
+	<-mgr.Done()
 }
 
-func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.Logger) (int64, error) {
+func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+	return func(ctx context.Context) error {
+		processWithLog := func(e tmEvents.Event) {
+			err := processor(e)
+			if err != nil {
+				logger.Error(err.Error())
+			}
+		}
+		consume := tmEvents.Consume(sub, processWithLog)
+		err := consume(ctx)
+		if err != nil {
+			cancel()
+			return err
+		}
+		return nil
+	}
+
+}
+
+func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
 	startBlock, err := stateStore.GetState()
 	if err != nil {
 		logger.Error(err.Error())
@@ -289,13 +330,13 @@ func getStartBlock(stateStore StateStore, tmClient rpcclient.Client, logger log.
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	status, err := tmClient.Status(rpcCtx)
+	height, err := tmClient.LatestBlockHeight(rpcCtx)
 	if err != nil {
 		return 0, err
 	}
 
 	// TODO: Make it configurable instead of a hardcoded 100
-	if status.SyncInfo.LatestBlockHeight-startBlock > 100 {
+	if height-startBlock > 100 {
 		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
 
 		return 0, nil
@@ -313,14 +354,14 @@ func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
 	}
 }
 
-func createEventBus(client rpcclient.Client, startBlock int64, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(tmEvents.NewBlockClient(client), logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier), pubsub.NewBus, logger)
+func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus, logger)
 }
 
-func createBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
+func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
 	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
+	return broadcaster.WithRefund(broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger))
 }
 
 func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
