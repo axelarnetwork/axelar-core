@@ -112,7 +112,7 @@ jobs:
 
       - name: Unit test (check ledger support)
         run: |
-          ./bin/axelard-* version --long
+          ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger"
 
       - name: Import GPG key
         id: import_gpg
@@ -138,12 +138,12 @@ jobs:
       - name: Create zip and sha256 files
         working-directory: ./bin
         run: |
-          for i in `ls`
+          for i in `ls | grep -v *.asc`
           do
+            shasum -a 256 $i | awk '{print $1}' > $i.sha256
             zip $i.zip $i
             shasum -a 256 $i.zip | awk '{print $1}' > $i.zip.sha256
           done
-          ls
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
