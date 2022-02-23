@@ -1,12 +1,9 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
@@ -33,10 +30,6 @@ func (m ConfirmDepositRequest) Type() string {
 func (m ConfirmDepositRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-
-	if len(m.TxID) != common.HashLength {
-		return fmt.Errorf("invalid TxID")
 	}
 
 	if err := sdk.ValidateDenom(m.Denom); err != nil {
