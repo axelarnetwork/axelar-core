@@ -73,7 +73,7 @@ func (b *Broadcaster) processBacklog() {
 			batch = append(batch, task)
 			msgCount += len(task.Msgs)
 
-			// if there are no new tasks are in the backlog, stop filling up the batch
+			// if there are no new tasks in the backlog, stop filling up the batch
 			if b.backlog.Len() == 0 {
 				break
 			}
