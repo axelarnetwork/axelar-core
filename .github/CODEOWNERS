@@ -2,3 +2,5 @@
 # Each line is a file pattern followed by one or more owners.
 
 * @cgorenflo @jcs47 @haiyizxx @sammy1991106
+./.github/workflows/* @talalashraf
+./.github/*.toml @talalashraf
