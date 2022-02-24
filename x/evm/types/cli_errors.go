@@ -5,7 +5,7 @@ const (
 	ErrFDepositAddress  = "could not get the deposit address"
 	ErrAddress          = "could not resolve address"
 	ErrFKeyID           = "could not resolve key ID: %s\n"
-	ErrFGatewayAddress  = "could not resolve gateway address: %s\n"
+	ErrFGatewayAddress  = "could not resolve gateway address"
 	ErrFTokenAddress    = "could not resolve token address: %s\n"
 	ErrFDeployTx        = "could not resolve deploy transaction: %s"
 	ErrFSignedTx        = "could not get transaction with txID %s"

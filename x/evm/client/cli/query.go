@@ -185,9 +185,7 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QAxelarGatewayAddress, args[0]), nil)
 			if err != nil {
-				fmt.Printf(types.ErrFGatewayAddress, err.Error())
-
-				return nil
+				return sdkerrors.Wrapf(err, types.ErrFGatewayAddress)
 			}
 
 			out := common.BytesToAddress(res)

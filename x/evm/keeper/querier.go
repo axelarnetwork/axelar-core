@@ -446,7 +446,10 @@ func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nex
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for symbol '%s' non-existent", symbol))
 	}
 
-	resp := types.QueryTokenAddressResponse{Address: token.GetAddress().Hex()}
+	resp := types.QueryTokenAddressResponse{
+		Address:   token.GetAddress().Hex(),
+		Confirmed: token.Is(types.Confirmed),
+	}
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
