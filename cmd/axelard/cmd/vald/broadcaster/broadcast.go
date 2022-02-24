@@ -60,17 +60,14 @@ func (b *Broadcaster) processBacklog() {
 
 		var batch []broadcastTask
 		msgCount := 0
-		b.logger.Debug("start creating a batch")
 		for {
 			// we cannot split a single task, so take at least one task and then fill up the batch
 			// until the size limit is reached
 			batchWouldBeTooLarge := len(batch) > 0 && msgCount+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
 			if batchWouldBeTooLarge {
-				b.logger.Debug("batch is full")
 				break
 			}
 
-			b.logger.Debug("popping msgs from backlog")
 			task := b.backlog.Pop()
 
 			batch = append(batch, task)
@@ -78,10 +75,8 @@ func (b *Broadcaster) processBacklog() {
 
 			// if there are no new tasks in the backlog, stop filling up the batch
 			if b.backlog.Len() == 0 {
-				b.logger.Debug("backlog empty")
 				break
 			}
-			b.logger.Debug("checking more msgs in the backlog")
 		}
 
 		b.logger.Debug("high traffic; merging batches", "batch_size", msgCount)
