@@ -379,10 +379,10 @@ func (bl *backlog) Peek() broadcastTask {
 }
 
 func (bl *backlog) Len() int {
-	bl.loadHead()
-
+	// do not block in this function because it might be used to inform other calls like Peek()
 	if len(bl.head.Msgs) == 0 {
-		return 0
+		// head is not currently loaded
+		return len(bl.tail)
 	}
 
 	return 1 + len(bl.tail)
