@@ -62,9 +62,9 @@ func (b *Broadcaster) processBacklog() {
 		msgCount := 0
 		for {
 			// we cannot split a single task, so take at least one task and then fill up the batch
-			// until the size limit is reached or no new tasks are in the backlog
+			// until the size limit is reached
 			batchWouldBeTooLarge := len(batch) > 0 && msgCount+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
-			if batchWouldBeTooLarge || b.backlog.Len() == 0 {
+			if batchWouldBeTooLarge {
 				break
 			}
 
@@ -72,6 +72,11 @@ func (b *Broadcaster) processBacklog() {
 
 			batch = append(batch, task)
 			msgCount += len(task.Msgs)
+
+			// if there are no new tasks are in the backlog, stop filling up the batch
+			if b.backlog.Len() == 0 {
+				break
+			}
 		}
 
 		b.logger.Debug("high traffic; merging batches", "batch_size", msgCount)
