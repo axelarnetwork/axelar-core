@@ -2852,6 +2852,7 @@ QueryDepositStateResponse is used by the legacy querier
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
 
 
 

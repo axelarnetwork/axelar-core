@@ -51,7 +51,10 @@ message QueryAddressResponse {
   }
 }
 
-message QueryTokenAddressResponse { string address = 1; }
+message QueryTokenAddressResponse {
+  string address = 1;
+  bool confirmed = 2;
+}
 
 message QueryDepositStateParams {
   bytes tx_id = 1 [
