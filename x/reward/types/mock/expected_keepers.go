@@ -184,7 +184,7 @@ var _ rewardtypes.Refunder = &RefunderMock{}
 // 			DeletePendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)  {
 // 				panic("mock out the DeletePendingRefund method")
 // 			},
-// 			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
+// 			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (rewardtypes.Refund, bool) {
 // 				panic("mock out the GetPendingRefund method")
 // 			},
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
@@ -201,7 +201,7 @@ type RefunderMock struct {
 	DeletePendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)
 
 	// GetPendingRefundFunc mocks the GetPendingRefund method.
-	GetPendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool)
+	GetPendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (rewardtypes.Refund, bool)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -269,7 +269,7 @@ func (mock *RefunderMock) DeletePendingRefundCalls() []struct {
 }
 
 // GetPendingRefund calls GetPendingRefundFunc.
-func (mock *RefunderMock) GetPendingRefund(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (cosmossdktypes.Coin, bool) {
+func (mock *RefunderMock) GetPendingRefund(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (rewardtypes.Refund, bool) {
 	if mock.GetPendingRefundFunc == nil {
 		panic("RefunderMock.GetPendingRefundFunc: method is nil but Refunder.GetPendingRefund was just called")
 	}

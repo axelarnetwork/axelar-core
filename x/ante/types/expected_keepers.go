@@ -43,7 +43,7 @@ type Staking interface {
 
 // Reward provides access to the reward functionality
 type Reward interface {
-	SetPendingRefund(ctx sdk.Context, req rewardtypes.RefundMsgRequest, fee sdk.Coin) error
+	SetPendingRefund(ctx sdk.Context, req rewardtypes.RefundMsgRequest, refund rewardtypes.Refund) error
 }
 
 // Permission provides access to the permission functionality

@@ -286,6 +286,7 @@
 - [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
     - [Pool](#reward.v1beta1.Pool)
     - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+    - [Refund](#reward.v1beta1.Refund)
   
 - [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
     - [GenesisState](#reward.v1beta1.GenesisState)
@@ -4199,6 +4200,22 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `validator` | [bytes](#bytes) |  |  |
 | `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.Refund"></a>
+
+### Refund
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `Payer` | [bytes](#bytes) |  |  |
+| `Fees` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 

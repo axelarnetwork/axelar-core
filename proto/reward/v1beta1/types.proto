@@ -21,3 +21,13 @@ message Pool {
   string name = 1;
   repeated Reward rewards = 2 [ (gogoproto.nullable) = false ];
 }
+
+message Refund {
+  bytes Payer = 1 [ (gogoproto.casttype) =
+      "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  repeated cosmos.base.v1beta1.Coin Fees = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+}
