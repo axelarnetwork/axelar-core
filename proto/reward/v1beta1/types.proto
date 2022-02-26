@@ -24,7 +24,7 @@ message Pool {
 
 message Refund {
   bytes payer = 1 [ (gogoproto.casttype) =
-      "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 
   repeated cosmos.base.v1beta1.Coin fees = 2 [
     (gogoproto.nullable) = false,
