@@ -99,19 +99,19 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 }
 
 // SetPendingRefund saves pending refundable message
-func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, fee sdk.Coin) error {
+func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, refund types.Refund) error {
 	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
+	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &refund)
 	return nil
 }
 
 // GetPendingRefund retrieves a pending refundable message
-func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (sdk.Coin, bool) {
-	var fee sdk.Coin
+func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (types.Refund, bool) {
+	var refund types.Refund
 	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &fee)
+	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &refund)
 
-	return fee, ok
+	return refund, ok
 }
 
 // DeletePendingRefund retrieves a pending refundable message

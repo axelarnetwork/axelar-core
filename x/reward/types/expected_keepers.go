@@ -25,7 +25,7 @@ type Rewarder interface {
 // Refunder provides refunding functionality
 type Refunder interface {
 	Logger(ctx sdk.Context) log.Logger
-	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (sdk.Coin, bool)
+	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (Refund, bool)
 	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
 }
 
