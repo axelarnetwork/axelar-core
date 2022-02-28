@@ -51,10 +51,6 @@ func (k Keeper) setNewTransfer(ctx sdk.Context, recipient exported.CrossChainAdd
 	return exported.TransferID(id)
 }
 
-func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
-	return k.setNewTransfer(ctx, recipient, amount, exported.Pending)
-}
-
 func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
 	k.getStore(ctx).Set(transferFee, &fee)
 }
@@ -148,7 +144,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s from %s in %s to cross chain address %s in %s successfully prepared",
 		asset.String(), sender.Address, sender.Chain.Name, recipient.Address, recipient.Chain.Name))
 
-	return k.setNewPendingTransfer(ctx, recipient, asset), nil
+	return k.setNewTransfer(ctx, recipient, asset, exported.Pending), nil
 }
 
 func (k Keeper) getTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
