@@ -31,7 +31,7 @@ message ConfirmDepositRequest {
 
   reserved 2; // tx_id was removed in v0.14
 
-  reserved 3; // token was removed in v0.13
+  reserved 3; // token was removed in v0.15
 
   bytes deposit_address = 4
       [ (gogoproto.casttype) =
@@ -69,7 +69,7 @@ message AddCosmosBasedChainRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
   string addr_prefix = 3;
-  reserved 4; // min_amount was removed in v0.14
+  reserved 4; // min_amount was removed in v0.15
   repeated nexus.exported.v1beta1.Asset native_assets = 5
       [ (gogoproto.nullable) = false ];
 }

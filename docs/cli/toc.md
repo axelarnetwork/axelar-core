@@ -246,7 +246,7 @@
       - [activate-chain \[chain\]...](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
       - [deactivate-chain \[chain\]...](axelard_tx_nexus_deactivate-chain.md)	 - deactivate the given chains
       - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
-      - [register-asset-fee \[chain\] \[asset\] \[min-fee\] \[max-fee\] \[fee-rate\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
+      - [register-asset-fee \[chain\] \[asset\] \[fee-rate\] \[min-fee\] \[max-fee\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
       - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
     - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
       - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account

@@ -69,7 +69,7 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error {
+// 			RegisterFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
 // 				panic("mock out the RegisterFee method")
 // 			},
 // 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
@@ -131,7 +131,7 @@ type NexusMock struct {
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// RegisterFeeFunc mocks the RegisterFee method.
-	RegisterFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error
+	RegisterFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
 	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
@@ -252,8 +252,6 @@ type NexusMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain exported.Chain
-			// Asset is the asset argument value.
-			Asset string
 			// FeeInfo is the feeInfo argument value.
 			FeeInfo exported.FeeInfo
 		}
@@ -820,25 +818,23 @@ func (mock *NexusMock) LoggerCalls() []struct {
 }
 
 // RegisterFee calls RegisterFeeFunc.
-func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error {
+func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
 	if mock.RegisterFeeFunc == nil {
 		panic("NexusMock.RegisterFeeFunc: method is nil but Nexus.RegisterFee was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Chain   exported.Chain
-		Asset   string
 		FeeInfo exported.FeeInfo
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
-		Asset:   asset,
 		FeeInfo: feeInfo,
 	}
 	mock.lockRegisterFee.Lock()
 	mock.calls.RegisterFee = append(mock.calls.RegisterFee, callInfo)
 	mock.lockRegisterFee.Unlock()
-	return mock.RegisterFeeFunc(ctx, chain, asset, feeInfo)
+	return mock.RegisterFeeFunc(ctx, chain, feeInfo)
 }
 
 // RegisterFeeCalls gets all the calls that were made to RegisterFee.
@@ -847,13 +843,11 @@ func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Contex
 func (mock *NexusMock) RegisterFeeCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Chain   exported.Chain
-	Asset   string
 	FeeInfo exported.FeeInfo
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
 		Chain   exported.Chain
-		Asset   string
 		FeeInfo exported.FeeInfo
 	}
 	mock.lockRegisterFee.RLock()

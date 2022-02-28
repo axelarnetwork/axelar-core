@@ -49,7 +49,7 @@ func TestComputeTransferFee(t *testing.T) {
 	for _, chain := range chains {
 		k.SetChain(ctx, chain)
 		for _, asset := range assets {
-			k.RegisterFee(ctx, chain, asset, chainFeeInfo)
+			k.RegisterFee(ctx, chain, chainFeeInfo)
 		}
 	}
 

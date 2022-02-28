@@ -48,9 +48,7 @@ message DeactivateChainResponse {}
 message RegisterAssetFeeRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  string asset = 3;
-  nexus.exported.v1beta1.FeeInfo fee_info = 4 [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.FeeInfo fee_info = 2 [ (gogoproto.nullable) = false ];
 }
 
 message RegisterAssetFeeResponse {}

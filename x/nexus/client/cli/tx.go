@@ -141,7 +141,7 @@ func GetCmdDeactivateChain() *cobra.Command {
 // GetCmdRegisterAssetFee returns the cli command to register an asset fee
 func GetCmdRegisterAssetFee() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-asset-fee [chain] [asset] [min-fee] [max-fee] [fee-rate]",
+		Use:   "register-asset-fee [chain] [asset] [fee-rate] [min-fee] [max-fee]",
 		Short: "register fees for an asset on a chain",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -150,13 +150,21 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 				return err
 			}
 
-			minFee := sdk.NewUintFromString(args[2])
-			maxFee := sdk.NewUintFromString(args[3])
-			feeRate := sdk.MustNewDecFromStr(args[4])
+			feeRate := sdk.MustNewDecFromStr(args[2])
 
-			feeInfo := exported.NewFeeInfo(feeRate, minFee, maxFee)
+			minFee, ok := sdk.NewIntFromString(args[3])
+			if !ok {
+				return fmt.Errorf("invalid value provided for min fee")
+			}
 
-			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), args[0], args[1], feeInfo)
+			maxFee, ok := sdk.NewIntFromString(args[4])
+			if !ok {
+				return fmt.Errorf("invalid value provided for max fee")
+			}
+
+			feeInfo := exported.NewFeeInfo(args[0], args[1], feeRate, minFee, maxFee)
+
+			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), feeInfo)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

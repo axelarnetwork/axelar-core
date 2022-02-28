@@ -55,21 +55,24 @@ message TransferFee {
 }
 
 message FeeInfo {
-  bytes fee_rate = 1 [
+  string chain = 1;
+  string asset = 2;
+  bytes fee_rate = 3 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];
-  bytes min_fee = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+  bytes min_fee = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-  bytes max_fee = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+  bytes max_fee = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
 }
 
 message Asset {
   string denom = 1;
-  bool is_native_asset = 2;
+  reserved 2; // min_amount was removed in v0.15
+  bool is_native_asset = 3;
 }

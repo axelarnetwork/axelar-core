@@ -3,7 +3,7 @@
 register fees for an asset on a chain
 
 ```
-axelard tx nexus register-asset-fee [chain] [asset] [min-fee] [max-fee] [fee-rate] [flags]
+axelard tx nexus register-asset-fee [chain] [asset] [fee-rate] [min-fee] [max-fee] [flags]
 ```
 
 ### Options

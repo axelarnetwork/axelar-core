@@ -36,7 +36,7 @@ type Nexus interface {
 	LatestDepositAddress(c context.Context, req *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
-	RegisterFee(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error
+	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool)
 }
 

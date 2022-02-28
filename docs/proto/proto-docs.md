@@ -935,6 +935,8 @@ registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 | `fee_rate` | [bytes](#bytes) |  |  |
 | `min_fee` | [bytes](#bytes) |  |  |
 | `max_fee` | [bytes](#bytes) |  |  |
@@ -3857,8 +3859,6 @@ info associated to an asset on a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `asset` | [string](#string) |  |  |
 | `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
 
 

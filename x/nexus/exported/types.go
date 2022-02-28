@@ -133,23 +133,34 @@ func (m Asset) Validate() error {
 }
 
 // NewFeeInfo returns a FeeInfo struct
-func NewFeeInfo(feeRate sdk.Dec, minFee sdk.Uint, maxFee sdk.Uint) FeeInfo {
-	return FeeInfo{FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
+func NewFeeInfo(chain string, asset string, feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int) FeeInfo {
+	chain = utils.NormalizeString(chain)
+	asset = utils.NormalizeString(asset)
+
+	return FeeInfo{Chain: chain, Asset: asset, FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
 }
 
 // ZeroFeeInfo returns a FeeInfo struct with zero fees
-func ZeroFeeInfo() FeeInfo {
-	return NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint())
+func ZeroFeeInfo(chain string, asset string) FeeInfo {
+	return NewFeeInfo(chain, asset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt())
 }
 
 // Validate checks the stateless validity of fee info
 func (m FeeInfo) Validate() error {
-	if m.MinFee.GT(m.MaxFee) {
-		return fmt.Errorf("min fee should not be greater than max fee")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if m.FeeRate.IsNil() {
-		return fmt.Errorf("fee rate should not be nil")
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
+	}
+
+	if m.MinFee.IsNegative() {
+		return fmt.Errorf("min fee cannot be negative")
+	}
+
+	if m.MinFee.GT(m.MaxFee) {
+		return fmt.Errorf("min fee should not be greater than max fee")
 	}
 
 	if m.FeeRate.IsNegative() {

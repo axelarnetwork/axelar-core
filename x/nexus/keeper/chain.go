@@ -69,12 +69,14 @@ func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, 
 
 // GetFeeInfo retrieves the fee info for an asset on a chain, and returns zero fees if it doesn't exist
 func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
-	feeInfo = exported.ZeroFeeInfo()
+	feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
 	return feeInfo, k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
 // RegisterFee registers the fee info for an asset on a chain
-func (k Keeper) RegisterFee(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) error {
+func (k Keeper) RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
+	asset := feeInfo.Asset
+
 	if !k.IsAssetRegistered(ctx, chain, asset) {
 		return fmt.Errorf("%s is not a registered asset for chain %s", asset, chain.Name)
 	}
