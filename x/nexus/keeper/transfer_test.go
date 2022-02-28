@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/ethereum/go-ethereum/common/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -27,15 +28,25 @@ import (
 )
 
 var (
-	linkedAddr   = 50
-	terra        = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
-	terraAssets  = []string{"uluna", "uusd"}
-	avalanche    = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
-	chains       = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
-	assets       = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
-	minAmount    = maxAmount / 2
-	chainFeeInfo = nexus.NewFeeInfo(sdk.ZeroDec(), sdk.NewUint(uint64(minAmount)), sdk.NewUint(uint64(maxAmount)))
+	linkedAddr  = 50
+	terra       = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
+	terraAssets = []string{"uluna", "uusd"}
+	avalanche   = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
+	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
+	assets      = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
+	minAmount   = maxAmount / 2
 )
+
+func TestUintIntConversion(t *testing.T) {
+	maxUint := sdk.NewUintFromBigInt(math.MaxBig256)
+	maxInt := sdk.Int(maxUint)
+
+	// ensure max uint can be converted into int without overflow
+	assert.True(t, maxInt.IsPositive())
+	assert.Equal(t, maxInt.BigInt().BitLen(), 256)
+	assert.Panics(t, func() { maxInt.AddRaw(1) })
+	assert.Equal(t, maxUint, sdk.Uint(maxInt))
+}
 
 func TestComputeTransferFee(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
@@ -46,25 +57,21 @@ func TestComputeTransferFee(t *testing.T) {
 		assetFees map[string]nexus.FeeInfo
 	)
 
-	for _, chain := range chains {
-		k.SetChain(ctx, chain)
-		for _, asset := range assets {
-			k.RegisterFee(ctx, chain, chainFeeInfo)
-		}
-	}
+	testChain := chains[0].Name
+	testAsset := assets[0]
 
-	err := nexus.NewFeeInfo(sdk.ZeroDec(), sdk.ZeroUint(), sdk.ZeroUint()).Validate()
+	err := nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
 	assert.Nil(t, err)
 
-	err = nexus.NewFeeInfo(sdk.OneDec(), sdk.Uint(sdk.NewIntFromUint64(10000)), sdk.Uint(sdk.NewIntFromUint64(10000))).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.OneDec(), sdk.NewInt(10000), sdk.NewInt(10000)).Validate()
 	assert.Nil(t, err)
 
 	// invalid fee
-	err = nexus.NewFeeInfo(sdk.NewDecWithPrec(15, 1), sdk.ZeroUint(), sdk.ZeroUint()).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.NewDecWithPrec(15, 1), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
 	assert.Error(t, err)
 
 	// invalid fee
-	err = nexus.NewFeeInfo(sdk.ZeroDec(), sdk.NewUint(10), sdk.NewUint(4)).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.NewInt(10), sdk.NewInt(4)).Validate()
 	assert.Error(t, err)
 
 	Given("a keeper",
@@ -76,8 +83,8 @@ func TestComputeTransferFee(t *testing.T) {
 			func(t *testing.T) {
 				for _, chain := range chains {
 					for _, asset := range assets {
-						assetFees[chain.Name+"_"+asset] = randFee()
-						k.RegisterFee(ctx, chain, asset, assetFees[chain.Name+"_"+asset])
+						assetFees[chain.Name+"_"+asset] = randFee(chain.Name, asset)
+						k.RegisterFee(ctx, chain, assetFees[chain.Name+"_"+asset])
 					}
 				}
 			}).
@@ -95,7 +102,7 @@ func TestComputeTransferFee(t *testing.T) {
 							assetFee := assetFees[sourceChain.Name+"_"+asset]
 							assert.Equal(t, sourceChainFee, assetFee)
 
-							coin := sdk.NewCoin(asset, sdk.Int(randUint(0, uint64(maxAmount)*2)))
+							coin := sdk.NewCoin(asset, randInt(0, maxAmount*2))
 							amount := coin.Amount
 
 							fees, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
@@ -106,8 +113,8 @@ func TestComputeTransferFee(t *testing.T) {
 							maxFee := sourceChainFee.MaxFee.Add(destinationChainFee.MaxFee)
 
 							fee := sdk.NewDecFromInt(amount).Mul(feeRate).TruncateInt()
-							fee = sdk.MaxInt(sdk.Int(minFee), fee)
-							fee = sdk.MinInt(sdk.Int(maxFee), fee)
+							fee = sdk.MaxInt(minFee, fee)
+							fee = sdk.MinInt(maxFee, fee)
 
 							assert.Equal(t, fees.Amount, fee)
 						}
@@ -392,7 +399,9 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 			}
 
 			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative))
-			k.RegisterFee(ctx, chain, asset, chainFeeInfo)
+
+			feeInfo := nexus.NewFeeInfo(chain.Name, asset, sdk.ZeroDec(), sdk.NewInt(minAmount), sdk.NewInt(maxAmount))
+			k.RegisterFee(ctx, chain, feeInfo)
 		}
 		k.ActivateChain(ctx, chain)
 	}
@@ -410,16 +419,16 @@ func randAsset() string {
 }
 
 func makeAmountAboveMin(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(chainFeeInfo.MinFee.BigInt().Int64()*2, chainFeeInfo.MaxFee.BigInt().Int64()*2)))
+	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount*2, maxAmount*2)))
 }
 
-func randFee() nexus.FeeInfo {
-	rate := sdk.NewDecWithPrec(sdk.Int(randUint(0, 100)).Int64(), 3)
-	min := randUint(0, uint64(minAmount))
-	max := randUint(min.Uint64(), uint64(maxAmount))
-	return nexus.NewFeeInfo(rate, min, max)
+func randFee(chain string, asset string) nexus.FeeInfo {
+	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
+	min := randInt(0, minAmount)
+	max := randInt(min.Int64(), maxAmount)
+	return nexus.NewFeeInfo(chain, asset, rate, min, max)
 }
 
-func randUint(min uint64, max uint64) sdk.Uint {
-	return sdk.NewUint(uint64(rand.I64Between(int64(min), int64(max))))
+func randInt(min int64, max int64) sdk.Int {
+	return sdk.NewInt(rand.I64Between(int64(min), int64(max)))
 }

@@ -64,19 +64,6 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
-// computeChainFee computes the fee for an asset transfer on a given chain
-//
-// chain_fee = min(max_fee, max(min_fee, fee_rate * amount))
-func (k Keeper) computeChainFee(ctx sdk.Context, chain exported.Chain, asset sdk.Coin) sdk.Coin {
-	feeInfo, _ := k.GetFeeInfo(ctx, chain, asset.Denom)
-
-	fee := sdk.NewDecFromInt(asset.Amount).Mul(feeInfo.FeeRate).TruncateInt()
-	fee = sdk.MaxInt(sdk.Int(feeInfo.MinFee), fee)
-	fee = sdk.MinInt(sdk.Int(feeInfo.MaxFee), fee)
-
-	return sdk.NewCoin(asset.Denom, fee)
-}
-
 // ComputeTransferFee computes the fee for a cross-chain transfer.
 // If fee_info is not set for an asset on a chain, default of zero is used
 //
@@ -96,8 +83,8 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 	maxFee := sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee)
 
 	fee := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
-	fee = sdk.MaxInt(sdk.Int(minFee), fee)
-	fee = sdk.MinInt(sdk.Int(maxFee), fee)
+	fee = sdk.MaxInt(minFee, fee)
+	fee = sdk.MinInt(maxFee, fee)
 
 	return sdk.NewCoin(asset.Denom, fee), nil
 }
