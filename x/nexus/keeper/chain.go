@@ -63,6 +63,20 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom s
 	return chainState.HasAsset(denom)
 }
 
+func (k Keeper) getFeeInfos(ctx sdk.Context) (feeInfos []exported.FeeInfo) {
+	iter := k.getStore(ctx).Iterator(assetFeePrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var feeInfo exported.FeeInfo
+		iter.UnmarshalValue(&feeInfo)
+
+		feeInfos = append(feeInfos, feeInfo)
+	}
+
+	return feeInfos
+}
+
 func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) {
 	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
 }

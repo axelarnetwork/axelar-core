@@ -109,11 +109,6 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
-
-	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper, am.axelarnet, am.evm))
-	if err != nil {
-		panic(err)
-	}
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state

@@ -3587,6 +3587,7 @@ GenesisState represents the genesis state
 | `linked_addresses` | [LinkedAddresses](#nexus.v1beta1.LinkedAddresses) | repeated |  |
 | `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
 | `fee` | [nexus.exported.v1beta1.TransferFee](#nexus.exported.v1beta1.TransferFee) |  |  |
+| `fee_infos` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) | repeated |  |
 
 
 

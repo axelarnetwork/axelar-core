@@ -60,6 +60,22 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
+// getCrossChainFees computes the fee info for a cross-chain transfer.
+func (k Keeper) getCrossChainFees(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset string) (feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int, err error) {
+	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset)
+	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset)
+
+	feeRate = sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate)
+	if feeRate.GT(sdk.OneDec()) {
+		return sdk.Dec{}, sdk.Int{}, sdk.Int{}, fmt.Errorf("total fee rate should not be greater than 1")
+	}
+
+	minFee = sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee)
+	maxFee = sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee)
+
+	return feeRate, minFee, maxFee, nil
+}
+
 // ComputeTransferFee computes the fee for a cross-chain transfer.
 // If fee_info is not set for an asset on a chain, default of zero is used
 //
@@ -67,16 +83,10 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 //
 // INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
 func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, error) {
-	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset.Denom)
-	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset.Denom)
-
-	feeRate := sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate)
-	if feeRate.GT(sdk.OneDec()) {
-		return sdk.Coin{}, fmt.Errorf("total fee rate should not be greater than 1")
+	feeRate, minFee, maxFee, err := k.getCrossChainFees(ctx, sourceChain, destinationChain, asset.Denom)
+	if err != nil {
+		return sdk.Coin{}, err
 	}
-
-	minFee := sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee)
-	maxFee := sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee)
 
 	fee := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
 	fee = sdk.MaxInt(minFee, fee)

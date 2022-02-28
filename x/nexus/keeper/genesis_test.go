@@ -21,6 +21,7 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -55,6 +56,17 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
+func randFee(chain string, asset string) nexus.FeeInfo {
+	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
+	min := randInt(0, 10)
+	max := randInt(min.Int64(), 100)
+	return nexus.NewFeeInfo(chain, asset, rate, min, max)
+}
+
+func randInt(min int64, max int64) sdk.Int {
+	return sdk.NewInt(rand.I64Between(int64(min), int64(max)))
+}
+
 func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) {
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.Equal(t, expected.Nonce, actual.Nonce)
@@ -62,6 +74,8 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.ElementsMatch(t, expected.ChainStates, actual.ChainStates)
 	assert.ElementsMatch(t, expected.LinkedAddresses, actual.LinkedAddresses)
 	assert.ElementsMatch(t, expected.Transfers, actual.Transfers)
+	assert.Equal(t, expected.Fee, actual.Fee)
+	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
@@ -80,9 +94,14 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	expected := types.DefaultGenesisState()
 
+	keeper.RegisterFee(ctx, axelarnet.Axelarnet, randFee(axelarnet.Axelarnet.Name, axelarnet.NativeAsset))
+
 	keeper.SetChain(ctx, bitcoin.Bitcoin)
 	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, true))
+	keeper.RegisterFee(ctx, bitcoin.Bitcoin, randFee(bitcoin.Bitcoin.Name, bitcoin.NativeAsset))
+
 	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false))
+	keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset))
 
 	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
 	for _, chain := range expected.Chains {
@@ -104,7 +123,13 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	for i, linkedAddress := range expectedLinkedAddresses {
 		depositAddress := linkedAddress.DepositAddress
 		recipientAddress := linkedAddress.RecipientAddress
-		asset := sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64()))
+
+		_, minFee, maxFee, err := keeper.getCrossChainFees(ctx, depositAddress.Chain, recipientAddress.Chain, axelarnet.NativeAsset)
+		assert.Nil(t, err)
+
+		asset := sdk.NewCoin(axelarnet.NativeAsset, randInt(minFee.Int64()/2, maxFee.Int64()*2))
+		fees, err := keeper.ComputeTransferFee(ctx, depositAddress.Chain, recipientAddress.Chain, asset)
+		assert.Nil(t, err)
 
 		keeper.EnqueueForTransfer(
 			ctx,
@@ -112,13 +137,21 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 			asset,
 		)
 
-		expectedTransfer := exported.NewPendingCrossChainTransfer(uint64(i), recipientAddress, asset)
+		if asset.Amount.LTE(fees.Amount) {
+			expectedTransfer := exported.NewCrossChainTransfer(uint64(i), recipientAddress, asset, exported.InsufficientAmount)
+			expected.Transfers = append(expected.Transfers, expectedTransfer)
+			continue
+		}
+
+		expectedTransfer := exported.NewPendingCrossChainTransfer(uint64(i), recipientAddress, asset.Sub(fees))
 		if rand.Bools(0.5).Next() {
 			keeper.ArchivePendingTransfer(ctx, expectedTransfer)
 			expectedTransfer.State = exported.Archived
 		}
 
 		expected.Transfers = append(expected.Transfers, expectedTransfer)
+
+		expected.Fee.Coins = expected.Fee.Coins.Add(fees)
 	}
 
 	expected.ChainStates = []types.ChainState{
@@ -137,6 +170,15 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 			Assets:    []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, true)},
 			Activated: true,
 		},
+	}
+
+	for _, chainState := range expected.ChainStates {
+		for _, asset := range chainState.Assets {
+			feeInfo, found := keeper.GetFeeInfo(ctx, chainState.Chain, asset.Denom)
+			if found {
+				expected.FeeInfos = append(expected.FeeInfos, feeInfo)
+			}
+		}
 	}
 
 	actual := keeper.ExportGenesis(ctx)
