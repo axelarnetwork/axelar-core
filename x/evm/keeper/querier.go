@@ -500,6 +500,23 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	}
 }
 
+// queryPendingCommands returns the pending commands for a gateway
+func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]types.QueryCommandResponse, error) {
+	var resp types.PendingCommandsResponse
+	commands := keeper.GetPendingCommands(ctx)
+
+	for _, cmd := range commands {
+		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
+		if err != nil {
+			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		resp.Commands = append(resp.Commands, cmdResp)
+	}
+
+	return resp.Commands, nil
+}
+
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {

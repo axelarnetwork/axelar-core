@@ -168,4 +168,9 @@ service QueryService {
   rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
     option (google.api.http).get = "/evm/v1beta1/deposit_state";
   }
+
+  // PendingCommands queries the pending commands for the specified chain
+  rpc PendingCommands(PendingCommandsRequest) returns (PendingCommandsResponse) {
+    option (google.api.http).get = "/evm/v1beta1/pending_commands";
+  }
 }

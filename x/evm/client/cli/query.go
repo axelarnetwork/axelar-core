@@ -296,12 +296,17 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryPendingCommands(clientCtx, args[0])
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.PendingCommands(cmd.Context(),
+				&types.PendingCommandsRequest{
+					Chain: args[0],
+				})
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
