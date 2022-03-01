@@ -169,21 +169,6 @@ func TestTransfer(t *testing.T) {
 	Given("a keeper",
 		func(t *testing.T) {
 			k, ctx = setup(cfg)
-		}).
-		When("no recipient linked to sender",
-			func(t *testing.T) {
-				sender, _ = makeRandAddresses(k, ctx)
-			}).
-		Then("enqueue transfer should return error",
-			func(t *testing.T) {
-				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()))
-				assert.Error(t, err)
-			},
-		).Run(t, repeated)
-
-	Given("a keeper",
-		func(t *testing.T) {
-			k, ctx = setup(cfg)
 
 			// clear start
 			recipients = nil
