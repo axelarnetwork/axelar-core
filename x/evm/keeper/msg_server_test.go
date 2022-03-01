@@ -373,7 +373,6 @@ func TestLink_UnknownChain(t *testing.T) {
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
-		TransactionFeeRate:  sdk.NewDecWithPrec(25, 5),
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L", Chain: btc.Bitcoin}
@@ -410,7 +409,6 @@ func TestLink_NoGateway(t *testing.T) {
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
-		TransactionFeeRate:  sdk.NewDecWithPrec(25, 5),
 	})
 
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
@@ -1505,7 +1503,6 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 			Name: network,
 			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
-		TransactionFeeRate: sdk.NewDecWithPrec(25, 5),
 	})
 	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
 	k.ForChain(chain).ConfirmPendingGateway(ctx)
@@ -1517,7 +1514,7 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	account := rand.AccAddr()
 
 	asset := types.NewAsset(btc.Bitcoin.Name, btc.NativeAsset)
-	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details, MinAmount: sdk.NewInt(1000000)}
+	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details}
 }
 
 func createDetails(name, symbol string) types.TokenDetails {

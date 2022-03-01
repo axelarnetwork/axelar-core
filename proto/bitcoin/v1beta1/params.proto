@@ -32,8 +32,5 @@ message Params {
       [ (gogoproto.nullable) = false ];
   int64 min_voter_count = 12;
   int64 max_tx_size = 13;
-  string transaction_fee_rate = 14 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
+  reserved 14; // transaction_fee_rate was removed in v0.14
 }

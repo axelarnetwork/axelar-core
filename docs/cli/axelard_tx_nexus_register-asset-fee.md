@@ -1,9 +1,9 @@
-## axelard tx axelarnet add-cosmos-based-chain
+## axelard tx nexus register-asset-fee
 
-Add a new cosmos based chain
+register fees for an asset on a chain
 
 ```
-axelard tx axelarnet add-cosmos-based-chain [name] [address prefix] [flags]
+axelard tx nexus register-asset-fee [chain] [asset] [fee-rate] [min-fee] [max-fee] [flags]
 ```
 
 ### Options
@@ -19,11 +19,10 @@ axelard tx axelarnet add-cosmos-based-chain [name] [address prefix] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.05uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for add-cosmos-based-chain
+  -h, --help                     help for register-asset-fee
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
-      --native-asset strings     denom, e.g. uaxl
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
@@ -46,4 +45,4 @@ axelard tx axelarnet add-cosmos-based-chain [name] [address prefix] [flags]
 
 ### SEE ALSO
 
-- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+- [axelard tx nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands

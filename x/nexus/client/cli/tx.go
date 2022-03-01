@@ -3,10 +3,12 @@ package cli
 import (
 	"fmt"
 
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 )
 
@@ -26,6 +28,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdDeregisterChainMaintainer(),
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
+		GetCmdRegisterAssetFee(),
 	)
 
 	return txCmd
@@ -122,6 +125,46 @@ func GetCmdDeactivateChain() *cobra.Command {
 			}
 
 			msg := types.NewDeactivateChainRequest(cliCtx.GetFromAddress(), args...)
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRegisterAssetFee returns the cli command to register an asset fee
+func GetCmdRegisterAssetFee() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "register-asset-fee [chain] [asset] [fee-rate] [min-fee] [max-fee]",
+		Short: "register fees for an asset on a chain",
+		Args:  cobra.ExactArgs(5),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			feeRate := sdk.MustNewDecFromStr(args[2])
+
+			minFee, ok := sdk.NewIntFromString(args[3])
+			if !ok {
+				return fmt.Errorf("invalid value provided for min fee")
+			}
+
+			maxFee, ok := sdk.NewIntFromString(args[4])
+			if !ok {
+				return fmt.Errorf("invalid value provided for max fee")
+			}
+
+			feeInfo := exported.NewFeeInfo(args[0], args[1], feeRate, minFee, maxFee)
+
+			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), feeInfo)
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err

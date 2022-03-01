@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -60,6 +61,43 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom s
 	}
 
 	return chainState.HasAsset(denom)
+}
+
+func (k Keeper) getFeeInfos(ctx sdk.Context) (feeInfos []exported.FeeInfo) {
+	iter := k.getStore(ctx).Iterator(assetFeePrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var feeInfo exported.FeeInfo
+		iter.UnmarshalValue(&feeInfo)
+
+		feeInfos = append(feeInfos, feeInfo)
+	}
+
+	return feeInfos
+}
+
+func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) {
+	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+}
+
+// GetFeeInfo retrieves the fee info for an asset on a chain, and returns zero fees if it doesn't exist
+func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
+	feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
+	return feeInfo, k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+}
+
+// RegisterFee registers the fee info for an asset on a chain
+func (k Keeper) RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
+	asset := feeInfo.Asset
+
+	if !k.IsAssetRegistered(ctx, chain, asset) {
+		return fmt.Errorf("%s is not a registered asset for chain %s", asset, chain.Name)
+	}
+
+	k.setFeeInfo(ctx, chain, asset, feeInfo)
+
+	return nil
 }
 
 // ActivateChain activates the given chain
@@ -136,16 +174,6 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, mai
 	k.setChainState(ctx, chainState)
 
 	return nil
-}
-
-// GetMinAmount returns the asset's minimum transferable amount for the given chain
-func (k Keeper) GetMinAmount(ctx sdk.Context, chain exported.Chain, asset string) (sdk.Int, bool) {
-	chainState, ok := k.getChainState(ctx, chain)
-	if !ok {
-		return sdk.ZeroInt(), false
-	}
-
-	return chainState.AssetMinAmount(asset), true
 }
 
 // GetChains retrieves the specification for all supported blockchains

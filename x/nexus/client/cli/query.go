@@ -6,6 +6,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
@@ -27,6 +28,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandChainMaintainers(queryRoute),
 		GetCommandLatestDepositAddress(),
 		GetCommandTransfersForChain(),
+		GetCommandFee(),
+		GetCommandTransferFee(),
 	)
 
 	return queryCmd
@@ -96,7 +99,7 @@ func GetCommandLatestDepositAddress() *cobra.Command {
 // GetCommandTransfersForChain returns the query for the transfers for a given chain
 func GetCommandTransfersForChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfers-for-chain [chain] [state (pending|archived)]",
+		Use:   "transfers-for-chain [chain] [state (pending|archived|insufficient_amount)]",
 		Short: "Query for account by address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -117,10 +120,15 @@ func GetCommandTransfersForChain() *cobra.Command {
 				pageReq.Key = nil
 			}
 
+			transferState := nexus.TransferStateFromString(args[1])
+			if transferState == nexus.TRANSFER_STATE_UNSPECIFIED {
+				return fmt.Errorf("invalid transfer state %s provided", args[1])
+			}
+
 			res, err := queryClient.TransfersForChain(cmd.Context(),
 				&types.TransfersForChainRequest{
 					Chain:      args[0],
-					State:      nexus.TransferStateFromString(args[1]),
+					State:      transferState,
 					Pagination: pageReq,
 				})
 			if err != nil {
@@ -133,6 +141,76 @@ func GetCommandTransfersForChain() *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 	flags.AddPaginationFlagsToCmd(cmd, "transfers")
+
+	return cmd
+}
+
+// GetCommandFee returns the query for the fee info of an asset registered on a chain
+func GetCommandFee() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fee [chain] [asset]",
+		Short: "Query for fees registered for an asset on a chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Fee(cmd.Context(),
+				&types.FeeRequest{
+					Chain: args[0],
+					Asset: args[1],
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCommandTransferFee returns the query for the transfers for a given chain
+func GetCommandTransferFee() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer-fee [source-chain] [destination-chain] [amount]",
+		Short: "Returns the fee incurred on a cross-chain transfer",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			amount, err := sdk.ParseCoinNormalized(args[2])
+			if err != nil {
+				return err
+			}
+
+			res, err := queryClient.TransferFee(cmd.Context(),
+				&types.TransferFeeRequest{
+					SourceChain:      args[0],
+					DestinationChain: args[1],
+					Amount:           amount,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
 }

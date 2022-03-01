@@ -1190,7 +1190,7 @@ var _ types.Nexus = &NexusMock{}
 // 			ArchivePendingTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
 // 			},
-// 			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin, feeRate github_com_cosmos_cosmos_sdk_types.Dec) (nexus.TransferID, error) {
+// 			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (nexus.TransferID, error) {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
 // 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool) {
@@ -1237,7 +1237,7 @@ type NexusMock struct {
 	ArchivePendingTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer nexus.CrossChainTransfer)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin, feeRate github_com_cosmos_cosmos_sdk_types.Dec) (nexus.TransferID, error)
+	EnqueueForTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (nexus.TransferID, error)
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (nexus.Chain, bool)
@@ -1289,8 +1289,6 @@ type NexusMock struct {
 			Sender nexus.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount github_com_cosmos_cosmos_sdk_types.Coin
-			// FeeRate is the feeRate argument value.
-			FeeRate github_com_cosmos_cosmos_sdk_types.Dec
 		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
@@ -1427,41 +1425,37 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 }
 
 // EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin, feeRate github_com_cosmos_cosmos_sdk_types.Dec) (nexus.TransferID, error) {
+func (mock *NexusMock) EnqueueForTransfer(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (nexus.TransferID, error) {
 	if mock.EnqueueForTransferFunc == nil {
 		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Sender  nexus.CrossChainAddress
-		Amount  github_com_cosmos_cosmos_sdk_types.Coin
-		FeeRate github_com_cosmos_cosmos_sdk_types.Dec
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender nexus.CrossChainAddress
+		Amount github_com_cosmos_cosmos_sdk_types.Coin
 	}{
-		Ctx:     ctx,
-		Sender:  sender,
-		Amount:  amount,
-		FeeRate: feeRate,
+		Ctx:    ctx,
+		Sender: sender,
+		Amount: amount,
 	}
 	mock.lockEnqueueForTransfer.Lock()
 	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
 	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount, feeRate)
+	return mock.EnqueueForTransferFunc(ctx, sender, amount)
 }
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
 //     len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Sender  nexus.CrossChainAddress
-	Amount  github_com_cosmos_cosmos_sdk_types.Coin
-	FeeRate github_com_cosmos_cosmos_sdk_types.Dec
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Sender nexus.CrossChainAddress
+	Amount github_com_cosmos_cosmos_sdk_types.Coin
 } {
 	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Sender  nexus.CrossChainAddress
-		Amount  github_com_cosmos_cosmos_sdk_types.Coin
-		FeeRate github_com_cosmos_cosmos_sdk_types.Dec
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Sender nexus.CrossChainAddress
+		Amount github_com_cosmos_cosmos_sdk_types.Coin
 	}
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer
@@ -2702,9 +2696,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetTokensFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token {
 // 				panic("mock out the GetTokens method")
 // 			},
-// 			GetTransactionFeeRateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool) {
-// 				panic("mock out the GetTransactionFeeRate method")
-// 			},
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
 // 			},
@@ -2852,9 +2843,6 @@ type ChainKeeperMock struct {
 
 	// GetTokensFunc mocks the GetTokens method.
 	GetTokensFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token
-
-	// GetTransactionFeeRateFunc mocks the GetTransactionFeeRate method.
-	GetTransactionFeeRateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool)
 
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
@@ -3121,11 +3109,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetTransactionFeeRate holds details about calls to the GetTransactionFeeRate method.
-		GetTransactionFeeRate []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetVotingThreshold holds details about calls to the GetVotingThreshold method.
 		GetVotingThreshold []struct {
 			// Ctx is the ctx argument value.
@@ -3230,7 +3213,6 @@ type ChainKeeperMock struct {
 	lockGetRevoteLockingPeriod        sync.RWMutex
 	lockGetTokenByteCode              sync.RWMutex
 	lockGetTokens                     sync.RWMutex
-	lockGetTransactionFeeRate         sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
@@ -4508,37 +4490,6 @@ func (mock *ChainKeeperMock) GetTokensCalls() []struct {
 	mock.lockGetTokens.RLock()
 	calls = mock.calls.GetTokens
 	mock.lockGetTokens.RUnlock()
-	return calls
-}
-
-// GetTransactionFeeRate calls GetTransactionFeeRateFunc.
-func (mock *ChainKeeperMock) GetTransactionFeeRate(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Dec, bool) {
-	if mock.GetTransactionFeeRateFunc == nil {
-		panic("ChainKeeperMock.GetTransactionFeeRateFunc: method is nil but ChainKeeper.GetTransactionFeeRate was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetTransactionFeeRate.Lock()
-	mock.calls.GetTransactionFeeRate = append(mock.calls.GetTransactionFeeRate, callInfo)
-	mock.lockGetTransactionFeeRate.Unlock()
-	return mock.GetTransactionFeeRateFunc(ctx)
-}
-
-// GetTransactionFeeRateCalls gets all the calls that were made to GetTransactionFeeRate.
-// Check the length with:
-//     len(mockedChainKeeper.GetTransactionFeeRateCalls())
-func (mock *ChainKeeperMock) GetTransactionFeeRateCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetTransactionFeeRate.RLock()
-	calls = mock.calls.GetTransactionFeeRate
-	mock.lockGetTransactionFeeRate.RUnlock()
 	return calls
 }
 

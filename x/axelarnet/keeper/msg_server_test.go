@@ -101,8 +101,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ibcPath := randomIBCPath()
 		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
 				return ibcPath, true
 			},
@@ -116,7 +115,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				return nexus.TransferID(mathRand.Uint64()), nil
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) {
@@ -164,7 +163,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when EnqueueForTransfer in nexus keeper failed", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgConfirmDeposit()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 			return 0, fmt.Errorf("failed")
 		}
 
@@ -308,7 +307,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
+					transfer := randomTransfer(testToken, testChain)
 					transfers = append(transfers, transfer)
 				}
 				randTransferIdx = mathRand.Intn(len(transfers))
@@ -323,7 +322,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				}, true
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) (nexus.TransferID, error) {
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				return nexus.TransferID(mathRand.Uint64()), nil
 			},
 			GetTransferFeesFunc: func(sdk.Context) sdk.Coins { return sdk.NewCoins() },
@@ -399,7 +398,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 		transfers = []nexus.CrossChainTransfer{}
 		for i := int64(0); i < rand.I64Between(1, 50); i++ {
-			transfer := randomTransfer(exported.NativeAsset, testChain, sdk.NewInt(1000000))
+			transfer := randomTransfer(exported.NativeAsset, testChain)
 			transfers = append(transfers, transfer)
 		}
 
@@ -483,7 +482,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			GetTransfersForChainFunc: func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
 				transfers = []nexus.CrossChainTransfer{}
 				for i := int64(0); i < rand.I64Between(1, 50); i++ {
-					transfer := randomTransfer(testToken, testChain, sdk.NewInt(1000000))
+					transfer := randomTransfer(testToken, testChain)
 					transfers = append(transfers, transfer)
 				}
 				return transfers
@@ -583,7 +582,7 @@ func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
 
 }
 
-func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossChainTransfer {
+func randomTransfer(asset string, chain string) nexus.CrossChainTransfer {
 	hash := sha256.Sum256(rand.BytesBetween(20, 50))
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 
@@ -597,7 +596,7 @@ func randomTransfer(asset string, chain string, minAmount sdk.Int) nexus.CrossCh
 			},
 			Address: ranAddr,
 		},
-		sdk.NewInt64Coin(asset, rand.I64Between(minAmount.Int64(), minAmount.Int64()+10000000000)),
+		sdk.NewInt64Coin(asset, rand.I64Between(1, 10000000000)),
 	)
 }
 

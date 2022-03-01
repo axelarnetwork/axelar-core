@@ -22,4 +22,6 @@ message GenesisState {
   repeated nexus.exported.v1beta1.CrossChainTransfer transfers = 6
       [ (gogoproto.nullable) = false ];
   nexus.exported.v1beta1.TransferFee fee = 7 [ (gogoproto.nullable) = false ];
+  repeated nexus.exported.v1beta1.FeeInfo fee_infos = 8
+      [ (gogoproto.nullable) = false ];
 }

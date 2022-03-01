@@ -2,8 +2,8 @@ package types
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -20,6 +20,7 @@ func NewGenesisState(
 	linkedAddresses []LinkedAddresses,
 	transfers []exported.CrossChainTransfer,
 	fee exported.TransferFee,
+	feeInfos []exported.FeeInfo,
 ) *GenesisState {
 	return &GenesisState{
 		Params:          params,
@@ -29,6 +30,7 @@ func NewGenesisState(
 		LinkedAddresses: linkedAddresses,
 		Transfers:       transfers,
 		Fee:             fee,
+		FeeInfos:        feeInfos,
 	}
 }
 
@@ -40,11 +42,12 @@ func DefaultGenesisState() *GenesisState {
 		[]exported.Chain{evm.Ethereum, axelarnet.Axelarnet},
 		[]ChainState{{
 			Chain:  axelarnet.Axelarnet,
-			Assets: []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, sdk.NewInt(100000), true)},
+			Assets: []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, true)},
 		}},
 		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},
 		exported.TransferFee{},
+		[]exported.FeeInfo{},
 	)
 }
 
@@ -80,6 +83,12 @@ func (m GenesisState) Validate() error {
 
 	if err := m.Fee.Coins.Validate(); err != nil {
 		return getValidateError(err)
+	}
+
+	for _, feeInfo := range m.FeeInfos {
+		if err := feeInfo.Validate(); err != nil {
+			return getValidateError(err)
+		}
 	}
 
 	return nil

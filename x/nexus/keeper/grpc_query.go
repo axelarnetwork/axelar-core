@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -18,6 +19,10 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 	chain, ok := k.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+	}
+
+	if err := req.State.Validate(); err != nil {
+		return nil, err
 	}
 
 	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
@@ -45,4 +50,59 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 	}
 
 	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
+}
+
+// Fee returns the fee info for an asset on a specific chain
+func (k Keeper) Fee(c context.Context, req *types.FeeRequest) (*types.FeeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+	}
+
+	if !k.IsAssetRegistered(ctx, chain, req.Asset) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
+	}
+
+	feeInfo, ok := k.GetFeeInfo(ctx, chain, req.Asset)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
+	}
+
+	return &types.FeeResponse{FeeInfo: &feeInfo}, nil
+}
+
+// TransferFee returns the transfer fee for a cross chain transfer
+func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	sourceChain, ok := k.GetChain(ctx, req.SourceChain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
+	}
+
+	destinationChain, ok := k.GetChain(ctx, req.DestinationChain)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
+	}
+
+	if !k.IsAssetRegistered(ctx, sourceChain, req.Amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, sourceChain.Name)
+	}
+
+	if !k.IsAssetRegistered(ctx, destinationChain, req.Amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, destinationChain.Name)
+	}
+
+	if req.Amount.IsNegative() {
+		return nil, fmt.Errorf("amount cannot be negative")
+	}
+
+	fee, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, req.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TransferFeeResponse{Fee: fee}, nil
 }

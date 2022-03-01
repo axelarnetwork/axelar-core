@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -41,3 +42,13 @@ message DeactivateChainRequest {
 }
 
 message DeactivateChainResponse {}
+
+// RegisterAssetFeeRequest represents a message to register the transfer fee
+// info associated to an asset on a chain
+message RegisterAssetFeeRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  nexus.exported.v1beta1.FeeInfo fee_info = 2 [ (gogoproto.nullable) = false ];
+}
+
+message RegisterAssetFeeResponse {}

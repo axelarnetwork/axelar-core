@@ -66,7 +66,6 @@ type ReqRegisterAsset struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Chain         string       `json:"chain" yaml:"chain"`
 	Denom         string       `json:"denom" yaml:"denom"`
-	MinAmount     string       `json:"min_amount" yaml:"min_amount"`
 	IsNativeAsset bool         `json:"is_native_asset" yaml:"is_native_asset"`
 }
 
@@ -250,12 +249,7 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		amount, ok := sdk.NewIntFromString(req.MinAmount)
-		if !ok {
-			return
-		}
-
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, amount, req.IsNativeAsset))
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, req.IsNativeAsset))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

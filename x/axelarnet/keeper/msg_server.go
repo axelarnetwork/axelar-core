@@ -154,7 +154,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount, s.GetTransactionFeeRate(ctx))
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		}
 
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, asset.MinAmount, false)); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false)); err != nil {
 			return nil, err
 		}
 	}
@@ -275,7 +275,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, req.Asset.MinAmount, false))
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false))
 
 	return &types.RegisterAssetResponse{}, nil
 }

@@ -39,7 +39,6 @@ type BTCKeeper interface {
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
 	GetMinVoterCount(ctx sdk.Context) int64
 	GetMaxTxSize(ctx sdk.Context) int64
-	GetTransactionFeeRate(ctx sdk.Context) sdk.Dec
 
 	SetPendingOutpointInfo(ctx sdk.Context, key vote.PollKey, info OutPointInfo)
 	GetPendingOutPointInfo(ctx sdk.Context, key vote.PollKey) (OutPointInfo, bool)
@@ -113,7 +112,7 @@ type Signer interface {
 type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
-	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin, feeRate sdk.Dec) error
+	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)

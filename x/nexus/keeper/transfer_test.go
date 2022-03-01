@@ -1,9 +1,11 @@
 package keeper_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
 	mathrand "math/rand"
 	"testing"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/ethereum/go-ethereum/common/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -30,10 +32,97 @@ var (
 	terra       = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
 	terraAssets = []string{"uluna", "uusd"}
 	avalanche   = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
-	minAmount   = sdk.NewInt(10000000)
 	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
 	assets      = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
+	minAmount   = maxAmount / 2
 )
+
+func TestUintIntConversion(t *testing.T) {
+	maxUint := sdk.NewUintFromBigInt(math.MaxBig256)
+	maxInt := sdk.Int(maxUint)
+
+	// ensure max uint can be converted into int without overflow
+	assert.True(t, maxInt.IsPositive())
+	assert.Equal(t, maxInt.BigInt().BitLen(), 256)
+	assert.Panics(t, func() { maxInt.AddRaw(1) })
+	assert.Equal(t, maxUint, sdk.Uint(maxInt))
+}
+
+func TestComputeTransferFee(t *testing.T) {
+	cfg := app.MakeEncodingConfig()
+	repeated := 10
+	k, ctx := setup(cfg)
+
+	var (
+		assetFees map[string]nexus.FeeInfo
+	)
+
+	testChain := chains[0].Name
+	testAsset := assets[0]
+
+	err := nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
+	assert.Nil(t, err)
+
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.OneDec(), sdk.NewInt(10000), sdk.NewInt(10000)).Validate()
+	assert.Nil(t, err)
+
+	// invalid fee
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.NewDecWithPrec(15, 1), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
+	assert.Error(t, err)
+
+	// invalid fee
+	err = nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.NewInt(10), sdk.NewInt(4)).Validate()
+	assert.Error(t, err)
+
+	Given("a keeper",
+		func(t *testing.T) {
+			k, ctx = setup(cfg)
+			assetFees = make(map[string]nexus.FeeInfo)
+		}).
+		When("asset fees are registered",
+			func(t *testing.T) {
+				for _, chain := range chains {
+					for _, asset := range assets {
+						assetFees[chain.Name+"_"+asset] = randFee(chain.Name, asset)
+						k.RegisterFee(ctx, chain, assetFees[chain.Name+"_"+asset])
+					}
+				}
+			}).
+		Then("transfer fees should be computed correctly",
+			func(t *testing.T) {
+				for _, sourceChain := range chains {
+					for _, destinationChain := range chains {
+						for _, asset := range assets {
+							sourceChainFee, found := k.GetFeeInfo(ctx, sourceChain, asset)
+							assert.True(t, found)
+
+							destinationChainFee, found := k.GetFeeInfo(ctx, destinationChain, asset)
+							assert.True(t, found)
+
+							assetFee := assetFees[sourceChain.Name+"_"+asset]
+							assert.Equal(t, sourceChainFee, assetFee)
+
+							coin := sdk.NewCoin(asset, randInt(0, maxAmount*2))
+							amount := coin.Amount
+
+							fees, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
+							assert.Nil(t, err)
+
+							minFee := sourceChainFee.MinFee.Add(destinationChainFee.MinFee)
+							feeRate := sourceChainFee.FeeRate.Add(destinationChainFee.FeeRate)
+							maxFee := sourceChainFee.MaxFee.Add(destinationChainFee.MaxFee)
+
+							fee := sdk.NewDecFromInt(amount).Mul(feeRate).TruncateInt()
+							fee = sdk.MaxInt(minFee, fee)
+							fee = sdk.MinInt(maxFee, fee)
+
+							assert.Equal(t, fees.Amount, fee)
+						}
+					}
+				}
+			},
+		).Run(t, repeated)
+}
 
 func TestTransfer(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
@@ -72,7 +161,7 @@ func TestTransfer(t *testing.T) {
 			}).
 		Then("enqueue transfer should return error",
 			func(t *testing.T) {
-				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()), feeRate)
+				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()))
 				assert.Error(t, err)
 			},
 		).Run(t, repeated)
@@ -97,23 +186,23 @@ func TestTransfer(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		}).Branch(
-		When("transfer amounts are smaller than min amount", func(t *testing.T) {
+		When("transfer amounts are smaller than min fee", func(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
-				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
+				feeInfo, ok := k.GetFeeInfo(ctx, r.Chain, asset)
 				assert.True(t, ok)
-				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, min.Int64())))
+				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
 				transfers = append(transfers, randAmt)
 			}
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer, feeRate)
+					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
+					feeDue := sdk.ZeroInt()
 					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
 					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
@@ -124,32 +213,41 @@ func TestTransfer(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
 						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
+						insufficientAmountTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
 
 						// total number of pending transfer match
 						assert.Equal(t, 0, len(pendingTransfers))
+						// total number of insufficient amount transfer match
+						assert.Equal(t, len(transfers), len(insufficientAmountTransfers))
 						// total fees match
 						assert.Equal(t, expected.fees, k.GetTransferFees(ctx))
+
+						// total transfer amount match
+						total := sdk.Coins{}
+						for _, transfer := range insufficientAmountTransfers {
+							total = total.Add(sdk.NewCoin(transfer.Asset.Denom, transfer.Asset.Amount))
+						}
+						assert.Equal(t, expected.coins, total)
 					}
 				}),
 
 		When("transfer amounts are greater than min amount", func(t *testing.T) {
-			for _, r := range recipients {
+			for i := 0; i < len(recipients); i++ {
 				asset := randAsset()
-				min, ok := k.GetMinAmount(ctx, r.Chain, asset)
-				assert.True(t, ok)
-				transfers = append(transfers, makeRandAmount(asset).AddAmount(min))
+				transfers = append(transfers, makeAmountAboveMin(asset))
 			}
 		}).And().
 			When("enqueue all transfers", func(t *testing.T) {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer, feeRate)
+					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					feeDue := sdk.NewDecFromInt(transfer.Amount).Mul(feeRate).TruncateInt()
-					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
-					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
+					feeDue, err := k.ComputeTransferFee(ctx, senders[i].Chain, recipients[i].Chain, transfer)
+					assert.Nil(t, err)
+					c.fees.Add(feeDue)
+					c.coins.Add(transfer.Sub(feeDue))
 					c.count += 1
 				}
 			}).
@@ -158,7 +256,10 @@ func TestTransfer(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
 						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
+						insufficientTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
 
+						// total number of insufficient amount transfer match
+						assert.Equal(t, 0, len(insufficientTransfers))
 						// total number of pending transfer match
 						assert.Equal(t, expected.count, len(pendingTransfers))
 						// total amount match
@@ -186,7 +287,7 @@ func TestTransfer(t *testing.T) {
 
 				asset = randAsset()
 				firstAmount := makeAmountAboveMin(asset)
-				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount, feeRate)
+				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount)
 				assert.NoError(t, err)
 
 				actualRecipient, ok := k.GetRecipient(ctx, sender)
@@ -199,7 +300,7 @@ func TestTransfer(t *testing.T) {
 		When("enqueue transfer second time",
 			func(t *testing.T) {
 				secondAmount := makeAmountAboveMin(asset)
-				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount, feeRate)
+				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount)
 				assert.NoError(t, err)
 			}).
 		Then("should merge transfers to the same recipient",
@@ -226,7 +327,7 @@ func TestTransfer(t *testing.T) {
 					err := k.LinkAddresses(ctx, s, r)
 					assert.NoError(t, err)
 
-					_, err = k.EnqueueForTransfer(ctx, s, makeAmountAboveMin(randAsset()), feeRate)
+					_, err = k.EnqueueForTransfer(ctx, s, makeAmountAboveMin(randAsset()))
 					assert.NoError(t, err)
 
 					c := expectedTransfers[recipients[i].Chain.Name]
@@ -246,7 +347,6 @@ func TestTransfer(t *testing.T) {
 						k.ArchivePendingTransfer(ctx, transfer)
 					}
 				}
-
 			}).
 		Then("should return 0 pending transfer",
 			func(t *testing.T) {
@@ -282,7 +382,11 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 			if chain.Name == terra.Name && utils.IndexOf(terraAssets, asset) != -1 {
 				isNative = true
 			}
-			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, minAmount, isNative))
+
+			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative))
+
+			feeInfo := nexus.NewFeeInfo(chain.Name, asset, sdk.ZeroDec(), sdk.NewInt(minAmount), sdk.NewInt(maxAmount))
+			k.RegisterFee(ctx, chain, feeInfo)
 		}
 		k.ActivateChain(ctx, chain)
 	}
@@ -300,5 +404,16 @@ func randAsset() string {
 }
 
 func makeAmountAboveMin(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount.Int64(), maxAmount)))
+	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount*2, maxAmount*2)))
+}
+
+func randFee(chain string, asset string) nexus.FeeInfo {
+	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
+	min := randInt(0, minAmount)
+	max := randInt(min.Int64(), maxAmount)
+	return nexus.NewFeeInfo(chain, asset, rate, min, max)
+}
+
+func randInt(min int64, max int64) sdk.Int {
+	return sdk.NewInt(rand.I64Between(int64(min), int64(max)))
 }

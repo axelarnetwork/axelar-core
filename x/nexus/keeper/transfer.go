@@ -44,9 +44,9 @@ func (k Keeper) deleteTransfer(ctx sdk.Context, transfer exported.CrossChainTran
 	k.getStore(ctx).Delete(getTransferKey(transfer))
 }
 
-func (k Keeper) setNewPendingTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin) exported.TransferID {
+func (k Keeper) setNewTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, amount sdk.Coin, state exported.TransferState) exported.TransferID {
 	id := k.getNonce(ctx)
-	k.setTransfer(ctx, exported.NewPendingCrossChainTransfer(id, recipient, amount))
+	k.setTransfer(ctx, exported.NewCrossChainTransfer(id, recipient, amount, state))
 	k.setNonce(ctx, id+1)
 	return exported.TransferID(id)
 }
@@ -60,8 +60,43 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 	return fee
 }
 
+// getCrossChainFees computes the fee info for a cross-chain transfer.
+func (k Keeper) getCrossChainFees(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset string) (feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int, err error) {
+	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset)
+	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset)
+
+	feeRate = sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate)
+	if feeRate.GT(sdk.OneDec()) {
+		return sdk.Dec{}, sdk.Int{}, sdk.Int{}, fmt.Errorf("total fee rate should not be greater than 1")
+	}
+
+	minFee = sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee)
+	maxFee = sourceChainFeeInfo.MaxFee.Add(destinationChainFeeInfo.MaxFee)
+
+	return feeRate, minFee, maxFee, nil
+}
+
+// ComputeTransferFee computes the fee for a cross-chain transfer.
+// If fee_info is not set for an asset on a chain, default of zero is used
+//
+// transfer_fee = min(total_max_fee, max(total_min_fee, (total_fee_rate) * amount))
+//
+// INVARIANT: source_chain.min_fee + destination_chain.min_fee <= transfer_fee <= source_chain.max_fee + destination_chain.max_fee
+func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset sdk.Coin) (sdk.Coin, error) {
+	feeRate, minFee, maxFee, err := k.getCrossChainFees(ctx, sourceChain, destinationChain, asset.Denom)
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	fee := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
+	fee = sdk.MaxInt(minFee, fee)
+	fee = sdk.MinInt(maxFee, fee)
+
+	return sdk.NewCoin(asset.Denom, fee), nil
+}
+
 // EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin, feeRate sdk.Dec) (exported.TransferID, error) {
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
 	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
 	if !sender.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
@@ -84,27 +119,46 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
+	// merging transfers below minimum for the specified recipient
+	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
+	if found {
+		asset = asset.Add(insufficientAmountTransfer.Asset)
+		k.deleteTransfer(ctx, insufficientAmountTransfer)
+	}
+
 	// collect fee
-	if feeDue := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt(); feeDue.IsPositive() {
-		k.addTransferFee(ctx, sdk.NewCoin(asset.Denom, feeDue))
-		asset = asset.SubAmount(feeDue)
+	fee, err := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	if err != nil {
+		return 0, err
+	}
+
+	if fee.Amount.GTE(asset.Amount) {
+		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below fees %s for asset %s",
+			sender.Chain.Name, sender.Address, recipient.Address, fee.String(), asset.String()))
+
+		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
+	}
+
+	if fee.IsPositive() {
+		k.addTransferFee(ctx, fee)
+		asset = asset.Sub(fee)
 	}
 
 	// merging transfers for the specified recipient
-	previousTransfer, found := k.getPendingTransferForRecipientAndAsset(ctx, recipient, asset.Denom)
+	previousTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.Pending)
 	if found {
 		asset = asset.Add(previousTransfer.Asset)
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s to cross chain address %s in %s successfully prepared",
-		asset.String(), recipient.Address, recipient.Chain.Name))
+	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s from %s in %s to cross chain address %s in %s successfully prepared",
+		asset.String(), sender.Address, sender.Chain.Name, recipient.Address, recipient.Chain.Name))
 
-	return k.setNewPendingTransfer(ctx, recipient, asset), nil
+	return k.setNewTransfer(ctx, recipient, asset, exported.Pending), nil
 }
 
-func (k Keeper) getPendingTransferForRecipientAndAsset(ctx sdk.Context, recipient exported.CrossChainAddress, denom string) (exported.CrossChainTransfer, bool) {
-	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, exported.Pending))
+func (k Keeper) getTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
+	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -135,24 +189,10 @@ func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, stat
 
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
-	// cache min amount
-	minAmounts := map[string]sdk.Int{}
 
 	for ; iter.Valid(); iter.Next() {
 		var transfer exported.CrossChainTransfer
 		iter.UnmarshalValue(&transfer)
-
-		asset := transfer.Asset.Denom
-		if _, ok := minAmounts[asset]; !ok {
-			amount, _ := k.GetMinAmount(ctx, chain, asset)
-			minAmounts[asset] = amount
-		}
-
-		if transfer.Asset.Amount.LT(minAmounts[asset]) {
-			k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s from recipient %s due to deposited amount being below "+
-				"minimum amount for asset %s", chain.Name, transfer.Recipient.Address, asset))
-			continue
-		}
 
 		transfers = append(transfers, transfer)
 	}
