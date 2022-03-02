@@ -66,7 +66,7 @@ func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		var res types.QueryPendingCommandsResponse
+		var res types.PendingCommandsResponse
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

@@ -83,7 +83,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		var res types.QueryPendingCommandsResponse
+		var res types.PendingCommandsResponse
 		bz, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
 		assert.NoError(t, err)
 

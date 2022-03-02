@@ -78,7 +78,7 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 }
 
 // PendingCommands implements the pending commands query
-func (q Querier) PendingCommands(c context.Context, req *types.QueryPendingCommandsRequest) (*types.QueryPendingCommandsResponse, error) {
+func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	ck := q.keeper.ForChain(req.Chain)
 
