@@ -82,9 +82,9 @@ func (q Querier) PendingCommands(c context.Context, req *types.QueryPendingComma
 	ctx := sdk.UnwrapSDKContext(c)
 	ck := q.keeper.ForChain(req.Chain)
 
-	pendingCommands, err_log, code := queryPendingCommands(ctx, ck, q.nexus)
+	pendingCommands, errLog, code := queryPendingCommands(ctx, ck, q.nexus)
 	if code != codes.OK {
-		return nil, status.Error(codes.NotFound, err_log)
+		return nil, status.Error(codes.NotFound, errLog)
 	}
 
 	return &pendingCommands, nil
