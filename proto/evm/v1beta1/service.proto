@@ -170,7 +170,8 @@ service QueryService {
   }
 
   // PendingCommands queries the pending commands for the specified chain
-  rpc PendingCommands(PendingCommandsRequest) returns (PendingCommandsResponse) {
+  rpc PendingCommands(PendingCommandsRequest)
+      returns (PendingCommandsResponse) {
     option (google.api.http).get = "/evm/v1beta1/pending_commands";
   }
 }
