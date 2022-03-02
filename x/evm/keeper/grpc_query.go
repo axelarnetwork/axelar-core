@@ -78,14 +78,14 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 }
 
 // PendingCommands implements the pending commands query
-func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
+func (q Querier) PendingCommands(c context.Context, req *types.QueryPendingCommandsRequest) (*types.QueryPendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	ck := q.keeper.ForChain(req.Chain)
 
-	pendingCommands, err := queryPendingCommands(ctx, ck, q.nexus)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "could not get pending commands")
+	pendingCommands, err_log, code := queryPendingCommands(ctx, ck, q.nexus)
+	if code != codes.OK {
+		return nil, status.Error(codes.NotFound, err_log)
 	}
 
-	return &types.PendingCommandsResponse{Commands: pendingCommands}, nil
+	return &pendingCommands, nil
 }

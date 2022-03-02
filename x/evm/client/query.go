@@ -25,22 +25,6 @@ func QueryChains(clientCtx client.Context) (types.QueryChainsResponse, error) {
 	return res, nil
 }
 
-// QueryPendingCommands returns all pending commands for the given chain
-func QueryPendingCommands(clientCtx client.Context, chain string) (types.QueryPendingCommandsResponse, error) {
-	path := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QPendingCommands, chain)
-	bz, _, err := clientCtx.Query(path)
-	if err != nil {
-		return types.QueryPendingCommandsResponse{}, sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain)
-	}
-
-	var res types.QueryPendingCommandsResponse
-	err = res.Unmarshal(bz)
-	if err != nil {
-		return types.QueryPendingCommandsResponse{}, sdkerrors.Wrap(err, "could not get pending commands")
-	}
-	return res, nil
-}
-
 // QueryCommand returns the specified command for the given chain
 func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryCommandResponse, error) {
 	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommand, chain, id)

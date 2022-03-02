@@ -98,23 +98,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	}
 }
 
-// QueryPendingCommands returns the pending commands for a gateway
-func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
-	var resp types.QueryPendingCommandsResponse
-	commands := keeper.GetPendingCommands(ctx)
-
-	for _, cmd := range commands {
-		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		resp.Commands = append(resp.Commands, cmdResp)
-	}
-
-	return resp.Marshal()
-}
-
 func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id string) ([]byte, error) {
 	cmdID, err := types.HexToCommandID(id)
 	if err != nil {
@@ -500,21 +483,28 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	}
 }
 
-// queryPendingCommands returns the pending commands for a gateway
-func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]types.QueryCommandResponse, error) {
-	var resp types.PendingCommandsResponse
-	commands := keeper.GetPendingCommands(ctx)
+// QueryPendingCommands returns the pending commands for a gateway
+func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
+	command_responses, err_log, code := queryPendingCommands(ctx, keeper, n)
+	if code != codes.OK {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err_log)
+	}
 
+	return command_responses.Marshal()
+}
+
+func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.QueryPendingCommandsResponse, string, codes.Code) {
+	var resp types.QueryPendingCommandsResponse
+	commands := keeper.GetPendingCommands(ctx)
 	for _, cmd := range commands {
 		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
 		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+			return types.QueryPendingCommandsResponse{}, err.Error(), codes.NotFound
 		}
-
 		resp.Commands = append(resp.Commands, cmdResp)
 	}
 
-	return resp.Commands, nil
+	return resp, "", codes.OK
 }
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
