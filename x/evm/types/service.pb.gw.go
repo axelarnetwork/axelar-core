@@ -792,7 +792,7 @@ var (
 )
 
 func request_QueryService_PendingCommands_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryPendingCommandsRequest
+	var protoReq PendingCommandsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -808,7 +808,7 @@ func request_QueryService_PendingCommands_0(ctx context.Context, marshaler runti
 }
 
 func local_request_QueryService_PendingCommands_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryPendingCommandsRequest
+	var protoReq PendingCommandsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {

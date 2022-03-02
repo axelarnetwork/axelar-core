@@ -493,13 +493,13 @@ func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nex
 	return commandResponses.Marshal()
 }
 
-func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.QueryPendingCommandsResponse, string, codes.Code) {
-	var resp types.QueryPendingCommandsResponse
+func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.PendingCommandsResponse, string, codes.Code) {
+	var resp types.PendingCommandsResponse
 	commands := keeper.GetPendingCommands(ctx)
 	for _, cmd := range commands {
 		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
 		if err != nil {
-			return types.QueryPendingCommandsResponse{}, err.Error(), codes.NotFound
+			return types.PendingCommandsResponse{}, err.Error(), codes.NotFound
 		}
 		resp.Commands = append(resp.Commands, cmdResp)
 	}

@@ -167,6 +167,8 @@
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
     - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
+    - [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest)
+    - [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse)
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
@@ -177,8 +179,6 @@
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
     - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
-    - [QueryPendingCommandsRequest](#evm.v1beta1.QueryPendingCommandsRequest)
-    - [QueryPendingCommandsResponse](#evm.v1beta1.QueryPendingCommandsResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
@@ -2664,6 +2664,36 @@ deposit address
 
 
 
+<a name="evm.v1beta1.PendingCommandsRequest"></a>
+
+### PendingCommandsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingCommandsResponse"></a>
+
+### PendingCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `commands` | [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse) | repeated |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.QueryAddressResponse"></a>
 
 ### QueryAddressResponse
@@ -2826,36 +2856,6 @@ QueryDepositStateResponse is used by the legacy querier
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
 | `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryPendingCommandsRequest"></a>
-
-### QueryPendingCommandsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryPendingCommandsResponse"></a>
-
-### QueryPendingCommandsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `commands` | [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse) | repeated |  |
 
 
 
@@ -3495,7 +3495,7 @@ QueryService defines the gRPC querier service.
 | `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
 | `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
-| `PendingCommands` | [QueryPendingCommandsRequest](#evm.v1beta1.QueryPendingCommandsRequest) | [QueryPendingCommandsResponse](#evm.v1beta1.QueryPendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
+| `PendingCommands` | [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
 
  <!-- end services -->
 
