@@ -299,7 +299,7 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			res, err := queryClient.PendingCommands(cmd.Context(),
-				&types.PendingCommandsRequest{
+				&types.QueryPendingCommandsRequest{
 					Chain: args[0],
 				})
 			if err != nil {

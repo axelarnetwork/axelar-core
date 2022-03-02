@@ -59,12 +59,15 @@ func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		chain := mux.Vars(r)[utils.PathVarChain]
-		res, err := evmclient.QueryPendingCommands(cliCtx, chain)
+
+		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QPendingCommands, chain))
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the pending commands for chain %s", chain).Error())
 			return
 		}
 
+		var res types.QueryPendingCommandsResponse
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

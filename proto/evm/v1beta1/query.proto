@@ -84,12 +84,7 @@ message QueryBurnerAddressResponse { string address = 1; }
 
 message QueryChainsResponse { repeated string chains = 1; }
 
-message PendingCommandsRequest { string chain = 1; }
-
-// TODO: remove QueryPendingCommandsResponse
-message PendingCommandsResponse {
-  repeated QueryCommandResponse commands = 1 [ (gogoproto.nullable) = false ];
-}
+message QueryPendingCommandsRequest { string chain = 1; }
 
 message QueryPendingCommandsResponse {
   repeated QueryCommandResponse commands = 1 [ (gogoproto.nullable) = false ];
