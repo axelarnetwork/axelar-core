@@ -485,12 +485,12 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 
 // QueryPendingCommands returns the pending commands for a gateway
 func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
-	command_responses, err_log, code := queryPendingCommands(ctx, keeper, n)
+	commandResponses, errLog, code := queryPendingCommands(ctx, keeper, n)
 	if code != codes.OK {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err_log)
+		return nil, sdkerrors.Wrap(types.ErrEVM, errLog)
 	}
 
-	return command_responses.Marshal()
+	return commandResponses.Marshal()
 }
 
 func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.QueryPendingCommandsResponse, string, codes.Code) {
