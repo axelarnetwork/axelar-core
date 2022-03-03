@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/config"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -73,6 +74,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
+			if err := extendSeeds(cmd, err); err != nil {
+				return err
+			}
+
 			// InterceptConfigsPreRunHandler initializes a console logger with an improper time format with no way of changing the config,
 			// so we need to overwrite the logger
 			err = overwriteLogger(cmd)
@@ -86,6 +91,20 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	initRootCmd(rootCmd, encodingConfig)
 	return rootCmd, encodingConfig
+}
+
+func extendSeeds(cmd *cobra.Command, err error) error {
+	serverCtx := server.GetServerContextFromCmd(cmd)
+	seeds, err := config.ReadSeeds(serverCtx.Viper)
+	if err != nil {
+		return err
+	}
+
+	serverCtx.Config = config.MergeSeeds(serverCtx.Config, seeds)
+	if err := server.SetCmdServerContext(cmd, serverCtx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func overwriteLogger(cmd *cobra.Command) error {
