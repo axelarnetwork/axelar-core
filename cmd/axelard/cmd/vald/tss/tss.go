@@ -336,7 +336,8 @@ func (mgr *Mgr) extractHeartBeatResponses(txRes *sdk.TxResponse) ([]tss.HeartBea
 	}
 
 	if len(heartbeatRes) == 0 {
-		return nil, fmt.Errorf("handler goroutine: failure to retrieve heartbeat reply")
+		jsonResp := mgr.cliCtx.Codec.MustMarshalJSON(txRes)
+		return nil, fmt.Errorf("handler goroutine: failure to retrieve heartbeat reply; full response: %s", jsonResp)
 	}
 	return heartbeatRes, nil
 }
