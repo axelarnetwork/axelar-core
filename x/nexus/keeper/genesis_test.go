@@ -59,7 +59,7 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 func randFee(chain string, asset string) nexus.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, 10)
-	max := randInt(min.Int64(), 100)
+	max := randInt(min.Int64()+1, 100)
 	return nexus.NewFeeInfo(chain, asset, rate, min, max)
 }
 
