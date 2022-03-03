@@ -74,14 +74,14 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			if err := extendSeeds(cmd, err); err != nil {
-				return err
-			}
-
 			// InterceptConfigsPreRunHandler initializes a console logger with an improper time format with no way of changing the config,
 			// so we need to overwrite the logger
 			err = overwriteLogger(cmd)
 			if err != nil {
+				return err
+			}
+
+			if err := extendSeeds(cmd, err); err != nil {
 				return err
 			}
 
@@ -104,6 +104,9 @@ func extendSeeds(cmd *cobra.Command, err error) error {
 	if err := server.SetCmdServerContext(cmd, serverCtx); err != nil {
 		return err
 	}
+
+	serverCtx.Logger.Info(fmt.Sprintf("adding %d seeds from seeds.toml for a total of %d distinct seeds", len(seeds), len(serverCtx.Config.P2P.Seeds)))
+
 	return nil
 }
 
