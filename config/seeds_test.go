@@ -10,16 +10,28 @@ import (
 )
 
 func TestReadSeeds(t *testing.T) {
-	v := viper.New()
-	v.AddConfigPath("./test_files")
+	t.Run("file exists", func(t *testing.T) {
+		v := viper.New()
+		v.AddConfigPath("./test_files")
 
-	seeds, err := config.ReadSeeds(v)
-	assert.NoError(t, err)
+		seeds, err := config.ReadSeeds(v)
+		assert.NoError(t, err)
 
-	assert.Len(t, seeds, 16)
-	for _, seed := range seeds {
-		assert.NotEmpty(t, seed)
-	}
+		assert.Len(t, seeds, 16)
+		for _, seed := range seeds {
+			assert.NotEmpty(t, seed)
+		}
+	})
+
+	t.Run("file does not exist", func(t *testing.T) {
+		v := viper.New()
+		v.AddConfigPath("some other path")
+
+		seeds, err := config.ReadSeeds(v)
+		assert.NoError(t, err)
+
+		assert.Len(t, seeds, 0)
+	})
 }
 
 func TestMergeSeeds(t *testing.T) {

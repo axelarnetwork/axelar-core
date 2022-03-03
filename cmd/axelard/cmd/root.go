@@ -96,6 +96,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 func extendSeeds(cmd *cobra.Command, err error) error {
 	serverCtx := server.GetServerContextFromCmd(cmd)
 	seeds, err := config.ReadSeeds(serverCtx.Viper)
+	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
+		serverCtx.Logger.Info("no seed.toml found")
+		return nil
+	}
 	if err != nil {
 		return err
 	}

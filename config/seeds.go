@@ -17,7 +17,8 @@ func ReadSeeds(v *viper.Viper) ([]string, error) {
 	v.SetConfigName("seeds")
 	v.SetConfigType("toml")
 
-	if err := v.MergeInConfig(); err != nil {
+	err := v.MergeInConfig()
+	if err != nil {
 		return nil, err
 	}
 
