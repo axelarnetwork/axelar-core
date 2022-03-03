@@ -81,8 +81,11 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			if err := extendSeeds(cmd, err); err != nil {
-				return err
+			// we don't have direct access to the definition of the start command, so this is the only place we can add additional seeds
+			if cmd.Use == "start" {
+				if err := extendSeeds(cmd, err); err != nil {
+					return err
+				}
 			}
 
 			return nil
