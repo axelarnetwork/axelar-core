@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -80,6 +81,11 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 // PendingCommands implements the pending commands query
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("chain %s not found", req.Chain))
+	}
+
 	ck := q.keeper.ForChain(req.Chain)
 
 	pendingCommands, errLog, code := queryPendingCommands(ctx, ck, q.nexus)
