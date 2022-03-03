@@ -9,7 +9,6 @@ import (
 
 // Seed is used to unmarshal the seeds.toml file
 type Seed struct {
-	Name    string `mapstructure:"name"`
 	Address string `mapstructure:"address"`
 }
 
