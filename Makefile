@@ -82,6 +82,15 @@ build-push-docker-images: populate-bytecode guard-SEMVER
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		-t axelarnet/axelar-core:${SEMVER} .
 
+
+.PHONY: build-push-docker-image-rosetta
+build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
+        @DOCKER_BUILDKIT=1 docker buildx build \
+                --platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
+                --output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+                -t axelarnet/axelar-core:${SEMVER}-rosetta .
+
+
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug: populate-bytecode
@@ -208,3 +217,4 @@ proto-update-deps:
 
 guard-%:
 	@ if [ -z '${${*}}' ]; then echo 'Environment variable $* not set' && exit 1; fi
+

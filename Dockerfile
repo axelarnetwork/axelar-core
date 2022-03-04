@@ -1,12 +1,7 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.17.5-alpine3.15 as build
-
-RUN apk add --no-cache --update \
-  ca-certificates \
-  git \
-  make
-
+FROM golang:1.17.5-bullseye as build
+apt update && apt install  ca-certificates git make -y
 WORKDIR axelar
 
 COPY ./go.mod .
@@ -17,11 +12,10 @@ COPY . .
 ENV CGO_ENABLED=0
 RUN make build
 
-FROM alpine:3.12
-
+FROM ubuntu:20.04
+RUN apt update && apt install jq -y
 ARG USER_ID=1000
 ARG GROUP_ID=1001
-RUN apk add jq
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
 RUN addgroup -S -g ${GROUP_ID} axelard && adduser -S -u ${USER_ID} axelard -G axelard
 USER axelard
