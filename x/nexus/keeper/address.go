@@ -9,20 +9,33 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (k Keeper) setLatestDepositAddress(ctx sdk.Context, depositChain string, recipientAddress, depositAddress exported.CrossChainAddress) {
-	k.getStore(ctx).Set(latestDepositAddressPrefix.AppendStr(depositChain).Append(utils.LowerCaseKey(recipientAddress.String())), &depositAddress)
+func getLatestDepositAddressKey(depositChain string, recipientAddress exported.CrossChainAddress) utils.Key {
+	return latestDepositAddressPrefix.
+		Append(utils.LowerCaseKey(depositChain)).
+		Append(utils.LowerCaseKey(recipientAddress.Chain.Name)).
+		Append(utils.KeyFromStr(recipientAddress.Address))
+}
+
+func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipientAddress, depositAddress exported.CrossChainAddress) {
+	k.getStore(ctx).Set(getLatestDepositAddressKey(depositAddress.Chain.Name, recipientAddress), &depositAddress)
 }
 
 func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain string, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
-	return depositAddress, k.getStore(ctx).Get(latestDepositAddressPrefix.AppendStr(depositChain).Append(utils.LowerCaseKey(recipientAddress.String())), &depositAddress)
+	return depositAddress, k.getStore(ctx).Get(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
+}
+
+func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) utils.Key {
+	return linkedAddressesPrefix.
+		Append(utils.LowerCaseKey(depositAddress.Chain.Name)).
+		Append(utils.KeyFromStr(depositAddress.Address))
 }
 
 func (k Keeper) setLinkedAddresses(ctx sdk.Context, linkedAddresses types.LinkedAddresses) {
-	k.getStore(ctx).Set(linkedAddressesPrefix.Append(utils.LowerCaseKey(linkedAddresses.DepositAddress.String())), &linkedAddresses)
+	k.getStore(ctx).Set(getLinkedAddressesKey(linkedAddresses.DepositAddress), &linkedAddresses)
 }
 
 func (k Keeper) getLinkedAddresses(ctx sdk.Context, depositAddress exported.CrossChainAddress) (linkedAddresses types.LinkedAddresses, ok bool) {
-	return linkedAddresses, k.getStore(ctx).Get(linkedAddressesPrefix.Append(utils.LowerCaseKey(depositAddress.String())), &linkedAddresses)
+	return linkedAddresses, k.getStore(ctx).Get(getLinkedAddressesKey(depositAddress), &linkedAddresses)
 }
 
 func (k Keeper) getAllLinkedAddresses(ctx sdk.Context) (results []types.LinkedAddresses) {
@@ -64,7 +77,7 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, depositAddress exported.CrossChai
 	linkedAddresses := types.NewLinkedAddresses(depositAddress, recipientAddress)
 
 	k.setLinkedAddresses(ctx, linkedAddresses)
-	k.setLatestDepositAddress(ctx, depositAddress.Chain.Name, recipientAddress, depositAddress)
+	k.setLatestDepositAddress(ctx, recipientAddress, depositAddress)
 
 	return nil
 }
