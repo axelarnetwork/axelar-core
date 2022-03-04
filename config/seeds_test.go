@@ -28,7 +28,7 @@ func TestReadSeeds(t *testing.T) {
 		v.AddConfigPath("some other path")
 
 		seeds, err := config.ReadSeeds(v)
-		assert.NoError(t, err)
+		assert.ErrorAs(t, err, &viper.ConfigFileNotFoundError{})
 
 		assert.Len(t, seeds, 0)
 	})
