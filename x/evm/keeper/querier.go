@@ -435,7 +435,10 @@ func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexu
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("token for asset '%s' non-existent", asset))
 	}
 
-	resp := types.QueryTokenAddressResponse{Address: token.GetAddress().Hex()}
+	resp := types.QueryTokenAddressResponse{
+		Address:   token.GetAddress().Hex(),
+		Confirmed: token.Is(types.Confirmed),
+	}
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
