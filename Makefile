@@ -84,7 +84,7 @@ build-push-docker-images: populate-bytecode guard-SEMVER
 
 
 .PHONY: build-push-docker-image-rosetta
-build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
+build-push-docker-images-rosetta: guard-SEMVER
         @DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
                 --platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
                 --output "type=image,push=${PUSH_DOCKER_IMAGE}" \
