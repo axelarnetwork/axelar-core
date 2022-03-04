@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -700,27 +699,12 @@ func (k chainKeeper) setUnsignedCommandBatchID(ctx sdk.Context, id []byte) {
 }
 
 // returns the queue of commands
-func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.GeneralKVQueue {
-	return utils.NewGeneralKVQueue(
+func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
+	return utils.NewBlockHeightKVQueue(
 		commandQueueName,
 		k.getStore(ctx, k.chainLowerKey),
+		ctx.BlockHeight(),
 		k.Logger(ctx),
-		func(value codec.ProtoMarshaler) utils.Key {
-			command, ok := value.(*types.Command)
-			if !ok {
-				panic(fmt.Errorf("unexpected type of command %T", command))
-			}
-
-			bz := make([]byte, 8)
-
-			switch command.Command {
-			case types.AxelarGatewayCommandBurnToken:
-			default:
-				binary.BigEndian.PutUint64(bz, uint64(ctx.BlockHeight()))
-			}
-
-			return utils.KeyFromBz(bz)
-		},
 	)
 }
 
