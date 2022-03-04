@@ -112,7 +112,7 @@ func extendSeeds(cmd *cobra.Command, err error) error {
 		return err
 	}
 
-	serverCtx.Logger.Info(fmt.Sprintf("adding %d seeds from seeds.toml for a total of %d distinct seeds", len(seeds), len(serverCtx.Config.P2P.Seeds)))
+	serverCtx.Logger.Info(fmt.Sprintf("adding %d seeds from seeds.toml", len(seeds)))
 
 	return nil
 }
