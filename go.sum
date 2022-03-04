@@ -154,6 +154,8 @@ github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbE
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/aws/smithy-go v1.8.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
+github.com/axelarnetwork/cosmos-sdk v0.44.5-rosetta h1:EQcICFdDX16WT6rJ5FFwkpP3FamKDgVMY0J3XRQf/E0=
+github.com/axelarnetwork/cosmos-sdk v0.44.5-rosetta/go.mod h1:maUA6m2TBxOJZkbwl0eRtEBgTX37kcaiOWU5t1HEGaY=
 github.com/axelarnetwork/tm-events v0.0.0-20220221000027-80a0d7f2077e h1:YU4SxoJz6Y3/yKyjjtezZaG5mC1ujKiGlwaefRgX4vY=
 github.com/axelarnetwork/tm-events v0.0.0-20220221000027-80a0d7f2077e/go.mod h1:yCDh7Rz0tcWEmccQS2uw4Pml9oxbyhyMLo5BQt/oU34=
 github.com/axelarnetwork/utils v0.0.0-20220203232147-bf4a42f338e8 h1:g5cJ6H1xZ6CftXb1rt8OrZLplo9KrDAPwSmOgNKtRFE=
@@ -258,8 +260,6 @@ github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfc
 github.com/cosmos/btcutil v1.0.4 h1:n7C2ngKXo7UC9gNyMNLbzqz7Asuf+7Qv4gnX/rOdQ44=
 github.com/cosmos/btcutil v1.0.4/go.mod h1:Ffqc8Hn6TJUdDgHBwIZLtrLQC1KdJ9jGJl/TvgUaxbU=
 github.com/cosmos/cosmos-sdk v0.44.3/go.mod h1:bA3+VenaR/l/vDiYzaiwbWvRPWHMBX2jG0ygiFtiBp0=
-github.com/cosmos/cosmos-sdk v0.44.5 h1:t5h+KPzZb0Zsag1RP1DCMQlyJyIQqJcqSPJrbUCDGHY=
-github.com/cosmos/cosmos-sdk v0.44.5/go.mod h1:maUA6m2TBxOJZkbwl0eRtEBgTX37kcaiOWU5t1HEGaY=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=
 github.com/cosmos/go-bip39 v1.0.0 h1:pcomnQdrdH22njcAatO0yWojsUnCO3y2tNoV1cb6hHY=
 github.com/cosmos/go-bip39 v1.0.0/go.mod h1:RNJv0H/pOIVgxw6KS7QeX2a0Uo0aKUlfhZ4xuwvCdJw=
