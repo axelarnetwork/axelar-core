@@ -35,17 +35,22 @@ lint:
 	@golangci-lint run
 	@go mod verify
 
+# Populate bytecode before building anything
+.PHONY: populate-bytecode
+populate-bytecode:
+	@bash scripts/populate-bytecode.sh
+
 # Build the project with release flags
 .PHONY: build
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
-build-binaries: guard-SEMVER
+build-binaries: populate-bytecode guard-SEMVER
 	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
 .PHONY: build-binaries-in-docker
-build-binaries-in-docker: guard-SEMVER
+build-binaries-in-docker: populate-bytecode guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
 		--build-arg SEMVER=${SEMVER} \
 		-t axelar/core:binaries \
@@ -54,24 +59,24 @@ build-binaries-in-docker: guard-SEMVER
 
 # Build the project with debug flags
 .PHONY: debug
-debug: go.sum
+debug: populate-bytecode go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 
 # Build a release image
 .PHONY: docker-image
-docker-image:
+docker-image: populate-bytecode
 	@DOCKER_BUILDKIT=1 docker build -t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user
-docker-image-local-user: guard-VERSION guard-GROUP_ID guard-USER_ID
+docker-image-local-user: populate-bytecode guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
-build-push-docker-images: guard-SEMVER
+build-push-docker-images: populate-bytecode guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
@@ -80,7 +85,7 @@ build-push-docker-images: guard-SEMVER
 
 .PHONY: build-push-docker-image-rosetta
 build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
-        @DOCKER_BUILDKIT=1 docker buildx build \
+        @DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
                 --platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
                 --output "type=image,push=${PUSH_DOCKER_IMAGE}" \
                 -t axelarnet/axelar-core:${SEMVER}-rosetta .
@@ -88,7 +93,7 @@ build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
-docker-image-debug:
+docker-image-debug: populate-bytecode
 	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
@@ -106,7 +111,7 @@ endif
 
 # Run all the code generators in the project
 .PHONY: generate
-generate:
+generate: populate-bytecode
 	go generate -x ./...
 
 
