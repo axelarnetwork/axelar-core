@@ -9,8 +9,8 @@ RUN apk add --no-cache --update \
 
 WORKDIR axelar
 
-COPY ./rosetta/go.mod .
-COPY ./rosetta/go.sum .
+COPY ./go.mod .
+COPY ./go.sum .
 RUN go mod download
 
 COPY . .
