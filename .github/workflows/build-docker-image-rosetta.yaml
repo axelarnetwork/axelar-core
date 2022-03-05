@@ -1,4 +1,4 @@
-name: Upload Binaries and Docker Image
+name: Build and push rosetta docker image
 
 on:
   workflow_dispatch:
