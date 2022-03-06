@@ -79,9 +79,9 @@ build-push-docker-images: guard-SEMVER
 
 
 .PHONY: build-push-docker-image-rosetta
-build-push-docker-images-rosetta: guard-SEMVER
+build-push-docker-images-rosetta:
         @DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
-                --platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
+                --platform linux/amd64 \
                 --output "type=image,push=${PUSH_DOCKER_IMAGE}" \
                 -t tototesteur/axelar-core:${SEMVER}-rosetta .
 
