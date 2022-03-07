@@ -122,6 +122,7 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 		keyID,
 		height,
 		BurnerInfo{Symbol: symbol, Salt: Hash(salt)},
+		false,
 	)
 
 	assert.NoError(t, err)
