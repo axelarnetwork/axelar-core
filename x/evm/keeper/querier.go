@@ -84,8 +84,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
-		case QPendingCommands:
-			return QueryPendingCommands(ctx, chainKeeper, n)
 		case QCommand:
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
@@ -484,16 +482,7 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 }
 
 // QueryPendingCommands returns the pending commands for a gateway
-func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
-	commandResponses, errLog, code := queryPendingCommands(ctx, keeper, n)
-	if code != codes.OK {
-		return nil, sdkerrors.Wrap(types.ErrEVM, errLog)
-	}
-
-	return commandResponses.Marshal()
-}
-
-func queryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.PendingCommandsResponse, string, codes.Code) {
+func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) (types.PendingCommandsResponse, string, codes.Code) {
 	var resp types.PendingCommandsResponse
 	commands := keeper.GetPendingCommands(ctx)
 	for _, cmd := range commands {
