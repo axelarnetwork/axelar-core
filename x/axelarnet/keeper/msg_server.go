@@ -75,6 +75,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		),
 	)
 
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", depositAddress.String(), exported.Axelarnet.Name, req.RecipientAddr, req.RecipientChain, req.Asset))
+
 	return &types.LinkResponse{DepositAddr: depositAddress.String()}, nil
 }
 

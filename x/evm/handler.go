@@ -22,7 +22,7 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", res.DepositAddr, msg.Chain, msg.RecipientAddr, msg.RecipientChain, msg.Asset)
+				result.Log = fmt.Sprintf("successfully linked deposit %s to recipient %s", res.DepositAddr, msg.RecipientAddr)
 			}
 			return result, err
 		case *types.ConfirmChainRequest:
