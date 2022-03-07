@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -10,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -154,7 +152,7 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 	}
 
-	nativeAssets := cmd.Flags().StringSlice(flagNativeAsset, []string{}, "denom and minimum transferable amount, e.g. uaxl:1000000")
+	nativeAssets := cmd.Flags().StringSlice(flagNativeAsset, []string{}, "denom, e.g. uaxl")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, err := client.GetClientTxContext(cmd)
 		if err != nil {
@@ -167,18 +165,7 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 
 		assets := make([]nexus.Asset, len(*nativeAssets))
 		for i, asset := range *nativeAssets {
-			assetInto := strings.Split(asset, ":")
-			if len(assetInto) != 2 {
-				return fmt.Errorf("denom and minimum amount have to be separated by \":\"")
-			}
-
-			denom := utils.NormalizeString(assetInto[0])
-			minAmount, ok := sdk.NewIntFromString(assetInto[1])
-			if !ok {
-				return fmt.Errorf("could not convert string to integer")
-			}
-
-			assets[i] = nexus.NewAsset(denom, minAmount, true)
+			assets[i] = nexus.NewAsset(asset, true)
 		}
 
 		name := args[0]
@@ -198,9 +185,9 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 // GetCmdRegisterAsset returns the cli command to register an asset to a cosmos based chain
 func GetCmdRegisterAsset() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-asset [chain] [denom] [min amount]",
+		Use:   "register-asset [chain] [denom]",
 		Short: "Register a new asset to a cosmos based chain",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -209,19 +196,14 @@ func GetCmdRegisterAsset() *cobra.Command {
 			return err
 		}
 		chain := args[0]
-		denom := utils.NormalizeString(args[1])
-
-		minAmount, ok := sdk.NewIntFromString(args[2])
-		if !ok {
-			return fmt.Errorf("could not convert string to integer")
-		}
+		denom := args[1]
 
 		isNativeAsset, err := cmd.Flags().GetBool(flagIsNativeAsset)
 		if err != nil {
 			return err
 		}
 
-		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, minAmount, isNativeAsset))
+		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset))
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

@@ -45,10 +45,10 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 		return nil, sdkerrors.Wrapf(err, "failed to execute message")
 	}
 
-	fee, found := s.Refunder.GetPendingRefund(ctx, *req)
+	refund, found := s.Refunder.GetPendingRefund(ctx, *req)
 	if found {
 		// refund tx fee to the given account.
-		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.GetSigners()[0], sdk.NewCoins(fee))
+		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, refund.Payer, refund.Fees)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to refund tx fee")
 		}

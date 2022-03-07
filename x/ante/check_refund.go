@@ -49,10 +49,15 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
-	fee := feeTx.GetFee()
-	if len(fee) > 0 {
+	fees := feeTx.GetFee()
+	if len(fees) > 0 {
+		feePayer := feeTx.FeeGranter()
+		if feePayer == nil {
+			feePayer = feeTx.FeePayer()
+		}
+
 		req := msgs[0].(*rewardtypes.RefundMsgRequest)
-		err := d.reward.SetPendingRefund(ctx, *req, fee[0])
+		err := d.reward.SetPendingRefund(ctx, *req, rewardtypes.Refund{Payer: feePayer, Fees: fees})
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 		}

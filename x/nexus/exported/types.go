@@ -88,11 +88,16 @@ func (t TransferID) Bytes() []byte {
 
 // NewPendingCrossChainTransfer returns a pending CrossChainTransfer
 func NewPendingCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin) CrossChainTransfer {
+	return NewCrossChainTransfer(id, recipient, asset, Pending)
+}
+
+// NewCrossChainTransfer returns a CrossChainTransfer
+func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coin, state TransferState) CrossChainTransfer {
 	return CrossChainTransfer{
 		ID:        TransferID(id),
 		Recipient: recipient,
 		Asset:     asset,
-		State:     Pending,
+		State:     state,
 	}
 }
 
@@ -114,8 +119,8 @@ func (m Chain) Validate() error {
 }
 
 // NewAsset returns an asset struct
-func NewAsset(denom string, minAmount sdk.Int, isNative bool) Asset {
-	return Asset{Denom: utils.NormalizeString(denom), MinAmount: minAmount, IsNativeAsset: isNative}
+func NewAsset(denom string, isNative bool) Asset {
+	return Asset{Denom: utils.NormalizeString(denom), IsNativeAsset: isNative}
 }
 
 // Validate checks the stateless validity of the asset
@@ -124,8 +129,50 @@ func (m Asset) Validate() error {
 		return sdkerrors.Wrap(err, "invalid denomination")
 	}
 
-	if !m.MinAmount.IsPositive() {
-		return fmt.Errorf("minimum amount must be greater than zero")
+	return nil
+}
+
+// NewFeeInfo returns a FeeInfo struct
+func NewFeeInfo(chain string, asset string, feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int) FeeInfo {
+	chain = utils.NormalizeString(chain)
+	asset = utils.NormalizeString(asset)
+
+	return FeeInfo{Chain: chain, Asset: asset, FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
+}
+
+// ZeroFeeInfo returns a FeeInfo struct with zero fees
+func ZeroFeeInfo(chain string, asset string) FeeInfo {
+	return NewFeeInfo(chain, asset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt())
+}
+
+// Validate checks the stateless validity of fee info
+func (m FeeInfo) Validate() error {
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
+	}
+
+	if err := sdk.ValidateDenom(m.Asset); err != nil {
+		return sdkerrors.Wrap(err, "invalid asset")
+	}
+
+	if m.MinFee.IsNegative() {
+		return fmt.Errorf("min fee cannot be negative")
+	}
+
+	if m.MinFee.GT(m.MaxFee) {
+		return fmt.Errorf("min fee should not be greater than max fee")
+	}
+
+	if m.FeeRate.IsNegative() {
+		return fmt.Errorf("fee rate should not be negative")
+	}
+
+	if m.FeeRate.GT(sdk.OneDec()) {
+		return fmt.Errorf("fee rate should not be greater than one")
+	}
+
+	if !m.FeeRate.IsZero() && m.MaxFee.IsZero() {
+		return fmt.Errorf("fee rate is non zero while max fee is zero")
 	}
 
 	return nil

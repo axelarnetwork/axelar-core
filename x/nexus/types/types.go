@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -128,14 +129,4 @@ func (m *ChainState) RemoveMaintainer(maintainer sdk.ValAddress) error {
 	m.Maintainers = m.Maintainers[:len(m.Maintainers)-1]
 
 	return nil
-}
-
-// AssetMinAmount returns the minimum transfer amount for the chain
-func (m ChainState) AssetMinAmount(asset string) sdk.Int {
-	i := m.indexOfAsset(asset)
-	if i == -1 {
-		return sdk.ZeroInt()
-	}
-
-	return m.Assets[i].MinAmount
 }

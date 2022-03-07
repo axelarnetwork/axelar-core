@@ -10,13 +10,12 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, minAmount sdk.Int, address Address) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, address Address) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:       sender,
 		Chain:        utils.NormalizeString(chain),
 		Asset:        asset,
 		TokenDetails: tokenDetails,
-		MinAmount:    minAmount,
 		Address:      address,
 	}
 }
@@ -69,10 +68,6 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 
 	if err := m.TokenDetails.Validate(); err != nil {
 		return err
-	}
-
-	if m.MinAmount.LTE(sdk.ZeroInt()) {
-		return fmt.Errorf("minimum amount for mint/withdrawals must be greater than zero")
 	}
 
 	return nil

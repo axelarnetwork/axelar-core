@@ -42,6 +42,14 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RegisterAssetFee(RegisterAssetFeeRequest)
+      returns (RegisterAssetFeeResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/register-asset-fee"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.
@@ -57,5 +65,16 @@ service QueryService {
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
     option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain";
+  }
+
+  // Fee queries the fee info by chain and asset
+  rpc Fee(FeeRequest) returns (FeeResponse) {
+    option (google.api.http).get = "/nexus/v1beta1/fee";
+  }
+
+  // TransferFee queries the transfer fee by the source, destination chain,
+  // asset and amount
+  rpc TransferFee(TransferFeeRequest) returns (TransferFeeResponse) {
+    option (google.api.http).get = "/nexus/v1beta1/transfer_fee";
   }
 }

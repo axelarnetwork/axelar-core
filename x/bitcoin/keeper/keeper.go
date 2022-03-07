@@ -194,14 +194,6 @@ func (k Keeper) GetMaxTxSize(ctx sdk.Context) int64 {
 	return result
 }
 
-// GetTransactionFeeRate returns the transaction fee rate for bitcoin
-func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
-	var result sdk.Dec
-	k.params.Get(ctx, types.KeyTransactionFeeRate, &result)
-
-	return result
-}
-
 // SetAddressInfo stores the given address information
 func (k Keeper) SetAddressInfo(ctx sdk.Context, address types.AddressInfo) {
 	key := addrInfoPrefix.Append(utils.LowerCaseKey(address.Address))

@@ -55,6 +55,18 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	k.setTransferFee(ctx, genState.Fee)
 
+	for _, feeInfo := range genState.FeeInfos {
+		chain, ok := k.GetChain(ctx, feeInfo.Chain)
+		if !ok {
+			panic(fmt.Errorf("chain %s not found", feeInfo.Chain))
+		}
+
+		if _, found := k.GetFeeInfo(ctx, chain, feeInfo.Asset); found {
+			panic(fmt.Errorf("fee info for chain %s and asset %s already registered", chain.Name, feeInfo.Asset))
+		}
+
+		k.RegisterFee(ctx, chain, feeInfo)
+	}
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -67,5 +79,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getAllLinkedAddresses(ctx),
 		k.getTransfers(ctx),
 		k.getTransferFee(ctx),
+		k.getFeeInfos(ctx),
 	)
 }

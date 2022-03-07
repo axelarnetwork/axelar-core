@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -48,14 +49,6 @@ func (k Keeper) setParams(ctx sdk.Context, p types.Params) {
 func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	var result uint64
 	k.params.Get(ctx, types.KeyRouteTimeoutWindow, &result)
-
-	return result
-}
-
-// GetTransactionFeeRate returns the transaction fee rate for axelarnet and cosmos chains
-func (k Keeper) GetTransactionFeeRate(ctx sdk.Context) sdk.Dec {
-	var result sdk.Dec
-	k.params.Get(ctx, types.KeyTransactionFeeRate, &result)
 
 	return result
 }

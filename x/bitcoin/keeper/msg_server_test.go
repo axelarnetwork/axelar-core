@@ -288,7 +288,6 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			KeyID:        tssTestUtils.RandKeyID(),
 		}
 		btcKeeper = &mock.BTCKeeperMock{
-			GetTransactionFeeRateFunc: func(sdk.Context) sdk.Dec { return sdk.NewDecWithPrec(25, 5) },
 			GetOutPointInfoFunc: func(sdk.Context, wire.OutPoint) (types.OutPointInfo, types.OutPointState, bool) {
 				return types.OutPointInfo{}, 0, false
 			},
@@ -320,7 +319,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
 				return chain == exported.Bitcoin
 			},
-			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error { return nil },
+			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error { return nil },
 			GetRecipientFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{Chain: nexus.Chain{}, Address: ""}, true
 			},
@@ -565,7 +564,7 @@ func TestHandleMsgVoteConfirmOutpoint(t *testing.T) {
 
 	t.Run("enqueue transfer failed", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin, sdk.Dec) error {
+		nexusKeeper.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) error {
 			return fmt.Errorf("failed")
 		}
 

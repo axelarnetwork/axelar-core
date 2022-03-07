@@ -32,8 +32,8 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	setup := func() {
 		refundKeeper = &mock.RefunderMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) {
-				return sdk.NewCoin("uaxl", sdk.NewInt(1000)), true
+			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
+				return types.Refund{Payer: rand.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
 			},
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
 		}
@@ -95,7 +95,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 
 	t.Run("should not refund transaction fee when no pending refund", testutils.Func(func(t *testing.T) {
 		setup()
-		refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (sdk.Coin, bool) { return sdk.Coin{}, false }
+		refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
 
 		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.HeartBeatRequest{})
 

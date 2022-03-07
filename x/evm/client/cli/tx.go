@@ -274,9 +274,9 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 // GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
 func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [min deposit]",
+		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
-		Args:  cobra.ExactArgs(8),
+		Args:  cobra.ExactArgs(7),
 	}
 	address := cmd.Flags().String(flagAddress, types.ZeroAddress.Hex(), "existing ERC20 token's address")
 
@@ -300,18 +300,13 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			return fmt.Errorf("could not parse capacity")
 		}
 
-		minAmount, ok := sdk.NewIntFromString(args[7])
-		if !ok {
-			return fmt.Errorf("could not parse minimum deposit amount")
-		}
-
 		if !common.IsHexAddress(*address) {
 			return fmt.Errorf("could not parse address")
 		}
 
 		asset := types.NewAsset(originChain, originAsset)
 		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, minAmount, types.Address(common.HexToAddress(*address)))
+		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)))
 		if err = msg.ValidateBasic(); err != nil {
 			return err
 		}
