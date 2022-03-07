@@ -285,6 +285,9 @@ func TestCreateBurnTokens(t *testing.T) {
 
 			return nil
 		}
+		evmChainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed})
+		}
 
 		_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), req)
 
@@ -344,6 +347,9 @@ func TestCreateBurnTokens(t *testing.T) {
 		}
 		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 			return &burnerInfo
+		}
+		evmChainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed})
 		}
 
 		_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), req)
