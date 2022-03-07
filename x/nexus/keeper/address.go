@@ -13,7 +13,7 @@ func getLatestDepositAddressKey(depositChain string, recipientAddress exported.C
 	return latestDepositAddressPrefix.
 		Append(utils.LowerCaseKey(depositChain)).
 		Append(utils.LowerCaseKey(recipientAddress.Chain.Name)).
-		Append(utils.KeyFromStr(recipientAddress.Address))
+		Append(utils.LowerCaseKey(recipientAddress.Address))
 }
 
 func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipientAddress, depositAddress exported.CrossChainAddress) {
@@ -27,7 +27,7 @@ func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain string, re
 func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) utils.Key {
 	return linkedAddressesPrefix.
 		Append(utils.LowerCaseKey(depositAddress.Chain.Name)).
-		Append(utils.KeyFromStr(depositAddress.Address))
+		Append(utils.LowerCaseKey(depositAddress.Address))
 }
 
 func (k Keeper) setLinkedAddresses(ctx sdk.Context, linkedAddresses types.LinkedAddresses) {
