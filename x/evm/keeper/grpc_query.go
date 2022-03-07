@@ -88,7 +88,7 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 
 	ck := q.keeper.ForChain(req.Chain)
 
-	pendingCommands, errLog, code := queryPendingCommands(ctx, ck, q.nexus)
+	pendingCommands, errLog, code := QueryPendingCommands(ctx, ck, q.nexus)
 	if code != codes.OK {
 		return nil, status.Error(codes.NotFound, errLog)
 	}

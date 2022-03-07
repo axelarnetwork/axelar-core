@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"google.golang.org/grpc/codes"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -83,12 +84,8 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		var res types.PendingCommandsResponse
-		bz, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
-		assert.NoError(t, err)
-
-		err = res.Unmarshal(bz)
-		assert.NoError(t, err)
+		res, _, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
+		assert.Equal(t, err, codes.OK)
 
 		var cmdResp []types.QueryCommandResponse
 		for _, cmd := range cmds {
