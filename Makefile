@@ -83,7 +83,7 @@ build-push-docker-images-rosetta:
         @DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
                 --platform linux/amd64 \
                 --output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-                -t tototesteur/axelar-core:${SEMVER}-rosetta .
+                -t axelarnet/axelar-core:${SEMVER}-rosetta .
 
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
