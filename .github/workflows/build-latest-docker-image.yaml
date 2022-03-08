@@ -34,6 +34,10 @@ jobs:
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
 
+      - name: Populate Bytecode
+        run: |
+          bash ./scripts/populate-bytecode.sh
+
       - uses: nelonoel/branch-name@v1.0.1
 
       - id: set-tag
