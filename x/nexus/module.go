@@ -109,6 +109,11 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
+
+	err := cfg.RegisterMigration(types.ModuleName, 3, keeper.GetMigrationHandler(am.keeper))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
@@ -154,4 +159,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 3 }
+func (AppModule) ConsensusVersion() uint64 { return 4 }
