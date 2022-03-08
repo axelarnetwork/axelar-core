@@ -379,11 +379,15 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryChains(clientCtx)
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Chains(cmd.Context(),
+				&types.ChainsRequest{},
+			)
 			if err != nil {
 				return err
 			}
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

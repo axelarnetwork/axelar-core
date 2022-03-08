@@ -174,4 +174,11 @@ service QueryService {
       returns (PendingCommandsResponse) {
     option (google.api.http).get = "/evm/v1beta1/pending_commands";
   }
+
+  // Chains queries the available evm chains
+  rpc Chains(ChainsRequest)
+      returns (ChainsResponse) {
+    option (google.api.http).get = "/evm/v1beta1/chains";
+  }
+
 }

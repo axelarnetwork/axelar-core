@@ -27,17 +27,34 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus) Querier {
 	}
 }
 
+func queryChains(ctx sdk.Context, n types.Nexus) []string {
+	chains := []string{}
+	for _, c := range n.GetChains(ctx) {
+		if c.Module == types.ModuleName {
+			chains = append(chains, c.Name)
+		}
+	}
+
+	return chains
+}
+
+// Chains returns the available evm chains
+func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := queryChains(ctx, q.nexus)
+
+	return &types.ChainsResponse{Chains: chains}, nil
+}
+
 // BurnerInfo implements the burner info grpc query
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains, err := queryChains(ctx, q.nexus)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "no chains registered")
-	}
+	chains := queryChains(ctx, q.nexus)
 
 	for _, chain := range chains {
-		ck := q.keeper.ForChain(string(chain))
+		ck := q.keeper.ForChain(chain)
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
 			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil

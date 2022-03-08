@@ -276,21 +276,5 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryChains returns a handler to query EVM chains
-func GetHandlerQueryChains(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
 
-		res, err := evmclient.QueryChains(cliCtx)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
 
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
