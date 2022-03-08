@@ -153,6 +153,15 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
+
+  // BatchedCommands queries the batched commands for a specified chain and
+  // BatchedCommandsID if no BatchedCommandsID is specified, then it returns the
+  // latest batched commands
+  rpc BatchedCommands(BatchedCommandsRequest)
+      returns (BatchedCommandsResponse) {
+    option (google.api.http).get = "/evm/v1beta1/batched_commands";
+  }
+
   // BurnerInfo queries the burner info for the specified address
   rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
     option (google.api.http).get = "/evm/v1beta1/burner_info";

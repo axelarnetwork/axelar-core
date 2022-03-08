@@ -16,7 +16,14 @@ message DepositQueryParams {
   string chain = 3;
 }
 
-message QueryBatchedCommandsResponse {
+message BatchedCommandsRequest {
+  string chain = 1;
+  // id defines an optional id for the commandsbatch. If not specified the
+  // latest will be returned
+  string id = 2;
+}
+
+message BatchedCommandsResponse {
   string id = 1 [ (gogoproto.customname) = "ID" ];
   string data = 2;
   BatchedCommandsStatus status = 3;

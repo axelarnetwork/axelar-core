@@ -31,6 +31,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	var (
 		chainKeeper *mock.ChainKeeperMock
 		baseKeeper  *mock.BaseKeeperMock
+		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    string
@@ -90,7 +91,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 
 		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
 		assert.NoError(t, err)

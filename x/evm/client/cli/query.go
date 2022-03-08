@@ -241,15 +241,18 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 			chain := args[0]
 			idHex := args[1]
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBatchedCommands, chain, idHex))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BatchedCommands(cmd.Context(),
+				&types.BatchedCommandsRequest{
+					Chain: utils.NormalizeString(chain),
+					Id:    utils.NormalizeString(idHex),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get batched commands %s", idHex)
+				return err
 			}
 
-			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -270,15 +273,17 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 
 			chain := args[0]
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestBatchedCommands, chain))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BatchedCommands(cmd.Context(),
+				&types.BatchedCommandsRequest{
+					Chain: utils.NormalizeString(chain),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain)
+				return err
 			}
 
-			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

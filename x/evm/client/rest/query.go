@@ -26,29 +26,6 @@ const (
 	QueryParamAsset   = keeper.ByAsset
 )
 
-// GetHandlerQueryLatestBatchedCommands returns a handler to query batched commands by ID
-func GetHandlerQueryLatestBatchedCommands(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-
-		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QLatestBatchedCommands, chain))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain).Error())
-			return
-		}
-
-		var res types.QueryBatchedCommandsResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryCommand returns a handler to get the command with the given ID on the specified chain
 func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -67,30 +44,6 @@ func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
-// GetHandlerQueryBatchedCommands returns a handler to query batched commands by ID
-func GetHandlerQueryBatchedCommands(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		batchedCommandsID := mux.Vars(r)[utils.PathVarBatchedCommandsID]
-
-		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QBatchedCommands, chain, batchedCommandsID))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrapf(err, types.ErrFBatchedCommands, chain, batchedCommandsID).Error())
-			return
-		}
-
-		var res types.QueryBatchedCommandsResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
@@ -275,6 +228,3 @@ func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
-
-
-

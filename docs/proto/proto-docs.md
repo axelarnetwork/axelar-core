@@ -160,6 +160,8 @@
     - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest)
+    - [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse)
     - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
     - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
     - [ChainsRequest](#evm.v1beta1.ChainsRequest)
@@ -174,7 +176,6 @@
     - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
     - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
-    - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
@@ -2555,6 +2556,44 @@ GenesisState represents the genesis state
 
 
 
+<a name="evm.v1beta1.BatchedCommandsRequest"></a>
+
+### BatchedCommandsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `id` | [string](#string) |  | id defines an optional id for the commandsbatch. If not specified the latest will be returned |
+
+
+
+
+
+
+<a name="evm.v1beta1.BatchedCommandsResponse"></a>
+
+### BatchedCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `data` | [string](#string) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `signature` | [string](#string) | repeated |  |
+| `execute_data` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [string](#string) |  |  |
+| `command_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.BurnerInfoRequest"></a>
 
 ### BurnerInfoRequest
@@ -2762,28 +2801,6 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryBatchedCommandsResponse"></a>
-
-### QueryBatchedCommandsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `data` | [string](#string) |  |  |
-| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `signature` | [string](#string) | repeated |  |
-| `execute_data` | [string](#string) |  |  |
-| `prev_batched_commands_id` | [string](#string) |  |  |
-| `command_ids` | [string](#string) | repeated |  |
 
 
 
@@ -3503,6 +3520,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `BatchedCommands` | [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/evm/v1beta1/batched_commands|
 | `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
 | `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
