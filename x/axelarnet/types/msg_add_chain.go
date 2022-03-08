@@ -59,6 +59,10 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		if err := asset.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
 		}
+
+		if !asset.IsNativeAsset {
+			return fmt.Errorf("%s is not specified as a native asset", asset.Denom)
+		}
 	}
 
 	return nil

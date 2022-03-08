@@ -287,6 +287,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		),
 	)
 
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", burnerAddress.Hex(), req.Chain, req.RecipientAddr, req.RecipientChain, req.Asset),
+		types.AttributeKeySourceChain, senderChain.Name,
+		types.AttributeKeyDepositAddress, burnerAddress.Hex(),
+		types.AttributeKeyDestinationChain, recipientChain.Name,
+		types.AttributeKeyDestinationAddress, req.RecipientAddr,
+		types.AttributeKeyAsset, req.Asset,
+	)
+
 	return &types.LinkResponse{DepositAddr: burnerAddress.Hex()}, nil
 }
 
@@ -784,10 +792,12 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
+		sdk.NewAttribute(types.AttributeKeyAsset, pendingDeposit.Asset),
 		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
@@ -817,7 +827,17 @@ func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmD
 
 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed on chain %s for %s to %s with transfer ID %d and command ID %s", chain.Name, pendingDeposit.TxID.Hex(), depositAddr.Address, transferID, types.TransferIDtoCommandID(transferID).Hex()))
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d and tx ID %s", depositAddr.Address, chain.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID, pendingDeposit.TxID.Hex()),
+		types.AttributeKeySourceChain, chain.Name,
+		types.AttributeKeyDepositAddress, depositAddr.Address,
+		types.AttributeKeyDestinationChain, recipient.Chain.Name,
+		types.AttributeKeyDestinationAddress, recipient.Address,
+		sdk.AttributeKeyAmount, amount.String(),
+		types.AttributeKeyAsset, amount.Denom,
+		types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex(),
+		types.AttributeKeyTxID, pendingDeposit.TxID.Hex(),
+		types.AttributeKeyTransferID, transferID.String(),
+	)
 	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
 
 	return &types.VoteConfirmDepositResponse{}, nil
@@ -1122,7 +1142,12 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
+		token := keeper.GetERC20TokenByAsset(ctx, burnerInfo.Asset)
+		if !token.Is(types.Confirmed) {
+			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
+		}
+
+		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
@@ -1277,12 +1302,18 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		}
 
 		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
-
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
-		s.Logger(ctx).Info(fmt.Sprintf("storing data for mint command %s", cmd.ID.Hex()))
+		s.Logger(ctx).Info(fmt.Sprintf("minting %s to recipient %s on %s with transfer ID %s and command ID %s", transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name, transfer.ID.String(), cmd.ID.Hex()),
+			types.AttributeKeyDestinationChain, transfer.Recipient.Chain.Name,
+			types.AttributeKeyDestinationAddress, transfer.Recipient.Address,
+			sdk.AttributeKeyAmount, transfer.Asset.String(),
+			types.AttributeKeyAsset, transfer.Asset.Denom,
+			types.AttributeKeyTransferID, transfer.ID.String(),
+			types.AttributeKeyCommandsID, cmd.ID.Hex(),
+		)
 
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err

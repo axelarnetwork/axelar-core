@@ -37,12 +37,16 @@ const (
 
 func TestHandleMsgLink(t *testing.T) {
 	var (
-		server      types.MsgServiceServer
-		nexusKeeper *mock.NexusMock
-		ctx         sdk.Context
-		msg         *types.LinkRequest
+		server          types.MsgServiceServer
+		axelarnetKeeper *mock.BaseKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		msg             *types.LinkRequest
 	)
 	setup := func() {
+		axelarnetKeeper = &mock.BaseKeeperMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
 				return nexus.Chain{
@@ -56,7 +60,7 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 
 		ctx = rand.Context(nil)
-		server = keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -123,6 +127,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					return exported.Axelarnet, true
 				}
 				return nexus.Chain{}, true
+			},
+			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+				return nexus.CrossChainAddress{}, true
 			},
 		}
 		bankKeeper = &mock.BankKeeperMock{

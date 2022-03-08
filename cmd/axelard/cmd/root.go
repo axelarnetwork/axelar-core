@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/config"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -80,12 +81,40 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
+			// we don't have direct access to the definition of the start command, so this is the only place we can add additional seeds
+			if cmd.Use == "start" {
+				if err := extendSeeds(cmd, err); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
 	return rootCmd, encodingConfig
+}
+
+func extendSeeds(cmd *cobra.Command, err error) error {
+	serverCtx := server.GetServerContextFromCmd(cmd)
+	seeds, err := config.ReadSeeds(serverCtx.Viper)
+	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
+		serverCtx.Logger.Info("file seeds.toml not found")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	serverCtx.Config = config.MergeSeeds(serverCtx.Config, seeds)
+	if err := server.SetCmdServerContext(cmd, serverCtx); err != nil {
+		return err
+	}
+
+	serverCtx.Logger.Info(fmt.Sprintf("adding %d seeds from seeds.toml", len(seeds)))
+
+	return nil
 }
 
 func overwriteLogger(cmd *cobra.Command) error {

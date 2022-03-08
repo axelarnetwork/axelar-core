@@ -54,7 +54,7 @@ func TestQueryPendingCommands(t *testing.T) {
 			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			Symbol:        symbol,
 			Salt:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-		})
+		}, false)
 		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
 
 		chainKeeper = &mock.ChainKeeperMock{
