@@ -45,7 +45,6 @@ const (
 	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
 	QueryBytecode             = keeper.QBytecode
 	QueryDepositState         = keeper.QDepositState
-	QueryChains               = keeper.QChains
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -76,7 +75,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
-	registerQuery(GetHandlerQueryChains(cliCtx), QueryChains)
 }
 
 // ReqLink represents a request to link a cross-chain address to an EVM chain address

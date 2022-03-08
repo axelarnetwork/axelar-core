@@ -35,7 +35,6 @@ const (
 	QBatchedCommands       = "batched-commands"
 	QPendingCommands       = "pending-commands"
 	QCommand               = "command"
-	QChains                = "chains"
 )
 
 //Bytecode labels
@@ -88,8 +87,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
 			return queryBytecode(ctx, chainKeeper, s, n, path[2])
-		case QChains:
-			return queryChains(ctx, n)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -481,8 +478,6 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	}
 }
 
-
-
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
@@ -562,18 +557,4 @@ func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (typ
 		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
 	}
 	return batchedCommandsSig, nil
-}
-
-func queryChains(ctx sdk.Context, n types.Nexus) ([]byte, error) {
-	chains := n.GetChains(ctx)
-
-	evmChains := []string{}
-	for _, c := range chains {
-		if c.Module == types.ModuleName {
-			evmChains = append(evmChains, c.Name)
-		}
-	}
-
-	response := types.QueryChainsResponse{Chains: evmChains}
-	return response.Marshal()
 }

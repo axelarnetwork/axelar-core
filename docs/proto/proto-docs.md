@@ -162,6 +162,8 @@
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
     - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
+    - [ChainsRequest](#evm.v1beta1.ChainsRequest)
+    - [ChainsResponse](#evm.v1beta1.ChainsResponse)
     - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
     - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
@@ -174,7 +176,6 @@
     - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
     - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
-    - [QueryChainsResponse](#evm.v1beta1.QueryChainsResponse)
     - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
@@ -2585,6 +2586,31 @@ GenesisState represents the genesis state
 
 
 
+<a name="evm.v1beta1.ChainsRequest"></a>
+
+### ChainsRequest
+
+
+
+
+
+
+
+<a name="evm.v1beta1.ChainsResponse"></a>
+
+### ChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.ConfirmationHeightRequest"></a>
 
 ### ConfirmationHeightRequest
@@ -2773,21 +2799,6 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryChainsResponse"></a>
-
-### QueryChainsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chains` | [string](#string) | repeated |  |
 
 
 
@@ -3496,6 +3507,7 @@ QueryService defines the gRPC querier service.
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
 | `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
 | `PendingCommands` | [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
+| `Chains` | [ChainsRequest](#evm.v1beta1.ChainsRequest) | [ChainsResponse](#evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/evm/v1beta1/chains|
 
  <!-- end services -->
 
