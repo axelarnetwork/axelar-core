@@ -58,6 +58,10 @@ jobs:
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
 
+      - name: Populate Bytecode
+        run: |
+          bash ./scripts/populate-bytecode.sh
+
       - name: Install Cosign
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'amd64'
         uses: sigstore/cosign-installer@main
