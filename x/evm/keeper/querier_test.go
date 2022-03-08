@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"google.golang.org/grpc/codes"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -31,6 +30,7 @@ import (
 func TestQueryPendingCommands(t *testing.T) {
 	var (
 		chainKeeper *mock.ChainKeeperMock
+		baseKeeper  *mock.BaseKeeperMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    string
@@ -77,6 +77,12 @@ func TestQueryPendingCommands(t *testing.T) {
 				return nexus.Chain{}, false
 			},
 		}
+
+		baseKeeper = &mock.BaseKeeperMock{
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
+			},
+		}
 	}
 
 	repeatCount := 20
@@ -84,8 +90,10 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, _, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
-		assert.Equal(t, err, codes.OK)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper)
+
+		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
+		assert.NoError(t, err)
 
 		var cmdResp []types.QueryCommandResponse
 		for _, cmd := range cmds {
