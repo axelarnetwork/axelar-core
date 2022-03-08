@@ -165,6 +165,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		),
 	)
 
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", depositAddressInfo.Address, exported.Bitcoin.Name, req.RecipientAddr, req.RecipientChain, exported.NativeAsset),
+		types.AttributeKeySourceChain, exported.Bitcoin.Name,
+		types.AttributeKeyDepositAddress, depositAddressInfo.Address,
+		types.AttributeKeyDestinationChain, recipientChain.Name,
+		types.AttributeKeyDestinationAddress, req.RecipientAddr,
+		types.AttributeKeyAsset, exported.NativeAsset,
+	)
+
 	return &types.LinkResponse{DepositAddr: depositAddressInfo.Address}, nil
 }
 
