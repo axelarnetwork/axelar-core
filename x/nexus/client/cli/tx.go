@@ -37,7 +37,7 @@ func GetTxCmd() *cobra.Command {
 // GetCmdRegisterChainMaintainer returns the cli command to register a validator as a chain maintainer for the given chains
 func GetCmdRegisterChainMaintainer() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "register-chain-maintainer [chains]",
+		Use:   "register-chain-maintainer [chain]...",
 		Short: "register a validator as a chain maintainer for the given chains",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -63,7 +63,7 @@ func GetCmdRegisterChainMaintainer() *cobra.Command {
 // GetCmdDeregisterChainMaintainer returns the cli command to deregister a validator as a chain maintainer for the given chains
 func GetCmdDeregisterChainMaintainer() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deregister-chain-maintainer [chains]",
+		Use:   "deregister-chain-maintainer [chain]...",
 		Short: "deregister a validator as a chain maintainer for the given chains",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

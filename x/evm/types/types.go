@@ -76,7 +76,8 @@ const (
 	AxelarGatewayCommandDeployToken          = "deployToken"
 	deployTokenMaxGasCost                    = 1400000
 	AxelarGatewayCommandBurnToken            = "burnToken"
-	burnTokenMaxGasCost                      = 400000
+	burnExternalTokenMaxGasCost              = 400000
+	burnInternalTokenMaxGasCost              = 120000
 	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
 	transferOwnershipMaxGasCost              = 120000
 	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
@@ -525,7 +526,7 @@ func GetSignHash(commandData []byte) common.Hash {
 }
 
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
-func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo) (Command, error) {
+func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
 	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 	if err != nil {
 		return Command{}, err
@@ -534,12 +535,17 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, bur
 	heightBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
+	burnTokenMaxGasCost := burnInternalTokenMaxGasCost
+	if isTokenExternal {
+		burnTokenMaxGasCost = burnExternalTokenMaxGasCost
+	}
+
 	return Command{
 		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
 		Command:    AxelarGatewayCommandBurnToken,
 		Params:     params,
 		KeyID:      keyID,
-		MaxGasCost: burnTokenMaxGasCost,
+		MaxGasCost: uint32(burnTokenMaxGasCost),
 	}, nil
 }
 

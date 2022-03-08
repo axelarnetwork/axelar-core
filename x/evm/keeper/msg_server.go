@@ -1142,7 +1142,12 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo)
+		token := keeper.GetERC20TokenByAsset(ctx, burnerInfo.Asset)
+		if !token.Is(types.Confirmed) {
+			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
+		}
+
+		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
