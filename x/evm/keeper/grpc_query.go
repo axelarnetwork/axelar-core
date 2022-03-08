@@ -82,7 +82,8 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !q.keeper.HasChain(ctx, req.Chain) {
+	_, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("chain %s not found", req.Chain))
 	}
 
