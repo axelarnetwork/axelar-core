@@ -3,7 +3,7 @@
 deregister a validator as a chain maintainer for the given chains
 
 ```
-axelard tx nexus deregister-chain-maintainer [chains] [flags]
+axelard tx nexus deregister-chain-maintainer [chain]... [flags]
 ```
 
 ### Options

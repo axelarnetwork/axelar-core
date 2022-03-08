@@ -3,7 +3,7 @@
 register a validator as a chain maintainer for the given chains
 
 ```
-axelard tx nexus register-chain-maintainer [chains] [flags]
+axelard tx nexus register-chain-maintainer [chain]... [flags]
 ```
 
 ### Options

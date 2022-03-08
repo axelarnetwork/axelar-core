@@ -180,7 +180,7 @@
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
-      - [add-cosmos-based-chain \[name\] \[address prefix\]](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
+      - [add-cosmos-based-chain \[name\] \[address prefix\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
       - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
@@ -245,9 +245,9 @@
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
       - [activate-chain \[chain\]...](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
       - [deactivate-chain \[chain\]...](axelard_tx_nexus_deactivate-chain.md)	 - deactivate the given chains
-      - [deregister-chain-maintainer \[chains\]](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
+      - [deregister-chain-maintainer \[chain\]...](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
       - [register-asset-fee \[chain\] \[asset\] \[fee-rate\] \[min-fee\] \[max-fee\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
-      - [register-chain-maintainer \[chains\]](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
+      - [register-chain-maintainer \[chain\]...](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
     - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
       - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account
       - [register-controller \[controller\]](axelard_tx_permission_register-controller.md)	 - Register controller account
