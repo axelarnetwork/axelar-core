@@ -75,6 +75,14 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		),
 	)
 
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", depositAddress.String(), exported.Axelarnet.Name, req.RecipientAddr, req.RecipientChain, req.Asset),
+		types.AttributeKeySourceChain, exported.Axelarnet.Name,
+		types.AttributeKeyDepositAddress, depositAddress.String(),
+		types.AttributeKeyDestinationChain, recipientChain.Name,
+		types.AttributeKeyDestinationAddress, req.RecipientAddr,
+		types.AttributeKeyAsset, req.Asset,
+	)
+
 	return &types.LinkResponse{DepositAddr: depositAddress.String()}, nil
 }
 
@@ -159,14 +167,33 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed to %s with transfer ID %d", req.DepositAddress.String(), transferID))
+	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil, fmt.Errorf("no recipient linked to deposit address %s", req.DepositAddress.String())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID),
+		sdk.AttributeKeyAction, types.AttributeValueConfirm,
+		types.AttributeKeySourceChain, exported.Axelarnet.Name,
+		types.AttributeKeyDepositAddress, req.DepositAddress.String(),
+		types.AttributeKeyDestinationChain, recipient.Chain.Name,
+		types.AttributeKeyDestinationAddress, recipient.Address,
+		sdk.AttributeKeyAmount, amount.String(),
+		types.AttributeKeyAsset, amount.Denom,
+		types.AttributeKeyTransferID, transferID.String(),
+	)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeTransferID, transferID.String()),
+			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
+			sdk.NewAttribute(types.AttributeKeyAsset, amount.Denom),
+			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
 		))
 
 	return &types.ConfirmDepositResponse{}, nil
@@ -275,6 +302,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
+	// ignore the error in case above chain is axelarnet, or if the asset is already registered
 	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false))
 
 	return &types.RegisterAssetResponse{}, nil

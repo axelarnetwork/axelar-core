@@ -35,6 +35,7 @@ const (
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
 	AttributeKeyValue              = "value"
+	AttributeKeyCommandsID         = "commandID"
 	AttributeKeyCommandsIDs        = "commandIDs"
 	AttributeKeyTransferID         = "transferID"
 )
