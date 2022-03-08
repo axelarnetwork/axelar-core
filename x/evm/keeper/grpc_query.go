@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -16,12 +15,12 @@ var _ types.QueryServiceServer = Querier{}
 
 // Querier implements the grpc querier
 type Querier struct {
-	keeper BaseKeeper
+	keeper types.BaseKeeper
 	nexus  types.Nexus
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k BaseKeeper, n types.Nexus) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus) Querier {
 	return Querier{
 		keeper: k,
 		nexus:  n,
@@ -32,11 +31,13 @@ func NewGRPCQuerier(k BaseKeeper, n types.Nexus) Querier {
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	iter := q.keeper.getBaseStore(ctx).Iterator(subspacePrefix)
-	defer utils.CloseLogError(iter, q.keeper.Logger(ctx))
+	chains, err := queryChains(ctx, q.nexus)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "no chains registered")
+	}
 
-	for ; iter.Valid(); iter.Next() {
-		ck := q.keeper.ForChain(string(iter.Value()))
+	for _, chain := range chains {
+		ck := q.keeper.ForChain(string(chain))
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
 			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil
