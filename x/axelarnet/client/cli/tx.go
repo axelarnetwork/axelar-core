@@ -147,24 +147,20 @@ func GetCmdRegisterIBCPathTx() *cobra.Command {
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [address prefix]",
+		Use:   "add-cosmos-based-chain [name] [address prefix] [native asset]...",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.MinimumNArgs(2),
 	}
 
-	nativeAssets := cmd.Flags().StringSlice(flagNativeAsset, []string{}, "denom, e.g. uaxl")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		cliCtx, err := client.GetClientTxContext(cmd)
 		if err != nil {
 			return err
 		}
 
-		if len(*nativeAssets) == 0 {
-			return fmt.Errorf("nativeAssets are required")
-		}
-
-		assets := make([]nexus.Asset, len(*nativeAssets))
-		for i, asset := range *nativeAssets {
+		// native assets are optional
+		assets := make([]nexus.Asset, len(args[2:]))
+		for i, asset := range args[2:] {
 			assets[i] = nexus.NewAsset(asset, true)
 		}
 
@@ -178,6 +174,7 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
+
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
