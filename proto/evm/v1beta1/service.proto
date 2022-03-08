@@ -189,4 +189,8 @@ service QueryService {
     option (google.api.http).get = "/evm/v1beta1/chains";
   }
 
+  // KeyAddress queries the address of key of a chain
+  rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
+    option (google.api.http).get = "/evm/v1beta1/key_address";
+  }
 }

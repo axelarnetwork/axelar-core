@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -26,7 +25,6 @@ const (
 	QDepositState         = "deposit-state"
 	QAddressByKeyRole     = "address-by-key-role"
 	QAddressByKeyID       = "address-by-key-id"
-	QNextMasterAddress    = "next-master-address"
 	QAxelarGatewayAddress = "gateway-address"
 	QBytecode             = "bytecode"
 	QPendingCommands      = "pending-commands"
@@ -56,17 +54,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		}
 
 		switch path[0] {
-		case QAddressByKeyRole:
-			return QueryAddressByKeyRole(ctx, s, n, path[1], path[2])
-		case QAddressByKeyID:
-			keyID := tss.KeyID(path[2])
-
-			if err := keyID.Validate(); err != nil {
-				return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-			}
-			return QueryAddressByKeyID(ctx, s, n, path[1], keyID)
-		case QNextMasterAddress:
-			return queryNextMasterAddress(ctx, s, n, path[1])
 		case QAxelarGatewayAddress:
 			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddressByAsset:
@@ -191,90 +178,6 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 		MaxGasCost: cmd.MaxGasCost,
 		Params:     params,
 	}, nil
-}
-
-// QueryAddressByKeyRole returns the current address of the given key role
-func QueryAddressByKeyRole(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyRoleStr string) ([]byte, error) {
-	keyRole, err := tss.KeyRoleFromSimpleStr(keyRoleStr)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
-	}
-
-	keyID, ok := s.GetCurrentKeyID(ctx, chain, keyRole)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s key not found", keyRole.SimpleString())
-	}
-
-	return QueryAddressByKeyID(ctx, s, n, chainName, keyID)
-}
-
-// QueryAddressByKeyID returns the address of the given key ID
-func QueryAddressByKeyID(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string, keyID tss.KeyID) ([]byte, error) {
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "%s is not a registered chain", chainName)
-	}
-
-	key, ok := s.GetKey(ctx, keyID)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
-	}
-
-	switch chain.KeyType {
-	case tss.Multisig:
-		multisigPubKey, err := key.GetMultisigPubKey()
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		addressStrs := make([]string, len(multisigPubKey))
-		for i, address := range types.KeysToAddresses(multisigPubKey...) {
-			addressStrs[i] = address.Hex()
-		}
-
-		threshold := uint32(key.GetMultisigKey().Threshold)
-
-		resp := types.QueryAddressResponse{
-			Address: &types.QueryAddressResponse_MultisigAddresses_{MultisigAddresses: &types.QueryAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
-			KeyID:   keyID,
-		}
-
-		return resp.Marshal()
-	case tss.Threshold:
-		pk, err := key.GetECDSAPubKey()
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		address := crypto.PubkeyToAddress(pk)
-		resp := types.QueryAddressResponse{
-			Address: &types.QueryAddressResponse_ThresholdAddress_{ThresholdAddress: &types.QueryAddressResponse_ThresholdAddress{Address: address.Hex()}},
-			KeyID:   key.ID,
-		}
-
-		return resp.Marshal()
-	default:
-		return nil, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
-	}
-}
-
-func queryNextMasterAddress(ctx sdk.Context, s types.Signer, n types.Nexus, chainName string) ([]byte, error) {
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", chainName))
-	}
-
-	keyID, ok := s.GetNextKeyID(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("next key ID for chain %s not set", chainName))
-	}
-
-	return QueryAddressByKeyID(ctx, s, n, chain.Name, keyID)
 }
 
 func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]byte, error) {

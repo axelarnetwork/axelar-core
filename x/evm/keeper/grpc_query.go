@@ -10,9 +10,12 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -263,4 +266,83 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 	}
 
 	return &types.PendingCommandsResponse{Commands: commands}, nil
+}
+
+func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain, keyID tss.KeyID) (types.KeyAddressResponse, error) {
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+	}
+
+	switch chain.KeyType {
+	case tss.Multisig:
+		multisigPubKey, err := key.GetMultisigPubKey()
+		if err != nil {
+			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		addressStrs := make([]string, len(multisigPubKey))
+		for i, address := range types.KeysToAddresses(multisigPubKey...) {
+			addressStrs[i] = address.Hex()
+		}
+
+		threshold := uint32(key.GetMultisigKey().Threshold)
+
+		resp := types.KeyAddressResponse{
+			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
+			KeyID:   keyID,
+		}
+
+		return resp, nil
+	case tss.Threshold:
+		pk, err := key.GetECDSAPubKey()
+		if err != nil {
+			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		address := crypto.PubkeyToAddress(pk)
+		resp := types.KeyAddressResponse{
+			Address: &types.KeyAddressResponse_ThresholdAddress_{ThresholdAddress: &types.KeyAddressResponse_ThresholdAddress{Address: address.Hex()}},
+			KeyID:   key.ID,
+		}
+
+		return resp, nil
+	default:
+		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
+	}
+}
+
+// KeyAddress returns the address the specified key for the specified chain
+func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*types.KeyAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	var keyID tss.KeyID
+	switch key := req.Key.(type) {
+	case *types.KeyAddressRequest_KeyID:
+		keyID = key.KeyID
+	case *types.KeyAddressRequest_Role:
+		switch key.Role {
+		case tss.MasterKey | tss.SecondaryKey:
+			break
+		default:
+			return nil, status.Error(codes.NotFound, fmt.Sprintf("unsupported key role %s", key.Role.SimpleString()))
+		}
+
+		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, key.Role)
+		if !ok {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "%s key not found for chain %s", key.Role.SimpleString(), req.Chain).Error())
+		}
+	}
+
+	res, err := queryAddressByKeyID(ctx, q.signer, chain, keyID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	return &res, nil
 }

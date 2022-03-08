@@ -48,47 +48,6 @@ func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerQueryAddress returns a handler to query an EVM chain address
-func GetHandlerQueryAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		keyID := r.URL.Query().Get(QueryParamKeyID)
-		keyRole := r.URL.Query().Get(QueryParamKeyRole)
-
-		var query string
-		var param string
-		switch {
-		case keyRole != "" && keyID == "":
-			query = keeper.QAddressByKeyRole
-			param = keyRole
-		case keyRole == "" && keyID != "":
-			query = keeper.QAddressByKeyID
-			param = keyID
-		default:
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "one and only one of the two flags key_role and key_id has to be set")
-			return
-		}
-
-		path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, query, chain, param)
-
-		bz, _, err := cliCtx.Query(path)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
-			return
-		}
-
-		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryTokenAddress returns a handler to query an EVM chain address
 func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -123,28 +82,6 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 		var res types.QueryTokenAddressResponse
 		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
 
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
-// GetHandlerQueryNextMasterAddress returns a handler to query an EVM chain next master address
-func GetHandlerQueryNextMasterAddress(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-		chain := mux.Vars(r)[utils.PathVarChain]
-
-		bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QNextMasterAddress, chain))
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrAddress).Error())
-			return
-		}
-
-		var res types.QueryAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

@@ -39,7 +39,21 @@ message BatchedCommandsResponse {
   repeated string command_ids = 8 [ (gogoproto.customname) = "CommandIDs" ];
 }
 
-message QueryAddressResponse {
+message KeyAddressRequest {
+  string chain = 1;
+  oneof key {
+    int32 role = 2
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
+    string id = 3 [
+      (gogoproto.customname) = "KeyID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+  }
+}
+
+message KeyAddressResponse {
   message MultisigAddresses {
     repeated string addresses = 1;
     uint32 threshold = 2;

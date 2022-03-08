@@ -149,26 +149,26 @@ func (m *BatchedCommandsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BatchedCommandsResponse proto.InternalMessageInfo
 
-type QueryAddressResponse struct {
-	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
-	// Types that are valid to be assigned to Address:
-	//	*QueryAddressResponse_MultisigAddresses_
-	//	*QueryAddressResponse_ThresholdAddress_
-	Address isQueryAddressResponse_Address `protobuf_oneof:"address"`
+type KeyAddressRequest struct {
+	Chain string `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	// Types that are valid to be assigned to Key:
+	//	*KeyAddressRequest_Role
+	//	*KeyAddressRequest_KeyID
+	Key isKeyAddressRequest_Key `protobuf_oneof:"key"`
 }
 
-func (m *QueryAddressResponse) Reset()         { *m = QueryAddressResponse{} }
-func (m *QueryAddressResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryAddressResponse) ProtoMessage()    {}
-func (*QueryAddressResponse) Descriptor() ([]byte, []int) {
+func (m *KeyAddressRequest) Reset()         { *m = KeyAddressRequest{} }
+func (m *KeyAddressRequest) String() string { return proto.CompactTextString(m) }
+func (*KeyAddressRequest) ProtoMessage()    {}
+func (*KeyAddressRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_78a1f61c7ae3396c, []int{3}
 }
-func (m *QueryAddressResponse) XXX_Unmarshal(b []byte) error {
+func (m *KeyAddressRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KeyAddressRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryAddressResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_KeyAddressRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -178,82 +178,166 @@ func (m *QueryAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *QueryAddressResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryAddressResponse.Merge(m, src)
+func (m *KeyAddressRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyAddressRequest.Merge(m, src)
 }
-func (m *QueryAddressResponse) XXX_Size() int {
+func (m *KeyAddressRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryAddressResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryAddressResponse.DiscardUnknown(m)
+func (m *KeyAddressRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyAddressRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryAddressResponse proto.InternalMessageInfo
+var xxx_messageInfo_KeyAddressRequest proto.InternalMessageInfo
 
-type isQueryAddressResponse_Address interface {
-	isQueryAddressResponse_Address()
+type isKeyAddressRequest_Key interface {
+	isKeyAddressRequest_Key()
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
 
-type QueryAddressResponse_MultisigAddresses_ struct {
-	MultisigAddresses *QueryAddressResponse_MultisigAddresses `protobuf:"bytes,2,opt,name=multisig_addresses,json=multisigAddresses,proto3,oneof" json:"multisig_addresses,omitempty"`
+type KeyAddressRequest_Role struct {
+	Role github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole `protobuf:"varint,2,opt,name=role,proto3,oneof,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" json:"role,omitempty"`
 }
-type QueryAddressResponse_ThresholdAddress_ struct {
-	ThresholdAddress *QueryAddressResponse_ThresholdAddress `protobuf:"bytes,3,opt,name=threshold_address,json=thresholdAddress,proto3,oneof" json:"threshold_address,omitempty"`
+type KeyAddressRequest_KeyID struct {
+	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,3,opt,name=id,proto3,oneof,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"id,omitempty"`
 }
 
-func (*QueryAddressResponse_MultisigAddresses_) isQueryAddressResponse_Address() {}
-func (*QueryAddressResponse_ThresholdAddress_) isQueryAddressResponse_Address()  {}
+func (*KeyAddressRequest_Role) isKeyAddressRequest_Key()  {}
+func (*KeyAddressRequest_KeyID) isKeyAddressRequest_Key() {}
 
-func (m *QueryAddressResponse) GetAddress() isQueryAddressResponse_Address {
+func (m *KeyAddressRequest) GetKey() isKeyAddressRequest_Key {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *KeyAddressRequest) GetRole() github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole {
+	if x, ok := m.GetKey().(*KeyAddressRequest_Role); ok {
+		return x.Role
+	}
+	return 0
+}
+
+func (m *KeyAddressRequest) GetKeyID() github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID {
+	if x, ok := m.GetKey().(*KeyAddressRequest_KeyID); ok {
+		return x.KeyID
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*KeyAddressRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*KeyAddressRequest_Role)(nil),
+		(*KeyAddressRequest_KeyID)(nil),
+	}
+}
+
+type KeyAddressResponse struct {
+	KeyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	// Types that are valid to be assigned to Address:
+	//	*KeyAddressResponse_MultisigAddresses_
+	//	*KeyAddressResponse_ThresholdAddress_
+	Address isKeyAddressResponse_Address `protobuf_oneof:"address"`
+}
+
+func (m *KeyAddressResponse) Reset()         { *m = KeyAddressResponse{} }
+func (m *KeyAddressResponse) String() string { return proto.CompactTextString(m) }
+func (*KeyAddressResponse) ProtoMessage()    {}
+func (*KeyAddressResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_78a1f61c7ae3396c, []int{4}
+}
+func (m *KeyAddressResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeyAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeyAddressResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeyAddressResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyAddressResponse.Merge(m, src)
+}
+func (m *KeyAddressResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeyAddressResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyAddressResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeyAddressResponse proto.InternalMessageInfo
+
+type isKeyAddressResponse_Address interface {
+	isKeyAddressResponse_Address()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type KeyAddressResponse_MultisigAddresses_ struct {
+	MultisigAddresses *KeyAddressResponse_MultisigAddresses `protobuf:"bytes,2,opt,name=multisig_addresses,json=multisigAddresses,proto3,oneof" json:"multisig_addresses,omitempty"`
+}
+type KeyAddressResponse_ThresholdAddress_ struct {
+	ThresholdAddress *KeyAddressResponse_ThresholdAddress `protobuf:"bytes,3,opt,name=threshold_address,json=thresholdAddress,proto3,oneof" json:"threshold_address,omitempty"`
+}
+
+func (*KeyAddressResponse_MultisigAddresses_) isKeyAddressResponse_Address() {}
+func (*KeyAddressResponse_ThresholdAddress_) isKeyAddressResponse_Address()  {}
+
+func (m *KeyAddressResponse) GetAddress() isKeyAddressResponse_Address {
 	if m != nil {
 		return m.Address
 	}
 	return nil
 }
 
-func (m *QueryAddressResponse) GetMultisigAddresses() *QueryAddressResponse_MultisigAddresses {
-	if x, ok := m.GetAddress().(*QueryAddressResponse_MultisigAddresses_); ok {
+func (m *KeyAddressResponse) GetMultisigAddresses() *KeyAddressResponse_MultisigAddresses {
+	if x, ok := m.GetAddress().(*KeyAddressResponse_MultisigAddresses_); ok {
 		return x.MultisigAddresses
 	}
 	return nil
 }
 
-func (m *QueryAddressResponse) GetThresholdAddress() *QueryAddressResponse_ThresholdAddress {
-	if x, ok := m.GetAddress().(*QueryAddressResponse_ThresholdAddress_); ok {
+func (m *KeyAddressResponse) GetThresholdAddress() *KeyAddressResponse_ThresholdAddress {
+	if x, ok := m.GetAddress().(*KeyAddressResponse_ThresholdAddress_); ok {
 		return x.ThresholdAddress
 	}
 	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
-func (*QueryAddressResponse) XXX_OneofWrappers() []interface{} {
+func (*KeyAddressResponse) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*QueryAddressResponse_MultisigAddresses_)(nil),
-		(*QueryAddressResponse_ThresholdAddress_)(nil),
+		(*KeyAddressResponse_MultisigAddresses_)(nil),
+		(*KeyAddressResponse_ThresholdAddress_)(nil),
 	}
 }
 
-type QueryAddressResponse_MultisigAddresses struct {
+type KeyAddressResponse_MultisigAddresses struct {
 	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
 	Threshold uint32   `protobuf:"varint,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
 }
 
-func (m *QueryAddressResponse_MultisigAddresses) Reset() {
-	*m = QueryAddressResponse_MultisigAddresses{}
+func (m *KeyAddressResponse_MultisigAddresses) Reset()         { *m = KeyAddressResponse_MultisigAddresses{} }
+func (m *KeyAddressResponse_MultisigAddresses) String() string { return proto.CompactTextString(m) }
+func (*KeyAddressResponse_MultisigAddresses) ProtoMessage()    {}
+func (*KeyAddressResponse_MultisigAddresses) Descriptor() ([]byte, []int) {
+	return fileDescriptor_78a1f61c7ae3396c, []int{4, 0}
 }
-func (m *QueryAddressResponse_MultisigAddresses) String() string { return proto.CompactTextString(m) }
-func (*QueryAddressResponse_MultisigAddresses) ProtoMessage()    {}
-func (*QueryAddressResponse_MultisigAddresses) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{3, 0}
-}
-func (m *QueryAddressResponse_MultisigAddresses) XXX_Unmarshal(b []byte) error {
+func (m *KeyAddressResponse_MultisigAddresses) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryAddressResponse_MultisigAddresses) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KeyAddressResponse_MultisigAddresses) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryAddressResponse_MultisigAddresses.Marshal(b, m, deterministic)
+		return xxx_messageInfo_KeyAddressResponse_MultisigAddresses.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -263,34 +347,34 @@ func (m *QueryAddressResponse_MultisigAddresses) XXX_Marshal(b []byte, determini
 		return b[:n], nil
 	}
 }
-func (m *QueryAddressResponse_MultisigAddresses) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryAddressResponse_MultisigAddresses.Merge(m, src)
+func (m *KeyAddressResponse_MultisigAddresses) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyAddressResponse_MultisigAddresses.Merge(m, src)
 }
-func (m *QueryAddressResponse_MultisigAddresses) XXX_Size() int {
+func (m *KeyAddressResponse_MultisigAddresses) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryAddressResponse_MultisigAddresses) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryAddressResponse_MultisigAddresses.DiscardUnknown(m)
+func (m *KeyAddressResponse_MultisigAddresses) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyAddressResponse_MultisigAddresses.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryAddressResponse_MultisigAddresses proto.InternalMessageInfo
+var xxx_messageInfo_KeyAddressResponse_MultisigAddresses proto.InternalMessageInfo
 
-type QueryAddressResponse_ThresholdAddress struct {
+type KeyAddressResponse_ThresholdAddress struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 }
 
-func (m *QueryAddressResponse_ThresholdAddress) Reset()         { *m = QueryAddressResponse_ThresholdAddress{} }
-func (m *QueryAddressResponse_ThresholdAddress) String() string { return proto.CompactTextString(m) }
-func (*QueryAddressResponse_ThresholdAddress) ProtoMessage()    {}
-func (*QueryAddressResponse_ThresholdAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{3, 1}
+func (m *KeyAddressResponse_ThresholdAddress) Reset()         { *m = KeyAddressResponse_ThresholdAddress{} }
+func (m *KeyAddressResponse_ThresholdAddress) String() string { return proto.CompactTextString(m) }
+func (*KeyAddressResponse_ThresholdAddress) ProtoMessage()    {}
+func (*KeyAddressResponse_ThresholdAddress) Descriptor() ([]byte, []int) {
+	return fileDescriptor_78a1f61c7ae3396c, []int{4, 1}
 }
-func (m *QueryAddressResponse_ThresholdAddress) XXX_Unmarshal(b []byte) error {
+func (m *KeyAddressResponse_ThresholdAddress) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryAddressResponse_ThresholdAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KeyAddressResponse_ThresholdAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryAddressResponse_ThresholdAddress.Marshal(b, m, deterministic)
+		return xxx_messageInfo_KeyAddressResponse_ThresholdAddress.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -300,17 +384,17 @@ func (m *QueryAddressResponse_ThresholdAddress) XXX_Marshal(b []byte, determinis
 		return b[:n], nil
 	}
 }
-func (m *QueryAddressResponse_ThresholdAddress) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryAddressResponse_ThresholdAddress.Merge(m, src)
+func (m *KeyAddressResponse_ThresholdAddress) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyAddressResponse_ThresholdAddress.Merge(m, src)
 }
-func (m *QueryAddressResponse_ThresholdAddress) XXX_Size() int {
+func (m *KeyAddressResponse_ThresholdAddress) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryAddressResponse_ThresholdAddress) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryAddressResponse_ThresholdAddress.DiscardUnknown(m)
+func (m *KeyAddressResponse_ThresholdAddress) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyAddressResponse_ThresholdAddress.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryAddressResponse_ThresholdAddress proto.InternalMessageInfo
+var xxx_messageInfo_KeyAddressResponse_ThresholdAddress proto.InternalMessageInfo
 
 type QueryTokenAddressResponse struct {
 	Address   string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
@@ -321,7 +405,7 @@ func (m *QueryTokenAddressResponse) Reset()         { *m = QueryTokenAddressResp
 func (m *QueryTokenAddressResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryTokenAddressResponse) ProtoMessage()    {}
 func (*QueryTokenAddressResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{4}
+	return fileDescriptor_78a1f61c7ae3396c, []int{5}
 }
 func (m *QueryTokenAddressResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -360,7 +444,7 @@ func (m *QueryDepositStateParams) Reset()         { *m = QueryDepositStateParams
 func (m *QueryDepositStateParams) String() string { return proto.CompactTextString(m) }
 func (*QueryDepositStateParams) ProtoMessage()    {}
 func (*QueryDepositStateParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{5}
+	return fileDescriptor_78a1f61c7ae3396c, []int{6}
 }
 func (m *QueryDepositStateParams) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -398,7 +482,7 @@ func (m *DepositStateRequest) Reset()         { *m = DepositStateRequest{} }
 func (m *DepositStateRequest) String() string { return proto.CompactTextString(m) }
 func (*DepositStateRequest) ProtoMessage()    {}
 func (*DepositStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{6}
+	return fileDescriptor_78a1f61c7ae3396c, []int{7}
 }
 func (m *DepositStateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -435,7 +519,7 @@ func (m *DepositStateResponse) Reset()         { *m = DepositStateResponse{} }
 func (m *DepositStateResponse) String() string { return proto.CompactTextString(m) }
 func (*DepositStateResponse) ProtoMessage()    {}
 func (*DepositStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{7}
+	return fileDescriptor_78a1f61c7ae3396c, []int{8}
 }
 func (m *DepositStateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -474,7 +558,7 @@ func (m *QueryDepositStateResponse) Reset()         { *m = QueryDepositStateResp
 func (m *QueryDepositStateResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryDepositStateResponse) ProtoMessage()    {}
 func (*QueryDepositStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{8}
+	return fileDescriptor_78a1f61c7ae3396c, []int{9}
 }
 func (m *QueryDepositStateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -511,7 +595,7 @@ func (m *QueryBurnerAddressResponse) Reset()         { *m = QueryBurnerAddressRe
 func (m *QueryBurnerAddressResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryBurnerAddressResponse) ProtoMessage()    {}
 func (*QueryBurnerAddressResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{9}
+	return fileDescriptor_78a1f61c7ae3396c, []int{10}
 }
 func (m *QueryBurnerAddressResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -547,7 +631,7 @@ func (m *ChainsRequest) Reset()         { *m = ChainsRequest{} }
 func (m *ChainsRequest) String() string { return proto.CompactTextString(m) }
 func (*ChainsRequest) ProtoMessage()    {}
 func (*ChainsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{10}
+	return fileDescriptor_78a1f61c7ae3396c, []int{11}
 }
 func (m *ChainsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -584,7 +668,7 @@ func (m *ChainsResponse) Reset()         { *m = ChainsResponse{} }
 func (m *ChainsResponse) String() string { return proto.CompactTextString(m) }
 func (*ChainsResponse) ProtoMessage()    {}
 func (*ChainsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{11}
+	return fileDescriptor_78a1f61c7ae3396c, []int{12}
 }
 func (m *ChainsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -621,7 +705,7 @@ func (m *PendingCommandsRequest) Reset()         { *m = PendingCommandsRequest{}
 func (m *PendingCommandsRequest) String() string { return proto.CompactTextString(m) }
 func (*PendingCommandsRequest) ProtoMessage()    {}
 func (*PendingCommandsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{12}
+	return fileDescriptor_78a1f61c7ae3396c, []int{13}
 }
 func (m *PendingCommandsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -658,7 +742,7 @@ func (m *PendingCommandsResponse) Reset()         { *m = PendingCommandsResponse
 func (m *PendingCommandsResponse) String() string { return proto.CompactTextString(m) }
 func (*PendingCommandsResponse) ProtoMessage()    {}
 func (*PendingCommandsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{13}
+	return fileDescriptor_78a1f61c7ae3396c, []int{14}
 }
 func (m *PendingCommandsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -699,7 +783,7 @@ func (m *QueryCommandResponse) Reset()         { *m = QueryCommandResponse{} }
 func (m *QueryCommandResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryCommandResponse) ProtoMessage()    {}
 func (*QueryCommandResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{14}
+	return fileDescriptor_78a1f61c7ae3396c, []int{15}
 }
 func (m *QueryCommandResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -736,7 +820,7 @@ func (m *BurnerInfoRequest) Reset()         { *m = BurnerInfoRequest{} }
 func (m *BurnerInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*BurnerInfoRequest) ProtoMessage()    {}
 func (*BurnerInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{15}
+	return fileDescriptor_78a1f61c7ae3396c, []int{16}
 }
 func (m *BurnerInfoRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -774,7 +858,7 @@ func (m *BurnerInfoResponse) Reset()         { *m = BurnerInfoResponse{} }
 func (m *BurnerInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*BurnerInfoResponse) ProtoMessage()    {}
 func (*BurnerInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{16}
+	return fileDescriptor_78a1f61c7ae3396c, []int{17}
 }
 func (m *BurnerInfoResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -811,7 +895,7 @@ func (m *ConfirmationHeightRequest) Reset()         { *m = ConfirmationHeightReq
 func (m *ConfirmationHeightRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmationHeightRequest) ProtoMessage()    {}
 func (*ConfirmationHeightRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{17}
+	return fileDescriptor_78a1f61c7ae3396c, []int{18}
 }
 func (m *ConfirmationHeightRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -848,7 +932,7 @@ func (m *ConfirmationHeightResponse) Reset()         { *m = ConfirmationHeightRe
 func (m *ConfirmationHeightResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmationHeightResponse) ProtoMessage()    {}
 func (*ConfirmationHeightResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_78a1f61c7ae3396c, []int{18}
+	return fileDescriptor_78a1f61c7ae3396c, []int{19}
 }
 func (m *ConfirmationHeightResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -881,9 +965,10 @@ func init() {
 	proto.RegisterType((*DepositQueryParams)(nil), "evm.v1beta1.DepositQueryParams")
 	proto.RegisterType((*BatchedCommandsRequest)(nil), "evm.v1beta1.BatchedCommandsRequest")
 	proto.RegisterType((*BatchedCommandsResponse)(nil), "evm.v1beta1.BatchedCommandsResponse")
-	proto.RegisterType((*QueryAddressResponse)(nil), "evm.v1beta1.QueryAddressResponse")
-	proto.RegisterType((*QueryAddressResponse_MultisigAddresses)(nil), "evm.v1beta1.QueryAddressResponse.MultisigAddresses")
-	proto.RegisterType((*QueryAddressResponse_ThresholdAddress)(nil), "evm.v1beta1.QueryAddressResponse.ThresholdAddress")
+	proto.RegisterType((*KeyAddressRequest)(nil), "evm.v1beta1.KeyAddressRequest")
+	proto.RegisterType((*KeyAddressResponse)(nil), "evm.v1beta1.KeyAddressResponse")
+	proto.RegisterType((*KeyAddressResponse_MultisigAddresses)(nil), "evm.v1beta1.KeyAddressResponse.MultisigAddresses")
+	proto.RegisterType((*KeyAddressResponse_ThresholdAddress)(nil), "evm.v1beta1.KeyAddressResponse.ThresholdAddress")
 	proto.RegisterType((*QueryTokenAddressResponse)(nil), "evm.v1beta1.QueryTokenAddressResponse")
 	proto.RegisterType((*QueryDepositStateParams)(nil), "evm.v1beta1.QueryDepositStateParams")
 	proto.RegisterType((*DepositStateRequest)(nil), "evm.v1beta1.DepositStateRequest")
@@ -905,72 +990,75 @@ func init() {
 func init() { proto.RegisterFile("evm/v1beta1/query.proto", fileDescriptor_78a1f61c7ae3396c) }
 
 var fileDescriptor_78a1f61c7ae3396c = []byte{
-	// 1033 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xdd, 0x6e, 0x1a, 0xc7,
-	0x17, 0x67, 0xf9, 0xb2, 0x39, 0xd8, 0xc4, 0x9e, 0x3f, 0x31, 0x18, 0x45, 0xe0, 0xac, 0xfe, 0x17,
-	0x8e, 0xd4, 0x40, 0x4d, 0xaa, 0x28, 0x89, 0xaa, 0x48, 0x01, 0xda, 0x9a, 0x46, 0x6d, 0xdd, 0x8d,
-	0xaf, 0x22, 0xb5, 0x68, 0x60, 0xc6, 0xb0, 0x82, 0xdd, 0x21, 0x3b, 0xb3, 0x14, 0x5e, 0xa2, 0xea,
-	0x45, 0x9f, 0xa1, 0xcf, 0xe2, 0xcb, 0x5c, 0x56, 0xbd, 0x40, 0x2d, 0x7e, 0x8b, 0x5e, 0x55, 0x3b,
-	0x3b, 0xbb, 0x2c, 0x1f, 0xb1, 0xa3, 0x4a, 0xbd, 0xdb, 0x73, 0xe6, 0xfc, 0xce, 0xe7, 0x6f, 0xce,
-	0x2c, 0x14, 0xe8, 0xc4, 0xaa, 0x4d, 0xce, 0xba, 0x54, 0xe0, 0xb3, 0xda, 0x3b, 0x97, 0x3a, 0xb3,
-	0xea, 0xd8, 0x61, 0x82, 0xa1, 0x2c, 0x9d, 0x58, 0x55, 0x75, 0x50, 0xca, 0xf7, 0x59, 0x9f, 0x49,
-	0x7d, 0xcd, 0xfb, 0xf2, 0x4d, 0x4a, 0x2b, 0x58, 0x31, 0x1b, 0x53, 0xee, 0x1f, 0xe8, 0x6f, 0x01,
-	0xb5, 0xe8, 0x98, 0x71, 0x53, 0x7c, 0xef, 0x79, 0xbc, 0xc0, 0x0e, 0xb6, 0x38, 0x2a, 0xc2, 0x0e,
-	0x26, 0xc4, 0xa1, 0x9c, 0x17, 0xb5, 0x13, 0xed, 0x34, 0x63, 0x04, 0x22, 0xca, 0x43, 0x0a, 0x73,
-	0x4e, 0x45, 0x31, 0x2e, 0xf5, 0xbe, 0xe0, 0x69, 0x7b, 0x03, 0x6c, 0xda, 0xc5, 0x84, 0xaf, 0x95,
-	0x82, 0xfe, 0x12, 0x8e, 0x1a, 0x58, 0xf4, 0x06, 0x94, 0x34, 0x99, 0x65, 0x61, 0x9b, 0x70, 0x83,
-	0xbe, 0x73, 0x29, 0x8f, 0xd8, 0x6b, 0x11, 0x7b, 0x94, 0x83, 0xb8, 0x49, 0x94, 0xe3, 0xb8, 0x49,
-	0xf4, 0xdf, 0x12, 0x50, 0xd8, 0x70, 0xc0, 0xc7, 0xcc, 0xe6, 0x14, 0x1d, 0x49, 0x5b, 0x09, 0x6f,
-	0xa4, 0x17, 0xf3, 0x4a, 0xbc, 0xdd, 0xf2, 0x30, 0x08, 0x41, 0x92, 0x60, 0x81, 0x95, 0x17, 0xf9,
-	0x8d, 0x5e, 0x40, 0x9a, 0x0b, 0x2c, 0x5c, 0x2e, 0xd3, 0xcb, 0xd5, 0xf5, 0x6a, 0xa4, 0x61, 0xd5,
-	0xb5, 0x08, 0x6f, 0xa4, 0xa5, 0xa1, 0x10, 0xe8, 0x07, 0x48, 0x0f, 0xe9, 0xac, 0x63, 0x92, 0x62,
-	0x52, 0xc6, 0xfa, 0x72, 0x31, 0xaf, 0xa4, 0x5e, 0xd3, 0x59, 0xbb, 0xf5, 0xf7, 0xbc, 0xf2, 0xbc,
-	0x6f, 0x8a, 0x81, 0xdb, 0xad, 0xf6, 0x98, 0x55, 0xc3, 0x53, 0x3a, 0xc2, 0x8e, 0x4d, 0xc5, 0x4f,
-	0xcc, 0x19, 0x2a, 0xe9, 0x71, 0x8f, 0x39, 0xb4, 0x36, 0xad, 0x09, 0xce, 0x6b, 0x74, 0x3a, 0x66,
-	0x8e, 0xa0, 0xa4, 0x2a, 0xc1, 0x46, 0x6a, 0x48, 0x67, 0x6d, 0x82, 0x1e, 0x40, 0x86, 0x9b, 0x7d,
-	0x1b, 0x0b, 0xd7, 0xa1, 0xc5, 0xd4, 0x49, 0xe2, 0x34, 0x63, 0x2c, 0x15, 0xe8, 0x21, 0xec, 0xd1,
-	0x29, 0xed, 0xb9, 0x82, 0x76, 0x64, 0x51, 0x69, 0x59, 0x54, 0x56, 0xe9, 0x5a, 0x5e, 0x6d, 0x06,
-	0x14, 0xc7, 0x0e, 0x9d, 0x74, 0xba, 0x7e, 0x15, 0x9d, 0x9e, 0x2a, 0xc3, 0xcb, 0x78, 0x47, 0x66,
-	0x7c, 0xbc, 0x98, 0x57, 0xee, 0x5f, 0x38, 0x74, 0xb2, 0x56, 0x68, 0xbb, 0x65, 0xdc, 0x1f, 0x6f,
-	0x51, 0x13, 0x54, 0x83, 0xac, 0x72, 0xd3, 0x31, 0x09, 0x2f, 0xee, 0x7a, 0x69, 0x35, 0x72, 0x8b,
-	0x79, 0x05, 0x94, 0x51, 0xbb, 0xc5, 0x0d, 0x50, 0x26, 0x6d, 0xc2, 0xf5, 0xeb, 0x04, 0xe4, 0x25,
-	0x7d, 0x5e, 0xf9, 0x2c, 0x09, 0xa7, 0xb4, 0xec, 0x9e, 0xf6, 0x5f, 0x74, 0x8f, 0x00, 0xb2, 0xdc,
-	0x91, 0x30, 0xb9, 0xd9, 0xef, 0x28, 0x82, 0x52, 0x2e, 0x47, 0x9f, 0xad, 0x3f, 0x59, 0x19, 0xf2,
-	0xb6, 0xec, 0xaa, 0xdf, 0x28, 0xec, 0xab, 0x00, 0x7a, 0x1e, 0x33, 0x0e, 0xad, 0x75, 0x25, 0xc2,
-	0x70, 0x28, 0x06, 0x0e, 0xe5, 0x03, 0x36, 0x22, 0x41, 0x18, 0xc9, 0xa4, 0x6c, 0xbd, 0x7e, 0x77,
-	0x90, 0xcb, 0x00, 0xaa, 0x0e, 0xce, 0x63, 0xc6, 0x81, 0x58, 0xd3, 0x95, 0xbe, 0x83, 0xc3, 0x8d,
-	0x64, 0x3c, 0x6e, 0x2c, 0x8b, 0xd2, 0x7c, 0x6e, 0xe0, 0xe8, 0x69, 0xe8, 0x46, 0x96, 0xbc, 0x6f,
-	0x2c, 0x15, 0xa5, 0x4f, 0xe0, 0x60, 0x3d, 0xf0, 0x87, 0x2f, 0x75, 0x23, 0x13, 0x9e, 0xe8, 0x6f,
-	0xe0, 0x58, 0x96, 0x71, 0xc9, 0x86, 0xd4, 0x5e, 0x1f, 0xe7, 0x87, 0xd7, 0xc2, 0x03, 0xc8, 0xf4,
-	0x98, 0x7d, 0x65, 0x3a, 0x16, 0xf5, 0xb3, 0xd9, 0x35, 0x96, 0x0a, 0xfd, 0x57, 0x0d, 0x0a, 0xd2,
-	0xab, 0x5a, 0x35, 0xde, 0x1d, 0xa3, 0x6a, 0xd5, 0x3c, 0x82, 0x94, 0x98, 0x06, 0x0c, 0xd9, 0x6b,
-	0xe4, 0xaf, 0xe7, 0x95, 0xd8, 0x1f, 0xf3, 0x4a, 0xf2, 0x1c, 0xf3, 0xc1, 0x62, 0x5e, 0x49, 0x5e,
-	0x4e, 0xdb, 0x2d, 0x23, 0x29, 0xa6, 0x6d, 0x82, 0x9e, 0x42, 0xae, 0xeb, 0x3a, 0x36, 0x75, 0xc2,
-	0x29, 0xc4, 0x25, 0xe6, 0x9e, 0xc2, 0xec, 0x04, 0xf9, 0xee, 0xfb, 0x66, 0x41, 0xe1, 0x47, 0x90,
-	0xc6, 0x16, 0x73, 0x6d, 0xa1, 0xd6, 0x93, 0x92, 0x74, 0x13, 0xfe, 0x17, 0x4d, 0xe8, 0xf6, 0xe5,
-	0xf4, 0x39, 0xa4, 0xc7, 0x32, 0x63, 0xc5, 0xaf, 0xff, 0x6f, 0x8e, 0x7e, 0xb3, 0x3a, 0x43, 0x61,
-	0xf4, 0xaf, 0x21, 0xbf, 0x1a, 0x4a, 0x75, 0xb4, 0x1e, 0xae, 0xa6, 0xb8, 0x5c, 0x4d, 0xa5, 0x15,
-	0xaf, 0x11, 0xc8, 0x72, 0x25, 0xe9, 0x58, 0x8d, 0x68, 0xab, 0xc3, 0x03, 0x48, 0x8c, 0x58, 0x5f,
-	0xa5, 0xee, 0x7d, 0xfe, 0xab, 0x10, 0x4f, 0xa1, 0x24, 0x43, 0x34, 0xa2, 0x7d, 0xbc, 0x9b, 0x06,
-	0xfa, 0x3d, 0xd8, 0x6f, 0x7a, 0xdd, 0x0a, 0x16, 0xbd, 0x7e, 0x0a, 0xb9, 0x40, 0x11, 0x2e, 0xee,
-	0xb4, 0x6c, 0x68, 0x40, 0x69, 0x25, 0xe9, 0x55, 0x38, 0xba, 0xa0, 0x36, 0x31, 0xed, 0xfe, 0x47,
-	0x3d, 0x16, 0xfa, 0x8f, 0x50, 0xd8, 0xb0, 0x57, 0x21, 0x9a, 0xb0, 0x1b, 0xac, 0x41, 0x19, 0x24,
-	0x5b, 0x7f, 0xb8, 0x39, 0x2c, 0x85, 0x0a, 0x40, 0x8d, 0xa4, 0x47, 0x22, 0x23, 0x04, 0xea, 0x3f,
-	0xc7, 0xd5, 0x4e, 0x5b, 0x33, 0xbc, 0xed, 0xe5, 0xf1, 0x1e, 0xd6, 0xe0, 0xe5, 0xf1, 0xbe, 0xd1,
-	0xeb, 0x90, 0x34, 0x09, 0x99, 0xc7, 0xe3, 0x3b, 0xf3, 0xa8, 0xfa, 0xc4, 0xf9, 0xc2, 0x16, 0xce,
-	0x4c, 0xe5, 0xa4, 0x5c, 0xa0, 0x93, 0xb5, 0xa7, 0x28, 0x13, 0x2e, 0xd3, 0x60, 0x1f, 0x9e, 0xc0,
-	0x9e, 0x85, 0xa7, 0x9d, 0x3e, 0xe6, 0x9d, 0x1e, 0xe3, 0xa2, 0x98, 0x92, 0x6b, 0x01, 0x2c, 0x3c,
-	0xfd, 0x0a, 0xf3, 0x26, 0xe3, 0xa2, 0xf4, 0x1c, 0xb2, 0x91, 0x00, 0x1e, 0x5b, 0x86, 0x74, 0x16,
-	0xb0, 0x65, 0x48, 0x67, 0x5e, 0xb3, 0x27, 0x78, 0xe4, 0x06, 0x65, 0xf8, 0xc2, 0x8b, 0xf8, 0x33,
-	0x4d, 0x7f, 0x09, 0x87, 0x3e, 0x1d, 0xda, 0xf6, 0x15, 0x0b, 0x66, 0xf3, 0x68, 0x95, 0x0a, 0x5b,
-	0xee, 0x62, 0xc8, 0x0d, 0x02, 0x28, 0x8a, 0x57, 0xdd, 0xdc, 0x7e, 0xd9, 0x9e, 0x41, 0x56, 0xdd,
-	0x74, 0xd3, 0xbe, 0x62, 0xea, 0xc6, 0x15, 0x56, 0x9f, 0xed, 0xa5, 0x2f, 0xe8, 0x86, 0xdf, 0xfa,
-	0x19, 0x1c, 0x37, 0xfd, 0xbd, 0x83, 0x85, 0xc9, 0xec, 0x73, 0x6a, 0xf6, 0x07, 0xe2, 0x76, 0x26,
-	0x7d, 0x06, 0xa5, 0x6d, 0x90, 0x25, 0x5f, 0x07, 0x52, 0x23, 0x41, 0x49, 0x43, 0x49, 0x8d, 0x6f,
-	0xaf, 0xff, 0x2a, 0xc7, 0xae, 0x17, 0x65, 0xed, 0xfd, 0xa2, 0xac, 0xfd, 0xb9, 0x28, 0x6b, 0xbf,
-	0xdc, 0x94, 0x63, 0xef, 0x6f, 0xca, 0xb1, 0xdf, 0x6f, 0xca, 0xb1, 0xb7, 0x9f, 0x7e, 0xe4, 0xdb,
-	0xe6, 0xfd, 0x96, 0xc9, 0xdf, 0xb1, 0x6e, 0x5a, 0xfe, 0x8f, 0x3d, 0xf9, 0x27, 0x00, 0x00, 0xff,
-	0xff, 0x85, 0x1c, 0x01, 0x0e, 0xe6, 0x09, 0x00, 0x00,
+	// 1088 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4f, 0x6f, 0x1b, 0x45,
+	0x14, 0xf7, 0xfa, 0x5f, 0xe3, 0xe7, 0x24, 0x4d, 0x86, 0x34, 0x71, 0xac, 0xca, 0x4e, 0x57, 0x1c,
+	0x52, 0x89, 0xda, 0x4d, 0x40, 0x55, 0x5b, 0x50, 0x51, 0x1d, 0x03, 0x36, 0x11, 0x10, 0xb6, 0x41,
+	0x42, 0x95, 0xc0, 0x1a, 0x7b, 0x5f, 0xec, 0x95, 0xbd, 0x3b, 0xee, 0xce, 0xd8, 0xd8, 0x5f, 0x02,
+	0x71, 0xe0, 0x33, 0xf0, 0x41, 0x38, 0xe5, 0xd8, 0x23, 0xe2, 0x60, 0x51, 0xe7, 0x5b, 0xf4, 0x84,
+	0x76, 0x76, 0x76, 0xbd, 0x76, 0x9c, 0xa4, 0xaa, 0xe0, 0x36, 0xf3, 0xe6, 0xfd, 0xde, 0xdf, 0xdf,
+	0xbc, 0x19, 0xd8, 0xc1, 0xa1, 0x5d, 0x1e, 0x1e, 0x34, 0x51, 0xd0, 0x83, 0xf2, 0xab, 0x01, 0xba,
+	0xe3, 0x52, 0xdf, 0x65, 0x82, 0x91, 0x2c, 0x0e, 0xed, 0x92, 0x3a, 0xc8, 0x6f, 0xb5, 0x59, 0x9b,
+	0x49, 0x79, 0xd9, 0x5b, 0xf9, 0x2a, 0xf9, 0x39, 0xac, 0x18, 0xf7, 0x91, 0xfb, 0x07, 0xfa, 0x4b,
+	0x20, 0x55, 0xec, 0x33, 0x6e, 0x89, 0xef, 0x3d, 0x8b, 0x27, 0xd4, 0xa5, 0x36, 0x27, 0x39, 0xb8,
+	0x45, 0x4d, 0xd3, 0x45, 0xce, 0x73, 0xda, 0x9e, 0xb6, 0x9f, 0x31, 0x82, 0x2d, 0xd9, 0x82, 0x14,
+	0xe5, 0x1c, 0x45, 0x2e, 0x2e, 0xe5, 0xfe, 0xc6, 0x93, 0xb6, 0x3a, 0xd4, 0x72, 0x72, 0x09, 0x5f,
+	0x2a, 0x37, 0xfa, 0x33, 0xd8, 0xae, 0x50, 0xd1, 0xea, 0xa0, 0x79, 0xc4, 0x6c, 0x9b, 0x3a, 0x26,
+	0x37, 0xf0, 0xd5, 0x00, 0x79, 0x44, 0x5f, 0x8b, 0xe8, 0x93, 0x75, 0x88, 0x5b, 0xa6, 0x32, 0x1c,
+	0xb7, 0x4c, 0xfd, 0x8f, 0x04, 0xec, 0x5c, 0x32, 0xc0, 0xfb, 0xcc, 0xe1, 0x48, 0xb6, 0xa5, 0xae,
+	0x84, 0x57, 0xd2, 0xd3, 0x49, 0x31, 0x5e, 0xaf, 0x7a, 0x18, 0x42, 0x20, 0x69, 0x52, 0x41, 0x95,
+	0x15, 0xb9, 0x26, 0x4f, 0x21, 0xcd, 0x05, 0x15, 0x03, 0x2e, 0xc3, 0x5b, 0x3f, 0xd4, 0x4b, 0x91,
+	0x82, 0x95, 0x16, 0x3c, 0xbc, 0x90, 0x9a, 0x86, 0x42, 0x90, 0x9f, 0x20, 0xdd, 0xc5, 0x71, 0xc3,
+	0x32, 0x73, 0x49, 0xe9, 0xeb, 0xcb, 0xe9, 0xa4, 0x98, 0x3a, 0xc6, 0x71, 0xbd, 0xfa, 0x76, 0x52,
+	0x7c, 0xd2, 0xb6, 0x44, 0x67, 0xd0, 0x2c, 0xb5, 0x98, 0x5d, 0xa6, 0x23, 0xec, 0x51, 0xd7, 0x41,
+	0xf1, 0x0b, 0x73, 0xbb, 0x6a, 0xf7, 0xa0, 0xc5, 0x5c, 0x2c, 0x8f, 0xca, 0x82, 0xf3, 0x32, 0x8e,
+	0xfa, 0xcc, 0x15, 0x68, 0x96, 0x24, 0xd8, 0x48, 0x75, 0x71, 0x5c, 0x37, 0xc9, 0x5d, 0xc8, 0x70,
+	0xab, 0xed, 0x50, 0x31, 0x70, 0x31, 0x97, 0xda, 0x4b, 0xec, 0x67, 0x8c, 0x99, 0x80, 0xdc, 0x83,
+	0x55, 0x1c, 0x61, 0x6b, 0x20, 0xb0, 0x21, 0x93, 0x4a, 0xcb, 0xa4, 0xb2, 0x4a, 0x56, 0xf5, 0x72,
+	0x33, 0x20, 0xd7, 0x77, 0x71, 0xd8, 0x68, 0xfa, 0x59, 0x34, 0x5a, 0x2a, 0x0d, 0x2f, 0xe2, 0x5b,
+	0x32, 0xe2, 0xdd, 0xe9, 0xa4, 0x78, 0xe7, 0xc4, 0xc5, 0xe1, 0x42, 0xa2, 0xf5, 0xaa, 0x71, 0xa7,
+	0xbf, 0x44, 0x6c, 0x92, 0x32, 0x64, 0x95, 0x99, 0x86, 0x65, 0xf2, 0xdc, 0x8a, 0x17, 0x56, 0x65,
+	0x7d, 0x3a, 0x29, 0x82, 0x52, 0xaa, 0x57, 0xb9, 0x01, 0x4a, 0xa5, 0x6e, 0x72, 0xfd, 0x8d, 0x06,
+	0x9b, 0xc7, 0x38, 0x7e, 0xee, 0x73, 0xe4, 0xfa, 0x26, 0xff, 0x00, 0x49, 0x97, 0xf5, 0x50, 0x36,
+	0x28, 0x55, 0xf9, 0xfc, 0xed, 0xa4, 0xf8, 0xe9, 0x7b, 0x56, 0xd1, 0x60, 0x3d, 0xac, 0xc5, 0x0c,
+	0x69, 0x8e, 0xfc, 0x28, 0xf9, 0x90, 0xf8, 0x2f, 0x7b, 0x54, 0x8b, 0x79, 0x8c, 0xaa, 0xa4, 0x20,
+	0xd1, 0xc5, 0xb1, 0xfe, 0x67, 0x02, 0x48, 0x34, 0x47, 0xc5, 0xc3, 0x19, 0x3f, 0xb4, 0xff, 0x83,
+	0x1f, 0x4d, 0x20, 0xf6, 0xa0, 0x27, 0x2c, 0x6e, 0xb5, 0x1b, 0xea, 0x0a, 0x22, 0x97, 0xb5, 0xcb,
+	0x1e, 0x1e, 0xcc, 0xd1, 0xf8, 0x72, 0x6c, 0xa5, 0x6f, 0x14, 0xf2, 0x79, 0x00, 0xac, 0xc5, 0x8c,
+	0x4d, 0x7b, 0x51, 0x48, 0x1a, 0xb0, 0x29, 0x3a, 0x2e, 0xf2, 0x0e, 0xeb, 0x99, 0x81, 0x13, 0x59,
+	0xc9, 0xec, 0xe1, 0xc3, 0x9b, 0x5c, 0x9c, 0x06, 0x40, 0x75, 0x50, 0x8b, 0x19, 0x1b, 0x62, 0x41,
+	0x96, 0xff, 0x0e, 0x36, 0x2f, 0x85, 0xe2, 0x31, 0x7f, 0x96, 0x90, 0xe6, 0x33, 0x9f, 0x46, 0x4f,
+	0x43, 0x33, 0x32, 0xdd, 0x35, 0x63, 0x26, 0xc8, 0x7f, 0x04, 0x1b, 0x8b, 0x8e, 0xaf, 0x1e, 0x59,
+	0x95, 0x4c, 0x78, 0xa2, 0xbf, 0x80, 0x5d, 0x39, 0xe6, 0x4e, 0x59, 0x17, 0x9d, 0xc5, 0x56, 0x5e,
+	0x3d, 0xf4, 0xee, 0x42, 0xa6, 0xc5, 0x9c, 0x33, 0xcb, 0xb5, 0xd1, 0x8f, 0x66, 0xc5, 0x98, 0x09,
+	0xf4, 0xdf, 0x35, 0xd8, 0x91, 0x56, 0xd5, 0x20, 0xf5, 0x26, 0x08, 0xaa, 0x41, 0x7a, 0x1f, 0x52,
+	0x62, 0x14, 0xb0, 0x63, 0xb5, 0xb2, 0x75, 0x3e, 0x29, 0xc6, 0xfe, 0x9e, 0x14, 0x93, 0x35, 0xca,
+	0x3b, 0xd3, 0x49, 0x31, 0x79, 0x3a, 0xaa, 0x57, 0x8d, 0xa4, 0x18, 0xd5, 0x4d, 0xf2, 0x08, 0xd6,
+	0x9b, 0x03, 0xd7, 0x41, 0x37, 0xec, 0x41, 0x5c, 0x62, 0x6e, 0x2b, 0xcc, 0xad, 0x20, 0xde, 0x35,
+	0x5f, 0x2d, 0x48, 0x7c, 0x1b, 0xd2, 0xd4, 0x66, 0x03, 0x47, 0xa8, 0xe1, 0xab, 0x76, 0xba, 0x05,
+	0x1f, 0x44, 0x03, 0xba, 0xfe, 0x56, 0x7e, 0x06, 0xe9, 0xbe, 0x8c, 0x58, 0x71, 0xeb, 0xc3, 0xb9,
+	0xc6, 0x5f, 0x91, 0x9d, 0xa1, 0x30, 0xfa, 0xd7, 0xb0, 0x35, 0xef, 0x4a, 0x55, 0xf4, 0x30, 0x1c,
+	0xbc, 0x71, 0x39, 0x78, 0xf3, 0x73, 0x56, 0x23, 0x90, 0xd9, 0xc0, 0xd5, 0xa9, 0x6a, 0xd1, 0x52,
+	0x83, 0x1b, 0x90, 0xe8, 0xb1, 0xb6, 0x0a, 0xdd, 0x5b, 0xbe, 0x97, 0x8b, 0x47, 0x90, 0x97, 0x2e,
+	0x2a, 0xd1, 0x3a, 0xde, 0x4c, 0x03, 0xfd, 0x36, 0xac, 0x1d, 0x79, 0xd5, 0x0a, 0x26, 0x9c, 0xbe,
+	0x0f, 0xeb, 0x81, 0x20, 0x7c, 0x96, 0xd2, 0xb2, 0xa0, 0x01, 0xa5, 0xd5, 0x4e, 0x2f, 0xc1, 0xf6,
+	0x09, 0x3a, 0xa6, 0xe5, 0xb4, 0xdf, 0xe9, 0x29, 0xd4, 0x7f, 0x86, 0x9d, 0x4b, 0xfa, 0xca, 0xc5,
+	0x11, 0xac, 0x04, 0x43, 0x5e, 0x3a, 0xc9, 0x1e, 0xde, 0xbb, 0xdc, 0x2c, 0x85, 0x0a, 0x40, 0x95,
+	0xa4, 0x47, 0x22, 0x23, 0x04, 0xea, 0xbf, 0xc6, 0x61, 0x6b, 0x99, 0xe2, 0x75, 0xef, 0xaa, 0xf7,
+	0x6d, 0x08, 0xde, 0x55, 0x6f, 0x4d, 0x8e, 0x43, 0xd2, 0x24, 0x64, 0x1c, 0x0f, 0x6e, 0x8c, 0xa3,
+	0xe4, 0x13, 0xe7, 0x0b, 0x47, 0xb8, 0x63, 0x15, 0x93, 0x32, 0x41, 0xf6, 0x16, 0x1e, 0xda, 0x4c,
+	0x38, 0x48, 0x83, 0x59, 0xb8, 0x07, 0xab, 0x36, 0x1d, 0x35, 0xda, 0x94, 0x37, 0x5a, 0x8c, 0x8b,
+	0x5c, 0x4a, 0x8e, 0x05, 0xb0, 0xe9, 0xe8, 0x2b, 0xca, 0x8f, 0x18, 0x17, 0xf9, 0x27, 0x90, 0x8d,
+	0x38, 0xf0, 0xd8, 0xd2, 0xc5, 0x71, 0xc0, 0x96, 0x2e, 0x8e, 0xbd, 0x62, 0x0f, 0x69, 0x6f, 0x10,
+	0xa4, 0xe1, 0x6f, 0x9e, 0xc6, 0x1f, 0x6b, 0xfa, 0x33, 0xd8, 0xf4, 0xe9, 0x50, 0x77, 0xce, 0x58,
+	0xd0, 0x9b, 0xfb, 0xf3, 0x54, 0x58, 0x72, 0x17, 0x43, 0x6e, 0x98, 0x40, 0xa2, 0x78, 0x55, 0xcd,
+	0xe5, 0x97, 0xed, 0x31, 0x64, 0xd5, 0x4d, 0xb7, 0x9c, 0x33, 0xa6, 0x6e, 0xdc, 0xce, 0xfc, 0xa7,
+	0x64, 0x66, 0x0b, 0x9a, 0xe1, 0x5a, 0x3f, 0x80, 0xdd, 0x23, 0x7f, 0xee, 0x50, 0x61, 0x31, 0xa7,
+	0x86, 0x56, 0xbb, 0x23, 0xae, 0x67, 0xd2, 0x27, 0x90, 0x5f, 0x06, 0x99, 0xf1, 0xb5, 0x23, 0x25,
+	0x12, 0x94, 0x34, 0xd4, 0xae, 0xf2, 0xed, 0xf9, 0x9b, 0x42, 0xec, 0x7c, 0x5a, 0xd0, 0x5e, 0x4f,
+	0x0b, 0xda, 0x3f, 0xd3, 0x82, 0xf6, 0xdb, 0x45, 0x21, 0xf6, 0xfa, 0xa2, 0x10, 0xfb, 0xeb, 0xa2,
+	0x10, 0x7b, 0xf9, 0xf0, 0x1d, 0xdf, 0x35, 0xef, 0xd3, 0x29, 0x3f, 0x9b, 0xcd, 0xb4, 0xfc, 0x6d,
+	0x7e, 0xfc, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x29, 0xe9, 0x60, 0x4c, 0xc4, 0x0a, 0x00, 0x00,
 }
 
 func (m *DepositQueryParams) Marshal() (dAtA []byte, err error) {
@@ -1135,7 +1223,7 @@ func (m *BatchedCommandsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryAddressResponse) Marshal() (dAtA []byte, err error) {
+func (m *KeyAddressRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1145,12 +1233,77 @@ func (m *QueryAddressResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryAddressResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeyAddressRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeyAddressRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Key != nil {
+		{
+			size := m.Key.Size()
+			i -= size
+			if _, err := m.Key.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeyAddressRequest_Role) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyAddressRequest_Role) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i = encodeVarintQuery(dAtA, i, uint64(m.Role))
+	i--
+	dAtA[i] = 0x10
+	return len(dAtA) - i, nil
+}
+func (m *KeyAddressRequest_KeyID) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyAddressRequest_KeyID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.KeyID)
+	copy(dAtA[i:], m.KeyID)
+	i = encodeVarintQuery(dAtA, i, uint64(len(m.KeyID)))
+	i--
+	dAtA[i] = 0x1a
+	return len(dAtA) - i, nil
+}
+func (m *KeyAddressResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeyAddressResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeyAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1174,12 +1327,12 @@ func (m *QueryAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryAddressResponse_MultisigAddresses_) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_MultisigAddresses_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAddressResponse_MultisigAddresses_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_MultisigAddresses_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.MultisigAddresses != nil {
 		{
@@ -1195,12 +1348,12 @@ func (m *QueryAddressResponse_MultisigAddresses_) MarshalToSizedBuffer(dAtA []by
 	}
 	return len(dAtA) - i, nil
 }
-func (m *QueryAddressResponse_ThresholdAddress_) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_ThresholdAddress_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAddressResponse_ThresholdAddress_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_ThresholdAddress_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ThresholdAddress != nil {
 		{
@@ -1216,7 +1369,7 @@ func (m *QueryAddressResponse_ThresholdAddress_) MarshalToSizedBuffer(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *QueryAddressResponse_MultisigAddresses) Marshal() (dAtA []byte, err error) {
+func (m *KeyAddressResponse_MultisigAddresses) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1226,12 +1379,12 @@ func (m *QueryAddressResponse_MultisigAddresses) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *QueryAddressResponse_MultisigAddresses) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_MultisigAddresses) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAddressResponse_MultisigAddresses) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_MultisigAddresses) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1253,7 +1406,7 @@ func (m *QueryAddressResponse_MultisigAddresses) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryAddressResponse_ThresholdAddress) Marshal() (dAtA []byte, err error) {
+func (m *KeyAddressResponse_ThresholdAddress) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1263,12 +1416,12 @@ func (m *QueryAddressResponse_ThresholdAddress) Marshal() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *QueryAddressResponse_ThresholdAddress) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_ThresholdAddress) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAddressResponse_ThresholdAddress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeyAddressResponse_ThresholdAddress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1924,7 +2077,42 @@ func (m *BatchedCommandsResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryAddressResponse) Size() (n int) {
+func (m *KeyAddressRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.Key != nil {
+		n += m.Key.Size()
+	}
+	return n
+}
+
+func (m *KeyAddressRequest_Role) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovQuery(uint64(m.Role))
+	return n
+}
+func (m *KeyAddressRequest_KeyID) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.KeyID)
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+func (m *KeyAddressResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1940,7 +2128,7 @@ func (m *QueryAddressResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryAddressResponse_MultisigAddresses_) Size() (n int) {
+func (m *KeyAddressResponse_MultisigAddresses_) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1952,7 +2140,7 @@ func (m *QueryAddressResponse_MultisigAddresses_) Size() (n int) {
 	}
 	return n
 }
-func (m *QueryAddressResponse_ThresholdAddress_) Size() (n int) {
+func (m *KeyAddressResponse_ThresholdAddress_) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1964,7 +2152,7 @@ func (m *QueryAddressResponse_ThresholdAddress_) Size() (n int) {
 	}
 	return n
 }
-func (m *QueryAddressResponse_MultisigAddresses) Size() (n int) {
+func (m *KeyAddressResponse_MultisigAddresses) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1982,7 +2170,7 @@ func (m *QueryAddressResponse_MultisigAddresses) Size() (n int) {
 	return n
 }
 
-func (m *QueryAddressResponse_ThresholdAddress) Size() (n int) {
+func (m *KeyAddressResponse_ThresholdAddress) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2782,7 +2970,7 @@ func (m *BatchedCommandsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
+func (m *KeyAddressRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2805,10 +2993,144 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryAddressResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: KeyAddressRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: KeyAddressRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Role", wireType)
+			}
+			var v github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Key = &KeyAddressRequest_Role{v}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = &KeyAddressRequest_KeyID{github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeyAddressResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeyAddressResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeyAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2872,11 +3194,11 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &QueryAddressResponse_MultisigAddresses{}
+			v := &KeyAddressResponse_MultisigAddresses{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Address = &QueryAddressResponse_MultisigAddresses_{v}
+			m.Address = &KeyAddressResponse_MultisigAddresses_{v}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -2907,11 +3229,11 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &QueryAddressResponse_ThresholdAddress{}
+			v := &KeyAddressResponse_ThresholdAddress{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Address = &QueryAddressResponse_ThresholdAddress_{v}
+			m.Address = &KeyAddressResponse_ThresholdAddress_{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2934,7 +3256,7 @@ func (m *QueryAddressResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryAddressResponse_MultisigAddresses) Unmarshal(dAtA []byte) error {
+func (m *KeyAddressResponse_MultisigAddresses) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3035,7 +3357,7 @@ func (m *QueryAddressResponse_MultisigAddresses) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryAddressResponse_ThresholdAddress) Unmarshal(dAtA []byte) error {
+func (m *KeyAddressResponse_ThresholdAddress) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
