@@ -38,7 +38,9 @@ jobs:
 
       - name: Install prereqs
         run: |
-          make prereqs
+          go install golang.org/x/tools/cmd/goimports
+          go install github.com/matryer/moq
+          pip3 install mdformat
 
       - name: Run go generate
         run: make generate
