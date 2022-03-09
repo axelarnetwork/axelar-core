@@ -1,11 +1,12 @@
 package types
 
 import (
-	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )

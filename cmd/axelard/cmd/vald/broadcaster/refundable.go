@@ -3,8 +3,9 @@ package broadcaster
 import (
 	"context"
 
-	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 // RefundableBroadcaster only sends RefundMsgRequest msgs

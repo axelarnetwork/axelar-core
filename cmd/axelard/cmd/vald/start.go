@@ -12,10 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-	"github.com/axelarnetwork/tm-events/pubsub"
-	"github.com/axelarnetwork/tm-events/tendermint"
-	"github.com/axelarnetwork/utils/jobs"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -28,6 +24,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/tm-events/tendermint"
+	"github.com/axelarnetwork/utils/jobs"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 

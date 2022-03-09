@@ -1,9 +1,10 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewRegisterAssetFeeRequest creates a message of type RegisterAssetFeeRequest

@@ -6,10 +6,11 @@ import (
 	"sort"
 	"strconv"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"

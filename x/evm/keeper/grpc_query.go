@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var _ types.QueryServiceServer = Querier{}

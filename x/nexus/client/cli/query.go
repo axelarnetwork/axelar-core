@@ -3,12 +3,13 @@ package cli
 import (
 	"fmt"
 
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"

@@ -4,8 +4,9 @@ import (
 	mathrand "math/rand"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/ethereum/go-ethereum/common/math"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"

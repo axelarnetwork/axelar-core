@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewSubmitMultisigSignaturesRequest constructor for SubmitMultisigSignaturesRequest

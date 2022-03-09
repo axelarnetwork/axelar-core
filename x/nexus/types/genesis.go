@@ -5,10 +5,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewGenesisState is the constructor of GenesisState

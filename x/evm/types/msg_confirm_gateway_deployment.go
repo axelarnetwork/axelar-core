@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewConfirmGatewayDeploymentRequest creates a message of type ConfirmGatewayDeploymentRequest

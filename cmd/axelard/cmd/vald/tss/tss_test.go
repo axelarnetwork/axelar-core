@@ -8,9 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	types2 "github.com/axelarnetwork/axelar-core/x/reward/types"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
@@ -20,6 +17,10 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	types2 "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 func TestGRPCTimeout(t *testing.T) {

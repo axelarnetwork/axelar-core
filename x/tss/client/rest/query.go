@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	tssclient "github.com/axelarnetwork/axelar-core/x/tss/client"
 	"github.com/cosmos/cosmos-sdk/client"
+
+	tssclient "github.com/axelarnetwork/axelar-core/x/tss/client"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 

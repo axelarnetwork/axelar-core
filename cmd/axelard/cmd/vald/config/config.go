@@ -3,9 +3,10 @@ package config
 import (
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // ValdConfig contains all necessary vald configurations

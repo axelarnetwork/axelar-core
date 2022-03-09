@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"testing"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -20,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/crypto/sha3"
+
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"

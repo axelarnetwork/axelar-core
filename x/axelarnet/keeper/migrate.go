@@ -1,12 +1,14 @@
 package keeper
 
 import (
+	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/legacy"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"strings"
 )
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.13 to v0.14. The

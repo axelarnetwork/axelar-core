@@ -3,8 +3,9 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewGenesisState is the constructor for GenesisState
