@@ -21,4 +21,3 @@
 /node_modules/
 *.DS_Store
 /contract-artifacts/*/*.json
-/x/evm/types/contracts.go
