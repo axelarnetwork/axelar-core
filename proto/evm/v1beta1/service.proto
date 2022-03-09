@@ -198,4 +198,9 @@ service QueryService {
   rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
     option (google.api.http).get = "/evm/v1beta1/gateway_address";
   }
+
+  // Bytecode queries the bytecode of a specified gateway at the specified chain
+  rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
+    option (google.api.http).get = "/evm/v1beta1/bytecode";
+  }
 }

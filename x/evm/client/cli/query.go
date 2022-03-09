@@ -217,18 +217,26 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 			keeper.BCGateway, keeper.BCGatewayDeployment, keeper.BCToken, keeper.BCBurner),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
+			chain := args[0]
+			contract := args[1]
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Bytecode(cmd.Context(),
+				&types.BytecodeRequest{
+					Chain:    utils.NormalizeString(chain),
+					Contract: utils.NormalizeString(contract),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
+				return sdkerrors.Wrapf(err, types.ErrFBytecode, contract)
 			}
 
-			fmt.Println("0x" + common.Bytes2Hex(res))
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

@@ -164,6 +164,8 @@
     - [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse)
     - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
     - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
+    - [BytecodeRequest](#evm.v1beta1.BytecodeRequest)
+    - [BytecodeResponse](#evm.v1beta1.BytecodeResponse)
     - [ChainsRequest](#evm.v1beta1.ChainsRequest)
     - [ChainsResponse](#evm.v1beta1.ChainsResponse)
     - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
@@ -2628,6 +2630,37 @@ GenesisState represents the genesis state
 
 
 
+<a name="evm.v1beta1.BytecodeRequest"></a>
+
+### BytecodeRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BytecodeResponse"></a>
+
+### BytecodeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `bytecode` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.ChainsRequest"></a>
 
 ### ChainsRequest
@@ -3578,6 +3611,7 @@ QueryService defines the gRPC querier service.
 | `Chains` | [ChainsRequest](#evm.v1beta1.ChainsRequest) | [ChainsResponse](#evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/evm/v1beta1/chains|
 | `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
 | `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
+| `Bytecode` | [BytecodeRequest](#evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/evm/v1beta1/bytecode|
 
  <!-- end services -->
 

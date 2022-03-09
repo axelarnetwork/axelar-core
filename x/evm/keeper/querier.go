@@ -25,7 +25,6 @@ const (
 	QDepositState         = "deposit-state"
 	QAddressByKeyRole     = "address-by-key-role"
 	QAddressByKeyID       = "address-by-key-id"
-	QBytecode             = "bytecode"
 	QPendingCommands      = "pending-commands"
 	QCommand              = "command"
 )
@@ -61,8 +60,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryDepositState(ctx, chainKeeper, n, req.Data)
 		case QCommand:
 			return queryCommand(ctx, chainKeeper, n, path[2])
-		case QBytecode:
-			return queryBytecode(ctx, chainKeeper, s, n, path[2])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
@@ -252,34 +249,4 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	default:
 		return -1, "deposit is in an unexpected state", codes.Internal
 	}
-}
-
-func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
-	chain, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
-	var bz []byte
-	switch strings.ToLower(contract) {
-	case BCGateway:
-		bz, _ = k.GetGatewayByteCode(ctx)
-	case BCGatewayDeployment:
-		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, k, s, chain)
-		if err != nil {
-			return nil, err
-		}
-
-		return deploymentBytecode, nil
-	case BCToken:
-		bz, _ = k.GetTokenByteCode(ctx)
-	case BCBurner:
-		bz, _ = k.GetBurnerByteCode(ctx)
-	}
-
-	if bz == nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecodes for chain %s", k.GetName()))
-	}
-
-	return bz, nil
 }

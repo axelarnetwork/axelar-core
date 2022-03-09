@@ -138,3 +138,10 @@ message ConfirmationHeightResponse { uint64 height = 1; }
 message GatewayAddressRequest { string chain = 1; }
 
 message GatewayAddressResponse { string address = 1; }
+
+message BytecodeRequest {
+  string chain = 1;
+  string contract = 2;
+}
+
+message BytecodeResponse { string bytecode = 1; }

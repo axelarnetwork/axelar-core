@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -363,4 +364,40 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 	}
 
 	return &types.GatewayAddressResponse{Address: address.Hex()}, nil
+}
+
+// Bytecode returns the bytecode of a specified contract and chain
+func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	ck := q.keeper.ForChain(req.Chain)
+
+	var bytecodeBytes []byte
+	switch strings.ToLower(req.Contract) {
+	case BCGateway:
+		bytecodeBytes, _ = ck.GetGatewayByteCode(ctx)
+	case BCGatewayDeployment:
+		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, ck, q.signer, chain)
+		if err != nil {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		bytecodeBytes = deploymentBytecode
+	case BCToken:
+		bytecodeBytes, _ = ck.GetTokenByteCode(ctx)
+	case BCBurner:
+		bytecodeBytes, _ = ck.GetBurnerByteCode(ctx)
+	}
+
+	if bytecodeBytes == nil {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", ck.GetName())).Error())
+	}
+
+	bytecode := fmt.Sprintf("0x" + common.Bytes2Hex(bytecodeBytes))
+
+	return &types.BytecodeResponse{Bytecode: bytecode}, nil
 }

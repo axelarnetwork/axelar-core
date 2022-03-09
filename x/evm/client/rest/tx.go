@@ -40,7 +40,6 @@ const (
 	QueryTokenAddress    = "token-address"
 	QueryPendingCommands = keeper.QPendingCommands
 	QueryCommand         = keeper.QCommand
-	QueryBytecode        = keeper.QBytecode
 	QueryDepositState    = keeper.QDepositState
 )
 
@@ -65,7 +64,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryCommand(cliCtx), QueryCommand, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryTokenAddress(cliCtx), QueryTokenAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
 }
 
