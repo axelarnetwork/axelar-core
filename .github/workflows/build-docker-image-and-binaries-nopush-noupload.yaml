@@ -159,6 +159,9 @@ jobs:
           PLATFORM: 'linux/amd64'
           SEMVER: 8.8.8
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
+
       - name: Sign the images with GitHub OIDC
         run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
         env:
