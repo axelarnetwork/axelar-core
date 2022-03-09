@@ -36,13 +36,12 @@ const (
 	TxSignCommands                = "sign-commands"
 	TxAddChain                    = "add-chain"
 
-	QueryAddress              = "query-address"
-	QueryTokenAddress         = "token-address"
-	QueryPendingCommands      = keeper.QPendingCommands
-	QueryCommand              = keeper.QCommand
-	QueryAxelarGatewayAddress = keeper.QAxelarGatewayAddress
-	QueryBytecode             = keeper.QBytecode
-	QueryDepositState         = keeper.QDepositState
+	QueryAddress         = "query-address"
+	QueryTokenAddress    = "token-address"
+	QueryPendingCommands = keeper.QPendingCommands
+	QueryCommand         = keeper.QCommand
+	QueryBytecode        = keeper.QBytecode
+	QueryDepositState    = keeper.QDepositState
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -66,7 +65,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(GetHandlerQueryCommand(cliCtx), QueryCommand, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryTokenAddress(cliCtx), QueryTokenAddress, clientUtils.PathVarChain)
-	registerQuery(GetHandlerQueryAxelarGatewayAddress(cliCtx), QueryAxelarGatewayAddress, clientUtils.PathVarChain)
 	registerQuery(GetHandlerQueryBytecode(cliCtx), QueryBytecode, clientUtils.PathVarChain, clientUtils.PathVarContract)
 	registerQuery(GetHandlerQueryDepositState(cliCtx), QueryDepositState, clientUtils.PathVarChain, clientUtils.PathVarTxID, clientUtils.PathVarEthereumAddress, clientUtils.PathVarAmount)
 }

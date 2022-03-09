@@ -25,7 +25,6 @@ const (
 	QDepositState         = "deposit-state"
 	QAddressByKeyRole     = "address-by-key-role"
 	QAddressByKeyID       = "address-by-key-id"
-	QAxelarGatewayAddress = "gateway-address"
 	QBytecode             = "bytecode"
 	QPendingCommands      = "pending-commands"
 	QCommand              = "command"
@@ -54,8 +53,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 		}
 
 		switch path[0] {
-		case QAxelarGatewayAddress:
-			return queryAxelarGateway(ctx, chainKeeper, n)
 		case QTokenAddressByAsset:
 			return QueryTokenAddressByAsset(ctx, chainKeeper, n, path[2])
 		case QTokenAddressBySymbol:
@@ -178,21 +175,6 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 		MaxGasCost: cmd.MaxGasCost,
 		Params:     params,
 	}, nil
-}
-
-func queryAxelarGateway(ctx sdk.Context, k types.ChainKeeper, n types.Nexus) ([]byte, error) {
-
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
-	}
-
-	addr, ok := k.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "axelar gateway not set")
-	}
-
-	return addr.Bytes(), nil
 }
 
 // QueryTokenAddressByAsset returns the address of the token contract by asset

@@ -346,3 +346,21 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 
 	return &res, nil
 }
+
+// GatewayAddress returns the axelar gateway address for the specified chain
+func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequest) (*types.GatewayAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	ck := q.keeper.ForChain(req.Chain)
+
+	address, ok := ck.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway not set for chain [%s]", req.Chain)).Error())
+	}
+
+	return &types.GatewayAddressResponse{Address: address.Hex()}, nil
+}

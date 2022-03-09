@@ -193,4 +193,9 @@ service QueryService {
   rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
     option (google.api.http).get = "/evm/v1beta1/key_address";
   }
+
+  // GatewayAddress queries the address of axelar gateway at the specified chain
+  rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
+    option (google.api.http).get = "/evm/v1beta1/gateway_address";
+  }
 }

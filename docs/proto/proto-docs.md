@@ -171,6 +171,8 @@
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
     - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
+    - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
+    - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
     - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
     - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
@@ -2730,6 +2732,36 @@ deposit address
 
 
 
+<a name="evm.v1beta1.GatewayAddressRequest"></a>
+
+### GatewayAddressRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GatewayAddressResponse"></a>
+
+### GatewayAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.KeyAddressRequest"></a>
 
 ### KeyAddressRequest
@@ -3545,6 +3577,7 @@ QueryService defines the gRPC querier service.
 | `PendingCommands` | [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
 | `Chains` | [ChainsRequest](#evm.v1beta1.ChainsRequest) | [ChainsResponse](#evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/evm/v1beta1/chains|
 | `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
+| `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
 
  <!-- end services -->
 

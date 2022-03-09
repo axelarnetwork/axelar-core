@@ -134,3 +134,7 @@ message BurnerInfoResponse {
 message ConfirmationHeightRequest { string chain = 1; }
 
 message ConfirmationHeightResponse { uint64 height = 1; }
+
+message GatewayAddressRequest { string chain = 1; }
+
+message GatewayAddressResponse { string address = 1; }

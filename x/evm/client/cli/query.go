@@ -182,18 +182,24 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 		Short: "Query the Axelar Gateway contract address",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QAxelarGatewayAddress, args[0]), nil)
+			chain := args[0]
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.GatewayAddress(cmd.Context(),
+				&types.GatewayAddressRequest{
+					Chain: utils.NormalizeString(chain),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFGatewayAddress)
+				return err
 			}
 
-			out := common.BytesToAddress(res)
-			return cliCtx.PrintObjectLegacy(out.Hex())
+			return clientCtx.PrintProto(res)
 		},
 	}
 
