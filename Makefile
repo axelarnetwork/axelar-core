@@ -92,7 +92,7 @@ docker-image-debug:
 .Phony: prereqs
 prereqs:
 	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
-	@which moq &>/dev/null 			||	go install github.com/matryer/moq
+	@which moq &>/dev/null			||	go install github.com/matryer/moq
 	@which mdformat &>/dev/null 	||	pip3 install mdformat
 	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
