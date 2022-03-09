@@ -5,10 +5,8 @@ import (
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -81,40 +79,6 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 
 		var res types.QueryTokenAddressResponse
 		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
-// GetHandlerQueryDepositState returns a handler to query the state of an ERC20 deposit confirmation
-func GetHandlerQueryDepositState(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		txID := common.HexToHash(mux.Vars(r)[utils.PathVarTxID])
-		burnerAddress := common.HexToAddress(mux.Vars(r)[utils.PathVarEthereumAddress])
-		amount := sdk.NewUintFromString(mux.Vars(r)[utils.PathVarAmount])
-
-		params := types.QueryDepositStateParams{
-			TxID:          types.Hash(txID),
-			BurnerAddress: types.Address(burnerAddress),
-			Amount:        amount.String(),
-		}
-		data := types.ModuleCdc.MustMarshalJSON(&params)
-
-		bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QDepositState, chain), data)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFDepositState).Error())
-			return
-		}
-
-		var res types.QueryDepositStateResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

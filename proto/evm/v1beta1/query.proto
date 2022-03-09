@@ -95,12 +95,6 @@ message DepositStateRequest {
 
 message DepositStateResponse { DepositStatus status = 2; }
 
-// QueryDepositStateResponse is used by the legacy querier
-message QueryDepositStateResponse {
-  string log = 1;
-  DepositStatus status = 2;
-}
-
 message QueryBurnerAddressResponse { string address = 1; }
 
 message ChainsRequest {}

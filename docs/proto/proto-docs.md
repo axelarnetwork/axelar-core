@@ -185,7 +185,6 @@
     - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
-    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
@@ -2951,22 +2950,6 @@ deposit address
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 | `amount` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.QueryDepositStateResponse"></a>
-
-### QueryDepositStateResponse
-QueryDepositStateResponse is used by the legacy querier
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
 
 
 

@@ -5,14 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/grpc/codes"
-
-	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -22,7 +18,6 @@ import (
 const (
 	QTokenAddressBySymbol = "token-address-symbol"
 	QTokenAddressByAsset  = "token-address-asset"
-	QDepositState         = "deposit-state"
 	QAddressByKeyRole     = "address-by-key-role"
 	QAddressByKeyID       = "address-by-key-id"
 	QPendingCommands      = "pending-commands"
@@ -56,8 +51,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryTokenAddressByAsset(ctx, chainKeeper, n, path[2])
 		case QTokenAddressBySymbol:
 			return QueryTokenAddressBySymbol(ctx, chainKeeper, n, path[2])
-		case QDepositState:
-			return QueryDepositState(ctx, chainKeeper, n, req.Data)
 		case QCommand:
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		default:
@@ -210,43 +203,4 @@ func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nex
 		Confirmed: token.Is(types.Confirmed),
 	}
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
-}
-
-// QueryDepositState returns the state of an ERC20 deposit confirmation
-func QueryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, data []byte) ([]byte, error) {
-	var params types.QueryDepositStateParams
-	if err := types.ModuleCdc.UnmarshalJSON(data, &params); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, "could not unmarshal parameters")
-	}
-
-	status, log, code := queryDepositState(ctx, k, n, &params)
-	if code != codes.OK {
-		return nil, sdkerrors.Wrap(types.ErrEVM, log)
-	}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&types.QueryDepositStateResponse{Status: status, Log: log})
-}
-
-func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	_, ok := n.GetChain(ctx, k.GetName())
-	if !ok {
-		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
-	_, isPending := k.GetPendingDeposit(ctx, pollKey)
-	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
-
-	switch {
-	case isPending:
-		return types.DepositStatus_Pending, "deposit transaction is waiting for confirmation", codes.OK
-	case !isPending && !ok:
-		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
-	case state == types.DepositStatus_Confirmed:
-		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
-	case state == types.DepositStatus_Burned:
-		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
-	default:
-		return -1, "deposit is in an unexpected state", codes.Internal
-	}
 }
