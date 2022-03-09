@@ -290,3 +290,269 @@ func TestQueryDepositState(t *testing.T) {
 
 	}).Repeat(repeatCount))
 }
+
+func TestChains(t *testing.T) {
+	var (
+		baseKeeper  *mock.BaseKeeperMock
+		signer      *mock.SignerMock
+		nexusKeeper *mock.NexusMock
+		ctx         sdk.Context
+		evmChain    string
+		nonEvmChain string
+		expectedRes types.ChainsResponse
+		grpcQuerier *evmKeeper.Querier
+	)
+
+	setup := func() {
+		evmChain = "evm-chain"
+		nonEvmChain = "non-evm-chain"
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	}
+
+	repeatCount := 1
+
+	t.Run("evm chain exists", testutils.Func(func(t *testing.T) {
+		setup()
+
+		expectedRes = types.ChainsResponse{Chains: []string{evmChain}}
+		nexusKeeper = &mock.NexusMock{
+			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
+				return []nexus.Chain{
+					{
+						Name:                  evmChain,
+						SupportsForeignAssets: true,
+						Module:                types.ModuleName,
+					},
+					{
+						Name:                  nonEvmChain,
+						SupportsForeignAssets: true,
+						Module:                "non-evm",
+					}}
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		grpcQuerier = &q
+		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+
+	t.Run("evm chain doesn't exist", testutils.Func(func(t *testing.T) {
+		setup()
+
+		expectedRes = types.ChainsResponse{Chains: []string{}}
+		nexusKeeper = &mock.NexusMock{
+			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
+				return []nexus.Chain{
+					{
+						Name:                  nonEvmChain,
+						SupportsForeignAssets: true,
+						Module:                "non-evm",
+					}}
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		grpcQuerier = &q
+		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+}
+
+func TestGateway(t *testing.T) {
+	var (
+		baseKeeper    *mock.BaseKeeperMock
+		signer        *mock.SignerMock
+		nexusKeeper   *mock.NexusMock
+		chainKeeper   *mock.ChainKeeperMock
+		ctx           sdk.Context
+		expectedRes   types.GatewayAddressResponse
+		grpcQuerier   *evmKeeper.Querier
+		address       common.Address
+		existingChain string
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		address = common.BytesToAddress([]byte{0})
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
+				return address, true
+			},
+		}
+
+		existingChain = "existing"
+		baseKeeper = &mock.BaseKeeperMock{
+			HasChainFunc: func(ctx sdk.Context, chain string) bool {
+				return chain == existingChain
+			},
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		grpcQuerier = &q
+	}
+
+	repeatCount := 1
+
+	t.Run("gateway exists", testutils.Func(func(t *testing.T) {
+		setup()
+
+		expectedRes = types.GatewayAddressResponse{
+			Address: address.Hex(),
+		}
+
+		res, err := grpcQuerier.GatewayAddress(sdk.WrapSDKContext(ctx), &types.GatewayAddressRequest{
+			Chain: existingChain,
+		})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+
+	t.Run("chain does not exist", testutils.Func(func(t *testing.T) {
+		setup()
+
+		_, err := grpcQuerier.GatewayAddress(sdk.WrapSDKContext(ctx), &types.GatewayAddressRequest{
+			Chain: "non-existing-chain",
+		})
+
+		assert := assert.New(t)
+		assert.Error(err)
+	}).Repeat(repeatCount))
+
+	t.Run("gateway does not exist", testutils.Func(func(t *testing.T) {
+		setup()
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
+				return address, false
+			},
+		}
+
+		_, err := grpcQuerier.GatewayAddress(sdk.WrapSDKContext(ctx), &types.GatewayAddressRequest{
+			Chain: existingChain,
+		})
+
+		assert := assert.New(t)
+		assert.Error(err)
+	}).Repeat(repeatCount))
+}
+
+func TestBytecode(t *testing.T) {
+	var (
+		baseKeeper     *mock.BaseKeeperMock
+		signer         *mock.SignerMock
+		nexusKeeper    *mock.NexusMock
+		chainKeeper    *mock.ChainKeeperMock
+		ctx            sdk.Context
+		expectedRes    types.BytecodeResponse
+		grpcQuerier    *evmKeeper.Querier
+		existingChain  string
+		contracts      []string
+		bytecodesExist bool
+	)
+
+	setup := func() {
+		existingChain = "existing"
+		contracts = []string{"gateway", "token", "burner"}
+
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		nexusKeeper = &mock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				if chain == existingChain {
+					return nexus.Chain{
+						Name:                  chain,
+						SupportsForeignAssets: false,
+						KeyType:               0,
+						Module:                "evm",
+					}, true
+				}
+				return nexus.Chain{}, false
+			},
+		}
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetGatewayByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
+				if bytecodesExist {
+					return []byte(contracts[0]), true
+				}
+				return nil, false
+			},
+			GetTokenByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
+				if bytecodesExist {
+					return []byte(contracts[1]), true
+				}
+				return nil, false
+			},
+			GetBurnerByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
+				if bytecodesExist {
+					return []byte(contracts[2]), true
+				}
+				return nil, false
+			},
+		}
+
+		baseKeeper = &mock.BaseKeeperMock{
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		grpcQuerier = &q
+	}
+
+	repeatCount := 1
+
+	t.Run("bytecodes exist", testutils.Func(func(t *testing.T) {
+		setup()
+		for _, bytecode := range contracts {
+			hexBytecode := fmt.Sprintf("0x" + common.Bytes2Hex([]byte(bytecode)))
+			expectedRes = types.BytecodeResponse{
+				Bytecode: hexBytecode,
+			}
+
+			bytecodesExist = true
+
+			res, err := grpcQuerier.Bytecode(sdk.WrapSDKContext(ctx), &types.BytecodeRequest{
+				Chain:    existingChain,
+				Contract: bytecode,
+			})
+
+			assert := assert.New(t)
+			assert.NoError(err)
+
+			assert.Equal(expectedRes, *res)
+		}
+	}).Repeat(repeatCount))
+
+	t.Run("bytecode don't exist", testutils.Func(func(t *testing.T) {
+		setup()
+		for _, bytecode := range contracts {
+			bytecodesExist = false
+
+			_, err := grpcQuerier.Bytecode(sdk.WrapSDKContext(ctx), &types.BytecodeRequest{
+				Chain:    existingChain,
+				Contract: bytecode,
+			})
+
+			assert := assert.New(t)
+			assert.Error(err)
+		}
+	}).Repeat(repeatCount))
+}

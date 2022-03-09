@@ -419,7 +419,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 	}
 
 	if bytecodeBytes == nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", ck.GetName())).Error())
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
 	}
 
 	bytecode := fmt.Sprintf("0x" + common.Bytes2Hex(bytecodeBytes))
