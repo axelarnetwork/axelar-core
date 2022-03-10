@@ -113,19 +113,29 @@ jobs:
 
       - name: Check architecture
         env:
-          ARCH: ${{ matrix.arch }}
-          OS: ${{ matrix.os }}
           SEMVER: 8.8.8      
         run: |
+          if [ "$RUNNER_OS" == "Linux" ]
+          then
+              OS="linux"
+          else
+              OS="darwin"
+          fi
+          ARCH="${{ matrix.arch }}"
           file ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" 
 
       - name: Check ledger support
         if: matrix.arch == 'amd64'
         env:
-          ARCH: ${{ matrix.arch }}
-          OS: ${{ matrix.os }}
           SEMVER: 8.8.8           
         run: |
+          if [ "$RUNNER_OS" == "Linux" ]
+          then
+              OS="linux"
+          else
+              OS="darwin"
+          fi
+          ARCH="${{ matrix.arch }}"
           ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" version --long 2>&1 | grep "build_tags: ledger" 
 
       - name: Create zip and sha256 files
