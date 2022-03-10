@@ -84,8 +84,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return QueryBatchedCommands(ctx, chainKeeper, s, n, path[2])
 		case QLatestBatchedCommands:
 			return QueryLatestBatchedCommands(ctx, chainKeeper, s)
-		case QPendingCommands:
-			return QueryPendingCommands(ctx, chainKeeper, n)
 		case QCommand:
 			return queryCommand(ctx, chainKeeper, n, path[2])
 		case QBytecode:
@@ -96,23 +94,6 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
-}
-
-// QueryPendingCommands returns the pending commands for a gateway
-func QueryPendingCommands(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus) ([]byte, error) {
-	var resp types.QueryPendingCommandsResponse
-	commands := keeper.GetPendingCommands(ctx)
-
-	for _, cmd := range commands {
-		cmdResp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		resp.Commands = append(resp.Commands, cmdResp)
-	}
-
-	return resp.Marshal()
 }
 
 func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id string) ([]byte, error) {
@@ -499,6 +480,8 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 		return -1, "deposit is in an unexpected state", codes.Internal
 	}
 }
+
+
 
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 	chain, ok := n.GetChain(ctx, k.GetName())

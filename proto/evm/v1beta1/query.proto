@@ -84,7 +84,9 @@ message QueryBurnerAddressResponse { string address = 1; }
 
 message QueryChainsResponse { repeated string chains = 1; }
 
-message QueryPendingCommandsResponse {
+message PendingCommandsRequest { string chain = 1; }
+
+message PendingCommandsResponse {
   repeated QueryCommandResponse commands = 1 [ (gogoproto.nullable) = false ];
 }
 

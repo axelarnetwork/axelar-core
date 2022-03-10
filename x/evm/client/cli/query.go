@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 
 	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
@@ -296,12 +297,17 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryPendingCommands(clientCtx, args[0])
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.PendingCommands(cmd.Context(),
+				&types.PendingCommandsRequest{
+					Chain: utils.NormalizeString(args[0]),
+				})
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
