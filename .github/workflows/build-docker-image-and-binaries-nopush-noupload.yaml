@@ -97,7 +97,7 @@ jobs:
           SEMVER: 8.8.8
         run: |
           make build
-          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Check architecture
         run: |
@@ -122,12 +122,12 @@ jobs:
         run: |
           if [ "$RUNNER" == "Linux" ]
           then
-              RUNNER_OS="linux"
+              OS="linux"
           else
-              RUNNER_OS="darwin"
+              OS="darwin"
           fi
           ARCH="${{ matrix.arch }}"
-          gpg --armor --detach-sign  axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Create zip and sha256 files
         working-directory: ./bin
