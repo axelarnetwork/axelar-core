@@ -135,12 +135,12 @@ jobs:
 
       - name: Unit test (check ledger support)
         env:
-          ARCH: amd64
-          OS: darwin
+          ARCH: ${{ matrix.arch }}"
+          OS: ${{ matrix.os }}"
           SEMVER: 8.8.8
         run: |
           file ./bin/axelard-* 
-          ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" version --long 
+          ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
 
       - name: Import GPG key
         id: import_gpg
