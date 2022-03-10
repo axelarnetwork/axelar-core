@@ -56,14 +56,8 @@ jobs:
           ARCH: amd64
           OS: linux
         run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              RUNNER_OS="linux"
-          else
-              RUNNER_OS="darwin"
-          fi
           make build
-          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Build Binaries for ubuntu arm64
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm64'
@@ -72,15 +66,8 @@ jobs:
           ARCH: arm64
           OS: linux
         run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              RUNNER_OS="linux"
-          else
-              RUNNER_OS="darwin"
-          fi
-          ARCH="${{ matrix.arch }}"
           make build
-          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Build Binaries for ubuntu arm
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm'
@@ -89,15 +76,8 @@ jobs:
           OS: linux
           SEMVER: 8.8.8
         run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              RUNNER_OS="linux"
-          else
-              RUNNER_OS="darwin"
-          fi
-          ARCH="${{ matrix.arch }}"
           make build
-          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Build Binaries for macos arm64
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
@@ -106,15 +86,8 @@ jobs:
           OS: darwin
           SEMVER: 8.8.8
         run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              RUNNER_OS="linux"
-          else
-              RUNNER_OS="darwin"
-          fi
-          ARCH="${{ matrix.arch }}"
           make build
-          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Build Binaries for macos amd64
         if: matrix.os == 'macos-latest' && matrix.arch == 'amd64'
@@ -123,21 +96,10 @@ jobs:
           OS: darwin
           SEMVER: 8.8.8
         run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              RUNNER_OS="linux"
-          else
-              RUNNER_OS="darwin"
-          fi
-          ARCH="${{ matrix.arch }}"
           make build
           mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
 
       - name: Unit test (check ledger support)
-        env:
-          ARCH: ${{ matrix.arch }}"
-          OS: ${{ matrix.os }}"
-          SEMVER: 8.8.8
         run: |
           file ./bin/axelard-* 
           ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
