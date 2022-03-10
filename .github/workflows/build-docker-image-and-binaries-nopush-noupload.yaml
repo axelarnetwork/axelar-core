@@ -63,7 +63,7 @@ jobs:
           ARCH: amd64
           OS: linux
         run: |
-          make build
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -74,7 +74,7 @@ jobs:
           ARCH: arm64
           OS: linux
         run: |
-          make build
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -85,7 +85,7 @@ jobs:
           OS: linux
           SEMVER: 8.8.8
         run: |
-          make build
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -96,7 +96,7 @@ jobs:
           OS: darwin
           SEMVER: 8.8.8
         run: |
-          make build
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -107,13 +107,13 @@ jobs:
           OS: darwin
           SEMVER: 8.8.8
         run: |
-          make build
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Check architecture
         env:
-          SEMVER: 8.8.8      
+          SEMVER: 8.8.8
         run: |
           if [ "$RUNNER_OS" == "Linux" ]
           then
@@ -122,12 +122,12 @@ jobs:
               OS="darwin"
           fi
           ARCH="${{ matrix.arch }}"
-          file ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" 
+          file ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Check ledger support
         if: matrix.arch == 'amd64'
         env:
-          SEMVER: 8.8.8           
+          SEMVER: 8.8.8
         run: |
           if [ "$RUNNER_OS" == "Linux" ]
           then
@@ -146,6 +146,7 @@ jobs:
             shasum -a 256 $i | awk '{print $1}' > $i.sha256
             zip $i.zip $i
             shasum -a 256 $i.zip | awk '{print $1}' > $i.zip.sha256
+            ls
           done
 
   release-docker:
