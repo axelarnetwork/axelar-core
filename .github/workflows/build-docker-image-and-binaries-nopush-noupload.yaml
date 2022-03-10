@@ -104,7 +104,7 @@ jobs:
           file ./bin/axelard-* 
 
       - name: Check ledger support
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.arch == 'amd64'
         run: |
           ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
 
