@@ -99,9 +99,13 @@ jobs:
           make build
           mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
 
-      - name: Unit test (check ledger support)
+      - name: Check architecture
         run: |
           file ./bin/axelard-* 
+
+      - name: Check ledger support
+        if: matrix.os == 'ubuntu-18.04'
+        run: |
           ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
 
       - name: Import GPG key
