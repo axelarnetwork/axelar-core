@@ -112,19 +112,21 @@ jobs:
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Check architecture
+        env:
+          ARCH: ${{ matrix.arch }}
+          OS: ${{ matrix.os }}
+          SEMVER: 8.8.8      
         run: |
-          for i in `ls | grep -v .asc`
-          do
-            file ./bin/axelard-* 
-          done
-          
+          file ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" 
+
       - name: Check ledger support
         if: matrix.arch == 'amd64'
+        env:
+          ARCH: ${{ matrix.arch }}
+          OS: ${{ matrix.os }}
+          SEMVER: 8.8.8           
         run: |
-          for i in `ls | grep -v .asc`
-          do  
-            ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
-          done
+          ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" version --long 2>&1 | grep "build_tags: ledger" 
 
       - name: Create zip and sha256 files
         working-directory: ./bin
