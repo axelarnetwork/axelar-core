@@ -113,12 +113,18 @@ jobs:
 
       - name: Check architecture
         run: |
-          file ./bin/axelard-* 
-
+          for i in `ls | grep -v .asc`
+          do
+            file ./bin/axelard-* 
+          done
+          
       - name: Check ledger support
         if: matrix.arch == 'amd64'
         run: |
-          ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
+          for i in `ls | grep -v .asc`
+          do  
+            ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
+          done
 
       - name: Create zip and sha256 files
         working-directory: ./bin
