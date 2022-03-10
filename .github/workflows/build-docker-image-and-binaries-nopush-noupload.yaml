@@ -49,7 +49,14 @@ jobs:
         with:
           go-version: 1.17.5
 
-      - name: Build Binaries for ubuntu amd64
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Build and sign binary for ubuntu amd64
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'amd64'
         env:
           SEMVER: 8.8.8
@@ -58,8 +65,9 @@ jobs:
         run: |
           make build
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
-      - name: Build Binaries for ubuntu arm64
+      - name: Build and sign binary for ubuntu arm64
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm64'
         env:
           SEMVER: 8.8.8
@@ -68,8 +76,9 @@ jobs:
         run: |
           make build
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
-      - name: Build Binaries for ubuntu arm
+      - name: Build and sign binary for ubuntu arm
         if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm'
         env:
           ARCH: arm
@@ -78,8 +87,9 @@ jobs:
         run: |
           make build
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
-      - name: Build Binaries for macos arm64
+      - name: Build and sign binary for macos arm64
         if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           ARCH: arm64
@@ -88,8 +98,9 @@ jobs:
         run: |
           make build
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
-      - name: Build Binaries for macos amd64
+      - name: Build and sign binary for macos amd64
         if: matrix.os == 'macos-latest' && matrix.arch == 'amd64'
         env:
           ARCH: amd64
@@ -98,6 +109,7 @@ jobs:
         run: |
           make build
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Check architecture
         run: |
@@ -107,27 +119,6 @@ jobs:
         if: matrix.arch == 'amd64'
         run: |
           ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger" 
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v4
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Sign Binaries
-        working-directory: ./bin
-        env:
-          SEMVER: 8.8.8
-        run: |
-          if [ "$RUNNER" == "Linux" ]
-          then
-              OS="linux"
-          else
-              OS="darwin"
-          fi
-          ARCH="${{ matrix.arch }}"
-          gpg --armor --detach-sign  axelard-"$OS"-"$ARCH"-"$SEMVER"
 
       - name: Create zip and sha256 files
         working-directory: ./bin
