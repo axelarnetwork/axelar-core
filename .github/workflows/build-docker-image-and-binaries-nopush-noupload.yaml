@@ -11,7 +11,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, macos-latest]
-        arch: [amd64]
+        arch: [amd64, arm64, arm]
+        exclude:
+          - {os: "macos-latest", arch: "arm"}
 
     permissions:
       contents: write
@@ -47,22 +49,93 @@ jobs:
         with:
           go-version: 1.17.5
 
-      - name: Build Binaries for Linux/MacOS
+      - name: Build Binaries for ubuntu amd64
+        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'amd64'
         env:
           SEMVER: 8.8.8
+          ARCH: amd64
+          OS: linux
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]
+          if [ "$RUNNER" == "Linux" ]
           then
-              OS="linux"
+              RUNNER_OS="linux"
           else
-              OS="darwin"
+              RUNNER_OS="darwin"
+          fi
+          make build
+          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+
+      - name: Build Binaries for ubuntu arm64
+        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm64'
+        env:
+          SEMVER: 8.8.8
+          ARCH: arm64
+          OS: linux
+        run: |
+          if [ "$RUNNER" == "Linux" ]
+          then
+              RUNNER_OS="linux"
+          else
+              RUNNER_OS="darwin"
           fi
           ARCH="${{ matrix.arch }}"
           make build
-          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
+          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+
+      - name: Build Binaries for ubuntu arm
+        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm'
+        env:
+          ARCH: arm
+          OS: linux
+          SEMVER: 8.8.8
+        run: |
+          if [ "$RUNNER" == "Linux" ]
+          then
+              RUNNER_OS="linux"
+          else
+              RUNNER_OS="darwin"
+          fi
+          ARCH="${{ matrix.arch }}"
+          make build
+          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+
+      - name: Build Binaries for macos arm64
+        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
+        env:
+          ARCH: arm64
+          OS: darwin
+          SEMVER: 8.8.8
+        run: |
+          if [ "$RUNNER" == "Linux" ]
+          then
+              RUNNER_OS="linux"
+          else
+              RUNNER_OS="darwin"
+          fi
+          ARCH="${{ matrix.arch }}"
+          make build
+          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
+
+      - name: Build Binaries for macos amd64
+        if: matrix.os == 'macos-latest' && matrix.arch == 'amd64'
+        env:
+          ARCH: amd64
+          OS: darwin
+          SEMVER: 8.8.8
+        run: |
+          if [ "$RUNNER" == "Linux" ]
+          then
+              RUNNER_OS="linux"
+          else
+              RUNNER_OS="darwin"
+          fi
+          ARCH="${{ matrix.arch }}"
+          make build
+          mv ./bin/axelard ./bin/axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
 
       - name: Unit test (check ledger support)
         run: |
+          file ./bin/axelard-* 
           ./bin/axelard-* version --long 2>&1 | grep "build_tags: ledger"
 
       - name: Import GPG key
@@ -77,14 +150,14 @@ jobs:
         env:
           SEMVER: 8.8.8
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]
+          if [ "$RUNNER" == "Linux" ]
           then
-              OS="linux"
+              RUNNER_OS="linux"
           else
-              OS="darwin"
+              RUNNER_OS="darwin"
           fi
           ARCH="${{ matrix.arch }}"
-          gpg --armor --detach-sign  axelard-"$OS"-"$ARCH"-"$SEMVER"
+          gpg --armor --detach-sign  axelard-"$RUNNER_OS"-"$ARCH"-"$SEMVER"
 
       - name: Create zip and sha256 files
         working-directory: ./bin

@@ -16,5 +16,5 @@ do
     GOOS=$os GOARCH=$arch go build -o ./bin/axelard-"$os"-"$arch"-"$version" -mod=readonly -tags "$build_tags" -ldflags "$ldflags" ./cmd/axelard
 done
 
-cd bin || exit 1
-sha256sum * > SHA256SUMS
+#cd bin || exit 1
+#sha256sum * > SHA256SUMS

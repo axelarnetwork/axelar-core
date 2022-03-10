@@ -43,7 +43,7 @@ populate-bytecode:
 # Build the project with release flags
 .PHONY: build
 build: go.sum
-		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
+		GOOS=${OS} GOARCH=${ARCH} go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
 build-binaries: populate-bytecode guard-SEMVER
