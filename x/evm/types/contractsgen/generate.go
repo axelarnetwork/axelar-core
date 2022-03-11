@@ -13,7 +13,7 @@ import (
 
 //go:generate go run generate.go -template ./contracts.go.tmpl -out ../contracts.go -contracts ../../../../contract-artifacts/gateway
 
-type Contracts struct {
+type contracts struct {
 	SinglesigGateway string
 	MultisigGateway  string
 	Token            string
@@ -50,8 +50,8 @@ func main() {
 	}
 }
 
-func parseContracts(contractDir string) Contracts {
-	var contracts Contracts
+func parseContracts(contractDir string) contracts {
+	var contracts contracts
 	contractSetterMapping := map[string]func(string){
 		"AxelarGatewayProxySinglesig": func(bz string) { contracts.SinglesigGateway = bz },
 		"AxelarGatewayProxyMultisig":  func(bz string) { contracts.MultisigGateway = bz },
