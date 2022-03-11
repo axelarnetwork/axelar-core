@@ -320,3 +320,4 @@ jobs:
         env:
           TAGS: axelarnet/axelar-core:${{ github.event.inputs.tag }}
           COSIGN_EXPERIMENTAL: 1
+          

@@ -49,26 +49,6 @@ func GetHandlerQueryLatestBatchedCommands(cliCtx client.Context) http.HandlerFun
 	}
 }
 
-// GetHandlerQueryPendingCommands returns a handler to get the list of commands not yet added to a batch
-func GetHandlerQueryPendingCommands(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		res, err := evmclient.QueryPendingCommands(cliCtx, chain)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-
 // GetHandlerQueryCommand returns a handler to get the command with the given ID on the specified chain
 func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

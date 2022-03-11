@@ -30,6 +30,7 @@ import (
 func TestQueryPendingCommands(t *testing.T) {
 	var (
 		chainKeeper *mock.ChainKeeperMock
+		baseKeeper  *mock.BaseKeeperMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    string
@@ -76,6 +77,12 @@ func TestQueryPendingCommands(t *testing.T) {
 				return nexus.Chain{}, false
 			},
 		}
+
+		baseKeeper = &mock.BaseKeeperMock{
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
+			},
+		}
 	}
 
 	repeatCount := 20
@@ -83,11 +90,9 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		var res types.QueryPendingCommandsResponse
-		bz, err := evmKeeper.QueryPendingCommands(ctx, chainKeeper, nexusKeeper)
-		assert.NoError(t, err)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper)
 
-		err = res.Unmarshal(bz)
+		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
 		assert.NoError(t, err)
 
 		var cmdResp []types.QueryCommandResponse
