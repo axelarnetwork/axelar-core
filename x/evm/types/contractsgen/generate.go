@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
+	"go/format"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,17 +38,20 @@ func main() {
 		log.Fatal(errors.Wrapf(err, "cannot build filepath for %s", *out))
 	}
 
-	f, err := os.OpenFile(outFP, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(errors.Wrapf(err, "cannot open or create file %s", *out))
-	}
+	var buf bytes.Buffer
 
-	if err := t.Execute(f, contracts); err != nil {
+	if err := t.Execute(&buf, contracts); err != nil {
 		log.Fatal(errors.Wrap(err, "failed to apply the contracts template"))
 	}
 
-	if err := f.Close(); err != nil {
-		log.Fatal(errors.Wrapf(err, "cannot close file %s", *out))
+	bz := buf.Bytes()
+	bz, err = format.Source(bz)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "could not gofmt the output"))
+	}
+
+	if err := os.WriteFile(outFP, bz, 0644); err != nil {
+		log.Fatal(errors.Wrapf(err, "cannot write to file %s", *out))
 	}
 }
 
