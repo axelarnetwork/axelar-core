@@ -171,6 +171,10 @@ func validateNetworks(network interface{}) error {
 		if n.Name == "" {
 			return sdkerrors.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
 		}
+
+		if !n.Id.IsPositive() {
+			return fmt.Errorf("network chain id must be positive")
+		}
 	}
 
 	return nil
