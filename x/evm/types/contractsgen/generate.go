@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(errors.Wrapf(err, "cannot build filepath for %s", *out))
 	}
 
-	f, err := os.OpenFile(outFP, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	f, err := os.OpenFile(outFP, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal(errors.Wrapf(err, "cannot open or create file %s", *out))
 	}
