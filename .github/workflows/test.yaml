@@ -21,22 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get Bytecode Version
-        id: bytecode_version
-        run: echo ::set-output name=VERSION::$(cat contract-artifacts/version-config.json | jq -r '.gateway')
-
-      - name: Download Bytecode
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          repo: axelarnetwork/solidity-cgp-gateway
-          workflow: publish-bytecode.yaml
-          name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
-          path: contract-artifacts/gateway
-
-      - name: Populate Bytecode
-        run: |
-          bash scripts/populate-bytecode.sh
-
       - name: Test
         run: |
           go test ./...
