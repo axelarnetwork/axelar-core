@@ -85,7 +85,7 @@ build-push-docker-images: populate-bytecode guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		-t tototesteur/axelar-core-${SUFFIX}:${SEMVER} .
+		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} .
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
