@@ -481,8 +481,6 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 	}
 }
 
-
-
 func queryBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, n types.Nexus, contract string) ([]byte, error) {
 	chain, ok := n.GetChain(ctx, k.GetName())
 	if !ok {
