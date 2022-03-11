@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewRegisterIBCPathRequest creates a message of type RegisterIBCPathRequest

@@ -1,12 +1,13 @@
 package types
 
 import (
-	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
+
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec

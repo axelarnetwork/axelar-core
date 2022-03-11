@@ -3,10 +3,11 @@ package client
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 // QueryChains returns all EVM chains

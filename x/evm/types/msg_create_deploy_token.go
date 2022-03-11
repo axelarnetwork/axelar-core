@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest

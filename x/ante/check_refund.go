@@ -3,11 +3,12 @@ package ante
 import (
 	"fmt"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
+
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 )

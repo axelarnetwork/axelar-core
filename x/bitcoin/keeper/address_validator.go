@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewAddressValidator returns the callback for validating bitcoin addresses

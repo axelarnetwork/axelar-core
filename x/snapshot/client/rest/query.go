@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/utils"
+
 	"github.com/cosmos/cosmos-sdk/client"
+
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 )

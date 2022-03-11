@@ -3,9 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewAddressValidator returns the callback for validating hex-encoded EVM addresses

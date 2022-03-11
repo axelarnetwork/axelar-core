@@ -1,22 +1,22 @@
 package keeper
 
 import (
+	mathrand "math/rand"
+	"strings"
+	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	evmUtil "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	evmUtil "github.com/ethereum/go-ethereum/common"
-	mathrand "math/rand"
-	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 var chains = []exported.Chain{

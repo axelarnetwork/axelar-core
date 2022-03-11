@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 // InitGenesis initializes the axelarnet module's state from a given genesis state.

@@ -19,7 +19,7 @@ USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 
 .PHONY: all
-all: generate lint build docker-image docker-image-debug
+all: generate goimports lint build docker-image docker-image-debug
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -35,9 +35,15 @@ lint:
 	@golangci-lint run
 	@go mod verify
 
+.PHONY: goimports
+goimports:
+	@echo "running goimports"
+# exclude mocks and proto generated files
+	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | xargs goimports -local github.com/axelarnetwork/ -w
+
 # Build the project with release flags
 .PHONY: build
-build: go.sum
+build: go.sum goimports
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
@@ -85,15 +91,10 @@ docker-image-debug:
 # Install all generate prerequisites
 .Phony: prereqs
 prereqs:
-ifeq (which moq,)
-	go get github.com/matryer/moq
-endif
-ifeq (which mdformat,)
-	pip3 install mdformat
-endif
-ifeq (which protoc,)
-	@echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
-endif
+	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
+	@which moq &>/dev/null			||	go install github.com/matryer/moq
+	@which mdformat &>/dev/null 	||	pip3 install mdformat
+	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
 # Run all the code generators in the project
 .PHONY: generate

@@ -3,9 +3,10 @@ package exported_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTransferStateFromString(t *testing.T) {

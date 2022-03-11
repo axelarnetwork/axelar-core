@@ -3,9 +3,10 @@ package keeper
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewAddressValidator returns the callback for validating cosmos SDK addresses

@@ -107,4 +107,3 @@ func randomIBCPath() string {
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return port + "/" + identifier
 }
-

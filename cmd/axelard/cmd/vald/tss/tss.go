@@ -8,13 +8,14 @@ import (
 	"sync"
 	"time"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"

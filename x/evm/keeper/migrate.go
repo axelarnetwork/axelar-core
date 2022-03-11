@@ -3,9 +3,10 @@ package keeper
 import (
 	"encoding/hex"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/evm/legacy"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.13 to v0.14. The

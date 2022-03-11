@@ -3,9 +3,10 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewPool is the constructor of Pool

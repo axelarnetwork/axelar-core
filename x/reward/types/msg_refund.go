@@ -3,10 +3,11 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
 
 // NewRefundMsgRequest creates a message of type RefundMsgRequest

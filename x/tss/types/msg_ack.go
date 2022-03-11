@@ -1,9 +1,10 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewHeartBeatRequest constructor for AckRequest
