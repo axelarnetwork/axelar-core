@@ -15,6 +15,7 @@ import (
 
 	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -62,30 +63,32 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 			return err
 		}
 
-		var query string
-		var param string
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		req := types.KeyAddressRequest{
+			Chain: utils.NormalizeString(args[0]),
+			Key:   nil,
+		}
+
 		switch {
 		case *keyRole != "" && *keyID == "":
-			query = keeper.QAddressByKeyRole
-			param = *keyRole
+			keyRoleType, err := tss.KeyRoleFromSimpleStr(*keyRole)
+			if err != nil {
+				return fmt.Errorf("key role %s is not supported", *keyRole)
+			}
+			req.Key = &types.KeyAddressRequest_Role{Role: keyRoleType}
 		case *keyRole == "" && *keyID != "":
-			query = keeper.QAddressByKeyID
-			param = *keyID
+			req.Key = &types.KeyAddressRequest_KeyID{KeyID: tss.KeyID(*keyID)}
 		default:
 			return fmt.Errorf("one and only one of the two flags key-role and key-id has to be set")
 		}
 
-		bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, query, args[0], param))
+		res, err := queryClient.KeyAddress(cmd.Context(), &req)
 		if err != nil {
-			return sdkerrors.Wrap(err, types.ErrAddress)
+			return err
 		}
 
-		var res types.QueryAddressResponse
-		if err := res.Unmarshal(bz); err != nil {
-			return sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		return clientCtx.PrintProto(&res)
+		return clientCtx.PrintProto(res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
@@ -179,18 +182,24 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 		Short: "Query the Axelar Gateway contract address",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QAxelarGatewayAddress, args[0]), nil)
+			chain := args[0]
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.GatewayAddress(cmd.Context(),
+				&types.GatewayAddressRequest{
+					Chain: utils.NormalizeString(chain),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFGatewayAddress)
+				return err
 			}
 
-			out := common.BytesToAddress(res)
-			return cliCtx.PrintObjectLegacy(out.Hex())
+			return clientCtx.PrintProto(res)
 		},
 	}
 
@@ -208,18 +217,26 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 			keeper.BCGateway, keeper.BCGatewayDeployment, keeper.BCToken, keeper.BCBurner),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBytecode, args[0], args[1]), nil)
+			chain := args[0]
+			contract := args[1]
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Bytecode(cmd.Context(),
+				&types.BytecodeRequest{
+					Chain:    utils.NormalizeString(chain),
+					Contract: utils.NormalizeString(contract),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFBytecode, args[1])
+				return sdkerrors.Wrapf(err, types.ErrFBytecode, contract)
 			}
 
-			fmt.Println("0x" + common.Bytes2Hex(res))
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -241,15 +258,18 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 			chain := args[0]
 			idHex := args[1]
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QBatchedCommands, chain, idHex))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BatchedCommands(cmd.Context(),
+				&types.BatchedCommandsRequest{
+					Chain: utils.NormalizeString(chain),
+					Id:    utils.NormalizeString(idHex),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get batched commands %s", idHex)
+				return err
 			}
 
-			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -270,15 +290,17 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 
 			chain := args[0]
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QLatestBatchedCommands, chain))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.BatchedCommands(cmd.Context(),
+				&types.BatchedCommandsRequest{
+					Chain: utils.NormalizeString(chain),
+				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, "could not get the latest batched commands for chain %s", chain)
+				return err
 			}
 
-			var res types.QueryBatchedCommandsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -379,11 +401,15 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryChains(clientCtx)
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Chains(cmd.Context(),
+				&types.ChainsRequest{},
+			)
 			if err != nil {
 				return err
 			}
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
