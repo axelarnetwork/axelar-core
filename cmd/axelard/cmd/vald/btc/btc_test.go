@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"testing"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -13,6 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
+
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"

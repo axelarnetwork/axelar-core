@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/config"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -36,6 +35,8 @@ import (
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+
+	"github.com/axelarnetwork/axelar-core/config"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"

@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
 // InitGenesis initializes the reward module's state from a given genesis state.

@@ -1,9 +1,10 @@
 package keeper
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // InitGenesis initializes the state from a genesis file

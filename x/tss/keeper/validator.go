@@ -1,9 +1,10 @@
 package keeper
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func (k Keeper) setValidatorStatus(ctx sdk.Context, validatorStatus types.ValidatorStatus) {

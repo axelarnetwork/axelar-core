@@ -9,11 +9,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/cosmos/cosmos-sdk/codec"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 var (

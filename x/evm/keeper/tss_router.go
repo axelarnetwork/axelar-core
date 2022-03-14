@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewTssHandler returns the handler for processing signatures delivered by the tss module

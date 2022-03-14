@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 // NewGenesisState is the constructor for GenesisState

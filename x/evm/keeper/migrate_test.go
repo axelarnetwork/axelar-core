@@ -3,17 +3,18 @@ package keeper
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func setup() (sdk.Context, types.BaseKeeper, string) {

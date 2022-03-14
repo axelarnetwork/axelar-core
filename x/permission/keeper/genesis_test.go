@@ -1,15 +1,13 @@
 package keeper_test
 
 import (
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"testing"
 
-	. "github.com/axelarnetwork/utils/test"
-	"github.com/axelarnetwork/utils/test/rand"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -19,6 +17,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
+	. "github.com/axelarnetwork/utils/test"
+	"github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestGenesis(t *testing.T) {
@@ -32,7 +32,7 @@ func TestGenesis(t *testing.T) {
 	Given("a keeper",
 		func(t *testing.T) {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "permission")
-			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey),subspace)
+			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 
 		}).
 		When("the state is initialized from a genesis state",

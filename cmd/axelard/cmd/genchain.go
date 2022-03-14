@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
+
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // AddGenesisEVMChainCmd returns set-genesis-chain cobra Command.

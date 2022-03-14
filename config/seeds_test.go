@@ -3,10 +3,11 @@ package config_test
 import (
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	tmcfg "github.com/tendermint/tendermint/config"
+
+	"github.com/axelarnetwork/axelar-core/config"
 )
 
 func TestReadSeeds(t *testing.T) {

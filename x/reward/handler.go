@@ -3,11 +3,12 @@ package reward
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
-	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
+	"github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 // NewHandler returns the handler of the Cosmos module

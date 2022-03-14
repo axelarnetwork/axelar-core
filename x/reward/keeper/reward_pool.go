@@ -1,10 +1,11 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/reward/exported"
-	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+
+	"github.com/axelarnetwork/axelar-core/x/reward/exported"
+	"github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 var _ exported.RewardPool = &rewardPool{}

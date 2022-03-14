@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 const (

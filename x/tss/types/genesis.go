@@ -3,9 +3,10 @@ package types
 import (
 	"encoding/json"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewGenesisState is the constructor for GenesisState

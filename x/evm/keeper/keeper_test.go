@@ -4,10 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -15,6 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"

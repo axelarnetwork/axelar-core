@@ -3,10 +3,11 @@ package client
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // QueryNextKeyID returns a response that contains the next assigned key ID for the given chain and role

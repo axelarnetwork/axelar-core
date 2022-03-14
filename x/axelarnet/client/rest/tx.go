@@ -3,12 +3,13 @@ package rest
 import (
 	"net/http"
 
-	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
+
+	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"

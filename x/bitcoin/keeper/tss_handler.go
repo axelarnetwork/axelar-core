@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"

@@ -4,6 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
@@ -12,12 +19,6 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	testutils "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func TestHandleMsgRefundRequest(t *testing.T) {

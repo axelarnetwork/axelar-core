@@ -19,12 +19,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 const (

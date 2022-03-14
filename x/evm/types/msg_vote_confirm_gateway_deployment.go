@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewVoteConfirmGatewayDeploymentRequest creates a message of type VoteConfirmGatewayDeploymentRequest

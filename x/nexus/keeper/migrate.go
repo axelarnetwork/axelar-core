@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.14 to v0.15. The

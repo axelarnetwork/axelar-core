@@ -4,15 +4,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	. "github.com/axelarnetwork/utils/test"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +13,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestKeeper_TransfersForChain(t *testing.T) {

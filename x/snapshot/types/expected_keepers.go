@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper BankKeeper

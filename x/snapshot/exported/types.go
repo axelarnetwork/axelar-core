@@ -11,9 +11,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
+	"github.com/gogo/protobuf/proto"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/gogo/protobuf/proto"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss

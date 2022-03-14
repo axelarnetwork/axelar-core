@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 // InitGenesis initialize default parameters

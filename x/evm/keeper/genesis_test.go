@@ -4,12 +4,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
-	. "github.com/axelarnetwork/utils/test"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -17,6 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestAddr(t *testing.T) {

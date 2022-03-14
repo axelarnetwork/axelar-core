@@ -1,4 +1,4 @@
-name: Check Generated Files Up-to-date
+name: Check format and generated files up-to-date
 
 on:
   - pull_request
@@ -36,22 +36,20 @@ jobs:
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
 
-      - name: Install moq
+      - name: Install prereqs
         run: |
-          go get github.com/matryer/moq
-
-      - name: Install mdformat
-
-        uses: BSFishy/pip-action@v1
-        with:
-          # The packages to install from Pip
-          packages: mdformat
+          go install golang.org/x/tools/cmd/goimports
+          go install github.com/matryer/moq
+          pip3 install mdformat
 
       - name: Run go generate
         run: make generate
 
       - name: Generate proto files and docs
         run: make proto-format proto-gen
+
+      - name: Run goimports
+        run: make goimports
 
       - name: Check for changes
         run: |

@@ -1,10 +1,11 @@
 package types
 
 import (
-	fmt "fmt"
+	"fmt"
+
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Parameter store keys

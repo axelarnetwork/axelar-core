@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 var _ types.QueryServiceServer = Keeper{}
