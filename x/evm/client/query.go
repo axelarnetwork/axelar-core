@@ -10,8 +10,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
-
-
 // QueryCommand returns the specified command for the given chain
 func QueryCommand(clientCtx client.Context, chain, id string) (types.QueryCommandResponse, error) {
 	path := fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QCommand, chain, id)
