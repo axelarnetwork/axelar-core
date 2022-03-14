@@ -43,7 +43,7 @@ goimports:
 
 # Build the project with release flags
 .PHONY: build
-build: go.sum goimports
+build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
 .PHONY: build-binaries
