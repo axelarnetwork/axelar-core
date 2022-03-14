@@ -19,7 +19,7 @@ USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 
 .PHONY: all
-all: generate lint build docker-image docker-image-debug
+all: generate goimports lint build docker-image docker-image-debug
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -35,27 +35,28 @@ lint:
 	@golangci-lint run
 	@go mod verify
 
-# Populate bytecode before building anything
-.PHONY: populate-bytecode
-populate-bytecode:
-	@bash scripts/populate-bytecode.sh
+.PHONY: goimports
+goimports:
+	@echo "running goimports"
+# exclude mocks and proto generated files
+	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | xargs goimports -local github.com/axelarnetwork/ -w
 
 # Build the project with release flags
 .PHONY: build
-build: go.sum
+build: go.sum goimports
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
+
+.PHONY: build-binaries
+build-binaries:  guard-SEMVER
+	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
 # Build the project with release flags for multiarch
 .PHONY: build-binaries-multiarch
-build-binaries-multiarch: go.sum
+build-binaries-multiarch: go.sum goimports
 		GOOS=${OS} GOARCH=${ARCH} go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
-.PHONY: build-binaries
-build-binaries: populate-bytecode guard-SEMVER
-	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
-
 .PHONY: build-binaries-in-docker
-build-binaries-in-docker: populate-bytecode guard-SEMVER
+build-binaries-in-docker:  guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
 		--build-arg SEMVER=${SEMVER} \
 		-t axelar/core:binaries \
@@ -64,24 +65,24 @@ build-binaries-in-docker: populate-bytecode guard-SEMVER
 
 # Build the project with debug flags
 .PHONY: debug
-debug: populate-bytecode go.sum
+debug:  go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) -gcflags="all=-N -l" ./cmd/axelard
 
 # Build a release image
 .PHONY: docker-image
-docker-image: populate-bytecode
+docker-image:
 	@DOCKER_BUILDKIT=1 docker build -t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user
-docker-image-local-user: populate-bytecode guard-VERSION guard-GROUP_ID guard-USER_ID
+docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
-build-push-docker-images: populate-bytecode guard-SEMVER
+build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
@@ -89,25 +90,20 @@ build-push-docker-images: populate-bytecode guard-SEMVER
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
-docker-image-debug: populate-bytecode
+docker-image-debug:
 	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .Phony: prereqs
 prereqs:
-ifeq (which moq,)
-	go get github.com/matryer/moq
-endif
-ifeq (which mdformat,)
-	pip3 install mdformat
-endif
-ifeq (which protoc,)
-	@echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
-endif
+	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
+	@which moq &>/dev/null			||	go install github.com/matryer/moq
+	@which mdformat &>/dev/null 	||	pip3 install mdformat
+	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
 # Run all the code generators in the project
 .PHONY: generate
-generate: populate-bytecode
+generate:
 	go generate -x ./...
 
 
