@@ -3718,7 +3718,7 @@ the network for a cross-chain transfer
 | ----- | ---- | ----- | ----------- |
 | `source_chain` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
-| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `amount` | [string](#string) |  |  |
 
 
 
@@ -3966,8 +3966,8 @@ QueryService defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
 | `TransfersForChain` | [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/nexus/v1beta1/transfers_for_chain|
-| `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/nexus/v1beta1/fee|
-| `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/nexus/v1beta1/transfer_fee|
+| `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee|
+| `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/axelar/nexus/v1beta1/transfer_fee|
 
  <!-- end services -->
 

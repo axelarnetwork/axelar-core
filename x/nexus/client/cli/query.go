@@ -192,8 +192,7 @@ func GetCommandTransferFee() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
-			amount, err := sdk.ParseCoinNormalized(args[2])
-			if err != nil {
+			if _, err := sdk.ParseCoinNormalized(args[2]); err != nil {
 				return err
 			}
 
@@ -201,7 +200,7 @@ func GetCommandTransferFee() *cobra.Command {
 				&types.TransferFeeRequest{
 					SourceChain:      args[0],
 					DestinationChain: args[1],
-					Amount:           amount,
+					Amount:           args[2],
 				})
 			if err != nil {
 				return err

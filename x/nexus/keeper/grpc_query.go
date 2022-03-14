@@ -88,19 +88,24 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
 
-	if !k.IsAssetRegistered(ctx, sourceChain, req.Amount.Denom) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, sourceChain.Name)
+	amount, err := sdk.ParseCoinNormalized(req.Amount)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid amount")
 	}
 
-	if !k.IsAssetRegistered(ctx, destinationChain, req.Amount.Denom) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Amount.Denom, destinationChain.Name)
+	if !k.IsAssetRegistered(ctx, sourceChain, amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, sourceChain.Name)
 	}
 
-	if req.Amount.IsNegative() {
+	if !k.IsAssetRegistered(ctx, destinationChain, amount.Denom) {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, destinationChain.Name)
+	}
+
+	if amount.IsNegative() {
 		return nil, fmt.Errorf("amount cannot be negative")
 	}
 
-	fee, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, req.Amount)
+	fee, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, amount)
 	if err != nil {
 		return nil, err
 	}
