@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	evmTest "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
