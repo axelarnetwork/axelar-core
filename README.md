@@ -54,4 +54,4 @@ interfaces.
 
 ## Bug bounty and disclosure of vulnerabilities
 
-See the [Axelar documentation website](https://docs.axelar.dev/#/bug-bounty).
+See the [Axelar documentation website](https://docs.axelar.dev/bug-bounty).
