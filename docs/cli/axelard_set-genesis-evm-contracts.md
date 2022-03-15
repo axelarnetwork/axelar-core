@@ -10,7 +10,6 @@ axelard set-genesis-evm-contracts [flags]
 
 ```
       --burnable string   Path to the burner contract ABI.
-      --gateway string    Path to the Axelar Gateway contract ABI.
   -h, --help              help for set-genesis-evm-contracts
       --token string      Path to the tokens contract ABI.
 ```

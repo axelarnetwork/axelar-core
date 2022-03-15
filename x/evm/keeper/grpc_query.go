@@ -395,34 +395,21 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
-	if !ok {
+	if _, ok := q.nexus.GetChain(ctx, req.Chain); !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	ck := q.keeper.ForChain(req.Chain)
 
-	var bytecodeBytes []byte
+	var bytecode []byte
 	switch strings.ToLower(req.Contract) {
-	case BCGateway:
-		bytecodeBytes, _ = ck.GetGatewayByteCode(ctx)
-	case BCGatewayDeployment:
-		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, ck, q.signer, chain)
-		if err != nil {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		bytecodeBytes = deploymentBytecode
 	case BCToken:
-		bytecodeBytes, _ = ck.GetTokenByteCode(ctx)
+		bytecode, _ = ck.GetTokenByteCode(ctx)
 	case BCBurner:
-		bytecodeBytes, _ = ck.GetBurnerByteCode(ctx)
-	}
-
-	if bytecodeBytes == nil {
+		bytecode, _ = ck.GetBurnerByteCode(ctx)
+	default:
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
 	}
 
-	bytecode := fmt.Sprintf("0x" + common.Bytes2Hex(bytecodeBytes))
-
-	return &types.BytecodeResponse{Bytecode: bytecode}, nil
+	return &types.BytecodeResponse{Bytecode: fmt.Sprintf("0x" + common.Bytes2Hex(bytecode))}, nil
 }

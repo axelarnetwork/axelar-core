@@ -469,7 +469,7 @@ func TestBytecode(t *testing.T) {
 
 	setup := func() {
 		existingChain = "existing"
-		contracts = []string{"gateway", "token", "burner"}
+		contracts = []string{"token", "burner"}
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
@@ -488,21 +488,15 @@ func TestBytecode(t *testing.T) {
 		}
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetGatewayByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
+			GetTokenByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
 				if bytecodesExist {
 					return []byte(contracts[0]), true
 				}
 				return nil, false
 			},
-			GetTokenByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
-				if bytecodesExist {
-					return []byte(contracts[1]), true
-				}
-				return nil, false
-			},
 			GetBurnerByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
 				if bytecodesExist {
-					return []byte(contracts[2]), true
+					return []byte(contracts[1]), true
 				}
 				return nil, false
 			},
@@ -520,7 +514,7 @@ func TestBytecode(t *testing.T) {
 
 	repeatCount := 1
 
-	t.Run("bytecodes exist", testutils.Func(func(t *testing.T) {
+	t.Run("bytecode exists", testutils.Func(func(t *testing.T) {
 		setup()
 		for _, bytecode := range contracts {
 			hexBytecode := fmt.Sprintf("0x" + common.Bytes2Hex([]byte(bytecode)))
@@ -539,21 +533,6 @@ func TestBytecode(t *testing.T) {
 			assert.NoError(err)
 
 			assert.Equal(expectedRes, *res)
-		}
-	}).Repeat(repeatCount))
-
-	t.Run("bytecode don't exist", testutils.Func(func(t *testing.T) {
-		setup()
-		for _, bytecode := range contracts {
-			bytecodesExist = false
-
-			_, err := grpcQuerier.Bytecode(sdk.WrapSDKContext(ctx), &types.BytecodeRequest{
-				Chain:    existingChain,
-				Contract: bytecode,
-			})
-
-			assert := assert.New(t)
-			assert.Error(err)
 		}
 	}).Repeat(repeatCount))
 }

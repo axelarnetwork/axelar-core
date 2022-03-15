@@ -10,6 +10,16 @@ import "evm/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+message SetGatewayRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message SetGatewayResponse {}
+
 message ConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -224,29 +234,3 @@ message AddChainRequest {
 }
 
 message AddChainResponse {}
-
-message ConfirmGatewayDeploymentRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-
-  string chain = 2;
-  bytes tx_id = 3 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
-  bytes address = 4
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-}
-
-message ConfirmGatewayDeploymentResponse {}
-
-message VoteConfirmGatewayDeploymentRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
-  string chain = 3;
-  bool confirmed = 4;
-}
-
-message VoteConfirmGatewayDeploymentResponse { string log = 1; }

@@ -211,11 +211,9 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 func GetCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
-		Short: "Fetch the bytecodes of an EVM contract [contract] for chain [chain]",
-		Long: fmt.Sprintf("Fetch the bytecodes of an EVM contract [contract] for chain [chain]. "+
-			"The value for [contract] can be either '%s', '%s', '%s', or '%s'.",
-			keeper.BCGateway, keeper.BCGatewayDeployment, keeper.BCToken, keeper.BCBurner),
-		Args: cobra.ExactArgs(2),
+		Short: "Fetch the bytecode of an EVM contract [contract] for chain [chain]",
+		Long:  fmt.Sprintf("Fetch the bytecode of an EVM contract [contract] for chain [chain]. The value for [contract] can be either '%s' or '%s'.", keeper.BCToken, keeper.BCBurner),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {

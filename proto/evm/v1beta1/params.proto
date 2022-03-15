@@ -14,7 +14,7 @@ message Params {
   string chain = 1;
   uint64 confirmation_height = 2;
   string network = 3;
-  bytes gateway_code = 4;
+  reserved 4; // gateway_code was removed in v0.16
   bytes token_code = 5;
   bytes burnable = 6;
   int64 revote_locking_period = 7;

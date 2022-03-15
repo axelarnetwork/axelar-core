@@ -1,10 +1,10 @@
 ## axelard query evm bytecode
 
-Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
+Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]
 
 ### Synopsis
 
-Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]. The value for \[contract\] can be either 'gateway', 'gateway-deployment', 'token', or 'burner'.
+Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]. The value for \[contract\] can be either 'token' or 'burner'.
 
 ```
 axelard query evm bytecode [chain] [contract] [flags]

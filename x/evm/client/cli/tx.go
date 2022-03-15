@@ -34,9 +34,9 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	evmTxCmd.AddCommand(
+		GetCmdSetGateway(),
 		GetCmdLink(),
 		GetCmdConfirmChain(),
-		GetCmdConfirmGatewayDeployment(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
@@ -51,6 +51,37 @@ func GetTxCmd() *cobra.Command {
 	)
 
 	return evmTxCmd
+}
+
+// GetCmdSetGateway sets the gateway address for the given evm chain
+func GetCmdSetGateway() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-gateway [chain] [address]",
+		Short: "Set the gateway address for the given evm chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			addressHex := args[1]
+			if !common.IsHexAddress(addressHex) {
+				return fmt.Errorf("invalid address %s", addressHex)
+			}
+
+			msg := types.NewSetGatewayRequest(cliCtx.GetFromAddress(), chain, types.Address(common.HexToAddress(addressHex)))
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
 }
 
 // GetCmdLink links a cross chain address to an EVM chain address created by Axelar
@@ -90,35 +121,6 @@ func GetCmdConfirmChain() *cobra.Command {
 			}
 
 			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-
-	return cmd
-}
-
-// GetCmdConfirmGatewayDeployment returns the cli command to confirm the gateway deployment
-func GetCmdConfirmGatewayDeployment() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-gateway-deployment [chain] [txID] [address]",
-		Short: "Confirm that the gateway contract was deploy for the given chain in the given transaction at the given address",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := common.HexToHash(args[1])
-			address := common.HexToAddress(args[2])
-
-			msg := types.NewConfirmGatewayDeploymentRequest(cliCtx.GetFromAddress(), chain, txID, address)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

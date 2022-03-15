@@ -33,13 +33,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("votes on confirmation of EVM chain %s started", msg.Name)
 			}
 			return result, err
-		case *types.ConfirmGatewayDeploymentRequest:
-			res, err := server.ConfirmGatewayDeployment(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of gateway deployment for chain %s started", msg.Chain)
-			}
-			return result, err
 		case *types.ConfirmTokenRequest:
 			res, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
@@ -63,13 +56,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			return result, err
 		case *types.VoteConfirmChainRequest:
 			res, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmGatewayDeploymentRequest:
-			res, err := server.VoteConfirmGatewayDeployment(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = res.Log

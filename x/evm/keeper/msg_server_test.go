@@ -372,7 +372,6 @@ func TestLink_UnknownChain(t *testing.T) {
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(minConfHeight),
-		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
@@ -408,7 +407,6 @@ func TestLink_NoGateway(t *testing.T) {
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(minConfHeight),
-		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
@@ -522,8 +520,7 @@ func TestLink_Success(t *testing.T) {
 	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
 	msg := createMsgSignDeploy(tokenDetails)
 
-	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
-	k.ForChain(chain).ConfirmPendingGateway(ctx)
+	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 
 	token, err := k.ForChain(chain).CreateERC20Token(ctx, btc.NativeAsset, tokenDetails, types.ZeroAddress)
 	if err != nil {
@@ -1338,7 +1335,6 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 					Chain:               exported.Ethereum.Name,
 					Network:             network,
 					ConfirmationHeight:  uint64(rand.I64Between(1, 10)),
-					GatewayCode:         bytecodes,
 					TokenCode:           tokenBC,
 					Burnable:            burnerBC,
 					RevoteLockingPeriod: 50,
@@ -1498,7 +1494,6 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(confHeight),
-		GatewayCode:         bytecodes,
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
 		RevoteLockingPeriod: 50,
@@ -1510,8 +1505,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
 	})
-	k.ForChain(chain).SetPendingGateway(ctx, common.HexToAddress(gateway))
-	k.ForChain(chain).ConfirmPendingGateway(ctx)
+	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 
 	return k
 }

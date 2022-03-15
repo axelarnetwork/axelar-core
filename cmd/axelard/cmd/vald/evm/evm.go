@@ -85,38 +85,6 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 	return err
 }
 
-// ProcessGatewayDeploymentConfirmation votes on an EVM chain's gateway deployment
-func (mgr Mgr) ProcessGatewayDeploymentConfirmation(e tmEvents.Event) error {
-	chain, txID, address, bytecodeHash, confHeight, pollKey, err := parseGatewayDeploymentParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM gateway deployment confirmation failed")
-	}
-
-	rpc, found := mgr.rpcs[strings.ToLower(chain)]
-	if !found {
-		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
-	}
-
-	confirmed := mgr.validate(rpc, txID, confHeight, func(tx *geth.Transaction, txReceipt *geth.Receipt) bool {
-		if !bytes.Equal(crypto.Keccak256(tx.Data()), bytecodeHash.Bytes()) {
-			return false
-		}
-
-		if !bytes.Equal(txReceipt.ContractAddress.Bytes(), address.Bytes()) {
-			return false
-		}
-
-		return true
-	})
-
-	msg := evmTypes.NewVoteConfirmGatewayDeploymentRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
-
-	return err
-}
-
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)

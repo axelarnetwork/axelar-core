@@ -26,10 +26,8 @@ const (
 
 //Bytecode labels
 const (
-	BCGateway           = "gateway"
-	BCGatewayDeployment = "gateway-deployment"
-	BCToken             = "token"
-	BCBurner            = "burner"
+	BCToken  = "token"
+	BCBurner = "burner"
 )
 
 //Token address labels

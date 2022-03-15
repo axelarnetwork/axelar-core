@@ -289,11 +289,6 @@ func (s SigKeyPairs) Swap(i, j int) {
 // NilToken is a nil erc20 token
 var NilToken = ERC20Token{}
 
-// GetConfirmGatewayDeploymentPollKey creates a poll key for the gateway deployment
-func GetConfirmGatewayDeploymentPollKey(chain nexus.Chain, txID Hash, address Address) vote.PollKey {
-	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s_%s", chain.Name, txID.Hex(), address.Hex()))
-}
-
 // GetConfirmTokenKey creates a poll key for token confirmation
 func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
 	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
@@ -641,113 +636,6 @@ func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferTyp
 	default:
 		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
 	}
-}
-
-// GetSinglesigGatewayDeploymentBytecode returns the deployment bytecode for the singlesig gateway contract
-func GetSinglesigGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, threshold uint8, owner common.Address, operator common.Address) ([]byte, error) {
-	if len(contractBytecode) == 0 {
-		return nil, fmt.Errorf("contract bytecode cannot be empty bytes")
-	}
-
-	if threshold == 0 {
-		return nil, fmt.Errorf("admin threshold must be >0")
-	}
-
-	if len(admins) < int(threshold) {
-		return nil, fmt.Errorf("not enought admins")
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	args := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressType}, {Type: addressType}}
-	argBytes, err := args.Pack(admins, big.NewInt(int64(threshold)), owner, operator)
-	if err != nil {
-		return nil, err
-	}
-
-	argBytes, err = abi.Arguments{{Type: bytesType}}.Pack(argBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return append(contractBytecode, argBytes...), nil
-}
-
-// GetMultisigGatewayDeploymentBytecode returns the deployment bytecode for the multisig gateway contract
-func GetMultisigGatewayDeploymentBytecode(contractBytecode []byte, admins []common.Address, adminThreshold uint8, owners []common.Address, ownerThreshold uint8, operators []common.Address, operatorThreshold uint8) ([]byte, error) {
-	if len(contractBytecode) == 0 {
-		return nil, fmt.Errorf("contract bytecode cannot be empty bytes")
-	}
-
-	if adminThreshold == 0 {
-		return nil, fmt.Errorf("admin threshold must be >0")
-	}
-
-	if len(admins) < int(adminThreshold) {
-		return nil, fmt.Errorf("not enought admins")
-	}
-
-	if ownerThreshold == 0 {
-		return nil, fmt.Errorf("owner threshold must be >0")
-	}
-
-	if len(owners) < int(ownerThreshold) {
-		return nil, fmt.Errorf("not enought owners")
-	}
-
-	if operatorThreshold == 0 {
-		return nil, fmt.Errorf("operator threshold must be >0")
-	}
-
-	if len(operators) < int(operatorThreshold) {
-		return nil, fmt.Errorf("not enought operators")
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	args := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
-	argBytes, err := args.Pack(admins, big.NewInt(int64(adminThreshold)), owners, big.NewInt(int64(ownerThreshold)), operators, big.NewInt(int64(operatorThreshold)))
-	if err != nil {
-		return nil, err
-	}
-
-	argBytes, err = abi.Arguments{{Type: bytesType}}.Pack(argBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return append(contractBytecode, argBytes...), nil
 }
 
 // Clone returns an exacy copy of Command

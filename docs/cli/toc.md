@@ -46,7 +46,7 @@
       - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
-      - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecodes of an EVM contract \[contract\] for chain \[chain\]
+      - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
@@ -208,13 +208,13 @@
       - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[amount\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
-      - [confirm-gateway-deployment \[chain\] \[txID\] \[address\]](axelard_tx_evm_confirm-gateway-deployment.md)	 - Confirm that the gateway contract was deploy for the given chain in the given transaction at the given address
       - [confirm-transfer-operatorship \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
       - [confirm-transfer-ownership \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
       - [create-burn-tokens \[chain\]](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain
       - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
       - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+      - [set-gateway \[chain\] \[address\]](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
       - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
       - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
       - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract
