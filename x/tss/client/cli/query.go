@@ -29,6 +29,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	tssQueryCmd.AddCommand(
+		GetCmdAssignableKey(queryRoute),
 		GetCmdGetSig(queryRoute),
 		GetCmdGetKey(queryRoute),
 		GetCmdRecovery(queryRoute),
@@ -403,6 +404,42 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 			res, err := queryClient.NextKeyID(cmd.Context(),
 				&types.NextKeyIDRequest{
+					Chain:   chain,
+					KeyRole: keyRole,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdAssignableKey returns true if a key can be assigned for the next rotation on a given chain and for the given key role
+func GetCmdAssignableKey(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "assignable-key [chain] [role]",
+		Short: "Returns the true if a key can be assigned for the next rotation on a given chain and for the given key role",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := utils.NormalizeString(args[0])
+			keyRole, err := exported.KeyRoleFromSimpleStr(args[1])
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			res, err := queryClient.AssignableKey(cmd.Context(),
+				&types.AssignableKeyRequest{
 					Chain:   chain,
 					KeyRole: keyRole,
 				})

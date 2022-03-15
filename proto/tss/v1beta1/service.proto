@@ -90,4 +90,10 @@ service QueryService {
   rpc NextKeyID(NextKeyIDRequest) returns (NextKeyIDResponse) {
     option (google.api.http).get = "/tss/v1beta1/next_key_id";
   }
+
+  // AssignableKey returns true if there is no assigned key for the
+  // next rotation on a given chain, and false otherwise
+  rpc AssignableKey(AssignableKeyRequest) returns (AssignableKeyResponse) {
+    option (google.api.http).get = "/tss/v1beta1/assignable_key";
+  }
 }

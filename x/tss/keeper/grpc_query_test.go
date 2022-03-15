@@ -3,6 +3,10 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -10,9 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -108,6 +109,106 @@ func TestNextKeyID(t *testing.T) {
 		assert.Nil(res)
 		s, ok := status.FromError(err)
 		assert.Equal(codes.OK, s.Code())
+		assert.Equal(true, ok)
+	}).Repeat(repeatCount))
+}
+
+func TestAssignbleKey(t *testing.T) {
+	var (
+		tssKeeper       *mock.TSSKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		grpcQuerier     *keeper.Querier
+		existingChain   string
+		existingKeyRole tss.KeyRole
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		existingChain = "existing"
+		existingKeyRole = tss.MasterKey
+
+		tssKeeper = &mock.TSSKeeperMock{
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				if chain.Name == existingChain && keyRole == existingKeyRole {
+					return "dummy-key-id", true
+				}
+				return "", false
+			},
+		}
+
+		nexusKeeper = &mock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				if chain == existingChain {
+					return nexus.Chain{
+						Name:                  existingChain,
+						SupportsForeignAssets: false,
+						KeyType:               tss.Multisig,
+						Module:                "evm",
+					}, true
+				}
+				return nexus.Chain{}, false
+			},
+		}
+
+		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper)
+		grpcQuerier = &q
+	}
+
+	setup()
+
+	repeatCount := 1
+
+	t.Run("chain and key exist", testutils.Func(func(t *testing.T) {
+		expectedRes := types.AssignableKeyResponse{
+			Assignable: false,
+		}
+
+		res, err := grpcQuerier.AssignableKey(sdk.WrapSDKContext(ctx), &types.AssignableKeyRequest{
+			Chain:   existingChain,
+			KeyRole: existingKeyRole,
+		})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Equal(expectedRes, *res)
+
+		s, ok := status.FromError(err)
+		assert.Equal(codes.OK, s.Code())
+		assert.Equal(true, ok)
+	}).Repeat(repeatCount))
+
+	t.Run("only chain exist", testutils.Func(func(t *testing.T) {
+		expectedRes := types.AssignableKeyResponse{
+			Assignable: true,
+		}
+
+		res, err := grpcQuerier.AssignableKey(sdk.WrapSDKContext(ctx), &types.AssignableKeyRequest{
+			Chain:   existingChain,
+			KeyRole: tss.SecondaryKey,
+		})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+
+		assert.Equal(expectedRes, *res)
+
+		s, ok := status.FromError(err)
+		assert.Equal(codes.OK, s.Code())
+		assert.Equal(true, ok)
+	}).Repeat(repeatCount))
+
+	t.Run("chain does not exist", testutils.Func(func(t *testing.T) {
+		res, err := grpcQuerier.AssignableKey(sdk.WrapSDKContext(ctx), &types.AssignableKeyRequest{
+			Chain:   "non-existing-chain",
+			KeyRole: tss.MasterKey,
+		})
+
+		assert := assert.New(t)
+		assert.Nil(res)
+		s, ok := status.FromError(err)
+		assert.Equal(codes.NotFound, s.Code())
 		assert.Equal(true, ok)
 	}).Repeat(repeatCount))
 }

@@ -380,6 +380,8 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest)
+    - [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse)
     - [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest)
     - [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse)
     - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
@@ -5423,6 +5425,37 @@ KeyInfo holds information about a key
 
 
 
+<a name="tss.v1beta1.AssignableKeyRequest"></a>
+
+### AssignableKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.AssignableKeyResponse"></a>
+
+### AssignableKeyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `assignable` | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="tss.v1beta1.NextKeyIDRequest"></a>
 
 ### NextKeyIDRequest
@@ -6094,7 +6127,8 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) |  | GET|/tss/v1beta1/next-key-id|
+| `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/tss/v1beta1/next_key_id|
+| `AssignableKey` | [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/tss/v1beta1/assignable_key|
 
  <!-- end services -->
 

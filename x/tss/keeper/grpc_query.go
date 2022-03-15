@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -42,4 +43,18 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 	}
 
 	return &types.NextKeyIDResponse{KeyID: keyID}, nil
+}
+
+// AssignableKey returns true if there is assign
+func (q Querier) AssignableKey(c context.Context, req *types.AssignableKeyRequest) (*types.AssignableKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("chain [%s] not found", req.Chain)).Error())
+	}
+
+	_, assigned := q.keeper.GetNextKeyID(ctx, chain, req.KeyRole)
+
+	return &types.AssignableKeyResponse{Assignable: !assigned}, nil
 }
