@@ -83,4 +83,11 @@ service MsgService {
 }
 
 // Query defines the gRPC querier service.
-service Query {}
+service QueryService {
+
+  // NextKeyID returns the key ID assigned for the next rotation on a given
+  // chain and for the given key role
+  rpc NextKeyID(NextKeyIDRequest) returns (NextKeyIDResponse) {
+    option (google.api.http).get = "/tss/v1beta1/next_key_id";
+  }
+}

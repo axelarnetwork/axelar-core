@@ -23,7 +23,6 @@ const (
 	QueryKey                      = "key"
 	QueryRecovery                 = "recovery"
 	QueryKeyID                    = "key-id"
-	QueryNextKeyID                = "next-key-id"
 	QueryKeySharesByKeyID         = "key-share-id"
 	QueryKeySharesByValidator     = "key-share-validator"
 	QueryActiveOldKeys            = "active-old-keys"
@@ -58,13 +57,6 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 			res, err = queryRecovery(ctx, k, s, keyID, path[2])
 		case QueryKeyID:
 			res, err = queryKeyID(ctx, k, n, path[1], path[2])
-		case QueryNextKeyID:
-			var request types.QueryNextKeyIDRequest
-			err = request.Unmarshal(req.Data)
-			if err != nil {
-				break
-			}
-			res, err = queryNextKeyID(ctx, k, n, request)
 		case QueryKeySharesByKeyID:
 			keyID := exported.KeyID(path[1])
 			err = keyID.Validate()
@@ -89,21 +81,6 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		}
 		return res, nil
 	}
-}
-
-func queryNextKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, req types.QueryNextKeyIDRequest) ([]byte, error) {
-	chain, ok := n.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("chain \"%s\" not found", req.Chain)
-	}
-
-	key, ok := k.GetNextKey(ctx, chain, req.KeyRole)
-	if !ok {
-		return nil, fmt.Errorf("no next key assigned for key role \"%s\" on chain \"%s\"", req.KeyRole.SimpleString(), chain.Name)
-	}
-
-	response := types.QueryNextKeyIDResponse{KeyID: key.ID}
-	return response.Marshal()
 }
 
 func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyID exported.KeyID, addressStr string) ([]byte, error) {

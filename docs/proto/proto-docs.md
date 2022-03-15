@@ -380,6 +380,8 @@
     - [GenesisState](#tss.v1beta1.GenesisState)
   
 - [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest)
+    - [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse)
     - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
     - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
     - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
@@ -391,8 +393,6 @@
     - [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey)
     - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
     - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
-    - [QueryNextKeyIDRequest](#tss.v1beta1.QueryNextKeyIDRequest)
-    - [QueryNextKeyIDResponse](#tss.v1beta1.QueryNextKeyIDResponse)
     - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
     - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
     - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
@@ -426,7 +426,7 @@
   
 - [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
     - [MsgService](#tss.v1beta1.MsgService)
-    - [Query](#tss.v1beta1.Query)
+    - [QueryService](#tss.v1beta1.QueryService)
   
 - [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
     - [Params](#vote.v1beta1.Params)
@@ -5423,6 +5423,37 @@ KeyInfo holds information about a key
 
 
 
+<a name="tss.v1beta1.NextKeyIDRequest"></a>
+
+### NextKeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.NextKeyIDResponse"></a>
+
+### NextKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
 
 ### QueryActiveOldKeysResponse
@@ -5596,37 +5627,6 @@ KeyInfo holds information about a key
 | `validator_address` | [string](#string) |  |  |
 | `num_validator_shares` | [int64](#int64) |  |  |
 | `num_total_shares` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryNextKeyIDRequest"></a>
-
-### QueryNextKeyIDRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
-
-
-
-
-
-
-<a name="tss.v1beta1.QueryNextKeyIDResponse"></a>
-
-### QueryNextKeyIDResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
 
 
 
@@ -6087,13 +6087,14 @@ Msg defines the tss Msg service.
 | `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
 
 
-<a name="tss.v1beta1.Query"></a>
+<a name="tss.v1beta1.QueryService"></a>
 
-### Query
+### QueryService
 Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) |  | GET|/tss/v1beta1/next-key-id|
 
  <!-- end services -->
 

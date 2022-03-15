@@ -5,14 +5,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	tssclient "github.com/axelarnetwork/axelar-core/x/tss/client"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 
@@ -395,13 +394,23 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			chain := args[0]
-			role := args[1]
-			res, err := tssclient.QueryNextKeyID(clientCtx, chain, role)
+			chain := utils.NormalizeString(args[0])
+			keyRole, err := exported.KeyRoleFromSimpleStr(args[1])
 			if err != nil {
 				return err
 			}
-			return clientCtx.PrintProto(&res)
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			res, err := queryClient.NextKeyID(cmd.Context(),
+				&types.NextKeyIDRequest{
+					Chain:   chain,
+					KeyRole: keyRole,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
 

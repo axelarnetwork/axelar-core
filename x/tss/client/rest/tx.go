@@ -25,7 +25,6 @@ const (
 	QueryKey                      = keeper.QueryKey
 	QueryRecovery                 = keeper.QueryRecovery
 	QueryKeyID                    = keeper.QueryKeyID
-	QueryNextKeyID                = keeper.QueryNextKeyID
 	QueryKeySharesByKeyID         = keeper.QueryKeySharesByKeyID
 	QueryActiveOldKeys            = keeper.QueryActiveOldKeys
 	QueryActiveOldKeysByValidator = keeper.QueryActiveOldKeysByValidator
@@ -69,7 +68,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKey, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerRecovery(cliCtx), QueryRecovery)
 	registerQuery(QueryHandlerKeyID(cliCtx), QueryKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
-	registerQuery(QueryHandlerNextKeyID(cliCtx), QueryNextKeyID, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerKeySharesByKeyID(cliCtx), QueryKeySharesByKeyID, clientUtils.PathVarKeyID)
 	registerQuery(QueryHandlerActiveOldKeys(cliCtx), QueryActiveOldKeys, clientUtils.PathVarChain, clientUtils.PathVarKeyRole)
 	registerQuery(QueryHandlerActiveOldKeysByValidator(cliCtx), QueryActiveOldKeysByValidator, clientUtils.PathVarCosmosAddress)
