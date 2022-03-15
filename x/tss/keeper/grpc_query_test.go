@@ -1,0 +1,113 @@
+package keeper_test
+
+import (
+	"testing"
+
+	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+)
+
+func TestNextKeyID(t *testing.T) {
+	var (
+		tssKeeper       *mock.TSSKeeperMock
+		nexusKeeper     *mock.NexusMock
+		ctx             sdk.Context
+		grpcQuerier     *keeper.Querier
+		existingChain   string
+		existingKeyID   tss.KeyID
+		existingKeyRole tss.KeyRole
+	)
+
+	setup := func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		existingChain = "existing"
+		existingKeyID = tss.KeyID("keyID")
+		existingKeyRole = tss.MasterKey
+
+		tssKeeper = &mock.TSSKeeperMock{
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				if chain.Name == existingChain && keyRole == existingKeyRole {
+					return existingKeyID, true
+				}
+				return "", false
+			},
+		}
+
+		nexusKeeper = &mock.NexusMock{
+			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				if chain == existingChain {
+					return nexus.Chain{
+						Name:                  existingChain,
+						SupportsForeignAssets: false,
+						KeyType:               tss.Multisig,
+						Module:                "evm",
+					}, true
+				}
+				return nexus.Chain{}, false
+			},
+		}
+
+		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper)
+		grpcQuerier = &q
+	}
+
+	setup()
+
+	repeatCount := 1
+
+	t.Run("when chain and key role exist get the keyID", testutils.Func(func(t *testing.T) {
+		expectedRes := types.NextKeyIDResponse{
+			KeyID: existingKeyID,
+		}
+
+		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
+			Chain:   existingChain,
+			KeyRole: existingKeyRole,
+		})
+
+		assert := assert.New(t)
+		assert.NoError(err)
+
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+
+	t.Run("if chain does not exist, get NotFound grpc code", testutils.Func(func(t *testing.T) {
+		chain := "non-existing-chain"
+		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
+			Chain:   chain,
+			KeyRole: existingKeyRole,
+		})
+
+		assert := assert.New(t)
+		assert.Nil(res)
+		s, ok := status.FromError(err)
+		assert.Equal(codes.NotFound, s.Code())
+		assert.Equal(true, ok)
+	}).Repeat(repeatCount))
+
+	t.Run("if key role does not exist, get OK grpc code", testutils.Func(func(t *testing.T) {
+		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
+			Chain:   existingChain,
+			KeyRole: tss.SecondaryKey,
+		})
+
+		assert := assert.New(t)
+		assert.Nil(res)
+		s, ok := status.FromError(err)
+		assert.Equal(codes.OK, s.Code())
+		assert.Equal(true, ok)
+	}).Repeat(repeatCount))
+}
