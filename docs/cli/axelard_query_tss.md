@@ -28,6 +28,7 @@ axelard query tss [flags]
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query tss active-old-keys](axelard_query_tss_active-old-keys.md)	 - Query active old key IDs by validator
 - [axelard query tss active-old-keys-by-validator](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
+- [axelard query tss assignable-key](axelard_query_tss_assignable-key.md)	 - Returns the true if a key can be assigned for the next rotation on a given chain and for the given key role
 - [axelard query tss deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
 - [axelard query tss external-key-id](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
 - [axelard query tss key](axelard_query_tss_key.md)	 - Query a key by key ID
