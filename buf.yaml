@@ -13,5 +13,6 @@ lint:
     - tofnd
     - cosmos
     - ibc
+    - proofs.proto
   except:
     - SERVICE_SUFFIX

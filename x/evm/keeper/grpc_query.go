@@ -2,13 +2,22 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -17,27 +26,46 @@ var _ types.QueryServiceServer = Querier{}
 type Querier struct {
 	keeper types.BaseKeeper
 	nexus  types.Nexus
+	signer types.Signer
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 	return Querier{
 		keeper: k,
 		nexus:  n,
+		signer: s,
 	}
+}
+
+func queryChains(ctx sdk.Context, n types.Nexus) []string {
+	chains := []string{}
+	for _, c := range n.GetChains(ctx) {
+		if c.Module == types.ModuleName {
+			chains = append(chains, c.Name)
+		}
+	}
+
+	return chains
+}
+
+// Chains returns the available evm chains
+func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := queryChains(ctx, q.nexus)
+
+	return &types.ChainsResponse{Chains: chains}, nil
 }
 
 // BurnerInfo implements the burner info grpc query
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains, err := queryChains(ctx, q.nexus)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "no chains registered")
-	}
+	chains := queryChains(ctx, q.nexus)
 
 	for _, chain := range chains {
-		ck := q.keeper.ForChain(string(chain))
+		ck := q.keeper.ForChain(chain)
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
 			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil
@@ -45,6 +73,146 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	}
 
 	return nil, status.Error(codes.NotFound, "unknown address")
+}
+
+func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBatch, s types.Signer) (types.BatchedCommandsResponse, error) {
+	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
+	prevBatchedCommandsIDHex := ""
+	if batchedCommands.GetPrevBatchedCommandsID() != nil {
+		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.GetPrevBatchedCommandsID())
+	}
+
+	var commandIDs []string
+	for _, id := range batchedCommands.GetCommandIDs() {
+		commandIDs = append(commandIDs, id.Hex())
+	}
+
+	var resp types.BatchedCommandsResponse
+
+	switch {
+	case batchedCommands.Is(types.BatchSigned):
+		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
+		if sigStatus != tss.SigStatus_Signed {
+			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
+		}
+
+		var executeData []byte
+		var signatures []string
+		switch signature := sig.GetSig().(type) {
+		case *tss.Signature_SingleSig_:
+			batchedCommandsSig, err := getBatchedCommandsSig(signature.SingleSig.SigKeyPair, batchedCommands.GetSigHash())
+			if err != nil {
+				return resp, err
+			}
+
+			executeData, err = types.CreateExecuteDataSinglesig(batchedCommands.GetData(), batchedCommandsSig)
+			if err != nil {
+				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+			}
+
+			signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
+		case *tss.Signature_MultiSig_:
+			var batchedCmdSigs []types.Signature
+			var err error
+
+			sigKeyPairs := types.SigKeyPairs(signature.MultiSig.SigKeyPairs)
+			sort.Stable(sigKeyPairs)
+
+			for _, pair := range sigKeyPairs {
+				batchedCommandsSig, err := getBatchedCommandsSig(pair, batchedCommands.GetSigHash())
+				if err != nil {
+					return resp, err
+				}
+
+				batchedCmdSigs = append(batchedCmdSigs, batchedCommandsSig)
+				signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
+			}
+
+			executeData, err = types.CreateExecuteDataMultisig(batchedCommands.GetData(), batchedCmdSigs...)
+			if err != nil {
+				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
+			}
+		}
+
+		resp = types.BatchedCommandsResponse{
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.GetData()),
+			Status:                batchedCommands.GetStatus(),
+			KeyID:                 batchedCommands.GetKeyID(),
+			Signature:             signatures,
+			ExecuteData:           hex.EncodeToString(executeData),
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+			CommandIDs:            commandIDs,
+		}
+	default:
+		resp = types.BatchedCommandsResponse{
+			ID:                    batchedCommandsIDHex,
+			Data:                  hex.EncodeToString(batchedCommands.GetData()),
+			Status:                batchedCommands.GetStatus(),
+			KeyID:                 batchedCommands.GetKeyID(),
+			Signature:             nil,
+			ExecuteData:           "",
+			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
+			CommandIDs:            commandIDs,
+		}
+	}
+
+	return resp, nil
+}
+
+func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.Signature, error) {
+	pk, err := pair.GetKey()
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse pub key: %v", err))
+	}
+
+	sig, err := pair.GetSig()
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse signature: %v", err))
+	}
+
+	batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands), pk)
+	if err != nil {
+		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
+	}
+	return batchedCommandsSig, nil
+}
+
+// BatchedCommands implements the batched commands query
+// If BatchedCommandsResponse.Id is set, it returns the latest batched commands with the specified id.
+// Otherwise returns the latest batched commands.
+func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRequest) (*types.BatchedCommandsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+	ck := q.keeper.ForChain(req.Chain)
+
+	var batchedCommands types.CommandBatch
+	if req.Id == "" {
+		batchedCommands = ck.GetLatestCommandBatch(ctx)
+		if batchedCommands.Is(types.BatchNonExistent) {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not get the latest batched commands for chain %s", req.Chain)).Error())
+		}
+	} else {
+		batchedCommandsID, err := hex.DecodeString(req.Id)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
+		}
+
+		batchedCommands = ck.GetBatchByID(ctx, batchedCommandsID)
+		if batchedCommands.Is(types.BatchNonExistent) {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", req.Id)).Error())
+		}
+	}
+
+	resp, err := batchedCommandsToQueryResp(ctx, batchedCommands, q.signer)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	return &resp, nil
 }
 
 // ConfirmationHeight implements the confirmation height grpc query
@@ -64,6 +232,30 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 	}
 
 	return &types.ConfirmationHeightResponse{Height: height}, nil
+}
+
+func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
+	_, ok := n.GetChain(ctx, k.GetName())
+	if !ok {
+		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
+	_, isPending := k.GetPendingDeposit(ctx, pollKey)
+	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
+
+	switch {
+	case isPending:
+		return types.DepositStatus_Pending, "deposit transaction is waiting for confirmation", codes.OK
+	case !isPending && !ok:
+		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
+	case state == types.DepositStatus_Confirmed:
+		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
+	case state == types.DepositStatus_Burned:
+		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
+	default:
+		return -1, "deposit is in an unexpected state", codes.Internal
+	}
 }
 
 // DepositState fetches the state of a deposit confirmation using a grpc query
@@ -100,4 +292,137 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 	}
 
 	return &types.PendingCommandsResponse{Commands: commands}, nil
+}
+
+func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain, keyID tss.KeyID) (types.KeyAddressResponse, error) {
+	key, ok := s.GetKey(ctx, keyID)
+	if !ok {
+		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+	}
+
+	switch chain.KeyType {
+	case tss.Multisig:
+		multisigPubKey, err := key.GetMultisigPubKey()
+		if err != nil {
+			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		addressStrs := make([]string, len(multisigPubKey))
+		for i, address := range types.KeysToAddresses(multisigPubKey...) {
+			addressStrs[i] = address.Hex()
+		}
+
+		threshold := uint32(key.GetMultisigKey().Threshold)
+
+		resp := types.KeyAddressResponse{
+			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
+			KeyID:   keyID,
+		}
+
+		return resp, nil
+	case tss.Threshold:
+		pk, err := key.GetECDSAPubKey()
+		if err != nil {
+			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		address := crypto.PubkeyToAddress(pk)
+		resp := types.KeyAddressResponse{
+			Address: &types.KeyAddressResponse_ThresholdAddress_{ThresholdAddress: &types.KeyAddressResponse_ThresholdAddress{Address: address.Hex()}},
+			KeyID:   key.ID,
+		}
+
+		return resp, nil
+	default:
+		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
+	}
+}
+
+// KeyAddress returns the address the specified key for the specified chain
+func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*types.KeyAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	var keyID tss.KeyID
+	switch key := req.Key.(type) {
+	case *types.KeyAddressRequest_KeyID:
+		keyID = key.KeyID
+	case *types.KeyAddressRequest_Role:
+		switch key.Role {
+		case tss.MasterKey | tss.SecondaryKey:
+			break
+		default:
+			return nil, status.Error(codes.NotFound, fmt.Sprintf("unsupported key role %s", key.Role.SimpleString()))
+		}
+
+		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, key.Role)
+		if !ok {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "%s key not found for chain %s", key.Role.SimpleString(), req.Chain).Error())
+		}
+	}
+
+	res, err := queryAddressByKeyID(ctx, q.signer, chain, keyID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	return &res, nil
+}
+
+// GatewayAddress returns the axelar gateway address for the specified chain
+func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequest) (*types.GatewayAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	ck := q.keeper.ForChain(req.Chain)
+
+	address, ok := ck.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway not set for chain [%s]", req.Chain)).Error())
+	}
+
+	return &types.GatewayAddressResponse{Address: address.Hex()}, nil
+}
+
+// Bytecode returns the bytecode of a specified contract and chain
+func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	ck := q.keeper.ForChain(req.Chain)
+
+	var bytecodeBytes []byte
+	switch strings.ToLower(req.Contract) {
+	case BCGateway:
+		bytecodeBytes, _ = ck.GetGatewayByteCode(ctx)
+	case BCGatewayDeployment:
+		deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, ck, q.signer, chain)
+		if err != nil {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		bytecodeBytes = deploymentBytecode
+	case BCToken:
+		bytecodeBytes, _ = ck.GetTokenByteCode(ctx)
+	case BCBurner:
+		bytecodeBytes, _ = ck.GetBurnerByteCode(ctx)
+	}
+
+	if bytecodeBytes == nil {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
+	}
+
+	bytecode := fmt.Sprintf("0x" + common.Bytes2Hex(bytecodeBytes))
+
+	return &types.BytecodeResponse{Bytecode: bytecode}, nil
 }
