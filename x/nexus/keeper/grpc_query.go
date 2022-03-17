@@ -88,7 +88,7 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
 
-	amount, err := sdk.ParseCoinNormalized(req.Amount)
+	amount, err := req.GetAmount()
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid amount")
 	}
