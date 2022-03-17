@@ -51,6 +51,7 @@ For the full list of available CLI commands for `axelard` see [here](docs/cli/to
 ## Test tools
 
 Dev tool dependencies, such as `moq` and `goimports`, can be installed via `make prereqs`.
+Make sure they're on available on your `PATH`.
 
 ## Bug bounty and disclosure of vulnerabilities
 
