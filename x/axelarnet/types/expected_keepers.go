@@ -1,11 +1,11 @@
 package types
 
 import (
-	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
-	ibcclient "github.com/cosmos/ibc-go/modules/core/exported"
+	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 
