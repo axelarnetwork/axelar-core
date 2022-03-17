@@ -36,6 +36,12 @@ jobs:
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
 
+      - name: Install prereqs
+        run: |
+          go install golang.org/x/tools/cmd/goimports
+          go install github.com/matryer/moq
+          pip3 install mdformat
+
       - name: Run go generate
         run: make generate
 
