@@ -153,6 +153,15 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
+
+  // BatchedCommands queries the batched commands for a specified chain and
+  // BatchedCommandsID if no BatchedCommandsID is specified, then it returns the
+  // latest batched commands
+  rpc BatchedCommands(BatchedCommandsRequest)
+      returns (BatchedCommandsResponse) {
+    option (google.api.http).get = "/evm/v1beta1/batched_commands";
+  }
+
   // BurnerInfo queries the burner info for the specified address
   rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
     option (google.api.http).get = "/evm/v1beta1/burner_info";
@@ -173,5 +182,25 @@ service QueryService {
   rpc PendingCommands(PendingCommandsRequest)
       returns (PendingCommandsResponse) {
     option (google.api.http).get = "/evm/v1beta1/pending_commands";
+  }
+
+  // Chains queries the available evm chains
+  rpc Chains(ChainsRequest) returns (ChainsResponse) {
+    option (google.api.http).get = "/evm/v1beta1/chains";
+  }
+
+  // KeyAddress queries the address of key of a chain
+  rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
+    option (google.api.http).get = "/evm/v1beta1/key_address";
+  }
+
+  // GatewayAddress queries the address of axelar gateway at the specified chain
+  rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
+    option (google.api.http).get = "/evm/v1beta1/gateway_address";
+  }
+
+  // Bytecode queries the bytecode of a specified gateway at the specified chain
+  rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
+    option (google.api.http).get = "/evm/v1beta1/bytecode";
   }
 }
