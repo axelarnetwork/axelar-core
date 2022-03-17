@@ -96,6 +96,7 @@
         - [end \[connection-id\]](axelard_query_ibc_connection_end.md)	 - Query stored connection end
         - [path \[client-id\]](axelard_query_ibc_connection_path.md)	 - Query stored client connection paths
     - [ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
+      - [denom-hash \[trace\]](axelard_query_ibc-transfer_denom-hash.md)	 - Query the denom hash info from a given denom trace
       - [denom-trace \[hash\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
       - [denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
       - [escrow-address](axelard_query_ibc-transfer_escrow-address.md)	 - Get the escrow address for a channel
@@ -228,7 +229,7 @@
         - [ibc-upgrade \[name\] \[height\] \[path/to/upgraded_client_state.json\] \[flags\]](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
         - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
         - [software-upgrade \[name\] (--upgrade-height \[height\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
-        - [update-client \[subject-client-id\] \[substitute-client-id\] \[flags\]](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
+        - [update-client \[subject-client-id\] \[substitute-client-id\]](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
       - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
       - [weighted-vote \[proposal-id\] \[weighted-options\]](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands

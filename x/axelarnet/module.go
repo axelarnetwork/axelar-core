@@ -14,9 +14,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	"github.com/cosmos/ibc-go/modules/apps/transfer"
-	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/modules/core/exported"
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -263,8 +263,8 @@ func (am AppModule) OnAcknowledgementPacket(
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
-) (*sdk.Result, error) {
-	result, err := am.transferModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
+) error {
+	err := am.transferModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
 	if err == nil {
 		var ack channeltypes.Acknowledgement
 		_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
@@ -276,7 +276,7 @@ func (am AppModule) OnAcknowledgementPacket(
 			am.keeper.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
 		}
 	}
-	return result, err
+	return err
 }
 
 // OnTimeoutPacket implements the IBCModule interface
@@ -284,12 +284,12 @@ func (am AppModule) OnTimeoutPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
-) (*sdk.Result, error) {
-	result, err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
+) error {
+	err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
 	if err == nil {
 		err = resendTransferRoutedByAxelar(ctx, am.keeper, am.transfer, am.channel, packet)
 	}
-	return result, err
+	return err
 }
 
 func resendTransferRoutedByAxelar(ctx sdk.Context, k keeper.Keeper, t types.IBCTransferKeeper, c types.ChannelKeeper, packet channeltypes.Packet) error {
@@ -305,4 +305,9 @@ func resendTransferRoutedByAxelar(ctx sdk.Context, k keeper.Keeper, t types.IBCT
 		k.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
 	}
 	return err
+}
+
+// NegotiateAppVersion implements the IBCModule interface
+func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Order, connectionID string, portID string, counterparty channeltypes.Counterparty, proposedVersion string) (version string, err error) {
+	return am.transferModule.NegotiateAppVersion(ctx, order, connectionID, portID, counterparty, proposedVersion)
 }
