@@ -26,8 +26,7 @@ In order to run/build the project locally we need to import the bytecode from ga
 2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
    Example: `Bytecode-v2.1.0`
 3. Unzip the json files under `contract-artifacts/gateway/`
-4. Make sure `moq` and `goimports` go dependencies are available. See `Test Tools` below. 
-5. Run `make generate` to generate `x/evm/types/contracts.go`
+4. Run `make generate` to generate `x/evm/types/contracts.go`
 
 ## Interacting with a local node
 
@@ -51,13 +50,7 @@ For the full list of available CLI commands for `axelard` see [here](docs/cli/to
 
 ## Test tools
 
-Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download``
-or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for
-interfaces.
-
-`goimports` dependency is needed for templating smart contract bytecode. You can install it via
-`go install golang.org/x/tools/cmd/goimports@latest`. It should be installed in your `go` home (likely `~/go/bin/goimports`),
-and then add it to your `PATH`.
+Dev tool dependencies, such as `moq` and `goimports`, can be installed via `make prereqs`.
 
 ## Bug bounty and disclosure of vulnerabilities
 

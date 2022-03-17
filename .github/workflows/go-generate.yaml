@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.16.x
+          - 1.17.x
         os:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
@@ -35,12 +35,6 @@ jobs:
           workflow: publish-bytecode.yaml
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
-
-      - name: Install prereqs
-        run: |
-          go install golang.org/x/tools/cmd/goimports
-          go install github.com/matryer/moq
-          pip3 install mdformat
 
       - name: Run go generate
         run: make generate
