@@ -58,57 +58,13 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Build and sign binary for ubuntu amd64
-        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'amd64'
+      - name: Build and sign binaries
         env:
-          ARCH: amd64
-          OS: linux
+          ARCH: ${{ matrix.arch }}
+          OS_TYPE: ${{ matrix.os }}
           SEMVER: ${{ github.event.inputs.tag }}
         run: |
-          make build-binaries-multiarch
-          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-
-      - name: Build and sign binary for ubuntu arm64
-        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm64'
-        env:
-          ARCH: arm64
-          OS: linux
-          SEMVER: ${{ github.event.inputs.tag }}
-        run: |
-          make build-binaries-multiarch
-          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-
-      - name: Build and sign binary for ubuntu arm
-        if: matrix.os == 'ubuntu-18.04' && matrix.arch == 'arm'
-        env:
-          ARCH: arm
-          OS: linux
-          SEMVER: ${{ github.event.inputs.tag }}
-        run: |
-          make build-binaries-multiarch
-          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-
-      - name: Build and sign binary for macos arm64
-        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
-        env:
-          ARCH: arm64
-          OS: darwin
-          SEMVER: ${{ github.event.inputs.tag }}
-        run: |
-          make build-binaries-multiarch
-          mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-          gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
-
-      - name: Build and sign binary for macos amd64
-        if: matrix.os == 'macos-latest' && matrix.arch == 'amd64'
-        env:
-          ARCH: amd64
-          OS: darwin
-          SEMVER: ${{ github.event.inputs.tag }}
-        run: |
+          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
           make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
@@ -139,7 +95,7 @@ jobs:
           fi
           ARCH="${{ matrix.arch }}"
           ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER" version --long 2>&1 | grep "build_tags: ledger"
- 
+
       - name: Create zip and sha256 files
         working-directory: ./bin
         run: |
@@ -171,7 +127,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04]
-        number: [1,2,3,4]
+        platform: [linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6]
 
     permissions:
       contents: write
@@ -207,40 +163,11 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and push docker image for linux/arm64
-        if: matrix.number == '1'
+      - name: Build and push docker images
         run: |
           make build-push-docker-images
         env:
-          PLATFORM: 'linux/arm64'
-          SUFFIX: 'linux-arm64'
-          SEMVER: ${{ github.event.inputs.tag }}
-
-      - name: Build and push docker image for linux/amd64
-        if: matrix.number == '2'
-        run: |
-          make build-push-docker-images
-        env:
-          PLATFORM: 'linux/amd64'
-          SUFFIX: 'linux-amd64'
-          SEMVER: ${{ github.event.inputs.tag }}
-
-      - name: Build and push docker image for linux/arm/v7
-        if: matrix.number == '3'
-        run: |
-          make build-push-docker-images
-        env:
-          PLATFORM: 'linux/arm/v7'
-          SUFFIX: 'linux-armv7'
-          SEMVER: ${{ github.event.inputs.tag }}
-
-      - name: Build and push docker image for linux/arm/v6
-        if: matrix.number == '4'
-        run: |
-          make build-push-docker-images
-        env:
-          PLATFORM: 'linux/arm/v6'
-          SUFFIX: 'linux-armv6'
+          PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
 
   combine-sign:

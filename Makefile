@@ -17,6 +17,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
+OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
+SUFFIX := $(shell echo $$PLATFORM | sed 's/\//-/' | sed 's/\///')
 
 .PHONY: all
 all: generate goimports lint build docker-image docker-image-debug
