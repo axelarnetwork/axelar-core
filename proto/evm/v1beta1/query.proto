@@ -16,14 +16,7 @@ message DepositQueryParams {
   string chain = 3;
 }
 
-message BatchedCommandsRequest {
-  string chain = 1;
-  // id defines an optional id for the commandsbatch. If not specified the
-  // latest will be returned
-  string id = 2;
-}
-
-message BatchedCommandsResponse {
+message QueryBatchedCommandsResponse {
   string id = 1 [ (gogoproto.customname) = "ID" ];
   string data = 2;
   BatchedCommandsStatus status = 3;
@@ -39,21 +32,7 @@ message BatchedCommandsResponse {
   repeated string command_ids = 8 [ (gogoproto.customname) = "CommandIDs" ];
 }
 
-message KeyAddressRequest {
-  string chain = 1;
-  oneof key {
-    int32 role = 2
-        [ (gogoproto.casttype) =
-              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
-    string id = 3 [
-      (gogoproto.customname) = "KeyID",
-      (gogoproto.casttype) =
-          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-    ];
-  }
-}
-
-message KeyAddressResponse {
+message QueryAddressResponse {
   message MultisigAddresses {
     repeated string addresses = 1;
     uint32 threshold = 2;
@@ -95,11 +74,15 @@ message DepositStateRequest {
 
 message DepositStateResponse { DepositStatus status = 2; }
 
+// QueryDepositStateResponse is used by the legacy querier
+message QueryDepositStateResponse {
+  string log = 1;
+  DepositStatus status = 2;
+}
+
 message QueryBurnerAddressResponse { string address = 1; }
 
-message ChainsRequest {}
-
-message ChainsResponse { repeated string chains = 1; }
+message QueryChainsResponse { repeated string chains = 1; }
 
 message PendingCommandsRequest { string chain = 1; }
 
@@ -128,14 +111,3 @@ message BurnerInfoResponse {
 message ConfirmationHeightRequest { string chain = 1; }
 
 message ConfirmationHeightResponse { uint64 height = 1; }
-
-message GatewayAddressRequest { string chain = 1; }
-
-message GatewayAddressResponse { string address = 1; }
-
-message BytecodeRequest {
-  string chain = 1;
-  string contract = 2;
-}
-
-message BytecodeResponse { string bytecode = 1; }

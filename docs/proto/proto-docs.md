@@ -160,31 +160,25 @@
     - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
-    - [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest)
-    - [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse)
     - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
     - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
-    - [BytecodeRequest](#evm.v1beta1.BytecodeRequest)
-    - [BytecodeResponse](#evm.v1beta1.BytecodeResponse)
-    - [ChainsRequest](#evm.v1beta1.ChainsRequest)
-    - [ChainsResponse](#evm.v1beta1.ChainsResponse)
     - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
     - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
     - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
-    - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
-    - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
-    - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
-    - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
-    - [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress)
     - [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse)
+    - [QueryAddressResponse](#evm.v1beta1.QueryAddressResponse)
+    - [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses)
+    - [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress)
+    - [QueryBatchedCommandsResponse](#evm.v1beta1.QueryBatchedCommandsResponse)
     - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
+    - [QueryChainsResponse](#evm.v1beta1.QueryChainsResponse)
     - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
+    - [QueryDepositStateResponse](#evm.v1beta1.QueryDepositStateResponse)
     - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
   
 - [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
@@ -2560,44 +2554,6 @@ GenesisState represents the genesis state
 
 
 
-<a name="evm.v1beta1.BatchedCommandsRequest"></a>
-
-### BatchedCommandsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `id` | [string](#string) |  | id defines an optional id for the commandsbatch. If not specified the latest will be returned |
-
-
-
-
-
-
-<a name="evm.v1beta1.BatchedCommandsResponse"></a>
-
-### BatchedCommandsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `data` | [string](#string) |  |  |
-| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `signature` | [string](#string) | repeated |  |
-| `execute_data` | [string](#string) |  |  |
-| `prev_batched_commands_id` | [string](#string) |  |  |
-| `command_ids` | [string](#string) | repeated |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.BurnerInfoRequest"></a>
 
 ### BurnerInfoRequest
@@ -2623,62 +2579,6 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
 | `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.BytecodeRequest"></a>
-
-### BytecodeRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `contract` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.BytecodeResponse"></a>
-
-### BytecodeResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `bytecode` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ChainsRequest"></a>
-
-### ChainsRequest
-
-
-
-
-
-
-
-<a name="evm.v1beta1.ChainsResponse"></a>
-
-### ChainsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chains` | [string](#string) | repeated |  |
 
 
 
@@ -2764,101 +2664,6 @@ deposit address
 
 
 
-<a name="evm.v1beta1.GatewayAddressRequest"></a>
-
-### GatewayAddressRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.GatewayAddressResponse"></a>
-
-### GatewayAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.KeyAddressRequest"></a>
-
-### KeyAddressRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `role` | [int32](#int32) |  |  |
-| `id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.KeyAddressResponse"></a>
-
-### KeyAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
-| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
-
-### KeyAddressResponse.MultisigAddresses
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [string](#string) | repeated |  |
-| `threshold` | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
-
-### KeyAddressResponse.ThresholdAddress
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="evm.v1beta1.PendingCommandsRequest"></a>
 
 ### PendingCommandsRequest
@@ -2889,6 +2694,76 @@ deposit address
 
 
 
+<a name="evm.v1beta1.QueryAddressResponse"></a>
+
+### QueryAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `multisig_addresses` | [QueryAddressResponse.MultisigAddresses](#evm.v1beta1.QueryAddressResponse.MultisigAddresses) |  |  |
+| `threshold_address` | [QueryAddressResponse.ThresholdAddress](#evm.v1beta1.QueryAddressResponse.ThresholdAddress) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryAddressResponse.MultisigAddresses"></a>
+
+### QueryAddressResponse.MultisigAddresses
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `addresses` | [string](#string) | repeated |  |
+| `threshold` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryAddressResponse.ThresholdAddress"></a>
+
+### QueryAddressResponse.ThresholdAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryBatchedCommandsResponse"></a>
+
+### QueryBatchedCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `data` | [string](#string) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `signature` | [string](#string) | repeated |  |
+| `execute_data` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [string](#string) |  |  |
+| `command_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.QueryBurnerAddressResponse"></a>
 
 ### QueryBurnerAddressResponse
@@ -2898,6 +2773,21 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryChainsResponse"></a>
+
+### QueryChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
 
 
 
@@ -2950,6 +2840,22 @@ deposit address
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
 | `amount` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateResponse"></a>
+
+### QueryDepositStateResponse
+QueryDepositStateResponse is used by the legacy querier
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
 
 
 
@@ -3586,15 +3492,10 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `BatchedCommands` | [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/evm/v1beta1/batched_commands|
 | `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
 | `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
 | `PendingCommands` | [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
-| `Chains` | [ChainsRequest](#evm.v1beta1.ChainsRequest) | [ChainsResponse](#evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/evm/v1beta1/chains|
-| `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
-| `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
-| `Bytecode` | [BytecodeRequest](#evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/evm/v1beta1/bytecode|
 
  <!-- end services -->
 
