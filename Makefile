@@ -17,6 +17,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
+OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
+SUFFIX := $(shell echo $$PLATFORM | sed 's/\//-/' | sed 's/\///')
 
 .PHONY: all
 all: generate goimports lint build docker-image docker-image-debug
@@ -50,6 +52,11 @@ build: go.sum
 build-binaries:  guard-SEMVER
 	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
 
+# Build the project with release flags for multiarch
+.PHONY: build-binaries-multiarch
+build-binaries-multiarch: go.sum
+		GOOS=${OS} GOARCH=${ARCH} go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
+
 .PHONY: build-binaries-in-docker
 build-binaries-in-docker:  guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
@@ -79,9 +86,9 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 .PHONY: build-push-docker-image
 build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
-		--platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 \
+		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		-t axelarnet/axelar-core:${SEMVER} .
+		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} .
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
