@@ -5,7 +5,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
@@ -192,17 +191,17 @@ func GetCommandTransferFee() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
-			amount, err := sdk.ParseCoinNormalized(args[2])
-			if err != nil {
+			req := types.TransferFeeRequest{
+				SourceChain:      args[0],
+				DestinationChain: args[1],
+				Amount:           args[2],
+			}
+
+			if _, err := req.GetAmount(); err != nil {
 				return err
 			}
 
-			res, err := queryClient.TransferFee(cmd.Context(),
-				&types.TransferFeeRequest{
-					SourceChain:      args[0],
-					DestinationChain: args[1],
-					Amount:           amount,
-				})
+			res, err := queryClient.TransferFee(cmd.Context(), &req)
 			if err != nil {
 				return err
 			}

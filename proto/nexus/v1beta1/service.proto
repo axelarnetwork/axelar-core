@@ -69,12 +69,12 @@ service QueryService {
 
   // Fee queries the fee info by chain and asset
   rpc Fee(FeeRequest) returns (FeeResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/fee";
+    option (google.api.http).get = "/axelar/nexus/v1beta1/fee";
   }
 
   // TransferFee queries the transfer fee by the source, destination chain,
   // asset and amount
   rpc TransferFee(TransferFeeRequest) returns (TransferFeeResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/transfer_fee";
+    option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_fee";
   }
 }
