@@ -54,7 +54,7 @@ message FeeResponse { exported.v1beta1.FeeInfo fee_info = 1; }
 message TransferFeeRequest {
   string source_chain = 1;
   string destination_chain = 2;
-  cosmos.base.v1beta1.Coin amount = 3 [ (gogoproto.nullable) = false ];
+  string amount = 3;
 }
 
 message TransferFeeResponse {
