@@ -892,9 +892,9 @@ var (
 
 	pattern_QueryService_TransfersForChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"nexus", "v1beta1", "transfers_for_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_Fee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"nexus", "v1beta1", "fee"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_Fee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "nexus", "v1beta1", "fee"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_TransferFee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"nexus", "v1beta1", "transfer_fee"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_TransferFee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "nexus", "v1beta1", "transfer_fee"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
