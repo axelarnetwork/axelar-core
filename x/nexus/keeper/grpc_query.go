@@ -90,7 +90,7 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 
 	amount, err := req.GetAmount()
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid amount")
+		return nil, err
 	}
 
 	if !k.IsAssetRegistered(ctx, sourceChain, amount.Denom) {
