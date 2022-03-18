@@ -5,18 +5,11 @@
 The axelar-core app based on the Cosmos SDK is the main application of the axelar network. This repository is used to
 build the necessary binaries and docker image to run a core node.
 
-### Smart contracts bytecode dependency
+## How To Build
 
-In order to run/build the project locally we need to import the bytecode from gateway smart contracts.
-1. Find the specific version of the bytecode here `contract-artifacts/version-config.json`
-2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
-   Example: `Bytecode-v2.1.0`
-3. Unzip the json files under `contract-artifacts/gateway/`
-4. Run `make generate` to generate `x/evm/types/contracts.go`
+_Note:_ For a release build, checkout the release tag via `git checkout vX.Y.Z` first.
 
-## Building binaries locally
-
-Execute `make build` to create local binaries for the validator node. They are created in the `./bin` folder.
+Execute `make build` to create the `axelard` binary in the `./bin` folder.
 
 ## Creating docker images
 
@@ -25,6 +18,16 @@ latest.
 
 To create a docker image for debugging (with [delve](https://github.com/go-delve/delve)),
 execute `make docker-image-debug`. This creates the image axelar/core-debug:latest.
+
+### Smart contracts bytecode dependency
+
+In order to run/build the project locally we need to import the bytecode from gateway smart contracts.
+
+1. Find the specific version of the bytecode here `contract-artifacts/version-config.json`
+2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
+   Example: `Bytecode-v2.1.0`
+3. Unzip the json files under `contract-artifacts/gateway/`
+4. Run `make generate` to generate `x/evm/types/contracts.go`
 
 ## Interacting with a local node
 
@@ -48,9 +51,8 @@ For the full list of available CLI commands for `axelard` see [here](docs/cli/to
 
 ## Test tools
 
-Because it is an executable, github.com/matryer/moq is not automatically downloaded when executing ``go mod download``
-or similar commands. Execute ``go get github.com/matryer/moq`` to install the _moq_ tool to generate mocks for
-interfaces.
+Dev tool dependencies, such as `moq` and `goimports`, can be installed via `make prereqs`.
+Make sure they're on available on your `PATH`.
 
 ## Bug bounty and disclosure of vulnerabilities
 

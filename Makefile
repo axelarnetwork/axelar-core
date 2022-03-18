@@ -98,7 +98,7 @@ prereqs:
 
 # Run all the code generators in the project
 .PHONY: generate
-generate:
+generate: prereqs
 	go generate -x ./...
 
 
