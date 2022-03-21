@@ -38,7 +38,7 @@ const (
 	QChains                = "chains"
 )
 
-//Bytecode labels
+// Bytecode labels
 const (
 	BCGateway           = "gateway"
 	BCGatewayDeployment = "gateway-deployment"
@@ -46,7 +46,7 @@ const (
 	BCBurner            = "burner"
 )
 
-//Token address labels
+// Token address labels
 const (
 	BySymbol = "symbol"
 	ByAsset  = "asset"
@@ -563,15 +563,20 @@ func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (typ
 }
 
 func queryChains(ctx sdk.Context, n types.Nexus) ([]byte, error) {
+	evmChains := getEVMChains(ctx, n)
+
+	response := types.QueryChainsResponse{Chains: evmChains}
+	return response.Marshal()
+}
+
+func getEVMChains(ctx sdk.Context, n types.Nexus) []string {
 	chains := n.GetChains(ctx)
 
-	evmChains := []string{}
+	var evmChains []string
 	for _, c := range chains {
 		if c.Module == types.ModuleName {
 			evmChains = append(evmChains, c.Name)
 		}
 	}
-
-	response := types.QueryChainsResponse{Chains: evmChains}
-	return response.Marshal()
+	return evmChains
 }
