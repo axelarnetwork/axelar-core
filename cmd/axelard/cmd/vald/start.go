@@ -242,8 +242,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	subscriptions = append(subscriptions, evmNewChain)
 	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	subscriptions = append(subscriptions, evmNewChain)
-	evmGatewayDeploymentConf := subscribe(evmTypes.EventTypeGatewayDeploymentConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmGatewayDeploymentConf)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	subscriptions = append(subscriptions, evmDepConf)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -290,7 +288,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
 		createJob(evmChainConf, evmMgr.ProcessChainConfirmation, cancelEventCtx, logger),
-		createJob(evmGatewayDeploymentConf, evmMgr.ProcessGatewayDeploymentConfirmation, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),

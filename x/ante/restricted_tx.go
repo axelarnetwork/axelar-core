@@ -32,7 +32,8 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *permissionTypes.UpdateGovernanceKeyRequest, *permissionTypes.RegisterControllerRequest,
-			*axelarnet.RegisterFeeCollectorRequest, *nexus.ActivateChainRequest, *nexus.DeactivateChainRequest:
+			*axelarnet.RegisterFeeCollectorRequest, *nexus.ActivateChainRequest, *nexus.DeactivateChainRequest,
+			*evm.SetGatewayRequest:
 
 			signer := msg.GetSigners()[0]
 			if permission.ROLE_ACCESS_CONTROL != d.permission.GetRole(ctx, signer) {
@@ -41,7 +42,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		case *tss.RegisterExternalKeysRequest, *tss.StartKeygenRequest,
 			*tss.RotateKeyRequest, *axelarnet.RegisterIBCPathRequest,
 			*axelarnet.RegisterAssetRequest, *axelarnet.AddCosmosBasedChainRequest,
-			*evm.AddChainRequest, *evm.ConfirmGatewayDeploymentRequest,
+			*evm.AddChainRequest,
 			*evm.CreateDeployTokenRequest, *evm.CreateTransferOwnershipRequest,
 			*evm.CreateTransferOperatorshipRequest, *nexus.RegisterAssetFeeRequest:
 

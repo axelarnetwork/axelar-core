@@ -22,7 +22,6 @@ import (
 // rest routes
 const (
 	TxConfirmChain                = "confirm-chain"
-	TxConfirmGatewayDeployment    = "confirm-gateway-deployment"
 	TxLink                        = "link"
 	TxConfirmTokenDeploy          = "confirm-erc20-deploy"
 	TxConfirmDeposit              = "confirm-erc20-deposit"
@@ -57,7 +56,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerCreateTransferOperatorship(cliCtx), TxCreateTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignCommands(cliCtx), TxSignCommands, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
-	registerTx(GetHandlerConfirmGatewayDeployment(cliCtx), TxConfirmGatewayDeployment)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
@@ -77,14 +75,6 @@ type ReqLink struct {
 type ReqConfirmChain struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Chain   string       `json:"chain" yaml:"chain"`
-}
-
-// ReqConfirmGatewayDeployment represents a request to confirm the gateway deployment
-type ReqConfirmGatewayDeployment struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Chain   string       `json:"chain" yaml:"chain"`
-	TxID    string       `json:"tx_id" yaml:"tx_id"`
-	Address string       `json:"address" yaml:"address"`
 }
 
 // ReqConfirmTokenDeploy represents a request to confirm a token deployment
@@ -235,37 +225,6 @@ func GetHandlerConfirmChain(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewConfirmChainRequest(fromAddr, req.Chain)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// GetHandlerConfirmGatewayDeployment returns a handler to confirm the gateway deployment
-func GetHandlerConfirmGatewayDeployment(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqConfirmGatewayDeployment
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		txID := common.HexToHash(req.TxID)
-		address := common.HexToAddress(req.Address)
-
-		msg := types.NewConfirmGatewayDeploymentRequest(fromAddr, req.Chain, txID, address)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -3,7 +3,6 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -56,8 +55,9 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	return nil
 }
 
-func (s msgServer) ConfirmGatewayDeployment(c context.Context, req *types.ConfirmGatewayDeploymentRequest) (*types.ConfirmGatewayDeploymentResponse, error) {
+func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (*types.SetGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
@@ -68,156 +68,22 @@ func (s msgServer) ConfirmGatewayDeployment(c context.Context, req *types.Confir
 	}
 
 	keeper := s.ForChain(chain.Name)
-
-	if _, ok := keeper.GetPendingGatewayAddress(ctx); ok {
-		return nil, fmt.Errorf("gateway is in the process of confirmation")
-	}
-
 	if _, ok := keeper.GetGatewayAddress(ctx); ok {
-		return nil, fmt.Errorf("gateway is already confirmed")
+		return nil, fmt.Errorf("%s gateway already set", req.Chain)
 	}
 
-	keeper.SetPendingGateway(ctx, common.Address(req.Address))
+	keeper.SetGateway(ctx, req.Address)
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period")
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold not found")
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count not found")
-	}
-
-	pollKey := types.GetConfirmGatewayDeploymentPollKey(chain, req.TxID, req.Address)
-	if err := s.voter.InitializePoll(
-		ctx,
-		pollKey,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
-	); err != nil {
-		return nil, err
-	}
-
-	deploymentBytecode, err := getGatewayDeploymentBytecode(ctx, keeper, s.signer, chain)
-	if err != nil {
-		return nil, err
-	}
-
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeGatewayDeploymentConfirmation,
+		sdk.NewEvent(types.EventTypeGateway,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
-			sdk.NewAttribute(types.AttributeKeyBytecodeHash, hex.EncodeToString(crypto.Keccak256(deploymentBytecode))),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
 	)
 
-	return nil, nil
-}
-
-func (s msgServer) VoteConfirmGatewayDeployment(c context.Context, req *types.VoteConfirmGatewayDeploymentRequest) (*types.VoteConfirmGatewayDeploymentResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	keeper := s.ForChain(chain.Name)
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	switch {
-	case poll.Is(vote.Expired):
-		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
-	case poll.Is(vote.Failed), poll.Is(vote.Completed):
-		// If the voting threshold has been met and additional votes are received they should not return an error
-		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
-	}
-
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeGatewayDeploymentConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
-
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("not enough votes to confirm gateway for chain %s yet", chain.Name)}, nil
-	}
-
-	if poll.Is(vote.Failed) {
-		if err := keeper.DeletePendingGateway(ctx); err != nil {
-			return nil, err
-		}
-
-		return &types.VoteConfirmGatewayDeploymentResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
-
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("%s gateway confirmation result is %t", chain.Name, confirmed.Value))
-
-	address, ok := keeper.GetPendingGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("no pending gateway found")
-	}
-
-	// handle poll result
-	event := sdk.NewEvent(
-		types.EventTypeGatewayDeploymentConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyAddress, address.Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
-	defer func() { ctx.EventManager().EmitEvent(event) }()
-
-	if !confirmed.Value {
-		poll.AllowOverride()
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
-
-		if err := keeper.DeletePendingGateway(ctx); err != nil {
-			return nil, err
-		}
-
-		return &types.VoteConfirmGatewayDeploymentResponse{
-			Log: fmt.Sprintf("%s gateway was discarded", chain.Name),
-		}, nil
-	}
-
-	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
-	keeper.ConfirmPendingGateway(ctx)
-
-	return &types.VoteConfirmGatewayDeploymentResponse{}, nil
+	return &types.SetGatewayResponse{}, nil
 }
 
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
@@ -1184,85 +1050,6 @@ func getMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
 
 	threshold := uint8(key.GetMultisigKey().Threshold)
 	return types.KeysToAddresses(multisigPubKeys...), threshold, nil
-}
-
-func getGatewayDeploymentBytecode(ctx sdk.Context, k types.ChainKeeper, s types.Signer, chain nexus.Chain) ([]byte, error) {
-	externalKeyIDs, ok := s.GetExternalKeyIDs(ctx, chain)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s keys for chain %s found", tss.ExternalKey.SimpleString(), chain.Name))
-	}
-
-	externalPubKeys := make([]ecdsa.PublicKey, len(externalKeyIDs))
-	for i, externalKeyID := range externalKeyIDs {
-		externalKey, ok := s.GetKey(ctx, externalKeyID)
-		if !ok {
-			return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s key %s for chain %s not found", tss.ExternalKey.SimpleString(), externalKeyID, chain.Name))
-		}
-
-		pk, err := externalKey.GetECDSAPubKey()
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		externalPubKeys[i] = pk
-	}
-	externalKeyAddresses := types.KeysToAddresses(externalPubKeys...)
-	externalKeyThreshold := getMultisigThreshold(len(externalKeyAddresses), s.GetExternalMultisigThreshold(ctx))
-
-	bz, _ := k.GetGatewayByteCode(ctx)
-
-	masterKey, ok := s.GetCurrentKey(ctx, chain, tss.MasterKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.MasterKey.SimpleString(), chain.Name))
-	}
-
-	secondaryKey, ok := s.GetCurrentKey(ctx, chain, tss.SecondaryKey)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name))
-	}
-
-	switch chain.KeyType {
-	case tss.Threshold:
-		masterPubKey, err := masterKey.GetECDSAPubKey()
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		secondaryPubKey, err := secondaryKey.GetECDSAPubKey()
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		return types.GetSinglesigGatewayDeploymentBytecode(
-			bz,
-			externalKeyAddresses,
-			uint8(s.GetExternalMultisigThreshold(ctx).Numerator),
-			crypto.PubkeyToAddress(masterPubKey),
-			crypto.PubkeyToAddress(secondaryPubKey),
-		)
-	case tss.Multisig:
-		masterMultisigAddresses, masterMultisigThreshold, err := getMultisigAddresses(masterKey)
-		if err != nil {
-			return nil, err
-		}
-
-		secondaryMultisigAddresses, secondaryMultisigThreshold, err := getMultisigAddresses(secondaryKey)
-		if err != nil {
-			return nil, err
-		}
-
-		return types.GetMultisigGatewayDeploymentBytecode(
-			bz,
-			externalKeyAddresses,
-			externalKeyThreshold,
-			masterMultisigAddresses,
-			masterMultisigThreshold,
-			secondaryMultisigAddresses,
-			secondaryMultisigThreshold,
-		)
-	default:
-		return nil, fmt.Errorf("unknown key type set for chain %s", chain.Name)
-	}
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {

@@ -179,13 +179,12 @@ func TestGetTokenAddress(t *testing.T) {
 	decimals := uint8(18)
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
-	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+	axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
 	expected := types.Address(common.HexToAddress("0x2f362D89100B2797C8f86fdE245Be5B65e6948f6"))
 
 	keeper := k.ForChain(chain)
 	keeper.SetParams(ctx, types.DefaultParams()[0])
-	keeper.SetPendingGateway(ctx, axelarGateway)
-	keeper.ConfirmPendingGateway(ctx)
+	keeper.SetGateway(ctx, axelarGateway)
 	tokenDetails := types.NewTokenDetails(tokenName, tokenSymbol, decimals, capacity)
 	token, err := keeper.CreateERC20Token(ctx, asset, tokenDetails, types.ZeroAddress)
 	assert.NoError(t, err)

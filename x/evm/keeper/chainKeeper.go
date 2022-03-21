@@ -290,18 +290,6 @@ func (k chainKeeper) GetTokenByteCode(ctx sdk.Context) ([]byte, bool) {
 	return b, ok
 }
 
-// GetGatewayByteCode retrieves the byte codes for the Axelar Gateway smart contract
-func (k chainKeeper) GetGatewayByteCode(ctx sdk.Context) ([]byte, bool) {
-	var b []byte
-	subspace, ok := k.getSubspace(ctx)
-	if !ok {
-		return b, false
-	}
-
-	subspace.Get(ctx, types.KeyGateway, &b)
-	return b, true
-}
-
 func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 	metadata, err := k.initTokenMetadata(ctx, asset, details, address)
 	if err != nil {
@@ -855,61 +843,29 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 	return meta, nil
 }
 
-// SetPendingGateway sets the pending gateway
-func (k chainKeeper) SetPendingGateway(ctx sdk.Context, address common.Address) {
-	gateway := types.Gateway{Address: types.Address(address), Status: types.GatewayStatusPending}
-	k.setGateway(ctx, gateway)
+// SetGateway sets the gateway
+func (k chainKeeper) SetGateway(ctx sdk.Context, address types.Address) {
+	k.setGateway(ctx, types.Gateway{Address: address})
+}
+
+// GetGatewayAddress returns the confirmed address of gateway
+func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+	if gateway := k.getGateway(ctx); !gateway.Address.IsZeroAddress() {
+		return common.Address(gateway.Address), true
+	}
+
+	return common.Address{}, false
 }
 
 func (k chainKeeper) setGateway(ctx sdk.Context, gateway types.Gateway) {
 	k.getStore(ctx, k.chainLowerKey).Set(gatewayKey, &gateway)
 }
 
-// ConfirmPendingGateway confirms the pending gateway
-func (k chainKeeper) ConfirmPendingGateway(ctx sdk.Context) error {
-	if gateway := k.getGateway(ctx); gateway.Status == types.GatewayStatusPending {
-		gateway.Status = types.GatewayStatusConfirmed
-		k.getStore(ctx, k.chainLowerKey).Set(gatewayKey, &gateway)
-
-		return nil
-	}
-
-	return fmt.Errorf("no pending gateway found for chain %s", k.chainLowerKey)
-}
-
 func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	var gateway types.Gateway
 	k.getStore(ctx, k.chainLowerKey).Get(gatewayKey, &gateway)
+
 	return gateway
-}
-
-// DeletePendingGateway deletes the pending gateway
-func (k chainKeeper) DeletePendingGateway(ctx sdk.Context) error {
-	if gateway := k.getGateway(ctx); gateway.Status == types.GatewayStatusPending {
-		k.getStore(ctx, k.chainLowerKey).Delete(gatewayKey)
-
-		return nil
-	}
-
-	return fmt.Errorf("no pending gateway found for chain %s", k.chainLowerKey)
-}
-
-// GetPendingGatewayAddress returns the pending addres of gateway
-func (k chainKeeper) GetPendingGatewayAddress(ctx sdk.Context) (common.Address, bool) {
-	if gateway := k.getGateway(ctx); gateway.Status == types.GatewayStatusPending {
-		return common.Address(gateway.Address), true
-	}
-
-	return common.Address{}, false
-}
-
-// GetGatewayAddress returns the confirmed address of gateway
-func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
-	if gateway := k.getGateway(ctx); gateway.Status == types.GatewayStatusConfirmed {
-		return common.Address(gateway.Address), true
-	}
-
-	return common.Address{}, false
 }
 
 func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {

@@ -285,7 +285,6 @@ func RandomParams() types.Params {
 	params := types.Params{
 		Chain:               randomNormalizedStr(5, 20),
 		ConfirmationHeight:  uint64(rand.PosI64()),
-		GatewayCode:         rand.Bytes(int(rand.I64Between(10, 100))),
 		TokenCode:           rand.Bytes(int(rand.I64Between(10, 100))),
 		Burnable:            bzBurnable,
 		RevoteLockingPeriod: rand.PosI64(),

@@ -16,12 +16,10 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteConfirmTokenRequest{}, "evm/VoteConfirmToken", nil)
 	cdc.RegisterConcrete(&VoteConfirmDepositRequest{}, "evm/VoteConfirmDeposit", nil)
 	cdc.RegisterConcrete(&VoteConfirmChainRequest{}, "evm/VoteConfirmChain", nil)
-	cdc.RegisterConcrete(&VoteConfirmGatewayDeploymentRequest{}, "evm/VoteConfirmGatewayDeployment", nil)
 	cdc.RegisterConcrete(&VoteConfirmTransferKeyRequest{}, "evm/VoteConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "evm/ConfirmToken", nil)
 	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "evm/ConfirmDeposit", nil)
 	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
-	cdc.RegisterConcrete(&ConfirmGatewayDeploymentRequest{}, "evm/ConfirmGatewayDeployment", nil)
 	cdc.RegisterConcrete(&ConfirmTransferKeyRequest{}, "evm/ConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&CreatePendingTransfersRequest{}, "evm/CreatePendingTransfers", nil)
 	cdc.RegisterConcrete(&CreateDeployTokenRequest{}, "evm/CreateDeployToken", nil)
@@ -30,6 +28,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&CreateTransferOperatorshipRequest{}, "evm/CreateTransferOperatorship", nil)
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
+	cdc.RegisterConcrete(&SetGatewayRequest{}, "evm/SetGatewayRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -39,12 +38,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmTokenRequest{},
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
-		&VoteConfirmGatewayDeploymentRequest{},
 		&VoteConfirmTransferKeyRequest{},
 		&ConfirmTokenRequest{},
 		&ConfirmDepositRequest{},
 		&ConfirmChainRequest{},
-		&ConfirmGatewayDeploymentRequest{},
 		&ConfirmTransferKeyRequest{},
 		&CreatePendingTransfersRequest{},
 		&CreateDeployTokenRequest{},
@@ -53,6 +50,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&CreateTransferOperatorshipRequest{},
 		&SignCommandsRequest{},
 		&AddChainRequest{},
+		&SetGatewayRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
@@ -63,7 +61,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
 		&VoteConfirmTransferKeyRequest{},
-		&VoteConfirmGatewayDeploymentRequest{},
 	)
 }
 

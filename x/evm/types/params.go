@@ -22,7 +22,6 @@ var (
 	KeyRevoteLockingPeriod = []byte("revoteLockingPeriod")
 	KeyNetworks            = []byte("networks")
 	KeyVotingThreshold     = []byte("votingThreshold")
-	KeyGateway             = []byte("gateway")
 	KeyToken               = []byte("token")
 	KeyBurnable            = []byte("burnable")
 	KeyMinVoterCount       = []byte("minVoterCount")
@@ -36,11 +35,6 @@ func KeyTable() params.KeyTable {
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() []Params {
-	bzGateway, err := hex.DecodeString(MultisigGateway)
-	if err != nil {
-		panic(err)
-	}
-
 	bzToken, err := hex.DecodeString(Token)
 	if err != nil {
 		panic(err)
@@ -55,7 +49,6 @@ func DefaultParams() []Params {
 		Chain:               exported.Ethereum.Name,
 		ConfirmationHeight:  1,
 		Network:             Ganache,
-		GatewayCode:         bzGateway,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
 		RevoteLockingPeriod: 50,
@@ -100,7 +93,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChain, &m.Chain, validateChain),
 		params.NewParamSetPair(KeyConfirmationHeight, &m.ConfirmationHeight, validateConfirmationHeight),
 		params.NewParamSetPair(KeyNetwork, &m.Network, validateNetwork),
-		params.NewParamSetPair(KeyGateway, &m.GatewayCode, validateBytes),
 		params.NewParamSetPair(KeyToken, &m.TokenCode, validateBytes),
 		params.NewParamSetPair(KeyBurnable, &m.Burnable, validateBurnable),
 		params.NewParamSetPair(KeyRevoteLockingPeriod, &m.RevoteLockingPeriod, validateRevoteLockingPeriod),
@@ -272,10 +264,6 @@ func (m Params) Validate() error {
 
 	if !found {
 		return fmt.Errorf("'%s' not part of the network list", m.Network)
-	}
-
-	if err := validateBytes(m.GatewayCode); err != nil {
-		return err
 	}
 
 	if err := validateBytes(m.TokenCode); err != nil {

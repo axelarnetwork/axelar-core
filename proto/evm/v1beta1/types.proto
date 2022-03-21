@@ -218,5 +218,5 @@ message Gateway {
 
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  Status status = 2;
+  Status status = 2 [ deprecated = true ];
 }

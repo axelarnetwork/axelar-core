@@ -16,10 +16,8 @@ import (
 //go:generate go run generate.go -template ./contracts.go.tmpl -out ../contracts.go -contracts ../../../../contract-artifacts/gateway
 
 type contracts struct {
-	SinglesigGateway string
-	MultisigGateway  string
-	Token            string
-	Burnable         string
+	Token    string
+	Burnable string
 }
 
 func main() {
@@ -58,8 +56,6 @@ func main() {
 func parseContracts(contractDir string) contracts {
 	var contracts contracts
 	contractSetterMapping := map[string]func(string){
-		"AxelarGatewayProxySinglesig": func(bz string) { contracts.SinglesigGateway = bz },
-		"AxelarGatewayProxyMultisig":  func(bz string) { contracts.MultisigGateway = bz },
 		"BurnableMintableCappedERC20": func(bz string) { contracts.Token = bz },
 		"DepositHandler":              func(bz string) { contracts.Burnable = bz },
 	}

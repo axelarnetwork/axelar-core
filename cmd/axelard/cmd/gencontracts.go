@@ -22,7 +22,7 @@ const (
 
 // SetGenesisEVMContractsCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
-	var gatewayFile, tokenFile, burnableFile string
+	var tokenFile, burnableFile string
 
 	cmd := &cobra.Command{
 		Use:   "set-genesis-evm-contracts",
@@ -43,15 +43,6 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 			genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
-
-			if gatewayFile != "" {
-				gateway, err := getByteCodes(gatewayFile)
-				if err != nil {
-					return err
-				}
-				//TODO:  Currently assuming a single element in the Params slice. We need to generalize for more EVM chains.
-				genesisState.Chains[0].Params.GatewayCode = gateway
-			}
 
 			if tokenFile != "" {
 				token, err := getByteCodes(tokenFile)
@@ -88,7 +79,6 @@ func SetGenesisEVMContractsCmd(defaultNodeHome string) *cobra.Command {
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
-	cmd.Flags().StringVar(&gatewayFile, flagGateway, "", "Path to the Axelar Gateway contract ABI.")
 	cmd.Flags().StringVar(&tokenFile, flagToken, "", "Path to the tokens contract ABI.")
 	cmd.Flags().StringVar(&burnableFile, flagBurnable, "", "Path to the burner contract ABI.")
 
