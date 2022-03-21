@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM tendermintdev/sdk-proto-gen as build
+FROM tendermintdev/sdk-proto-gen:v0.1 as build
 
 RUN apk add --no-cache --update \
   git \
