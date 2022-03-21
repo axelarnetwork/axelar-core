@@ -31,13 +31,13 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus) Querier {
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains, err := queryChains(ctx, q.nexus)
-	if err != nil {
+	chains := getEVMChains(ctx, q.nexus)
+	if len(chains) == 0 {
 		return nil, status.Error(codes.NotFound, "no chains registered")
 	}
 
 	for _, chain := range chains {
-		ck := q.keeper.ForChain(string(chain))
+		ck := q.keeper.ForChain(chain)
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
 			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil
