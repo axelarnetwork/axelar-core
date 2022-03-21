@@ -19,6 +19,10 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
+		case *types.SetGatewayRequest:
+			res, err := server.SetGateway(sdk.WrapSDKContext(ctx), msg)
+
+			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.LinkRequest:
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)

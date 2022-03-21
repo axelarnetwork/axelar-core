@@ -28,6 +28,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&CreateTransferOperatorshipRequest{}, "evm/CreateTransferOperatorship", nil)
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
+	cdc.RegisterConcrete(&SetGatewayRequest{}, "evm/SetGatewayRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -49,6 +50,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&CreateTransferOperatorshipRequest{},
 		&SignCommandsRequest{},
 		&AddChainRequest{},
+		&SetGatewayRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
