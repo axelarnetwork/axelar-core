@@ -82,6 +82,8 @@ type ChainKeeper interface {
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
+
+	GetContractCallQueue(ctx sdk.Context) utils.BlockHeightKVQueue
 }
 
 // ParamsKeeper represents a global paramstore
@@ -119,6 +121,7 @@ type Nexus interface {
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
+	ComputeTransferFee(ctx sdk.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

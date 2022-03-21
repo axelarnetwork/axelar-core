@@ -5,6 +5,7 @@ const (
 	EventTypeNewChain                = "newChain"
 	EventTypeGateway                 = "gateway"
 	EventTypeChainConfirmation       = "chainConfirmation"
+	EventTypeGatewayTxConfirmation   = "gatewayTxConfirmation"
 	EventTypeDepositConfirmation     = "depositConfirmation"
 	EventTypeTokenConfirmation       = "tokenConfirmation"
 	EventTypeTransferKeyConfirmation = "transferKeyConfirmation"

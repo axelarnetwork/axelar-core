@@ -14,6 +14,7 @@ import (
 
 // KVQueue represents a queue built with the KVStore
 type KVQueue interface {
+	Has(key Key) bool
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
@@ -41,6 +42,10 @@ func NewGeneralKVQueue(name string, store KVStore, logger log.Logger, prioritize
 		logger:      logger,
 		prioritizer: prioritizer,
 	}
+}
+
+func (q GeneralKVQueue) Has(key Key) bool {
+	return q.store.Has(key)
 }
 
 // Enqueue pushes the given value onto the top of the queue and stores the value at given key

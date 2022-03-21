@@ -25,6 +25,9 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
 // 			},
+// 			HasFunc: func(key utils.Key) bool {
+// 				panic("mock out the Has method")
+// 			},
 // 			IsEmptyFunc: func() bool {
 // 				panic("mock out the IsEmpty method")
 // 			},
@@ -43,6 +46,9 @@ type KVQueueMock struct {
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
+
+	// HasFunc mocks the Has method.
+	HasFunc func(key utils.Key) bool
 
 	// IsEmptyFunc mocks the IsEmpty method.
 	IsEmptyFunc func() bool
@@ -66,6 +72,11 @@ type KVQueueMock struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
 		}
+		// Has holds details about calls to the Has method.
+		Has []struct {
+			// Key is the key argument value.
+			Key utils.Key
+		}
 		// IsEmpty holds details about calls to the IsEmpty method.
 		IsEmpty []struct {
 		}
@@ -75,6 +86,7 @@ type KVQueueMock struct {
 	}
 	lockDequeue sync.RWMutex
 	lockEnqueue sync.RWMutex
+	lockHas     sync.RWMutex
 	lockIsEmpty sync.RWMutex
 	lockKeys    sync.RWMutex
 }
@@ -146,6 +158,37 @@ func (mock *KVQueueMock) EnqueueCalls() []struct {
 	mock.lockEnqueue.RLock()
 	calls = mock.calls.Enqueue
 	mock.lockEnqueue.RUnlock()
+	return calls
+}
+
+// Has calls HasFunc.
+func (mock *KVQueueMock) Has(key utils.Key) bool {
+	if mock.HasFunc == nil {
+		panic("KVQueueMock.HasFunc: method is nil but KVQueue.Has was just called")
+	}
+	callInfo := struct {
+		Key utils.Key
+	}{
+		Key: key,
+	}
+	mock.lockHas.Lock()
+	mock.calls.Has = append(mock.calls.Has, callInfo)
+	mock.lockHas.Unlock()
+	return mock.HasFunc(key)
+}
+
+// HasCalls gets all the calls that were made to Has.
+// Check the length with:
+//     len(mockedKVQueue.HasCalls())
+func (mock *KVQueueMock) HasCalls() []struct {
+	Key utils.Key
+} {
+	var calls []struct {
+		Key utils.Key
+	}
+	mock.lockHas.RLock()
+	calls = mock.calls.Has
+	mock.lockHas.RUnlock()
 	return calls
 }
 

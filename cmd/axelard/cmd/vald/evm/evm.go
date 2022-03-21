@@ -37,6 +37,7 @@ var (
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
 	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
 	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
+	ContractCallApprovedWithMintSig  = crypto.Keccak256Hash([]byte("ContractCallApprovedWithMint(bytes32,string,string,address,bytes32,string,uint256)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -177,6 +178,131 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 	return err
 }
 
+// ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
+func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
+	chain, txID, confHeight, pollKey, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
+	if err != nil {
+		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
+	}
+
+	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	if !found {
+		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+	}
+
+	vote := evmTypes.VoteConfirmGatewayTxRequest_Vote{}
+	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+		for i, log := range txReceipt.Logs {
+			eventInfo := evmTypes.EventInfo{
+				Chain: chain,
+				TxId:  evmTypes.Hash(txID),
+				Index: uint64(i),
+			}
+
+			switch log.Topics[0] {
+			case ContractCallApprovedWithMintSig:
+				event, err := decodeEventContractCallApprovedWithMint(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallApprovedWithMint failed").Error())
+
+					return false
+				}
+
+				vote.Events = append(vote.Events, evmTypes.VoteConfirmGatewayTxRequest_Vote_Event{
+					Info: eventInfo,
+					Event: &evmTypes.VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken{
+						ContractCallWithToken: &event,
+					},
+				})
+			default:
+			}
+		}
+
+		return true
+	})
+
+	if !confirmed {
+		vote = evmTypes.VoteConfirmGatewayTxRequest_Vote{}
+	}
+
+	msg := evmTypes.NewVoteConfirmGatewayTxRequest(mgr.cliCtx.FromAddress, pollKey, evmTypes.VoteConfirmGatewayTxRequest_Vote{})
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", mgr.cdc.MustMarshalJSON(vote), pollKey.String()))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+
+	return err
+}
+
+func decodeEventContractCallApprovedWithMint(log *geth.Log) (evmTypes.EventContractCallWithToken, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return evmTypes.EventContractCallWithToken{}, err
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return evmTypes.EventContractCallWithToken{}, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return evmTypes.EventContractCallWithToken{}, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: bytesType},
+		{Type: stringType},
+		{Type: uint256Type},
+	}
+	params, err := arguments.Unpack(log.Data)
+	if err != nil {
+		return evmTypes.EventContractCallWithToken{}, err
+	}
+
+	return evmTypes.EventContractCallWithToken{
+		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+		DestinationChain: params[0].(string),
+		ContractAddress:  params[1].(string),
+		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
+		Payload:          params[2].([]byte),
+		Symbol:           params[3].(string),
+		Amount:           sdk.NewUintFromBigInt(params[4].(*big.Int)),
+	}, nil
+}
+
+func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
+	chain string,
+	txID common.Hash,
+	confHeight uint64,
+	pollKey vote.PollKey,
+	err error,
+) {
+	parsers := []*parse.AttributeParser{
+		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
+			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
+		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
+			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
+
+			return pollKey, nil
+		}},
+	}
+
+	results, err := parse.Parse(attributes, parsers)
+	if err != nil {
+		return "", common.Hash{}, 0, vote.PollKey{}, err
+	}
+
+	return results[0].(string),
+		results[1].(common.Hash),
+		results[6].(uint64),
+		results[7].(vote.PollKey),
+		nil
+}
+
 func parseNewChainParams(attributes map[string]string) (chain string, nativeAsset string, err error) {
 	parsers := []*parse.AttributeParser{
 		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
@@ -210,47 +336,6 @@ func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	}
 
 	return results[0].(string), results[1].(vote.PollKey), nil
-}
-
-func parseGatewayDeploymentParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
-	txID common.Hash,
-	address common.Address,
-	bytecodeHash common.Hash,
-	confHeight uint64,
-	pollKey vote.PollKey,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
-		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyBytecodeHash, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", common.Hash{}, common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
-	}
-
-	return results[0].(string),
-		results[1].(common.Hash),
-		results[2].(common.Address),
-		results[3].(common.Hash),
-		results[4].(uint64),
-		results[5].(vote.PollKey),
-		nil
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (

@@ -19,6 +19,30 @@ service MsgService {
     };
   }
 
+  rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
+      returns (ConfirmGatewayTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm-gateway-tx"
+      body : "*"
+    };
+  }
+
+  rpc VoteConfirmGatewayTx(VoteConfirmGatewayTxRequest)
+      returns (VoteConfirmGatewayTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/vote-confirm-gateway-tx"
+      body : "*"
+    };
+  }
+
+  rpc CreateApproveContractCallsFromChain(CreateApproveContractCallsRequest)
+      returns (CreateApproveContractCallsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create-approve-contract-calls"
+      body : "*"
+    };
+  }
+
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/link/{recipient_chain}"

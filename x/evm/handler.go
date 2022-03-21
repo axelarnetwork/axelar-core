@@ -21,7 +21,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 		switch msg := msg.(type) {
 		case *types.SetGatewayRequest:
 			res, err := server.SetGateway(sdk.WrapSDKContext(ctx), msg)
-
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.LinkRequest:
 			res, err := server.Link(sdk.WrapSDKContext(ctx), msg)
@@ -58,6 +57,9 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
 			}
 			return result, err
+		case *types.ConfirmGatewayTxRequest:
+			res, err := server.ConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.VoteConfirmChainRequest:
 			res, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
@@ -86,6 +88,13 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = res.Log
 			}
 			return result, err
+		case *types.VoteConfirmGatewayTxRequest:
+			res, err := server.VoteConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = res.Log
+			}
+			return result, err
 		case *types.CreateDeployTokenRequest:
 			res, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
@@ -100,6 +109,9 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.CreateTransferOperatorshipRequest:
 			res, err := server.CreateTransferOperatorship(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.CreateApproveContractCallsRequest:
+			res, err := server.CreateApproveContractCallsFromChain(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.SignCommandsRequest:
 			res, err := server.SignCommands(sdk.WrapSDKContext(ctx), msg)

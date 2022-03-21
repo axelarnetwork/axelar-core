@@ -41,11 +41,13 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
 		GetCmdConfirmTransferOperatorship(),
+		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreatePendingTransfers(),
 		GetCmdCreateDeployToken(),
 		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOwnership(),
 		GetCmdCreateTransferOperatorship(),
+		GetCmdCreateApproveContractCallsFromChain(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
 	)
@@ -249,6 +251,33 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 	return cmd
 }
 
+// GetCmdCreateConfirmGatewayTx returns the cli command to confirm a gateway transaction
+func GetCmdCreateConfirmGatewayTx() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-gateway-tx [chain] [txID]",
+		Short: "Confirm a gateway transaction in an EVM chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			txID := types.Hash(common.HexToHash(args[1]))
+
+			msg := types.NewConfirmGatewayTxRequest(cliCtx.GetFromAddress(), chain, txID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
 // GetCmdCreatePendingTransfers returns the cli command to create commands for handling all pending token transfers to an EVM chain
 func GetCmdCreatePendingTransfers() *cobra.Command {
 	cmd := &cobra.Command{
@@ -381,6 +410,30 @@ func GetCmdCreateTransferOperatorship() *cobra.Command {
 			}
 
 			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCreateApproveContractCallsFromChain returns the cli command to create approve-contract-call commands that are initiated from an EVM chain
+func GetCmdCreateApproveContractCallsFromChain() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create-approve-contract-calls [chain]",
+		Short: "Create approve contract call commands that are initiated from an EVM chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewCreateApproveContractCallsRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -37,7 +37,8 @@ var (
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 
-	commandQueueName = "cmd_queue"
+	commandQueueName      = "cmd_queue"
+	contractCallQueueName = "contract_call_queue"
 )
 
 var _ types.ChainKeeper = chainKeeper{}
@@ -259,7 +260,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		}
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
-	case types.BurnerCodeHashV2:
+	case types.BurnerCodeHashV2, types.BurnerCodeHashV3:
 		initCodeHash = token.GetBurnerCodeHash()
 	default:
 		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
@@ -321,6 +322,15 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
 		k.setTokenMetadata(ctx, m)
 	}, metadata)
+}
+
+func (k chainKeeper) GetContractCallQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
+	return utils.NewBlockHeightKVQueue(
+		contractCallQueueName,
+		k.getStore(ctx, k.chainLowerKey),
+		ctx.BlockHeight(),
+		k.Logger(ctx),
+	)
 }
 
 // EnqueueCommand stores the given command; note that overwriting is not allowed
