@@ -353,7 +353,7 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 		keyID = key.KeyID
 	case *types.KeyAddressRequest_Role:
 		switch key.Role {
-		case tss.MasterKey | tss.SecondaryKey:
+		case tss.MasterKey, tss.SecondaryKey:
 			break
 		default:
 			return nil, status.Error(codes.NotFound, fmt.Sprintf("unsupported key role %s", key.Role.SimpleString()))
