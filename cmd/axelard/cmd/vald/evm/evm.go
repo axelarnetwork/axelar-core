@@ -37,7 +37,7 @@ var (
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
 	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
 	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
-	ContractCallApprovedWithMintSig  = crypto.Keccak256Hash([]byte("ContractCallApprovedWithMint(bytes32,string,string,address,bytes32,string,uint256)"))
+	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -200,8 +200,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 			}
 
 			switch log.Topics[0] {
-			case ContractCallApprovedWithMintSig:
-				event, err := decodeEventContractCallApprovedWithMint(log)
+			case ContractCallWithTokenSig:
+				event, err := decodeEventContractCallWithToken(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallApprovedWithMint failed").Error())
 
@@ -225,14 +225,14 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		vote = evmTypes.VoteConfirmGatewayTxRequest_Vote{}
 	}
 
-	msg := evmTypes.NewVoteConfirmGatewayTxRequest(mgr.cliCtx.FromAddress, pollKey, evmTypes.VoteConfirmGatewayTxRequest_Vote{})
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", mgr.cdc.MustMarshalJSON(vote), pollKey.String()))
+	msg := evmTypes.NewVoteConfirmGatewayTxRequest(mgr.cliCtx.FromAddress, pollKey, vote)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", vote.String(), pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 
 	return err
 }
 
-func decodeEventContractCallApprovedWithMint(log *geth.Log) (evmTypes.EventContractCallWithToken, error) {
+func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCallWithToken, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return evmTypes.EventContractCallWithToken{}, err
@@ -298,8 +298,8 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 
 	return results[0].(string),
 		results[1].(common.Hash),
-		results[6].(uint64),
-		results[7].(vote.PollKey),
+		results[2].(uint64),
+		results[3].(vote.PollKey),
 		nil
 }
 

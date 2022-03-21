@@ -75,12 +75,13 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid tx id in poll key")
 	}
 
-	for i, event := range m.Vote.Events {
+	indexSeen := make(map[uint64]bool)
+	for _, event := range m.Vote.Events {
 		if err := event.Info.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event info")
 		}
 
-		if event.Info.Chain != m.GetChain() {
+		if !strings.EqualFold(event.Info.Chain, m.GetChain()) {
 			return fmt.Errorf("invalid source chain in event ContractCallWithToken")
 		}
 
@@ -88,9 +89,11 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 			return fmt.Errorf("invalid tx id in event ContractCallWithToken")
 		}
 
-		if event.Info.Index != uint64(i) {
+		if indexSeen[event.Info.Index] {
 			return fmt.Errorf("invalid index in event ContractCallWithToken")
 		}
+
+		indexSeen[event.Info.Index] = true
 
 		switch event := event.GetEvent().(type) {
 		case *VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken:

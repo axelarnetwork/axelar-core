@@ -161,7 +161,7 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
-			sdk.NewAttribute(types.AttributeKeyValue, string(types.ModuleCdc.MustMarshalJSON(&req.Vote))),
+			sdk.NewAttribute(types.AttributeKeyValue, req.Vote.String()),
 		),
 	)
 
@@ -177,6 +177,8 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected VoteConfirmGatewayTxRequest_Vote, got %T", req.PollKey.String(), poll.GetResult())
 	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("gateway transaction confirmation confirmation result is %s", result.String()), "chain", chain.Name, "pollKey", req.PollKey.String())
 
 	event := sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -198,10 +200,10 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 	queue := keeper.GetContractCallQueue(ctx)
 	txID := req.GetTxID()
 
-	for i, event := range result.Events {
-		key := utils.LowerCaseKey(txID).AppendStr(strconv.Itoa(i))
+	for _, event := range result.Events {
+		key := utils.LowerCaseKey(txID).AppendStr(strconv.FormatUint(event.Info.Index, 10))
 		if queue.Has(key) {
-			return nil, fmt.Errorf("event %s-%d already confirmed", txID, i)
+			return nil, fmt.Errorf("event %s-%d already confirmed", txID, event.Info.Index)
 		}
 
 		switch event.GetEvent().(type) {
