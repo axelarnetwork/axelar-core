@@ -261,7 +261,8 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 				continue
 			}
 
-			if token := s.ForChain(contractCallWithToken.DestinationChain).GetERC20TokenByAsset(ctx, token.GetAsset()); !token.Is(types.Confirmed) {
+			destinationChainKeeper := s.ForChain(contractCallWithToken.DestinationChain)
+			if token := destinationChainKeeper.GetERC20TokenByAsset(ctx, token.GetAsset()); !token.Is(types.Confirmed) {
 				s.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", contractCallWithToken.DestinationChain, token.GetAsset()))
 				invalidEvents = append(invalidEvents, event)
 
@@ -297,7 +298,7 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 				continue
 			}
 
-			destinationChainID, ok := s.ForChain(contractCallWithToken.DestinationChain).GetChainID(ctx)
+			destinationChainID, ok := destinationChainKeeper.GetChainID(ctx)
 			if !ok {
 				return nil, fmt.Errorf("could not find chain ID for '%s'", contractCallWithToken.DestinationChain)
 			}
@@ -328,7 +329,7 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 				"commandID", cmd.ID.Hex(),
 			)
 
-			if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
+			if err := destinationChainKeeper.EnqueueCommand(ctx, cmd); err != nil {
 				return nil, err
 			}
 
