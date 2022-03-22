@@ -341,14 +341,7 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 
 	// TODO: decide what to do with invalid events other than simply pushing them back to the queue
 	for _, event := range invalidEvents {
-		key := utils.LowerCaseKey(event.GetID())
-
-		switch event := event.GetEvent().(type) {
-		case *types.Event_ContractCallWithToken:
-			queue.Enqueue(key, event.ContractCallWithToken)
-		default:
-			return nil, fmt.Errorf("unsupported event type %T", event)
-		}
+		queue.Enqueue(utils.LowerCaseKey(event.GetID()), &event)
 	}
 
 	return &types.CreateApproveContractCallsResponse{}, nil
