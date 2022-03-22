@@ -6,8 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 
-	tssclient "github.com/axelarnetwork/axelar-core/x/tss/client"
-
 	"github.com/axelarnetwork/axelar-core/utils"
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
@@ -159,28 +157,6 @@ func QueryHandlerKeyID(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, string(res))
-	}
-}
-
-// QueryHandlerNextKeyID returns a handler to query the keyID of the next key given the keyChain and keyRole
-func QueryHandlerNextKeyID(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		role := mux.Vars(r)[utils.PathVarKeyRole]
-
-		res, err := tssclient.QueryNextKeyID(cliCtx, chain, role)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 

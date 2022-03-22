@@ -128,15 +128,22 @@ message QueryExternalKeyIDResponse {
   ];
 }
 
-message QueryNextKeyIDRequest {
+message NextKeyIDRequest {
   string chain = 1;
   tss.exported.v1beta1.KeyRole key_role = 2;
 }
 
-message QueryNextKeyIDResponse {
+message NextKeyIDResponse {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
+
+message AssignableKeyRequest {
+  string chain = 1;
+  tss.exported.v1beta1.KeyRole key_role = 2;
+}
+
+message AssignableKeyResponse { bool assignable = 1; }
