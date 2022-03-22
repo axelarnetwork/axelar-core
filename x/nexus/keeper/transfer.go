@@ -140,7 +140,7 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	if fee.IsPositive() {
-		k.addTransferFee(ctx, fee)
+		k.AddTransferFee(ctx, fee)
 		asset = asset.Sub(fee)
 	}
 
@@ -221,8 +221,8 @@ func (k Keeper) GetTransfersForChainPaginated(ctx sdk.Context, chain exported.Ch
 	return transfers, resp, nil
 }
 
-// addTransferFee adds transfer fee
-func (k Keeper) addTransferFee(ctx sdk.Context, coin sdk.Coin) {
+// AddTransferFee adds transfer fee
+func (k Keeper) AddTransferFee(ctx sdk.Context, coin sdk.Coin) {
 	fee := k.getTransferFee(ctx)
 	fee.Coins = fee.Coins.Add(coin)
 	k.setTransferFee(ctx, fee)

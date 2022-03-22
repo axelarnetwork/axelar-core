@@ -34,16 +34,7 @@ message ConfirmGatewayTxRequest {
 message ConfirmGatewayTxResponse {}
 
 message VoteConfirmGatewayTxRequest {
-  message Vote {
-    message Event {
-      evm.v1beta1.EventInfo info = 1 [ (gogoproto.nullable) = false ];
-      oneof event {
-        evm.v1beta1.EventContractCallWithToken contract_call_with_token = 2;
-      }
-    }
-
-    repeated Event events = 1 [ (gogoproto.nullable) = false ];
-  }
+  message Vote { repeated Event events = 1 [ (gogoproto.nullable) = false ]; }
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];

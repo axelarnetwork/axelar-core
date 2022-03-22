@@ -34,22 +34,22 @@ func (m VoteConfirmGatewayTxRequest) Type() string {
 
 // GetChain returns chain in poll key
 func (m VoteConfirmGatewayTxRequest) GetChain() string {
-	pollKeyIdItems := strings.Split(m.PollKey.ID, "_")
-	if len(pollKeyIdItems) != 2 {
+	pollKeyIDItems := strings.Split(m.PollKey.ID, "_")
+	if len(pollKeyIDItems) != 2 {
 		return ""
 	}
 
-	return pollKeyIdItems[0]
+	return pollKeyIDItems[0]
 }
 
 // GetTxID returns the tx id in poll key
 func (m VoteConfirmGatewayTxRequest) GetTxID() string {
-	pollKeyIdItems := strings.Split(m.PollKey.ID, "_")
-	if len(pollKeyIdItems) != 2 {
+	pollKeyIDItems := strings.Split(m.PollKey.ID, "_")
+	if len(pollKeyIDItems) != 2 {
 		return ""
 	}
 
-	return pollKeyIdItems[1]
+	return pollKeyIDItems[1]
 }
 
 // ValidateBasic implements sdk.Msg
@@ -77,33 +77,26 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 
 	indexSeen := make(map[uint64]bool)
 	for _, event := range m.Vote.Events {
-		if err := event.Info.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event info")
+		if err := event.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event")
 		}
 
-		if !strings.EqualFold(event.Info.Chain, m.GetChain()) {
+		if !strings.EqualFold(event.Chain, m.GetChain()) {
 			return fmt.Errorf("invalid source chain in event ContractCallWithToken")
 		}
 
-		if event.Info.TxId.Hex() != m.GetTxID() {
+		if event.TxId.Hex() != m.GetTxID() {
 			return fmt.Errorf("invalid tx id in event ContractCallWithToken")
 		}
 
-		if indexSeen[event.Info.Index] {
+		if indexSeen[event.Index] {
 			return fmt.Errorf("invalid index in event ContractCallWithToken")
 		}
 
-		indexSeen[event.Info.Index] = true
+		indexSeen[event.Index] = true
 
-		switch event := event.GetEvent().(type) {
-		case *VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken:
-			if event.ContractCallWithToken == nil {
-				return sdkerrors.Wrap(err, "missing event ContractCallWithToken")
-			}
-
-			if err := event.ContractCallWithToken.Validate(); err != nil {
-				return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
-			}
+		switch event.GetEvent().(type) {
+		case *Event_ContractCallWithToken:
 		default:
 			return fmt.Errorf("unknown type of event")
 		}

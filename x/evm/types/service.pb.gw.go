@@ -133,7 +133,7 @@ func local_request_MsgService_VoteConfirmGatewayTx_0(ctx context.Context, marsha
 
 }
 
-func request_MsgService_CreateApproveContractCallsFromChain_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_MsgService_CreateApproveContractCalls_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CreateApproveContractCallsRequest
 	var metadata runtime.ServerMetadata
 
@@ -145,12 +145,12 @@ func request_MsgService_CreateApproveContractCallsFromChain_0(ctx context.Contex
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.CreateApproveContractCallsFromChain(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.CreateApproveContractCalls(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_MsgService_CreateApproveContractCallsFromChain_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_MsgService_CreateApproveContractCalls_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CreateApproveContractCallsRequest
 	var metadata runtime.ServerMetadata
 
@@ -162,7 +162,7 @@ func local_request_MsgService_CreateApproveContractCallsFromChain_0(ctx context.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.CreateApproveContractCallsFromChain(ctx, &protoReq)
+	msg, err := server.CreateApproveContractCalls(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -1119,7 +1119,7 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_CreateApproveContractCallsFromChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_CreateApproveContractCalls_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1128,14 +1128,14 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_MsgService_CreateApproveContractCallsFromChain_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_MsgService_CreateApproveContractCalls_0(rctx, inboundMarshaler, server, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_CreateApproveContractCallsFromChain_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_CreateApproveContractCalls_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1749,7 +1749,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("POST", pattern_MsgService_CreateApproveContractCallsFromChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_MsgService_CreateApproveContractCalls_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1758,14 +1758,14 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_MsgService_CreateApproveContractCallsFromChain_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_MsgService_CreateApproveContractCalls_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_MsgService_CreateApproveContractCallsFromChain_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_MsgService_CreateApproveContractCalls_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2099,7 +2099,7 @@ var (
 
 	pattern_MsgService_VoteConfirmGatewayTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-gateway-tx"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateApproveContractCallsFromChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-approve-contract-calls"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateApproveContractCalls_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-approve-contract-calls"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "evm", "link", "recipient_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -2141,7 +2141,7 @@ var (
 
 	forward_MsgService_VoteConfirmGatewayTx_0 = runtime.ForwardResponseMessage
 
-	forward_MsgService_CreateApproveContractCallsFromChain_0 = runtime.ForwardResponseMessage
+	forward_MsgService_CreateApproveContractCalls_0 = runtime.ForwardResponseMessage
 
 	forward_MsgService_Link_0 = runtime.ForwardResponseMessage
 

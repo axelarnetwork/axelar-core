@@ -358,8 +358,8 @@ type Hash common.Hash
 var ZeroHash = common.Hash{}
 
 // IsZero returns true if the hash is empty; otherwise false
-func (a Hash) IsZero() bool {
-	return bytes.Equal(a.Bytes(), ZeroHash.Bytes())
+func (h Hash) IsZero() bool {
+	return bytes.Equal(h.Bytes(), ZeroHash.Bytes())
 }
 
 // Bytes returns the actual byte array of the hash
@@ -537,20 +537,22 @@ func GetSignHash(commandData []byte) common.Hash {
 func CreateApproveContractCallWithMintCommand(
 	chainID *big.Int,
 	keyID tss.KeyID,
-	eventInfo EventInfo,
+	sourceChain string,
+	txID Hash,
+	Index uint64,
 	event EventContractCallWithToken,
 	amount sdk.Uint,
 ) (Command, error) {
-	params, err := createApproveContractCallWithMintParams(eventInfo, event, amount)
+	params, err := createApproveContractCallWithMintParams(sourceChain, event, amount)
 	if err != nil {
 		return Command{}, err
 	}
 
 	eventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(eventIndexBz, eventInfo.Index)
+	binary.LittleEndian.PutUint64(eventIndexBz, Index)
 
 	return Command{
-		ID:         NewCommandID(append(eventInfo.TxId.Bytes(), eventIndexBz...), chainID),
+		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCallWithMint,
 		Params:     params,
 		KeyID:      keyID,
@@ -558,7 +560,7 @@ func CreateApproveContractCallWithMintCommand(
 	}, nil
 }
 
-func createApproveContractCallWithMintParams(eventInfo EventInfo, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
+func createApproveContractCallWithMintParams(sourceChain string, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -588,7 +590,7 @@ func createApproveContractCallWithMintParams(eventInfo EventInfo, event EventCon
 		{Type: uint256Type},
 	}
 	result, err := arguments.Pack(
-		eventInfo.Chain,
+		sourceChain,
 		event.Sender.Hex(),
 		common.HexToAddress(event.ContractAddress),
 		common.Hash(event.PayloadHash),
@@ -1341,7 +1343,13 @@ func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
 	return nil
 }
 
-func (m EventInfo) Validate() error {
+// GetID returns an unique ID for the event
+func (m Event) GetID() string {
+	return strings.ToLower(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
+}
+
+// Validate returns an error if the event is invalid
+func (m Event) Validate() error {
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
@@ -1350,9 +1358,23 @@ func (m EventInfo) Validate() error {
 		return fmt.Errorf("invalid tx id")
 	}
 
+	switch event := m.GetEvent().(type) {
+	case *Event_ContractCallWithToken:
+		if event.ContractCallWithToken == nil {
+			return fmt.Errorf("missing event ContractCallWithToken")
+		}
+
+		if err := event.ContractCallWithToken.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
+		}
+	default:
+		return fmt.Errorf("unknown type of event")
+	}
+
 	return nil
 }
 
+// Validate returns an error if the event contract call with token is invalid
 func (m EventContractCallWithToken) Validate() error {
 	if m.Sender.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")

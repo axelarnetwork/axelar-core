@@ -180,7 +180,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
-	chain, txID, confHeight, pollKey, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
+	chain, gatewayAddress, txID, confHeight, pollKey, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
 	}
@@ -190,13 +190,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	vote := evmTypes.VoteConfirmGatewayTxRequest_Vote{}
+	var vote evmTypes.VoteConfirmGatewayTxRequest_Vote
+	var events []evmTypes.Event
 	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
-			eventInfo := evmTypes.EventInfo{
-				Chain: chain,
-				TxId:  evmTypes.Hash(txID),
-				Index: uint64(i),
+			if !bytes.Equal(gatewayAddress.Bytes(), log.Address.Bytes()) {
+				continue
 			}
 
 			switch log.Topics[0] {
@@ -208,9 +207,11 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
-				vote.Events = append(vote.Events, evmTypes.VoteConfirmGatewayTxRequest_Vote_Event{
-					Info: eventInfo,
-					Event: &evmTypes.VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken{
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_ContractCallWithToken{
 						ContractCallWithToken: &event,
 					},
 				})
@@ -221,8 +222,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	if !confirmed {
-		vote = evmTypes.VoteConfirmGatewayTxRequest_Vote{}
+	if confirmed {
+		vote.Events = events
 	}
 
 	msg := evmTypes.NewVoteConfirmGatewayTxRequest(mgr.cliCtx.FromAddress, pollKey, vote)
@@ -273,6 +274,7 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 
 func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
+	gatewayAddress common.Address,
 	txID common.Hash,
 	confHeight uint64,
 	pollKey vote.PollKey,
@@ -280,6 +282,9 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 ) {
 	parsers := []*parse.AttributeParser{
 		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
@@ -293,13 +298,14 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", common.Hash{}, 0, vote.PollKey{}, err
+		return "", common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
 	}
 
 	return results[0].(string),
-		results[1].(common.Hash),
-		results[2].(uint64),
-		results[3].(vote.PollKey),
+		results[1].(common.Address),
+		results[2].(common.Hash),
+		results[3].(uint64),
+		results[4].(vote.PollKey),
 		nil
 }
 

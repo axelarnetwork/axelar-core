@@ -47,7 +47,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOwnership(),
 		GetCmdCreateTransferOperatorship(),
-		GetCmdCreateApproveContractCallsFromChain(),
+		GetCmdCreateApproveContractCalls(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
 	)
@@ -421,8 +421,8 @@ func GetCmdCreateTransferOperatorship() *cobra.Command {
 	return cmd
 }
 
-// GetCmdCreateApproveContractCallsFromChain returns the cli command to create approve-contract-call commands that are initiated from an EVM chain
-func GetCmdCreateApproveContractCallsFromChain() *cobra.Command {
+// GetCmdCreateApproveContractCalls returns the cli command to create approve-contract-call commands that are initiated from an EVM chain
+func GetCmdCreateApproveContractCalls() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-approve-contract-calls [chain]",
 		Short: "Create approve contract call commands that are initiated from an EVM chain",

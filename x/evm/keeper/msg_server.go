@@ -68,7 +68,8 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 	}
 
 	keeper := s.ForChain(chain.Name)
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
+	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
+	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
@@ -110,6 +111,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
@@ -201,13 +203,14 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 	txID := req.GetTxID()
 
 	for _, event := range result.Events {
-		key := utils.LowerCaseKey(txID).AppendStr(strconv.FormatUint(event.Info.Index, 10))
-		if queue.Has(key) {
-			return nil, fmt.Errorf("event %s-%d already confirmed", txID, event.Info.Index)
+		if keeper.HasConfirmedContractCall(ctx, event) {
+			return nil, fmt.Errorf("event %s-%d already confirmed", txID, event.Index)
 		}
 
+		key := utils.LowerCaseKey(event.GetID())
+
 		switch event.GetEvent().(type) {
-		case *types.VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken:
+		case *types.Event_ContractCallWithToken:
 			queue.Enqueue(key, &event)
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)
@@ -217,7 +220,7 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 	return &types.VoteConfirmGatewayTxResponse{}, nil
 }
 
-func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *types.CreateApproveContractCallsRequest) (*types.CreateApproveContractCallsResponse, error) {
+func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.CreateApproveContractCallsRequest) (*types.CreateApproveContractCallsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
@@ -234,13 +237,13 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	var invalidEvents []types.VoteConfirmGatewayTxRequest_Vote_Event
+	var invalidEvents []types.Event
 
 	queue := keeper.GetContractCallQueue(ctx)
-	var event types.VoteConfirmGatewayTxRequest_Vote_Event
+	var event types.Event
 	for queue.Dequeue(&event) {
 		switch e := event.GetEvent().(type) {
-		case *types.VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken:
+		case *types.Event_ContractCallWithToken:
 			contractCallWithToken := e.ContractCallWithToken
 
 			token := keeper.GetERC20TokenBySymbol(ctx, contractCallWithToken.Symbol)
@@ -272,6 +275,7 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 				continue
 			}
 
+			// TODO: cosmos sdk invariants may be a good solution to avoid the check here
 			destinationChain, ok := s.nexus.GetChain(ctx, contractCallWithToken.DestinationChain)
 			if !ok {
 				return nil, fmt.Errorf("%s is not a registered chain", contractCallWithToken.DestinationChain)
@@ -279,7 +283,10 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 
 			fee, err := s.nexus.ComputeTransferFee(ctx, chain, destinationChain, sdk.NewCoin(token.GetAsset(), sdk.Int(contractCallWithToken.Amount)))
 			if err != nil {
-				return nil, err
+				s.Logger(ctx).Info(fmt.Sprintf("failed computing transfer fee for event %s with error %s", event.GetID(), err.Error()))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
 			}
 
 			amount := contractCallWithToken.Amount.Sub(sdk.Uint(fee.Amount))
@@ -297,15 +304,25 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 
 			keyID, ok := s.signer.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
 			if !ok {
-				return nil, fmt.Errorf("no secondary key for chain %s found", destinationChain.Name)
+				s.Logger(ctx).Info(fmt.Sprintf("chain %s does not have the secondary key set", destinationChain.Name))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
 			}
 
-			cmd, err := types.CreateApproveContractCallWithMintCommand(destinationChainID, keyID, event.Info, *contractCallWithToken, amount)
+			cmd, err := types.CreateApproveContractCallWithMintCommand(
+				destinationChainID,
+				keyID,
+				event.Chain,
+				event.TxId,
+				event.Index,
+				*contractCallWithToken,
+				amount,
+			)
 			if err != nil {
 				return nil, err
 			}
 
-			// TODO: event
 			s.Logger(ctx).Debug("created ApproveContractCallWithMint command",
 				"chain", destinationChain.Name,
 				"commandID", cmd.ID.Hex(),
@@ -314,6 +331,8 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 			if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 				return nil, err
 			}
+
+			s.nexus.AddTransferFee(ctx, fee)
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)
 		}
@@ -321,10 +340,10 @@ func (s msgServer) CreateApproveContractCallsFromChain(c context.Context, req *t
 
 	// TODO: decide what to do with invalid events other than simply pushing them back to the queue
 	for _, event := range invalidEvents {
-		key := utils.LowerCaseKey(event.Info.TxId.Hex()).AppendStr(strconv.Itoa(int(event.Info.Index)))
+		key := utils.LowerCaseKey(event.GetID())
 
 		switch event := event.GetEvent().(type) {
-		case *types.VoteConfirmGatewayTxRequest_Vote_Event_ContractCallWithToken:
+		case *types.Event_ContractCallWithToken:
 			queue.Enqueue(key, event.ContractCallWithToken)
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)

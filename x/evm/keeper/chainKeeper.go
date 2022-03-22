@@ -878,6 +878,10 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
+func (k chainKeeper) HasConfirmedContractCall(ctx sdk.Context, event types.Event) bool {
+	return k.getStore(ctx, k.chainLowerKey).Has(utils.LowerCaseKey(event.GetID()))
+}
+
 func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {
 	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
 	// The following check has to be done regardless, if we would only do it dependent on the existence of a subspace
