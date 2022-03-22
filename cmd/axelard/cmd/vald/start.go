@@ -248,6 +248,8 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	subscriptions = append(subscriptions, evmTokConf)
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	subscriptions = append(subscriptions, evmTraConf)
+	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	subscriptions = append(subscriptions, evmGatewayTxConf)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	// stop the jobs if process gets interrupted/terminated
@@ -291,6 +293,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
+		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
 	}
 
 	mgr := jobs.NewMgr(eventCtx)

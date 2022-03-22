@@ -39,6 +39,8 @@ const (
 	BurnerCodeHashV1 = "0x70be6eedec1d63b7cf8b9233615e4e408c99e0753be123b605aa5d53ed4a8670"
 	// BurnerCodeHashV2 is the hash of the bytecode of burner v2
 	BurnerCodeHashV2 = "0x49c166661e31e0bf5434d891dea1448dc35f6ecd54a0d88594df06e24effe7c2"
+	// BurnerCodeHashV3 is the hash of the bytecode of burner v3
+	BurnerCodeHashV3 = "0xa50851cafd39f2f61171c0c00a11bda820ed0958950df5a53ba11a047402351f"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
@@ -46,6 +48,7 @@ func validateBurnerCode(burnerCode []byte) error {
 	switch burnerCodeHash {
 	case BurnerCodeHashV1:
 	case BurnerCodeHashV2:
+	case BurnerCodeHashV3:
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
 	}
@@ -71,18 +74,20 @@ const (
 			"type": "function"
 		}
 	]`
-	AxelarGatewayCommandMintToken            = "mintToken"
-	mintTokenMaxGasCost                      = 150000
-	AxelarGatewayCommandDeployToken          = "deployToken"
-	deployTokenMaxGasCost                    = 1400000
-	AxelarGatewayCommandBurnToken            = "burnToken"
-	burnExternalTokenMaxGasCost              = 400000
-	burnInternalTokenMaxGasCost              = 120000
-	AxelarGatewayCommandTransferOwnership    = "transferOwnership"
-	transferOwnershipMaxGasCost              = 120000
-	AxelarGatewayCommandTransferOperatorship = "transferOperatorship"
-	transferOperatorshipMaxGasCost           = 120000
-	axelarGatewayFuncExecute                 = "execute"
+	AxelarGatewayCommandMintToken                   = "mintToken"
+	mintTokenMaxGasCost                             = 150000
+	AxelarGatewayCommandDeployToken                 = "deployToken"
+	deployTokenMaxGasCost                           = 1400000
+	AxelarGatewayCommandBurnToken                   = "burnToken"
+	burnExternalTokenMaxGasCost                     = 400000
+	burnInternalTokenMaxGasCost                     = 120000
+	AxelarGatewayCommandTransferOwnership           = "transferOwnership"
+	transferOwnershipMaxGasCost                     = 120000
+	AxelarGatewayCommandTransferOperatorship        = "transferOperatorship"
+	transferOperatorshipMaxGasCost                  = 120000
+	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
+	approveContractCallWithMintMaxGasCost           = 120000
+	axelarGatewayFuncExecute                        = "execute"
 )
 
 type role uint8
@@ -349,6 +354,14 @@ func (a Address) Size() int {
 // Hash wraps EVM Hash
 type Hash common.Hash
 
+// ZeroHash represents an empty 32-bytes hash
+var ZeroHash = common.Hash{}
+
+// IsZero returns true if the hash is empty; otherwise false
+func (h Hash) IsZero() bool {
+	return bytes.Equal(h.Bytes(), ZeroHash.Bytes())
+}
+
 // Bytes returns the actual byte array of the hash
 func (h Hash) Bytes() []byte {
 	return common.Hash(h).Bytes()
@@ -518,6 +531,77 @@ func GetSignHash(commandData []byte) common.Hash {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
 
 	return crypto.Keccak256Hash([]byte(msg))
+}
+
+// CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
+func CreateApproveContractCallWithMintCommand(
+	chainID *big.Int,
+	keyID tss.KeyID,
+	sourceChain string,
+	txID Hash,
+	Index uint64,
+	event EventContractCallWithToken,
+	amount sdk.Uint,
+) (Command, error) {
+	params, err := createApproveContractCallWithMintParams(sourceChain, event, amount)
+	if err != nil {
+		return Command{}, err
+	}
+
+	eventIndexBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(eventIndexBz, Index)
+
+	return Command{
+		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
+		Command:    AxelarGatewayCommandApproveContractCallWithMint,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
+	}, nil
+}
+
+func createApproveContractCallWithMintParams(sourceChain string, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: addressType},
+		{Type: bytes32Type},
+		{Type: stringType},
+		{Type: uint256Type},
+	}
+	result, err := arguments.Pack(
+		sourceChain,
+		event.Sender.Hex(),
+		common.HexToAddress(event.ContractAddress),
+		common.Hash(event.PayloadHash),
+		event.Symbol,
+		amount.BigInt(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
@@ -1254,6 +1338,70 @@ func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
 		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
 			return fmt.Errorf("expected first key part of %s to be a block height", key)
 		}
+	}
+
+	return nil
+}
+
+// GetID returns an unique ID for the event
+func (m Event) GetID() string {
+	return strings.ToLower(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
+}
+
+// Validate returns an error if the event is invalid
+func (m Event) Validate() error {
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid source chain")
+	}
+
+	if m.TxId.IsZero() {
+		return fmt.Errorf("invalid tx id")
+	}
+
+	switch event := m.GetEvent().(type) {
+	case *Event_ContractCallWithToken:
+		if event.ContractCallWithToken == nil {
+			return fmt.Errorf("missing event ContractCallWithToken")
+		}
+
+		if err := event.ContractCallWithToken.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
+		}
+	default:
+		return fmt.Errorf("unknown type of event")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event contract call with token is invalid
+func (m EventContractCallWithToken) Validate() error {
+	if m.Sender.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
+	}
+
+	if err := utils.ValidateString(m.ContractAddress); err != nil {
+		return sdkerrors.Wrap(err, "invalid contract address")
+	}
+
+	if m.PayloadHash.IsZero() {
+		return fmt.Errorf("invalid payload hash")
+	}
+
+	if !bytes.Equal(crypto.Keccak256Hash(m.Payload).Bytes(), m.PayloadHash.Bytes()) {
+		return fmt.Errorf("invalid payload")
+	}
+
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid symbol")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("invalid amount")
 	}
 
 	return nil

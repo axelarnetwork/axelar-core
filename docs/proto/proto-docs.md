@@ -136,6 +136,8 @@
     - [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata)
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
+    - [Event](#evm.v1beta1.Event)
+    - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
     - [Gateway](#evm.v1beta1.Gateway)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
@@ -194,10 +196,14 @@
     - [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse)
     - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
+    - [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest)
+    - [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
     - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
+    - [CreateApproveContractCallsRequest](#evm.v1beta1.CreateApproveContractCallsRequest)
+    - [CreateApproveContractCallsResponse](#evm.v1beta1.CreateApproveContractCallsResponse)
     - [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest)
     - [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse)
     - [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest)
@@ -218,6 +224,9 @@
     - [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse)
     - [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest)
     - [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse)
+    - [VoteConfirmGatewayTxRequest](#evm.v1beta1.VoteConfirmGatewayTxRequest)
+    - [VoteConfirmGatewayTxRequest.Vote](#evm.v1beta1.VoteConfirmGatewayTxRequest.Vote)
+    - [VoteConfirmGatewayTxResponse](#evm.v1beta1.VoteConfirmGatewayTxResponse)
     - [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest)
     - [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse)
     - [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest)
@@ -2237,6 +2246,45 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
+<a name="evm.v1beta1.Event"></a>
+
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `index` | [uint64](#uint64) |  |  |
+| `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventContractCallWithToken"></a>
+
+### EventContractCallWithToken
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.Gateway"></a>
 
 ### Gateway
@@ -3070,6 +3118,33 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
+<a name="evm.v1beta1.ConfirmGatewayTxRequest"></a>
+
+### ConfirmGatewayTxRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmGatewayTxResponse"></a>
+
+### ConfirmGatewayTxResponse
+
+
+
+
+
+
+
 <a name="evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
@@ -3120,6 +3195,32 @@ MsgConfirmToken represents a token deploy confirmation message
 <a name="evm.v1beta1.ConfirmTransferKeyResponse"></a>
 
 ### ConfirmTransferKeyResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateApproveContractCallsRequest"></a>
+
+### CreateApproveContractCallsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CreateApproveContractCallsResponse"></a>
+
+### CreateApproveContractCallsResponse
 
 
 
@@ -3427,6 +3528,53 @@ MsgVoteConfirmDeposit represents a message that votes on a deposit
 
 
 
+<a name="evm.v1beta1.VoteConfirmGatewayTxRequest"></a>
+
+### VoteConfirmGatewayTxRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `vote` | [VoteConfirmGatewayTxRequest.Vote](#evm.v1beta1.VoteConfirmGatewayTxRequest.Vote) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.VoteConfirmGatewayTxRequest.Vote"></a>
+
+### VoteConfirmGatewayTxRequest.Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `events` | [Event](#evm.v1beta1.Event) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.VoteConfirmGatewayTxResponse"></a>
+
+### VoteConfirmGatewayTxResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.VoteConfirmTokenRequest"></a>
 
 ### VoteConfirmTokenRequest
@@ -3525,6 +3673,9 @@ Msg defines the evm Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `SetGateway` | [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set-gateway|
+| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm-gateway-tx|
+| `VoteConfirmGatewayTx` | [VoteConfirmGatewayTxRequest](#evm.v1beta1.VoteConfirmGatewayTxRequest) | [VoteConfirmGatewayTxResponse](#evm.v1beta1.VoteConfirmGatewayTxResponse) |  | POST|/axelar/evm/vote-confirm-gateway-tx|
+| `CreateApproveContractCalls` | [CreateApproveContractCallsRequest](#evm.v1beta1.CreateApproveContractCallsRequest) | [CreateApproveContractCallsResponse](#evm.v1beta1.CreateApproveContractCallsResponse) |  | POST|/axelar/evm/create-approve-contract-calls|
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|

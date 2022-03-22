@@ -29,6 +29,9 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
 	cdc.RegisterConcrete(&SetGatewayRequest{}, "evm/SetGatewayRequest", nil)
+	cdc.RegisterConcrete(&ConfirmGatewayTxRequest{}, "evm/ConfirmGatewayTxRequest", nil)
+	cdc.RegisterConcrete(&VoteConfirmGatewayTxRequest{}, "evm/VoteConfirmGatewayTxRequest", nil)
+	cdc.RegisterConcrete(&CreateApproveContractCallsRequest{}, "evm/CreateApproveContractCallsRequest", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -51,9 +54,13 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&SignCommandsRequest{},
 		&AddChainRequest{},
 		&SetGatewayRequest{},
+		&ConfirmGatewayTxRequest{},
+		&VoteConfirmGatewayTxRequest{},
+		&CreateApproveContractCallsRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
+		&VoteConfirmGatewayTxRequest_Vote{},
 	)
 
 	registry.RegisterImplementations((*reward.Refundable)(nil),
@@ -61,6 +68,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&VoteConfirmDepositRequest{},
 		&VoteConfirmChainRequest{},
 		&VoteConfirmTransferKeyRequest{},
+		&VoteConfirmGatewayTxRequest{},
 	)
 }
 

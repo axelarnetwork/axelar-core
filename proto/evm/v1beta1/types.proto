@@ -9,6 +9,32 @@ import "tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+message Event {
+  string chain = 1;
+  bytes tx_id = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  uint64 index = 3;
+
+  oneof event {
+    evm.v1beta1.EventContractCallWithToken contract_call_with_token = 4;
+  }
+}
+
+message EventContractCallWithToken {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2;
+  string contract_address = 3;
+  bytes payload_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  bytes payload = 5;
+  string symbol = 6;
+  bytes amount = 7 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
 // NetworkInfo describes information about a network
 message NetworkInfo {
   string name = 1;

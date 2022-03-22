@@ -1187,8 +1187,14 @@ var _ types.Nexus = &NexusMock{}
 //
 // 		// make and configure a mocked types.Nexus
 // 		mockedNexus := &NexusMock{
+// 			AddTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin)  {
+// 				panic("mock out the AddTransferFee method")
+// 			},
 // 			ArchivePendingTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer nexus.CrossChainTransfer)  {
 // 				panic("mock out the ArchivePendingTransfer method")
+// 			},
+// 			ComputeTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error) {
+// 				panic("mock out the ComputeTransferFee method")
 // 			},
 // 			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (nexus.TransferID, error) {
 // 				panic("mock out the EnqueueForTransfer method")
@@ -1233,8 +1239,14 @@ var _ types.Nexus = &NexusMock{}
 //
 // 	}
 type NexusMock struct {
+	// AddTransferFeeFunc mocks the AddTransferFee method.
+	AddTransferFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin)
+
 	// ArchivePendingTransferFunc mocks the ArchivePendingTransfer method.
 	ArchivePendingTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer nexus.CrossChainTransfer)
+
+	// ComputeTransferFeeFunc mocks the ComputeTransferFee method.
+	ComputeTransferFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error)
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
 	EnqueueForTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (nexus.TransferID, error)
@@ -1274,12 +1286,30 @@ type NexusMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddTransferFee holds details about calls to the AddTransferFee method.
+		AddTransferFee []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Coin is the coin argument value.
+			Coin github_com_cosmos_cosmos_sdk_types.Coin
+		}
 		// ArchivePendingTransfer holds details about calls to the ArchivePendingTransfer method.
 		ArchivePendingTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Transfer is the transfer argument value.
 			Transfer nexus.CrossChainTransfer
+		}
+		// ComputeTransferFee holds details about calls to the ComputeTransferFee method.
+		ComputeTransferFee []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// SourceChain is the sourceChain argument value.
+			SourceChain nexus.Chain
+			// DestinationChain is the destinationChain argument value.
+			DestinationChain nexus.Chain
+			// Asset is the asset argument value.
+			Asset github_com_cosmos_cosmos_sdk_types.Coin
 		}
 		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
 		EnqueueForTransfer []struct {
@@ -1374,7 +1404,9 @@ type NexusMock struct {
 			Chain nexus.Chain
 		}
 	}
+	lockAddTransferFee         sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
+	lockComputeTransferFee     sync.RWMutex
 	lockEnqueueForTransfer     sync.RWMutex
 	lockGetChain               sync.RWMutex
 	lockGetChainByNativeAsset  sync.RWMutex
@@ -1387,6 +1419,41 @@ type NexusMock struct {
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
+}
+
+// AddTransferFee calls AddTransferFeeFunc.
+func (mock *NexusMock) AddTransferFee(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin) {
+	if mock.AddTransferFeeFunc == nil {
+		panic("NexusMock.AddTransferFeeFunc: method is nil but Nexus.AddTransferFee was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Coin github_com_cosmos_cosmos_sdk_types.Coin
+	}{
+		Ctx:  ctx,
+		Coin: coin,
+	}
+	mock.lockAddTransferFee.Lock()
+	mock.calls.AddTransferFee = append(mock.calls.AddTransferFee, callInfo)
+	mock.lockAddTransferFee.Unlock()
+	mock.AddTransferFeeFunc(ctx, coin)
+}
+
+// AddTransferFeeCalls gets all the calls that were made to AddTransferFee.
+// Check the length with:
+//     len(mockedNexus.AddTransferFeeCalls())
+func (mock *NexusMock) AddTransferFeeCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Coin github_com_cosmos_cosmos_sdk_types.Coin
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Coin github_com_cosmos_cosmos_sdk_types.Coin
+	}
+	mock.lockAddTransferFee.RLock()
+	calls = mock.calls.AddTransferFee
+	mock.lockAddTransferFee.RUnlock()
+	return calls
 }
 
 // ArchivePendingTransfer calls ArchivePendingTransferFunc.
@@ -1421,6 +1488,49 @@ func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 	mock.lockArchivePendingTransfer.RLock()
 	calls = mock.calls.ArchivePendingTransfer
 	mock.lockArchivePendingTransfer.RUnlock()
+	return calls
+}
+
+// ComputeTransferFee calls ComputeTransferFeeFunc.
+func (mock *NexusMock) ComputeTransferFee(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error) {
+	if mock.ComputeTransferFeeFunc == nil {
+		panic("NexusMock.ComputeTransferFeeFunc: method is nil but Nexus.ComputeTransferFee was just called")
+	}
+	callInfo := struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SourceChain      nexus.Chain
+		DestinationChain nexus.Chain
+		Asset            github_com_cosmos_cosmos_sdk_types.Coin
+	}{
+		Ctx:              ctx,
+		SourceChain:      sourceChain,
+		DestinationChain: destinationChain,
+		Asset:            asset,
+	}
+	mock.lockComputeTransferFee.Lock()
+	mock.calls.ComputeTransferFee = append(mock.calls.ComputeTransferFee, callInfo)
+	mock.lockComputeTransferFee.Unlock()
+	return mock.ComputeTransferFeeFunc(ctx, sourceChain, destinationChain, asset)
+}
+
+// ComputeTransferFeeCalls gets all the calls that were made to ComputeTransferFee.
+// Check the length with:
+//     len(mockedNexus.ComputeTransferFeeCalls())
+func (mock *NexusMock) ComputeTransferFeeCalls() []struct {
+	Ctx              github_com_cosmos_cosmos_sdk_types.Context
+	SourceChain      nexus.Chain
+	DestinationChain nexus.Chain
+	Asset            github_com_cosmos_cosmos_sdk_types.Coin
+} {
+	var calls []struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		SourceChain      nexus.Chain
+		DestinationChain nexus.Chain
+		Asset            github_com_cosmos_cosmos_sdk_types.Coin
+	}
+	mock.lockComputeTransferFee.RLock()
+	calls = mock.calls.ComputeTransferFee
+	mock.lockComputeTransferFee.RUnlock()
 	return calls
 }
 
@@ -2633,6 +2743,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
+// 			GetContractCallQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue {
+// 				panic("mock out the GetContractCallQueue method")
+// 			},
 // 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 // 				panic("mock out the GetDeposit method")
 // 			},
@@ -2686,6 +2799,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
+// 			},
+// 			HasConfirmedContractCallFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool {
+// 				panic("mock out the HasConfirmedContractCall method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -2769,6 +2885,9 @@ type ChainKeeperMock struct {
 	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
 
+	// GetContractCallQueueFunc mocks the GetContractCallQueue method.
+	GetContractCallQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue
+
 	// GetDepositFunc mocks the GetDeposit method.
 	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool)
 
@@ -2822,6 +2941,9 @@ type ChainKeeperMock struct {
 
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
+
+	// HasConfirmedContractCallFunc mocks the HasConfirmedContractCall method.
+	HasConfirmedContractCallFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -2968,6 +3090,11 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// GetContractCallQueue holds details about calls to the GetContractCallQueue method.
+		GetContractCallQueue []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// GetDeposit holds details about calls to the GetDeposit method.
 		GetDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -3070,6 +3197,13 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// HasConfirmedContractCall holds details about calls to the HasConfirmedContractCall method.
+		HasConfirmedContractCall []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Event is the event argument value.
+			Event types.Event
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -3148,6 +3282,7 @@ type ChainKeeperMock struct {
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetCommand                    sync.RWMutex
 	lockGetConfirmedDeposits          sync.RWMutex
+	lockGetContractCallQueue          sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
 	lockGetERC20TokenBySymbol         sync.RWMutex
@@ -3166,6 +3301,7 @@ type ChainKeeperMock struct {
 	lockGetTokenByteCode              sync.RWMutex
 	lockGetTokens                     sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
+	lockHasConfirmedContractCall      sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
@@ -3771,6 +3907,37 @@ func (mock *ChainKeeperMock) GetConfirmedDepositsCalls() []struct {
 	return calls
 }
 
+// GetContractCallQueue calls GetContractCallQueueFunc.
+func (mock *ChainKeeperMock) GetContractCallQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue {
+	if mock.GetContractCallQueueFunc == nil {
+		panic("ChainKeeperMock.GetContractCallQueueFunc: method is nil but ChainKeeper.GetContractCallQueue was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetContractCallQueue.Lock()
+	mock.calls.GetContractCallQueue = append(mock.calls.GetContractCallQueue, callInfo)
+	mock.lockGetContractCallQueue.Unlock()
+	return mock.GetContractCallQueueFunc(ctx)
+}
+
+// GetContractCallQueueCalls gets all the calls that were made to GetContractCallQueue.
+// Check the length with:
+//     len(mockedChainKeeper.GetContractCallQueueCalls())
+func (mock *ChainKeeperMock) GetContractCallQueueCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetContractCallQueue.RLock()
+	calls = mock.calls.GetContractCallQueue
+	mock.lockGetContractCallQueue.RUnlock()
+	return calls
+}
+
 // GetDeposit calls GetDepositFunc.
 func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	if mock.GetDepositFunc == nil {
@@ -4349,6 +4516,41 @@ func (mock *ChainKeeperMock) GetVotingThresholdCalls() []struct {
 	mock.lockGetVotingThreshold.RLock()
 	calls = mock.calls.GetVotingThreshold
 	mock.lockGetVotingThreshold.RUnlock()
+	return calls
+}
+
+// HasConfirmedContractCall calls HasConfirmedContractCallFunc.
+func (mock *ChainKeeperMock) HasConfirmedContractCall(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool {
+	if mock.HasConfirmedContractCallFunc == nil {
+		panic("ChainKeeperMock.HasConfirmedContractCallFunc: method is nil but ChainKeeper.HasConfirmedContractCall was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockHasConfirmedContractCall.Lock()
+	mock.calls.HasConfirmedContractCall = append(mock.calls.HasConfirmedContractCall, callInfo)
+	mock.lockHasConfirmedContractCall.Unlock()
+	return mock.HasConfirmedContractCallFunc(ctx, event)
+}
+
+// HasConfirmedContractCallCalls gets all the calls that were made to HasConfirmedContractCall.
+// Check the length with:
+//     len(mockedChainKeeper.HasConfirmedContractCallCalls())
+func (mock *ChainKeeperMock) HasConfirmedContractCallCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Event types.Event
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}
+	mock.lockHasConfirmedContractCall.RLock()
+	calls = mock.calls.HasConfirmedContractCall
+	mock.lockHasConfirmedContractCall.RUnlock()
 	return calls
 }
 

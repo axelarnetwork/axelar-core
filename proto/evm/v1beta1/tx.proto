@@ -20,6 +20,38 @@ message SetGatewayRequest {
 
 message SetGatewayResponse {}
 
+message ConfirmGatewayTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  bytes tx_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+}
+
+message ConfirmGatewayTxResponse {}
+
+message VoteConfirmGatewayTxRequest {
+  message Vote { repeated Event events = 1 [ (gogoproto.nullable) = false ]; }
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
+  Vote vote = 3 [ (gogoproto.nullable) = false ];
+}
+
+message VoteConfirmGatewayTxResponse { string log = 1; }
+
+message CreateApproveContractCallsRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+}
+
+message CreateApproveContractCallsResponse {}
+
 message ConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];

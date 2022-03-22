@@ -55,6 +55,304 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	return nil
 }
 
+func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	period, ok := keeper.GetRevoteLockingPeriod(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not retrieve revote locking period")
+	}
+
+	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
+	if !ok {
+		return nil, fmt.Errorf("voting threshold not found")
+	}
+
+	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
+	if !ok {
+		return nil, fmt.Errorf("min voter count not found")
+	}
+
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
+	if err := s.voter.InitializePoll(
+		ctx,
+		pollKey,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		vote.ExpiryAt(ctx.BlockHeight()+period),
+		vote.Threshold(votingThreshold),
+		vote.MinVoterCount(minVoterCount),
+		vote.RewardPool(chain.Name),
+	); err != nil {
+		return nil, err
+	}
+
+	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
+	if !ok {
+		return nil, fmt.Errorf("required confirmation height not found")
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+		),
+	)
+
+	return &types.ConfirmGatewayTxResponse{}, nil
+}
+
+func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfirmGatewayTxRequest) (*types.VoteConfirmGatewayTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chainName := req.GetChain()
+	chain, ok := s.nexus.GetChain(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", chainName)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	if voter == nil {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	}
+
+	poll := s.voter.GetPoll(ctx, req.PollKey)
+	switch {
+	case poll.Is(vote.NonExistent):
+		return nil, fmt.Errorf("vote for non-existent poll %s", req.PollKey)
+	case poll.Is(vote.Expired):
+		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("vote for poll %s already expired", poll.GetKey())}, nil
+	case poll.Is(vote.Failed), poll.Is(vote.Completed):
+		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("vote for poll %s already decided", poll.GetKey())}, nil
+	}
+
+	if err := poll.Vote(voter, &req.Vote); err != nil {
+		return nil, err
+	}
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
+			sdk.NewAttribute(types.AttributeKeyValue, req.Vote.String()),
+		),
+	)
+
+	if poll.Is(vote.Pending) {
+		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("not enough votes to confirm poll %s yet", poll.GetKey())}, nil
+	}
+
+	if poll.Is(vote.Failed) {
+		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+	}
+
+	result, ok := poll.GetResult().(*types.VoteConfirmGatewayTxRequest_Vote)
+	if !ok {
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected VoteConfirmGatewayTxRequest_Vote, got %T", req.PollKey.String(), poll.GetResult())
+	}
+
+	s.Logger(ctx).Info(fmt.Sprintf("gateway transaction confirmation confirmation result is %s", result.String()), "chain", chain.Name, "pollKey", req.PollKey.String())
+
+	event := sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyTxID, req.GetTxID()),
+		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
+
+	if len(result.Events) == 0 {
+		poll.AllowOverride()
+		ctx.EventManager().EmitEvent(
+			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
+
+		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("poll %s failed to decide anything", poll.GetKey())}, nil
+	}
+
+	ctx.EventManager().EmitEvent(
+		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
+
+	queue := keeper.GetContractCallQueue(ctx)
+	txID := req.GetTxID()
+
+	for _, event := range result.Events {
+		if keeper.HasConfirmedContractCall(ctx, event) {
+			return nil, fmt.Errorf("event %s-%d already confirmed", txID, event.Index)
+		}
+
+		key := utils.LowerCaseKey(event.GetID())
+
+		switch event.GetEvent().(type) {
+		case *types.Event_ContractCallWithToken:
+			queue.Enqueue(key, &event)
+		default:
+			return nil, fmt.Errorf("unsupported event type %T", event)
+		}
+	}
+
+	return &types.VoteConfirmGatewayTxResponse{}, nil
+}
+
+func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.CreateApproveContractCallsRequest) (*types.CreateApproveContractCallsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	var invalidEvents []types.Event
+
+	queue := keeper.GetContractCallQueue(ctx)
+	var event types.Event
+	for queue.Dequeue(&event) {
+		switch e := event.GetEvent().(type) {
+		case *types.Event_ContractCallWithToken:
+			contractCallWithToken := e.ContractCallWithToken
+
+			token := keeper.GetERC20TokenBySymbol(ctx, contractCallWithToken.Symbol)
+			if !token.Is(types.Confirmed) {
+				s.Logger(ctx).Info(fmt.Sprintf("%s token %s is not confirmed yet", chain.Name, contractCallWithToken.Symbol))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			if !s.HasChain(ctx, contractCallWithToken.DestinationChain) {
+				s.Logger(ctx).Info(fmt.Sprintf("destination evm chain %s does not exist", chain.Name))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			if token := s.ForChain(contractCallWithToken.DestinationChain).GetERC20TokenByAsset(ctx, token.GetAsset()); !token.Is(types.Confirmed) {
+				s.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", contractCallWithToken.DestinationChain, token.GetAsset()))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			if !common.IsHexAddress(contractCallWithToken.ContractAddress) {
+				s.Logger(ctx).Info(fmt.Sprintf("invalid contract address %s for chain %s", contractCallWithToken.ContractAddress, contractCallWithToken.DestinationChain))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			// TODO: cosmos sdk invariants may be a good solution to avoid the check here
+			destinationChain, ok := s.nexus.GetChain(ctx, contractCallWithToken.DestinationChain)
+			if !ok {
+				return nil, fmt.Errorf("%s is not a registered chain", contractCallWithToken.DestinationChain)
+			}
+
+			fee, err := s.nexus.ComputeTransferFee(ctx, chain, destinationChain, sdk.NewCoin(token.GetAsset(), sdk.Int(contractCallWithToken.Amount)))
+			if err != nil {
+				s.Logger(ctx).Info(fmt.Sprintf("failed computing transfer fee for event %s with error %s", event.GetID(), err.Error()))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			amount := contractCallWithToken.Amount.Sub(sdk.Uint(fee.Amount))
+			if amount.LT(sdk.ZeroUint()) {
+				s.Logger(ctx).Info(fmt.Sprintf("amount %s less than fee %s", contractCallWithToken.Amount.String(), fee.Amount.String()))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			destinationChainID, ok := s.ForChain(contractCallWithToken.DestinationChain).GetChainID(ctx)
+			if !ok {
+				return nil, fmt.Errorf("could not find chain ID for '%s'", contractCallWithToken.DestinationChain)
+			}
+
+			keyID, ok := s.signer.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
+			if !ok {
+				s.Logger(ctx).Info(fmt.Sprintf("chain %s does not have the secondary key set", destinationChain.Name))
+				invalidEvents = append(invalidEvents, event)
+
+				continue
+			}
+
+			cmd, err := types.CreateApproveContractCallWithMintCommand(
+				destinationChainID,
+				keyID,
+				event.Chain,
+				event.TxId,
+				event.Index,
+				*contractCallWithToken,
+				amount,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			s.Logger(ctx).Debug("created ApproveContractCallWithMint command",
+				"chain", destinationChain.Name,
+				"commandID", cmd.ID.Hex(),
+			)
+
+			if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
+				return nil, err
+			}
+
+			s.nexus.AddTransferFee(ctx, fee)
+		default:
+			return nil, fmt.Errorf("unsupported event type %T", event)
+		}
+	}
+
+	// TODO: decide what to do with invalid events other than simply pushing them back to the queue
+	for _, event := range invalidEvents {
+		key := utils.LowerCaseKey(event.GetID())
+
+		switch event := event.GetEvent().(type) {
+		case *types.Event_ContractCallWithToken:
+			queue.Enqueue(key, event.ContractCallWithToken)
+		default:
+			return nil, fmt.Errorf("unsupported event type %T", event)
+		}
+	}
+
+	return &types.CreateApproveContractCallsResponse{}, nil
+}
+
 func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (*types.SetGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
