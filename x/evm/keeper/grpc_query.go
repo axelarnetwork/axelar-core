@@ -27,14 +27,16 @@ type Querier struct {
 	keeper types.BaseKeeper
 	nexus  types.Nexus
 	signer types.Signer
+	voter  types.Voter
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer, v types.Voter) Querier {
 	return Querier{
 		keeper: k,
 		nexus:  n,
 		signer: s,
+		voter:  v,
 	}
 }
 
@@ -232,6 +234,36 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 	}
 
 	return &types.ConfirmationHeightResponse{Height: height}, nil
+}
+
+// GatewayTxState implements the gateway tx state grpc query
+func (q Querier) GatewayTxState(c context.Context, req *types.GatewayTxStateRequest) (*types.GatewayTxStateResponse, error) {
+
+	ctx := sdk.UnwrapSDKContext(c)
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	var pollState vote.PollState
+
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
+	poll := q.voter.GetPoll(ctx, pollKey)
+	switch {
+	case poll.Is(vote.NonExistent):
+		pollState = vote.NonExistent
+	case poll.Is(vote.Completed):
+		pollState = vote.Completed
+	case poll.Is(vote.Expired):
+		pollState = vote.Expired
+	case poll.Is(vote.Failed):
+		pollState = vote.Failed
+	case poll.Is(vote.Pending):
+		pollState = vote.Pending
+	default:
+		return nil, status.Error(codes.Internal, sdkerrors.Wrap(types.ErrEVM, "unknown state type").Error())
+	}
+
+	return &types.GatewayTxStateResponse{PollState: pollState}, nil
 }
 
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {

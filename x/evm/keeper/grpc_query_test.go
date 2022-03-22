@@ -14,6 +14,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -32,6 +33,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		chainKeeper *mock.ChainKeeperMock
 		baseKeeper  *mock.BaseKeeperMock
 		signer      *mock.SignerMock
+		voter       *mock.VoterMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    string
@@ -91,7 +93,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 
 		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
 		assert.NoError(t, err)
@@ -112,6 +114,7 @@ func TestQueryDepositState(t *testing.T) {
 	var (
 		baseKeeper      *mock.BaseKeeperMock
 		signer          *mock.SignerMock
+		voter           *mock.VoterMock
 		ctx             sdk.Context
 		evmChain        string
 		expectedDeposit types.ERC20Deposit
@@ -159,7 +162,7 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 		grpcQuerier = &q
 	}
 	repeatCount := 20
@@ -297,6 +300,7 @@ func TestChains(t *testing.T) {
 		baseKeeper  *mock.BaseKeeperMock
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
+		voter       *mock.VoterMock
 		ctx         sdk.Context
 		evmChain    string
 		nonEvmChain string
@@ -332,7 +336,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -357,7 +361,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -372,6 +376,7 @@ func TestGateway(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
 		signer        *mock.SignerMock
+		voter         *mock.VoterMock
 		nexusKeeper   *mock.NexusMock
 		chainKeeper   *mock.ChainKeeperMock
 		ctx           sdk.Context
@@ -401,7 +406,7 @@ func TestGateway(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 		grpcQuerier = &q
 	}
 
@@ -457,6 +462,7 @@ func TestBytecode(t *testing.T) {
 	var (
 		baseKeeper     *mock.BaseKeeperMock
 		signer         *mock.SignerMock
+		voter          *mock.VoterMock
 		nexusKeeper    *mock.NexusMock
 		chainKeeper    *mock.ChainKeeperMock
 		ctx            sdk.Context
@@ -508,7 +514,7 @@ func TestBytecode(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
 		grpcQuerier = &q
 	}
 
@@ -534,5 +540,89 @@ func TestBytecode(t *testing.T) {
 
 			assert.Equal(expectedRes, *res)
 		}
+	}).Repeat(repeatCount))
+}
+
+func TestContractTxState(t *testing.T) {
+	var (
+		baseKeeper        *mock.BaseKeeperMock
+		signer            *mock.SignerMock
+		voter             *mock.VoterMock
+		nexusKeeper       *mock.NexusMock
+		ctx               sdk.Context
+		expectedRes       types.GatewayTxStateResponse
+		grpcQuerier       *evmKeeper.Querier
+		existingPollState vote.PollState
+		existingChain     string
+	)
+
+	setup := func() {
+		existingChain = "existing"
+
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		baseKeeper = &mock.BaseKeeperMock{
+			HasChainFunc: func(_ sdk.Context, chain string) bool {
+				return chain == existingChain
+			},
+		}
+
+		voter = &mock.VoterMock{
+			GetPollFunc: func(ctx sdk.Context, _ vote.PollKey) vote.Poll {
+				return &voteMock.PollMock{
+					IsFunc: func(state vote.PollState) bool {
+						switch {
+						case state == existingPollState:
+							return true
+						default:
+							return false
+						}
+					},
+				}
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		grpcQuerier = &q
+	}
+
+	repeatCount := 1
+
+	pollStates := []vote.PollState{vote.NonExistent, vote.Completed, vote.Expired, vote.Failed, vote.Pending}
+
+	t.Run("valid poll states", testutils.Func(func(t *testing.T) {
+		setup()
+		for _, pollState := range pollStates {
+			existingPollState = pollState
+			expectedRes = types.GatewayTxStateResponse{
+				PollState: pollState,
+			}
+
+			res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
+				Chain: existingChain,
+				TxID:  types.Hash{},
+			})
+
+			assert := assert.New(t)
+			assert.NoError(err)
+
+			assert.Equal(expectedRes, *res)
+		}
+	}).Repeat(repeatCount))
+
+	t.Run("invalid poll", testutils.Func(func(t *testing.T) {
+		setup()
+		existingPollState = -1
+
+		res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
+			Chain: existingChain,
+			TxID:  types.Hash{},
+		})
+
+		assert := assert.New(t)
+		assert.Nil(res)
+		assert.NotNil(err)
+
+		assert.Equal(err.Error(), "rpc error: code = Internal desc = unknown state type: bridge error")
 	}).Repeat(repeatCount))
 }

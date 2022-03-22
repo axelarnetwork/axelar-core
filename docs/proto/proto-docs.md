@@ -178,6 +178,8 @@
     - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
     - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
     - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
+    - [GatewayTxStateRequest](#evm.v1beta1.GatewayTxStateRequest)
+    - [GatewayTxStateResponse](#evm.v1beta1.GatewayTxStateResponse)
     - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
     - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
@@ -2856,6 +2858,37 @@ deposit address
 
 
 
+<a name="evm.v1beta1.GatewayTxStateRequest"></a>
+
+### GatewayTxStateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GatewayTxStateResponse"></a>
+
+### GatewayTxStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `poll_state` | [vote.exported.v1beta1.PollState](#vote.exported.v1beta1.PollState) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.KeyAddressRequest"></a>
 
 ### KeyAddressRequest
@@ -3725,6 +3758,7 @@ QueryService defines the gRPC querier service.
 | `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
 | `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
 | `Bytecode` | [BytecodeRequest](#evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/evm/v1beta1/bytecode|
+| `GatewayTxState` | [GatewayTxStateRequest](#evm.v1beta1.GatewayTxStateRequest) | [GatewayTxStateResponse](#evm.v1beta1.GatewayTxStateResponse) | GatewayTxState queries the state of a gateway transaction at the specified chain | GET|/evm/v1beta1/gateway_tx_state|
 
  <!-- end services -->
 

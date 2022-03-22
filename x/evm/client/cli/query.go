@@ -444,3 +444,38 @@ func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
+
+// GetCmdGatewayTxState returns the query to get the minimum confirmation height for the given chain
+func GetCmdGatewayTxState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gateway-tx-state [chain] [tx-id]",
+		Short: "Returns the current state of the gateway-tx for the given chain",
+		Args:  cobra.ExactArgs(2),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		chain := utils.NormalizeString(args[0])
+		txID := common.HexToHash(args[1])
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.GatewayTxState(cmd.Context(),
+			&types.GatewayTxStateRequest{
+				Chain: chain,
+				TxID:  types.Hash(txID),
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}

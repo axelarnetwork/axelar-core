@@ -218,4 +218,10 @@ service QueryService {
   rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
     option (google.api.http).get = "/evm/v1beta1/bytecode";
   }
+
+  // GatewayTxState queries the state of a gateway transaction at the specified
+  // chain
+  rpc GatewayTxState(GatewayTxStateRequest) returns (GatewayTxStateResponse) {
+    option (google.api.http).get = "/evm/v1beta1/gateway_tx_state";
+  }
 }
