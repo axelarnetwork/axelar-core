@@ -190,7 +190,6 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	var vote evmTypes.VoteConfirmGatewayTxRequest_Vote
 	var events []evmTypes.Event
 	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
@@ -222,6 +221,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
+	var vote evmTypes.VoteConfirmGatewayTxRequest_Vote
 	if confirmed {
 		vote.Events = events
 	}
