@@ -77,4 +77,19 @@ service QueryService {
   rpc TransferFee(TransferFeeRequest) returns (TransferFeeResponse) {
     option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_fee";
   }
+
+  // Chains queries the chains registered on the network
+  rpc Chains(ChainsRequest) returns (ChainsResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/chains";
+  }
+
+  // ChainState queries the state of a registered chain on the network
+  rpc ChainState(ChainStateRequest) returns (ChainStateResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/chain_state";
+  }
+
+  // ChainsByAsset queries the chains that support an asset on the network
+  rpc ChainsByAsset(ChainsByAssetRequest) returns (ChainsByAssetResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/chains_by_asset";
+  }
 }

@@ -112,3 +112,66 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 
 	return &types.TransferFeeResponse{Fee: fee}, nil
 }
+
+// Chains returns the chains registered on the network
+func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := k.GetChains(ctx)
+
+	res := types.ChainsResponse{
+		Chains: []types.ChainsResponse_ChainState{},
+	}
+
+	for _, chain := range chains {
+		res.Chains = append(res.Chains, types.ChainsResponse_ChainState{
+			Chain:     chain,
+			Activated: k.IsChainActivated(ctx, chain),
+		})
+	}
+
+	return &res, nil
+}
+
+// Assets returns the assets supported by a specific chain
+func (k Keeper) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := k.GetChains(ctx)
+
+	res := types.ChainsResponse{
+		Chains: []types.ChainsResponse_ChainState{},
+	}
+
+	for _, chain := range chains {
+		res.Chains = append(res.Chains, types.ChainsResponse_ChainState{
+			Chain:     chain,
+			Activated: k.IsChainActivated(ctx, chain),
+		})
+	}
+
+	return &res, nil
+}
+
+// ChainsByAsset returns the chains that support an asset
+func (k Keeper) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest) (*types.ChainsByAssetResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := sdk.ValidateDenom(req.Asset); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid asset")
+	}
+
+	chains := k.GetChains(ctx)
+
+	resp := types.ChainsByAssetResponse{
+		Chains: []string{},
+	}
+
+	for _, chain := range chains {
+		if k.IsAssetRegistered(ctx, chain, req.Asset) {
+			resp.Chains = append(resp.Chains, chain.Name)
+		}
+	}
+
+	return &resp, nil
+}
