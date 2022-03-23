@@ -49,7 +49,7 @@ func NewLogMsgDecorator(cdc codec.Codec) LogMsgDecorator {
 
 // AnteHandle logs all messages in blocks
 func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	if simulate {
+	if simulate || ctx.IsCheckTx() {
 		return next(ctx, tx, simulate)
 	}
 
