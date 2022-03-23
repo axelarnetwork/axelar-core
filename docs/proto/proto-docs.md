@@ -247,6 +247,12 @@
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
 - [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [ChainStateRequest](#nexus.v1beta1.ChainStateRequest)
+    - [ChainStateResponse](#nexus.v1beta1.ChainStateResponse)
+    - [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest)
+    - [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse)
+    - [ChainsRequest](#nexus.v1beta1.ChainsRequest)
+    - [ChainsResponse](#nexus.v1beta1.ChainsResponse)
     - [FeeRequest](#nexus.v1beta1.FeeRequest)
     - [FeeResponse](#nexus.v1beta1.FeeResponse)
     - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
@@ -3841,6 +3847,94 @@ GenesisState represents the genesis state
 
 
 
+<a name="nexus.v1beta1.ChainStateRequest"></a>
+
+### ChainStateRequest
+ChainStateRequest represents a message that queries the state of a chain
+registered on the network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainStateResponse"></a>
+
+### ChainStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `state` | [ChainState](#nexus.v1beta1.ChainState) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsByAssetRequest"></a>
+
+### ChainsByAssetRequest
+ChainsByAssetRequest represents a message that queries the chains
+that support an asset on the network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsByAssetResponse"></a>
+
+### ChainsByAssetResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsRequest"></a>
+
+### ChainsRequest
+ChainsRequest represents a message that queries the chains
+registered on the network
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsResponse"></a>
+
+### ChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="nexus.v1beta1.FeeRequest"></a>
 
 ### FeeRequest
@@ -4182,6 +4276,9 @@ QueryService defines the gRPC querier service.
 | `TransfersForChain` | [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/nexus/v1beta1/transfers_for_chain|
 | `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee|
 | `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/axelar/nexus/v1beta1/transfer_fee|
+| `Chains` | [ChainsRequest](#nexus.v1beta1.ChainsRequest) | [ChainsResponse](#nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
+| `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state|
+| `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset|
 
  <!-- end services -->
 
