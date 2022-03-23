@@ -570,13 +570,8 @@ func TestContractTxState(t *testing.T) {
 		voter = &mock.VoterMock{
 			GetPollFunc: func(ctx sdk.Context, _ vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					IsFunc: func(state vote.PollState) bool {
-						switch {
-						case state == existingPollState:
-							return true
-						default:
-							return false
-						}
+					GetStateFunc: func() vote.PollState {
+						return existingPollState
 					},
 				}
 			},
@@ -588,7 +583,7 @@ func TestContractTxState(t *testing.T) {
 
 	repeatCount := 1
 
-	pollStates := []vote.PollState{vote.NonExistent, vote.Completed, vote.Expired, vote.Failed, vote.Pending}
+	pollStates := []vote.PollState{vote.Completed, vote.Expired, vote.Failed, vote.Pending}
 
 	t.Run("valid poll states", testutils.Func(func(t *testing.T) {
 		setup()
@@ -612,17 +607,20 @@ func TestContractTxState(t *testing.T) {
 
 	t.Run("invalid poll", testutils.Func(func(t *testing.T) {
 		setup()
-		existingPollState = -1
+		invalidPollStates := []vote.PollState{vote.NonExistent}
 
-		res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
-			Chain: existingChain,
-			TxID:  types.Hash{},
-		})
+		for _, pollState := range invalidPollStates {
+			existingPollState = pollState
+			res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
+				Chain: existingChain,
+				TxID:  types.Hash{},
+			})
 
-		assert := assert.New(t)
-		assert.Nil(res)
-		assert.NotNil(err)
+			assert := assert.New(t)
+			assert.Nil(res)
+			assert.NotNil(err)
 
-		assert.Equal(err.Error(), "rpc error: code = Internal desc = unknown state type: bridge error")
+			assert.Equal(err.Error(), "rpc error: code = NotFound desc = poll [evm_existing_0x0000000000000000000000000000000000000000000000000000000000000000] does not exist: bridge error")
+		}
 	}).Repeat(repeatCount))
 }
