@@ -4277,8 +4277,8 @@ QueryService defines the gRPC querier service.
 | `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee|
 | `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/axelar/nexus/v1beta1/transfer_fee|
 | `Chains` | [ChainsRequest](#nexus.v1beta1.ChainsRequest) | [ChainsResponse](#nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
-| `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state|
-| `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset|
+| `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
+| `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 
  <!-- end services -->
 

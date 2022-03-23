@@ -85,11 +85,12 @@ service QueryService {
 
   // ChainState queries the state of a registered chain on the network
   rpc ChainState(ChainStateRequest) returns (ChainStateResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/chain_state";
+    option (google.api.http).get = "/axelar/nexus/v1beta1/chain_state/{chain}";
   }
 
   // ChainsByAsset queries the chains that support an asset on the network
   rpc ChainsByAsset(ChainsByAssetRequest) returns (ChainsByAssetResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/chains_by_asset";
+    option (google.api.http).get =
+        "/axelar/nexus/v1beta1/chains_by_asset/{asset}";
   }
 }

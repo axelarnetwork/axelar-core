@@ -421,19 +421,26 @@ func local_request_QueryService_Chains_0(ctx context.Context, marshaler runtime.
 
 }
 
-var (
-	filter_QueryService_ChainState_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_ChainState_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ChainStateRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ChainState_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := client.ChainState(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -445,11 +452,22 @@ func local_request_QueryService_ChainState_0(ctx context.Context, marshaler runt
 	var protoReq ChainStateRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ChainState_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := server.ChainState(ctx, &protoReq)
@@ -457,19 +475,26 @@ func local_request_QueryService_ChainState_0(ctx context.Context, marshaler runt
 
 }
 
-var (
-	filter_QueryService_ChainsByAsset_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_ChainsByAsset_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ChainsByAssetRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["asset"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ChainsByAsset_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Asset, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
 	}
 
 	msg, err := client.ChainsByAsset(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -481,11 +506,22 @@ func local_request_QueryService_ChainsByAsset_0(ctx context.Context, marshaler r
 	var protoReq ChainsByAssetRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["asset"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ChainsByAsset_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Asset, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
 	}
 
 	msg, err := server.ChainsByAsset(ctx, &protoReq)
@@ -1108,9 +1144,9 @@ var (
 
 	pattern_QueryService_Chains_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "nexus", "v1beta1", "chains"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_ChainState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "nexus", "v1beta1", "chain_state"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_ChainState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "nexus", "v1beta1", "chain_state", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_ChainsByAsset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "nexus", "v1beta1", "chains_by_asset"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_ChainsByAsset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "nexus", "v1beta1", "chains_by_asset", "asset"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
