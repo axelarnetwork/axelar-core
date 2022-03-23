@@ -237,6 +237,7 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 }
 
 // GatewayTxState implements the gateway tx state grpc query
+// TODO: this is a temporary solution until general message passing functionality is finalized
 func (q Querier) GatewayTxState(c context.Context, req *types.GatewayTxStateRequest) (*types.GatewayTxStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if !q.keeper.HasChain(ctx, req.Chain) {
