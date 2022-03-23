@@ -130,6 +130,11 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 	return p.Result.GetCachedValue().(codec.ProtoMarshaler)
 }
 
+// GetState checks if the poll is in the given state
+func (p Poll) GetState() exported.PollState {
+	return p.State
+}
+
 // Initialize initializes the poll
 func (p Poll) Initialize() error {
 	sumVotingPower := sdk.ZeroInt()
