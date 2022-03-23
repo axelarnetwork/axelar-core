@@ -36,6 +36,7 @@ var (
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
 	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
+	eventPrefix                 = utils.KeyFromStr("event")
 
 	commandQueueName      = "cmd_queue"
 	contractCallQueueName = "contract_call_queue"
@@ -324,7 +325,7 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 	}, metadata)
 }
 
-func (k chainKeeper) GetContractCallQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
+func (k chainKeeper) GetContractCallQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewBlockHeightKVQueue(
 		contractCallQueueName,
 		k.getStore(ctx, k.chainLowerKey),
@@ -878,8 +879,48 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
-func (k chainKeeper) HasConfirmedContractCall(ctx sdk.Context, event types.Event) bool {
-	return k.getStore(ctx, k.chainLowerKey).Has(utils.LowerCaseKey(event.GetID()))
+func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
+	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
+	k.getStore(ctx, k.chainLowerKey).Get(key, &event)
+
+	return event, event.Status != types.EventNonExistent
+
+}
+
+// SetConfirmedEvent sets the event as confirmed
+func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error {
+	eventID := event.GetID()
+	if _, ok := k.GetEvent(ctx, eventID); ok {
+		return fmt.Errorf("event %s is already confirmed", eventID)
+	}
+
+	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
+	event.Status = types.EventConfirmed
+
+	switch event.GetEvent().(type) {
+	case *types.Event_ContractCallWithToken:
+		k.
+			GetContractCallQueue(ctx).
+			Enqueue(key, &event)
+	default:
+		return fmt.Errorf("unsupported event type %T", event)
+	}
+
+	return nil
+}
+
+// SetEventCompleted sets the event as completed
+func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
+	event, ok := k.GetEvent(ctx, eventID)
+	if !ok || event.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is not confirmed", eventID)
+	}
+
+	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
+	event.Status = types.EventCompleted
+	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
+
+	return nil
 }
 
 func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {
