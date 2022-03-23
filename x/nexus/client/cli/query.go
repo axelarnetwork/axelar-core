@@ -5,9 +5,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -30,6 +32,9 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandTransfersForChain(),
 		GetCommandFee(),
 		GetCommandTransferFee(),
+		GetCommandChains(),
+		GetCommandChainState(),
+		GetCommandChainsByAsset(),
 	)
 
 	return queryCmd
@@ -149,7 +154,7 @@ func GetCommandTransfersForChain() *cobra.Command {
 func GetCommandFee() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fee [chain] [asset]",
-		Short: "Query for fees registered for an asset on a chain",
+		Short: "Returns the per-chain fee for a registered asset",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -202,6 +207,106 @@ func GetCommandTransferFee() *cobra.Command {
 			}
 
 			res, err := queryClient.TransferFee(cmd.Context(), &req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCommandChains returns the query for retrieving the registered chains
+func GetCommandChains() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "chains",
+		Short: "Returns the registered chain names",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCommandChainState returns the query for retrieving the chain state
+func GetCommandChainState() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "chain-state [chain]",
+		Short: "Returns the chain state",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			if err := utils.ValidateString(args[0]); err != nil {
+				return sdkerrors.Wrap(err, "invalid chain")
+			}
+
+			res, err := queryClient.ChainState(cmd.Context(),
+				&types.ChainStateRequest{
+					Chain: args[0],
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCommandChainsByAsset returns the query for retrieving the chains where an asset is registered
+func GetCommandChainsByAsset() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "chain-by-asset [asset]",
+		Short: "Returns the chains an asset is registered on",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			if err := sdk.ValidateDenom(args[0]); err != nil {
+				return sdkerrors.Wrap(err, "invalid asset")
+			}
+
+			res, err := queryClient.ChainsByAsset(cmd.Context(),
+				&types.ChainsByAssetRequest{
+					Asset: args[0],
+				},
+			)
 			if err != nil {
 				return err
 			}

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -119,41 +120,33 @@ func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.Chai
 
 	chains := k.GetChains(ctx)
 
-	res := types.ChainsResponse{
-		Chains: []types.ChainsResponse_ChainState{},
-	}
+	chainNames := []string{}
 
 	for _, chain := range chains {
-		res.Chains = append(res.Chains, types.ChainsResponse_ChainState{
-			Chain:     chain,
-			Activated: k.IsChainActivated(ctx, chain),
-		})
+		chainNames = append(chainNames, strings.ToLower(chain.Name))
 	}
 
-	return &res, nil
+	return &types.ChainsResponse{Chains: chainNames}, nil
 }
 
-// Assets returns the assets supported by a specific chain
+// ChainState returns the chain state in the network
 func (k Keeper) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := k.GetChains(ctx)
-
-	res := types.ChainsResponse{
-		Chains: []types.ChainsResponse_ChainState{},
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	for _, chain := range chains {
-		res.Chains = append(res.Chains, types.ChainsResponse_ChainState{
-			Chain:     chain,
-			Activated: k.IsChainActivated(ctx, chain),
-		})
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
 	}
 
-	return &res, nil
+	return &types.ChainStateResponse{State: chainState}, nil
 }
 
-// ChainsByAsset returns the chains that support an asset
+// ChainsByAsset returns all chains that an asset is registered on
 func (k Keeper) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest) (*types.ChainsByAssetResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -162,16 +155,13 @@ func (k Keeper) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest
 	}
 
 	chains := k.GetChains(ctx)
-
-	resp := types.ChainsByAssetResponse{
-		Chains: []string{},
-	}
+	chainNames := []string{}
 
 	for _, chain := range chains {
 		if k.IsAssetRegistered(ctx, chain, req.Asset) {
-			resp.Chains = append(resp.Chains, chain.Name)
+			chainNames = append(chainNames, chain.Name)
 		}
 	}
 
-	return &resp, nil
+	return &types.ChainsByAssetResponse{Chains: chainNames}, nil
 }
