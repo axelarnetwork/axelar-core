@@ -83,8 +83,10 @@ type ChainKeeper interface {
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
-	GetContractCallQueue(ctx sdk.Context) utils.BlockHeightKVQueue
-	HasConfirmedContractCall(ctx sdk.Context, event Event) bool
+	GetContractCallQueue(ctx sdk.Context) utils.KVQueue
+	GetEvent(ctx sdk.Context, eventID string) (Event, bool)
+	SetConfirmedEvent(ctx sdk.Context, event Event) error
+	SetEventCompleted(ctx sdk.Context, eventID string) error
 }
 
 // ParamsKeeper represents a global paramstore

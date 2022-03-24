@@ -81,6 +81,10 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 			return sdkerrors.Wrap(err, "invalid event")
 		}
 
+		if event.Status != EventNonExistent {
+			return fmt.Errorf("invalid event status")
+		}
+
 		if !strings.EqualFold(event.Chain, m.GetChain()) {
 			return fmt.Errorf("invalid source chain in event ContractCallWithToken")
 		}

@@ -31,6 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -46,11 +47,464 @@ var (
 	evmChain    = exported.Ethereum.Name
 	network     = types.Rinkeby
 	networkConf = evmParams.RinkebyChainConfig
-	bytecodes   = common.FromHex(MymintableBin)
 	tokenBC     = rand.Bytes(64)
 	burnerBC    = common.Hex2Bytes(types.Burnable)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
+
+func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.TSSMock, *mock.NexusMock, *mock.SignerMock, *mock.VoterMock, *mock.SnapshotterMock) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+	evmBaseKeeper := &mock.BaseKeeperMock{}
+	tssKeeper := &mock.TSSMock{}
+	nexusKeeper := &mock.NexusMock{}
+	signerKeeper := &mock.SignerMock{}
+	voteKeeper := &mock.VoterMock{}
+	snapshotKeeper := &mock.SnapshotterMock{}
+
+	return ctx,
+		keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper),
+		evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper
+}
+
+func TestCreateApproveContractCalls(t *testing.T) {
+	repeat := 100
+	req := types.NewCreateApproveContractCallsRequest(rand.AccAddr(), rand.Str(5))
+
+	t.Run("should fail if the source chain is not registered", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, _, _, nexusKeeper, _, _, _ := setup()
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, false }
+
+		_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not a registered chain")
+	}).Repeat(repeat))
+
+	t.Run("should fail if the source chain is not activated", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, _, _, nexusKeeper, _, _, _ := setup()
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return false }
+
+		_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not activated yet")
+	}).Repeat(repeat))
+
+	t.Run("should fail if the source chain's gateway is not set", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, baseKeeper, _, nexusKeeper, _, _, _ := setup()
+		chainKeeper := &mock.ChainKeeperMock{}
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) { return common.Address{}, false }
+
+		_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "axelar gateway address not set")
+	}).Repeat(repeat))
+
+	t.Run("ContractCallWithToken", testutils.Func(func(t *testing.T) {
+		setup := func() (sdk.Context, types.MsgServiceServer, *mock.ChainKeeperMock, *mock.ChainKeeperMock, *mock.NexusMock, *mock.SignerMock, *utilsMock.KVQueueMock, *types.Event) {
+			ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
+			chainKeeper := &mock.ChainKeeperMock{}
+			sourceChainKeeper := &mock.ChainKeeperMock{}
+			contractCallQueue := &utilsMock.KVQueueMock{}
+
+			payload := rand.Bytes(100)
+			event := types.Event{
+				Chain: rand.Str(5),
+				TxId:  evmTestUtils.RandomHash(),
+				Index: uint64(rand.PosI64()),
+				Event: &types.Event_ContractCallWithToken{
+					ContractCallWithToken: &types.EventContractCallWithToken{
+						Sender:           evmTestUtils.RandomAddress(),
+						DestinationChain: req.Chain,
+						ContractAddress:  evmTestUtils.RandomAddress().Hex(),
+						PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(payload)),
+						Payload:          payload,
+						Symbol:           rand.Denom(3, 5),
+						Amount:           sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+					},
+				},
+			}
+
+			baseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return log.TestingLogger() }
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				if chain == req.Chain {
+					return nexus.Chain{Name: chain}, true
+				}
+				return nexus.Chain{}, false
+			}
+			nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
+			baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper {
+				switch chain {
+				case event.Chain:
+					return sourceChainKeeper
+				case req.Chain:
+					return chainKeeper
+				default:
+					return &mock.ChainKeeperMock{}
+				}
+			}
+			chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) { return common.Address{}, true }
+			chainKeeper.GetContractCallQueueFunc = func(ctx sdk.Context) utils.KVQueue { return contractCallQueue }
+			contractCallQueue.EnqueueFunc = func(key utils.Key, value codec.ProtoMarshaler) {}
+			callCount := 0
+			contractCallQueue.DequeueFunc = func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+				callCount += 1
+				if callCount == 1 {
+					bz, _ := event.Marshal()
+					value.Unmarshal(bz)
+					return true
+				}
+				return false
+			}
+
+			return ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, signerKeeper, contractCallQueue, &event
+		}
+
+		t.Run("should ignore it if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, _, sourceChainKeeper, _, _, contractCallQueue, _ := setup()
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				return types.NilToken
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}))
+
+		t.Run("should ignore it if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, _, _, contractCallQueue, event := setup()
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				return types.NilToken
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}))
+
+		t.Run("should ignore it if the contract address is invalid", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, _, _, contractCallQueue, event := setup()
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			event.GetContractCallWithToken().ContractAddress = rand.Str(42)
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}))
+
+		t.Run("should fail if the source chain is not registered", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, _, _, _, event := setup()
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "not a registered chain")
+		}))
+
+		t.Run("should ignore it if failed to compute transfer fee", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, _, contractCallQueue, event := setup()
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case req.Chain, event.Chain:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+				return sdk.Coin{}, fmt.Errorf("")
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}))
+
+		t.Run("should ignore it if the amount is not enough to cover the fee", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, _, contractCallQueue, event := setup()
+			fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.Int(event.GetContractCallWithToken().Amount.AddUint64(1)))
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case req.Chain, event.Chain:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+				return fee, nil
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}))
+
+		t.Run("should fail if the destination chain ID is not found", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, _, _, event := setup()
+			fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case req.Chain, event.Chain:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+				return fee, nil
+			}
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), false }
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "could not find chain ID")
+		}))
+
+		t.Run("should fail if the destination chain's secondary key is not found", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, signerKeeper, _, event := setup()
+			fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case req.Chain, event.Chain:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+				return fee, nil
+			}
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), false
+			}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "no secondary key")
+		}))
+
+		t.Run("should queue the corresponding command", testutils.Func(func(t *testing.T) {
+			ctx, msgServer, chainKeeper, sourceChainKeeper, nexusKeeper, signerKeeper, contractCallQueue, event := setup()
+			fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+			sourceChainKeeper.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+			chainKeeper.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == event.GetContractCallWithToken().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
+			}
+			nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case req.Chain, event.Chain:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+				return fee, nil
+			}
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				return tssTestUtils.RandKeyID(), chain.Name == req.Chain && keyRole == tss.SecondaryKey
+			}
+			chainKeeper.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
+			chainKeeper.SetEventCompletedFunc = func(ctx sdk.Context, eventID string) error { return nil }
+			nexusKeeper.AddTransferFeeFunc = func(ctx sdk.Context, coin sdk.Coin) {}
+
+			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, chainKeeper.EnqueueCommandCalls(), 1)
+			assert.Len(t, chainKeeper.SetEventCompletedCalls(), 1)
+			assert.Equal(t, event.GetID(), chainKeeper.SetEventCompletedCalls()[0].EventID)
+			assert.Len(t, nexusKeeper.AddTransferFeeCalls(), 1)
+			assert.Equal(t, fee, nexusKeeper.AddTransferFeeCalls()[0].Coin)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 0)
+		}))
+	}).Repeat(repeat))
+}
+
+func TestSetGateway(t *testing.T) {
+	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
+
+	t.Run("should fail if any of master, secondary and external keys is not set", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, _, _, nexusKeeper, signerKeeper, _, _ := setup()
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == req.Chain {
+				return nexus.Chain{Name: chain}, true
+			}
+
+			return nexus.Chain{}, false
+		}
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
+
+		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), keyRole != tss.MasterKey
+		}
+		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no master key")
+
+		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), keyRole != tss.SecondaryKey
+		}
+		_, err = msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no secondary key")
+
+		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
+		}
+		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, false }
+		_, err = msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no external keys")
+	}))
+
+	t.Run("should fail if gateway is already set", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
+		chainKeeper := &mock.ChainKeeperMock{}
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == req.Chain {
+				return nexus.Chain{Name: chain}, true
+			}
+
+			return nexus.Chain{}, false
+		}
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
+		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
+		}
+		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
+		baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
+			return common.Address(evmTestUtils.RandomAddress()), true
+		}
+
+		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "gateway already set")
+	}))
+
+	t.Run("should set gateway", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
+		chainKeeper := &mock.ChainKeeperMock{}
+
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			if chain == req.Chain {
+				return nexus.Chain{Name: chain}, true
+			}
+
+			return nexus.Chain{}, false
+		}
+		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
+		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			return tssTestUtils.RandKeyID(), true
+		}
+		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
+		baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
+			return common.Address{}, false
+		}
+		chainKeeper.SetGatewayFunc = func(ctx sdk.Context, address types.Address) {}
+
+		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
+		assert.NoError(t, err)
+		assert.Len(t, chainKeeper.SetGatewayCalls(), 1)
+		assert.Equal(t, req.Address, chainKeeper.SetGatewayCalls()[0].Address)
+	}))
+}
 
 func TestSignCommands(t *testing.T) {
 	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.SignerMock) {
