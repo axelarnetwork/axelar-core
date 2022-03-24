@@ -96,12 +96,12 @@ func (k chainKeeper) GetChainID(ctx sdk.Context) (sdk.Int, bool) {
 		return sdk.Int{}, false
 	}
 
-	chainId, found := k.GetChainIDByNetwork(ctx, network)
+	chainID, found := k.GetChainIDByNetwork(ctx, network)
 	if !found {
 		return sdk.Int{}, false
 	}
 
-	return chainId, true
+	return chainID, true
 }
 
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to
