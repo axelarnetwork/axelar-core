@@ -879,6 +879,7 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
+// GetEvent returns the event for the given event ID
 func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
 	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
 	k.getStore(ctx, k.chainLowerKey).Get(key, &event)
@@ -899,9 +900,7 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCallWithToken:
-		k.
-			GetContractCallQueue(ctx).
-			Enqueue(key, &event)
+		k.GetContractCallQueue(ctx).Enqueue(key, &event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
