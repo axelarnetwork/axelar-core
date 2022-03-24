@@ -32,8 +32,8 @@ func DefaultValdConfig() ValdConfig {
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {
-	MaxRetries int            `mapstructure:"max-retries"`
-	MinTimeout time.Duration  `mapstructure:"min-timeout"`
+	MaxRetries int            `mapstructure:"max_retries"`
+	MinTimeout time.Duration  `mapstructure:"min_timeout"`
 	FeeGranter sdk.AccAddress `mapstructure:"fee_granter"`
 }
 
