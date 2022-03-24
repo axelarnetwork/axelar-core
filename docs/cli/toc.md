@@ -106,6 +106,7 @@
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+      - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
       - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
       - [chain-state \[chain\]](axelard_query_nexus_chain-state.md)	 - Returns the chain state

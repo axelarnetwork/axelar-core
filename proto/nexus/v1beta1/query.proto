@@ -68,6 +68,12 @@ message ChainsRequest {}
 
 message ChainsResponse { repeated string chains = 1; }
 
+// AssetsRequest represents a message that queries the registered assets of a
+// chain
+message AssetsRequest { string chain = 1; }
+
+message AssetsResponse { repeated string assets = 1; }
+
 // ChainStateRequest represents a message that queries the state of a chain
 // registered on the network
 message ChainStateRequest { string chain = 1; }

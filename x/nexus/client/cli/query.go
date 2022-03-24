@@ -33,6 +33,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandFee(),
 		GetCommandTransferFee(),
 		GetCommandChains(),
+		GetCommandAssets(),
 		GetCommandChainState(),
 		GetCommandChainsByAsset(),
 	)
@@ -235,6 +236,42 @@ func GetCommandChains() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// GetCommandAssets returns the query for retrieving the registered assets of a chain
+func GetCommandAssets() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "assets [chain]",
+		Short: "Returns the registered assets of a chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			if err := utils.ValidateString(args[0]); err != nil {
+				return sdkerrors.Wrap(err, "invalid chain")
+			}
+
+			res, err := queryClient.Assets(cmd.Context(),
+				&types.AssetsRequest{
+					Chain: args[0],
+				},
+			)
 			if err != nil {
 				return err
 			}

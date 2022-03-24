@@ -247,6 +247,8 @@
     - [GenesisState](#nexus.v1beta1.GenesisState)
   
 - [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [AssetsRequest](#nexus.v1beta1.AssetsRequest)
+    - [AssetsResponse](#nexus.v1beta1.AssetsResponse)
     - [ChainStateRequest](#nexus.v1beta1.ChainStateRequest)
     - [ChainStateResponse](#nexus.v1beta1.ChainStateResponse)
     - [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest)
@@ -3847,6 +3849,37 @@ GenesisState represents the genesis state
 
 
 
+<a name="nexus.v1beta1.AssetsRequest"></a>
+
+### AssetsRequest
+AssetsRequest represents a message that queries the registered assets of a
+chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.AssetsResponse"></a>
+
+### AssetsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `assets` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="nexus.v1beta1.ChainStateRequest"></a>
 
 ### ChainStateRequest
@@ -4277,6 +4310,7 @@ QueryService defines the gRPC querier service.
 | `Fee` | [FeeRequest](#nexus.v1beta1.FeeRequest) | [FeeResponse](#nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee|
 | `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/axelar/nexus/v1beta1/transfer_fee|
 | `Chains` | [ChainsRequest](#nexus.v1beta1.ChainsRequest) | [ChainsResponse](#nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
+| `Assets` | [AssetsRequest](#nexus.v1beta1.AssetsRequest) | [AssetsResponse](#nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
 | `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 

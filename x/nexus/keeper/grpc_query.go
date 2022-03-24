@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -123,10 +122,33 @@ func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.Chai
 	chainNames := []string{}
 
 	for _, chain := range chains {
-		chainNames = append(chainNames, strings.ToLower(chain.Name))
+		chainNames = append(chainNames, chain.Name)
 	}
 
 	return &types.ChainsResponse{Chains: chainNames}, nil
+}
+
+// Assets returns the registered assets of a chain
+func (k Keeper) Assets(c context.Context, req *types.AssetsRequest) (*types.AssetsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
+	}
+
+	assets := []string{}
+
+	for _, asset := range chainState.Assets {
+		assets = append(assets, asset.Denom)
+	}
+
+	return &types.AssetsResponse{Assets: assets}, nil
 }
 
 // ChainState returns the chain state in the network
