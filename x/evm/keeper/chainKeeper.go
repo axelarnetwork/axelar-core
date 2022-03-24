@@ -3,7 +3,6 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -91,12 +90,18 @@ func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) uint32 {
 	return commandsGasLimit
 }
 
-func (k chainKeeper) GetChainID(ctx sdk.Context) (*big.Int, bool) {
+func (k chainKeeper) GetChainID(ctx sdk.Context) (sdk.Int, bool) {
 	network, ok := k.GetNetwork(ctx)
 	if !ok {
-		return nil, false
+		return sdk.Int{}, false
 	}
-	return k.GetChainIDByNetwork(ctx, network), true
+
+	chainId, found := k.GetChainIDByNetwork(ctx, network)
+	if !found {
+		return sdk.Int{}, false
+	}
+
+	return chainId, true
 }
 
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to
@@ -429,12 +434,12 @@ func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 	}
 
 	subspace.Get(ctx, types.KeyNetwork, &network)
-	chainID := k.GetChainIDByNetwork(ctx, network)
+	chainID, found := k.GetChainIDByNetwork(ctx, network)
 
-	if chainID == nil {
+	if !found {
 		panic(fmt.Sprintf("could not find chain ID for network '%s'", network))
 	}
-	return evmTypes.NewEIP155Signer(chainID)
+	return evmTypes.NewEIP155Signer(chainID.BigInt())
 }
 
 // DeletePendingDeposit deletes the deposit associated with the given poll
@@ -504,10 +509,7 @@ func (k chainKeeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
-func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool) {
-	if id == nil {
-		return "", false
-	}
+func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool) {
 	subspace, ok := k.getSubspace(ctx)
 	if !ok {
 		return "", false
@@ -516,7 +518,7 @@ func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 	var p types.Params
 	subspace.GetParamSet(ctx, &p)
 	for _, n := range p.Networks {
-		if n.Id.BigInt().Cmp(id) == 0 {
+		if n.Id == id {
 			return n.Name, true
 		}
 	}
@@ -525,24 +527,24 @@ func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
 }
 
 // GetChainIDByNetwork returns the network name for a given chain and network name
-func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int {
+func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool) {
 	if network == "" {
-		return nil
+		return sdk.Int{}, false
 	}
 	subspace, ok := k.getSubspace(ctx)
 	if !ok {
-		return nil
+		return sdk.Int{}, false
 	}
 
 	var p types.Params
 	subspace.GetParamSet(ctx, &p)
 	for _, n := range p.Networks {
 		if n.Name == network {
-			return n.Id.BigInt()
+			return n.Id, true
 		}
 	}
 
-	return nil
+	return sdk.Int{}, false
 }
 
 func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
@@ -659,7 +661,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 	}
 
 	keyRole := signer.GetKeyRole(ctx, keyID)
-	commandBatch, err := types.NewCommandBatchMetadata(chainID.BigInt(), keyID, keyRole, commands)
+	commandBatch, err := types.NewCommandBatchMetadata(chainID, keyID, keyRole, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}

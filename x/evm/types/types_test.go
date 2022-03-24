@@ -19,7 +19,7 @@ import (
 )
 
 func TestNewCommandBatchMetadata(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	commands := []Command{
 		{
 			ID:      CommandID(common.HexToHash("0xc5baf525fe191e3e9e35c2012ff5f86954c04677a1e4df56079714fc4949409f")),
@@ -41,7 +41,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 }
 
 func TestDeployToken(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 
 	details := TokenDetails{
@@ -77,7 +77,7 @@ func TestDeployToken(t *testing.T) {
 }
 
 func TestCreateMintTokenCommand(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	commandID := NewCommandID(rand.Bytes(32), chainID)
 	symbol := rand.Str(3)
@@ -107,7 +107,7 @@ func TestCreateMintTokenCommand(t *testing.T) {
 }
 
 func TestCreateBurnTokenCommand(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	symbol := rand.Str(3)
 	salt := common.BytesToHash(rand.Bytes(common.HashLength))
@@ -135,7 +135,7 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 }
 
 func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	newOwnerAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
@@ -156,7 +156,7 @@ func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
 }
 
 func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
@@ -177,7 +177,7 @@ func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 }
 
 func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 
 	addresses := []common.Address{
@@ -205,7 +205,7 @@ func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
 	assert.Equal(t, threshold, decodedThreshold)
 }
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
-	chainID := big.NewInt(1)
+	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
 
 	addresses := []common.Address{
