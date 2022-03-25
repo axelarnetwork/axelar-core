@@ -1345,7 +1345,7 @@ func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
 
 // GetID returns an unique ID for the event
 func (m Event) GetID() string {
-	return strings.ToLower(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
+	return fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index)
 }
 
 // Validate returns an error if the event is invalid

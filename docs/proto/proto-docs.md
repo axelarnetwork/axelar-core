@@ -147,6 +147,7 @@
   
     - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [Event.Status](#evm.v1beta1.Event.Status)
     - [Gateway.Status](#evm.v1beta1.Gateway.Status)
     - [SigType](#evm.v1beta1.SigType)
     - [Status](#evm.v1beta1.Status)
@@ -2265,6 +2266,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `index` | [uint64](#uint64) |  |  |
+| `status` | [Event.Status](#evm.v1beta1.Event.Status) |  |  |
 | `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
 
 
@@ -2420,6 +2422,19 @@ TransferKey contains information for a transfer ownership or operatorship
 | DEPOSIT_STATUS_PENDING | 1 |  |
 | DEPOSIT_STATUS_CONFIRMED | 2 |  |
 | DEPOSIT_STATUS_BURNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.Event.Status"></a>
+
+### Event.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_CONFIRMED | 1 |  |
+| STATUS_COMPLETED | 2 |  |
 
 
 
