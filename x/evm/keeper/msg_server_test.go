@@ -324,7 +324,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), false }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), false }
 
 			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
 			assert.Error(t, err)
@@ -357,7 +357,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return tssTestUtils.RandKeyID(), false
 			}
@@ -393,7 +393,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return tssTestUtils.RandKeyID(), chain.Name == req.Chain && keyRole == tss.SecondaryKey
 			}
