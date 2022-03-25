@@ -2742,7 +2742,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit {
 // 				panic("mock out the GetConfirmedDeposits method")
 // 			},
-// 			GetContractCallQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue {
+// 			GetContractCallQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetContractCallQueue method")
 // 			},
 // 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
@@ -2753,6 +2753,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			GetERC20TokenBySymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
 // 				panic("mock out the GetERC20TokenBySymbol method")
+// 			},
+// 			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool) {
+// 				panic("mock out the GetEvent method")
 // 			},
 // 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
 // 				panic("mock out the GetGatewayAddress method")
@@ -2799,17 +2802,20 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
 // 				panic("mock out the GetVotingThreshold method")
 // 			},
-// 			HasConfirmedContractCallFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool {
-// 				panic("mock out the HasConfirmedContractCall method")
-// 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
 // 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)  {
 // 				panic("mock out the SetBurnerInfo method")
 // 			},
+// 			SetConfirmedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+// 				panic("mock out the SetConfirmedEvent method")
+// 			},
 // 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
 // 				panic("mock out the SetDeposit method")
+// 			},
+// 			SetEventCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+// 				panic("mock out the SetEventCompleted method")
 // 			},
 // 			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
 // 				panic("mock out the SetGateway method")
@@ -2885,7 +2891,7 @@ type ChainKeeperMock struct {
 	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Deposit
 
 	// GetContractCallQueueFunc mocks the GetContractCallQueue method.
-	GetContractCallQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue
+	GetContractCallQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
 
 	// GetDepositFunc mocks the GetDeposit method.
 	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool)
@@ -2895,6 +2901,9 @@ type ChainKeeperMock struct {
 
 	// GetERC20TokenBySymbolFunc mocks the GetERC20TokenBySymbol method.
 	GetERC20TokenBySymbolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token
+
+	// GetEventFunc mocks the GetEvent method.
+	GetEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool)
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool)
@@ -2941,17 +2950,20 @@ type ChainKeeperMock struct {
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
 	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
 
-	// HasConfirmedContractCallFunc mocks the HasConfirmedContractCall method.
-	HasConfirmedContractCallFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool
-
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
 	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)
 
+	// SetConfirmedEventFunc mocks the SetConfirmedEvent method.
+	SetConfirmedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error
+
 	// SetDepositFunc mocks the SetDeposit method.
 	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)
+
+	// SetEventCompletedFunc mocks the SetEventCompleted method.
+	SetEventCompletedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error
 
 	// SetGatewayFunc mocks the SetGateway method.
 	SetGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)
@@ -3117,6 +3129,13 @@ type ChainKeeperMock struct {
 			// Symbol is the symbol argument value.
 			Symbol string
 		}
+		// GetEvent holds details about calls to the GetEvent method.
+		GetEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// EventID is the eventID argument value.
+			EventID string
+		}
 		// GetGatewayAddress holds details about calls to the GetGatewayAddress method.
 		GetGatewayAddress []struct {
 			// Ctx is the ctx argument value.
@@ -3196,13 +3215,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// HasConfirmedContractCall holds details about calls to the HasConfirmedContractCall method.
-		HasConfirmedContractCall []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Event is the event argument value.
-			Event types.Event
-		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -3215,6 +3227,13 @@ type ChainKeeperMock struct {
 			// BurnerInfo is the burnerInfo argument value.
 			BurnerInfo types.BurnerInfo
 		}
+		// SetConfirmedEvent holds details about calls to the SetConfirmedEvent method.
+		SetConfirmedEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Event is the event argument value.
+			Event types.Event
+		}
 		// SetDeposit holds details about calls to the SetDeposit method.
 		SetDeposit []struct {
 			// Ctx is the ctx argument value.
@@ -3223,6 +3242,13 @@ type ChainKeeperMock struct {
 			Deposit types.ERC20Deposit
 			// State is the state argument value.
 			State types.DepositStatus
+		}
+		// SetEventCompleted holds details about calls to the SetEventCompleted method.
+		SetEventCompleted []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// EventID is the eventID argument value.
+			EventID string
 		}
 		// SetGateway holds details about calls to the SetGateway method.
 		SetGateway []struct {
@@ -3285,6 +3311,7 @@ type ChainKeeperMock struct {
 	lockGetDeposit                    sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
 	lockGetERC20TokenBySymbol         sync.RWMutex
+	lockGetEvent                      sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetLatestCommandBatch         sync.RWMutex
 	lockGetMinVoterCount              sync.RWMutex
@@ -3300,10 +3327,11 @@ type ChainKeeperMock struct {
 	lockGetTokenByteCode              sync.RWMutex
 	lockGetTokens                     sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
-	lockHasConfirmedContractCall      sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
+	lockSetConfirmedEvent             sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
+	lockSetEventCompleted             sync.RWMutex
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
 	lockSetParams                     sync.RWMutex
@@ -3907,7 +3935,7 @@ func (mock *ChainKeeperMock) GetConfirmedDepositsCalls() []struct {
 }
 
 // GetContractCallQueue calls GetContractCallQueueFunc.
-func (mock *ChainKeeperMock) GetContractCallQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.BlockHeightKVQueue {
+func (mock *ChainKeeperMock) GetContractCallQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 	if mock.GetContractCallQueueFunc == nil {
 		panic("ChainKeeperMock.GetContractCallQueueFunc: method is nil but ChainKeeper.GetContractCallQueue was just called")
 	}
@@ -4043,6 +4071,41 @@ func (mock *ChainKeeperMock) GetERC20TokenBySymbolCalls() []struct {
 	mock.lockGetERC20TokenBySymbol.RLock()
 	calls = mock.calls.GetERC20TokenBySymbol
 	mock.lockGetERC20TokenBySymbol.RUnlock()
+	return calls
+}
+
+// GetEvent calls GetEventFunc.
+func (mock *ChainKeeperMock) GetEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool) {
+	if mock.GetEventFunc == nil {
+		panic("ChainKeeperMock.GetEventFunc: method is nil but ChainKeeper.GetEvent was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID string
+	}{
+		Ctx:     ctx,
+		EventID: eventID,
+	}
+	mock.lockGetEvent.Lock()
+	mock.calls.GetEvent = append(mock.calls.GetEvent, callInfo)
+	mock.lockGetEvent.Unlock()
+	return mock.GetEventFunc(ctx, eventID)
+}
+
+// GetEventCalls gets all the calls that were made to GetEvent.
+// Check the length with:
+//     len(mockedChainKeeper.GetEventCalls())
+func (mock *ChainKeeperMock) GetEventCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	EventID string
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID string
+	}
+	mock.lockGetEvent.RLock()
+	calls = mock.calls.GetEvent
+	mock.lockGetEvent.RUnlock()
 	return calls
 }
 
@@ -4518,41 +4581,6 @@ func (mock *ChainKeeperMock) GetVotingThresholdCalls() []struct {
 	return calls
 }
 
-// HasConfirmedContractCall calls HasConfirmedContractCallFunc.
-func (mock *ChainKeeperMock) HasConfirmedContractCall(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) bool {
-	if mock.HasConfirmedContractCallFunc == nil {
-		panic("ChainKeeperMock.HasConfirmedContractCallFunc: method is nil but ChainKeeper.HasConfirmedContractCall was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Event types.Event
-	}{
-		Ctx:   ctx,
-		Event: event,
-	}
-	mock.lockHasConfirmedContractCall.Lock()
-	mock.calls.HasConfirmedContractCall = append(mock.calls.HasConfirmedContractCall, callInfo)
-	mock.lockHasConfirmedContractCall.Unlock()
-	return mock.HasConfirmedContractCallFunc(ctx, event)
-}
-
-// HasConfirmedContractCallCalls gets all the calls that were made to HasConfirmedContractCall.
-// Check the length with:
-//     len(mockedChainKeeper.HasConfirmedContractCallCalls())
-func (mock *ChainKeeperMock) HasConfirmedContractCallCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Event types.Event
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Event types.Event
-	}
-	mock.lockHasConfirmedContractCall.RLock()
-	calls = mock.calls.HasConfirmedContractCall
-	mock.lockHasConfirmedContractCall.RUnlock()
-	return calls
-}
-
 // Logger calls LoggerFunc.
 func (mock *ChainKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -4619,6 +4647,41 @@ func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 	return calls
 }
 
+// SetConfirmedEvent calls SetConfirmedEventFunc.
+func (mock *ChainKeeperMock) SetConfirmedEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+	if mock.SetConfirmedEventFunc == nil {
+		panic("ChainKeeperMock.SetConfirmedEventFunc: method is nil but ChainKeeper.SetConfirmedEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockSetConfirmedEvent.Lock()
+	mock.calls.SetConfirmedEvent = append(mock.calls.SetConfirmedEvent, callInfo)
+	mock.lockSetConfirmedEvent.Unlock()
+	return mock.SetConfirmedEventFunc(ctx, event)
+}
+
+// SetConfirmedEventCalls gets all the calls that were made to SetConfirmedEvent.
+// Check the length with:
+//     len(mockedChainKeeper.SetConfirmedEventCalls())
+func (mock *ChainKeeperMock) SetConfirmedEventCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Event types.Event
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}
+	mock.lockSetConfirmedEvent.RLock()
+	calls = mock.calls.SetConfirmedEvent
+	mock.lockSetConfirmedEvent.RUnlock()
+	return calls
+}
+
 // SetDeposit calls SetDepositFunc.
 func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
 	if mock.SetDepositFunc == nil {
@@ -4655,6 +4718,41 @@ func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 	mock.lockSetDeposit.RLock()
 	calls = mock.calls.SetDeposit
 	mock.lockSetDeposit.RUnlock()
+	return calls
+}
+
+// SetEventCompleted calls SetEventCompletedFunc.
+func (mock *ChainKeeperMock) SetEventCompleted(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+	if mock.SetEventCompletedFunc == nil {
+		panic("ChainKeeperMock.SetEventCompletedFunc: method is nil but ChainKeeper.SetEventCompleted was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID string
+	}{
+		Ctx:     ctx,
+		EventID: eventID,
+	}
+	mock.lockSetEventCompleted.Lock()
+	mock.calls.SetEventCompleted = append(mock.calls.SetEventCompleted, callInfo)
+	mock.lockSetEventCompleted.Unlock()
+	return mock.SetEventCompletedFunc(ctx, eventID)
+}
+
+// SetEventCompletedCalls gets all the calls that were made to SetEventCompleted.
+// Check the length with:
+//     len(mockedChainKeeper.SetEventCompletedCalls())
+func (mock *ChainKeeperMock) SetEventCompletedCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	EventID string
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID string
+	}
+	mock.lockSetEventCompleted.RLock()
+	calls = mock.calls.SetEventCompleted
+	mock.lockSetEventCompleted.RUnlock()
 	return calls
 }
 

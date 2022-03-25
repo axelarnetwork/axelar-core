@@ -10,13 +10,26 @@ import "tss/exported/v1beta1/types.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message Event {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    STATUS_UNSPECIFIED = 0
+        [ (gogoproto.enumvalue_customname) = "EventNonExistent" ];
+    STATUS_CONFIRMED = 1
+        [ (gogoproto.enumvalue_customname) = "EventConfirmed" ];
+    STATUS_COMPLETED = 2
+        [ (gogoproto.enumvalue_customname) = "EventCompleted" ];
+  }
+
   string chain = 1;
   bytes tx_id = 2
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   uint64 index = 3;
+  Status status = 4;
 
   oneof event {
-    evm.v1beta1.EventContractCallWithToken contract_call_with_token = 4;
+    evm.v1beta1.EventContractCallWithToken contract_call_with_token = 5;
   }
 }
 

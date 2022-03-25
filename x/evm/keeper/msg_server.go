@@ -154,6 +154,17 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("vote for poll %s already decided", poll.GetKey())}, nil
 	}
 
+	for _, event := range req.Vote.Events {
+		switch event.GetEvent().(type) {
+		case *types.Event_ContractCallWithToken:
+			if _, ok := s.ForChain(event.GetContractCallWithToken().DestinationChain).GetEvent(ctx, event.GetID()); ok {
+				return nil, fmt.Errorf("event %s from chain %s is already confirmed", event.GetID(), chain.Name)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported event type %T", event)
+		}
+	}
+
 	if err := poll.Vote(voter, &req.Vote); err != nil {
 		return nil, err
 	}
@@ -199,19 +210,11 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 	ctx.EventManager().EmitEvent(
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
-	queue := keeper.GetContractCallQueue(ctx)
-	txID := req.GetTxID()
-
 	for _, event := range result.Events {
-		if keeper.HasConfirmedContractCall(ctx, event) {
-			return nil, fmt.Errorf("event %s-%d already confirmed", txID, event.Index)
-		}
-
-		key := utils.LowerCaseKey(event.GetID())
-
 		switch event.GetEvent().(type) {
 		case *types.Event_ContractCallWithToken:
-			queue.Enqueue(key, &event)
+			s.
+				ForChain(event.GetContractCallWithToken().DestinationChain).SetConfirmedEvent(ctx, event)
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)
 		}
@@ -238,31 +241,23 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 	}
 
 	var invalidEvents []types.Event
+	var event types.Event
 
 	queue := keeper.GetContractCallQueue(ctx)
-	var event types.Event
 	for queue.Dequeue(&event) {
 		switch e := event.GetEvent().(type) {
 		case *types.Event_ContractCallWithToken:
 			contractCallWithToken := e.ContractCallWithToken
 
-			token := keeper.GetERC20TokenBySymbol(ctx, contractCallWithToken.Symbol)
+			token := s.ForChain(event.Chain).GetERC20TokenBySymbol(ctx, contractCallWithToken.Symbol)
 			if !token.Is(types.Confirmed) {
-				s.Logger(ctx).Info(fmt.Sprintf("%s token %s is not confirmed yet", chain.Name, contractCallWithToken.Symbol))
+				s.Logger(ctx).Info(fmt.Sprintf("%s token %s is not confirmed yet", event.Chain, contractCallWithToken.Symbol))
 				invalidEvents = append(invalidEvents, event)
 
 				continue
 			}
 
-			if !s.HasChain(ctx, contractCallWithToken.DestinationChain) {
-				s.Logger(ctx).Info(fmt.Sprintf("destination evm chain %s does not exist", chain.Name))
-				invalidEvents = append(invalidEvents, event)
-
-				continue
-			}
-
-			destinationChainKeeper := s.ForChain(contractCallWithToken.DestinationChain)
-			if token := destinationChainKeeper.GetERC20TokenByAsset(ctx, token.GetAsset()); !token.Is(types.Confirmed) {
+			if token := keeper.GetERC20TokenByAsset(ctx, token.GetAsset()); !token.Is(types.Confirmed) {
 				s.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", contractCallWithToken.DestinationChain, token.GetAsset()))
 				invalidEvents = append(invalidEvents, event)
 
@@ -277,12 +272,13 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 			}
 
 			// TODO: cosmos sdk invariants may be a good solution to avoid the check here
-			destinationChain, ok := s.nexus.GetChain(ctx, contractCallWithToken.DestinationChain)
+			sourceChain, ok := s.nexus.GetChain(ctx, event.Chain)
 			if !ok {
-				return nil, fmt.Errorf("%s is not a registered chain", contractCallWithToken.DestinationChain)
+				return nil, fmt.Errorf("%s is not a registered chain", event.Chain)
 			}
 
-			fee, err := s.nexus.ComputeTransferFee(ctx, chain, destinationChain, sdk.NewCoin(token.GetAsset(), sdk.Int(contractCallWithToken.Amount)))
+			coin := sdk.NewCoin(token.GetAsset(), sdk.Int(contractCallWithToken.Amount))
+			fee, err := s.nexus.ComputeTransferFee(ctx, sourceChain, chain, coin)
 			if err != nil {
 				s.Logger(ctx).Info(fmt.Sprintf("failed computing transfer fee for event %s with error %s", event.GetID(), err.Error()))
 				invalidEvents = append(invalidEvents, event)
@@ -290,29 +286,26 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 				continue
 			}
 
-			amount := contractCallWithToken.Amount.Sub(sdk.Uint(fee.Amount))
-			if amount.LT(sdk.ZeroUint()) {
+			if coin.IsLT(fee) {
 				s.Logger(ctx).Info(fmt.Sprintf("amount %s less than fee %s", contractCallWithToken.Amount.String(), fee.Amount.String()))
 				invalidEvents = append(invalidEvents, event)
 
 				continue
 			}
 
-			destinationChainID, ok := destinationChainKeeper.GetChainID(ctx)
+			chainID, ok := keeper.GetChainID(ctx)
 			if !ok {
-				return nil, fmt.Errorf("could not find chain ID for '%s'", contractCallWithToken.DestinationChain)
+				return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 			}
 
-			keyID, ok := s.signer.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
+			keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
 			if !ok {
-				s.Logger(ctx).Info(fmt.Sprintf("chain %s does not have the secondary key set", destinationChain.Name))
-				invalidEvents = append(invalidEvents, event)
-
-				continue
+				return nil, fmt.Errorf("no secondary key for chain %s found", chain.Name)
 			}
 
+			amount := contractCallWithToken.Amount.Sub(sdk.Uint(fee.Amount))
 			cmd, err := types.CreateApproveContractCallWithMintCommand(
-				destinationChainID,
+				chainID,
 				keyID,
 				event.Chain,
 				event.TxId,
@@ -325,11 +318,15 @@ func (s msgServer) CreateApproveContractCalls(c context.Context, req *types.Crea
 			}
 
 			s.Logger(ctx).Debug("created ApproveContractCallWithMint command",
-				"chain", destinationChain.Name,
+				"chain", chain.Name,
 				"commandID", cmd.ID.Hex(),
 			)
 
-			if err := destinationChainKeeper.EnqueueCommand(ctx, cmd); err != nil {
+			if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
+				return nil, err
+			}
+
+			if err := keeper.SetEventCompleted(ctx, event.GetID()); err != nil {
 				return nil, err
 			}
 
@@ -357,6 +354,18 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 
 	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
 		return nil, err
+	}
+
+	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey); !ok {
+		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+	}
+
+	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey); !ok {
+		return nil, fmt.Errorf("no secondary key for chain %s found", chain.Name)
+	}
+
+	if _, ok := s.signer.GetExternalKeyIDs(ctx, chain); !ok {
+		return nil, fmt.Errorf("no external keys for chain %s found", chain.Name)
 	}
 
 	keeper := s.ForChain(chain.Name)
