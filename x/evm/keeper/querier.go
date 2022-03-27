@@ -81,6 +81,20 @@ func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd ty
 	params := make(map[string]string)
 
 	switch cmd.Command {
+	case types.AxelarGatewayCommandApproveContractCallWithMint:
+		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, err := types.DecodeApproveContractCallWithMintParams(cmd.Params)
+
+		if err != nil {
+			return types.QueryCommandResponse{}, err
+		}
+
+		params["sourceChain"] = sourceChain
+		params["sourceAddress"] = sourceAddress
+		params["contractAddress"] = contractAddress.Hex()
+		params["payloadHash"] = payloadHash.Hex()
+		params["symbol"] = symbol
+		params["amount"] = amount.String()
+
 	case types.AxelarGatewayCommandDeployToken:
 		name, symbol, decs, cap, err := types.DecodeDeployTokenParams(cmd.Params)
 		if err != nil {

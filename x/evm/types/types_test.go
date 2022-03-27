@@ -18,6 +18,49 @@ import (
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
+func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
+	chainID := big.NewInt(1)
+	keyID := tssTestUtils.RandKeyID()
+	sourceChain := "polygon"
+	txID := Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
+	index := uint64(rand.I64Between(1, 100))
+	sourceAddress := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
+	contractAddress := common.HexToAddress("0x956dA338C1518a7FB213042b70c60c021aeBd554")
+	payloadHash := common.HexToHash("0x7c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c14")
+	symbol := "testA"
+	amount := sdk.NewUint(20000)
+	event := EventContractCallWithToken{
+		Sender:          Address(common.HexToAddress(sourceAddress)),
+		ContractAddress: contractAddress.Hex(),
+		PayloadHash:     Hash(payloadHash),
+		Symbol:          symbol,
+	}
+
+	expectedParams := "00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000956da338c1518a7fb213042b70c60c021aebd5547c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c1400000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000004e200000000000000000000000000000000000000000000000000000000000000007706f6c79676f6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078363842393330343566653744383739346137634146333237653766383535434436436430334242380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000057465737441000000000000000000000000000000000000000000000000000000"
+	actual, err := CreateApproveContractCallWithMintCommand(
+		chainID,
+		keyID,
+		sourceChain,
+		txID,
+		index,
+		event,
+		amount,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, err := DecodeApproveContractCallWithMintParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, sourceAddress, actualSourceAddress)
+	assert.Equal(t, contractAddress, actualContractAddress)
+	assert.Equal(t, payloadHash, actualPayloadHash)
+	assert.Equal(t, symbol, actualSymbol)
+	assert.Equal(t, amount.BigInt(), actualAmount)
+
+}
+
 func TestNewCommandBatchMetadata(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	commands := []Command{

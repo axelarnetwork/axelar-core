@@ -539,7 +539,7 @@ func CreateApproveContractCallWithMintCommand(
 	keyID tss.KeyID,
 	sourceChain string,
 	txID Hash,
-	Index uint64,
+	index uint64,
 	event EventContractCallWithToken,
 	amount sdk.Uint,
 ) (Command, error) {
@@ -549,7 +549,7 @@ func CreateApproveContractCallWithMintCommand(
 	}
 
 	eventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(eventIndexBz, Index)
+	binary.LittleEndian.PutUint64(eventIndexBz, index)
 
 	return Command{
 		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
@@ -558,6 +558,47 @@ func CreateApproveContractCallWithMintCommand(
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
 	}, nil
+}
+
+// DecodeApproveContractCallWithMintParams unpacks the parameters of a approve contract call with mint command
+func DecodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: addressType},
+		{Type: bytes32Type},
+		{Type: stringType},
+		{Type: uint256Type},
+	}
+
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+
+	payloadHash := params[3].([32]byte)
+
+	return params[0].(string), params[1].(string), params[2].(common.Address), common.BytesToHash(payloadHash[:]), params[4].(string), params[5].(*big.Int), nil
 }
 
 func createApproveContractCallWithMintParams(sourceChain string, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
