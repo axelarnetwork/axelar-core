@@ -138,6 +138,7 @@
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollKey](#vote.exported.v1beta1.PollKey)
     - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
+    - [Vote](#vote.exported.v1beta1.Vote)
     - [Voter](#vote.exported.v1beta1.Voter)
   
     - [PollState](#vote.exported.v1beta1.PollState)
@@ -178,7 +179,9 @@
     - [Event](#evm.v1beta1.Event)
     - [EventContractCall](#evm.v1beta1.EventContractCall)
     - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
+    - [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed)
     - [EventTokenSent](#evm.v1beta1.EventTokenSent)
+    - [EventTransfer](#evm.v1beta1.EventTransfer)
     - [Gateway](#evm.v1beta1.Gateway)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
@@ -467,6 +470,13 @@
   
 - [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
     - [GenesisState](#vote.v1beta1.GenesisState)
+  
+- [vote/v1beta1/tx.proto](#vote/v1beta1/tx.proto)
+    - [VoteRequest](#vote.v1beta1.VoteRequest)
+    - [VoteResponse](#vote.v1beta1.VoteResponse)
+  
+- [vote/v1beta1/service.proto](#vote/v1beta1/service.proto)
+    - [MsgService](#vote.v1beta1.MsgService)
   
 - [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
     - [TalliedVote](#vote.v1beta1.TalliedVote)
@@ -2259,6 +2269,21 @@ vote can have any data type
 
 
 
+<a name="vote.exported.v1beta1.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `results` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+
+
+
+
+
+
 <a name="vote.exported.v1beta1.Voter"></a>
 
 ### Voter
@@ -2784,6 +2809,8 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `token_sent` | [EventTokenSent](#evm.v1beta1.EventTokenSent) |  |  |
 | `contract_call` | [EventContractCall](#evm.v1beta1.EventContractCall) |  |  |
 | `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
+| `transfer` | [EventTransfer](#evm.v1beta1.EventTransfer) |  |  |
+| `token_deployed` | [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed) |  |  |
 
 
 
@@ -2828,6 +2855,22 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
+<a name="evm.v1beta1.EventTokenDeployed"></a>
+
+### EventTokenDeployed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `symbol` | [string](#string) |  |  |
+| `token_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.EventTokenSent"></a>
 
 ### EventTokenSent
@@ -2840,6 +2883,22 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `destination_chain` | [string](#string) |  |  |
 | `destination_address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventTransfer"></a>
+
+### EventTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `to` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 
 
@@ -3693,8 +3752,6 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `amount` | [bytes](#bytes) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
 
 
 
@@ -4248,8 +4305,6 @@ Msg defines the evm Msg service.
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
 | `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote-confirm-chain|
-| `VoteConfirmDeposit` | [VoteConfirmDepositRequest](#evm.v1beta1.VoteConfirmDepositRequest) | [VoteConfirmDepositResponse](#evm.v1beta1.VoteConfirmDepositResponse) |  | POST|/axelar/evm/vote-confirm-deposit|
-| `VoteConfirmToken` | [VoteConfirmTokenRequest](#evm.v1beta1.VoteConfirmTokenRequest) | [VoteConfirmTokenResponse](#evm.v1beta1.VoteConfirmTokenResponse) |  | POST|/axelar/evm/vote-confirm-token|
 | `VoteConfirmTransferKey` | [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest) | [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
 | `CreateDeployToken` | [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create-deploy-token|
 | `CreateBurnTokens` | [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
@@ -6672,6 +6727,81 @@ Params represent the genesis parameters for the module
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/tx.proto
+
+
+
+<a name="vote.v1beta1.VoteRequest"></a>
+
+### VoteRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `vote` | [vote.exported.v1beta1.Vote](#vote.exported.v1beta1.Vote) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vote.v1beta1.VoteResponse"></a>
+
+### VoteResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `log` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="vote.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the vote Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Vote` | [VoteRequest](#vote.v1beta1.VoteRequest) | [VoteResponse](#vote.v1beta1.VoteResponse) |  | POST|/vote/vote|
 
  <!-- end services -->
 

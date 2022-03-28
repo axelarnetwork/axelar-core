@@ -25,6 +25,8 @@ message Voter {
   int64 voting_power = 2;
 }
 
+message Vote { repeated google.protobuf.Any results = 1; }
+
 // PollMetadata represents a poll with write-in voting, i.e. the result of the
 // vote can have any data type
 message PollMetadata {

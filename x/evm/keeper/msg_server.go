@@ -388,7 +388,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	// if token was initialized, both token and gateway addresses are available
-	tokenAddr := token.GetAddress()
 	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
@@ -399,9 +398,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
-			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset.Name),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -477,21 +473,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	keeper := s.ForChain(chain.Name)
 
-	_, state, ok := keeper.GetDeposit(ctx, common.Hash(req.TxID), common.Address(req.BurnerAddress))
-	switch {
-	case !ok:
-		break
-	case state == types.DepositStatus_Confirmed:
-		return nil, fmt.Errorf("already confirmed")
-	case state == types.DepositStatus_Burned:
-		return nil, fmt.Errorf("already burned")
-	}
-
-	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
-	if burnerInfo == nil {
-		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
-	}
-
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
@@ -507,7 +488,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex(), req.Amount.String()))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -520,15 +501,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	erc20Deposit := types.ERC20Deposit{
-		TxID:             req.TxID,
-		Amount:           req.Amount,
-		Asset:            burnerInfo.Asset,
-		DestinationChain: burnerInfo.DestinationChain,
-		BurnerAddress:    req.BurnerAddress,
-	}
-	keeper.SetPendingDeposit(ctx, pollKey, &erc20Deposit)
-
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
@@ -536,9 +508,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-			sdk.NewAttribute(types.AttributeKeyAmount, req.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -742,231 +711,6 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
-}
-
-// VoteConfirmDeposit handles votes for deposit confirmations
-func (s msgServer) VoteConfirmDeposit(c context.Context, req *types.VoteConfirmDepositRequest) (*types.VoteConfirmDepositResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	switch {
-	case poll.Is(vote.Expired):
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Expired.String())}, nil
-	case poll.Is(vote.Failed), poll.Is(vote.Completed):
-		// If the voting threshold has been met and additional votes are received they should not return an error
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("vote for poll %s already %s", req.PollKey, vote.Completed.String())}, nil
-	default:
-	}
-
-	keeper := s.ForChain(chain.Name)
-	pendingDeposit, _ := keeper.GetPendingDeposit(ctx, req.PollKey)
-
-	// poll is pending
-	if pendingDeposit.BurnerAddress != req.BurnAddress || pendingDeposit.TxID != req.TxID {
-		return nil, fmt.Errorf("deposit in %s to address %s does not match poll %s", req.TxID.Hex(), req.BurnAddress.Hex(), req.PollKey.String())
-	}
-
-	_, ok = s.nexus.GetChain(ctx, pendingDeposit.DestinationChain)
-	if !ok {
-		return nil, fmt.Errorf("destination chain %s is not a registered chain", pendingDeposit.DestinationChain)
-	}
-
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeDepositConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
-
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("not enough votes to confirm deposit in %s to %s yet", req.TxID.Hex(), req.BurnAddress.Hex())}, nil
-	}
-
-	if poll.Is(vote.Failed) {
-		keeper.DeletePendingDeposit(ctx, req.PollKey)
-		return &types.VoteConfirmDepositResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
-
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result for %s to %s is %t", chain.Name, pendingDeposit.TxID.Hex(), pendingDeposit.BurnerAddress.Hex(), confirmed.Value))
-	keeper.DeletePendingDeposit(ctx, req.PollKey)
-
-	depositAddr := nexus.CrossChainAddress{Address: pendingDeposit.BurnerAddress.Hex(), Chain: chain}
-	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
-	if !ok {
-		return nil, fmt.Errorf("cross-chain sender has no recipient")
-	}
-
-	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not find EVM subspace")
-	}
-
-	// handle poll result
-	event := sdk.NewEvent(types.EventTypeDepositConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
-		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-		sdk.NewAttribute(types.AttributeKeyAmount, pendingDeposit.Amount.String()),
-		sdk.NewAttribute(types.AttributeKeyAsset, pendingDeposit.Asset),
-		sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
-		sdk.NewAttribute(types.AttributeKeyTxID, pendingDeposit.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
-
-	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnAddress)
-	if burnerInfo != nil {
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()))
-	}
-
-	defer func() { ctx.EventManager().EmitEvent(event) }()
-
-	if !confirmed.Value {
-		poll.AllowOverride()
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
-		return &types.VoteConfirmDepositResponse{
-			Log: fmt.Sprintf("deposit in %s to %s was discarded", pendingDeposit.TxID.Hex(), req.BurnAddress.Hex()),
-		}, nil
-	}
-
-	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
-
-	amount := sdk.NewCoin(pendingDeposit.Asset, sdk.NewIntFromBigInt(pendingDeposit.Amount.BigInt()))
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount)
-	if err != nil {
-		return nil, err
-	}
-
-	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()))
-
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d and tx ID %s", depositAddr.Address, chain.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID, pendingDeposit.TxID.Hex()),
-		types.AttributeKeySourceChain, chain.Name,
-		types.AttributeKeyDepositAddress, depositAddr.Address,
-		types.AttributeKeyDestinationChain, recipient.Chain.Name,
-		types.AttributeKeyDestinationAddress, recipient.Address,
-		sdk.AttributeKeyAmount, amount.String(),
-		types.AttributeKeyAsset, amount.Denom,
-		types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex(),
-		types.AttributeKeyTxID, pendingDeposit.TxID.Hex(),
-		types.AttributeKeyTransferID, transferID.String(),
-	)
-	keeper.SetDeposit(ctx, pendingDeposit, types.DepositStatus_Confirmed)
-
-	return &types.VoteConfirmDepositResponse{}, nil
-}
-
-// VoteConfirmToken handles votes for token deployment confirmations
-func (s msgServer) VoteConfirmToken(c context.Context, req *types.VoteConfirmTokenRequest) (*types.VoteConfirmTokenResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	keeper := s.ForChain(chain.Name)
-	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	switch {
-	case poll.Is(vote.Expired):
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
-	case poll.Is(vote.Failed), poll.Is(vote.Completed):
-		// If the voting threshold has been met and additional votes are received they should not return an error
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
-	default:
-		if types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()) != req.PollKey {
-			return nil, fmt.Errorf("poll key mismatch (expected %s, got %s)", types.GetConfirmTokenKey(token.GetTxID(), token.GetAsset()).String(), req.PollKey.String())
-		}
-	}
-
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeTokenConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
-
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("not enough votes to confirm token %s yet", req.Asset)}, nil
-	}
-
-	if poll.Is(vote.Failed) {
-		token.RejectDeployment()
-		return &types.VoteConfirmTokenResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
-
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmation result on chain %s is %t", req.Asset, chain.Name, confirmed.Value))
-
-	// handle poll result
-	event := sdk.NewEvent(types.EventTypeTokenConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
-		sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
-		sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
-
-	if !confirmed.Value {
-		poll.AllowOverride()
-		token.RejectDeployment()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
-		return &types.VoteConfirmTokenResponse{
-			Log: fmt.Sprintf("token %s was discarded", req.Asset),
-		}, nil
-	}
-
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
-
-	token.ConfirmDeployment()
-
-	return &types.VoteConfirmTokenResponse{
-		Log: fmt.Sprintf("token %s deployment confirmed", req.Asset)}, nil
 }
 
 // VoteConfirmTransferKey handles votes for transfer ownership/operatorship confirmations

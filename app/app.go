@@ -442,6 +442,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK))
 	tssK.SetRouter(tssRouter)
 
+	voteRouter := voteTypes.NewRouter()
+	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK))
+	votingK.SetVoteRouter(voteRouter)
+
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment

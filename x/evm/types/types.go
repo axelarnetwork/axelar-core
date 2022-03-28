@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -1556,6 +1558,20 @@ func (m Event) ValidateBasic() error {
 		if err := event.TokenSent.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenSent")
 		}
+	case *Event_Transfer:
+		if event.Transfer == nil {
+			return fmt.Errorf("missing event Transfer")
+		}
+		if err := event.Transfer.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event Transfer")
+		}
+	case *Event_TokenDeployed:
+		if event.TokenDeployed == nil {
+			return fmt.Errorf("missing event TokenDeployed")
+		}
+		if err := event.TokenDeployed.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
+		}
 	default:
 		return fmt.Errorf("unknown type of event")
 	}
@@ -1633,6 +1649,32 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 
 	if m.Amount.IsZero() {
 		return fmt.Errorf("invalid amount")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event transfer is invalid
+func (m EventTransfer) Validate() error {
+	if m.To.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("invalid amount")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event token deployed is invalid
+func (m EventTokenDeployed) Validate() error {
+	if m.TokenAddress.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid symbol")
 	}
 
 	return nil
@@ -1742,4 +1784,32 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 	}
 
 	return params, nil
+}
+
+// UnpackEvents converts Any slice to Events
+func UnpackEvents(cdc codec.Codec, eventsAny []*codectypes.Any) ([]Event, error) {
+	var events []Event
+	for _, any := range eventsAny {
+		var event Event
+		if err := cdc.Unmarshal(any.Value, &event); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+// PackEvents converts Event to Any slice
+func PackEvents(events []Event) ([]*codectypes.Any, error) {
+	eventsAny := make([]*codectypes.Any, len(events))
+	for i, e := range events {
+		any, err := codectypes.NewAnyWithValue(&e)
+		if err != nil {
+			return nil, err
+		}
+		eventsAny[i] = any
+	}
+
+	return eventsAny, nil
 }

@@ -68,12 +68,6 @@ message ConfirmDepositRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  bytes amount = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  bytes burner_address = 5
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 message ConfirmDepositResponse {}
