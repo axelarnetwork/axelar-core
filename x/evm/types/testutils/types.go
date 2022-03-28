@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"encoding/hex"
-	"math/big"
 	"strconv"
 	"strings"
 
@@ -196,7 +195,7 @@ func RandomCommandIDs() []types.CommandID {
 
 // RandomCommandID returns a random (valid) command ID for testing
 func RandomCommandID() types.CommandID {
-	return types.NewCommandID(rand.Bytes(int(rand.I64Between(1, 100))), big.NewInt(rand.PosI64()))
+	return types.NewCommandID(rand.Bytes(int(rand.I64Between(1, 100))), sdk.NewInt(rand.PosI64()))
 }
 
 // RandomTokens returns a random (valid) slice of tokens for testing
