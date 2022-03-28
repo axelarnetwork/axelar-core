@@ -460,7 +460,7 @@ func GetCmdEvent(queryRoute string) *cobra.Command {
 		}
 
 		chain := utils.NormalizeString(args[0])
-		eventID := args[1]
+		eventID := utils.NormalizeString(args[1])
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
 
