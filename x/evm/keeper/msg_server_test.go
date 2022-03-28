@@ -324,7 +324,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), false }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), false }
 
 			_, err := msgServer.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), req)
 			assert.Error(t, err)
@@ -357,7 +357,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return tssTestUtils.RandKeyID(), false
 			}
@@ -393,7 +393,7 @@ func TestCreateApproveContractCalls(t *testing.T) {
 			nexusKeeper.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 				return fee, nil
 			}
-			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+			chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 			signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				return tssTestUtils.RandKeyID(), chain.Name == req.Chain && keyRole == tss.SecondaryKey
 			}
@@ -530,7 +530,7 @@ func TestSignCommands(t *testing.T) {
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
 		for i := range expectedCommandIDs {
-			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), sdk.NewInt(0))
 		}
 		expected := types.CommandBatchMetadata{
 			ID:         rand.Bytes(common.HashLength),
@@ -542,7 +542,7 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
-		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
 		}
@@ -571,7 +571,7 @@ func TestSignCommands(t *testing.T) {
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
 		for i := range expectedCommandIDs {
-			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), big.NewInt(0))
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), sdk.NewInt(0))
 		}
 		commandBatch := types.CommandBatchMetadata{
 			ID:         rand.Bytes(common.HashLength),
@@ -583,7 +583,7 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
-		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (*big.Int, bool) { return big.NewInt(0), true }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
 				assert.Equal(t, types.BatchSigning, batch.Status)
@@ -633,8 +633,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
 				return []types.ERC20Deposit{}
 			},
-			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
-				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID).BigInt()
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
+				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID), true
 			},
 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit) {},
 			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
@@ -642,8 +642,8 @@ func TestCreateBurnTokens(t *testing.T) {
 				return &types.BurnerInfo{}
 			},
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
-			GetChainIDFunc: func(sdk.Context) (*big.Int, bool) {
-				return big.NewInt(rand.PosI64()), true
+			GetChainIDFunc: func(sdk.Context) (sdk.Int, bool) {
+				return sdk.NewInt(rand.PosI64()), true
 			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
@@ -1800,8 +1800,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
 				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
 			},
-			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) *big.Int {
-				return big.NewInt(rand.I64Between(1, 1000))
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
+				return sdk.NewInt(rand.I64Between(1, 1000)), true
 			},
 
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {

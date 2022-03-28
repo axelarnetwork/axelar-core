@@ -37,7 +37,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		evmChain    string
 		asset       string
 		symbol      string
-		chainID     *big.Int
+		chainID     sdk.Int
 		keyID       tss.KeyID
 		cmds        []types.Command
 	)
@@ -47,7 +47,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		evmChain = rand.StrBetween(5, 10)
 		asset = btc.NativeAsset
 		symbol = "axelarBTC"
-		chainID = big.NewInt(1)
+		chainID = sdk.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
 		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, createDetails(asset, symbol), types.ZeroAddress)
 		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
