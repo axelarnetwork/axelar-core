@@ -176,7 +176,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 
 	if t.IsExternal() {
 		return CreateDeployTokenCommand(
-			t.metadata.ChainID.BigInt(),
+			t.metadata.ChainID,
 			key,
 			t.metadata.Details,
 			t.GetAddress(),
@@ -184,7 +184,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	}
 
 	return CreateDeployTokenCommand(
-		t.metadata.ChainID.BigInt(),
+		t.metadata.ChainID,
 		key,
 		t.metadata.Details,
 		ZeroAddress,
@@ -535,7 +535,7 @@ func GetSignHash(commandData []byte) common.Hash {
 
 // CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func CreateApproveContractCallWithMintCommand(
-	chainID *big.Int,
+	chainID sdk.Int,
 	keyID tss.KeyID,
 	sourceChain string,
 	txID Hash,
@@ -605,7 +605,7 @@ func createApproveContractCallWithMintParams(sourceChain string, event EventCont
 }
 
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
-func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
+func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
 	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 	if err != nil {
 		return Command{}, err
@@ -629,8 +629,8 @@ func CreateBurnTokenCommand(chainID *big.Int, keyID tss.KeyID, height int64, bur
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID *big.Int, keyID tss.KeyID, tokenDetails TokenDetails, address Address) (Command, error) {
-	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity.BigInt(), address)
+func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, tokenDetails TokenDetails, address Address) (Command, error) {
+	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address)
 	if err != nil {
 		return Command{}, err
 	}
@@ -663,7 +663,7 @@ func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, addres
 // CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
 func CreateSinglesigTransferCommand(
 	transferType TransferKeyType,
-	chainID *big.Int,
+	chainID sdk.Int,
 	keyID tss.KeyID,
 	address common.Address) (Command, error) {
 	params, err := createTransferSinglesigParams(address)
@@ -677,7 +677,7 @@ func CreateSinglesigTransferCommand(
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(
 	transferType TransferKeyType,
-	chainID *big.Int,
+	chainID sdk.Int,
 	keyID tss.KeyID,
 	threshold uint8,
 	addresses ...common.Address) (Command, error) {
@@ -807,7 +807,7 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(chainID *big.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
 	var r role
 	var commandIDs []CommandID
 	var commands []string
@@ -849,9 +849,9 @@ const commandIDSize = 32
 type CommandID [commandIDSize]byte
 
 // NewCommandID is the constructor for CommandID
-func NewCommandID(data []byte, chainID *big.Int) CommandID {
+func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
-	copy(commandID[:], crypto.Keccak256(append(data, chainID.Bytes()...))[:commandIDSize])
+	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
 	return commandID
 }
@@ -986,7 +986,7 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID *big.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID sdk.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
@@ -1018,7 +1018,7 @@ func packArguments(chainID *big.Int, r role, commandIDs []CommandID, commands []
 
 	arguments := abi.Arguments{{Type: uint256Type}, {Type: uint8Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
-		chainID,
+		chainID.BigInt(),
 		r,
 		commandIDs,
 		commands,
@@ -1082,7 +1082,7 @@ func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity *big.Int, address Address) ([]byte, error) {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -1108,7 +1108,7 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		tokenName,
 		symbol,
 		decimals,
-		capacity,
+		capacity.BigInt(),
 		address,
 	)
 	if err != nil {

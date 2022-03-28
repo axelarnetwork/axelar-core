@@ -1,8 +1,6 @@
 package types
 
 import (
-	"math/big"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
@@ -42,7 +40,7 @@ type ChainKeeper interface {
 	GetParams(ctx sdk.Context) Params
 
 	GetNetwork(ctx sdk.Context) (string, bool)
-	GetChainID(ctx sdk.Context) (*big.Int, bool)
+	GetChainID(ctx sdk.Context) (sdk.Int, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
 	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
 	GetBurnerByteCode(ctx sdk.Context) ([]byte, bool)
@@ -64,8 +62,8 @@ type ChainKeeper interface {
 	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
 	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
 	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
-	GetNetworkByID(ctx sdk.Context, id *big.Int) (string, bool)
-	GetChainIDByNetwork(ctx sdk.Context, network string) *big.Int
+	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
+	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
 	GetMinVoterCount(ctx sdk.Context) (int64, bool)
 
