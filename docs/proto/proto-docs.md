@@ -222,8 +222,6 @@
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
     - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
-    - [CreateApproveContractCallsRequest](#evm.v1beta1.CreateApproveContractCallsRequest)
-    - [CreateApproveContractCallsResponse](#evm.v1beta1.CreateApproveContractCallsResponse)
     - [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest)
     - [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse)
     - [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest)
@@ -2665,6 +2663,7 @@ TransferKey contains information for a transfer ownership or operatorship
 | STATUS_UNSPECIFIED | 0 |  |
 | STATUS_CONFIRMED | 1 |  |
 | STATUS_COMPLETED | 2 |  |
+| STATUS_FAILED | 3 |  |
 
 
 
@@ -3486,32 +3485,6 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="evm.v1beta1.CreateApproveContractCallsRequest"></a>
-
-### CreateApproveContractCallsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.CreateApproveContractCallsResponse"></a>
-
-### CreateApproveContractCallsResponse
-
-
-
-
-
-
-
 <a name="evm.v1beta1.CreateBurnTokensRequest"></a>
 
 ### CreateBurnTokensRequest
@@ -3959,7 +3932,6 @@ Msg defines the evm Msg service.
 | `SetGateway` | [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set-gateway|
 | `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm-gateway-tx|
 | `VoteConfirmGatewayTx` | [VoteConfirmGatewayTxRequest](#evm.v1beta1.VoteConfirmGatewayTxRequest) | [VoteConfirmGatewayTxResponse](#evm.v1beta1.VoteConfirmGatewayTxResponse) |  | POST|/axelar/evm/vote-confirm-gateway-tx|
-| `CreateApproveContractCalls` | [CreateApproveContractCallsRequest](#evm.v1beta1.CreateApproveContractCallsRequest) | [CreateApproveContractCallsResponse](#evm.v1beta1.CreateApproveContractCallsResponse) |  | POST|/axelar/evm/create-approve-contract-calls|
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|

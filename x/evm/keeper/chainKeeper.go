@@ -919,6 +919,20 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
 	return nil
 }
 
+// SetEventFailed sets the event as invalid
+func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
+	event, ok := k.GetEvent(ctx, eventID)
+	if !ok || event.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is not confirmed", eventID)
+	}
+
+	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
+	event.Status = types.EventFailed
+	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
+
+	return nil
+}
+
 func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {
 	// When a node restarts or joins the network after genesis, it might not have all EVM subspaces initialized.
 	// The following check has to be done regardless, if we would only do it dependent on the existence of a subspace

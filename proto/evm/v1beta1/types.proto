@@ -20,6 +20,7 @@ message Event {
         [ (gogoproto.enumvalue_customname) = "EventConfirmed" ];
     STATUS_COMPLETED = 2
         [ (gogoproto.enumvalue_customname) = "EventCompleted" ];
+    STATUS_FAILED = 3 [ (gogoproto.enumvalue_customname) = "EventFailed" ];
   }
 
   string chain = 1;

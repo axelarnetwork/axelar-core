@@ -44,14 +44,6 @@ message VoteConfirmGatewayTxRequest {
 
 message VoteConfirmGatewayTxResponse { string log = 1; }
 
-message CreateApproveContractCallsRequest {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-}
-
-message CreateApproveContractCallsResponse {}
-
 message ConfirmChainRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
