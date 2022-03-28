@@ -294,6 +294,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				event, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+					return false
 				}
 
 				events = append(events, evmTypes.Event{
