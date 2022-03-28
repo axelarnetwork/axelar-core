@@ -176,10 +176,10 @@
     - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
     - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
     - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
+    - [EventRequest](#evm.v1beta1.EventRequest)
+    - [EventResponse](#evm.v1beta1.EventResponse)
     - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
     - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
-    - [GatewayTxStateRequest](#evm.v1beta1.GatewayTxStateRequest)
-    - [GatewayTxStateResponse](#evm.v1beta1.GatewayTxStateResponse)
     - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
     - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
@@ -2828,6 +2828,37 @@ deposit address
 
 
 
+<a name="evm.v1beta1.EventRequest"></a>
+
+### EventRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventResponse"></a>
+
+### EventResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `event` | [Event](#evm.v1beta1.Event) |  |  |
+
+
+
+
+
+
 <a name="evm.v1beta1.GatewayAddressRequest"></a>
 
 ### GatewayAddressRequest
@@ -2852,37 +2883,6 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.GatewayTxStateRequest"></a>
-
-### GatewayTxStateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.GatewayTxStateResponse"></a>
-
-### GatewayTxStateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `poll_state` | [vote.exported.v1beta1.PollState](#vote.exported.v1beta1.PollState) |  |  |
 
 
 
@@ -3758,7 +3758,7 @@ QueryService defines the gRPC querier service.
 | `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
 | `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
 | `Bytecode` | [BytecodeRequest](#evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/evm/v1beta1/bytecode|
-| `GatewayTxState` | [GatewayTxStateRequest](#evm.v1beta1.GatewayTxStateRequest) | [GatewayTxStateResponse](#evm.v1beta1.GatewayTxStateResponse) | GatewayTxState queries the state of a gateway transaction at the specified chain | GET|/evm/v1beta1/gateway_tx_state|
+| `Event` | [EventRequest](#evm.v1beta1.EventRequest) | [EventResponse](#evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/evm/v1beta1/event|
 
  <!-- end services -->
 

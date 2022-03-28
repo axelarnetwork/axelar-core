@@ -32,9 +32,6 @@ var _ exported.Poll = &PollMock{}
 // 			GetResultFunc: func() codec.ProtoMarshaler {
 // 				panic("mock out the GetResult method")
 // 			},
-// 			GetStateFunc: func() exported.PollState {
-// 				panic("mock out the GetState method")
-// 			},
 // 			GetTotalVotingPowerFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetTotalVotingPower method")
 // 			},
@@ -66,9 +63,6 @@ type PollMock struct {
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
 
-	// GetStateFunc mocks the GetState method.
-	GetStateFunc func() exported.PollState
-
 	// GetTotalVotingPowerFunc mocks the GetTotalVotingPower method.
 	GetTotalVotingPowerFunc func() github_com_cosmos_cosmos_sdk_types.Int
 
@@ -95,9 +89,6 @@ type PollMock struct {
 		// GetResult holds details about calls to the GetResult method.
 		GetResult []struct {
 		}
-		// GetState holds details about calls to the GetState method.
-		GetState []struct {
-		}
 		// GetTotalVotingPower holds details about calls to the GetTotalVotingPower method.
 		GetTotalVotingPower []struct {
 		}
@@ -121,7 +112,6 @@ type PollMock struct {
 	lockDelete              sync.RWMutex
 	lockGetKey              sync.RWMutex
 	lockGetResult           sync.RWMutex
-	lockGetState            sync.RWMutex
 	lockGetTotalVotingPower sync.RWMutex
 	lockGetVoters           sync.RWMutex
 	lockIs                  sync.RWMutex
@@ -229,32 +219,6 @@ func (mock *PollMock) GetResultCalls() []struct {
 	mock.lockGetResult.RLock()
 	calls = mock.calls.GetResult
 	mock.lockGetResult.RUnlock()
-	return calls
-}
-
-// GetState calls GetStateFunc.
-func (mock *PollMock) GetState() exported.PollState {
-	if mock.GetStateFunc == nil {
-		panic("PollMock.GetStateFunc: method is nil but Poll.GetState was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetState.Lock()
-	mock.calls.GetState = append(mock.calls.GetState, callInfo)
-	mock.lockGetState.Unlock()
-	return mock.GetStateFunc()
-}
-
-// GetStateCalls gets all the calls that were made to GetState.
-// Check the length with:
-//     len(mockedPoll.GetStateCalls())
-func (mock *PollMock) GetStateCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetState.RLock()
-	calls = mock.calls.GetState
-	mock.lockGetState.RUnlock()
 	return calls
 }
 

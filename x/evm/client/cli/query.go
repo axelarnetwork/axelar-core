@@ -445,11 +445,11 @@ func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdGatewayTxState returns the query to get the minimum confirmation height for the given chain
-func GetCmdGatewayTxState(queryRoute string) *cobra.Command {
+// GetCmdEvent returns the query to an event for a chain based on the event's txID
+func GetCmdEvent(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "gateway-tx-state [chain] [tx-id]",
-		Short: "Returns the current state of the gateway-tx for the given chain",
+		Use:   "event [chain] [event-id]",
+		Short: "Returns an event for the given chain",
 		Args:  cobra.ExactArgs(2),
 	}
 
@@ -460,14 +460,14 @@ func GetCmdGatewayTxState(queryRoute string) *cobra.Command {
 		}
 
 		chain := utils.NormalizeString(args[0])
-		txID := common.HexToHash(args[1])
+		eventID := args[1]
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
 
-		res, err := queryClient.GatewayTxState(cmd.Context(),
-			&types.GatewayTxStateRequest{
-				Chain: chain,
-				TxID:  types.Hash(txID),
+		res, err := queryClient.Event(cmd.Context(),
+			&types.EventRequest{
+				Chain:   chain,
+				EventId: eventID,
 			})
 		if err != nil {
 			return err

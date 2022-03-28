@@ -27,16 +27,14 @@ type Querier struct {
 	keeper types.BaseKeeper
 	nexus  types.Nexus
 	signer types.Signer
-	voter  types.Voter
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer, v types.Voter) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 	return Querier{
 		keeper: k,
 		nexus:  n,
 		signer: s,
-		voter:  v,
 	}
 }
 
@@ -236,23 +234,19 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 	return &types.ConfirmationHeightResponse{Height: height}, nil
 }
 
-// GatewayTxState implements the gateway tx state grpc query
-// TODO: this is a temporary solution until general message passing functionality is finalized
-func (q Querier) GatewayTxState(c context.Context, req *types.GatewayTxStateRequest) (*types.GatewayTxStateResponse, error) {
+// Event implements the query for an event at a chain based on the event's ID
+func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.EventResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if !q.keeper.HasChain(ctx, req.Chain) {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
-	pollState := q.voter.GetPoll(ctx, pollKey).GetState()
-
-	switch pollState {
-	case vote.NonExistent:
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("poll [%s] does not exist", pollKey.String())).Error())
-	default:
-		return &types.GatewayTxStateResponse{PollState: pollState}, nil
+	event, ok := q.keeper.ForChain(req.Chain).GetEvent(ctx, req.EventId)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
 	}
+
+	return &types.EventResponse{Event: &event}, nil
 }
 
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {

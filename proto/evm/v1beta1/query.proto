@@ -5,7 +5,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 import "evm/v1beta1/types.proto";
-import "vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -96,18 +95,12 @@ message DepositStateRequest {
 
 message DepositStateResponse { DepositStatus status = 2; }
 
-message GatewayTxStateRequest {
+message EventRequest {
   string chain = 1;
-  bytes tx_id = 2 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
+  string event_id = 2;
 }
 
-message GatewayTxStateResponse {
-  vote.exported.v1beta1.PollState poll_state = 1;
-}
+message EventResponse { Event event = 1; }
 
 message QueryBurnerAddressResponse { string address = 1; }
 

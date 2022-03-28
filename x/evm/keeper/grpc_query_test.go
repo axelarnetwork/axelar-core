@@ -14,7 +14,6 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -33,7 +32,6 @@ func TestQueryPendingCommands(t *testing.T) {
 		chainKeeper *mock.ChainKeeperMock
 		baseKeeper  *mock.BaseKeeperMock
 		signer      *mock.SignerMock
-		voter       *mock.VoterMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    string
@@ -93,7 +91,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 
 		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
 		assert.NoError(t, err)
@@ -114,7 +112,6 @@ func TestQueryDepositState(t *testing.T) {
 	var (
 		baseKeeper      *mock.BaseKeeperMock
 		signer          *mock.SignerMock
-		voter           *mock.VoterMock
 		ctx             sdk.Context
 		evmChain        string
 		expectedDeposit types.ERC20Deposit
@@ -162,7 +159,7 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 	}
 	repeatCount := 20
@@ -300,7 +297,6 @@ func TestChains(t *testing.T) {
 		baseKeeper  *mock.BaseKeeperMock
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
-		voter       *mock.VoterMock
 		ctx         sdk.Context
 		evmChain    string
 		nonEvmChain string
@@ -336,7 +332,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -361,7 +357,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -376,7 +372,6 @@ func TestGateway(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
 		signer        *mock.SignerMock
-		voter         *mock.VoterMock
 		nexusKeeper   *mock.NexusMock
 		chainKeeper   *mock.ChainKeeperMock
 		ctx           sdk.Context
@@ -406,7 +401,7 @@ func TestGateway(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 	}
 
@@ -462,7 +457,6 @@ func TestBytecode(t *testing.T) {
 	var (
 		baseKeeper     *mock.BaseKeeperMock
 		signer         *mock.SignerMock
-		voter          *mock.VoterMock
 		nexusKeeper    *mock.NexusMock
 		chainKeeper    *mock.ChainKeeperMock
 		ctx            sdk.Context
@@ -514,7 +508,7 @@ func TestBytecode(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 	}
 
@@ -543,84 +537,111 @@ func TestBytecode(t *testing.T) {
 	}).Repeat(repeatCount))
 }
 
-func TestContractTxState(t *testing.T) {
+func TestEvent(t *testing.T) {
 	var (
-		baseKeeper        *mock.BaseKeeperMock
-		signer            *mock.SignerMock
-		voter             *mock.VoterMock
-		nexusKeeper       *mock.NexusMock
-		ctx               sdk.Context
-		expectedRes       types.GatewayTxStateResponse
-		grpcQuerier       *evmKeeper.Querier
-		existingPollState vote.PollState
-		existingChain     string
+		baseKeeper         *mock.BaseKeeperMock
+		signer             *mock.SignerMock
+		chainKeeper        *mock.ChainKeeperMock
+		nexusKeeper        *mock.NexusMock
+		ctx                sdk.Context
+		expectedResp       types.EventResponse
+		grpcQuerier        *evmKeeper.Querier
+		existingChain      string
+		nonExistingChain   string
+		existingEventID    string
+		nonExistingEventID string
+		existingStatus     types.Event_Status
 	)
 
 	setup := func() {
-		existingChain = "existing"
+		existingChain = "existing-chain"
+		nonExistingChain = "non-existing-chain"
+		existingEventID = evmTest.RandomHash().Hex()
+		nonExistingEventID = evmTest.RandomHash().Hex()
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetEventFunc: func(ctx sdk.Context, eventID string) (types.Event, bool) {
+				if eventID == existingEventID {
+					return types.Event{
+						Chain:  existingChain,
+						TxId:   types.Hash(common.HexToHash(existingEventID)),
+						Index:  0,
+						Status: existingStatus,
+						Event:  nil,
+					}, true
+				}
+				return types.Event{}, false
+			},
+		}
 
 		baseKeeper = &mock.BaseKeeperMock{
 			HasChainFunc: func(_ sdk.Context, chain string) bool {
 				return chain == existingChain
 			},
-		}
-
-		voter = &mock.VoterMock{
-			GetPollFunc: func(ctx sdk.Context, _ vote.PollKey) vote.Poll {
-				return &voteMock.PollMock{
-					GetStateFunc: func() vote.PollState {
-						return existingPollState
-					},
-				}
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, voter)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 		grpcQuerier = &q
 	}
 
-	repeatCount := 1
+	repeatCount := 10
 
-	pollStates := []vote.PollState{vote.Completed, vote.Expired, vote.Failed, vote.Pending}
+	statuses := []types.Event_Status{types.EventCompleted, types.EventConfirmed, types.EventNonExistent}
 
-	t.Run("valid poll states", testutils.Func(func(t *testing.T) {
+	t.Run("chain and event exist", testutils.Func(func(t *testing.T) {
 		setup()
-		for _, pollState := range pollStates {
-			existingPollState = pollState
-			expectedRes = types.GatewayTxStateResponse{
-				PollState: pollState,
+		for _, status := range statuses {
+			existingStatus = status
+			expectedResp = types.EventResponse{
+				Event: &types.Event{
+					Chain:  existingChain,
+					TxId:   types.Hash(common.HexToHash(existingEventID)),
+					Index:  0,
+					Status: existingStatus,
+					Event:  nil,
+				},
 			}
 
-			res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
-				Chain: existingChain,
-				TxID:  types.Hash{},
+			res, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+				Chain:   existingChain,
+				EventId: existingEventID,
 			})
 
 			assert := assert.New(t)
 			assert.NoError(err)
 
-			assert.Equal(expectedRes, *res)
+			assert.Equal(expectedResp, *res)
 		}
 	}).Repeat(repeatCount))
 
-	t.Run("invalid poll", testutils.Func(func(t *testing.T) {
+	t.Run("chain doesn't exist", testutils.Func(func(t *testing.T) {
 		setup()
-		invalidPollStates := []vote.PollState{vote.NonExistent}
+		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+			Chain:   nonExistingChain,
+			EventId: existingEventID,
+		})
 
-		for _, pollState := range invalidPollStates {
-			existingPollState = pollState
-			res, err := grpcQuerier.GatewayTxState(sdk.WrapSDKContext(ctx), &types.GatewayTxStateRequest{
-				Chain: existingChain,
-				TxID:  types.Hash{},
-			})
+		assert := assert.New(t)
+		assert.Error(err)
 
-			assert := assert.New(t)
-			assert.Nil(res)
-			assert.NotNil(err)
+		assert.Equal(err.Error(), fmt.Sprintf("rpc error: code = NotFound desc = [%s] is not a registered chain: bridge error", nonExistingChain))
+	}).Repeat(repeatCount))
 
-			assert.Equal(err.Error(), "rpc error: code = NotFound desc = poll [evm_existing_0x0000000000000000000000000000000000000000000000000000000000000000] does not exist: bridge error")
-		}
+	t.Run("event doesn't exist", testutils.Func(func(t *testing.T) {
+		setup()
+		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+			Chain:   existingChain,
+			EventId: nonExistingEventID,
+		})
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+		assert.Equal(err.Error(), fmt.Sprintf("rpc error: code = NotFound desc = no event with ID [%s] was found: bridge error", nonExistingEventID))
 	}).Repeat(repeatCount))
 }
