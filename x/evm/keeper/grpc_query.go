@@ -234,6 +234,21 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 	return &types.ConfirmationHeightResponse{Height: height}, nil
 }
 
+// Event implements the query for an event at a chain based on the event's ID
+func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.EventResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if !q.keeper.HasChain(ctx, req.Chain) {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
+	}
+
+	event, ok := q.keeper.ForChain(req.Chain).GetEvent(ctx, req.EventId)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
+	}
+
+	return &types.EventResponse{Event: &event}, nil
+}
+
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
 	_, ok := n.GetChain(ctx, k.GetName())
 	if !ok {

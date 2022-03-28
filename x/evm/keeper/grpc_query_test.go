@@ -536,3 +536,112 @@ func TestBytecode(t *testing.T) {
 		}
 	}).Repeat(repeatCount))
 }
+
+func TestEvent(t *testing.T) {
+	var (
+		baseKeeper         *mock.BaseKeeperMock
+		signer             *mock.SignerMock
+		chainKeeper        *mock.ChainKeeperMock
+		nexusKeeper        *mock.NexusMock
+		ctx                sdk.Context
+		expectedResp       types.EventResponse
+		grpcQuerier        *evmKeeper.Querier
+		existingChain      string
+		nonExistingChain   string
+		existingEventID    string
+		nonExistingEventID string
+		existingStatus     types.Event_Status
+	)
+
+	setup := func() {
+		existingChain = "existing-chain"
+		nonExistingChain = "non-existing-chain"
+		existingEventID = evmTest.RandomHash().Hex()
+		nonExistingEventID = evmTest.RandomHash().Hex()
+
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+
+		chainKeeper = &mock.ChainKeeperMock{
+			GetEventFunc: func(ctx sdk.Context, eventID string) (types.Event, bool) {
+				if eventID == existingEventID {
+					return types.Event{
+						Chain:  existingChain,
+						TxId:   types.Hash(common.HexToHash(existingEventID)),
+						Index:  0,
+						Status: existingStatus,
+						Event:  nil,
+					}, true
+				}
+				return types.Event{}, false
+			},
+		}
+
+		baseKeeper = &mock.BaseKeeperMock{
+			HasChainFunc: func(_ sdk.Context, chain string) bool {
+				return chain == existingChain
+			},
+			ForChainFunc: func(chain string) types.ChainKeeper {
+				return chainKeeper
+			},
+		}
+
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		grpcQuerier = &q
+	}
+
+	repeatCount := 10
+
+	statuses := []types.Event_Status{types.EventCompleted, types.EventConfirmed, types.EventNonExistent}
+
+	t.Run("chain and event exist", testutils.Func(func(t *testing.T) {
+		setup()
+		for _, status := range statuses {
+			existingStatus = status
+			expectedResp = types.EventResponse{
+				Event: &types.Event{
+					Chain:  existingChain,
+					TxId:   types.Hash(common.HexToHash(existingEventID)),
+					Index:  0,
+					Status: existingStatus,
+					Event:  nil,
+				},
+			}
+
+			res, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+				Chain:   existingChain,
+				EventId: existingEventID,
+			})
+
+			assert := assert.New(t)
+			assert.NoError(err)
+
+			assert.Equal(expectedResp, *res)
+		}
+	}).Repeat(repeatCount))
+
+	t.Run("chain doesn't exist", testutils.Func(func(t *testing.T) {
+		setup()
+		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+			Chain:   nonExistingChain,
+			EventId: existingEventID,
+		})
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+		assert.Equal(err.Error(), fmt.Sprintf("rpc error: code = NotFound desc = [%s] is not a registered chain: bridge error", nonExistingChain))
+	}).Repeat(repeatCount))
+
+	t.Run("event doesn't exist", testutils.Func(func(t *testing.T) {
+		setup()
+		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
+			Chain:   existingChain,
+			EventId: nonExistingEventID,
+		})
+
+		assert := assert.New(t)
+		assert.Error(err)
+
+		assert.Equal(err.Error(), fmt.Sprintf("rpc error: code = NotFound desc = no event with ID [%s] was found: bridge error", nonExistingEventID))
+	}).Repeat(repeatCount))
+}
