@@ -560,8 +560,8 @@ func CreateApproveContractCallWithMintCommand(
 	}, nil
 }
 
-// DecodeApproveContractCallWithMintParams unpacks the parameters of a approve contract call with mint command
-func DecodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, error) {
+// decodeApproveContractCallWithMintParams unpacks the parameters of a approve contract call with mint command
+func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return "", "", common.Address{}, common.Hash{}, "", nil, err
@@ -590,10 +590,12 @@ func DecodeApproveContractCallWithMintParams(bz []byte) (string, string, common.
 		{Type: stringType},
 		{Type: uint256Type},
 	}
-
 	params, err := arguments.Unpack(bz)
 	if err != nil {
 		return "", "", common.Address{}, common.Hash{}, "", nil, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return "", "", common.Address{}, common.Hash{}, "", nil, fmt.Errorf("wrong data")
 	}
 
 	payloadHash := params[3].([32]byte)
@@ -1097,8 +1099,8 @@ func createMintTokenParams(symbol string, address common.Address, amount *big.In
 	return result, nil
 }
 
-// DecodeMintTokenParams unpacks the parameters of a mint token command
-func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) {
+// decodeMintTokenParams unpacks the parameters of a mint token command
+func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return "", common.Address{}, nil, err
@@ -1118,6 +1120,9 @@ func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	params, err := arguments.Unpack(bz)
 	if err != nil {
 		return "", common.Address{}, nil, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return "", common.Address{}, nil, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
@@ -1159,30 +1164,38 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 	return result, nil
 }
 
-// DecodeDeployTokenParams unpacks the parameters of a deploy token command
-func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, error) {
+// decodeDeployTokenParams unpacks the parameters of a deploy token command
+func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return "", "", 0, nil, err
+		return "", "", 0, nil, common.Address{}, err
 	}
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return "", "", 0, nil, err
+		return "", "", 0, nil, common.Address{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return "", "", 0, nil, err
+		return "", "", 0, nil, common.Address{}, err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return "", "", 0, nil, common.Address{}, err
+	}
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
 	params, err := arguments.Unpack(bz)
 	if err != nil {
-		return "", "", 0, nil, err
+		return "", "", 0, nil, common.Address{}, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return "", "", 0, nil, common.Address{}, fmt.Errorf("wrong data")
 	}
 
-	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), nil
+	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), nil
 }
 
 func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
@@ -1205,8 +1218,8 @@ func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
 	return result, nil
 }
 
-// DecodeBurnTokenParams unpacks the parameters of a burn token command
-func DecodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
+// decodeBurnTokenParams unpacks the parameters of a burn token command
+func decodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return "", common.Hash{}, err
@@ -1221,6 +1234,9 @@ func DecodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
 	params, err := arguments.Unpack(bz)
 	if err != nil {
 		return "", common.Hash{}, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return "", common.Hash{}, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(string), params[1].([common.HashLength]byte), nil
@@ -1241,8 +1257,8 @@ func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
 	return result, nil
 }
 
-// DecodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
-func DecodeTransferSinglesigParams(bz []byte) (common.Address, error) {
+// decodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
+func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
 		return common.Address{}, err
@@ -1252,6 +1268,9 @@ func DecodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	params, err := arguments.Unpack(bz)
 	if err != nil {
 		return common.Address{}, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return common.Address{}, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(common.Address), nil
@@ -1277,8 +1296,8 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	return result, nil
 }
 
-// DecodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
-func DecodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
+// decodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
+func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return []common.Address{}, 0, err
@@ -1293,6 +1312,9 @@ func DecodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 	params, err := arguments.Unpack(bz)
 	if err != nil {
 		return []common.Address{}, 0, err
+	}
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return []common.Address{}, 0, fmt.Errorf("wrong data")
 	}
 
 	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
@@ -1446,4 +1468,83 @@ func (m EventContractCallWithToken) Validate() error {
 	}
 
 	return nil
+}
+
+// DecodeParams returns the decoded parameters in the given command
+func (c Command) DecodeParams() (map[string]string, error) {
+	params := make(map[string]string)
+
+	switch c.Command {
+	case AxelarGatewayCommandApproveContractCallWithMint:
+		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, err := decodeApproveContractCallWithMintParams(c.Params)
+
+		if err != nil {
+			return nil, err
+		}
+
+		params["sourceChain"] = sourceChain
+		params["sourceAddress"] = sourceAddress
+		params["contractAddress"] = contractAddress.Hex()
+		params["payloadHash"] = payloadHash.Hex()
+		params["symbol"] = symbol
+		params["amount"] = amount.String()
+	case AxelarGatewayCommandDeployToken:
+		name, symbol, decs, cap, tokenAddress, err := decodeDeployTokenParams(c.Params)
+		if err != nil {
+			return nil, err
+		}
+
+		params["name"] = name
+		params["symbol"] = symbol
+		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
+		params["cap"] = cap.String()
+		params["tokenAddress"] = tokenAddress.Hex()
+	case AxelarGatewayCommandMintToken:
+		symbol, addr, amount, err := decodeMintTokenParams(c.Params)
+		if err != nil {
+			return nil, err
+		}
+
+		params["symbol"] = symbol
+		params["account"] = addr.Hex()
+		params["amount"] = amount.String()
+	case AxelarGatewayCommandBurnToken:
+		symbol, salt, err := decodeBurnTokenParams(c.Params)
+		if err != nil {
+			return nil, err
+		}
+
+		params["symbol"] = symbol
+		params["salt"] = salt.Hex()
+	case AxelarGatewayCommandTransferOwnership, AxelarGatewayCommandTransferOperatorship:
+		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
+		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
+
+		switch {
+		case decodeSinglesigErr != nil:
+			param := "newOwner"
+			if c.Command == AxelarGatewayCommandTransferOperatorship {
+				param = "newOperator"
+			}
+			params[param] = address.Hex()
+		case decodeMultisigErr != nil:
+			var addressStrs []string
+			for _, address := range addresses {
+				addressStrs = append(addressStrs, address.Hex())
+			}
+
+			param := "newOwners"
+			if c.Command == AxelarGatewayCommandTransferOperatorship {
+				param = "newOperators"
+			}
+			params[param] = strings.Join(addressStrs, ";")
+			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
+		default:
+			return nil, fmt.Errorf("unsupported type of transfer key")
+		}
+	default:
+		return nil, fmt.Errorf("unknown command type '%s'", c.Command)
+	}
+
+	return params, nil
 }
