@@ -590,12 +590,9 @@ func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.
 		{Type: stringType},
 		{Type: uint256Type},
 	}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return "", "", common.Address{}, common.Hash{}, "", nil, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return "", "", common.Address{}, common.Hash{}, "", nil, fmt.Errorf("wrong data")
 	}
 
 	payloadHash := params[3].([32]byte)
@@ -1117,12 +1114,9 @@ func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return "", common.Address{}, nil, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return "", common.Address{}, nil, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
@@ -1187,12 +1181,9 @@ func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return "", "", 0, nil, common.Address{}, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return "", "", 0, nil, common.Address{}, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), nil
@@ -1231,12 +1222,9 @@ func decodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return "", common.Hash{}, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return "", common.Hash{}, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(string), params[1].([common.HashLength]byte), nil
@@ -1265,12 +1253,9 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	}
 
 	arguments := abi.Arguments{{Type: addressType}}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return common.Address{}, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return common.Address{}, fmt.Errorf("wrong data")
 	}
 
 	return params[0].(common.Address), nil
@@ -1309,12 +1294,9 @@ func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 	}
 
 	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
-	params, err := arguments.Unpack(bz)
+	params, err := StrictDecode(arguments, bz)
 	if err != nil {
 		return []common.Address{}, 0, err
-	}
-	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
-		return []common.Address{}, 0, fmt.Errorf("wrong data")
 	}
 
 	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
@@ -1544,6 +1526,20 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		}
 	default:
 		return nil, fmt.Errorf("unknown command type '%s'", c.Command)
+	}
+
+	return params, nil
+}
+
+// StrictDecode performs strict decode on evm encoded data, e.g. no byte can be left after the decoding
+func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
+	params, err := arguments.Unpack(bz)
+	if err != nil {
+		return nil, err
+	}
+
+	if actual, err := arguments.Pack(params...); err != nil || !bytes.Equal(actual, bz) {
+		return nil, fmt.Errorf("wrong data")
 	}
 
 	return params, nil
