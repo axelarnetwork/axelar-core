@@ -81,7 +81,7 @@ type ChainKeeper interface {
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
-	GetContractCallQueue(ctx sdk.Context) utils.KVQueue
+	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
 	GetEvent(ctx sdk.Context, eventID string) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID string) error
@@ -112,6 +112,7 @@ type Voter interface {
 type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
+	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)

@@ -30,8 +30,21 @@ message Event {
   Status status = 4;
 
   oneof event {
-    evm.v1beta1.EventContractCallWithToken contract_call_with_token = 5;
+    EventTokenSent token_sent = 5;
+    EventContractCallWithToken contract_call_with_token = 6;
   }
+}
+
+message EventTokenSent {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2;
+  string destination_address = 3;
+  string symbol = 4;
+  bytes amount = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message EventContractCallWithToken {

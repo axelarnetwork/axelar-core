@@ -114,22 +114,22 @@ func CreateERC20Token(setter func(meta ERC20TokenMetadata), meta ERC20TokenMetad
 }
 
 // GetAsset returns the asset name
-func (t *ERC20Token) GetAsset() string {
+func (t ERC20Token) GetAsset() string {
 	return t.metadata.Asset
 }
 
 // GetTxID returns the tx ID set with StartConfirmation
-func (t *ERC20Token) GetTxID() Hash {
+func (t ERC20Token) GetTxID() Hash {
 	return t.metadata.TxHash
 }
 
 // GetDetails returns the details of the token
-func (t *ERC20Token) GetDetails() TokenDetails {
+func (t ERC20Token) GetDetails() TokenDetails {
 	return t.metadata.Details
 }
 
 // Is returns true if the given status matches the token's status
-func (t *ERC20Token) Is(status Status) bool {
+func (t ERC20Token) Is(status Status) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x
 	if status == NonExistent {
 		return t.metadata.Status == NonExistent
@@ -143,7 +143,7 @@ func (t ERC20Token) IsExternal() bool {
 }
 
 // SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
-func (t ERC20Token) SaveBurnerCode(burnerCode []byte) {
+func (t *ERC20Token) SaveBurnerCode(burnerCode []byte) {
 	if len(t.metadata.BurnerCode) > 0 {
 		panic(fmt.Errorf("burner code already set"))
 	}
@@ -213,7 +213,7 @@ func transferIDtoCommandID(transferID nexus.TransferID) CommandID {
 }
 
 // GetAddress returns the token's address
-func (t *ERC20Token) GetAddress() Address {
+func (t ERC20Token) GetAddress() Address {
 	return t.metadata.TokenAddress
 
 }
@@ -1412,8 +1412,41 @@ func (m Event) Validate() error {
 		if err := event.ContractCallWithToken.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
 		}
+	case *Event_TokenSent:
+		if event.TokenSent == nil {
+			return fmt.Errorf("missing event TokenSent")
+		}
+
+		if err := event.TokenSent.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event TokenSent")
+		}
 	default:
 		return fmt.Errorf("unknown type of event")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event token sent is invalid
+func (m EventTokenSent) Validate() error {
+	if m.Sender.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
+	}
+
+	if err := utils.ValidateString(m.DestinationAddress); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination address")
+	}
+
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid symbol")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("invalid amount")
 	}
 
 	return nil

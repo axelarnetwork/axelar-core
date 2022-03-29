@@ -155,6 +155,7 @@
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [Event](#evm.v1beta1.Event)
     - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
+    - [EventTokenSent](#evm.v1beta1.EventTokenSent)
     - [Gateway](#evm.v1beta1.Gateway)
     - [NetworkInfo](#evm.v1beta1.NetworkInfo)
     - [SigMetadata](#evm.v1beta1.SigMetadata)
@@ -2495,6 +2496,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `tx_id` | [bytes](#bytes) |  |  |
 | `index` | [uint64](#uint64) |  |  |
 | `status` | [Event.Status](#evm.v1beta1.Event.Status) |  |  |
+| `token_sent` | [EventTokenSent](#evm.v1beta1.EventTokenSent) |  |  |
 | `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
 
 
@@ -2515,6 +2517,25 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `contract_address` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventTokenSent"></a>
+
+### EventTokenSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 
