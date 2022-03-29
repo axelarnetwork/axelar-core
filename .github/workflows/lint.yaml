@@ -13,10 +13,10 @@ jobs:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Setup Golang with cache
-      uses: magnetikonline/action-golang-cache@v2
-      with:
-        go-version: ${{ matrix.go-version }}
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v2
+        with:
+          go-version: ${{ matrix.go-version }}
 
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
