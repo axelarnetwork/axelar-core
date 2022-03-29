@@ -18,6 +18,49 @@ import (
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
+func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
+	chainID := sdk.NewInt(1)
+	keyID := tssTestUtils.RandKeyID()
+	sourceChain := "polygon"
+	txID := Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
+	index := uint64(rand.I64Between(1, 100))
+	sourceAddress := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
+	contractAddress := common.HexToAddress("0x956dA338C1518a7FB213042b70c60c021aeBd554")
+	payloadHash := common.HexToHash("0x7c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c14")
+	symbol := "testA"
+	amount := sdk.NewUint(20000)
+	event := EventContractCallWithToken{
+		Sender:          Address(common.HexToAddress(sourceAddress)),
+		ContractAddress: contractAddress.Hex(),
+		PayloadHash:     Hash(payloadHash),
+		Symbol:          symbol,
+	}
+
+	expectedParams := "00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000956da338c1518a7fb213042b70c60c021aebd5547c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c1400000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000004e200000000000000000000000000000000000000000000000000000000000000007706f6c79676f6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078363842393330343566653744383739346137634146333237653766383535434436436430334242380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000057465737441000000000000000000000000000000000000000000000000000000"
+	actual, err := CreateApproveContractCallWithMintCommand(
+		chainID,
+		keyID,
+		sourceChain,
+		txID,
+		index,
+		event,
+		amount,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+
+	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, err := decodeApproveContractCallWithMintParams(actual.Params)
+	assert.NoError(t, err)
+	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, sourceAddress, actualSourceAddress)
+	assert.Equal(t, contractAddress, actualContractAddress)
+	assert.Equal(t, payloadHash, actualPayloadHash)
+	assert.Equal(t, symbol, actualSymbol)
+	assert.Equal(t, amount.BigInt(), actualAmount)
+
+}
+
 func TestNewCommandBatchMetadata(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	commands := []Command{
@@ -68,12 +111,13 @@ func TestDeployToken(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedName, decodedSymbol, decodedDecs, decodedCap, err := DecodeDeployTokenParams(actual.Params)
+	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, err := decodeDeployTokenParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, details.TokenName, decodedName)
 	assert.Equal(t, details.Symbol, decodedSymbol)
 	assert.Equal(t, details.Decimals, decodedDecs)
 	assert.Equal(t, details.Capacity.BigInt(), decodedCap)
+	assert.Equal(t, address, Address(tokenAddress))
 }
 
 func TestCreateMintTokenCommand(t *testing.T) {
@@ -98,7 +142,7 @@ func TestCreateMintTokenCommand(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedSymbol, decodedAddr, decodedAmount, err := DecodeMintTokenParams(actual.Params)
+	decodedSymbol, decodedAddr, decodedAmount, err := decodeMintTokenParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, address, decodedAddr)
@@ -128,7 +172,7 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedSymbol, decodedSalt, err := DecodeBurnTokenParams(actual.Params)
+	decodedSymbol, decodedSalt, err := decodeBurnTokenParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, salt, decodedSalt)
@@ -150,9 +194,12 @@ func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedAddr, err := DecodeTransferSinglesigParams(actual.Params)
+	decodedAddr, err := decodeTransferSinglesigParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, newOwnerAddr, decodedAddr)
+
+	_, _, err = decodeTransferMultisigParams(actual.Params)
+	assert.Error(t, err)
 }
 
 func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
@@ -171,9 +218,12 @@ func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedAddr, err := DecodeTransferSinglesigParams(actual.Params)
+	decodedAddr, err := decodeTransferSinglesigParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, newOperatorAddr, decodedAddr)
+
+	_, _, err = decodeTransferMultisigParams(actual.Params)
+	assert.Error(t, err)
 }
 
 func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
@@ -199,10 +249,13 @@ func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedAddrs, decodedThreshold, err := DecodeTransferMultisigParams(actual.Params)
+	decodedAddrs, decodedThreshold, err := decodeTransferMultisigParams(actual.Params)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, addresses, decodedAddrs)
 	assert.Equal(t, threshold, decodedThreshold)
+
+	_, err = decodeTransferSinglesigParams(actual.Params)
+	assert.Error(t, err)
 }
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 	chainID := sdk.NewInt(1)
@@ -227,10 +280,13 @@ func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedAddrs, decodedThreshold, err := DecodeTransferMultisigParams(actual.Params)
+	decodedAddrs, decodedThreshold, err := decodeTransferMultisigParams(actual.Params)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, addresses, decodedAddrs)
 	assert.Equal(t, threshold, decodedThreshold)
+
+	_, err = decodeTransferSinglesigParams(actual.Params)
+	assert.Error(t, err)
 }
 
 func TestGetSignHash(t *testing.T) {
