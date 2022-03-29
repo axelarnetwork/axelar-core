@@ -8,18 +8,24 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.17.5
+          - 1.18
         os:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v2
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
+
+      - name: Cache Python
+        uses: action/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-cache
 
       - name: Checkout code
         uses: actions/checkout@v2
