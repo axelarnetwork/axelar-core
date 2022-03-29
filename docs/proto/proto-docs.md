@@ -1508,7 +1508,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc-transfer-count|
+| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
 
  <!-- end services -->
 

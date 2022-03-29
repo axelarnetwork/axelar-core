@@ -854,7 +854,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 }
 
 var (
-	pattern_QueryService_PendingIBCTransferCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "axelarnet", "v1beta1", "ibc-transfer-count"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_PendingIBCTransferCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "axelarnet", "v1beta1", "ibc_transfer_count"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
