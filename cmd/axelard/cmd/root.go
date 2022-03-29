@@ -210,18 +210,13 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	// Add rosetta command
 	rootCmd.AddCommand(server.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
-	defaults := map[string]string{
-		flags.FlagBroadcastMode:    flags.BroadcastBlock,
-		flags.FlagSkipConfirmation: "true",
-		flags.FlagGasPrices:        "0.05uaxl",
-	}
-	// overwrite default and set as current value
-	utils.OverwriteFlagDefaults(rootCmd, defaults, true)
-
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagChainID:        app.Name,
-		flags.FlagKeyringBackend: "file",
+		flags.FlagBroadcastMode:    flags.BroadcastBlock,
+		flags.FlagChainID:          app.Name,
+		flags.FlagGasPrices:        "0.00005uaxl",
+		flags.FlagKeyringBackend:   "file",
+		flags.FlagSkipConfirmation: "true",
 	}, false)
 
 	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")

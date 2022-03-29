@@ -218,4 +218,9 @@ service QueryService {
   rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
     option (google.api.http).get = "/evm/v1beta1/bytecode";
   }
+
+  // Event queries an event at the specified chain
+  rpc Event(EventRequest) returns (EventResponse) {
+    option (google.api.http).get = "/evm/v1beta1/event";
+  }
 }

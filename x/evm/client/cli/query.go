@@ -444,3 +444,38 @@ func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
+
+// GetCmdEvent returns the query to an event for a chain based on the event's txID
+func GetCmdEvent(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "event [chain] [event-id]",
+		Short: "Returns an event for the given chain",
+		Args:  cobra.ExactArgs(2),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		chain := utils.NormalizeString(args[0])
+		eventID := utils.NormalizeString(args[1])
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.Event(cmd.Context(),
+			&types.EventRequest{
+				Chain:   chain,
+				EventId: eventID,
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
