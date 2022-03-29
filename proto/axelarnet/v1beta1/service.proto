@@ -73,6 +73,6 @@ service QueryService {
   rpc PendingIBCTransferCount(PendingIBCTransferCountRequest)
       returns (PendingIBCTransferCountResponse) {
     option (google.api.http).get =
-        "/axelar/axelarnet/v1beta1/ibc-transfer-count";
+        "/axelar/axelarnet/v1beta1/ibc_transfer_count";
   }
 }
