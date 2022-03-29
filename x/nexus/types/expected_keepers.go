@@ -9,7 +9,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -55,9 +54,6 @@ type StakingKeeper interface {
 // AxelarnetKeeper provides functionality to the axelarnet module
 type AxelarnetKeeper interface {
 	IsCosmosChain(ctx sdk.Context, chain string) bool
-	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
-	GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool)
-	GetCosmosChains(ctx sdk.Context) []string
 }
 
 // EVMBaseKeeper provides functionality to get evm chain keeper
