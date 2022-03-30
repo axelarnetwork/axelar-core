@@ -100,8 +100,8 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 		indexSeen[event.Index] = true
 
 		switch event.GetEvent().(type) {
-		case *Event_ContractCallWithToken:
-		case *Event_TokenSent:
+		case *Event_ContractCallWithToken, *Event_TokenSent:
+			break
 		default:
 			return fmt.Errorf("unknown type of event")
 		}
