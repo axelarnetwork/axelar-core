@@ -12,25 +12,42 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
+func validateChains(ctx sdk.Context, sourceChainName string, destinationChainName string, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
+	sourceChain, ok := n.GetChain(ctx, sourceChainName)
+	if !ok {
+		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
+	}
+
+	destinationChain, ok := n.GetChain(ctx, destinationChainName)
+	if !ok {
+		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("%s is not a registered chain", destinationChainName)
+	}
+
+	if !bk.HasChain(ctx, destinationChainName) {
+		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("destination chain %s is not an evm chain", destinationChainName)
+	}
+
+	if !n.IsChainActivated(ctx, destinationChain) {
+		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("destination chain %s is not activated", destinationChainName)
+	}
+
+	return sourceChain, destinationChain, nil
+}
+
 func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) bool {
 	e := event.GetEvent().(*types.Event_TokenSent).TokenSent
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceCk := bk.ForChain(event.Chain)
-	destinationCk := bk.ForChain(e.DestinationChain)
-
-	// TODO: cosmos sdk invariants may be a good solution to avoid the check here
-	sourceChain, ok := n.GetChain(ctx, event.Chain)
-	if !ok {
-		panic(fmt.Errorf("%s is not a registered chain", event.Chain))
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	if err != nil {
+		bk.Logger(ctx).Info(err.Error())
+		return false
 	}
 
-	destinationChain, ok := n.GetChain(ctx, e.DestinationChain)
-	if !ok {
-		panic(fmt.Errorf("%s is not a registered chain", e.DestinationChain))
-	}
+	sourceCk := bk.ForChain(sourceChain.Name)
+	destinationCk := bk.ForChain(destinationChain.Name)
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -61,25 +78,69 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	return true
 }
 
+func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, s types.Signer) bool {
+	e := event.GetEvent().(*types.Event_ContractCall).ContractCall
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
+	}
+
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	if err != nil {
+		bk.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	destinationCk := bk.ForChain(destinationChain.Name)
+
+	destinationChainID, ok := destinationCk.GetChainID(ctx)
+	if !ok {
+		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
+	}
+
+	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
+	if !ok {
+		panic(fmt.Errorf("no secondary key for chain %s found", destinationChain.Name))
+	}
+
+	cmd, err := types.CreateApproveContractCallCommand(
+		destinationChainID,
+		keyID,
+		sourceChain.Name,
+		event.TxId,
+		event.Index,
+		*e,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
+		panic(err)
+	}
+
+	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Command),
+		"chain", destinationChain.Name,
+		"eventID", event.GetID(),
+		"commandID", cmd.ID.Hex(),
+	)
+
+	return true
+}
+
 func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, s types.Signer) bool {
 	e := event.GetEvent().(*types.Event_ContractCallWithToken).ContractCallWithToken
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceCk := bk.ForChain(event.Chain)
-	destinationCk := bk.ForChain(e.DestinationChain)
-
-	// TODO: cosmos sdk invariants may be a good solution to avoid the check here
-	sourceChain, ok := n.GetChain(ctx, event.Chain)
-	if !ok {
-		panic(fmt.Errorf("%s is not a registered chain", event.Chain))
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	if err != nil {
+		bk.Logger(ctx).Info(err.Error())
+		return false
 	}
 
-	destinationChain, ok := n.GetChain(ctx, e.DestinationChain)
-	if !ok {
-		panic(fmt.Errorf("%s is not a registered chain", e.DestinationChain))
-	}
+	sourceCk := bk.ForChain(sourceChain.Name)
+	destinationCk := bk.ForChain(destinationChain.Name)
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -178,6 +239,8 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			var ok bool
 
 			switch event.GetEvent().(type) {
+			case *types.Event_ContractCall:
+				ok = handleContractCall(ctx, event, bk, n, s)
 			case *types.Event_ContractCallWithToken:
 				ok = handleContractCallWithToken(ctx, event, bk, n, s)
 			case *types.Event_TokenSent:

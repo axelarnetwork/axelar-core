@@ -159,6 +159,8 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 		var destinationChain string
 
 		switch event := event.GetEvent().(type) {
+		case *types.Event_ContractCall:
+			destinationChain = event.ContractCall.DestinationChain
 		case *types.Event_ContractCallWithToken:
 			destinationChain = event.ContractCallWithToken.DestinationChain
 		case *types.Event_TokenSent:
@@ -221,6 +223,8 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 		var destinationChain string
 
 		switch event := event.GetEvent().(type) {
+		case *types.Event_ContractCall:
+			destinationChain = event.ContractCall.DestinationChain
 		case *types.Event_ContractCallWithToken:
 			destinationChain = event.ContractCallWithToken.DestinationChain
 		case *types.Event_TokenSent:

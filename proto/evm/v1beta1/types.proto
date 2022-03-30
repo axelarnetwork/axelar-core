@@ -31,7 +31,8 @@ message Event {
 
   oneof event {
     EventTokenSent token_sent = 5;
-    EventContractCallWithToken contract_call_with_token = 6;
+    EventContractCall contract_call = 6;
+    EventContractCallWithToken contract_call_with_token = 7;
   }
 }
 
@@ -45,6 +46,16 @@ message EventTokenSent {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
+}
+
+message EventContractCall {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2;
+  string contract_address = 3;
+  bytes payload_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  bytes payload = 5;
 }
 
 message EventContractCallWithToken {

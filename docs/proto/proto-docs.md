@@ -166,6 +166,7 @@
     - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
     - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
     - [Event](#evm.v1beta1.Event)
+    - [EventContractCall](#evm.v1beta1.EventContractCall)
     - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
     - [EventTokenSent](#evm.v1beta1.EventTokenSent)
     - [Gateway](#evm.v1beta1.Gateway)
@@ -2674,7 +2675,27 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `index` | [uint64](#uint64) |  |  |
 | `status` | [Event.Status](#evm.v1beta1.Event.Status) |  |  |
 | `token_sent` | [EventTokenSent](#evm.v1beta1.EventTokenSent) |  |  |
+| `contract_call` | [EventContractCall](#evm.v1beta1.EventContractCall) |  |  |
 | `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventContractCall"></a>
+
+### EventContractCall
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
 
 
 

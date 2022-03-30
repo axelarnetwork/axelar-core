@@ -37,6 +37,7 @@ var (
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
 	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
 	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
+	ContractCallSig                  = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
 	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 	TokenSentSig                     = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
@@ -199,10 +200,26 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 			}
 
 			switch log.Topics[0] {
+			case ContractCallSig:
+				event, err := decodeEventContractCall(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
+
+					return false
+				}
+
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_ContractCall{
+						ContractCall: &event,
+					},
+				})
 			case ContractCallWithTokenSig:
 				event, err := decodeEventContractCallWithToken(log)
 				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallApprovedWithMint failed").Error())
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
 
 					return false
 				}
@@ -278,6 +295,36 @@ func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
 		DestinationAddress: params[1].(string),
 		Symbol:             params[2].(string),
 		Amount:             sdk.NewUintFromBigInt(params[3].(*big.Int)),
+	}, nil
+}
+
+func decodeEventContractCall(log *geth.Log) (evmTypes.EventContractCall, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return evmTypes.EventContractCall{}, err
+	}
+
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return evmTypes.EventContractCall{}, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: bytesType},
+	}
+	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	if err != nil {
+		return evmTypes.EventContractCall{}, err
+	}
+
+	return evmTypes.EventContractCall{
+		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+		DestinationChain: params[0].(string),
+		ContractAddress:  params[1].(string),
+		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
+		Payload:          params[2].([]byte),
 	}, nil
 }
 

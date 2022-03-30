@@ -19,6 +19,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func setup() (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, *mock.SignerMock, *mock.ChainKeeperMock, *mock.ChainKeeperMock) {
@@ -33,6 +34,211 @@ func setup() (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, *mock.SignerMo
 	bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 
 	return ctx, bk, n, s, sourceCk, destinationCk
+}
+
+func TestHandleContractCall(t *testing.T) {
+	var (
+		event types.Event
+
+		ctx           sdk.Context
+		bk            *mock.BaseKeeperMock
+		n             *mock.NexusMock
+		s             *mock.SignerMock
+		sourceCk      *mock.ChainKeeperMock
+		destinationCk *mock.ChainKeeperMock
+	)
+
+	sourceChainName := rand.Str(5)
+	destinationChainName := rand.Str(5)
+	payload := rand.Bytes(100)
+
+	givenContractCallEvent := Given("a ContractCall event", func(t *testing.T) {
+		event = types.Event{
+			Chain: sourceChainName,
+			TxId:  evmTestUtils.RandomHash(),
+			Index: uint64(rand.PosI64()),
+			Event: &types.Event_ContractCall{
+				ContractCall: &types.EventContractCall{
+					Sender:           evmTestUtils.RandomAddress(),
+					DestinationChain: destinationChainName,
+					ContractAddress:  evmTestUtils.RandomAddress().Hex(),
+					PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(payload)),
+					Payload:          payload,
+				},
+			},
+		}
+		ctx, bk, n, s, sourceCk, destinationCk = setup()
+
+		bk.ForChainFunc = func(chain string) types.ChainKeeper {
+			switch chain {
+			case sourceChainName:
+				return sourceCk
+			case destinationChainName:
+				return destinationCk
+			default:
+				return nil
+			}
+		}
+	})
+
+	whenChainsAreRegistered := givenContractCallEvent.
+		When("the source chain is registered", func(t *testing.T) {
+			n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				switch chain {
+				case sourceChainName, destinationChainName:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+		})
+
+	panicWith := func(msg string) func(t *testing.T) {
+		return func(t *testing.T) {
+			assert.PanicsWithError(t, msg, func() {
+				handleContractCall(ctx, event, bk, n, s)
+			})
+		}
+	}
+
+	isDestinationChainEvm := func(isEvm bool) func(t *testing.T) {
+		return func(t *testing.T) {
+			bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return chain == destinationChainName && isEvm }
+		}
+	}
+
+	isDestinationChainActivated := func(isActivated bool) func(t *testing.T) {
+		return func(t *testing.T) {
+			n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain.Name == destinationChainName && isActivated
+			}
+		}
+	}
+
+	isDestinationChainIDSet := func(isSet bool) func(t *testing.T) {
+		return func(t *testing.T) {
+			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), isSet }
+		}
+	}
+
+	isCurrentSecondaryKeySet := func(isSet bool) func(t *testing.T) {
+		return func(t *testing.T) {
+			s.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+				if !isSet {
+					return "", false
+				}
+
+				return tssTestUtils.RandKeyID(), true
+			}
+		}
+	}
+
+	enqueueCommandSucceed := func(isSuccessful bool) func(t *testing.T) {
+		return func(t *testing.T) {
+			destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error {
+				if !isSuccessful {
+					return fmt.Errorf("enqueue error")
+				}
+
+				return nil
+			}
+		}
+	}
+
+	givenContractCallEvent.
+		When("the source chain is not registered", func(t *testing.T) {
+			n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				return nexus.Chain{}, chain != sourceChainName
+			}
+		}).
+		Then("should panic", panicWith(fmt.Sprintf("%s is not a registered chain", sourceChainName))).
+		Run(t)
+
+	givenContractCallEvent.
+		When("the destination chain is not registered", func(t *testing.T) {
+			n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				return nexus.Chain{}, chain != destinationChainName
+			}
+		}).
+		Then("should return false", func(t *testing.T) {
+			ok := handleContractCall(ctx, event, bk, n, s)
+			assert.False(t, ok)
+		}).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is not an evm chain", isDestinationChainEvm(false)).
+		Then("should return false", func(t *testing.T) {
+			ok := handleContractCall(ctx, event, bk, n, s)
+			assert.False(t, ok)
+		}).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is an evm chain", isDestinationChainEvm(true)).
+		And().
+		When("destination chain is not activated", isDestinationChainActivated(false)).
+		Then("should return false", func(t *testing.T) {
+			ok := handleContractCall(ctx, event, bk, n, s)
+			assert.False(t, ok)
+		}).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is an evm chain", isDestinationChainEvm(true)).
+		And().
+		When("destination chain is not activated", isDestinationChainActivated(true)).
+		And().
+		When("destination chain ID is not set", isDestinationChainIDSet(false)).
+		Then("should panic", panicWith(fmt.Sprintf("could not find chain ID for '%s'", destinationChainName))).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is an evm chain", isDestinationChainEvm(true)).
+		And().
+		When("destination chain is not activated", isDestinationChainActivated(true)).
+		And().
+		When("destination chain ID is set", isDestinationChainIDSet(true)).
+		And().
+		When("current secondary key is not set", isCurrentSecondaryKeySet(false)).
+		Then("should panic", panicWith(fmt.Sprintf("no secondary key for chain %s found", destinationChainName))).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is an evm chain", isDestinationChainEvm(true)).
+		And().
+		When("destination chain is not activated", isDestinationChainActivated(true)).
+		And().
+		When("destination chain ID is set", isDestinationChainIDSet(true)).
+		And().
+		When("current secondary key is set", isCurrentSecondaryKeySet(true)).
+		And().
+		When("enqueue command fails", enqueueCommandSucceed(false)).
+		Then("should panic", panicWith("enqueue error")).
+		Run(t)
+
+	whenChainsAreRegistered.
+		And().
+		When("destination chain is an evm chain", isDestinationChainEvm(true)).
+		And().
+		When("destination chain is not activated", isDestinationChainActivated(true)).
+		And().
+		When("destination chain ID is set", isDestinationChainIDSet(true)).
+		And().
+		When("current secondary key is set", isCurrentSecondaryKeySet(true)).
+		And().
+		When("enqueue command succeeds", enqueueCommandSucceed(true)).
+		Then("should return true", func(t *testing.T) {
+			ok := handleContractCall(ctx, event, bk, n, s)
+			assert.True(t, ok)
+			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
+		}).
+		Run(t)
 }
 
 func TestHandleTokenSent(t *testing.T) {
@@ -75,7 +281,7 @@ func TestHandleTokenSent(t *testing.T) {
 		})
 	}))
 
-	t.Run("should panic if the destination chain is not registered", testutils.Func(func(t *testing.T) {
+	t.Run("should return false if the destination chain is not registered", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain string) types.ChainKeeper {
@@ -92,9 +298,8 @@ func TestHandleTokenSent(t *testing.T) {
 			return nexus.Chain{}, chain != destinationChainName
 		}
 
-		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", destinationChainName), func() {
-			handleTokenSent(ctx, event, bk, n)
-		})
+		ok := handleTokenSent(ctx, event, bk, n)
+		assert.False(t, ok)
 	}))
 
 	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
@@ -118,6 +323,8 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			return types.NilToken
 		}
@@ -147,6 +354,8 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetTokenSent().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -182,6 +391,8 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetTokenSent().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -223,6 +434,8 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetTokenSent().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -305,9 +518,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return nexus.Chain{}, chain != destinationChainName
 		}
 
-		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", destinationChainName), func() {
-			handleContractCallWithToken(ctx, event, bk, n, s)
-		})
+		ok := handleContractCallWithToken(ctx, event, bk, n, s)
+		assert.False(t, ok)
 	}))
 
 	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
@@ -331,6 +543,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			return types.NilToken
 		}
@@ -360,6 +574,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -395,6 +611,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -436,6 +654,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -478,6 +698,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -520,6 +742,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -564,6 +788,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -611,6 +837,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				return nexus.Chain{}, false
 			}
 		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain string) bool { return true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
