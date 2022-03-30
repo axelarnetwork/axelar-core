@@ -21,7 +21,7 @@ func RunEndBlocker(c sdk.Context, l Logger, endBlocker func(sdk.Context) ([]abci
 
 	defer func() {
 		if r := recover(); r != nil {
-			l.Logger(ctx).Debug(fmt.Sprintf("panicked running end blocker due to error %v", r))
+			l.Logger(ctx).Error(fmt.Sprintf("panicked running end blocker due to error %v", r))
 		}
 	}()
 

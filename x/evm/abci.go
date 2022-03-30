@@ -158,7 +158,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
-func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, bk types.BaseKeeper) {}
+func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, s types.Signer) ([]abci.ValidatorUpdate, error) {
