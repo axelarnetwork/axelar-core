@@ -36,7 +36,7 @@ Run `./bin/axelard --help` after building the binaries to get information about 
 
 ## Show API documentation
 
-Execute `GO111MODULE=off go get -u golang.org/x/tools/cmd/godoc` to ensure that `godoc` is installed on the host.
+Execute `GO111MODULE=off go install -u golang.org/x/tools/cmd/godoc` to ensure that `godoc` is installed on the host.
 
 After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with
 port `8080` the documentation is hosted at
