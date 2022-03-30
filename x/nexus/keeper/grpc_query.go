@@ -119,8 +119,7 @@ func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.Chai
 
 	chains := k.GetChains(ctx)
 
-	chainNames := []string{}
-
+	chainNames := make([]string, len(chains))
 	for _, chain := range chains {
 		chainNames = append(chainNames, chain.Name)
 	}
@@ -142,8 +141,7 @@ func (k Keeper) Assets(c context.Context, req *types.AssetsRequest) (*types.Asse
 		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
 	}
 
-	assets := []string{}
-
+	assets := make([]string, len(chainState.Assets))
 	for _, asset := range chainState.Assets {
 		assets = append(assets, asset.Denom)
 	}
