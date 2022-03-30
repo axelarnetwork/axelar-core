@@ -2,13 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -68,7 +65,7 @@ func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id s
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", cmd.ID.Hex()))
 	}
 
-	resp, err := GetCommandResponse(ctx, keeper.GetName(), n, cmd)
+	resp, err := GetCommandResponse(cmd)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
@@ -77,83 +74,10 @@ func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id s
 }
 
 // GetCommandResponse converts a Command into a CommandResponse type
-func GetCommandResponse(ctx sdk.Context, chainName string, n types.Nexus, cmd types.Command) (types.QueryCommandResponse, error) {
-	params := make(map[string]string)
-
-	switch cmd.Command {
-	case types.AxelarGatewayCommandDeployToken:
-		name, symbol, decs, cap, err := types.DecodeDeployTokenParams(cmd.Params)
-		if err != nil {
-			return types.QueryCommandResponse{}, err
-		}
-
-		params["name"] = name
-		params["symbol"] = symbol
-		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
-		params["cap"] = cap.String()
-
-	case types.AxelarGatewayCommandMintToken:
-		symbol, addr, amount, err := types.DecodeMintTokenParams(cmd.Params)
-		if err != nil {
-			return types.QueryCommandResponse{}, err
-		}
-
-		params["symbol"] = symbol
-		params["account"] = addr.Hex()
-		params["amount"] = amount.String()
-
-	case types.AxelarGatewayCommandBurnToken:
-		symbol, salt, err := types.DecodeBurnTokenParams(cmd.Params)
-		if err != nil {
-			return types.QueryCommandResponse{}, err
-		}
-
-		params["symbol"] = symbol
-		params["salt"] = salt.Hex()
-
-	case types.AxelarGatewayCommandTransferOwnership, types.AxelarGatewayCommandTransferOperatorship:
-		chain, ok := n.GetChain(ctx, chainName)
-		if !ok {
-			return types.QueryCommandResponse{}, fmt.Errorf("unknown chain '%s'", chainName)
-		}
-
-		switch chain.KeyType {
-		case tss.Threshold:
-			address, err := types.DecodeTransferSinglesigParams(cmd.Params)
-			if err != nil {
-				return types.QueryCommandResponse{}, err
-			}
-
-			param := "newOwner"
-			if cmd.Command == types.AxelarGatewayCommandTransferOperatorship {
-				param = "newOperator"
-			}
-			params[param] = address.Hex()
-
-		case tss.Multisig:
-			addresses, threshold, err := types.DecodeTransferMultisigParams(cmd.Params)
-			if err != nil {
-				return types.QueryCommandResponse{}, err
-			}
-
-			var hexs []string
-			for _, address := range addresses {
-				hexs = append(hexs, address.Hex())
-			}
-
-			param := "newOwners"
-			if cmd.Command == types.AxelarGatewayCommandTransferOperatorship {
-				param = "newOperators"
-			}
-			params[param] = strings.Join(hexs, ";")
-			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
-
-		default:
-			return types.QueryCommandResponse{}, fmt.Errorf("unsupported key type '%s'", chain.KeyType.SimpleString())
-		}
-
-	default:
-		return types.QueryCommandResponse{}, fmt.Errorf("unknown command type '%s'", cmd.Command)
+func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
+	params, err := cmd.DecodeParams()
+	if err != nil {
+		return types.QueryCommandResponse{}, err
 	}
 
 	return types.QueryCommandResponse{

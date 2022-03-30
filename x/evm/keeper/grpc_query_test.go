@@ -98,7 +98,7 @@ func TestQueryPendingCommands(t *testing.T) {
 
 		var cmdResp []types.QueryCommandResponse
 		for _, cmd := range cmds {
-			resp, err := evmKeeper.GetCommandResponse(ctx, evmChain, nexusKeeper, cmd)
+			resp, err := evmKeeper.GetCommandResponse(cmd)
 			assert.NoError(t, err)
 			cmdResp = append(cmdResp, resp)
 		}

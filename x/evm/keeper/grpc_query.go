@@ -299,7 +299,7 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 
 	var commands []types.QueryCommandResponse
 	for _, cmd := range ck.GetPendingCommands(ctx) {
-		cmdResp, err := GetCommandResponse(ctx, ck.GetName(), q.nexus, cmd)
+		cmdResp, err := GetCommandResponse(cmd)
 		if err != nil {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}

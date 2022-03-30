@@ -29,6 +29,8 @@
       - [account \[address\]](axelard_query_auth_account.md)	 - Query for account by address
       - [accounts](axelard_query_auth_accounts.md)	 - Query all the accounts
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
+    - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
+      - [ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
     - [bank](axelard_query_bank.md)	 - Querying commands for the bank module
       - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations
