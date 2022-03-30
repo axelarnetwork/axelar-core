@@ -154,14 +154,21 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 		return &types.VoteConfirmGatewayTxResponse{Log: fmt.Sprintf("vote for poll %s already decided", poll.GetKey())}, nil
 	}
 
+	// validate events in vote
 	for _, event := range req.Vote.Events {
-		switch event.GetEvent().(type) {
+		var destinationChain string
+
+		switch event := event.GetEvent().(type) {
 		case *types.Event_ContractCallWithToken:
-			if _, ok := s.ForChain(event.GetContractCallWithToken().DestinationChain).GetEvent(ctx, event.GetID()); ok {
-				return nil, fmt.Errorf("event %s from chain %s is already confirmed", event.GetID(), chain.Name)
-			}
+			destinationChain = event.ContractCallWithToken.DestinationChain
+		case *types.Event_TokenSent:
+			destinationChain = event.TokenSent.DestinationChain
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)
+		}
+
+		if _, ok := s.ForChain(destinationChain).GetEvent(ctx, event.GetID()); ok {
+			return nil, fmt.Errorf("event %s from chain %s is already confirmed", event.GetID(), chain.Name)
 		}
 	}
 
@@ -211,13 +218,18 @@ func (s msgServer) VoteConfirmGatewayTx(c context.Context, req *types.VoteConfir
 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
 
 	for _, event := range result.Events {
-		switch event.GetEvent().(type) {
+		var destinationChain string
+
+		switch event := event.GetEvent().(type) {
 		case *types.Event_ContractCallWithToken:
-			s.
-				ForChain(event.GetContractCallWithToken().DestinationChain).SetConfirmedEvent(ctx, event)
+			destinationChain = event.ContractCallWithToken.DestinationChain
+		case *types.Event_TokenSent:
+			destinationChain = event.TokenSent.DestinationChain
 		default:
 			return nil, fmt.Errorf("unsupported event type %T", event)
 		}
+
+		s.ForChain(destinationChain).SetConfirmedEvent(ctx, event)
 	}
 
 	return &types.VoteConfirmGatewayTxResponse{}, nil
