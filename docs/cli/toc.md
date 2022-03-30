@@ -108,8 +108,12 @@
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+      - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
+      - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
       - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
-      - [fee \[chain\] \[asset\]](axelard_query_nexus_fee.md)	 - Query for fees registered for an asset on a chain
+      - [chain-state \[chain\]](axelard_query_nexus_chain-state.md)	 - Returns the chain state
+      - [chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
+      - [fee \[chain\] \[asset\]](axelard_query_nexus_fee.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfers-for-chain \[chain\] \[state (pending|archived|insufficient_amount)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address

@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
 import "nexus/exported/v1beta1/types.proto";
+import "nexus/v1beta1/types.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
@@ -59,4 +60,30 @@ message TransferFeeRequest {
 
 message TransferFeeResponse {
   cosmos.base.v1beta1.Coin fee = 1 [ (gogoproto.nullable) = false ];
-};
+}
+
+// ChainsRequest represents a message that queries the chains
+// registered on the network
+message ChainsRequest {}
+
+message ChainsResponse { repeated string chains = 1; }
+
+// AssetsRequest represents a message that queries the registered assets of a
+// chain
+message AssetsRequest { string chain = 1; }
+
+message AssetsResponse { repeated string assets = 1; }
+
+// ChainStateRequest represents a message that queries the state of a chain
+// registered on the network
+message ChainStateRequest { string chain = 1; }
+
+message ChainStateResponse {
+  ChainState state = 1 [ (gogoproto.nullable) = false ];
+}
+
+// ChainsByAssetRequest represents a message that queries the chains
+// that support an asset on the network
+message ChainsByAssetRequest { string asset = 1; }
+
+message ChainsByAssetResponse { repeated string chains = 1; }
