@@ -112,3 +112,76 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 
 	return &types.TransferFeeResponse{Fee: fee}, nil
 }
+
+// Chains returns the chains registered on the network
+func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := k.GetChains(ctx)
+
+	chainNames := make([]string, len(chains))
+	for i, chain := range chains {
+		chainNames[i] = chain.Name
+	}
+
+	return &types.ChainsResponse{Chains: chainNames}, nil
+}
+
+// Assets returns the registered assets of a chain
+func (k Keeper) Assets(c context.Context, req *types.AssetsRequest) (*types.AssetsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
+	}
+
+	assets := make([]string, len(chainState.Assets))
+	for i, asset := range chainState.Assets {
+		assets[i] = asset.Denom
+	}
+
+	return &types.AssetsResponse{Assets: assets}, nil
+}
+
+// ChainState returns the chain state in the network
+func (k Keeper) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := k.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
+	}
+
+	return &types.ChainStateResponse{State: chainState}, nil
+}
+
+// ChainsByAsset returns all chains that an asset is registered on
+func (k Keeper) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest) (*types.ChainsByAssetResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := sdk.ValidateDenom(req.Asset); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid asset")
+	}
+
+	chains := k.GetChains(ctx)
+	chainNames := []string{}
+
+	for _, chain := range chains {
+		if k.IsAssetRegistered(ctx, chain, req.Asset) {
+			chainNames = append(chainNames, chain.Name)
+		}
+	}
+
+	return &types.ChainsByAssetResponse{Chains: chainNames}, nil
+}
