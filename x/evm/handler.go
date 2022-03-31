@@ -110,9 +110,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 		case *types.CreateTransferOperatorshipRequest:
 			res, err := server.CreateTransferOperatorship(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.CreateApproveContractCallsRequest:
-			res, err := server.CreateApproveContractCalls(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.SignCommandsRequest:
 			res, err := server.SignCommands(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)

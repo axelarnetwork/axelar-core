@@ -38,6 +38,7 @@ var (
 	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
 	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
 	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
+	TokenSentSig                     = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -214,6 +215,22 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 						ContractCallWithToken: &event,
 					},
 				})
+			case TokenSentSig:
+				event, err := decodeEventTokenSent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+
+					return false
+				}
+
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_TokenSent{
+						TokenSent: &event,
+					},
+				})
 			default:
 			}
 		}
@@ -231,6 +248,37 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 
 	return err
+}
+
+func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return evmTypes.EventTokenSent{}, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return evmTypes.EventTokenSent{}, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: stringType},
+		{Type: uint256Type},
+	}
+	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	if err != nil {
+		return evmTypes.EventTokenSent{}, err
+	}
+
+	return evmTypes.EventTokenSent{
+		Sender:             evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+		DestinationChain:   params[0].(string),
+		DestinationAddress: params[1].(string),
+		Symbol:             params[2].(string),
+		Amount:             sdk.NewUintFromBigInt(params[3].(*big.Int)),
+	}, nil
 }
 
 func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCallWithToken, error) {
@@ -256,7 +304,7 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 		{Type: stringType},
 		{Type: uint256Type},
 	}
-	params, err := arguments.Unpack(log.Data)
+	params, err := evmTypes.StrictDecode(arguments, log.Data)
 	if err != nil {
 		return evmTypes.EventContractCallWithToken{}, err
 	}
@@ -753,13 +801,14 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (string, common.Address, err
 	if err != nil {
 		return "", common.Address{}, err
 	}
-	packedArgs := abi.Arguments{{Type: stringType}, {Type: addressType}}
-	args, err := packedArgs.Unpack(log.Data)
+
+	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}}
+	params, err := evmTypes.StrictDecode(arguments, log.Data)
 	if err != nil {
 		return "", common.Address{}, err
 	}
 
-	return args[0].(string), args[1].(common.Address), nil
+	return params[0].(string), params[1].(common.Address), nil
 }
 
 func decodeSinglesigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.TransferKeyType) (common.Address, error) {
@@ -806,21 +855,21 @@ func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.Tran
 	}
 
 	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
-	results, err := arguments.Unpack(log.Data)
+	params, err := evmTypes.StrictDecode(arguments, log.Data)
 	if err != nil {
 		return []common.Address{}, 0, err
 	}
 
-	if len(results) != 4 {
+	if len(params) != 4 {
 		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
 	}
 
-	addresses, ok := results[2].([]common.Address)
+	addresses, ok := params[2].([]common.Address)
 	if !ok {
 		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
 	}
 
-	threshold, ok := results[3].(*big.Int)
+	threshold, ok := params[3].(*big.Int)
 	if !ok {
 		return []common.Address{}, 0, fmt.Errorf("event is not for a transfer multisig key")
 	}

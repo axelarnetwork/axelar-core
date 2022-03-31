@@ -35,14 +35,6 @@ service MsgService {
     };
   }
 
-  rpc CreateApproveContractCalls(CreateApproveContractCallsRequest)
-      returns (CreateApproveContractCallsResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/create-approve-contract-calls"
-      body : "*"
-    };
-  }
-
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/link/{recipient_chain}"

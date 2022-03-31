@@ -47,7 +47,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOwnership(),
 		GetCmdCreateTransferOperatorship(),
-		GetCmdCreateApproveContractCalls(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
 	)
@@ -410,30 +409,6 @@ func GetCmdCreateTransferOperatorship() *cobra.Command {
 			}
 
 			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreateApproveContractCalls returns the cli command to create approve-contract-call commands that are initiated from an EVM chain
-func GetCmdCreateApproveContractCalls() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "create-approve-contract-calls [chain]",
-		Short: "Create approve contract call commands that are initiated from an EVM chain",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewCreateApproveContractCallsRequest(cliCtx.GetFromAddress(), args[0])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

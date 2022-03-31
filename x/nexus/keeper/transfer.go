@@ -95,27 +95,22 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 	return sdk.NewCoin(asset.Denom, fee), nil
 }
 
-// EnqueueForTransfer appoints the amount of tokens to be transferred/minted to the recipient previously linked to the specified sender
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
+// EnqueueTransfer enqueues an asset transfer to the given recipient address
+func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, recipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
 	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
-	if !sender.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
-		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", sender.Chain.Name)
+	if !senderChain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
+		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", senderChain.Name)
 	}
 
-	if !k.IsChainActivated(ctx, sender.Chain) {
-		return 0, fmt.Errorf("source chain '%s' is not activated", sender.Chain.Name)
-	}
-
-	recipient, ok := k.GetRecipient(ctx, sender)
-	if !ok {
-		return 0, fmt.Errorf("no recipient linked to sender %s", sender.String())
+	if !k.IsChainActivated(ctx, senderChain) {
+		return 0, fmt.Errorf("source chain '%s' is not activated", senderChain.Name)
 	}
 
 	if !k.IsChainActivated(ctx, recipient.Chain) {
 		return 0, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && sender.Chain.Name == chain.Name) {
+	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
@@ -127,14 +122,14 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 	}
 
 	// collect fee
-	fee, err := k.ComputeTransferFee(ctx, sender.Chain, recipient.Chain, asset)
+	fee, err := k.ComputeTransferFee(ctx, senderChain, recipient.Chain, asset)
 	if err != nil {
 		return 0, err
 	}
 
 	if fee.Amount.GTE(asset.Amount) {
-		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit for chain %s at %s from recipient %s due to deposited amount being below fees %s for asset %s",
-			sender.Chain.Name, sender.Address, recipient.Address, fee.String(), asset.String()))
+		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from chain %s to chain %s and recipient %s due to deposited amount being below fees %s for asset %s",
+			senderChain.Name, recipient.Chain.Name, recipient.Address, fee.String(), asset.String()))
 
 		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
 	}
@@ -151,10 +146,20 @@ func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAd
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("Transfer of %s from %s in %s to cross chain address %s in %s successfully prepared",
-		asset.String(), sender.Address, sender.Chain.Name, recipient.Address, recipient.Chain.Name))
+	k.Logger(ctx).Info(fmt.Sprintf("transfer %s from chain %s to chain %s and recipient %s is successfully prepared",
+		asset.String(), senderChain.Name, recipient.Chain.Name, recipient.Address))
 
 	return k.setNewTransfer(ctx, recipient, asset, exported.Pending), nil
+}
+
+// EnqueueForTransfer enqueues an asset transfer for the given deposit address
+func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
+	recipient, ok := k.GetRecipient(ctx, sender)
+	if !ok {
+		return 0, fmt.Errorf("no recipient linked to sender %s", sender.String())
+	}
+
+	return k.EnqueueTransfer(ctx, sender.Chain, recipient, asset)
 }
 
 func (k Keeper) getTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {

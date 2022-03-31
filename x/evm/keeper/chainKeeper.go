@@ -303,6 +303,7 @@ func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details typ
 	}, metadata), nil
 }
 
+// GetERC20TokenBySymbol returns the erc20 token by asset
 func (k chainKeeper) GetERC20TokenByAsset(ctx sdk.Context, asset string) types.ERC20Token {
 	metadata, ok := k.getTokenMetadataByAsset(ctx, asset)
 	if !ok {
@@ -314,6 +315,7 @@ func (k chainKeeper) GetERC20TokenByAsset(ctx sdk.Context, asset string) types.E
 	}, metadata)
 }
 
+// GetERC20TokenBySymbol returns the erc20 token by symbol
 func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types.ERC20Token {
 	metadata, ok := k.getTokenMetadataBySymbol(ctx, symbol)
 	if !ok {
@@ -325,7 +327,8 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 	}, metadata)
 }
 
-func (k chainKeeper) GetContractCallQueue(ctx sdk.Context) utils.KVQueue {
+// GetConfirmedEventQueue returns a queue of all the confirmed events
+func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewBlockHeightKVQueue(
 		contractCallQueueName,
 		k.getStore(ctx, k.chainLowerKey),
@@ -896,8 +899,8 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	event.Status = types.EventConfirmed
 
 	switch event.GetEvent().(type) {
-	case *types.Event_ContractCallWithToken:
-		k.GetContractCallQueue(ctx).Enqueue(key, &event)
+	case *types.Event_ContractCallWithToken, *types.Event_TokenSent:
+		k.GetConfirmedEventQueue(ctx).Enqueue(key, &event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -914,6 +917,20 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
 
 	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
 	event.Status = types.EventCompleted
+	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
+
+	return nil
+}
+
+// SetEventFailed sets the event as invalid
+func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
+	event, ok := k.GetEvent(ctx, eventID)
+	if !ok || event.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is not confirmed", eventID)
+	}
+
+	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
+	event.Status = types.EventFailed
 	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
 
 	return nil
