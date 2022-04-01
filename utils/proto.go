@@ -7,6 +7,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
+// GetPermissionRole returns the role that is defined for the given message. Returns ROLE_CHAIN_MANAGEMENT if none is set.
 func GetPermissionRole(message descriptor.Message) exported.Role {
 	_, d := descriptor.ForMessage(message)
 	v, err := proto.GetExtension(d.GetOptions(), E_PermissionRole)
