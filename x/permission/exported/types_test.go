@@ -11,7 +11,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
 func TestMsgRoles(t *testing.T) {
@@ -34,7 +34,7 @@ func TestMsgRoles(t *testing.T) {
 			missingRoles = append(missingRoles, implementation)
 			continue
 		}
-		_, err = proto.GetExtension(options, utils.E_PermissionRole)
+		_, err = proto.GetExtension(options, exported.E_PermissionRole)
 		if err != nil {
 			missingRoles = append(missingRoles, implementation)
 			continue

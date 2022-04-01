@@ -76,14 +76,11 @@
 - [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
     - [Role](#permission.exported.v1beta1.Role)
   
-- [utils/v1beta1/custom_options.proto](#utils/v1beta1/custom_options.proto)
-    - [File-level Extensions](#utils/v1beta1/custom_options.proto-extensions)
+    - [File-level Extensions](#permission/exported/v1beta1/types.proto-extensions)
   
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
-    - [AccessControlRequest](#axelarnet.v1beta1.AccessControlRequest)
     - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
-    - [ChainManagementRequest](#axelarnet.v1beta1.ChainManagementRequest)
     - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
@@ -98,7 +95,6 @@
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
     - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
     - [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse)
-    - [UnrestrictedRequest](#axelarnet.v1beta1.UnrestrictedRequest)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
@@ -1440,29 +1436,13 @@ transfers for the specified chain
 
  <!-- end enums -->
 
- <!-- end HasExtensions -->
 
- <!-- end services -->
-
-
-
-<a name="utils/v1beta1/custom_options.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## utils/v1beta1/custom_options.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
-
-<a name="utils/v1beta1/custom_options.proto-extensions"></a>
+<a name="permission/exported/v1beta1/types.proto-extensions"></a>
 
 ### File-level Extensions
 | Extension | Type | Base | Number | Description |
 | --------- | ---- | ---- | ------ | ----------- |
-| `permission_role` | permission.exported.v1beta1.Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
+| `permission_role` | Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
 
  <!-- end HasExtensions -->
 
@@ -1474,16 +1454,6 @@ transfers for the specified chain
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelarnet/v1beta1/tx.proto
-
-
-
-<a name="axelarnet.v1beta1.AccessControlRequest"></a>
-
-### AccessControlRequest
-
-
-
-
 
 
 
@@ -1509,16 +1479,6 @@ to nexus
 <a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
 
 ### AddCosmosBasedChainResponse
-
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.ChainManagementRequest"></a>
-
-### ChainManagementRequest
 
 
 
@@ -1715,16 +1675,6 @@ cosmos based chains
 <a name="axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
 
 ### RouteIBCTransfersResponse
-
-
-
-
-
-
-
-<a name="axelarnet.v1beta1.UnrestrictedRequest"></a>
-
-### UnrestrictedRequest
 
 
 
