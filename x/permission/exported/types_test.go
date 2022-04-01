@@ -41,7 +41,7 @@ func TestMsgRoles(t *testing.T) {
 		}
 	}
 
-	if len(implementations) > 0 {
+	if len(missingRoles) > 0 {
 		assert.Fail(t, "Found msgs without defined role", strings.Join(missingRoles, "\n"))
 	}
 }
