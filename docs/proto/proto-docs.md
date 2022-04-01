@@ -2695,7 +2695,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
-| `payload` | [bytes](#bytes) |  |  |
 
 
 
@@ -2714,7 +2713,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
-| `payload` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
 

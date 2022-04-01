@@ -63,7 +63,6 @@ func TestHandleContractCall(t *testing.T) {
 					DestinationChain: destinationChainName,
 					ContractAddress:  evmTestUtils.RandomAddress().Hex(),
 					PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(payload)),
-					Payload:          payload,
 				},
 			},
 		}
@@ -472,7 +471,6 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				DestinationChain: destinationChainName,
 				ContractAddress:  evmTestUtils.RandomAddress().Hex(),
 				PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(payload)),
-				Payload:          payload,
 				Symbol:           rand.Denom(3, 5),
 				Amount:           sdk.NewUint(uint64(rand.I64Between(1, 10000))),
 			},
