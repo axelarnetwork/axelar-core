@@ -11,7 +11,7 @@ enum Role {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  ROLE_UNSPECIFIED = 0;
+  ROLE_UNSPECIFIED = 0 [(gogoproto.enumvalue_customname)="ROLE_UNRESTRICTED"];
   ROLE_ACCESS_CONTROL = 1;
   ROLE_CHAIN_MANAGEMENT = 2;
 }

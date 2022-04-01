@@ -73,9 +73,17 @@
     - [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse)
     - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
   
+- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
+    - [Role](#permission.exported.v1beta1.Role)
+  
+- [utils/v1beta1/custom_options.proto](#utils/v1beta1/custom_options.proto)
+    - [File-level Extensions](#utils/v1beta1/custom_options.proto-extensions)
+  
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [AccessControlRequest](#axelarnet.v1beta1.AccessControlRequest)
     - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
+    - [ChainManagementRequest](#axelarnet.v1beta1.ChainManagementRequest)
     - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
@@ -90,6 +98,7 @@
     - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
     - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
     - [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse)
+    - [UnrestrictedRequest](#axelarnet.v1beta1.UnrestrictedRequest)
   
 - [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
     - [MsgService](#axelarnet.v1beta1.MsgService)
@@ -293,9 +302,6 @@
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
     - [QueryService](#nexus.v1beta1.QueryService)
-  
-- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
-    - [Role](#permission.exported.v1beta1.Role)
   
 - [permission/v1beta1/types.proto](#permission/v1beta1/types.proto)
     - [GovAccount](#permission.v1beta1.GovAccount)
@@ -1411,10 +1417,73 @@ transfers for the specified chain
 
 
 
+<a name="permission/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="permission.exported.v1beta1.Role"></a>
+
+### Role
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ROLE_UNSPECIFIED | 0 |  |
+| ROLE_ACCESS_CONTROL | 1 |  |
+| ROLE_CHAIN_MANAGEMENT | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="utils/v1beta1/custom_options.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/custom_options.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+
+<a name="utils/v1beta1/custom_options.proto-extensions"></a>
+
+### File-level Extensions
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+| `permission_role` | permission.exported.v1beta1.Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelarnet/v1beta1/tx.proto
+
+
+
+<a name="axelarnet.v1beta1.AccessControlRequest"></a>
+
+### AccessControlRequest
+
+
+
+
 
 
 
@@ -1440,6 +1509,16 @@ to nexus
 <a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
 
 ### AddCosmosBasedChainResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.ChainManagementRequest"></a>
+
+### ChainManagementRequest
 
 
 
@@ -1636,6 +1715,16 @@ cosmos based chains
 <a name="axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
 
 ### RouteIBCTransfersResponse
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.UnrestrictedRequest"></a>
+
+### UnrestrictedRequest
 
 
 
@@ -4500,35 +4589,6 @@ QueryService defines the gRPC querier service.
 | `Assets` | [AssetsRequest](#nexus.v1beta1.AssetsRequest) | [AssetsResponse](#nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
 | `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
-
- <!-- end services -->
-
-
-
-<a name="permission/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## permission/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="permission.exported.v1beta1.Role"></a>
-
-### Role
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ROLE_UNSPECIFIED | 0 |  |
-| ROLE_ACCESS_CONTROL | 1 |  |
-| ROLE_CHAIN_MANAGEMENT | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
