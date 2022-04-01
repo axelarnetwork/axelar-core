@@ -87,6 +87,8 @@ const (
 	transferOperatorshipMaxGasCost                  = 120000
 	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
 	approveContractCallWithMintMaxGasCost           = 120000
+	AxelarGatewayCommandApproveContractCall         = "approveContractCall"
+	approveContractCallMaxGasCost                   = 120000
 	axelarGatewayFuncExecute                        = "execute"
 )
 
@@ -533,6 +535,32 @@ func GetSignHash(commandData []byte) common.Hash {
 	return crypto.Keccak256Hash([]byte(msg))
 }
 
+// CreateApproveContractCallCommand creates a command to approve contract call
+func CreateApproveContractCallCommand(
+	chainID sdk.Int,
+	keyID tss.KeyID,
+	sourceChain string,
+	txID Hash,
+	index uint64,
+	event EventContractCall,
+) (Command, error) {
+	params, err := createApproveContractCallParams(sourceChain, event)
+	if err != nil {
+		return Command{}, err
+	}
+
+	eventIndexBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(eventIndexBz, index)
+
+	return Command{
+		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
+		Command:    AxelarGatewayCommandApproveContractCall,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: uint32(approveContractCallMaxGasCost),
+	}, nil
+}
+
 // CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
@@ -598,6 +626,42 @@ func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.
 	payloadHash := params[3].([32]byte)
 
 	return params[0].(string), params[1].(string), params[2].(common.Address), common.BytesToHash(payloadHash[:]), params[4].(string), params[5].(*big.Int), nil
+}
+
+func createApproveContractCallParams(sourceChain string, event EventContractCall) ([]byte, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: addressType},
+		{Type: bytes32Type},
+	}
+
+	result, err := arguments.Pack(
+		sourceChain,
+		event.Sender.Hex(),
+		common.HexToAddress(event.ContractAddress),
+		common.Hash(event.PayloadHash),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func createApproveContractCallWithMintParams(sourceChain string, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
@@ -1404,6 +1468,14 @@ func (m Event) Validate() error {
 	}
 
 	switch event := m.GetEvent().(type) {
+	case *Event_ContractCall:
+		if event.ContractCall == nil {
+			return fmt.Errorf("missing event ContractCall")
+		}
+
+		if err := event.ContractCall.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event ContractCall")
+		}
 	case *Event_ContractCallWithToken:
 		if event.ContractCallWithToken == nil {
 			return fmt.Errorf("missing event ContractCallWithToken")
@@ -1447,6 +1519,31 @@ func (m EventTokenSent) Validate() error {
 
 	if m.Amount.IsZero() {
 		return fmt.Errorf("invalid amount")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event contract call is invalid
+func (m EventContractCall) Validate() error {
+	if m.Sender.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if err := utils.ValidateString(m.DestinationChain); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
+	}
+
+	if err := utils.ValidateString(m.ContractAddress); err != nil {
+		return sdkerrors.Wrap(err, "invalid contract address")
+	}
+
+	if m.PayloadHash.IsZero() {
+		return fmt.Errorf("invalid payload hash")
+	}
+
+	if !bytes.Equal(crypto.Keccak256Hash(m.Payload).Bytes(), m.PayloadHash.Bytes()) {
+		return fmt.Errorf("invalid payload")
 	}
 
 	return nil
