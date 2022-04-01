@@ -325,3 +325,8 @@ func Context(store types.MultiStore) sdk.Context {
 	ctx.GasMeter().ConsumeGas(uint64(I64Between(1000, 1000000)), "test")
 	return ctx
 }
+
+// Of returns a random item from the given slice
+func Of[T any](items ...T) T {
+	return items[I64Between(0, int64(len(items)))]
+}

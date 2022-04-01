@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -1435,30 +1434,13 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 	return commandList
 }
 
-// ValidateCommandQueueState checks if the keys of the given map have the correct format to be imported as command queue state.
-// The expected format is {block height}_{[a-zA-Z0-9]+}
-func ValidateCommandQueueState(state map[string]codec.ProtoMarshaler) error {
-	for key := range state {
-		keyParticles := strings.Split(key, utils.DefaultDelimiter)
-		if len(keyParticles) != 2 {
-			return fmt.Errorf("expected key %s to consist of two parts", key)
-		}
-
-		if _, err := strconv.ParseInt(keyParticles[0], 10, 64); err != nil {
-			return fmt.Errorf("expected first key part of %s to be a block height", key)
-		}
-	}
-
-	return nil
-}
-
 // GetID returns an unique ID for the event
 func (m Event) GetID() string {
 	return fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index)
 }
 
-// Validate returns an error if the event is invalid
-func (m Event) Validate() error {
+// ValidateBasic returns an error if the event is invalid
+func (m Event) ValidateBasic() error {
 	if err := utils.ValidateString(m.Chain); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
@@ -1473,7 +1455,7 @@ func (m Event) Validate() error {
 			return fmt.Errorf("missing event ContractCall")
 		}
 
-		if err := event.ContractCall.Validate(); err != nil {
+		if err := event.ContractCall.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event ContractCall")
 		}
 	case *Event_ContractCallWithToken:
@@ -1481,7 +1463,7 @@ func (m Event) Validate() error {
 			return fmt.Errorf("missing event ContractCallWithToken")
 		}
 
-		if err := event.ContractCallWithToken.Validate(); err != nil {
+		if err := event.ContractCallWithToken.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
 		}
 	case *Event_TokenSent:
@@ -1489,7 +1471,7 @@ func (m Event) Validate() error {
 			return fmt.Errorf("missing event TokenSent")
 		}
 
-		if err := event.TokenSent.Validate(); err != nil {
+		if err := event.TokenSent.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenSent")
 		}
 	default:
@@ -1499,8 +1481,8 @@ func (m Event) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event token sent is invalid
-func (m EventTokenSent) Validate() error {
+// ValidateBasic returns an error if the event token sent is invalid
+func (m EventTokenSent) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}
@@ -1524,8 +1506,8 @@ func (m EventTokenSent) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event contract call is invalid
-func (m EventContractCall) Validate() error {
+// ValidateBasic returns an error if the event contract call is invalid
+func (m EventContractCall) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}
@@ -1545,8 +1527,8 @@ func (m EventContractCall) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event contract call with token is invalid
-func (m EventContractCallWithToken) Validate() error {
+// ValidateBasic returns an error if the event contract call with token is invalid
+func (m EventContractCallWithToken) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}

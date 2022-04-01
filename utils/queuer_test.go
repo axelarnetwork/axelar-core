@@ -60,6 +60,43 @@ func TestNewBlockHeightKVQueue(t *testing.T) {
 		}
 		assert.Equal(t, items, actualItems)
 	}).Repeat(repeats))
+
+	t.Run("ImportState and ExportState", testutils.Func(func(t *testing.T) {
+		ctx, cdc := setup()
+		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+		itemCount := rand.I64Between(10, 1000)
+		items := make([]string, itemCount)
+
+		for i := 0; i < int(itemCount); i++ {
+			items[i] = rand.Str(10)
+		}
+
+		blockHeight := rand.I64Between(1, 10000)
+		kvQueue := NewBlockHeightKVQueue("test-queue", store, blockHeight, log.TestingLogger())
+
+		for _, item := range items {
+			kvQueue.Enqueue(KeyFromStr(item), &gogoprototypes.StringValue{Value: item})
+			blockHeight += rand.I64Between(1, 1000)
+			kvQueue = NewBlockHeightKVQueue("test-queue", store, blockHeight, log.TestingLogger())
+		}
+
+		state := kvQueue.ExportState()
+
+		var expected []string
+		var item gogoprototypes.StringValue
+		for kvQueue.Dequeue(&item) {
+			expected = append(expected, item.Value)
+		}
+
+		kvQueue.ImportState(state)
+		var actual []string
+		for kvQueue.Dequeue(&item) {
+			actual = append(actual, item.Value)
+		}
+
+		assert.Equal(t, expected, actual)
+	}).Repeat(repeats))
 }
 
 func TestNewSequenceKVQueue(t *testing.T) {
