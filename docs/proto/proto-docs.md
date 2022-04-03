@@ -3752,6 +3752,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
 
 
 
@@ -6801,7 +6802,7 @@ Msg defines the vote Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Vote` | [VoteRequest](#vote.v1beta1.VoteRequest) | [VoteResponse](#vote.v1beta1.VoteResponse) |  | POST|/vote/vote|
+| `Vote` | [VoteRequest](#vote.v1beta1.VoteRequest) | [VoteResponse](#vote.v1beta1.VoteResponse) |  | POST|/axelar/vote/vote|
 
  <!-- end services -->
 

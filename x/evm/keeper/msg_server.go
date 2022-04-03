@@ -473,6 +473,11 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	keeper := s.ForChain(chain.Name)
 
+	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
+	if burnerInfo == nil {
+		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
+	}
+
 	period, ok := keeper.GetRevoteLockingPeriod(ctx)
 	if !ok {
 		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
@@ -488,7 +493,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex()))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -508,6 +513,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),

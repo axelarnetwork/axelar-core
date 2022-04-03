@@ -137,7 +137,7 @@ func TestHandleVoteResult(t *testing.T) {
 	t.Run("GIVEN vote WHEN result is invalid THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 
-		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewCreateApproveContractCallsRequest(rand.AccAddr(), rand.Str(5)))
+		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
 		result.Results = []*codectypes.Any{incorrectResult}
 		err := handler(ctx, evmChain, &result)
 

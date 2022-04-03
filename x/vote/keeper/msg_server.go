@@ -30,6 +30,11 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
+	voteHandler := s.GetVoteRouter().GetHandler(req.PollKey.Module)
+	if voteHandler == nil {
+		return nil, fmt.Errorf("unknown module for vote %s", req.PollKey.Module)
+	}
+
 	poll := s.GetPoll(ctx, req.PollKey)
 
 	switch {
@@ -70,13 +75,11 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 
 	if len(result.Results) == 0 {
 		poll.AllowOverride()
-		return nil, fmt.Errorf("poll %s failed to decide anything", poll.GetKey())
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed to decide anything", poll.GetKey())}, nil
 	}
 
-	if voteHandler := s.GetVoteRouter().GetHandler(req.PollKey.Module); voteHandler == nil {
-		return nil, fmt.Errorf("unknown module for vote %s", req.PollKey.Module)
-	} else if err := voteHandler(ctx, req.Chain, result); err != nil {
-		return nil, err
+	if err := voteHandler(ctx, req.Chain, result); err != nil {
+		return &types.VoteResponse{Log: fmt.Sprintf("failed to process %s", err.Error())}, nil
 	}
 
 	return &types.VoteResponse{}, nil

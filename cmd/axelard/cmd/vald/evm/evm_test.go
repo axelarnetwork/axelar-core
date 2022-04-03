@@ -340,10 +340,11 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
 		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:      "Ethereum",
-			evmTypes.AttributeKeyTxID:       common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyConfHeight: strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:       string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyChain:          "Ethereum",
+			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
+			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})

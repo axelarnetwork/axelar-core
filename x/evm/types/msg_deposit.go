@@ -9,11 +9,12 @@ import (
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
-func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash) *ConfirmDepositRequest {
+func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, burnerAddr common.Address) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
-		Sender: sender,
-		Chain:  utils.NormalizeString(chain),
-		TxID:   Hash(txID),
+		Sender:        sender,
+		Chain:         utils.NormalizeString(chain),
+		TxID:          Hash(txID),
+		BurnerAddress: Address(burnerAddr),
 	}
 }
 

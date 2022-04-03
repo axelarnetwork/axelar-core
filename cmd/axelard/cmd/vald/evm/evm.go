@@ -91,7 +91,7 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, burnAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -110,6 +110,11 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
 					continue
 				}
+
+				if event.To != evmTypes.Address(burnAddr) {
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
@@ -492,6 +497,7 @@ func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
+	burnAddr common.Address,
 	confHeight uint64,
 	pollKey vote.PollKey,
 	err error,
@@ -500,6 +506,9 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
+		}},
+		{Key: evmTypes.AttributeKeyDepositAddress, Map: func(s string) (interface{}, error) {
+			return common.HexToAddress(s), nil
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
@@ -510,13 +519,14 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, 0, vote.PollKey{}, err
 	}
 
 	return results[0].(string),
 		results[1].(common.Hash),
-		results[2].(uint64),
-		results[3].(vote.PollKey),
+		results[2].(common.Address),
+		results[3].(uint64),
+		results[4].(vote.PollKey),
 		nil
 }
 
@@ -838,8 +848,8 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed
 	}
 
 	return evmTypes.EventTokenDeployed{
-		Symbol:       args[0].(string),
-		TokenAddress: evmTypes.Address(args[1].(common.Address)),
+		Symbol:       params[0].(string),
+		TokenAddress: evmTypes.Address(params[1].(common.Address)),
 	}, nil
 }
 

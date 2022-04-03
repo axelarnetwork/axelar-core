@@ -13,7 +13,7 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc Vote(VoteRequest) returns (VoteResponse) {
     option (google.api.http) = {
-      post : "/vote/vote"
+      post : "/axelar/vote/vote"
       body : "*"
     };
   }

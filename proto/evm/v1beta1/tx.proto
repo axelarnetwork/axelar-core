@@ -68,6 +68,8 @@ message ConfirmDepositRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
+  bytes burner_address = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 message ConfirmDepositResponse {}

@@ -166,9 +166,9 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 // GetCmdConfirmERC20Deposit returns the cli command to confirm an ERC20 deposit
 func GetCmdConfirmERC20Deposit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-erc20-deposit [chain] [txID]",
-		Short: "Confirm ERC20 deposits in an EVM chain transaction",
-		Args:  cobra.ExactArgs(4),
+		Use:   "confirm-erc20-deposit [chain] [txID] [burnerAddr]",
+		Short: "Confirm ERC20 deposits in an EVM chain transaction to a burner address",
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -177,8 +177,9 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 
 			chain := args[0]
 			txID := common.HexToHash(args[1])
+			burnerAddr := common.HexToAddress(args[2])
 
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID)
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
