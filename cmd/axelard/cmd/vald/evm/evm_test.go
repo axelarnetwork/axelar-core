@@ -94,7 +94,6 @@ func TestDecodeEventContractCall(t *testing.T) {
 		DestinationChain: "ethereum-2",
 		ContractAddress:  "0xb9845f9247a85Ee592273a79605f34E8607d7e75",
 		PayloadHash:      evmTypes.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
-		Payload:          common.Hex2Bytes("627566666572"),
 	}
 	actual, err := decodeEventContractCall(log)
 
@@ -117,7 +116,6 @@ func TestDecodeEventContractCallWithToken(t *testing.T) {
 		DestinationChain: "ethereum",
 		ContractAddress:  "0x76a06043391712bE39A343d1f43165854fCF6De3",
 		PayloadHash:      evmTypes.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
-		Payload:          common.Hex2Bytes("627566666572"),
 		Symbol:           "uaxl",
 		Amount:           sdk.NewUint(10000000),
 	}

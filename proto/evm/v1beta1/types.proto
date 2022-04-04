@@ -55,7 +55,6 @@ message EventContractCall {
   string contract_address = 3;
   bytes payload_hash = 4
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  bytes payload = 5;
 }
 
 message EventContractCallWithToken {
@@ -65,9 +64,8 @@ message EventContractCallWithToken {
   string contract_address = 3;
   bytes payload_hash = 4
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  bytes payload = 5;
-  string symbol = 6;
-  bytes amount = 7 [
+  string symbol = 5;
+  bytes amount = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];

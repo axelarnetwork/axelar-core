@@ -1542,10 +1542,6 @@ func (m EventContractCall) Validate() error {
 		return fmt.Errorf("invalid payload hash")
 	}
 
-	if !bytes.Equal(crypto.Keccak256Hash(m.Payload).Bytes(), m.PayloadHash.Bytes()) {
-		return fmt.Errorf("invalid payload")
-	}
-
 	return nil
 }
 
@@ -1565,10 +1561,6 @@ func (m EventContractCallWithToken) Validate() error {
 
 	if m.PayloadHash.IsZero() {
 		return fmt.Errorf("invalid payload hash")
-	}
-
-	if !bytes.Equal(crypto.Keccak256Hash(m.Payload).Bytes(), m.PayloadHash.Bytes()) {
-		return fmt.Errorf("invalid payload")
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {

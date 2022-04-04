@@ -324,7 +324,6 @@ func decodeEventContractCall(log *geth.Log) (evmTypes.EventContractCall, error) 
 		DestinationChain: params[0].(string),
 		ContractAddress:  params[1].(string),
 		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
-		Payload:          params[2].([]byte),
 	}, nil
 }
 
@@ -361,7 +360,6 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 		DestinationChain: params[0].(string),
 		ContractAddress:  params[1].(string),
 		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
-		Payload:          params[2].([]byte),
 		Symbol:           params[3].(string),
 		Amount:           sdk.NewUintFromBigInt(params[4].(*big.Int)),
 	}, nil
