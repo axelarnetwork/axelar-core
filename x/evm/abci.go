@@ -149,7 +149,8 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	}
 
 	asset := token.GetAsset()
-	if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
+	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
+	if !destinationToken.Is(types.Confirmed) {
 		bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
 		return false
 	}
@@ -190,6 +191,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		event.Index,
 		*e,
 		amount,
+		destinationToken.GetDetails().Symbol,
 	)
 	if err != nil {
 		panic(err)
@@ -225,6 +227,11 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		ck := bk.ForChain(chain.Name)
 		// skip if gateway not set yet
 		if _, ok := ck.GetGatewayAddress(ctx); !ok {
+			continue
+		}
+
+		// skip if secondary key rotation is in progress
+		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
 			continue
 		}
 
