@@ -426,6 +426,10 @@
     - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
     - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
+    - [ValidatorKeyRequest](#tss.v1beta1.ValidatorKeyRequest)
+    - [ValidatorKeyResponse](#tss.v1beta1.ValidatorKeyResponse)
+    - [ValidatorKeyResponse.Keys](#tss.v1beta1.ValidatorKeyResponse.Keys)
+    - [ValidatorKeyResponse.KeysEntry](#tss.v1beta1.ValidatorKeyResponse.KeysEntry)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -5227,6 +5231,7 @@ Key presence check types
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_uid` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
 
 
 
@@ -5321,6 +5326,7 @@ File copied from golang tofnd with minor tweaks
 | `key_uid` | [string](#string) |  |  |
 | `msg_to_sign` | [bytes](#bytes) |  | 32-byte pre-hashed message digest |
 | `party_uid` | [string](#string) |  | used only for logging |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed curve point |
 
 
 
@@ -6165,6 +6171,67 @@ KeyInfo holds information about a key
 
 
 
+
+<a name="tss.v1beta1.ValidatorKeyRequest"></a>
+
+### ValidatorKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorKeyResponse"></a>
+
+### ValidatorKeyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [ValidatorKeyResponse.KeysEntry](#tss.v1beta1.ValidatorKeyResponse.KeysEntry) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorKeyResponse.Keys"></a>
+
+### ValidatorKeyResponse.Keys
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorKeyResponse.KeysEntry"></a>
+
+### ValidatorKeyResponse.KeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [ValidatorKeyResponse.Keys](#tss.v1beta1.ValidatorKeyResponse.Keys) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
 
@@ -6547,6 +6614,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/tss/v1beta1/next_key_id|
 | `AssignableKey` | [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/tss/v1beta1/assignable_key|
+| `ValidatorKey` | [ValidatorKeyRequest](#tss.v1beta1.ValidatorKeyRequest) | [ValidatorKeyResponse](#tss.v1beta1.ValidatorKeyResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/validator_key/{address}|
 
  <!-- end services -->
 

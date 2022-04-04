@@ -23,6 +23,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
@@ -155,6 +156,7 @@ type Mgr struct {
 	timeoutQueue   *TimeoutQueue
 	Timeout        time.Duration
 	principalAddr  string
+	Keys           *types.ValidatorKeyResponse
 	Logger         log.Logger
 	broadcaster    broadcasterTypes.Broadcaster
 	cdc            *codec.LegacyAmino
@@ -171,7 +173,7 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, keys *types.ValidatorKeyResponse, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		multiSigClient: multiSigClient,
@@ -183,6 +185,7 @@ func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClie
 		timeoutQueue:   NewTimeoutQueue(),
 		Timeout:        timeout,
 		principalAddr:  principalAddr,
+		Keys:           keys,
 		Logger:         logger.With("listener", "tss"),
 		broadcaster:    broadcaster,
 		cdc:            cdc,
@@ -223,6 +226,18 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 	return nil
 }
 
+func (mgr *Mgr) getPubKeys(keyID exported.KeyID) ([][]byte, bool) {
+	if mgr.Keys == nil {
+		return [][]byte{}, false
+	}
+
+	if keys, found := mgr.Keys.Keys[string(keyID)]; found {
+		return keys.Keys, true
+	}
+
+	return [][]byte{}, false
+}
+
 // ProcessHeartBeatEvent broadcasts the heartbeat
 func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
@@ -232,6 +247,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	// TODO: we should have a specific GRPC to do this diagnostic
 	request := &tofnd.KeyPresenceRequest{
 		KeyUid: "dummyID",
+		PubKey: []byte{},
 	}
 
 	response, err := mgr.client.KeyPresence(grpcCtx, request)
@@ -261,11 +277,18 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 		case exported.Threshold:
 			request = &tofnd.KeyPresenceRequest{
 				KeyUid: string(keyInfo.KeyID),
+				PubKey: []byte{},
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
+			pubKey := []byte{}
+			if pubKeys, found := mgr.getPubKeys(keyInfo.KeyID); found {
+				pubKey = pubKeys[0]
+			}
+
 			request = &tofnd.KeyPresenceRequest{
 				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
+				PubKey: pubKey,
 			}
 			response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
 		default:

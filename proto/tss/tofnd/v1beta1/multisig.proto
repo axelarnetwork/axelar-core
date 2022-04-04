@@ -28,6 +28,7 @@ message SignRequest {
   string key_uid = 1;
   bytes msg_to_sign = 2; // 32-byte pre-hashed message digest
   string party_uid = 3;  // used only for logging
+  bytes pub_key = 4;     // SEC1-encoded compressed curve point
 }
 
 message SignResponse {

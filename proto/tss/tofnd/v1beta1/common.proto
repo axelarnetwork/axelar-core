@@ -8,7 +8,10 @@ import "gogoproto/gogo.proto";
 package tss.tofnd.v1beta1;
 
 // Key presence check types
-message KeyPresenceRequest { string key_uid = 1; }
+message KeyPresenceRequest {
+  string key_uid = 1;
+  bytes pub_key = 2;
+}
 
 message KeyPresenceResponse {
   enum Response {

@@ -147,3 +147,11 @@ message AssignableKeyRequest {
 }
 
 message AssignableKeyResponse { bool assignable = 1; }
+
+message ValidatorKeyRequest { string address = 1; }
+
+message ValidatorKeyResponse {
+  message Keys { repeated bytes keys = 1; };
+
+  map<string, Keys> keys = 1;
+}

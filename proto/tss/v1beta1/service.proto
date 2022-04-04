@@ -96,4 +96,11 @@ service QueryService {
   rpc AssignableKey(AssignableKeyRequest) returns (AssignableKeyResponse) {
     option (google.api.http).get = "/tss/v1beta1/assignable_key";
   }
+
+  // NextKeyID returns the key ID assigned for the next rotation on a given
+  // chain and for the given key role
+  rpc ValidatorKey(ValidatorKeyRequest) returns (ValidatorKeyResponse) {
+    option (google.api.http).get =
+        "/axelar/tss/v1beta1/validator_key/{address}";
+  }
 }

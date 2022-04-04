@@ -24,6 +24,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
@@ -127,7 +129,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cmd.Context(), cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -165,7 +167,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -198,7 +200,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	eventBus := createEventBus(robustClient, startBlock, logger)
 
-	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(ctx, bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
@@ -365,7 +367,7 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster.WithRefund(broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger))
 }
 
-func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(ctx context.Context, broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
@@ -377,10 +379,28 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 		gg20client := tofnd.NewGG20Client(conn)
 		multiSigClient := tofnd.NewMultisigClient(conn)
 
-		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
+		// retrieve key id mappings
+
+		queryClient := tssTypes.NewQueryServiceClient(cliCtx)
+		res, err := queryClient.ValidatorKey(ctx, &tssTypes.ValidatorKeyRequest{
+			Address: valAddr,
+		})
+
+		status, _ := status.FromError(err)
+
+		switch status.Code() {
+		case codes.OK:
+		case codes.NotFound:
+			return nil, fmt.Errorf("query result was not found")
+		default:
+			return nil, sdkerrors.Wrap(err, "failed to execute query")
+		}
+
+		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, res, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}
+
 	mgr, err := create()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))
