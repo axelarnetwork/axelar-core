@@ -44,13 +44,14 @@ curl --silent -LJO "https://github.com/axelarnetwork/axelar-core/releases/downlo
 DW_ARM64_HASH=$(cat axelard-darwin-arm64-${PATCH}.zip.sha256)
 rm axelard-darwin-arm64-${PATCH}.zip.sha256
 
-# Retrieve DARWIN AMD64 Hsh from github
+# Retrieve DARWIN AMD64 Hash from github
 curl --silent -LJO "https://github.com/axelarnetwork/axelar-core/releases/download/${PATCH}/axelard-darwin-amd64-${PATCH}.zip.sha256"
 DW_AMD64_HASH=$(cat axelard-darwin-amd64-${PATCH}.zip.sha256)
 rm axelard-darwin-amd64-${PATCH}.zip.sha256
 
-# Create txgov.sh script that will contain the governance tx. Text for the tx is always the same excepted for some variables.
+# Create upgrade-tx.sh script that will contain the governance tx. Text for the tx is always the same excepted for some variables.
 # We make a sed on multiple patterns (*_HASH) to replace the variables by the correct value.
+# The script will display the generated tx and save it in  upgrade-tx.sh
 cat <<EOF > upgrade-tx.sh | sed -e "s/LX_AMD64_HASH/$LX_AMD64_HASH/; s/LX_ARM64_HASH/$LX_ARM64_HASH/; s/DW_AMD64_HASH/$DW_AMD64_HASH/; s/DW_ARM64_HASH/$DW_ARM64_HASH/"
 axelard tx gov submit-proposal software-upgrade "$MINOR" --upgrade-height $HEIGHT_NUMBER --upgrade-info '{"binaries":{"linux/amd64":"https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/$PATCH/axelard-linux-amd64-$PATCH.zip?checksum=sha256:$LX_AMD64_HASH","linux/arm64":"https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/$PATCH/axelard-linux-arm64-$PATCH.zip?checksum=sha256:$LX_ARM64_HASH","darwin/amd64":"https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/$PATCH/axelard-darwin-amd64-$PATCH.zip?checksum=sha256:$DW_AMD64_HASH","darwin/arm64":"https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/$PATCH/axelard-darwin-arm64-$PATCH.zip?checksum=sha256:$DW_ARM64_HASH"}}' --deposit 100000000uaxl --description  "This proposal is intended to upgrade axelar core to $MINOR" --title "Axelar $MINOR Upgrade Proposal" --from validator --gas auto --gas-adjustment 1.2
 EOF
