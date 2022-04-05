@@ -1054,7 +1054,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, msg.Chain, btc.NativeAsset))
+		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.NativeAsset))
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {

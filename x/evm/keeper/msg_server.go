@@ -374,7 +374,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("min voter count not found")
 	}
 
-	pollKey := types.GetConfirmTokenKey(req.TxID, req.Chain, req.Asset.Name)
+	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -588,13 +588,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	transferKey := types.TransferKey{
-		TxID:      req.TxID,
-		Type:      req.TransferType,
-		NextKeyID: req.KeyID,
-	}
-	keeper.SetPendingTransferKey(ctx, pollKey, &transferKey)
-
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
@@ -609,41 +602,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
-
-	key, ok := s.signer.GetKey(ctx, req.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("key %s does not exist", req.KeyID)
-	}
-
-	switch chain.KeyType {
-	case tss.Threshold:
-		pk, err := key.GetECDSAPubKey()
-		if err != nil {
-			return nil, err
-		}
-
-		event = event.AppendAttributes(
-			sdk.NewAttribute(types.AttributeKeyAddress, crypto.PubkeyToAddress(pk).Hex()),
-			sdk.NewAttribute(types.AttributeKeyThreshold, ""),
-		)
-	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(key)
-		if err != nil {
-			return nil, err
-		}
-
-		addressStrs := make([]string, len(addresses))
-		for i, address := range addresses {
-			addressStrs[i] = address.Hex()
-		}
-
-		event = event.AppendAttributes(
-			sdk.NewAttribute(types.AttributeKeyAddress, strings.Join(addressStrs, ",")),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatUint(uint64(threshold), 10)),
-		)
-	default:
-		return nil, fmt.Errorf("uknown key type for chain %s", chain.Name)
-	}
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
@@ -721,99 +679,6 @@ func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmCha
 	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
 
 	return &types.VoteConfirmChainResponse{}, nil
-}
-
-// VoteConfirmTransferKey handles votes for transfer ownership/operatorship confirmations
-func (s msgServer) VoteConfirmTransferKey(c context.Context, req *types.VoteConfirmTransferKeyRequest) (*types.VoteConfirmTransferKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	switch {
-	case poll.Is(vote.Expired):
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
-	case poll.Is(vote.Failed), poll.Is(vote.Completed):
-		// If the voting threshold has been met and additional votes are received they should not return an error
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
-	default:
-	}
-
-	keeper := s.ForChain(chain.Name)
-	pendingTransfer, _ := keeper.GetPendingTransferKey(ctx, req.PollKey)
-
-	var keyRole tss.KeyRole
-	keyRole = s.signer.GetKeyRole(ctx, pendingTransfer.NextKeyID)
-	if keyRole == tss.Unknown {
-		return nil, fmt.Errorf("key %s cannot be found", pendingTransfer.NextKeyID)
-	}
-
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeTransferKeyConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
-
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("not enough votes to confirm transfer key in poll %s yet", req.PollKey.String())}, nil
-	}
-
-	if poll.Is(vote.Failed) {
-		keeper.DeletePendingTransferKey(ctx, req.PollKey)
-		return &types.VoteConfirmTransferKeyResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
-
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
-
-	// handle poll result
-	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-		sdk.NewAttribute(types.AttributeKeyTransferKeyType, pendingTransfer.Type.SimpleString()),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
-
-	if !confirmed.Value {
-		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
-
-		msg := fmt.Sprintf("failed to confirmed %s key transfer for chain %s", keyRole.SimpleString(), chain.Name)
-		s.Logger(ctx).Error(msg)
-		return &types.VoteConfirmTransferKeyResponse{Log: msg}, nil
-
-	}
-
-	keeper.ArchiveTransferKey(ctx, req.PollKey)
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
-
-	if err := s.signer.RotateKey(ctx, chain, keyRole); err != nil {
-		return nil, err
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
-		keyRole.SimpleString(), chain.Name), "txID", pendingTransfer.TxID.Hex(), "rotation count", s.tss.GetRotationCount(ctx, chain, keyRole))
-	return &types.VoteConfirmTransferKeyResponse{}, nil
 }
 
 func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {

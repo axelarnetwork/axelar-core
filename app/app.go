@@ -443,7 +443,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tssK.SetRouter(tssRouter)
 
 	voteRouter := voteTypes.NewRouter()
-	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK))
+	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, tssK))
 	votingK.SetVoteRouter(voteRouter)
 
 	/****  Module Options ****/
