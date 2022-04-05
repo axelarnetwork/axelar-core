@@ -333,7 +333,7 @@ func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, l
 		logger.Info(err.Error())
 		startBlock = 0
 	} else {
-		startBlock += 1 // Skip the block that might have already been executed
+		startBlock++ // Skip the block that might have already been executed
 	}
 
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
