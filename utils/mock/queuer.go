@@ -25,12 +25,6 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
 // 			},
-// 			ExportStateFunc: func() utils.QueueState {
-// 				panic("mock out the ExportState method")
-// 			},
-// 			ImportStateFunc: func(state utils.QueueState, validator ...func(utils.QueueState) error)  {
-// 				panic("mock out the ImportState method")
-// 			},
 // 			IsEmptyFunc: func() bool {
 // 				panic("mock out the IsEmpty method")
 // 			},
@@ -49,12 +43,6 @@ type KVQueueMock struct {
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
-
-	// ExportStateFunc mocks the ExportState method.
-	ExportStateFunc func() utils.QueueState
-
-	// ImportStateFunc mocks the ImportState method.
-	ImportStateFunc func(state utils.QueueState, validator ...func(utils.QueueState) error)
 
 	// IsEmptyFunc mocks the IsEmpty method.
 	IsEmptyFunc func() bool
@@ -78,16 +66,6 @@ type KVQueueMock struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
 		}
-		// ExportState holds details about calls to the ExportState method.
-		ExportState []struct {
-		}
-		// ImportState holds details about calls to the ImportState method.
-		ImportState []struct {
-			// State is the state argument value.
-			State utils.QueueState
-			// Validator is the validator argument value.
-			Validator []func(utils.QueueState) error
-		}
 		// IsEmpty holds details about calls to the IsEmpty method.
 		IsEmpty []struct {
 		}
@@ -95,12 +73,10 @@ type KVQueueMock struct {
 		Keys []struct {
 		}
 	}
-	lockDequeue     sync.RWMutex
-	lockEnqueue     sync.RWMutex
-	lockExportState sync.RWMutex
-	lockImportState sync.RWMutex
-	lockIsEmpty     sync.RWMutex
-	lockKeys        sync.RWMutex
+	lockDequeue sync.RWMutex
+	lockEnqueue sync.RWMutex
+	lockIsEmpty sync.RWMutex
+	lockKeys    sync.RWMutex
 }
 
 // Dequeue calls DequeueFunc.
@@ -170,67 +146,6 @@ func (mock *KVQueueMock) EnqueueCalls() []struct {
 	mock.lockEnqueue.RLock()
 	calls = mock.calls.Enqueue
 	mock.lockEnqueue.RUnlock()
-	return calls
-}
-
-// ExportState calls ExportStateFunc.
-func (mock *KVQueueMock) ExportState() utils.QueueState {
-	if mock.ExportStateFunc == nil {
-		panic("KVQueueMock.ExportStateFunc: method is nil but KVQueue.ExportState was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockExportState.Lock()
-	mock.calls.ExportState = append(mock.calls.ExportState, callInfo)
-	mock.lockExportState.Unlock()
-	return mock.ExportStateFunc()
-}
-
-// ExportStateCalls gets all the calls that were made to ExportState.
-// Check the length with:
-//     len(mockedKVQueue.ExportStateCalls())
-func (mock *KVQueueMock) ExportStateCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockExportState.RLock()
-	calls = mock.calls.ExportState
-	mock.lockExportState.RUnlock()
-	return calls
-}
-
-// ImportState calls ImportStateFunc.
-func (mock *KVQueueMock) ImportState(state utils.QueueState, validator ...func(utils.QueueState) error) {
-	if mock.ImportStateFunc == nil {
-		panic("KVQueueMock.ImportStateFunc: method is nil but KVQueue.ImportState was just called")
-	}
-	callInfo := struct {
-		State     utils.QueueState
-		Validator []func(utils.QueueState) error
-	}{
-		State:     state,
-		Validator: validator,
-	}
-	mock.lockImportState.Lock()
-	mock.calls.ImportState = append(mock.calls.ImportState, callInfo)
-	mock.lockImportState.Unlock()
-	mock.ImportStateFunc(state, validator...)
-}
-
-// ImportStateCalls gets all the calls that were made to ImportState.
-// Check the length with:
-//     len(mockedKVQueue.ImportStateCalls())
-func (mock *KVQueueMock) ImportStateCalls() []struct {
-	State     utils.QueueState
-	Validator []func(utils.QueueState) error
-} {
-	var calls []struct {
-		State     utils.QueueState
-		Validator []func(utils.QueueState) error
-	}
-	mock.lockImportState.RLock()
-	calls = mock.calls.ImportState
-	mock.lockImportState.RUnlock()
 	return calls
 }
 

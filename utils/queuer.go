@@ -18,8 +18,6 @@ type KVQueue interface {
 	Enqueue(key Key, value codec.ProtoMarshaler)
 	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
 	IsEmpty() bool
-	ExportState() (state QueueState)
-	ImportState(state QueueState, validator ...func(QueueState) error)
 
 	//TODO: convert to iterator
 	Keys() []Key
@@ -125,16 +123,9 @@ func (q GeneralKVQueue) ExportState() (state QueueState) {
 }
 
 // ImportState imports the given queue state into the kv store
-func (q GeneralKVQueue) ImportState(state QueueState, validator ...func(QueueState) error) {
-	if len(validator) > 0 {
-		if err := validator[0](state); err != nil {
-			panic(err)
-		}
-	}
-
+func (q GeneralKVQueue) ImportState(state QueueState) {
 	name := string(q.name.AsKey())
 	for key, item := range state.Items {
-
 		if !strings.HasPrefix(key, fmt.Sprintf("%s%s", name, DefaultDelimiter)) {
 			panic(fmt.Errorf("queue key %s is invalid for queue %s", key, name))
 		}

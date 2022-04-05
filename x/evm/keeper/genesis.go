@@ -18,9 +18,10 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 			ck.SetBurnerInfo(ctx, burner)
 		}
 
-		ck.getCommandQueue(ctx).ImportState(chain.CommandQueue, func(qs utils.QueueState) error {
-			return ck.validateCommandQueueState(qs, commandQueueName)
-		})
+		if err := ck.validateCommandQueueState(chain.CommandQueue, commandQueueName); err != nil {
+			panic(err)
+		}
+		ck.getCommandQueue(ctx).ImportState(chain.CommandQueue)
 
 		for _, deposit := range chain.ConfirmedDeposits {
 			ck.SetDeposit(ctx, deposit, types.DepositStatus_Confirmed)
@@ -51,9 +52,10 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 			ck.setEvent(ctx, event)
 		}
 
-		ck.GetConfirmedEventQueue(ctx).ImportState(chain.ConfirmedEventQueue, func(qs utils.QueueState) error {
-			return ck.validateConfirmedEventQueueState(qs, confirmedEventQueueName)
-		})
+		if err := ck.validateConfirmedEventQueueState(chain.ConfirmedEventQueue, confirmedEventQueueName); err != nil {
+			panic(err)
+		}
+		ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ImportState(chain.ConfirmedEventQueue)
 	}
 }
 
@@ -80,7 +82,7 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 			Gateway:             ck.getGateway(ctx),
 			Tokens:              ck.getTokensMetadata(ctx),
 			Events:              ck.getEvents(ctx),
-			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).ExportState(),
+			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ExportState(),
 		}
 		chains = append(chains, chain)
 	}
