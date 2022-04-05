@@ -18,7 +18,10 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 			ck.SetBurnerInfo(ctx, burner)
 		}
 
-		ck.setCommandQueue(ctx, chain.CommandQueue)
+		if err := ck.validateCommandQueueState(chain.CommandQueue, commandQueueName); err != nil {
+			panic(err)
+		}
+		ck.getCommandQueue(ctx).ImportState(chain.CommandQueue)
 
 		for _, deposit := range chain.ConfirmedDeposits {
 			ck.SetDeposit(ctx, deposit, types.DepositStatus_Confirmed)
@@ -44,6 +47,15 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 		for _, token := range chain.Tokens {
 			ck.setTokenMetadata(ctx, token)
 		}
+
+		for _, event := range chain.Events {
+			ck.setEvent(ctx, event)
+		}
+
+		if err := ck.validateConfirmedEventQueueState(chain.ConfirmedEventQueue, confirmedEventQueueName); err != nil {
+			panic(err)
+		}
+		ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ImportState(chain.ConfirmedEventQueue)
 	}
 }
 
@@ -61,14 +73,16 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 		ck := k.ForChain(string(iter.Value())).(chainKeeper)
 
 		chain := types.GenesisState_Chain{
-			Params:            ck.GetParams(ctx),
-			BurnerInfos:       ck.getBurnerInfos(ctx),
-			CommandQueue:      ck.serializeCommandQueue(ctx),
-			ConfirmedDeposits: ck.GetConfirmedDeposits(ctx),
-			BurnedDeposits:    ck.getBurnedDeposits(ctx),
-			CommandBatches:    ck.getCommandBatchesMetadata(ctx),
-			Gateway:           ck.getGateway(ctx),
-			Tokens:            ck.getTokensMetadata(ctx),
+			Params:              ck.GetParams(ctx),
+			BurnerInfos:         ck.getBurnerInfos(ctx),
+			CommandQueue:        ck.getCommandQueue(ctx).ExportState(),
+			ConfirmedDeposits:   ck.GetConfirmedDeposits(ctx),
+			BurnedDeposits:      ck.getBurnedDeposits(ctx),
+			CommandBatches:      ck.getCommandBatchesMetadata(ctx),
+			Gateway:             ck.getGateway(ctx),
+			Tokens:              ck.getTokensMetadata(ctx),
+			Events:              ck.getEvents(ctx),
+			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ExportState(),
 		}
 		chains = append(chains, chain)
 	}

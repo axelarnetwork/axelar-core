@@ -158,6 +158,11 @@
 - [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
     - [MsgService](#bitcoin.v1beta1.MsgService)
   
+- [utils/v1beta1/queuer.proto](#utils/v1beta1/queuer.proto)
+    - [QueueState](#utils.v1beta1.QueueState)
+    - [QueueState.Item](#utils.v1beta1.QueueState.Item)
+    - [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry)
+  
 - [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
     - [Asset](#evm.v1beta1.Asset)
     - [BurnerInfo](#evm.v1beta1.BurnerInfo)
@@ -191,7 +196,6 @@
 - [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
     - [GenesisState](#evm.v1beta1.GenesisState)
     - [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain)
-    - [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry)
   
 - [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
     - [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest)
@@ -2537,6 +2541,69 @@ Msg defines the bitcoin Msg service.
 
 
 
+<a name="utils/v1beta1/queuer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/queuer.proto
+
+
+
+<a name="utils.v1beta1.QueueState"></a>
+
+### QueueState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `items` | [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="utils.v1beta1.QueueState.Item"></a>
+
+### QueueState.Item
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="utils.v1beta1.QueueState.ItemsEntry"></a>
+
+### QueueState.ItemsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [QueueState.Item](#utils.v1beta1.QueueState.Item) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="evm/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3032,28 +3099,14 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#evm.v1beta1.Params) |  |  |
 | `burner_infos` | [BurnerInfo](#evm.v1beta1.BurnerInfo) | repeated |  |
-| `command_queue` | [GenesisState.Chain.CommandQueueEntry](#evm.v1beta1.GenesisState.Chain.CommandQueueEntry) | repeated |  |
+| `command_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
 | `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
 | `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
 | `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
 | `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
 | `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.GenesisState.Chain.CommandQueueEntry"></a>
-
-### GenesisState.Chain.CommandQueueEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [Command](#evm.v1beta1.Command) |  |  |
+| `events` | [Event](#evm.v1beta1.Event) | repeated |  |
+| `confirmed_event_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
 
 
 

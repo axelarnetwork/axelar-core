@@ -77,7 +77,7 @@ func (m VoteConfirmGatewayTxRequest) ValidateBasic() error {
 
 	indexSeen := make(map[uint64]bool)
 	for _, event := range m.Vote.Events {
-		if err := event.Validate(); err != nil {
+		if err := event.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event")
 		}
 
