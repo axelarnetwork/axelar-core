@@ -2,11 +2,13 @@ package testutils
 
 import (
 	"encoding/hex"
-	"strconv"
+	"fmt"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -15,23 +17,31 @@ import (
 )
 
 // RandomChains returns a random (valid) slice of chains for testing
-func RandomChains() []types.GenesisState_Chain {
+func RandomChains(cdc codec.Codec) []types.GenesisState_Chain {
 	chainCount := rand.I64Between(0, 20)
 	var chains []types.GenesisState_Chain
 
 	for i := int64(0); i < chainCount; i++ {
-		chains = append(chains, RandomChain())
+		chains = append(chains, RandomChain(cdc))
 	}
 	return chains
 }
 
 // RandomChain returns a random (valid) chain for testing
-func RandomChain() types.GenesisState_Chain {
+func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
+	eventCount := rand.I64Between(1, 1000)
+	events := make([]types.Event, eventCount)
+	for i := 0; i < int(eventCount); i++ {
+		events[i] = RandomEvent(types.EventConfirmed, types.EventCompleted, types.EventFailed)
+	}
+
 	chain := types.GenesisState_Chain{
-		Params:         RandomParams(),
-		Gateway:        RandomGateway(),
-		CommandQueue:   RandomCommandQueue(),
-		CommandBatches: RandomBatches(),
+		Params:              RandomParams(),
+		Gateway:             RandomGateway(),
+		CommandQueue:        RandomCommandQueue(cdc),
+		CommandBatches:      RandomBatches(),
+		Events:              events,
+		ConfirmedEventQueue: getConfirmedEventQueue(cdc, events),
 	}
 
 	if chain.Gateway.Status != types.GatewayStatusConfirmed {
@@ -82,18 +92,41 @@ func getConfirmedTokens(tokens []types.ERC20TokenMetadata) []types.ERC20TokenMet
 }
 
 // RandomCommandQueue returns a random (valid) command queue state for testing
-func RandomCommandQueue() map[string]types.Command {
-	queue := make(map[string]types.Command)
+func RandomCommandQueue(cdc codec.Codec) utils.QueueState {
+	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}
+	queueName := "cmd_queue"
 	queueLen := rand.I64Between(0, 20)
+	commandPrefix := utils.KeyFromStr("command")
 
 	for i := int64(0); i < queueLen; i++ {
-		key := strings.Join([]string{
-			strconv.FormatInt(rand.PosI64(), 10),
-			rand.Strings(5, 20).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.:")).Next(),
-		}, "_")
-		queue[key] = RandomCommand()
+		command := RandomCommand()
+
+		qs.Items[fmt.Sprintf("%s_%d_%s", queueName, rand.PosI64(), command.ID.Hex())] = utils.QueueState_Item{
+			Key:   commandPrefix.AppendStr(command.ID.Hex()).AsKey(),
+			Value: cdc.MustMarshalLengthPrefixed(&command),
+		}
 	}
-	return queue
+
+	return qs
+}
+
+func getConfirmedEventQueue(cdc codec.Codec, events []types.Event) utils.QueueState {
+	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}
+	queueName := "confirmed_event_queue"
+	eventPrefix := utils.KeyFromStr("event")
+
+	for _, event := range events {
+		if event.Status != types.EventConfirmed {
+			continue
+		}
+
+		qs.Items[fmt.Sprintf("%s_%s", queueName, event.GetID())] = utils.QueueState_Item{
+			Key:   eventPrefix.AppendStr(event.GetID()).AsKey(),
+			Value: cdc.MustMarshalLengthPrefixed(&event),
+		}
+	}
+
+	return qs
 }
 
 // RandomNetworks returns a random (valid) slice of networks for testing
@@ -310,4 +343,57 @@ func RandomHash() types.Hash {
 
 func randomNormalizedStr(min, max int) string {
 	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
+}
+
+// RandomEvent returns a random event for testing
+func RandomEvent(statuses ...types.Event_Status) types.Event {
+	payload := rand.Bytes(int(rand.I64Between(1, 100)))
+
+	return rand.Of(
+		types.Event{
+			Chain:  randomNormalizedStr(5, 20),
+			TxId:   RandomHash(),
+			Index:  uint64(rand.PosI64()),
+			Status: rand.Of(statuses...),
+			Event: &types.Event_ContractCall{
+				ContractCall: &types.EventContractCall{
+					Sender:           RandomAddress(),
+					DestinationChain: randomNormalizedStr(5, 20),
+					ContractAddress:  RandomAddress().Hex(),
+					PayloadHash:      types.Hash(crypto.Keccak256Hash(payload)),
+				},
+			},
+		},
+		types.Event{
+			Chain:  randomNormalizedStr(5, 20),
+			TxId:   RandomHash(),
+			Index:  uint64(rand.PosI64()),
+			Status: rand.Of(statuses...),
+			Event: &types.Event_ContractCallWithToken{
+				ContractCallWithToken: &types.EventContractCallWithToken{
+					Sender:           RandomAddress(),
+					DestinationChain: randomNormalizedStr(5, 20),
+					ContractAddress:  RandomAddress().Hex(),
+					PayloadHash:      types.Hash(crypto.Keccak256Hash(payload)),
+					Symbol:           randomNormalizedStr(5, 20),
+					Amount:           sdk.NewUint(uint64(rand.PosI64())),
+				},
+			},
+		},
+		types.Event{
+			Chain:  randomNormalizedStr(5, 20),
+			TxId:   RandomHash(),
+			Index:  uint64(rand.PosI64()),
+			Status: rand.Of(statuses...),
+			Event: &types.Event_TokenSent{
+				TokenSent: &types.EventTokenSent{
+					Sender:             RandomAddress(),
+					DestinationChain:   randomNormalizedStr(5, 20),
+					DestinationAddress: RandomAddress().Hex(),
+					Symbol:             randomNormalizedStr(5, 20),
+					Amount:             sdk.NewUint(uint64(rand.PosI64())),
+				},
+			},
+		},
+	)
 }

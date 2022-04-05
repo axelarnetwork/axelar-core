@@ -1,9 +1,9 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -37,8 +37,8 @@ var (
 	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 	eventPrefix                 = utils.KeyFromStr("event")
 
-	commandQueueName      = "cmd_queue"
-	contractCallQueueName = "contract_call_queue"
+	commandQueueName        = "cmd_queue"
+	confirmedEventQueueName = "confirmed_event_queue"
 )
 
 var _ types.ChainKeeper = chainKeeper{}
@@ -329,11 +329,23 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 
 // GetConfirmedEventQueue returns a queue of all the confirmed events
 func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
-	return utils.NewBlockHeightKVQueue(
-		contractCallQueueName,
+	blockHeightBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(blockHeightBz, uint64(ctx.BlockHeight()))
+
+	return utils.NewGeneralKVQueue(
+		confirmedEventQueueName,
 		k.getStore(ctx, k.chainLowerKey),
-		ctx.BlockHeight(),
 		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			event := value.(*types.Event)
+
+			indexBz := make([]byte, 8)
+			binary.BigEndian.PutUint64(blockHeightBz, event.Index)
+
+			return utils.KeyFromBz(blockHeightBz).
+				Append(utils.KeyFromBz(event.TxId.Bytes())).
+				Append(utils.KeyFromBz(indexBz))
+		},
 	)
 }
 
@@ -707,35 +719,6 @@ func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
 	)
 }
 
-func (k chainKeeper) serializeCommandQueue(ctx sdk.Context) map[string]types.Command {
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(utils.KeyFromStr(commandQueueName))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	commands := make(map[string]types.Command)
-	for ; iter.Valid(); iter.Next() {
-		var command types.Command
-		iter.UnmarshalValue(&command)
-		key := string(iter.Key())
-		key = strings.TrimPrefix(key, commandQueueName)
-		key = strings.TrimPrefix(key, "_")
-		commands[key] = command
-	}
-
-	return commands
-}
-
-func (k chainKeeper) setCommandQueue(ctx sdk.Context, queueState map[string]types.Command) {
-	state := make(map[string]codec.ProtoMarshaler, len(queueState))
-	for key, value := range queueState {
-		// need to create a new variable inside the loop because the state map takes its reference,
-		// otherwise all entries would refer to a single &value pointer
-		v := value
-		state[key] = &v
-	}
-
-	k.getCommandQueue(ctx).ImportState(state, types.ValidateCommandQueueState)
-}
-
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {
 	// lookup by asset
 	key := tokenMetadataByAssetPrefix.Append(utils.LowerCaseKey(meta.Asset))
@@ -879,13 +862,33 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
+func getEventKey(event types.Event) utils.Key {
+	return eventPrefix.Append(utils.LowerCaseKey(event.GetID()))
+}
+
+func (k chainKeeper) setEvent(ctx sdk.Context, event types.Event) {
+	k.getStore(ctx, k.chainLowerKey).Set(getEventKey(event), &event)
+}
+
+func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
+	iter := k.getStore(ctx, k.chainLowerKey).Iterator(eventPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	var events []types.Event
+	for ; iter.Valid(); iter.Next() {
+		var event types.Event
+		iter.UnmarshalValue(&event)
+		events = append(events, event)
+	}
+
+	return events
+}
+
 // GetEvent returns the event for the given event ID
 func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
-	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
-	k.getStore(ctx, k.chainLowerKey).Get(key, &event)
+	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(event), &event)
 
 	return event, event.Status != types.EventNonExistent
-
 }
 
 // SetConfirmedEvent sets the event as confirmed
@@ -895,12 +898,11 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 		return fmt.Errorf("event %s is already confirmed", eventID)
 	}
 
-	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
 	event.Status = types.EventConfirmed
 
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
-		k.GetConfirmedEventQueue(ctx).Enqueue(key, &event)
+		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(event), &event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -915,9 +917,8 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
 		return fmt.Errorf("event %s is not confirmed", eventID)
 	}
 
-	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
 	event.Status = types.EventCompleted
-	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
+	k.setEvent(ctx, event)
 
 	return nil
 }
@@ -929,9 +930,8 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
 		return fmt.Errorf("event %s is not confirmed", eventID)
 	}
 
-	key := eventPrefix.Append(utils.LowerCaseKey(eventID))
 	event.Status = types.EventFailed
-	k.getStore(ctx, k.chainLowerKey).Set(key, &event)
+	k.setEvent(ctx, event)
 
 	return nil
 }
@@ -951,4 +951,44 @@ func (k chainKeeper) getSubspace(ctx sdk.Context) (params.Subspace, bool) {
 		k.subspaces[chainKey] = subspace
 	}
 	return subspace, true
+}
+
+// validateCommandQueueState checks if the keys of the given map have the correct format to be imported as command queue state.
+func (k chainKeeper) validateCommandQueueState(state utils.QueueState, queueName ...string) error {
+	if err := state.ValidateBasic(queueName...); err != nil {
+		return err
+	}
+
+	for _, item := range state.Items {
+		var command types.Command
+		if err := k.cdc.UnmarshalLengthPrefixed(item.Value, &command); err != nil {
+			return err
+		}
+
+		if err := command.KeyID.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateConfirmedEventQueueState checks if the keys of the given map have the correct format to be imported as confirmed event state.
+func (k chainKeeper) validateConfirmedEventQueueState(state utils.QueueState, queueName ...string) error {
+	if err := state.ValidateBasic(queueName...); err != nil {
+		return err
+	}
+
+	for _, item := range state.Items {
+		var event types.Event
+		if err := k.cdc.UnmarshalLengthPrefixed(item.Value, &event); err != nil {
+			return err
+		}
+
+		if err := event.ValidateBasic(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -99,17 +100,69 @@ func (q GeneralKVQueue) Keys() []Key {
 	return keys
 }
 
-// ImportState should only be used to populate state at genesis. Panics if the given state is invalid
-func (q GeneralKVQueue) ImportState(state map[string]codec.ProtoMarshaler, validator ...func(map[string]codec.ProtoMarshaler) error) {
-	if len(validator) > 0 {
-		if err := validator[0](state); err != nil {
-			panic(err)
+// ExportState exports the given queue's state from the kv store
+func (q GeneralKVQueue) ExportState() (state QueueState) {
+	state.Items = make(map[string]QueueState_Item)
+
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	for ; iter.Valid(); iter.Next() {
+		var key gogoprototypes.BytesValue
+		q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
+
+		item := QueueState_Item{
+			Key:   key.Value,
+			Value: q.store.GetRaw(KeyFromBz(key.Value)),
 		}
+
+		state.Items[string(iter.Key())] = item
 	}
 
-	for key, value := range state {
-		q.store.Set(q.name.AppendStr(key), value)
+	return state
+}
+
+// ImportState imports the given queue state into the kv store
+func (q GeneralKVQueue) ImportState(state QueueState) {
+	name := string(q.name.AsKey())
+	for key, item := range state.Items {
+		if !strings.HasPrefix(key, fmt.Sprintf("%s%s", name, DefaultDelimiter)) {
+			panic(fmt.Errorf("queue key %s is invalid for queue %s", key, name))
+		}
+
+		q.store.Set(KeyFromStr(key), &gogoprototypes.BytesValue{Value: item.Key})
+		q.store.SetRaw(KeyFromBz(item.Key), item.Value)
 	}
+}
+
+// ValidateBasic returns an error if the given queue state is invalid
+func (m QueueState) ValidateBasic(queueName ...string) error {
+	itemKeySeen := make(map[string]bool)
+	for key, item := range m.Items {
+		if itemKeySeen[string(item.Key)] {
+			return fmt.Errorf("duplicate item key")
+		}
+
+		if len(key) == 0 {
+			return fmt.Errorf("queue key cannot be empty")
+		}
+
+		if len(queueName) > 0 && !strings.HasPrefix(key, fmt.Sprintf("%s%s", queueName[0], DefaultDelimiter)) {
+			return fmt.Errorf("queue key %s is invalid for queue %s", key, queueName[0])
+		}
+
+		if len(item.Key) == 0 {
+			return fmt.Errorf("item key cannot be empty")
+		}
+
+		if len(item.Value) == 0 {
+			return fmt.Errorf("item value cannot be empty")
+		}
+
+		itemKeySeen[string(item.Key)] = true
+	}
+
+	return nil
 }
 
 // BlockHeightKVQueue is a queue that orders items with the block height at which the items are enqueued;
