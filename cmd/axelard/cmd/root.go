@@ -44,6 +44,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
 )
 
+const minGasPrice = "0.00005uaxl"
+
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
@@ -159,8 +161,8 @@ func initAppConfig() (string, interface{}) {
 	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their
 	//   own app.toml to override, or use this default value.
 	//
-	// In simapp, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0uaxl"
+	// In simapp, we set the default min gas price.
+	srvCfg.MinGasPrices = minGasPrice
 
 	axelarAppConfig := AxelarAppConfig{
 		Config: *srvCfg,
@@ -214,7 +216,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
 		flags.FlagChainID:          app.Name,
-		flags.FlagGasPrices:        "0.00005uaxl",
+		flags.FlagGasPrices:        minGasPrice,
 		flags.FlagKeyringBackend:   "file",
 		flags.FlagSkipConfirmation: "true",
 	}, false)
