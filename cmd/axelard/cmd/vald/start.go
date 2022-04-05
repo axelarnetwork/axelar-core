@@ -320,30 +320,50 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
+// Get the block height to start listening for TM events from.
+// Checks that the node is not too out of sync from the network.
+// If state.json is not stale, uses that as starting height.
+// Otherwise, starts from the node height.
 func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
+	// TODO: Make it configurable instead of a hardcoded 100
+	maxOutOfSyncHeight := int64(100)
+
 	startBlock, err := stateStore.GetState()
 	if err != nil {
-		logger.Error(err.Error())
-
-		return 0, nil
+		logger.Info(err.Error())
+		startBlock = 0
+	} else {
+		startBlock += 1 // Skip the block that might have already been executed
 	}
 
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	height, err := tmClient.LatestBlockHeight(rpcCtx)
+	nodeHeight, err := tmClient.LatestNodeBlockHeight(rpcCtx)
 	if err != nil {
 		return 0, err
 	}
 
-	// TODO: Make it configurable instead of a hardcoded 100
-	if height-startBlock > 100 {
-		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
-
-		return 0, nil
+	networkHeight, err := tmClient.LatestBlockHeight(rpcCtx)
+	if err != nil {
+		return 0, err
 	}
 
-	return startBlock + 1, nil
+	if networkHeight-nodeHeight > maxOutOfSyncHeight {
+		return 0, fmt.Errorf("node height %d is old compared to network block height %d", nodeHeight, networkHeight)
+	}
+
+	// start block height must not be more than one block ahead of the network
+	if startBlock > networkHeight+1 {
+		return 0, fmt.Errorf("start block height %d is ahead of the network block height %d", startBlock, networkHeight)
+	}
+
+	if networkHeight-startBlock > maxOutOfSyncHeight {
+		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the node height %d instead", startBlock, nodeHeight))
+		startBlock = nodeHeight
+	}
+
+	return startBlock, nil
 }
 
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
