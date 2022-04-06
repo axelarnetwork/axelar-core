@@ -23,7 +23,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
@@ -156,7 +155,7 @@ type Mgr struct {
 	timeoutQueue   *TimeoutQueue
 	Timeout        time.Duration
 	principalAddr  string
-	Keys           *types.ValidatorKeyResponse
+	Keys           map[string][][]byte
 	Logger         log.Logger
 	broadcaster    broadcasterTypes.Broadcaster
 	cdc            *codec.LegacyAmino
@@ -173,7 +172,7 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, keys *types.ValidatorKeyResponse, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, keys map[string][][]byte, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		multiSigClient: multiSigClient,
@@ -226,18 +225,6 @@ func (mgr *Mgr) Recover(recoverJSON []byte) error {
 	return nil
 }
 
-func (mgr *Mgr) getPubKeys(keyID exported.KeyID) ([][]byte, bool) {
-	if mgr.Keys == nil {
-		return [][]byte{}, false
-	}
-
-	if keys, found := mgr.Keys.Keys[string(keyID)]; found {
-		return keys.Keys, true
-	}
-
-	return [][]byte{}, false
-}
-
 // ProcessHeartBeatEvent broadcasts the heartbeat
 func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.Timeout)
@@ -281,16 +268,17 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
-			pubKey := []byte{}
-			if pubKeys, found := mgr.getPubKeys(keyInfo.KeyID); found {
-				pubKey = pubKeys[0]
-			}
+			pubKeys, found := mgr.Keys[string(keyInfo.KeyID)]
 
-			request = &tofnd.KeyPresenceRequest{
-				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
-				PubKey: pubKey,
+			if found {
+				request = &tofnd.KeyPresenceRequest{
+					KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
+					PubKey: pubKeys[0],
+				}
+				response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
+			} else {
+				response, err = &tofnd.KeyPresenceResponse{Response: tofnd.RESPONSE_ABSENT}, nil
 			}
-			response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
 		default:
 			return sdkerrors.Wrapf(err, fmt.Sprintf("unrecognize key type %s", keyInfo.KeyType.SimpleString()))
 		}

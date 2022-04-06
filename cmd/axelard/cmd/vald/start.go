@@ -382,7 +382,7 @@ func createTSSMgr(ctx context.Context, broadcaster broadcasterTypes.Broadcaster,
 		// retrieve key id mappings
 
 		queryClient := tssTypes.NewQueryServiceClient(cliCtx)
-		res, err := queryClient.ValidatorKey(ctx, &tssTypes.ValidatorKeyRequest{
+		valKeysResponse, err := queryClient.ValidatorMultisigKeys(ctx, &tssTypes.ValidatorMultisigKeysRequest{
 			Address: valAddr,
 		})
 
@@ -396,7 +396,12 @@ func createTSSMgr(ctx context.Context, broadcaster broadcasterTypes.Broadcaster,
 			return nil, sdkerrors.Wrap(err, "failed to execute query")
 		}
 
-		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, res, broadcaster, logger, cdc)
+		pubKeys := make(map[string][][]byte, len(valKeysResponse.Keys))
+		for keyID, keys := range valKeysResponse.Keys {
+			pubKeys[keyID] = keys.Keys
+		}
+
+		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, pubKeys, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}

@@ -125,7 +125,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 		}
 	}
 
-	mgr.Keys.Keys[keyID] = &tss.ValidatorKeyResponse_Keys{Keys: pubKeys}
+	mgr.Keys[keyID] = pubKeys
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
 	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)

@@ -10,7 +10,8 @@ package tss.tofnd.v1beta1;
 // Key presence check types
 message KeyPresenceRequest {
   string key_uid = 1;
-  bytes pub_key = 2;
+  bytes pub_key = 2; // SEC1-encoded compressed pub key bytes to find the right
+                     // mnemonic. Latest is used, if empty.
 }
 
 message KeyPresenceResponse {

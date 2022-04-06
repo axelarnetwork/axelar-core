@@ -226,16 +226,14 @@ func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 
 func (mgr *Mgr) multiSigSignStart(keyID string, sigID string, shares uint32, payload []byte) error {
 	var signatures [][]byte
-	pubKey := []byte{}
-	pubKeys, found := mgr.getPubKeys(tssexported.KeyID(keyID))
+	pubKeys, found := mgr.Keys[keyID]
+	if !found {
+		return fmt.Errorf("received multisig sign request for sigID %s for an unknown key ID %s", sigID, keyID)
+	}
 
 	for i := uint32(0); i < shares; i++ {
 		keyUID := fmt.Sprintf("%s_%d", keyID, i)
-		if found {
-			pubKey = pubKeys[i]
-		}
-
-		signature, err := mgr.multiSigSign(keyUID, payload, pubKey)
+		signature, err := mgr.multiSigSign(keyUID, payload, pubKeys[i])
 		if err != nil {
 			return err
 		}

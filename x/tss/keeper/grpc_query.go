@@ -63,8 +63,8 @@ func (q Querier) AssignableKey(c context.Context, req *types.AssignableKeyReques
 	return &types.AssignableKeyResponse{Assignable: !assigned}, nil
 }
 
-// ValidatorKey returns a map of active multisig role key ids to pub keys of a validator
-func (q Querier) ValidatorKey(c context.Context, req *types.ValidatorKeyRequest) (*types.ValidatorKeyResponse, error) {
+// ValidatorMultisigKeys returns a map of active multisig role key ids to pub keys of a validator
+func (q Querier) ValidatorMultisigKeys(c context.Context, req *types.ValidatorMultisigKeysRequest) (*types.ValidatorMultisigKeysResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	valAddress, err := sdk.ValAddressFromBech32(req.Address)
@@ -78,7 +78,7 @@ func (q Querier) ValidatorKey(c context.Context, req *types.ValidatorKeyRequest)
 	}
 
 	chains := q.nexus.GetChains(ctx)
-	keys := make(map[string]*types.ValidatorKeyResponse_Keys, 10)
+	keys := make(map[string]*types.ValidatorMultisigKeysResponse_Keys, 10)
 
 	keyRoles := []exported.KeyRole{exported.MasterKey, exported.SecondaryKey}
 
@@ -109,24 +109,25 @@ func (q Querier) ValidatorKey(c context.Context, req *types.ValidatorKeyRequest)
 		}
 	}
 
-	return &types.ValidatorKeyResponse{Keys: keys}, nil
+	return &types.ValidatorMultisigKeysResponse{Keys: keys}, nil
 }
 
-func (q Querier) getSerializedMultisigKeys(ctx sdk.Context, key exported.Key, valAddress sdk.ValAddress) (*types.ValidatorKeyResponse_Keys, bool) {
+func (q Querier) getSerializedMultisigKeys(ctx sdk.Context, key exported.Key, valAddress sdk.ValAddress) (*types.ValidatorMultisigKeysResponse_Keys, bool) {
 	if key.Type != exported.Multisig {
 		return nil, false
 	}
 
-	if pubkeys, ok := q.keeper.GetMultisigPubKeysByValidator(ctx, key.ID, valAddress); ok {
-		valKeys := make([][]byte, len(pubkeys))
-
-		for i, pubkey := range pubkeys {
-			wrappedKey := btcec.PublicKey(pubkey)
-			valKeys[i] = (&wrappedKey).SerializeCompressed()
-		}
-
-		return &types.ValidatorKeyResponse_Keys{Keys: valKeys}, true
+	pubkeys, ok := q.keeper.GetMultisigPubKeysByValidator(ctx, key.ID, valAddress)
+	if !ok {
+		return nil, false
 	}
 
-	return nil, false
+	valKeys := make([][]byte, len(pubkeys))
+
+	for i, pubkey := range pubkeys {
+		wrappedKey := btcec.PublicKey(pubkey)
+		valKeys[i] = wrappedKey.SerializeCompressed()
+	}
+
+	return &types.ValidatorMultisigKeysResponse_Keys{Keys: valKeys}, true
 }

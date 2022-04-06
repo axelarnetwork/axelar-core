@@ -97,10 +97,11 @@ service QueryService {
     option (google.api.http).get = "/tss/v1beta1/assignable_key";
   }
 
-  // NextKeyID returns the key ID assigned for the next rotation on a given
-  // chain and for the given key role
-  rpc ValidatorKey(ValidatorKeyRequest) returns (ValidatorKeyResponse) {
+  // ValidatorMultisigKeys returns the validator's multisig pubkeys
+  // corresponding to each active key ID
+  rpc ValidatorMultisigKeys(ValidatorMultisigKeysRequest)
+      returns (ValidatorMultisigKeysResponse) {
     option (google.api.http).get =
-        "/axelar/tss/v1beta1/validator_key/{address}";
+        "/axelar/tss/v1beta1/validator_multisig_keys/{address}";
   }
 }
