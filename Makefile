@@ -143,24 +143,26 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
-TM_URL              = https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc6/proto/tendermint
-GOGO_PROTO_URL      = https://raw.githubusercontent.com/regen-network/protobuf/cosmos
-GOOGLE_API_URL		= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
-COSMOS_PROTO_URL    = https://raw.githubusercontent.com/regen-network/cosmos-proto/master
-CONFIO_URL          = https://raw.githubusercontent.com/confio/ics23/v0.6.4
+TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc6/proto/tendermint
+GOGO_PROTO_URL      	= https://raw.githubusercontent.com/regen-network/protobuf/cosmos
+GOOGLE_PROTOBUF_URL		= https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf
+GOOGLE_API_URL			= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
+COSMOS_PROTO_URL    	= https://raw.githubusercontent.com/regen-network/cosmos-proto/master
+CONFIO_URL          	= https://raw.githubusercontent.com/confio/ics23/v0.6.4
 
-TM_CRYPTO_TYPES     = third_party/proto/tendermint/crypto
-TM_ABCI_TYPES       = third_party/proto/tendermint/abci
-TM_TYPES            = third_party/proto/tendermint/types
-TM_VERSION          = third_party/proto/tendermint/version
-TM_LIBS             = third_party/proto/tendermint/libs/bits
-TM_P2P              = third_party/proto/tendermint/p2p
+TM_CRYPTO_TYPES     	= third_party/proto/tendermint/crypto
+TM_ABCI_TYPES       	= third_party/proto/tendermint/abci
+TM_TYPES            	= third_party/proto/tendermint/types
+TM_VERSION          	= third_party/proto/tendermint/version
+TM_LIBS             	= third_party/proto/tendermint/libs/bits
+TM_P2P              	= third_party/proto/tendermint/p2p
 
-GOGO_PROTO_TYPES    = third_party/proto/gogoproto
+GOGO_PROTO_TYPES    	= third_party/proto/gogoproto
 GOOGLE_API_TYPES		= third_party/proto/google/api
-COSMOS_PROTO_TYPES  = third_party/proto/cosmos_proto
+GOOGLE_PROTOBUF_TYPES	= third_party/proto/google/protobuf
+COSMOS_PROTO_TYPES  	= third_party/proto/cosmos_proto
 # For some reason ibc expects confio proto files to be in the main folder
-CONFIO_TYPES        = third_party/proto
+CONFIO_TYPES        	= third_party/proto
 
 proto-update-deps:
 	@mkdir -p $(GOGO_PROTO_TYPES)
@@ -169,6 +171,9 @@ proto-update-deps:
 	@mkdir -p $(GOOGLE_API_TYPES)
 	@curl -sSL $(GOOGLE_API_URL)/annotations.proto > $(GOOGLE_API_TYPES)/annotations.proto
 	@curl -sSL $(GOOGLE_API_URL)/http.proto > $(GOOGLE_API_TYPES)/http.proto
+
+	@mkdir -p $(GOOGLE_PROTOBUF_TYPES)
+	@curl -sSL $(GOOGLE_PROTOBUF_URL)/descriptor.proto > $(GOOGLE_PROTOBUF_TYPES)/descriptor.proto
 
 	@mkdir -p $(COSMOS_PROTO_TYPES)
 	@curl -sSL $(COSMOS_PROTO_URL)/cosmos.proto > $(COSMOS_PROTO_TYPES)/cosmos.proto
