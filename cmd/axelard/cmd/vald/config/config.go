@@ -11,10 +11,11 @@ import (
 
 // ValdConfig contains all necessary vald configurations
 type ValdConfig struct {
-	tss.TssConfig   `mapstructure:",squash"`
-	BroadcastConfig `mapstructure:",squash"`
-	BatchSizeLimit  int `mapstructure:"max_batch_size"`
-	BatchThreshold  int `mapstructure:"batch_threshold"`
+	tss.TssConfig      `mapstructure:",squash"`
+	BroadcastConfig    `mapstructure:",squash"`
+	BatchSizeLimit     int   `mapstructure:"max_batch_size"`
+	BatchThreshold     int   `mapstructure:"batch_threshold"`
+	MaxOutOfSyncHeight int64 `mapstructure:"max_out_of_sync_height"`
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -22,11 +23,12 @@ type ValdConfig struct {
 // DefaultValdConfig returns a configurations populated with default values
 func DefaultValdConfig() ValdConfig {
 	return ValdConfig{
-		TssConfig:       tss.DefaultConfig(),
-		BroadcastConfig: DefaultBroadcastConfig(),
-		BatchSizeLimit:  250,
-		BatchThreshold:  3,
-		EVMConfig:       evm.DefaultConfig(),
+		TssConfig:          tss.DefaultConfig(),
+		BroadcastConfig:    DefaultBroadcastConfig(),
+		BatchSizeLimit:     250,
+		BatchThreshold:     3,
+		MaxOutOfSyncHeight: 50, // Max voting/sign/heartbeats periods are 50 blocks
+		EVMConfig:          evm.DefaultConfig(),
 	}
 }
 

@@ -65,6 +65,12 @@ func GetValdCommand() *cobra.Command {
 					return err
 				}
 			}
+			if !cmd.Flags().Changed("max-out-of-sync-height") {
+				if err := cmd.Flags().Set("max-out-of-sync-height", serverCtx.Viper.GetString("broadcast.max-out-of-sync-height")); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -145,6 +151,7 @@ func GetValdCommand() *cobra.Command {
 		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.00005uaxl",
 		flags.FlagKeyringBackend: "file",
+		"max-out-of-sync-height": "50",
 	}, false)
 
 	return cmd
@@ -161,8 +168,9 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
-	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of your validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
+	cmd.PersistentFlags().String("max-out-of-sync-height", "50", "The max height allowed to")
 }
 
 func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
@@ -176,6 +184,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
+	panic(fmt.Errorf("max sync config %d", axelarCfg.MaxOutOfSyncHeight))
 	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
 
 	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
@@ -191,7 +200,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return cl, nil
 	})
 	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(stateStore, robustClient, logger)
+	startBlock, err := getStartBlock(axelarCfg, stateStore, robustClient, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -324,10 +333,7 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 // Checks that the node is not too out of sync from the network.
 // If state.json is not stale, uses that as starting height.
 // Otherwise, starts from the node height.
-func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
-	// TODO: Make it configurable instead of a hardcoded 100
-	maxOutOfSyncHeight := int64(100)
-
+func getStartBlock(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
 	startBlock, err := stateStore.GetState()
 	if err != nil {
 		logger.Info(err.Error())
@@ -349,7 +355,7 @@ func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, l
 		return 0, err
 	}
 
-	if networkHeight-nodeHeight > maxOutOfSyncHeight {
+	if networkHeight-nodeHeight > cfg.MaxOutOfSyncHeight {
 		return 0, fmt.Errorf("node height %d is old compared to network block height %d", nodeHeight, networkHeight)
 	}
 
@@ -358,7 +364,7 @@ func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, l
 		return 0, fmt.Errorf("start block height %d is ahead of the network block height %d", startBlock, networkHeight)
 	}
 
-	if networkHeight-startBlock > maxOutOfSyncHeight {
+	if networkHeight-startBlock > cfg.MaxOutOfSyncHeight {
 		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the node height %d instead", startBlock, nodeHeight))
 		startBlock = nodeHeight
 	}
