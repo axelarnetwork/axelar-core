@@ -374,7 +374,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("min voter count not found")
 	}
 
-	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
+	pollKey := types.GetConfirmTokenKey(req.TxID, req.Chain, req.Asset.Name)
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -388,6 +388,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	// if token was initialized, both token and gateway addresses are available
+	tokenAddr := token.GetAddress()
 	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
 
@@ -398,6 +399,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
+			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),
@@ -493,7 +496,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex()))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.Chain, req.TxID.Hex(), req.BurnerAddress.Hex()))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -514,6 +517,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
 		),

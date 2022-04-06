@@ -89,6 +89,7 @@ type ReqConfirmTokenDeploy struct {
 type ReqConfirmDeposit struct {
 	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID          string       `json:"tx_id" yaml:"tx_id"`
+	Amount        string       `json:"amount" yaml:"amount"`
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
 }
 

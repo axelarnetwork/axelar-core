@@ -298,8 +298,8 @@ func (s SigKeyPairs) Swap(i, j int) {
 var NilToken = ERC20Token{}
 
 // GetConfirmTokenKey creates a poll key for token confirmation
-func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
-	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
+func GetConfirmTokenKey(txID Hash, chain string, asset string) vote.PollKey {
+	return vote.NewPollKey(ModuleName, strings.ToLower(chain)+"_"+txID.Hex()+"_"+strings.ToLower(asset))
 }
 
 // Address wraps EVM Address
@@ -1562,14 +1562,14 @@ func (m Event) ValidateBasic() error {
 		if event.Transfer == nil {
 			return fmt.Errorf("missing event Transfer")
 		}
-		if err := event.Transfer.Validate(); err != nil {
+		if err := event.Transfer.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event Transfer")
 		}
 	case *Event_TokenDeployed:
 		if event.TokenDeployed == nil {
 			return fmt.Errorf("missing event TokenDeployed")
 		}
-		if err := event.TokenDeployed.Validate(); err != nil {
+		if err := event.TokenDeployed.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
 		}
 	default:
@@ -1654,8 +1654,8 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 	return nil
 }
 
-// Validate returns an error if the event transfer is invalid
-func (m EventTransfer) Validate() error {
+// ValidateBasic returns an error if the event transfer is invalid
+func (m EventTransfer) ValidateBasic() error {
 	if m.To.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}
@@ -1667,8 +1667,8 @@ func (m EventTransfer) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event token deployed is invalid
-func (m EventTokenDeployed) Validate() error {
+// ValidateBasic returns an error if the event token deployed is invalid
+func (m EventTokenDeployed) ValidateBasic() error {
 	if m.TokenAddress.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}

@@ -114,23 +114,23 @@ func TestHandleVoteResult(t *testing.T) {
 
 	}).Repeat(repeats))
 
-	t.Run("GIVEN vote WHEN chain is not activated THEN return error", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN vote WHEN chain is not activated THEN still confirm the event", testutils.Func(func(t *testing.T) {
 		setup()
 
 		n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
-
-		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
+		eventNum := int(rand.I64Between(5, 10))
+		result.Results = randTransferEvents(eventNum)
 
 		err := handler(ctx, evmChain, &result)
 
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
 			isValidType := event.GetType() == types.EventTypeDepositConfirmation
 			if !isValidType {
 				return false
 			}
 			return isValidType
-		}), 0)
+		}), eventNum)
 
 	}).Repeat(repeats))
 
@@ -283,10 +283,10 @@ func TestHandleVoteResult(t *testing.T) {
 func randTransferEvents(n int) []*codectypes.Any {
 	var events []types.Event
 	events = make([]types.Event, n)
-
+	burnerAddress := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	for i := 0; i < n; i++ {
 		transfer := types.EventTransfer{
-			To:     types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			To:     burnerAddress,
 			Amount: sdk.NewUint(mathRand.Uint64()),
 		}
 		events[i] = types.Event{

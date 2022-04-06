@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -39,8 +40,8 @@ func (m VoteRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid poll key")
 	}
 
-	if len(m.Chain) == 0 {
-		return fmt.Errorf("empty chain")
+	if err := utils.ValidateString(m.Chain); err != nil {
+		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
 	if m.Vote.Results == nil {

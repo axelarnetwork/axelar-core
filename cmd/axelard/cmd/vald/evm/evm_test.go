@@ -343,6 +343,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyChain:          "Ethereum",
 			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
 			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
+			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
 			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
@@ -422,7 +423,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 2, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		assert.Equal(t, 1, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -485,6 +486,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyChain:          "Ethereum",
 			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
 			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
+			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
+			evmTypes.AttributeKeySymbol:         symbol,
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
 			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}

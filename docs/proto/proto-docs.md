@@ -3752,6 +3752,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  | **Deprecated.**  |
 | `burner_address` | [bytes](#bytes) |  |  |
 
 
