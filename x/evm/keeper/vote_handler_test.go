@@ -111,7 +111,7 @@ func TestHandleVoteResult(t *testing.T) {
 		result = vote.Vote{}
 	}
 
-	repeats := 1
+	repeats := 20
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
