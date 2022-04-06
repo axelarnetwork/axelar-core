@@ -54,7 +54,6 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		sdk.NewEvent(types.EventType,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Chain),
 			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
 			sdk.NewAttribute(types.AttributeKeyVoter, req.Sender.String()),
 		),
@@ -73,12 +72,12 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return &types.VoteResponse{Log: fmt.Sprintf("result of poll %s has wrong type, expected VoteConfirmDepositRequest_Vote, got %T", poll.GetKey().String(), poll.GetResult())}, nil
 	}
 
-	if len(result.Results) == 0 {
+	if result.Results == nil || len(result.Results) == 0 {
 		poll.AllowOverride()
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed to decide anything", poll.GetKey())}, nil
 	}
 
-	if err := voteHandler(ctx, req.Chain, result); err != nil {
+	if err := voteHandler(ctx, result); err != nil {
 		return &types.VoteResponse{Log: fmt.Sprintf("failed to process %s", err.Error())}, nil
 	}
 

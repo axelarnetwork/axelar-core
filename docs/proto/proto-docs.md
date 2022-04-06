@@ -6752,7 +6752,6 @@ Params represent the genesis parameters for the module
 | `sender` | [bytes](#bytes) |  |  |
 | `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `vote` | [vote.exported.v1beta1.Vote](#vote.exported.v1beta1.Vote) |  |  |
-| `chain` | [string](#string) |  |  |
 
 
 

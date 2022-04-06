@@ -1,22 +1,18 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewVoteRequest creates a message of type VoteMsgRequest
-func NewVoteRequest(sender sdk.AccAddress, pollKey vote.PollKey, vote vote.Vote, chain string) *VoteRequest {
+func NewVoteRequest(sender sdk.AccAddress, pollKey vote.PollKey, vote vote.Vote) *VoteRequest {
 	return &VoteRequest{
 		Sender:  sender,
 		PollKey: pollKey,
 		Vote:    vote,
-		Chain:   chain,
 	}
 }
 
@@ -38,14 +34,6 @@ func (m VoteRequest) ValidateBasic() error {
 
 	if err := m.PollKey.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid poll key")
-	}
-
-	if err := utils.ValidateString(m.Chain); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
-	}
-
-	if m.Vote.Results == nil {
-		return fmt.Errorf("missing vote results")
 	}
 
 	return nil

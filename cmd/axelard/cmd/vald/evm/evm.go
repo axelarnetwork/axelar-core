@@ -101,7 +101,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 	var events []evmTypes.Event
-	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
 			switch log.Topics[0] {
 			case ERC20TransferSig:
@@ -134,11 +134,11 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(confirmed, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v, chain)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -157,7 +157,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	}
 
 	var events []evmTypes.Event
-	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
 			if !bytes.Equal(gatewayAddr.Bytes(), log.Address.Bytes()) {
 				continue
@@ -181,6 +181,8 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 						TokenDeployed: &event,
 					},
 				})
+
+				return true
 			default:
 			}
 		}
@@ -188,11 +190,11 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(confirmed, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v, chain)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -929,14 +931,14 @@ func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.Tran
 	return addresses, uint8(threshold.Uint64()), nil
 }
 
-func packEvents(confirmed bool, events []evmTypes.Event) (vote.Vote, error) {
+func packEvents(events []evmTypes.Event) (vote.Vote, error) {
 	var v vote.Vote
-	if confirmed {
-		eventsAny, err := evmTypes.PackEvents(events)
-		if err != nil {
-			return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
-		}
-		v.Results = eventsAny
+
+	eventsAny, err := evmTypes.PackEvents(events)
+	if err != nil {
+		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
 	}
+	v.Results = eventsAny
+
 	return v, nil
 }

@@ -67,6 +67,9 @@ func TestHandleVoteResult(t *testing.T) {
 			SetConfirmedEventFunc: func(sdk.Context, types.Event) error {
 				return nil
 			},
+			SetEventCompletedFunc: func(sdk.Context, string) error {
+				return nil
+			},
 			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, symbol string) types.ERC20Token {
 				return types.NilToken
 			},
@@ -98,10 +101,12 @@ func TestHandleVoteResult(t *testing.T) {
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-
+		n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			return nexus.Chain{}, false
+		}
 		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
 
-		err := handler(ctx, rand.Str(5), &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -121,7 +126,7 @@ func TestHandleVoteResult(t *testing.T) {
 		eventNum := int(rand.I64Between(5, 10))
 		result.Results = randTransferEvents(eventNum)
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -139,7 +144,7 @@ func TestHandleVoteResult(t *testing.T) {
 
 		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
 		result.Results = []*codectypes.Any{incorrectResult}
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -161,7 +166,7 @@ func TestHandleVoteResult(t *testing.T) {
 
 		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -183,7 +188,7 @@ func TestHandleVoteResult(t *testing.T) {
 
 		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -200,7 +205,7 @@ func TestHandleVoteResult(t *testing.T) {
 		setup()
 		eventNum := int(rand.I64Between(5, 10))
 		result.Results = randTransferEvents(eventNum)
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -219,7 +224,7 @@ func TestHandleVoteResult(t *testing.T) {
 		eventsAny, _ := types.PackEvents(event)
 		result.Results = eventsAny
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -242,7 +247,7 @@ func TestHandleVoteResult(t *testing.T) {
 			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Pending})
 		}
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
@@ -266,7 +271,7 @@ func TestHandleVoteResult(t *testing.T) {
 			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Pending, TokenAddress: deployedEvent.TokenDeployed.TokenAddress})
 		}
 
-		err := handler(ctx, evmChain, &result)
+		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {

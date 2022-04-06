@@ -6,6 +6,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/utils/slices"
+
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -13,16 +15,24 @@ import (
 
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
 func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus) vote.VoteHandler {
-	return func(ctx sdk.Context, chainName string, result *vote.Vote) error {
+	return func(ctx sdk.Context, result *vote.Vote) error {
+		events, err := types.UnpackEvents(cdc, result.Results)
+		if err != nil {
+			return err
+		}
+
+		if len(events) == 0 {
+			return nil
+		}
+
+		chainName := events[0].Chain
+		if slices.Any(events, func(event types.Event) bool { return event.Chain != chainName }) {
+			return fmt.Errorf("events are not from the same source chain")
+		}
 
 		chain, ok := nexus.GetChain(ctx, chainName)
 		if !ok {
 			return fmt.Errorf("%s is not a registered chain", chainName)
-		}
-
-		events, err := types.UnpackEvents(cdc, result.Results)
-		if err != nil {
-			return err
 		}
 
 		var errors []error
@@ -56,8 +66,9 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 				errors = append(errors, fmt.Errorf("event %s: %s", eventID, err.Error()))
 				continue
 			}
-
-			keeper.ForChain(chain.Name).SetConfirmedEvent(ctx, event)
+			// set event complete
+			keeper.ForChain(chainName).SetConfirmedEvent(ctx, event)
+			keeper.ForChain(chainName).SetEventCompleted(ctx, eventID)
 		}
 
 		if len(errors) != 0 {

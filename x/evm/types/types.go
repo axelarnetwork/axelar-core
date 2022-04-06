@@ -228,8 +228,6 @@ func (t *ERC20Token) RecordDeployment(txID Hash) error {
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
 	case t.Is(Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.metadata.Asset)
-	case t.Is(Pending):
-		return fmt.Errorf("voting for token %s is already underway", t.metadata.Asset)
 	}
 
 	t.metadata.TxHash = txID
@@ -298,8 +296,8 @@ func (s SigKeyPairs) Swap(i, j int) {
 var NilToken = ERC20Token{}
 
 // GetConfirmTokenKey creates a poll key for token confirmation
-func GetConfirmTokenKey(txID Hash, chain string, asset string) vote.PollKey {
-	return vote.NewPollKey(ModuleName, strings.ToLower(chain)+"_"+txID.Hex()+"_"+strings.ToLower(asset))
+func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
+	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s", txID.Hex(), strings.ToLower(asset)))
 }
 
 // Address wraps EVM Address
