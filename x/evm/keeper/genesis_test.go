@@ -37,7 +37,7 @@ func TestGenesis(t *testing.T) {
 	k := keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), paramsK)
 
 	Given("a genesis state", func(t *testing.T) {
-		initialState = types.NewGenesisState(testutils.RandomChains())
+		initialState = types.NewGenesisState(testutils.RandomChains(cfg.Codec))
 
 	}).And().Given("it is valid", func(t *testing.T) {
 		assert.NoError(t, initialState.Validate())
@@ -49,7 +49,6 @@ func TestGenesis(t *testing.T) {
 		}).
 		Then("both states are equal", func(t *testing.T) {
 			assertChainsEqual(t, initialState, exportedState)
-
 		}).Run(t, 10)
 
 	Given("the default genesis state", func(t *testing.T) {
@@ -67,8 +66,7 @@ func assertChainsEqual(t *testing.T, initial types.GenesisState, exported types.
 	assert.Equal(t, len(initial.Chains), len(exported.Chains))
 
 	for i := range initial.Chains {
-
-		assertCommandQueueEqual(t, initial.Chains[i].CommandQueue, exported.Chains[i].CommandQueue)
+		assert.Equal(t, initial.Chains[i].CommandQueue, exported.Chains[i].CommandQueue)
 		assert.ElementsMatch(t, initial.Chains[i].BurnerInfos, exported.Chains[i].BurnerInfos)
 		assert.ElementsMatch(t, initial.Chains[i].ConfirmedDeposits, exported.Chains[i].ConfirmedDeposits)
 		assert.ElementsMatch(t, initial.Chains[i].BurnedDeposits, exported.Chains[i].BurnedDeposits)
@@ -76,12 +74,7 @@ func assertChainsEqual(t *testing.T, initial types.GenesisState, exported types.
 		assert.ElementsMatch(t, initial.Chains[i].CommandBatches, exported.Chains[i].CommandBatches)
 		assert.Equal(t, initial.Chains[i].Gateway, exported.Chains[i].Gateway)
 		assert.Equal(t, initial.Chains[i].Params, exported.Chains[i].Params)
-	}
-}
-
-func assertCommandQueueEqual(t *testing.T, initial map[string]types.Command, exported map[string]types.Command) {
-	assert.Equal(t, len(initial), len(exported))
-	for key, value := range initial {
-		assert.Equal(t, value, exported[key])
+		assert.ElementsMatch(t, initial.Chains[i].Events, exported.Chains[i].Events)
+		assert.Equal(t, initial.Chains[i].ConfirmedEventQueue, exported.Chains[i].ConfirmedEventQueue)
 	}
 }

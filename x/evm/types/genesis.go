@@ -11,6 +11,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewGenesisState returns a new genesis state
@@ -36,14 +38,16 @@ func DefaultChains() []GenesisState_Chain {
 	var chains []GenesisState_Chain
 	for _, params := range DefaultParams() {
 		chain := GenesisState_Chain{
-			Params:            params,
-			BurnerInfos:       nil,
-			CommandQueue:      nil,
-			ConfirmedDeposits: nil,
-			BurnedDeposits:    nil,
-			CommandBatches:    nil,
-			Gateway:           Gateway{},
-			Tokens:            nil,
+			Params:              params,
+			BurnerInfos:         nil,
+			CommandQueue:        utils.QueueState{},
+			ConfirmedDeposits:   nil,
+			BurnedDeposits:      nil,
+			CommandBatches:      nil,
+			Gateway:             Gateway{},
+			Tokens:              nil,
+			Events:              nil,
+			ConfirmedEventQueue: utils.QueueState{},
 		}
 		chains = append(chains, chain)
 	}
@@ -55,6 +59,9 @@ func (m GenesisState) Validate() error {
 	if !sort.SliceIsSorted(m.Chains, less(m.Chains)) {
 		return getValidateError(0, fmt.Errorf("chains must be sorted by name (in params)"))
 	}
+
+	// events should be globally unique across all the chains
+	eventSeen := make(map[string]bool)
 
 	for j, chain := range m.Chains {
 		if err := chain.Params.Validate(); err != nil {
@@ -125,14 +132,30 @@ func (m GenesisState) Validate() error {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
 		}
 
-		queueState := make(map[string]codec.ProtoMarshaler, len(chain.CommandQueue))
-		for key, value := range chain.CommandQueue {
-			queueState[key] = &value
-		}
-
-		if err := ValidateCommandQueueState(queueState); err != nil {
+		if err := chain.CommandQueue.ValidateBasic(); err != nil {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command queue state"))
 		}
+
+		for _, event := range chain.Events {
+			if eventSeen[event.GetID()] {
+				return getValidateError(j, fmt.Errorf("duplicate event %s", event.GetID()))
+			}
+
+			if event.Status == EventNonExistent {
+				return getValidateError(j, fmt.Errorf("invalid status of event %s", event.GetID()))
+			}
+
+			if err := event.ValidateBasic(); err != nil {
+				return getValidateError(j, sdkerrors.Wrapf(err, "invalid event %s", event.GetID()))
+			}
+
+			eventSeen[event.GetID()] = true
+		}
+
+		if err := chain.ConfirmedEventQueue.ValidateBasic(); err != nil {
+			return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed event queue state"))
+		}
+
 	}
 
 	return nil
