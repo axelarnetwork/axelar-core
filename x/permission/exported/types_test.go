@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
@@ -28,14 +27,9 @@ func TestMsgRoles(t *testing.T) {
 
 		msg, err := registry.Resolve(implementation)
 		assert.NoError(t, err)
-		_, d := descriptor.ForMessage(msg.(descriptor.Message))
-		options := d.GetOptions()
-		if options == nil {
-			missingRoles = append(missingRoles, implementation)
-			continue
-		}
-		_, err = proto.GetExtension(options, exported.E_PermissionRole)
-		if err != nil {
+
+		role := exported.GetPermissionRole(msg.(descriptor.Message))
+		if role == exported.ROLE_UNSPECIFIED {
 			missingRoles = append(missingRoles, implementation)
 			continue
 		}

@@ -10,7 +10,7 @@ func GetPermissionRole(message descriptor.Message) Role {
 	_, d := descriptor.ForMessage(message)
 	v, err := proto.GetExtension(d.GetOptions(), E_PermissionRole)
 	if err != nil {
-		return ROLE_CHAIN_MANAGEMENT
+		return ROLE_UNSPECIFIED
 	}
 	return *v.(*Role)
 }

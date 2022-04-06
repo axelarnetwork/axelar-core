@@ -10,7 +10,7 @@ import "permission/exported/v1beta1/types.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message RegisterProxyRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes proxy_addr = 2 [ (gogoproto.casttype) =
@@ -20,7 +20,7 @@ message RegisterProxyRequest {
 message RegisterProxyResponse {}
 
 message DeactivateProxyRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
 }

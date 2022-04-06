@@ -16,7 +16,7 @@ option (gogoproto.goproto_getters_all) = false;
 // MsgLink represents a message to link a cross-chain address to an Axelar
 // address
 message LinkRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
@@ -28,7 +28,7 @@ message LinkResponse { string deposit_addr = 1; };
 
 // MsgConfirmDeposit represents a deposit confirmation message
 message ConfirmDepositRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 
@@ -48,7 +48,7 @@ message ConfirmDepositResponse {}
 // MsgExecutePendingTransfers represents a message to trigger transfer all
 // pending transfers
 message ExecutePendingTransfersRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
@@ -97,7 +97,7 @@ message RegisterAssetResponse {}
 // RouteIBCTransfersRequest represents a message to route pending transfers to
 // cosmos based chains
 message RouteIBCTransfersRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNSPECIFIED;
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }

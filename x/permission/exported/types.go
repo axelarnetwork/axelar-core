@@ -11,7 +11,7 @@ func (x Role) Validate() error {
 		return fmt.Errorf("unknown gov role")
 	}
 
-	if x == ROLE_UNRESTRICTED {
+	if x == ROLE_UNSPECIFIED || x == ROLE_UNRESTRICTED {
 		return fmt.Errorf("unspecified gov role")
 	}
 

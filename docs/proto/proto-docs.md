@@ -1430,8 +1430,9 @@ transfers for the specified chain
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | ROLE_UNSPECIFIED | 0 |  |
-| ROLE_ACCESS_CONTROL | 1 |  |
+| ROLE_UNRESTRICTED | 1 |  |
 | ROLE_CHAIN_MANAGEMENT | 2 |  |
+| ROLE_ACCESS_CONTROL | 3 |  |
 
 
  <!-- end enums -->
