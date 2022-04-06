@@ -569,8 +569,9 @@ func CreateApproveContractCallWithMintCommand(
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
 	amount sdk.Uint,
+	symbol string,
 ) (Command, error) {
-	params, err := createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount)
+	params, err := createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount, symbol)
 	if err != nil {
 		return Command{}, err
 	}
@@ -739,7 +740,8 @@ func createApproveContractCallWithMintParams(
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
-	amount sdk.Uint) ([]byte, error) {
+	amount sdk.Uint,
+	symbol string) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -775,7 +777,7 @@ func createApproveContractCallWithMintParams(
 		event.Sender.Hex(),
 		common.HexToAddress(event.ContractAddress),
 		common.Hash(event.PayloadHash),
-		event.Symbol,
+		symbol,
 		amount.BigInt(),
 		common.Hash(sourceTxID),
 		new(big.Int).SetUint64(sourceEventIndex),
