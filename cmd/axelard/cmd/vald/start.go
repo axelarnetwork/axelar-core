@@ -65,12 +65,6 @@ func GetValdCommand() *cobra.Command {
 					return err
 				}
 			}
-			if !cmd.Flags().Changed("max-out-of-sync-height") {
-				if err := cmd.Flags().Set("max-out-of-sync-height", serverCtx.Viper.GetString("broadcast.max-out-of-sync-height")); err != nil {
-					return err
-				}
-			}
-
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -151,7 +145,6 @@ func GetValdCommand() *cobra.Command {
 		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.00005uaxl",
 		flags.FlagKeyringBackend: "file",
-		"max-out-of-sync-height": "50",
 	}, false)
 
 	return cmd
@@ -168,9 +161,8 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
-	cmd.PersistentFlags().String("validator-addr", "", "the address of your validator operator, i.e axelarvaloper1..")
+	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
-	cmd.PersistentFlags().String("max-out-of-sync-height", "50", "The max height allowed to")
 }
 
 func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
