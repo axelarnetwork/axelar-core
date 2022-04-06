@@ -539,20 +539,20 @@ func CreateApproveContractCallCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	sourceChain string,
-	txID Hash,
-	index uint64,
+	sourceTxID Hash,
+	sourceEventIndex uint64,
 	event EventContractCall,
 ) (Command, error) {
-	params, err := createApproveContractCallParams(sourceChain, event)
+	params, err := createApproveContractCallParams(sourceChain, sourceTxID, sourceEventIndex, event)
 	if err != nil {
 		return Command{}, err
 	}
 
-	eventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(eventIndexBz, index)
+	sourceEventIndexBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sourceEventIndexBz, sourceEventIndex)
 
 	return Command{
-		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
+		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCall,
 		Params:     params,
 		KeyID:      keyID,
@@ -565,21 +565,21 @@ func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	sourceChain string,
-	txID Hash,
-	index uint64,
+	sourceTxID Hash,
+	sourceEventIndex uint64,
 	event EventContractCallWithToken,
 	amount sdk.Uint,
 ) (Command, error) {
-	params, err := createApproveContractCallWithMintParams(sourceChain, event, amount)
+	params, err := createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount)
 	if err != nil {
 		return Command{}, err
 	}
 
-	eventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(eventIndexBz, index)
+	sourceEventIndexBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sourceEventIndexBz, sourceEventIndex)
 
 	return Command{
-		ID:         NewCommandID(append(txID.Bytes(), eventIndexBz...), chainID),
+		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCallWithMint,
 		Params:     params,
 		KeyID:      keyID,
@@ -588,25 +588,25 @@ func CreateApproveContractCallWithMintCommand(
 }
 
 // decodeApproveContractCallWithMintParams unpacks the parameters of a approve contract call with mint command
-func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, error) {
+func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, common.Hash, *big.Int, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, err
+		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
 	}
 
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, err
+		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
 	}
 
 	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
 	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, err
+		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, err
+		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
 	}
 
 	arguments := abi.Arguments{
@@ -616,18 +616,80 @@ func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.
 		{Type: bytes32Type},
 		{Type: stringType},
 		{Type: uint256Type},
+		{Type: bytes32Type},
+		{Type: uint256Type},
 	}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, err
+		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
 	}
 
-	payloadHash := params[3].([32]byte)
+	payloadHash := params[3].([common.HashLength]byte)
+	sourceTxID := params[6].([common.HashLength]byte)
 
-	return params[0].(string), params[1].(string), params[2].(common.Address), common.BytesToHash(payloadHash[:]), params[4].(string), params[5].(*big.Int), nil
+	return params[0].(string),
+		params[1].(string),
+		params[2].(common.Address),
+		common.BytesToHash(payloadHash[:]),
+		params[4].(string),
+		params[5].(*big.Int),
+		common.BytesToHash(sourceTxID[:]),
+		params[7].(*big.Int),
+		nil
 }
 
-func createApproveContractCallParams(sourceChain string, event EventContractCall) ([]byte, error) {
+// decodeApproveContractCallParams unpacks the parameters of a approve contract call command
+func decodeApproveContractCallParams(bz []byte) (string, string, common.Address, common.Hash, common.Hash, *big.Int, error) {
+	stringType, err := abi.NewType("string", "string", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
+	}
+
+	addressType, err := abi.NewType("address", "address", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
+	}
+
+	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
+	}
+
+	arguments := abi.Arguments{
+		{Type: stringType},
+		{Type: stringType},
+		{Type: addressType},
+		{Type: bytes32Type},
+		{Type: bytes32Type},
+		{Type: uint256Type},
+	}
+	params, err := StrictDecode(arguments, bz)
+	if err != nil {
+		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
+	}
+
+	payloadHash := params[3].([common.HashLength]byte)
+	sourceTxID := params[4].([common.HashLength]byte)
+
+	return params[0].(string),
+		params[1].(string),
+		params[2].(common.Address),
+		common.BytesToHash(payloadHash[:]),
+		common.BytesToHash(sourceTxID[:]),
+		params[5].(*big.Int),
+		nil
+}
+
+func createApproveContractCallParams(
+	sourceChain string,
+	sourceTxID Hash,
+	sourceEventIndex uint64,
+	event EventContractCall) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -643,11 +705,18 @@ func createApproveContractCallParams(sourceChain string, event EventContractCall
 		return nil, err
 	}
 
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	arguments := abi.Arguments{
 		{Type: stringType},
 		{Type: stringType},
 		{Type: addressType},
 		{Type: bytes32Type},
+		{Type: bytes32Type},
+		{Type: uint256Type},
 	}
 
 	result, err := arguments.Pack(
@@ -655,6 +724,8 @@ func createApproveContractCallParams(sourceChain string, event EventContractCall
 		event.Sender.Hex(),
 		common.HexToAddress(event.ContractAddress),
 		common.Hash(event.PayloadHash),
+		common.Hash(sourceTxID),
+		new(big.Int).SetUint64(sourceEventIndex),
 	)
 	if err != nil {
 		return nil, err
@@ -663,7 +734,12 @@ func createApproveContractCallParams(sourceChain string, event EventContractCall
 	return result, nil
 }
 
-func createApproveContractCallWithMintParams(sourceChain string, event EventContractCallWithToken, amount sdk.Uint) ([]byte, error) {
+func createApproveContractCallWithMintParams(
+	sourceChain string,
+	sourceTxID Hash,
+	sourceEventIndex uint64,
+	event EventContractCallWithToken,
+	amount sdk.Uint) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -690,6 +766,8 @@ func createApproveContractCallWithMintParams(sourceChain string, event EventCont
 		{Type: addressType},
 		{Type: bytes32Type},
 		{Type: stringType},
+		{Type: uint256Type},
+		{Type: bytes32Type},
 		{Type: uint256Type},
 	}
 	result, err := arguments.Pack(
@@ -699,6 +777,8 @@ func createApproveContractCallWithMintParams(sourceChain string, event EventCont
 		common.Hash(event.PayloadHash),
 		event.Symbol,
 		amount.BigInt(),
+		common.Hash(sourceTxID),
+		new(big.Int).SetUint64(sourceEventIndex),
 	)
 	if err != nil {
 		return nil, err
@@ -1562,8 +1642,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 
 	switch c.Command {
 	case AxelarGatewayCommandApproveContractCallWithMint:
-		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, err := decodeApproveContractCallWithMintParams(c.Params)
-
+		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex, err := decodeApproveContractCallWithMintParams(c.Params)
 		if err != nil {
 			return nil, err
 		}
@@ -1574,6 +1653,20 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["payloadHash"] = payloadHash.Hex()
 		params["symbol"] = symbol
 		params["amount"] = amount.String()
+		params["sourceTxHash"] = sourceTxID.Hex()
+		params["sourceEventIndex"] = sourceEventIndex.String()
+	case AxelarGatewayCommandApproveContractCall:
+		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex, err := decodeApproveContractCallParams(c.Params)
+		if err != nil {
+			return nil, err
+		}
+
+		params["sourceChain"] = sourceChain
+		params["sourceAddress"] = sourceAddress
+		params["contractAddress"] = contractAddress.Hex()
+		params["payloadHash"] = payloadHash.Hex()
+		params["sourceTxHash"] = sourceTxID.Hex()
+		params["sourceEventIndex"] = sourceEventIndex.String()
 	case AxelarGatewayCommandDeployToken:
 		name, symbol, decs, cap, tokenAddress, err := decodeDeployTokenParams(c.Params)
 		if err != nil {
