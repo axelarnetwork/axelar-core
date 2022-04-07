@@ -3,6 +3,7 @@ package evm
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -25,10 +26,6 @@ func validateChains(ctx sdk.Context, sourceChainName string, destinationChainNam
 
 	if !bk.HasChain(ctx, destinationChainName) {
 		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("destination chain %s is not an evm chain", destinationChainName)
-	}
-
-	if !n.IsChainActivated(ctx, destinationChain) {
-		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("destination chain %s is not activated", destinationChainName)
 	}
 
 	return sourceChain, destinationChain, nil
@@ -213,28 +210,48 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 }
 
 func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, s types.Signer) error {
+	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
+		event := e.(*types.Event)
+
+		var destinationChainName string
+		switch event := event.GetEvent().(type) {
+		case *types.Event_ContractCall:
+			destinationChainName = event.ContractCall.DestinationChain
+		case *types.Event_ContractCallWithToken:
+			destinationChainName = event.ContractCallWithToken.DestinationChain
+		case *types.Event_TokenSent:
+			destinationChainName = event.TokenSent.DestinationChain
+		default:
+			panic(fmt.Errorf("unsupported event type %T", event))
+		}
+
+		// would handle event as failure if destination chain is not registered
+		destinationChain, ok := n.GetChain(ctx, destinationChainName)
+		if !ok {
+			return true
+		}
+		// would handle event as failure if destination chain is not an evm chain
+		if !bk.HasChain(ctx, destinationChainName) {
+			return true
+		}
+		// skip if destination chain is not activated
+		if !n.IsChainActivated(ctx, destinationChain) {
+			return false
+		}
+		// skip if destination chain has not got gateway set yet
+		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+			return false
+		}
+		// skip if destination chain has the secondary key rotation in progress
+		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+			return false
+		}
+
+		return true
+	}
+
 	for _, chain := range n.GetChains(ctx) {
-		// skip if not an evm chain
-		if !bk.HasChain(ctx, chain.Name) {
-			continue
-		}
-
-		// skip if not activated
-		if !n.IsChainActivated(ctx, chain) {
-			continue
-		}
-
 		ck := bk.ForChain(chain.Name)
-		// skip if gateway not set yet
-		if _, ok := ck.GetGatewayAddress(ctx); !ok {
-			continue
-		}
-
-		// skip if secondary key rotation is in progress
-		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-			continue
-		}
-
 		queue := ck.GetConfirmedEventQueue(ctx)
 		// skip if confirmed event queue is empty
 		if queue.IsEmpty() {
@@ -242,7 +259,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		var event types.Event
-		for queue.Dequeue(&event) {
+		for queue.Dequeue(&event, shouldHandleEvent) {
 			var ok bool
 
 			switch event.GetEvent().(type) {
@@ -272,7 +289,6 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
 				return err
 			}
-
 		}
 	}
 

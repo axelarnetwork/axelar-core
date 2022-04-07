@@ -106,14 +106,6 @@ func TestHandleContractCall(t *testing.T) {
 		}
 	}
 
-	isDestinationChainActivated := func(isActivated bool) func(t *testing.T) {
-		return func(t *testing.T) {
-			n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool {
-				return chain.Name == destinationChainName && isActivated
-			}
-		}
-	}
-
 	isDestinationChainIDSet := func(isSet bool) func(t *testing.T) {
 		return func(t *testing.T) {
 			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), isSet }
@@ -178,19 +170,6 @@ func TestHandleContractCall(t *testing.T) {
 		And().
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		And().
-		When("destination chain is not activated", isDestinationChainActivated(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleContractCall(ctx, event, bk, n, s)
-			assert.False(t, ok)
-		}).
-		Run(t)
-
-	whenChainsAreRegistered.
-		And().
-		When("destination chain is an evm chain", isDestinationChainEvm(true)).
-		And().
-		When("destination chain is not activated", isDestinationChainActivated(true)).
-		And().
 		When("destination chain ID is not set", isDestinationChainIDSet(false)).
 		Then("should panic", panicWith(fmt.Sprintf("could not find chain ID for '%s'", destinationChainName))).
 		Run(t)
@@ -198,8 +177,6 @@ func TestHandleContractCall(t *testing.T) {
 	whenChainsAreRegistered.
 		And().
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
-		And().
-		When("destination chain is not activated", isDestinationChainActivated(true)).
 		And().
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		And().
@@ -210,8 +187,6 @@ func TestHandleContractCall(t *testing.T) {
 	whenChainsAreRegistered.
 		And().
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
-		And().
-		When("destination chain is not activated", isDestinationChainActivated(true)).
 		And().
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		And().
@@ -224,8 +199,6 @@ func TestHandleContractCall(t *testing.T) {
 	whenChainsAreRegistered.
 		And().
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
-		And().
-		When("destination chain is not activated", isDestinationChainActivated(true)).
 		And().
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		And().
