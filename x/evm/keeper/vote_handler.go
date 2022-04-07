@@ -44,7 +44,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 		chainK := keeper.ForChain(chain.Name)
 		cacheCtx, writeCache := ctx.CacheContext()
 
-		err = handleEvents(cacheCtx, chainK, nexus, events, chain)
+		err = handleEvents(cacheCtx, chainK, nexus, signer, events, chain)
 		if err != nil {
 			// set events to failed, we will deal with later
 			for _, e := range events {
@@ -58,7 +58,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 	}
 }
 
-func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, events []types.Event, chain nexus.Chain) error {
+func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, signer types.Signer, events []types.Event, chain nexus.Chain) error {
 	for _, event := range events {
 		var err error
 		// validate event
@@ -80,18 +80,16 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, even
 		case *types.Event_TokenDeployed:
 			err = handleVoteConfirmToken(ctx, ck, chain, event)
 		case *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
-				err = handleVoteConfirmMultisigTransferKey(ctx, keeper, signer, chain, event)
-			case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
-				err = handleVoteConfirmGatewayTx(ctx, keeper, chain, event)
-			default:
-				err = fmt.Errorf("event %s: unsupported event type %T", eventID, event)
-			}
+			err = handleVoteConfirmMultisigTransferKey(ctx, ck, signer, chain, event)
+		case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
+			err = handleVoteConfirmGatewayTx(ctx, ck, event)
+		default:
+			err = fmt.Errorf("event %s: unsupported event type %T", eventID, event)
+		}
 
 		if err != nil {
 			return fmt.Errorf("event %s: %s", eventID, err.Error())
 		}
-
-		ck.SetEventCompleted(ctx, eventID)
 	}
 
 	return nil
@@ -128,6 +126,7 @@ func handleVoteConfirmDeposit(ctx sdk.Context, keeper types.ChainKeeper, n types
 	}
 	keeper.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
+	keeper.SetEventCompleted(ctx, event.GetID())
 	keeper.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", transferEvent.Transfer.To.Hex(), transferEvent.Transfer.Amount), "chain", chain.Name)
 
 	ctx.EventManager().EmitEvent(
@@ -164,6 +163,7 @@ func handleVoteConfirmToken(ctx sdk.Context, keeper types.ChainKeeper, chain nex
 		return err
 	}
 
+	keeper.SetEventCompleted(ctx, event.GetID())
 	keeper.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", tokenDeployedEvent.TokenDeployed.Symbol, chain.Name))
 
 	ctx.EventManager().EmitEvent(
@@ -180,7 +180,7 @@ func handleVoteConfirmToken(ctx sdk.Context, keeper types.ChainKeeper, chain nex
 	return nil
 }
 
-func handleVoteConfirmMultisigTransferKey(ctx sdk.Context, k types.BaseKeeper, s types.Signer, chain nexus.Chain, event types.Event) error {
+func handleVoteConfirmMultisigTransferKey(ctx sdk.Context, keeper types.ChainKeeper, s types.Signer, chain nexus.Chain, event types.Event) error {
 	var newAddresses []types.Address
 	var newThreshold sdk.Uint
 	var keyRole tss.KeyRole
@@ -226,8 +226,9 @@ func handleVoteConfirmMultisigTransferKey(ctx sdk.Context, k types.BaseKeeper, s
 		return err
 	}
 
-	k.ForChain(chain.Name).SetConfirmedEvent(ctx, event)
-	k.ForChain(chain.Name).SetEventCompleted(ctx, event.GetID())
+	keeper.SetEventCompleted(ctx, event.GetID())
+	keeper.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
+		keyRole.SimpleString(), chain.Name), "txID", event.TxId.Hex(), "rotation count", s.GetRotationCount(ctx, chain, keyRole))
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeTransferKeyConfirmation,
@@ -239,28 +240,14 @@ func handleVoteConfirmMultisigTransferKey(ctx sdk.Context, k types.BaseKeeper, s
 	return nil
 }
 
-func handleVoteConfirmGatewayTx(ctx sdk.Context, k types.BaseKeeper, chain nexus.Chain, event types.Event) error {
-	var destinationChain string
-	switch event := event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		destinationChain = event.ContractCall.DestinationChain
-	case *types.Event_ContractCallWithToken:
-		destinationChain = event.ContractCallWithToken.DestinationChain
-	case *types.Event_TokenSent:
-		destinationChain = event.TokenSent.DestinationChain
-	default:
-		return fmt.Errorf("unsupported event type %T", event)
-	}
-
-	k.ForChain(destinationChain).SetConfirmedEvent(ctx, event)
-
+func handleVoteConfirmGatewayTx(ctx sdk.Context, k types.ChainKeeper, event types.Event) error {
 	k.Logger(ctx).Info(fmt.Sprintf("gateway transaction confirmation confirmation result is %s", event.String()))
 
 	// emit gatewayTxConfirmation event
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, event.Chain),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)),
 	)
@@ -273,9 +260,11 @@ func areAddressesEqual(addressesA, addressesB []common.Address) bool {
 		return false
 	}
 
-	hexesA := addressesToHexes(addressesA)
+	addressesToHex := func(addr common.Address) string { return addr.Hex() }
+
+	hexesA := slices.Map(addressesA, addressesToHex)
 	sort.Strings(hexesA)
-	hexesB := addressesToHexes(addressesB)
+	hexesB := slices.Map(addressesB, addressesToHex)
 	sort.Strings(hexesB)
 
 	for i, hexA := range hexesA {
@@ -285,36 +274,4 @@ func areAddressesEqual(addressesA, addressesB []common.Address) bool {
 	}
 
 	return true
-}
-
-func addressesToHexes(addresses []common.Address) []string {
-	hexes := make([]string, len(addresses))
-	for i, address := range addresses {
-		hexes[i] = address.Hex()
-	}
-
-	return hexes
-}
-
-func checkDuplication(ctx sdk.Context, k types.BaseKeeper, chainName string, event types.Event) error {
-	chain := chainName
-	eventID := event.GetID()
-	switch event := event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		chain = event.ContractCall.DestinationChain
-	case *types.Event_ContractCallWithToken:
-		chain = event.ContractCallWithToken.DestinationChain
-	case *types.Event_TokenSent:
-		chain = event.TokenSent.DestinationChain
-	case *types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
-		chain = chainName
-	default:
-		return fmt.Errorf("event %s: unsupported event type %T", eventID, event)
-	}
-
-	if _, ok := k.ForChain(chain).GetEvent(ctx, event.GetID()); ok {
-		return fmt.Errorf("event %s from chain %s is already confirmed", event.GetID(), chainName)
-	}
-
-	return nil
 }

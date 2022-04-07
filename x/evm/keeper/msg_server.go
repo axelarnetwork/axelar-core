@@ -496,7 +496,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.Chain, req.TxID.Hex(), req.BurnerAddress.Hex()))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex()))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,

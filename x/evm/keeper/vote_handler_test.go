@@ -38,7 +38,7 @@ func TestHandleVoteResult(t *testing.T) {
 		basek      *mock.BaseKeeperMock
 		chaink     *mock.ChainKeeperMock
 		n          *mock.NexusMock
-		s       *mock.SignerMock
+		s          *mock.SignerMock
 		result     vote.Vote
 		handler    vote.VoteHandler
 	)
@@ -248,17 +248,24 @@ func TestHandleVoteResult(t *testing.T) {
 
 func TestHandleVoteTransferKey(t *testing.T) {
 	var (
-		ctx       sdk.Context
-		basek     *mock.BaseKeeperMock
-		chaink    *mock.ChainKeeperMock
-		n         *mock.NexusMock
-		s         *mock.SignerMock
-		result    vote.Vote
-		handler   vote.VoteHandler
-		masterKey tss.Key
+		ctx        sdk.Context
+		cacheStore *fakeMock.CacheMultiStoreMock
+		basek      *mock.BaseKeeperMock
+		chaink     *mock.ChainKeeperMock
+		n          *mock.NexusMock
+		s          *mock.SignerMock
+		result     vote.Vote
+		handler    vote.VoteHandler
+		masterKey  tss.Key
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		store := &fakeMock.MultiStoreMock{}
+		cacheStore = &fakeMock.CacheMultiStoreMock{
+			WriteFunc: func() {},
+		}
+		store.CacheMultiStoreFunc = func() sdk.CacheMultiStore { return cacheStore }
+
+		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
 		masterKey = randomMultisigKey(tss.MasterKey)
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
@@ -267,7 +274,8 @@ func TestHandleVoteTransferKey(t *testing.T) {
 				}
 				return nil
 			},
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			HasChainFunc: func(ctx sdk.Context, chain string) bool { return true },
 		}
 		chaink = &mock.ChainKeeperMock{
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
@@ -281,13 +289,16 @@ func TestHandleVoteTransferKey(t *testing.T) {
 			SetEventCompletedFunc: func(sdk.Context, string) error {
 				return nil
 			},
+			SetFailedEventFunc: func(sdk.Context, types.Event) error {
+				return nil
+			},
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 
 		chains := map[string]nexus.Chain{
 			exported.Ethereum.Name: exported.Ethereum,
 		}
 		n = &mock.NexusMock{
-			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
@@ -300,7 +311,8 @@ func TestHandleVoteTransferKey(t *testing.T) {
 			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 				return masterKey, true
 			},
-			RotateKeyFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) error { return nil },
+			RotateKeyFunc:        func(sdk.Context, nexus.Chain, tss.KeyRole) error { return nil },
+			GetRotationCountFunc: func(sdk.Context, nexus.Chain, tss.KeyRole) int64 { return 0 },
 		}
 		encCfg := params.MakeEncodingConfig()
 		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n, s)
@@ -323,13 +335,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTransferKeyConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -346,13 +352,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTransferKeyConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -365,13 +365,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTransferKeyConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -401,13 +395,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTransferKeyConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 1)
+		assert.Len(t, cacheStore.WriteCalls(), 1)
 
 	}).Repeat(repeats))
 }
