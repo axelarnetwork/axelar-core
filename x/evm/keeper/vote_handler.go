@@ -35,22 +35,18 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 			return fmt.Errorf("%s is not a registered chain", chainName)
 		}
 
-		var errors []error
 		for _, event := range events {
 			var err error
-
 			// validate event
 			err = event.ValidateBasic()
 			if err != nil {
-				errors = append(errors, fmt.Errorf("event %d: %s", event.Index, err.Error()))
-				continue
+				return fmt.Errorf("event %s: %s", event.GetID(), err.Error())
 			}
 
 			// check if event confirmed before
 			eventID := event.GetID()
 			if _, ok := keeper.ForChain(chainName).GetEvent(ctx, eventID); ok {
-				errors = append(errors, fmt.Errorf("event %s is already confirmed", eventID))
-				continue
+				return fmt.Errorf("event %s is already confirmed", eventID)
 			}
 
 			switch event.GetEvent().(type) {
@@ -63,19 +59,11 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 			}
 
 			if err != nil {
-				errors = append(errors, fmt.Errorf("event %s: %s", eventID, err.Error()))
-				continue
+				return fmt.Errorf("event %s: %s", eventID, err.Error())
 			}
 			// set event complete
 			keeper.ForChain(chainName).SetConfirmedEvent(ctx, event)
 			keeper.ForChain(chainName).SetEventCompleted(ctx, eventID)
-		}
-
-		if len(errors) != 0 {
-			for _, err := range errors {
-				keeper.Logger(ctx).Error(fmt.Sprintf("failed to process event: %s", err.Error()))
-			}
-			return fmt.Errorf("failed to process events: %s", errors)
 		}
 
 		return nil
@@ -86,8 +74,6 @@ func handleVoteConfirmDeposit(ctx sdk.Context, k types.BaseKeeper, n types.Nexus
 
 	keeper := k.ForChain(chain.Name)
 	transferEvent := event.GetEvent().(*types.Event_Transfer)
-
-	k.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result is %s", transferEvent.Transfer.String()), "chain", chain.Name)
 
 	// get deposit address
 	burnerInfo := keeper.GetBurnerInfo(ctx, transferEvent.Transfer.To)
@@ -107,7 +93,17 @@ func handleVoteConfirmDeposit(ctx sdk.Context, k types.BaseKeeper, n types.Nexus
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("%s deposit confirmation result to %s", chain.Name, burnerInfo.BurnerAddress))
+	// set confirmed deposit
+	erc20Deposit := types.ERC20Deposit{
+		TxID:             event.TxId,
+		Amount:           transferEvent.Transfer.Amount,
+		Asset:            burnerInfo.Asset,
+		DestinationChain: burnerInfo.DestinationChain,
+		BurnerAddress:    burnerInfo.BurnerAddress,
+	}
+	keeper.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
+
+	k.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", transferEvent.Transfer.To.Hex(), transferEvent.Transfer.Amount), "chain", chain.Name)
 
 	// handle poll result
 	ctx.EventManager().EmitEvent(

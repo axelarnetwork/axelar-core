@@ -73,6 +73,7 @@ func TestHandleVoteResult(t *testing.T) {
 			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, symbol string) types.ERC20Token {
 				return types.NilToken
 			},
+			SetDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
 		}
 
 		chains := map[string]nexus.Chain{
