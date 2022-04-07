@@ -112,7 +112,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 				event, err := decodeERC20TransferEvent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
-					continue
+					return false
 				}
 
 				if event.To != evmTypes.Address(burnAddr) {
