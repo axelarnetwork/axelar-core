@@ -289,7 +289,6 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
 				return err
 			}
-
 		}
 	}
 
