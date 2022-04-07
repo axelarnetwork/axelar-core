@@ -12,6 +12,8 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission
+
 // Tss provides access to the tss functionality
 type Tss interface {
 	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)

@@ -73,6 +73,11 @@
     - [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse)
     - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
   
+- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
+    - [Role](#permission.exported.v1beta1.Role)
+  
+    - [File-level Extensions](#permission/exported/v1beta1/types.proto-extensions)
+  
 - [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
     - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
@@ -293,9 +298,6 @@
 - [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
     - [MsgService](#nexus.v1beta1.MsgService)
     - [QueryService](#nexus.v1beta1.QueryService)
-  
-- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
-    - [Role](#permission.exported.v1beta1.Role)
   
 - [permission/v1beta1/types.proto](#permission/v1beta1/types.proto)
     - [GovAccount](#permission.v1beta1.GovAccount)
@@ -1404,6 +1406,44 @@ transfers for the specified chain
  <!-- end messages -->
 
  <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="permission/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## permission/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="permission.exported.v1beta1.Role"></a>
+
+### Role
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ROLE_UNSPECIFIED | 0 |  |
+| ROLE_UNRESTRICTED | 1 |  |
+| ROLE_CHAIN_MANAGEMENT | 2 |  |
+| ROLE_ACCESS_CONTROL | 3 |  |
+
+
+ <!-- end enums -->
+
+
+<a name="permission/exported/v1beta1/types.proto-extensions"></a>
+
+### File-level Extensions
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+| `permission_role` | Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
 
  <!-- end HasExtensions -->
 
@@ -4500,35 +4540,6 @@ QueryService defines the gRPC querier service.
 | `Assets` | [AssetsRequest](#nexus.v1beta1.AssetsRequest) | [AssetsResponse](#nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
 | `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
-
- <!-- end services -->
-
-
-
-<a name="permission/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## permission/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="permission.exported.v1beta1.Role"></a>
-
-### Role
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ROLE_UNSPECIFIED | 0 |  |
-| ROLE_ACCESS_CONTROL | 1 |  |
-| ROLE_CHAIN_MANAGEMENT | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
