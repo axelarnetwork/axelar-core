@@ -69,7 +69,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 
 	result, ok := poll.GetResult().(*vote.Vote)
 	if !ok {
-		return &types.VoteResponse{Log: fmt.Sprintf("result of poll %s has wrong type, expected VoteConfirmDepositRequest_Vote, got %T", poll.GetKey().String(), poll.GetResult())}, nil
+		return nil, fmt.Errorf("result of poll %s has wrong type, expected VoteConfirmDepositRequest_Vote, got %T", poll.GetKey().String(), poll.GetResult())
 	}
 
 	if len(result.Results) == 0 {
@@ -78,7 +78,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	}
 
 	if err := voteHandler(ctx, result); err != nil {
-		return nil, err
+		return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
 	}
 
 	return &types.VoteResponse{}, nil

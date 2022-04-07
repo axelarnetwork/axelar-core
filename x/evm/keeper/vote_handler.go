@@ -22,7 +22,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 		}
 
 		if len(events) == 0 {
-			return nil
+			return fmt.Errorf("vote result has no events")
 		}
 
 		chainName := events[0].Chain
@@ -34,45 +34,63 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 		if !ok {
 			return fmt.Errorf("%s is not a registered chain", chainName)
 		}
-
-		for _, event := range events {
-			var err error
-			// validate event
-			err = event.ValidateBasic()
-			if err != nil {
-				return fmt.Errorf("event %s: %s", event.GetID(), err.Error())
-			}
-
-			// check if event confirmed before
-			eventID := event.GetID()
-			if _, ok := keeper.ForChain(chainName).GetEvent(ctx, eventID); ok {
-				return fmt.Errorf("event %s is already confirmed", eventID)
-			}
-
-			switch event.GetEvent().(type) {
-			case *types.Event_Transfer:
-				err = handleVoteConfirmDeposit(ctx, keeper, nexus, chain, event)
-			case *types.Event_TokenDeployed:
-				err = handleVoteConfirmToken(ctx, keeper, chain, event)
-			default:
-				err = fmt.Errorf("event %s: unsupported event type %T", eventID, event)
-			}
-
-			if err != nil {
-				return fmt.Errorf("event %s: %s", eventID, err.Error())
-			}
-			// set event complete
-			keeper.ForChain(chainName).SetConfirmedEvent(ctx, event)
-			keeper.ForChain(chainName).SetEventCompleted(ctx, eventID)
+		if !keeper.HasChain(ctx, chainName) {
+			return fmt.Errorf("%s is not an evm chain", chainName)
 		}
 
+		chainK := keeper.ForChain(chain.Name)
+		cacheCtx, writeCache := ctx.CacheContext()
+
+		err = handleEvents(cacheCtx, chainK, nexus, events, chain)
+		if err != nil {
+			// set events to failed, we will deal with later
+			for _, e := range events {
+				chainK.SetFailedEvent(ctx, e)
+			}
+			return err
+		}
+
+		writeCache()
 		return nil
 	}
 }
 
-func handleVoteConfirmDeposit(ctx sdk.Context, k types.BaseKeeper, n types.Nexus, chain nexus.Chain, event types.Event) error {
+func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, events []types.Event, chain nexus.Chain) error {
+	for _, event := range events {
+		var err error
+		// validate event
+		err = event.ValidateBasic()
+		if err != nil {
+			return fmt.Errorf("event %s: %s", event.GetID(), err.Error())
+		}
 
-	keeper := k.ForChain(chain.Name)
+		// check if event confirmed before
+		eventID := event.GetID()
+		if _, ok := ck.GetEvent(ctx, eventID); ok {
+			return fmt.Errorf("event %s is already confirmed", eventID)
+		}
+		ck.SetConfirmedEvent(ctx, event)
+
+		switch event.GetEvent().(type) {
+		case *types.Event_Transfer:
+			err = handleVoteConfirmDeposit(ctx, ck, nexus, chain, event)
+		case *types.Event_TokenDeployed:
+			err = handleVoteConfirmToken(ctx, ck, chain, event)
+		default:
+			err = fmt.Errorf("event %s: unsupported event type %T", eventID, event)
+		}
+
+		if err != nil {
+			return fmt.Errorf("event %s: %s", eventID, err.Error())
+		}
+
+		ck.SetEventCompleted(ctx, eventID)
+	}
+
+	return nil
+}
+
+func handleVoteConfirmDeposit(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, chain nexus.Chain, event types.Event) error {
 	transferEvent := event.GetEvent().(*types.Event_Transfer)
 
 	// get deposit address
@@ -103,7 +121,7 @@ func handleVoteConfirmDeposit(ctx sdk.Context, k types.BaseKeeper, n types.Nexus
 	}
 	keeper.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
-	k.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", transferEvent.Transfer.To.Hex(), transferEvent.Transfer.Amount), "chain", chain.Name)
+	keeper.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", transferEvent.Transfer.To.Hex(), transferEvent.Transfer.Amount), "chain", chain.Name)
 
 	// handle poll result
 	ctx.EventManager().EmitEvent(
@@ -124,8 +142,7 @@ func handleVoteConfirmDeposit(ctx sdk.Context, k types.BaseKeeper, n types.Nexus
 	return nil
 }
 
-func handleVoteConfirmToken(ctx sdk.Context, k types.BaseKeeper, chain nexus.Chain, event types.Event) error {
-	keeper := k.ForChain(chain.Name)
+func handleVoteConfirmToken(ctx sdk.Context, keeper types.ChainKeeper, chain nexus.Chain, event types.Event) error {
 	tokenDeployedEvent := event.GetEvent().(*types.Event_TokenDeployed)
 
 	token := keeper.GetERC20TokenBySymbol(ctx, tokenDeployedEvent.TokenDeployed.Symbol)
@@ -141,7 +158,7 @@ func handleVoteConfirmToken(ctx sdk.Context, k types.BaseKeeper, chain nexus.Cha
 		return err
 	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", tokenDeployedEvent.TokenDeployed.Symbol, chain.Name))
+	keeper.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", tokenDeployedEvent.TokenDeployed.Symbol, chain.Name))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,

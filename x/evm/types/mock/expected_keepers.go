@@ -2881,6 +2881,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
 // 				panic("mock out the SetEventFailed method")
 // 			},
+// 			SetFailedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+// 				panic("mock out the SetFailedEvent method")
+// 			},
 // 			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
 // 				panic("mock out the SetGateway method")
 // 			},
@@ -3031,6 +3034,9 @@ type ChainKeeperMock struct {
 
 	// SetEventFailedFunc mocks the SetEventFailed method.
 	SetEventFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error
+
+	// SetFailedEventFunc mocks the SetFailedEvent method.
+	SetFailedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error
 
 	// SetGatewayFunc mocks the SetGateway method.
 	SetGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)
@@ -3324,6 +3330,13 @@ type ChainKeeperMock struct {
 			// EventID is the eventID argument value.
 			EventID string
 		}
+		// SetFailedEvent holds details about calls to the SetFailedEvent method.
+		SetFailedEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Event is the event argument value.
+			Event types.Event
+		}
 		// SetGateway holds details about calls to the SetGateway method.
 		SetGateway []struct {
 			// Ctx is the ctx argument value.
@@ -3407,6 +3420,7 @@ type ChainKeeperMock struct {
 	lockSetDeposit                    sync.RWMutex
 	lockSetEventCompleted             sync.RWMutex
 	lockSetEventFailed                sync.RWMutex
+	lockSetFailedEvent                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
 	lockSetParams                     sync.RWMutex
@@ -4863,6 +4877,41 @@ func (mock *ChainKeeperMock) SetEventFailedCalls() []struct {
 	mock.lockSetEventFailed.RLock()
 	calls = mock.calls.SetEventFailed
 	mock.lockSetEventFailed.RUnlock()
+	return calls
+}
+
+// SetFailedEvent calls SetFailedEventFunc.
+func (mock *ChainKeeperMock) SetFailedEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+	if mock.SetFailedEventFunc == nil {
+		panic("ChainKeeperMock.SetFailedEventFunc: method is nil but ChainKeeper.SetFailedEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockSetFailedEvent.Lock()
+	mock.calls.SetFailedEvent = append(mock.calls.SetFailedEvent, callInfo)
+	mock.lockSetFailedEvent.Unlock()
+	return mock.SetFailedEventFunc(ctx, event)
+}
+
+// SetFailedEventCalls gets all the calls that were made to SetFailedEvent.
+// Check the length with:
+//     len(mockedChainKeeper.SetFailedEventCalls())
+func (mock *ChainKeeperMock) SetFailedEventCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Event types.Event
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}
+	mock.lockSetFailedEvent.RLock()
+	calls = mock.calls.SetFailedEvent
+	mock.lockSetFailedEvent.RUnlock()
 	return calls
 }
 

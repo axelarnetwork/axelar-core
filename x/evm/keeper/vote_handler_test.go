@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	mathRand "math/rand"
@@ -11,7 +13,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -28,15 +29,22 @@ import (
 
 func TestHandleVoteResult(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
-		n       *mock.NexusMock
-		result  vote.Vote
-		handler vote.VoteHandler
+		ctx        sdk.Context
+		cacheStore *fakeMock.CacheMultiStoreMock
+		basek      *mock.BaseKeeperMock
+		chaink     *mock.ChainKeeperMock
+		n          *mock.NexusMock
+		result     vote.Vote
+		handler    vote.VoteHandler
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		store := &fakeMock.MultiStoreMock{}
+		cacheStore = &fakeMock.CacheMultiStoreMock{
+			WriteFunc: func() {},
+		}
+		store.CacheMultiStoreFunc = func() sdk.CacheMultiStore { return cacheStore }
+
+		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
@@ -45,7 +53,8 @@ func TestHandleVoteResult(t *testing.T) {
 				}
 				return nil
 			},
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			HasChainFunc: func(ctx sdk.Context, chain string) bool { return true },
 		}
 		chaink = &mock.ChainKeeperMock{
 			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
@@ -70,10 +79,14 @@ func TestHandleVoteResult(t *testing.T) {
 			SetEventCompletedFunc: func(sdk.Context, string) error {
 				return nil
 			},
+			SetFailedEventFunc: func(sdk.Context, types.Event) error {
+				return nil
+			},
 			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, symbol string) types.ERC20Token {
 				return types.NilToken
 			},
 			SetDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
+			LoggerFunc:     func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 
 		chains := map[string]nexus.Chain{
@@ -98,7 +111,7 @@ func TestHandleVoteResult(t *testing.T) {
 		result = vote.Vote{}
 	}
 
-	repeats := 20
+	repeats := 1
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
@@ -110,14 +123,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
-
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN chain is not activated THEN still confirm the event", testutils.Func(func(t *testing.T) {
@@ -128,16 +134,8 @@ func TestHandleVoteResult(t *testing.T) {
 		result.Results = randTransferEvents(eventNum)
 
 		err := handler(ctx, &result)
-
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), eventNum)
-
+		assert.Len(t, cacheStore.WriteCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN result is invalid THEN return error", testutils.Func(func(t *testing.T) {
@@ -148,14 +146,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
-
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN already confirmed event WHEN handle deposit THEN return error", testutils.Func(func(t *testing.T) {
@@ -170,13 +161,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -192,13 +177,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -209,14 +188,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), eventNum)
-
+		assert.Len(t, cacheStore.WriteCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN tokenDeployed event WHEN token is not exited THEN return error", testutils.Func(func(t *testing.T) {
@@ -228,14 +200,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTokenConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
-
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN tokenDeployed event WHEN token address does not match THEN return error", testutils.Func(func(t *testing.T) {
@@ -251,13 +216,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTokenConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 0)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
 
 	}).Repeat(repeats))
 
@@ -275,13 +234,7 @@ func TestHandleVoteResult(t *testing.T) {
 		err := handler(ctx, &result)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTokenConfirmation
-			if !isValidType {
-				return false
-			}
-			return isValidType
-		}), 1)
+		assert.Len(t, cacheStore.WriteCalls(), 1)
 
 	}).Repeat(repeats))
 }
