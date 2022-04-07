@@ -41,6 +41,7 @@ jobs:
           workflow: publish-bytecode.yaml
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
           path: contract-artifacts/gateway
+          search_artifacts: true
 
       - name: Install prereqs
         run: |
