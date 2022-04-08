@@ -1,0 +1,31 @@
+{
+  "name": "axelar-docs",
+  "version": "1.0.0",
+  "description": "Resources & Documentation for Axelar Network",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "debug": "NODE_OPTIONS='--inspect' next",
+    "start": "next start",
+    "build": "next build"
+  },
+  "author": "Axelar Network",
+  "license": "MIT",
+  "dependencies": {
+    "@reach/skip-nav": "^0.16.0",
+    "focus-visible": "^5.1.0",
+    "intersection-observer": "^0.10.0",
+    "markdown-to-jsx": "^6.11.4",
+    "next": "^12.1.0",
+    "nextra": "^2.0.0-alpha.44",
+    "nextra-theme-docs": "^2.0.0-alpha.44",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-intersection-observer": "^8.26.2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.2",
+    "postcss": "^8.4.5",
+    "tailwindcss": "^3.0.16"
+  }
+}
