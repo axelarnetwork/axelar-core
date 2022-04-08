@@ -384,6 +384,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetNextKeyID method")
 // 			},
+// 			GetRotationCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+// 				panic("mock out the GetRotationCount method")
+// 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
 // 				panic("mock out the GetSig method")
 // 			},
@@ -435,6 +438,9 @@ type SignerMock struct {
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
 	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetRotationCountFunc mocks the GetRotationCount method.
+	GetRotationCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -545,6 +551,15 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
+		// GetRotationCount holds details about calls to the GetRotationCount method.
+		GetRotationCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
 			// Ctx is the ctx argument value.
@@ -593,6 +608,7 @@ type SignerMock struct {
 	lockGetKeyRole                   sync.RWMutex
 	lockGetKeyType                   sync.RWMutex
 	lockGetNextKeyID                 sync.RWMutex
+	lockGetRotationCount             sync.RWMutex
 	lockGetSig                       sync.RWMutex
 	lockGetSnapshotCounterForKeyID   sync.RWMutex
 	lockRotateKey                    sync.RWMutex
@@ -1013,6 +1029,45 @@ func (mock *SignerMock) GetNextKeyIDCalls() []struct {
 	mock.lockGetNextKeyID.RLock()
 	calls = mock.calls.GetNextKeyID
 	mock.lockGetNextKeyID.RUnlock()
+	return calls
+}
+
+// GetRotationCount calls GetRotationCountFunc.
+func (mock *SignerMock) GetRotationCount(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+	if mock.GetRotationCountFunc == nil {
+		panic("SignerMock.GetRotationCountFunc: method is nil but Signer.GetRotationCount was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetRotationCount.Lock()
+	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
+	mock.lockGetRotationCount.Unlock()
+	return mock.GetRotationCountFunc(ctx, chain, keyRole)
+}
+
+// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
+// Check the length with:
+//     len(mockedSigner.GetRotationCountCalls())
+func (mock *SignerMock) GetRotationCountCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockGetRotationCount.RLock()
+	calls = mock.calls.GetRotationCount
+	mock.lockGetRotationCount.RUnlock()
 	return calls
 }
 

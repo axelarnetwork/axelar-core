@@ -35,6 +35,11 @@ message Event {
     EventContractCallWithToken contract_call_with_token = 7;
     EventTransfer transfer = 8;
     EventTokenDeployed token_deployed = 9;
+    EventMultisigOwnershipTransferred multisig_ownership_transferred = 10;
+    EventMultisigOperatorshipTransferred multisig_operatorship_transferred = 11;
+    EventSinglesigOwnershipTransferred singlesig_ownership_transferred = 12;
+    EventSinglesigOperatorshipTransferred singlesig_operatorship_transferred =
+        13;
   }
 }
 
@@ -85,6 +90,50 @@ message EventTransfer {
 message EventTokenDeployed {
   string symbol = 1;
   bytes token_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message EventMultisigOwnershipTransferred {
+  repeated bytes pre_owners = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes prev_threshold = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes new_owners = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_threshold = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventMultisigOperatorshipTransferred {
+  repeated bytes pre_operators = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes prev_threshold = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes new_operators = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_threshold = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventSinglesigOwnershipTransferred {
+  bytes pre_owner = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_owner = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message EventSinglesigOperatorshipTransferred {
+  bytes pre_operator = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_operator = 2
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 

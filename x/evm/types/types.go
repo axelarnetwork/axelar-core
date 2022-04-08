@@ -23,6 +23,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // Ethereum network labels
@@ -1570,6 +1571,20 @@ func (m Event) ValidateBasic() error {
 		if err := event.TokenDeployed.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
 		}
+	case *Event_MultisigOwnershipTransferred:
+		if event.MultisigOwnershipTransferred == nil {
+			return fmt.Errorf("missing event MultisigOwnershipTransferred")
+		}
+		if err := event.MultisigOwnershipTransferred.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event MultisigOwnershipTransferred")
+		}
+	case *Event_MultisigOperatorshipTransferred:
+		if event.MultisigOperatorshipTransferred == nil {
+			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
+		}
+		if err := event.MultisigOperatorshipTransferred.Validate(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event MultisigOperatorshipTransferred")
+		}
 	default:
 		return fmt.Errorf("unknown type of event")
 	}
@@ -1673,6 +1688,46 @@ func (m EventTokenDeployed) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid symbol")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOwnershipTransferred) Validate() error {
+	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
+
+	if !slices.All(m.PreOwners, NonzeroAddress) {
+		return fmt.Errorf("invalid pre owners")
+	}
+	if m.PrevThreshold.IsZero() {
+		return fmt.Errorf("invalid pre threshold")
+	}
+	if !slices.All(m.NewOwners, NonzeroAddress) {
+		return fmt.Errorf("invalid new owners")
+	}
+	if m.NewThreshold.IsZero() {
+		return fmt.Errorf("invalid new threshold")
+	}
+
+	return nil
+}
+
+// Validate returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOperatorshipTransferred) Validate() error {
+	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
+
+	if !slices.All(m.PreOperators, NonzeroAddress) {
+		return fmt.Errorf("invalid pre operators")
+	}
+	if m.PrevThreshold.IsZero() {
+		return fmt.Errorf("invalid pre threshold")
+	}
+	if !slices.All(m.NewOperators, NonzeroAddress) {
+		return fmt.Errorf("invalid new operators")
+	}
+	if m.NewThreshold.IsZero() {
+		return fmt.Errorf("invalid new threshold")
 	}
 
 	return nil

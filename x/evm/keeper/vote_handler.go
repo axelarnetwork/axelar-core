@@ -2,19 +2,22 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/utils/slices"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
-func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus) vote.VoteHandler {
+func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, signer types.Signer) vote.VoteHandler {
 	return func(ctx sdk.Context, result *vote.Vote) error {
 		events, err := types.UnpackEvents(cdc, result.Results)
 		if err != nil {
@@ -41,7 +44,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 		chainK := keeper.ForChain(chain.Name)
 		cacheCtx, writeCache := ctx.CacheContext()
 
-		err = handleEvents(cacheCtx, chainK, nexus, events, chain)
+		err = handleEvents(cacheCtx, chainK, nexus, signer, events, chain)
 		if err != nil {
 			// set events to failed, we will deal with later
 			for _, e := range events {
@@ -55,7 +58,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus)
 	}
 }
 
-func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, events []types.Event, chain nexus.Chain) error {
+func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, signer types.Signer, events []types.Event, chain nexus.Chain) error {
 	for _, event := range events {
 		var err error
 		// validate event
@@ -76,6 +79,10 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, even
 			err = handleVoteConfirmDeposit(ctx, ck, nexus, chain, event)
 		case *types.Event_TokenDeployed:
 			err = handleVoteConfirmToken(ctx, ck, chain, event)
+		case *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+			err = handleVoteConfirmMultisigTransferKey(ctx, ck, signer, chain, event)
+		case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
+			err = handleVoteConfirmGatewayTx(ctx, ck, event)
 		default:
 			err = fmt.Errorf("event %s: unsupported event type %T", eventID, event)
 		}
@@ -83,8 +90,6 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, nexus types.Nexus, even
 		if err != nil {
 			return fmt.Errorf("event %s: %s", eventID, err.Error())
 		}
-
-		ck.SetEventCompleted(ctx, eventID)
 	}
 
 	return nil
@@ -121,9 +126,9 @@ func handleVoteConfirmDeposit(ctx sdk.Context, keeper types.ChainKeeper, n types
 	}
 	keeper.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
+	keeper.SetEventCompleted(ctx, event.GetID())
 	keeper.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", transferEvent.Transfer.To.Hex(), transferEvent.Transfer.Amount), "chain", chain.Name)
 
-	// handle poll result
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -158,6 +163,7 @@ func handleVoteConfirmToken(ctx sdk.Context, keeper types.ChainKeeper, chain nex
 		return err
 	}
 
+	keeper.SetEventCompleted(ctx, event.GetID())
 	keeper.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", tokenDeployedEvent.TokenDeployed.Symbol, chain.Name))
 
 	ctx.EventManager().EmitEvent(
@@ -172,4 +178,100 @@ func handleVoteConfirmToken(ctx sdk.Context, keeper types.ChainKeeper, chain nex
 		))
 
 	return nil
+}
+
+func handleVoteConfirmMultisigTransferKey(ctx sdk.Context, keeper types.ChainKeeper, s types.Signer, chain nexus.Chain, event types.Event) error {
+	var newAddresses []types.Address
+	var newThreshold sdk.Uint
+	var keyRole tss.KeyRole
+
+	switch e := event.GetEvent().(type) {
+	case *types.Event_MultisigOwnershipTransferred:
+		newAddresses = e.MultisigOwnershipTransferred.NewOwners
+		newThreshold = e.MultisigOwnershipTransferred.NewThreshold
+		keyRole = tss.MasterKey
+	case *types.Event_MultisigOperatorshipTransferred:
+		newAddresses = e.MultisigOperatorshipTransferred.NewOperators
+		newThreshold = e.MultisigOperatorshipTransferred.NewThreshold
+		keyRole = tss.SecondaryKey
+	default:
+		return fmt.Errorf("event %s: unsupported event type %T", event.GetID(), event)
+	}
+
+	nextKeyID, ok := s.GetNextKeyID(ctx, chain, keyRole)
+	if !ok {
+		return fmt.Errorf("next %s key for chain %s not found", keyRole.SimpleString(), chain.Name)
+	}
+
+	nextKey, found := s.GetKey(ctx, nextKeyID)
+	if !found {
+		return fmt.Errorf("key %s not found", nextKeyID)
+	}
+
+	expectedAddress, expectedThreshold, err := getMultisigAddresses(nextKey)
+	if err != nil {
+		return err
+	}
+
+	newOwners := slices.Map(newAddresses, func(addr types.Address) common.Address { return common.Address(addr) })
+	if !areAddressesEqual(expectedAddress, newOwners) {
+		return fmt.Errorf("new adddress does not match, expected %v got %v", expectedAddress, newOwners)
+	}
+
+	if !sdk.NewUint(uint64(expectedThreshold)).Equal(newThreshold) {
+		return fmt.Errorf("new threshold does not match, expected %d got %d", expectedThreshold, newThreshold.Uint64())
+	}
+
+	if err := s.RotateKey(ctx, chain, keyRole); err != nil {
+		return err
+	}
+
+	keeper.SetEventCompleted(ctx, event.GetID())
+	keeper.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
+		keyRole.SimpleString(), chain.Name), "txID", event.TxId.Hex(), "rotation count", s.GetRotationCount(ctx, chain, keyRole))
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeTransferKeyConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyTransferKeyType, keyRole.SimpleString()),
+	))
+
+	return nil
+}
+
+func handleVoteConfirmGatewayTx(ctx sdk.Context, k types.ChainKeeper, event types.Event) error {
+	k.Logger(ctx).Info(fmt.Sprintf("gateway transaction confirmation confirmation result is %s", event.String()))
+
+	// emit gatewayTxConfirmation event
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, event.Chain),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)),
+	)
+
+	return nil
+}
+
+func areAddressesEqual(addressesA, addressesB []common.Address) bool {
+	if len(addressesA) != len(addressesB) {
+		return false
+	}
+
+	addressesToHex := func(addr common.Address) string { return addr.Hex() }
+
+	hexesA := slices.Map(addressesA, addressesToHex)
+	sort.Strings(hexesA)
+	hexesB := slices.Map(addressesB, addressesToHex)
+	sort.Strings(hexesB)
+
+	for i, hexA := range hexesA {
+		if hexA != hexesB[i] {
+			return false
+		}
+	}
+
+	return true
 }

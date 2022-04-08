@@ -27,14 +27,6 @@ service MsgService {
     };
   }
 
-  rpc VoteConfirmGatewayTx(VoteConfirmGatewayTxRequest)
-      returns (VoteConfirmGatewayTxResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/vote-confirm-gateway-tx"
-      body : "*"
-    };
-  }
-
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/link/{recipient_chain}"
@@ -75,14 +67,6 @@ service MsgService {
       returns (VoteConfirmChainResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/vote-confirm-chain",
-      body : "*"
-    };
-  }
-
-  rpc VoteConfirmTransferKey(VoteConfirmTransferKeyRequest)
-      returns (VoteConfirmTransferKeyResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/vote-confirm-transfer-key",
       body : "*"
     };
   }

@@ -179,6 +179,10 @@
     - [Event](#evm.v1beta1.Event)
     - [EventContractCall](#evm.v1beta1.EventContractCall)
     - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
+    - [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred)
+    - [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred)
+    - [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred)
+    - [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred)
     - [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed)
     - [EventTokenSent](#evm.v1beta1.EventTokenSent)
     - [EventTransfer](#evm.v1beta1.EventTransfer)
@@ -2811,6 +2815,10 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
 | `transfer` | [EventTransfer](#evm.v1beta1.EventTransfer) |  |  |
 | `token_deployed` | [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed) |  |  |
+| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred) |  |  |
+| `multisig_operatorship_transferred` | [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred) |  |  |
+| `singlesig_ownership_transferred` | [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred) |  |  |
+| `singlesig_operatorship_transferred` | [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred) |  |  |
 
 
 
@@ -2849,6 +2857,74 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `symbol` | [string](#string) |  |  |
 | `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventMultisigOperatorshipTransferred"></a>
+
+### EventMultisigOperatorshipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_operators` | [bytes](#bytes) | repeated |  |
+| `prev_threshold` | [bytes](#bytes) |  |  |
+| `new_operators` | [bytes](#bytes) | repeated |  |
+| `new_threshold` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventMultisigOwnershipTransferred"></a>
+
+### EventMultisigOwnershipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_owners` | [bytes](#bytes) | repeated |  |
+| `prev_threshold` | [bytes](#bytes) |  |  |
+| `new_owners` | [bytes](#bytes) | repeated |  |
+| `new_threshold` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventSinglesigOperatorshipTransferred"></a>
+
+### EventSinglesigOperatorshipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_operator` | [bytes](#bytes) |  |  |
+| `new_operator` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventSinglesigOwnershipTransferred"></a>
+
+### EventSinglesigOwnershipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_owner` | [bytes](#bytes) |  |  |
+| `new_owner` | [bytes](#bytes) |  |  |
 
 
 
@@ -4300,14 +4376,12 @@ Msg defines the evm Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `SetGateway` | [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set-gateway|
 | `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm-gateway-tx|
-| `VoteConfirmGatewayTx` | [VoteConfirmGatewayTxRequest](#evm.v1beta1.VoteConfirmGatewayTxRequest) | [VoteConfirmGatewayTxResponse](#evm.v1beta1.VoteConfirmGatewayTxResponse) |  | POST|/axelar/evm/vote-confirm-gateway-tx|
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
 | `ConfirmChain` | [ConfirmChainRequest](#evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
 | `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
 | `VoteConfirmChain` | [VoteConfirmChainRequest](#evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote-confirm-chain|
-| `VoteConfirmTransferKey` | [VoteConfirmTransferKeyRequest](#evm.v1beta1.VoteConfirmTransferKeyRequest) | [VoteConfirmTransferKeyResponse](#evm.v1beta1.VoteConfirmTransferKeyResponse) |  | POST|/axelar/evm/vote-confirm-transfer-key|
 | `CreateDeployToken` | [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create-deploy-token|
 | `CreateBurnTokens` | [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
 | `CreatePendingTransfers` | [CreatePendingTransfersRequest](#evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create-pending-transfers|
