@@ -86,6 +86,7 @@ type ChainKeeper interface {
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID string) error
 	SetEventFailed(ctx sdk.Context, eventID string) error
+	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
 // ParamsKeeper represents a global paramstore

@@ -67,20 +67,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = res.Log
 			}
 			return result, err
-		case *types.VoteConfirmDepositRequest:
-			res, err := server.VoteConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmTokenRequest:
-			res, err := server.VoteConfirmToken(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
 		case *types.VoteConfirmTransferKeyRequest:
 			res, err := server.VoteConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)

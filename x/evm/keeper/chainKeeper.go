@@ -903,6 +903,8 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
 		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
+	case *types.Event_Transfer, *types.Event_TokenDeployed:
+		k.setEvent(ctx, event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -928,6 +930,19 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
+	}
+
+	event.Status = types.EventFailed
+	k.setEvent(ctx, event)
+
+	return nil
+}
+
+// SetFailedEvent sets the event to failed if the event status is not completed or failed
+func (k chainKeeper) SetFailedEvent(ctx sdk.Context, event types.Event) error {
+	e, ok := k.GetEvent(ctx, event.GetID())
+	if ok && e.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is already %s", e.GetID(), e.Status)
 	}
 
 	event.Status = types.EventFailed

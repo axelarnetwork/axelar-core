@@ -27,6 +27,7 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 // Smart contract event signatures
@@ -90,7 +91,7 @@ func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, amount, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -99,25 +100,53 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	if !found {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
+	var events []evmTypes.Event
+	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+		for i, log := range txReceipt.Logs {
+			switch log.Topics[0] {
+			case ERC20TransferSig:
+				if !bytes.Equal(tokenAddr.Bytes(), log.Address.Bytes()) {
+					continue
+				}
 
-	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		err = confirmERC20Deposit(txReceipt, amount, burnAddr, tokenAddr)
-		if err != nil {
-			mgr.logger.Debug(sdkerrors.Wrap(err, "deposit confirmation failed").Error())
-			return false
+				event, err := decodeERC20TransferEvent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
+					continue
+				}
+
+				if event.To != evmTypes.Address(burnAddr) {
+					continue
+				}
+
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_Transfer{
+						Transfer: &event,
+					},
+				})
+			default:
+			}
+
 		}
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmDepositRequest(mgr.cliCtx.FromAddress, chain, pollKey, txID, evmTypes.Address(burnAddr), confirmed)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
+	v, err := packEvents(events)
+	if err != nil {
+		return err
+	}
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
-	chain, txID, gatewayAddr, tokenAddr, asset, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
@@ -127,17 +156,46 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
 
-	confirmed := mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		err = confirmERC20TokenDeployment(txReceipt, symbol, gatewayAddr, tokenAddr)
-		if err != nil {
-			mgr.logger.Debug(sdkerrors.Wrap(err, "token confirmation failed").Error())
-			return false
+	var events []evmTypes.Event
+	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+		for i, log := range txReceipt.Logs {
+			if !bytes.Equal(gatewayAddr.Bytes(), log.Address.Bytes()) {
+				continue
+			}
+
+			switch log.Topics[0] {
+			case ERC20TokenDeploymentSig:
+				event, err := decodeERC20TokenDeploymentEvent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
+					continue
+				}
+				if event.TokenAddress != evmTypes.Address(tokenAddr) || event.Symbol != symbol {
+					continue
+				}
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_TokenDeployed{
+						TokenDeployed: &event,
+					},
+				})
+
+				return true
+			default:
+			}
 		}
+
 		return true
 	})
 
-	msg := evmTypes.NewVoteConfirmTokenRequest(mgr.cliCtx.FromAddress, chain, asset, pollKey, txID, confirmed)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
+	v, err := packEvents(events)
+	if err != nil {
+		return err
+	}
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
@@ -236,8 +294,6 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				event, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
-
-					return false
 				}
 
 				events = append(events, evmTypes.Event{
@@ -440,7 +496,6 @@ func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain string,
 	txID common.Hash,
-	amount sdk.Uint,
 	burnAddr, tokenAddr common.Address,
 	confHeight uint64,
 	pollKey vote.PollKey,
@@ -451,7 +506,6 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
-		{Key: evmTypes.AttributeKeyAmount, Map: func(s string) (interface{}, error) { return sdk.ParseUint(s) }},
 		{Key: evmTypes.AttributeKeyDepositAddress, Map: func(s string) (interface{}, error) {
 			return common.HexToAddress(s), nil
 		}},
@@ -467,16 +521,15 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, sdk.Uint{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
 	}
 
 	return results[0].(string),
 		results[1].(common.Hash),
-		results[2].(sdk.Uint),
+		results[2].(common.Address),
 		results[3].(common.Address),
-		results[4].(common.Address),
-		results[5].(uint64),
-		results[6].(vote.PollKey),
+		results[4].(uint64),
+		results[5].(vote.PollKey),
 		nil
 }
 
@@ -484,7 +537,6 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	chain string,
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
-	asset string,
 	symbol string,
 	confHeight uint64,
 	pollKey vote.PollKey,
@@ -501,7 +553,6 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
 			return common.HexToAddress(s), nil
 		}},
-		{Key: evmTypes.AttributeKeyAsset, Map: parse.IdentityMap},
 		{Key: evmTypes.AttributeKeySymbol, Map: parse.IdentityMap},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
@@ -512,7 +563,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", "", 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, vote.PollKey{}, err
 	}
 
 	return results[0].(string),
@@ -520,9 +571,8 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		results[2].(common.Address),
 		results[3].(common.Address),
 		results[4].(string),
-		results[5].(string),
-		results[6].(uint64),
-		results[7].(vote.PollKey),
+		results[5].(uint64),
+		results[6].(vote.PollKey),
 		nil
 }
 
@@ -673,66 +723,6 @@ func (mgr Mgr) validate(client rpc.Client, txID common.Hash, confHeight uint64, 
 	return validateTx(tx, txReceipt)
 }
 
-func confirmERC20Deposit(txReceipt *geth.Receipt, amount sdk.Uint, burnAddr common.Address, tokenAddr common.Address) error {
-	actualAmount := sdk.ZeroUint()
-	for _, log := range txReceipt.Logs {
-		/* Event is not related to the token */
-		if log.Address != tokenAddr {
-			continue
-		}
-
-		to, transferAmount, err := decodeERC20TransferEvent(log)
-		/* Event is not an ERC20 transfer */
-		if err != nil {
-			continue
-		}
-
-		/* Transfer isn't sent to burner */
-		if to != burnAddr {
-			continue
-		}
-
-		actualAmount = actualAmount.Add(transferAmount)
-	}
-
-	if !actualAmount.Equal(amount) {
-		return fmt.Errorf("given deposit amount: %s, actual amount: %s", amount.String(), actualAmount.String())
-	}
-
-	return nil
-}
-
-func confirmERC20TokenDeployment(txReceipt *geth.Receipt, expectedSymbol string, gatewayAddr, expectedAddr common.Address) error {
-	for _, log := range txReceipt.Logs {
-		// Event is not emitted by the axelar gateway
-		if log.Address != gatewayAddr {
-			continue
-		}
-
-		// Event is not for a ERC20 token deployment
-		symbol, tokenAddr, err := decodeERC20TokenDeploymentEvent(log)
-		if err != nil {
-			continue
-		}
-
-		// Symbol does not match
-		if symbol != expectedSymbol {
-			continue
-		}
-
-		// token address does not match
-		if tokenAddr != expectedAddr {
-			continue
-		}
-
-		// if we reach this point, it means that the log matches what we want to verify,
-		// so the function can return with no error
-		return nil
-	}
-
-	return fmt.Errorf("failed to confirm token deployment for symbol '%s' at contract address '%s'", expectedSymbol, expectedAddr.String())
-}
-
 func confirmSinglesigTransferKey(txReceipt *geth.Receipt, transferKeyType evmTypes.TransferKeyType, gatewayAddr common.Address, expectedNewAddr common.Address) (err error) {
 	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		log := txReceipt.Logs[i]
@@ -819,41 +809,58 @@ func isTxSuccessful(txReceipt *geth.Receipt) bool {
 	return txReceipt.Status == 1
 }
 
-func decodeERC20TransferEvent(log *geth.Log) (common.Address, sdk.Uint, error) {
-
+func decodeERC20TransferEvent(log *geth.Log) (evmTypes.EventTransfer, error) {
 	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
-		return common.Address{}, sdk.Uint{}, fmt.Errorf("log is not an ERC20 transfer")
+		return evmTypes.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
+	}
+
+	uint256Type, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return evmTypes.EventTransfer{}, err
 	}
 
 	to := common.BytesToAddress(log.Topics[2][:])
-	amount := new(big.Int)
-	amount.SetBytes(log.Data[:32])
 
-	return to, sdk.NewUintFromBigInt(amount), nil
+	arguments := abi.Arguments{
+		{Type: uint256Type},
+	}
+
+	params, err := arguments.Unpack(log.Data)
+	if err != nil {
+		return evmTypes.EventTransfer{}, err
+	}
+
+	return evmTypes.EventTransfer{
+		To:     evmTypes.Address(to),
+		Amount: sdk.NewUintFromBigInt(params[0].(*big.Int)),
+	}, nil
 }
 
-func decodeERC20TokenDeploymentEvent(log *geth.Log) (string, common.Address, error) {
+func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploymentSig {
-		return "", common.Address{}, fmt.Errorf("event is not for an ERC20 token deployment")
+		return evmTypes.EventTokenDeployed{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
 
 	// Decode the data field
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return "", common.Address{}, err
+		return evmTypes.EventTokenDeployed{}, err
 	}
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return "", common.Address{}, err
+		return evmTypes.EventTokenDeployed{}, err
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}}
 	params, err := evmTypes.StrictDecode(arguments, log.Data)
 	if err != nil {
-		return "", common.Address{}, err
+		return evmTypes.EventTokenDeployed{}, err
 	}
 
-	return params[0].(string), params[1].(common.Address), nil
+	return evmTypes.EventTokenDeployed{
+		Symbol:       params[0].(string),
+		TokenAddress: evmTypes.Address(params[1].(common.Address)),
+	}, nil
 }
 
 func decodeSinglesigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.TransferKeyType) (common.Address, error) {
@@ -920,4 +927,16 @@ func decodeMultisigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.Tran
 	}
 
 	return addresses, uint8(threshold.Uint64()), nil
+}
+
+func packEvents(events []evmTypes.Event) (vote.Vote, error) {
+	var v vote.Vote
+
+	eventsAny, err := evmTypes.PackEvents(events)
+	if err != nil {
+		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
+	}
+	v.Results = eventsAny
+
+	return v, nil
 }

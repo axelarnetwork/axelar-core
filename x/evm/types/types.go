@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -226,8 +228,6 @@ func (t *ERC20Token) RecordDeployment(txID Hash) error {
 		return fmt.Errorf("token %s non-existent", t.metadata.Asset)
 	case t.Is(Confirmed):
 		return fmt.Errorf("token %s already confirmed", t.metadata.Asset)
-	case t.Is(Pending):
-		return fmt.Errorf("voting for token %s is already underway", t.metadata.Asset)
 	}
 
 	t.metadata.TxHash = txID
@@ -297,7 +297,7 @@ var NilToken = ERC20Token{}
 
 // GetConfirmTokenKey creates a poll key for token confirmation
 func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
-	return vote.NewPollKey(ModuleName, txID.Hex()+"_"+strings.ToLower(asset))
+	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s", txID.Hex(), strings.ToLower(asset)))
 }
 
 // Address wraps EVM Address
@@ -1556,6 +1556,20 @@ func (m Event) ValidateBasic() error {
 		if err := event.TokenSent.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenSent")
 		}
+	case *Event_Transfer:
+		if event.Transfer == nil {
+			return fmt.Errorf("missing event Transfer")
+		}
+		if err := event.Transfer.ValidateBasic(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event Transfer")
+		}
+	case *Event_TokenDeployed:
+		if event.TokenDeployed == nil {
+			return fmt.Errorf("missing event TokenDeployed")
+		}
+		if err := event.TokenDeployed.ValidateBasic(); err != nil {
+			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
+		}
 	default:
 		return fmt.Errorf("unknown type of event")
 	}
@@ -1633,6 +1647,32 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 
 	if m.Amount.IsZero() {
 		return fmt.Errorf("invalid amount")
+	}
+
+	return nil
+}
+
+// ValidateBasic returns an error if the event transfer is invalid
+func (m EventTransfer) ValidateBasic() error {
+	if m.To.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if m.Amount.IsZero() {
+		return fmt.Errorf("invalid amount")
+	}
+
+	return nil
+}
+
+// ValidateBasic returns an error if the event token deployed is invalid
+func (m EventTokenDeployed) ValidateBasic() error {
+	if m.TokenAddress.IsZeroAddress() {
+		return fmt.Errorf("invalid sender")
+	}
+
+	if err := utils.ValidateString(m.Symbol); err != nil {
+		return sdkerrors.Wrap(err, "invalid symbol")
 	}
 
 	return nil
@@ -1742,4 +1782,32 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 	}
 
 	return params, nil
+}
+
+// UnpackEvents converts Any slice to Events
+func UnpackEvents(cdc codec.Codec, eventsAny []*codectypes.Any) ([]Event, error) {
+	var events []Event
+	for _, any := range eventsAny {
+		var event Event
+		if err := cdc.Unmarshal(any.Value, &event); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+// PackEvents converts Event to Any slice
+func PackEvents(events []Event) ([]*codectypes.Any, error) {
+	eventsAny := make([]*codectypes.Any, len(events))
+	for i, e := range events {
+		any, err := codectypes.NewAnyWithValue(&e)
+		if err != nil {
+			return nil, err
+		}
+		eventsAny[i] = any
+	}
+
+	return eventsAny, nil
 }

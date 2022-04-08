@@ -13,6 +13,9 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . Poll
 
+// VoteHandler defines a function that handler pool result
+type VoteHandler func(ctx sdk.Context, result *Vote) error
+
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x

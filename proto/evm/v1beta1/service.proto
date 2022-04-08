@@ -79,22 +79,6 @@ service MsgService {
     };
   }
 
-  rpc VoteConfirmDeposit(VoteConfirmDepositRequest)
-      returns (VoteConfirmDepositResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/vote-confirm-deposit",
-      body : "*"
-    };
-  }
-
-  rpc VoteConfirmToken(VoteConfirmTokenRequest)
-      returns (VoteConfirmTokenResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/vote-confirm-token",
-      body : "*"
-    };
-  }
-
   rpc VoteConfirmTransferKey(VoteConfirmTransferKeyRequest)
       returns (VoteConfirmTransferKeyResponse) {
     option (google.api.http) = {

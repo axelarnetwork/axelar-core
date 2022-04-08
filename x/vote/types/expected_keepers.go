@@ -13,6 +13,7 @@ import (
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
 	GetSnapshot(sdk.Context, int64) (snapshot.Snapshot, bool)
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 // StakingKeeper provides functionality of the staking module

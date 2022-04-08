@@ -70,7 +70,8 @@ message ConfirmDepositRequest {
   ];
   bytes amount = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
+    (gogoproto.nullable) = false,
+    deprecated = true
   ];
   bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
