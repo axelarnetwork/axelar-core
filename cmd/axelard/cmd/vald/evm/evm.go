@@ -395,8 +395,6 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
-
-	return err
 }
 
 func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
