@@ -6,4 +6,5 @@ module.exports = {
     "./theme.config.js",
     "./styles/globals.css",
   ],
+  darkMode: "class",
 };

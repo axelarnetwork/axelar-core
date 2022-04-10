@@ -13,38 +13,43 @@ module.exports = withNextra({
   redirects: () => {
     return [
       {
-        source: "/docs",
-        destination: "/docs/getting-started",
+        source: "/node",
+        destination: "/node/join",
         statusCode: 301,
       },
       {
-        source: "/advanced/performance",
-        destination: "/docs/advanced/performance",
+        source: "/validator",
+        destination: "/validator/setup",
         statusCode: 301,
       },
       {
-        source: "/advanced/cache",
-        destination: "/docs/advanced/cache",
+        source: "/validator/setup",
+        destination: "/validator/setup/overview",
         statusCode: 301,
       },
       {
-        source: "/docs/cache",
-        destination: "/docs/advanced/cache",
+        source: "/validator/external-chains",
+        destination: "/validator/external-chains/overview",
         statusCode: 301,
       },
       {
-        source: "/change-log",
-        destination: "/docs/change-log",
-        statusCode: 301,
-      },
-      {
-        source: "/docs",
-        destination: "/docs/getting-started",
+        source: "/node",
+        destination: "/node/join",
         statusCode: 302,
       },
       {
-        source: "/examples",
-        destination: "/examples/basic",
+        source: "/validator",
+        destination: "/validator/setup",
+        statusCode: 302,
+      },
+      {
+        source: "/validator/setup",
+        destination: "/validator/setup/overview",
+        statusCode: 302,
+      },
+      {
+        source: "/validator/external-chains",
+        destination: "/validator/external-chains/overview",
         statusCode: 302,
       },
     ];

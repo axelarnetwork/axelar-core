@@ -1,3 +1,5 @@
+@tailwind base;
+@tailwind components;
 @tailwind utilities;
 
 html {
@@ -30,4 +32,36 @@ body {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, #111 300px),
     fixed 0 0 / 20px 20px radial-gradient(#313131 1px, transparent 0),
     fixed 10px 10px / 20px 20px radial-gradient(#313131 1px, transparent 0);
+}
+
+main {
+  max-width: 68rem !important;
+}
+
+article ul {
+  margin-top: 0.5rem !important;
+}
+
+td {
+  vertical-align: baseline;
+}
+
+.callout {
+  div {
+    max-width: 95%;
+    h3 {
+      margin-top: 1rem;
+    }
+  }
+}
+
+.code-block {
+  background-color: rgb(241 245 249/var(--tw-bg-opacity)) !important;
+  padding: 1rem !important;
+}
+
+.dark .code-block {
+  background-color: rgb(147 197 253/var(--tw-bg-opacity)) !important;
+  --tw-bg-opacity: 0.1;
+  color: var(--shiki-color-text) !important;
 }

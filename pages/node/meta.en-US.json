@@ -1,0 +1,6 @@
+{
+  "join": "Quick sync (recommended)",
+  "join-genesis": "Genesis sync",
+  "basic": "Basic node management",
+  "keyring": "Keyring backend"
+}

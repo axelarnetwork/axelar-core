@@ -1,0 +1,8 @@
+{
+  "setup": "Setup",
+  "external-chains": "Support external chains",
+  "troubleshoot": {
+    "title": "Troubleshoot",
+    "hidden": true
+  }
+}

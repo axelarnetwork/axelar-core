@@ -1,0 +1,87 @@
+.tabs {
+  .tab {
+    @apply font-bold uppercase;
+    @apply text-xs p-4;
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
+  }
+  &.flex-row {
+    .tab-content {
+      @apply w-full px-0;
+    }
+  }
+  &.flex-col {
+    .tab-content {
+      @apply w-full py-2 px-0;
+      div {
+        h2 {
+          margin-top: 0;
+        }
+      }
+    }
+  }
+}
+
+.tabs {
+  @apply bg-transparent text-gray-900;
+  .tab {
+    @apply bg-transparent text-gray-900;
+    &:disabled {
+      @apply opacity-50;
+    }
+    &:hover:not(:disabled) {
+      @apply bg-blue-50;
+    }
+    &.tab-active:not(:disabled) {
+      @apply bg-blue-500 text-white;
+    }
+    &.tab-underline {
+      @apply border-b-2 border-transparent;
+      &:hover:not(:disabled),
+      &.tab-active:not(:disabled) {
+        @apply bg-transparent text-gray-900;
+        @apply border-b-2 border-blue-500;
+      }
+    }
+  }
+  .tab-content {
+    /*@apply bg-white;*/
+  }
+}
+
+.dark {
+  .tabs {
+    @apply text-white;
+    /*background: color(theme('colors.gray.900') tint(5%));*/
+    background: transparent;
+    .tab {
+      @apply text-white;
+      /*background: color(theme('colors.gray.900') tint(5%));*/
+      background: transparent;
+      &:disabled {
+        @apply opacity-50;
+      }
+      &:hover:not(:disabled) {
+        background: color(theme('colors.gray.900') tint(10%));
+      }
+      &.tab-active:not(:disabled) {
+        @apply bg-blue-500 text-white;
+      }
+      &.tab-underline {
+        @apply border-b-2;
+        border-color: transparent;
+        &:hover:not(:disabled),
+        &.tab-active:not(:disabled) {
+          @apply text-white;
+          /*background: color(theme('colors.gray.900') tint(5%));*/
+          background: transparent;
+          @apply border-b-2 border-blue-500;
+        }
+      }
+    }
+    .tab-content {
+      /*background: color(theme('colors.gray.900') tint(5%));*/
+    }
+  }
+}

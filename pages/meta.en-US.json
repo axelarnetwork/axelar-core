@@ -1,15 +1,41 @@
 {
   "index": {
-    "title": "Introduction",
+    "title": "Welcome",
     "type": "page",
     "hidden": true
   },
-  "docs": {
-    "title": "Docs",
-    "type": "page"
+  "intro": {
+    "title": "Introduction",
+    "type": "doc"
   },
-  "examples": {
-    "title": "Examples",
-    "type": "page"
+  "dev": {
+    "title": "Developer",
+    "type": "doc"
+  },
+  "node": {
+    "title": "Node operator",
+    "type": "doc"
+  },
+  "validator": {
+    "title": "Validator",
+    "type": "doc"
+  },
+  "resources": {
+    "title": "Resources",
+    "type": "doc"
+  },
+  "controller": {
+    "title": "Controller operations",
+    "type": "doc",
+    "hidden": true
+  },
+  "bug-bounty": {
+    "title": "Bug Bounty",
+    "type": "doc"
+  },
+  "terms-of-use": {
+    "title": "Terms of Use",
+    "type": "page",
+    "hidden": true
   }
 }

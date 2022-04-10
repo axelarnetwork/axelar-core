@@ -1,0 +1,45 @@
+# Mainnet upgrade: 2022-Mar-21
+
+import Callout from 'nextra-theme-docs/callout'
+
+Instructions for 2022-Mar-21 mainnet upgrade to axelar-core `v0.16.1`.
+
+1. If you're a validator, please vote for the upgrade proposal via
+
+```bash
+axelard tx gov vote 6 yes --from validator
+```
+
+2. Wait for the proposed upgrade block, `1336350`. Your node will panic at that block height with a log: `{"level":"error","module":"consensus","err":"UPGRADE \"v0.16\" NEEDED at height: ",`. Stop your node after chain halt.
+
+```bash
+pkill -f 'axelard start'
+# Validators need to also stop vald/tofnd
+pkill -f 'axelard vald-start'
+pkill -f tofnd
+```
+
+3. Backup the state:
+
+```bash
+cp -r ~/.axelar/.core/data ~/.axelar-dojo-1-upgrade-0.16/.core/data
+```
+
+<Callout type="warning" emoji="⚠️">
+  Caution: If you backup the entire folder, `~/.axelar/.core`, that'll also include your private keys (inside `config` and `keyring-file` subfolders). That can be dangerous if anyone gets access to your backups. We recommend backing up keys separately when you first create your node, and then excluding them from any data backups.
+</Callout>
+
+4. Restart your node with the new `v0.16.1` build (`tofnd` still uses `v0.8.2`).
+
+Example using join scripts in [axelarate-community git repo](https://github.com/axelarnetwork/axelarate-community):
+
+```bash
+# in axelarate-community repo
+git checkout main
+git pull
+KEYRING_PASSWORD="pw-1" ./scripts/node.sh -n mainnet -a v0.16.1
+# For validators, restart vald/tofnd
+KEYRING_PASSWORD="pw-1" TOFND_PASSWORD="pw-2" ./scripts/validator-tools-host.sh -a v0.16.1 -n mainnet
+```
+
+The join scripts should automatically pull the new binary from [Mainnet resources](../mainnet). Or you can add the flag `-a v0.16.1` to force a specific version.
