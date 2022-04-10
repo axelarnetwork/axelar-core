@@ -13,12 +13,24 @@ In order to complete exercises for a EVM chain `[chain]` you need to connect you
 
 Open Metamask. In the "Networks" dropdown list choose "Add Network". Enter the data for your desired `[chain]` below and click "Save". Repeat for any chains you like.
 
-| EVM chain | Network Name     | Chain ID | Native Token | RPC URL                                                              | Explorer URL                          | Add Chain                                             |
+### Mainnet
+
+| EVM chain | Chain Name | Chain ID | Native Token | RPC URL                                      | Explorer URL                   | Add Chain                                             |
+| --------- | ---------- | -------- | -------------| -------------------------------------------- | ------------------------------ | ----------------------------------------------------- |
+| Ethereum  | Ethereum   | 1        | ETH          | [URL](https://rpc.ankr.com/eth)              | [URL](https://etherscan.io)    | <AddToWeb3 environment="mainnet" chain="ethereum" />  |
+| Avalanche | Avalanche  | 43114    | AVAX         | [URL](https://api.avax.network/ext/bc/C/rpc) | [URL](https://snowtrace.io)    | <AddToWeb3 environment="mainnet" chain="avalanche" /> |
+| Fantom    | Fantom     | 250      | FTM          | [URL](https://rpc.ftm.tools)                 | [URL](https://ftmscan.com/)    | <AddToWeb3 environment="mainnet" chain="fantom" />    |
+| Polygon   | Polygon    | 137      | MATIC        | [URL](https://polygon-rpc.com)               | [URL](https://polygonscan.com) | <AddToWeb3 environment="mainnet" chain="polygon" />   |
+| Moonbeam  | Moonbeam   | 1284     | DEV          | [URL](https://rpc.api.moonbeam.network)      | [URL](https://moonscan.io)     | <AddToWeb3 environment="mainnet" chain="moonbeam" />  |
+
+### Testnet
+
+| EVM chain | Chain Name       | Chain ID | Native Token | RPC URL                                                              | Explorer URL                          | Add Chain                                             |
 | --------- | ---------------- | -------- | -------------| -------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
 | Ethereum  | Ethereum Ropsten | 3        | ETH          | [URL](https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [URL](https://ropsten.etherscan.io)   | <AddToWeb3 environment="testnet" chain="ethereum" />  |
-| Avalanche | Avalanche Fuji   | 43113    | C-AVAX       | [URL](https://api.avax-test.network/ext/bc/C/rpc)                    | [URL](https://testnet.snowtrace.io)   | <AddToWeb3 environment="testnet" chain="avalanche" /> |
-| Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://rpc-mumbai.maticvigil.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
+| Avalanche | Avalanche Fuji   | 43113    | AVAX         | [URL](https://api.avax-test.network/ext/bc/C/rpc)                    | [URL](https://testnet.snowtrace.io)   | <AddToWeb3 environment="testnet" chain="avalanche" /> |
 | Fantom    | Fantom Testnet   | 4002     | FTM          | [URL](https://rpc.testnet.fantom.network)                            | [URL](https://testnet.ftmscan.com/)   | <AddToWeb3 environment="testnet" chain="fantom" />    |
+| Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://rpc-mumbai.maticvigil.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
 | Moonbeam  | Moonbase Alpha   | 1287     | DEV          | [URL](https://rpc.api.moonbase.moonbeam.network)                     | [URL](https://moonbase.moonscan.io)   | <AddToWeb3 environment="testnet" chain="moonbeam" />  |
 
 ## Get testnet tokens for EVM chains
