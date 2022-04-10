@@ -1,5 +1,7 @@
 # Set up Metamask
 
+import AddToWeb3 from '../../components/web3'
+
 1. Connect Metamask to other EVM chains
 2. Get testnet tokens for other EVM chains to pay for gas
 3. Import Axelar ERC20 tokens on other EVM chains
@@ -11,13 +13,13 @@ In order to complete exercises for a EVM chain `[chain]` you need to connect you
 
 Open Metamask. In the "Networks" dropdown list choose "Add Network". Enter the data for your desired `[chain]` below and click "Save". Repeat for any chains you like.
 
-| EVM chain | Network Name              | Chain ID | Currency Symbol | RPC URL                                                              | Block Explorer URL                                           |
-| --------- | ------------------------- | -------- | --------------- | -------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Ethereum  | Ethereum Ropsten Testnet  | 3        | ETH             | [url](https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [url](https://ropsten.etherscan.io)                          |
-| Avalanche | Avalanche C-Chain Testnet | 43113    | C-AVAX          | [url](https://api.avax-test.network/ext/bc/C/rpc)                    | [url](https://cchain.explorer.avax-test.network)             |
-| Fantom    | Fantom Testnet            | 4002     | FTM             | [url](https://rpc.testnet.fantom.network/)                           | [url](https://testnet.ftmscan.com/)                          |
-| Moonbeam  | Moonbase Alpha Testnet    | 1287     | DEV             | [url](https://rpc.testnet.moonbeam.network)                          | [url](https://moonbase-blockscout.testnet.moonbeam.network/) |
-| Polygon   | Polygon Mumbain Testnet   | 80001    | MATIC           | [url](https://rpc-mumbai.maticvigil.com/)                            | [url](https://mumbai.polygonscan.com/)                       |
+| EVM chain | Network Name     | Chain ID | Native Token | RPC URL                                                              | Explorer URL                          | Add Chain                                             |
+| --------- | ---------------- | -------- | -------------| -------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| Ethereum  | Ethereum Ropsten | 3        | ETH          | [URL](https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [URL](https://ropsten.etherscan.io)   | <AddToWeb3 environment="testnet" chain="ethereum" />  |
+| Avalanche | Avalanche Fuji   | 43113    | C-AVAX       | [URL](https://api.avax-test.network/ext/bc/C/rpc)                    | [URL](https://testnet.snowtrace.io)   | <AddToWeb3 environment="testnet" chain="avalanche" /> |
+| Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://rpc-mumbai.maticvigil.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
+| Fantom    | Fantom Testnet   | 4002     | FTM          | [URL](https://rpc.testnet.fantom.network)                            | [URL](https://testnet.ftmscan.com/)   | <AddToWeb3 environment="testnet" chain="fantom" />    |
+| Moonbeam  | Moonbase Alpha   | 1287     | DEV          | [URL](https://rpc.api.moonbase.moonbeam.network)                     | [URL](https://moonbase.moonscan.io)   | <AddToWeb3 environment="testnet" chain="moonbeam" />  |
 
 ## Get testnet tokens for EVM chains
 
