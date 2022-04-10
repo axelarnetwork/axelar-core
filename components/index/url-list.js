@@ -32,7 +32,7 @@ const items = [
   {
     title: "Whitepaper",
     icon: (
-    	<BsFileEarmarkTextFill size={24} />
+      <BsFileEarmarkTextFill size={24} />
     ),
     url: "https://axelar.network/wp-content/uploads/2021/07/axelar_whitepaper.pdf",
     external: true,
@@ -40,7 +40,7 @@ const items = [
   {
     title: "Resources",
     icon: (
-    	<BsStack size={24} />
+      <BsStack size={24} />
     ),
     url: "/resources",
     external: false,
@@ -50,33 +50,33 @@ const items = [
 export default () => {
   return (
     <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 mt-6">
-    	{items.map((item, key) => {
-    		const element = (
-	    		<div className="card">
-	    			<div className="flex items-center space-x-3">
-	    				{item.icon}
-	    				<span className="text-base font-semibold">{item.title}</span>
-	    			</div>
-	    		</div>
-	    	);
+      {items.map((item, key) => {
+        const element = (
+          <div className="card">
+            <div className="flex items-center space-x-3">
+              {item.icon}
+              <span className="text-base font-semibold">{item.title}</span>
+            </div>
+          </div>
+        );
 
-	    	return item.external ?
-	    		<a
+        return item.external ?
+          <a
             key={key}
-	    			href={item.url}
-	    			target="_blank"
-	    			rel="noopenner noreferrer"
-	    			className="no-underline text-black dark:text-white"
-	    		>
-	    			{element}
-	    		</a>
-	    		:
-	    		<Link key={key} href={item.url}>
-	    			<a className="no-underline text-black dark:text-white">
-	    				{element}
-	    			</a>
-	    		</Link>
-    	})}
+            href={item.url}
+            target="_blank"
+            rel="noopenner noreferrer"
+            className="no-underline text-black dark:text-white"
+          >
+            {element}
+          </a>
+          :
+          <Link key={key} href={item.url}>
+            <a className="no-underline text-black dark:text-white">
+              {element}
+            </a>
+          </Link>
+      })}
     </div>
   );
 };

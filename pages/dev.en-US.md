@@ -1,5 +1,7 @@
 # Developer
 
+import Button from '../components/button'
+
 ## Develop your cross-chain dapp in 2 simple steps
 
 1. **_Build._** Develop and test in the Axelar local development environment
@@ -14,7 +16,7 @@
 
 View the github README for instructions and code:
 
-Button: [axelar-local-dev-sample](https://github.com/axelarnetwork/axelar-local-dev-sample)
+<Button title="axelar-local-dev-sample" url="https://github.com/axelarnetwork/axelar-local-dev-sample" />
 
 ## Build
 
@@ -26,7 +28,7 @@ The Axelar local development environment emulates multiple EVM chains and the Ax
 
 Learn more at the `axelar-local-dev` github README:
 
-Button: [Axelar local development environment](https://github.com/axelarnetwork/axelar-local-dev)
+<Button title="Axelar local development environment" url="https://github.com/axelarnetwork/axelar-local-dev" />
 
 ## Deploy
 
@@ -37,7 +39,7 @@ When you're ready to go live:
 
 See `axelar-local-dev-sample` for a working example:
 
-Button: [axelar-local-dev-sample](https://github.com/axelarnetwork/axelar-local-dev-sample)
+<Button title="axelar-local-dev-sample" url="https://github.com/axelarnetwork/axelar-local-dev-sample" />
 
 ## More examples
 
@@ -58,4 +60,4 @@ Not all dapps need the SDK. _[TODO review the following.]_ Your dapp might benef
 
 Learn more at the `axelarjs-sdk` github README:
 
-Button: [axelarjs-sdk](https://github.com/axelarnetwork/axelarjs-sdk)
+<Button title="axelarjs-sdk" url="https://github.com/axelarnetwork/axelarjs-sdk" />
