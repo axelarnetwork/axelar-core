@@ -237,7 +237,7 @@ export default ({ environment = "mainnet", chain, symbol, address, decimals }) =
               options: {
                 address: contract.address,
                 symbol: contract.symbol,
-                decimals: contract.decimals,
+                decimals: Number(contract.decimals),
                 image: contract.image ? `${window.location.origin}${contract.image}` : undefined,
               },
             },
