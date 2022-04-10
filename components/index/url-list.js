@@ -26,8 +26,8 @@ const items = [
         </div>
       </>
     ),
-    url: "https://axelar.network",
-    external: true,
+    url: "/intro",
+    external: false,
   },
   {
     title: "Whitepaper",
