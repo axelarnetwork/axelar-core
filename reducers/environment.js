@@ -2,7 +2,7 @@ import { ENVIRONMENT_DATA } from "./types";
 
 export default function environment(
   state = {
-    [`${ENVIRONMENT_DATA}`]: 'mainnet',
+    [`${ENVIRONMENT_DATA}`]: "mainnet",
   },
   action
 ) {
@@ -14,5 +14,5 @@ export default function environment(
       };
     default:
       return state;
-  }
+  };
 };

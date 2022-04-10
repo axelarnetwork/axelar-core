@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch, shallowEqual } from "react-redux";
+
+import { CHAIN_ID_DATA } from '../../reducers/types';
 
 import Web3 from "web3";
 
@@ -201,6 +204,10 @@ const chains_data = {
 };
 
 export default ({ environment = "mainnet", chain, symbol, address, decimals }) => {
+  const dispatch = useDispatch();
+  const { chain_id } = useSelector(state => ({ chain_id: state.chain_id }), shallowEqual);
+  const { chain_id_data } = { ...chain_id };
+
   const [web3, setWeb3] = useState(null);
   const [chainId, setChainId] = useState(null);
   const [addTokenData, setAddTokenData] = useState(null);
@@ -214,17 +221,27 @@ export default ({ environment = "mainnet", chain, symbol, address, decimals }) =
         web3.currentProvider._handleChainChanged = e => {
           try {
             setChainId(Web3.utils.hexToNumber(e?.chainId));
+            dispatch({
+              type: CHAIN_ID_DATA,
+              value: Web3.utils.hexToNumber(e?.chainId),
+            });
           } catch (error) {}
         }
       } catch (error) {}
     }
-  }, [web3])
+  }, [web3]);
+
+  useEffect(() => {
+    if (chain_id_data) {
+      setChainId(chain_id_data);
+    }
+  }, [chain_id_data]);
 
   useEffect(() => {
     if (addTokenData?.chain_id === chainId && addTokenData?.contract) {
       addTokenToMetaMask(addTokenData.chain_id, addTokenData.contract);
     }
-  }, [chainId, addTokenData])
+  }, [chainId, addTokenData]);
 
   const addTokenToMetaMask = async (chain_id, contract) => {
     if (web3 && contract) {
