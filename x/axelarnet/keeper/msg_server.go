@@ -96,6 +96,19 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("deposit address '%s' holds no funds for token %s", req.DepositAddress.String(), req.Denom)
 	}
 
+	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	if !ok {
+		return nil, fmt.Errorf("no recipient linked to deposit address %s", req.DepositAddress.String())
+	}
+
+	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
+		return nil, fmt.Errorf("source chain '%s'  is not activated", exported.Axelarnet.Name)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, recipient.Chain) {
+		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
+	}
+
 	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
 	switch {
 	// check if the format of token denomination is 'ibc/{hash}'
@@ -165,11 +178,6 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return nil, err
-	}
-
-	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
-	if !ok {
-		return nil, fmt.Errorf("no recipient linked to deposit address %s", req.DepositAddress.String())
 	}
 
 	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID),
