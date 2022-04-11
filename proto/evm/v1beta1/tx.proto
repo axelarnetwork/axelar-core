@@ -167,6 +167,20 @@ message VoteConfirmChainRequest {
 
 message VoteConfirmChainResponse { string log = 1; }
 
+message CreateTransferOwnershipRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message CreateTransferOwnershipResponse {}
+
 message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
