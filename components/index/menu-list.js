@@ -26,7 +26,7 @@ const items = [
     icon: (
       <RiSettings4Fill size={24} />
     ),
-    url: "/node",
+    url: "/node/join",
     external: false,
   },
   {
@@ -35,7 +35,7 @@ const items = [
     icon: (
       <RiServerFill size={24} />
     ),
-    url: "/validator",
+    url: "/validator/setup/overview",
     external: false,
   }
 ];
