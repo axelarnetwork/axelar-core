@@ -36,18 +36,6 @@ message ConfirmGatewayTxRequest {
 
 message ConfirmGatewayTxResponse {}
 
-message VoteConfirmGatewayTxRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  message Vote { repeated Event events = 1 [ (gogoproto.nullable) = false ]; }
-
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
-  Vote vote = 3 [ (gogoproto.nullable) = false ];
-}
-
-message VoteConfirmGatewayTxResponse { string log = 1; }
-
 message ConfirmChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -178,66 +166,6 @@ message VoteConfirmChainRequest {
 }
 
 message VoteConfirmChainResponse { string log = 1; }
-
-// MsgVoteConfirmDeposit represents a message that votes on a deposit
-message VoteConfirmDepositRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  vote.exported.v1beta1.PollKey poll_key = 3 [ (gogoproto.nullable) = false ];
-  bytes tx_id = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
-  bytes burn_address = 5
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bool confirmed = 6;
-}
-
-message VoteConfirmDepositResponse { string log = 1; }
-
-message VoteConfirmTokenRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  vote.exported.v1beta1.PollKey poll_key = 3 [ (gogoproto.nullable) = false ];
-  bytes tx_id = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
-  string asset = 5;
-  bool confirmed = 6;
-}
-
-message VoteConfirmTokenResponse { string log = 1; }
-
-message VoteConfirmTransferKeyRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  vote.exported.v1beta1.PollKey poll_key = 3 [ (gogoproto.nullable) = false ];
-  bool confirmed = 4;
-}
-message VoteConfirmTransferKeyResponse { string log = 1; }
-
-message CreateTransferOwnershipRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  string key_id = 3 [
-    (gogoproto.customname) = "KeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-  ];
-}
-
-message CreateTransferOwnershipResponse {}
 
 message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
