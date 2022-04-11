@@ -33,6 +33,11 @@ module.exports = withNextra({
         statusCode: 301,
       },
       {
+        source: "/validator/troubleshoot",
+        destination: "/validator/troubleshoot/startup",
+        statusCode: 301,
+      },
+      {
         source: "/node",
         destination: "/node/join",
         statusCode: 302,
@@ -50,6 +55,11 @@ module.exports = withNextra({
       {
         source: "/validator/external-chains",
         destination: "/validator/external-chains/overview",
+        statusCode: 302,
+      },
+      {
+        source: "/validator/troubleshoot",
+        destination: "/validator/troubleshoot/startup",
         statusCode: 302,
       },
     ];
