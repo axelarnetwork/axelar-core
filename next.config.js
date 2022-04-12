@@ -38,31 +38,6 @@ module.exports = withNextra({
         statusCode: 301,
       },
       {
-        source: "/node",
-        destination: "/node/join",
-        statusCode: 302,
-      },
-      {
-        source: "/validator",
-        destination: "/validator/setup",
-        statusCode: 302,
-      },
-      {
-        source: "/validator/setup",
-        destination: "/validator/setup/overview",
-        statusCode: 302,
-      },
-      {
-        source: "/validator/external-chains",
-        destination: "/validator/external-chains/overview",
-        statusCode: 302,
-      },
-      {
-        source: "/validator/troubleshoot",
-        destination: "/validator/troubleshoot/startup",
-        statusCode: 302,
-      },
-      {
         source: "/resources/mainnet-releases",
         destination: "/resources/mainnet",
         statusCode: 301,
@@ -73,20 +48,20 @@ module.exports = withNextra({
         statusCode: 301,
       },
       {
-        source: "/releases(.*)",
-        destination: "/resources$1",
+        source: "/releases/:path",
+        destination: "/resources/:path",
         statusCode: 301,
       },
       {
-        source: "/roles(.*)",
-        destination: "$1",
+        source: "/user/:path",
+        destination: "/resources/:path",
         statusCode: 301,
       },
       {
-        source: "/user(.*)",
-        destination: "/resources$1",
+        source: "/roles/:path",
+        destination: "/:path",
         statusCode: 301,
-      }
+      },
     ];
   },
 });

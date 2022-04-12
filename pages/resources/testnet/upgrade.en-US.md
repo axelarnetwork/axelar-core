@@ -26,7 +26,7 @@ cp -r ~/.axelar_testnet/.core/data ~/.axelar-lisbon-3-upgrade-0.17/.core/data
 ```
 
 <Callout type="warning" emoji="⚠️">
-  If you backup the entire folder, `~/.axelar_testnet/.core`, that'll also include your private keys (inside `config` and `keyring-file` subfolders). That can be dangerous if anyone gets access to your backups. We recommend backing up keys separately when you first create your node, and then excluding them from any data backups.
+  Caution: If you backup the entire folder, `~/.axelar_testnet/.core`, that'll also include your private keys (inside `config` and `keyring-file` subfolders). That can be dangerous if anyone gets access to your backups. We recommend backing up keys separately when you first create your node, and then excluding them from any data backups.
 </Callout>
 
 4. Restart your node with the new `v0.17.0` build (`tofnd` still uses `v0.8.2`).
