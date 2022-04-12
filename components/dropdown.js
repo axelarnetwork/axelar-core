@@ -15,7 +15,7 @@ const data = {
   ibc_assets,
 };
 
-export default ({ environment, chain, dataName, placeholder, hasAllOptions, allOptionsName = "All", defaultSelectedKey, onSelect, className = "" }) => {
+export default ({ environment, chain, dataName, placeholder, hasAllOptions, allOptionsName = "All", defaultSelectedKey, onSelect, align = "left", className = "" }) => {
   const [options, setOptions] = useState(null);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -99,7 +99,7 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className="bg-white w-48 min-w-max dark:bg-dark absolute z-10 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-left left-0 mt-2">
+            <Menu.Items className={`bg-white w-48 min-w-max dark:bg-dark absolute z-10 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-${align} ${align}-0 mt-2`}>
               <div className="py-1">
                 {hasAllOptions && (
                   <Menu.Item key={-1}>

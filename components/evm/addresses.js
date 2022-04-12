@@ -16,7 +16,7 @@ export default ({ environment = "mainnet" }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-center space-x-2">
+      <div className="flex flex-wrap items-center justify-center space-x-3">
         <Dropdown
           environment={environment}
           dataName="evm_chains"
@@ -66,7 +66,7 @@ export default ({ environment = "mainnet" }) => {
                 </div>
                 <AddToWeb3 environment={environment} chain={c.id} />
               </div>
-              <div className="flex flex-col text-xs space-y-2 mt-3">
+              <div className="flex flex-col text-xs space-y-3 mt-3">
                 <div className="flex flex-col">
                   <div className="flex items-center space-x-1">
                     <span className="text-gray-500 dark:text-gray-300">RPC URL</span>
@@ -141,8 +141,8 @@ export default ({ environment = "mainnet" }) => {
           const explorer_url = chain_data?.provider_params?.[0]?.blockExplorerUrls?.[0];
           const token_contract_address = a.address;
           const denom = a.id;
-          const transfer_fee = a.transfer_fee;
           const ethereum_transfer_fee = evm_assets[environment].find(_a => _a?.id === a.id)?.contracts?.find(c => c?.chain === "ethereum")?.transfer_fee;
+          const non_ethereum_transfer_fee = evm_assets[environment].find(_a => _a?.id === a.id)?.transfer_fee;
           const cosmos_transfer_fee = ibc_assets[environment].find(_a => _a?.id === a.id)?.transfer_fee;
 
           return (
@@ -179,7 +179,7 @@ export default ({ environment = "mainnet" }) => {
                 </div>
                 <AddToWeb3 environment={environment} { ...a } />
               </div>
-              <div className="flex flex-col text-xs space-y-2 mt-3">
+              <div className="flex flex-col text-xs space-y-3 mt-3">
                 <div className="flex flex-col">
                   <div className="flex items-center space-x-1">
                     <span className="text-gray-500 dark:text-gray-300">Token Contract</span>
@@ -200,29 +200,12 @@ export default ({ environment = "mainnet" }) => {
                     <span className="text-gray-400 dark:text-gray-600">-</span>
                   }
                 </div>
-                <div className="grid grid-flow-row grid-cols-2 gap-2">
-                  <div className={`cols-span-${a.chain === "ethereum" ? 2 : 1} flex flex-col`}>
-                    <div className="flex items-center space-x-1">
-                      <span className="text-gray-500 dark:text-gray-300">Transfer Fee</span>
-                      {transfer_fee && (
-                        <Copy value={transfer_fee} />
-                      )}
-                    </div>
-                    {transfer_fee ?
-                      <span className="font-semibold">
-                        {transfer_fee} {a.symbol}
-                      </span>
-                      :
-                      <span className="text-gray-400 dark:text-gray-600">-</span>
-                    }
-                  </div>
-                  {a.chain !== "ethereum" && (
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500 dark:text-gray-300">Transfer Fee</span>
+                  <div className="grid grid-flow-row grid-cols-2 gap-2">
                     <div className="flex flex-col">
                       <div className="flex items-center space-x-1">
-                        <span className="text-gray-500 dark:text-gray-300">on Ethereum</span>
-                        {ethereum_transfer_fee && (
-                          <Copy value={ethereum_transfer_fee} />
-                        )}
+                        <span className="text-gray-500 dark:text-gray-300">to Ethereum</span>
                       </div>
                       {ethereum_transfer_fee ?
                         <span className="font-semibold">
@@ -232,38 +215,47 @@ export default ({ environment = "mainnet" }) => {
                         <span className="text-gray-400 dark:text-gray-600">-</span>
                       }
                     </div>
-                  )}
-                </div>
-                <div className="grid grid-flow-row grid-cols-2 gap-2">
-                  <div className="flex flex-col">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-gray-500 dark:text-gray-300">via IBC</span>
-                      {cosmos_transfer_fee && (
-                        <Copy value={cosmos_transfer_fee} />
-                      )}
+                    <div className="flex flex-col">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-gray-500 dark:text-gray-300">to non-Ethereum</span>
+                      </div>
+                      {non_ethereum_transfer_fee ?
+                        <span className="font-semibold">
+                          {non_ethereum_transfer_fee} {a.symbol}
+                        </span>
+                        :
+                        <span className="text-gray-400 dark:text-gray-600">-</span>
+                      }
                     </div>
-                    {cosmos_transfer_fee ?
-                      <span className="font-semibold">
-                        {cosmos_transfer_fee} {a.symbol}
-                      </span>
-                      :
-                      <span className="text-gray-400 dark:text-gray-600">-</span>
-                    }
                   </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-gray-500 dark:text-gray-300">Denom</span>
-                      {denom && (
-                        <Copy value={denom} />
-                      )}
+                  <div className="grid grid-flow-row grid-cols-2 gap-2">
+                    <div className="flex flex-col">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-gray-500 dark:text-gray-300">to Cosmos</span>
+                      </div>
+                      {cosmos_transfer_fee ?
+                        <span className="font-semibold">
+                          {cosmos_transfer_fee} {a.symbol}
+                        </span>
+                        :
+                        <span className="text-gray-400 dark:text-gray-600">-</span>
+                      }
                     </div>
-                    {denom ?
-                      <span className="font-semibold">
-                        {denom}
-                      </span>
-                      :
-                      <span className="text-gray-400 dark:text-gray-600">-</span>
-                    }
+                    {/*<div className="flex flex-col">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-gray-500 dark:text-gray-300">Denom</span>
+                        {denom && (
+                          <Copy value={denom} />
+                        )}
+                      </div>
+                      {denom ?
+                        <span className="font-semibold">
+                          {denom}
+                        </span>
+                        :
+                        <span className="text-gray-400 dark:text-gray-600">-</span>
+                      }
+                    </div>*/}
                   </div>
                 </div>
               </div>
