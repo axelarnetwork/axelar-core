@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
 
-import { ENVIRONMENT_DATA } from '../reducers/types';
+import { ENVIRONMENT_DATA } from "../reducers/types";
 
 export default ({ tabs, children }) => {
   const dispatch = useDispatch();
@@ -31,7 +31,7 @@ export default ({ tabs, children }) => {
           <div key={key} className="flex-none">
             <button
               onClick={() => onClick(tab, key)}
-              className={openTab === key ? 'tab tab-underline tab-active' : 'tab tab-underline'}
+              className={openTab === key ? "tab tab-underline tab-active" : "tab tab-underline"}
               type="button"
             >
               {tab.title}
@@ -40,7 +40,7 @@ export default ({ tabs, children }) => {
         ))}
       </div>
       {tabs?.filter(tab => !tab.hidden).map((tab, key) => (
-        <div key={key} className={`tab-content ${openTab !== key ? 'hidden' : 'block'} max-w-full`}>
+        <div key={key} className={`tab-content ${openTab !== key ? "hidden" : "block"} max-w-full`}>
           {tab.content}
         </div>
       ))}

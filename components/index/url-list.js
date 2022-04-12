@@ -51,7 +51,7 @@ export default () => {
     <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 mt-6">
       {items.map((item, key) => {
         const element = (
-          <div className="card">
+          <div className="card-index">
             <div className="flex items-center space-x-3">
               {item.icon}
               <span className="text-base font-semibold">{item.title}</span>

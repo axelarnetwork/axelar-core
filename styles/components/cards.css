@@ -1,4 +1,25 @@
 .card {
+  @apply rounded-lg border p-3;
+  &.clickable {
+    @apply cursor-pointer;
+    &:hover:not(:disabled) {
+      @apply bg-white shadow-lg border-0;
+    }
+  }
+}
+
+.dark {
+  .card {
+    @apply border-gray-800;
+    &.clickable {
+      &:hover:not(:disabled) {
+        @apply bg-gray-900;
+      }
+    }
+  }
+}
+
+.card-index {
   @apply rounded-lg border cursor-pointer p-6;
   &:hover:not(:disabled) {
     @apply bg-white shadow-lg border-0;
@@ -6,7 +27,7 @@
 }
 
 .dark {
-  .card {
+  .card-index {
     @apply border-gray-800;
     &:hover:not(:disabled) {
       @apply bg-gray-900;

@@ -1,209 +1,12 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
-
-import { CHAIN_ID_DATA } from '../../reducers/types';
-
 import Web3 from "web3";
 
-const chains_data = {
-  mainnet: [
-    {
-      id: "ethereum",
-      name: "Ethereum",
-      chain_id: 1,
-      image: "/images/chains/ethereum.png",
-      provider_params: [
-        {
-          chainId: "0x1",
-          chainName: "Ethereum Mainnet",
-          rpcUrls: ["https://rpc.ankr.com/eth"],
-          nativeCurrency: {
-            name: "Ether",
-            symbol: "ETH",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://etherscan.io"],
-        },
-      ],
-    },
-    {
-      id: "avalanche",
-      name: "Avalache",
-      chain_id: 43114,
-      image: "/images/chains/avalache.png",
-      provider_params: [
-        {
-          chainId: "0xa86a",
-          chainName: "Avalanche Mainnet C-Chain",
-          rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
-          nativeCurrency: {
-            name: "Avalanche",
-            symbol: "AVAX",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://snowtrace.io"],
-        },
-      ],
-    },
-    {
-      id: "polygon",
-      name: "Polygon",
-      chain_id: 137,
-      image: "/images/chains/polygon.png",
-      provider_params: [
-        {
-          chainId: "0x89",
-          chainName: "Matic Mainnet",
-          rpcUrls: ["https://polygon-rpc.com", "https://matic-mainnet.chainstacklabs.com", "https://rpc-mainnet.maticvigil.com"],
-          nativeCurrency: {
-            name: "Matic",
-            symbol: "MATIC",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://polygonscan.com"],
-        },
-      ],
-    },
-    {
-      id: "fantom",
-      name: "Fantom",
-      chain_id: 250,
-      image: "/images/chains/fantom.png",
-      provider_params: [
-        {
-          chainId: "0xfa",
-          chainName: "Fantom Opera",
-          rpcUrls: ["https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpcapi.fantom.network"],
-          nativeCurrency: {
-            name: "Fantom",
-            symbol: "FTM",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://ftmscan.com"],
-        },
-      ],
-    },
-    {
-      id: "moonbeam",
-      name: "Moonbeam",
-      chain_id: 1284,
-      image: "/images/chains/moonbeam.png",
-      provider_params: [
-        {
-          chainId: "0x504",
-          chainName: "Moonbeam",
-          rpcUrls: ["https://rpc.api.moonbeam.network"],
-          nativeCurrency: {
-            name: "Glimmer",
-            symbol: "GLMR",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://moonscan.io"],
-        },
-      ],
-    },
-  ],
-  testnet: [
-    {
-      id: "ethereum",
-      name: "Ethereum Ropsten",
-      chain_id: 3,
-      image: "/images/chains/ethereum.png",
-      provider_params: [
-        {
-          chainId: "0x3",
-          chainName: "Ethereum Ropsten",
-          rpcUrls: ["https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"],
-          nativeCurrency: {
-            name: "Ropsten Ether",
-            symbol: "ROP",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://ropsten.etherscan.io"],
-        },
-      ],
-    },
-    {
-      id: "avalanche",
-      name: "Avalache Fuji",
-      chain_id: 43113,
-      image: "/images/chains/avalache.png",
-      provider_params: [
-        {
-          chainId: "0xa869",
-          chainName: "Avalanche Testnet C-Chain",
-          rpcUrls: ["https://api.avax-test.network/ext/bc/C/rpc"],
-          nativeCurrency: {
-            name: "Avalanche",
-            symbol: "AVAX",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://testnet.snowtrace.io"],
-        },
-      ],
-    },
-    {
-      id: "polygon",
-      name: "Polygon Mumbai",
-      chain_id: 80001,
-      image: "/images/chains/polygon.png",
-      provider_params: [
-        {
-          chainId: "0x13881",
-          chainName: "Polygon Mumbai",
-          rpcUrls: ["https://rpc-mumbai.maticvigil.com", "https://rpc-mumbai.matic.today", "https://matic-mumbai.chainstacklabs.com"],
-          nativeCurrency: {
-            name: "Matic",
-            symbol: "MATIC",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://mumbai.polygonscan.com"],
-        },
-      ],
-    },
-    {
-      id: "fantom",
-      name: "Fantom Testnet",
-      chain_id: 4002,
-      image: "/images/chains/fantom.png",
-      provider_params: [
-        {
-          chainId: "0xfa2",
-          chainName: "Fantom Testnet",
-          rpcUrls: ["https://rpc.testnet.fantom.network"],
-          nativeCurrency: {
-            name: "Fantom",
-            symbol: "FTM",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://testnet.ftmscan.com"],
-        },
-      ],
-    },
-    {
-      id: "moonbeam",
-      name: "Moonbase Alpha",
-      chain_id: 1287,
-      image: "/images/chains/moonbeam.png",
-      provider_params: [
-        {
-          chainId: "0x507",
-          chainName: "Moonbase Alpha",
-          rpcUrls: ["https://rpc.api.moonbase.moonbeam.network"],
-          nativeCurrency: {
-            name: "Dev",
-            symbol: "DEV",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://moonbase.moonscan.io"],
-        },
-      ],
-    },
-  ],
-};
+import { CHAIN_ID_DATA } from "../../reducers/types";
+import chains_data from "../../data/evm_chains.json";
 
-export default ({ environment = "mainnet", chain, symbol, address, decimals }) => {
+export default ({ environment = "mainnet", chain, symbol, image, address, decimals }) => {
   const dispatch = useDispatch();
   const { chain_id } = useSelector(state => ({ chain_id: state.chain_id }), shallowEqual);
   const { chain_id_data } = { ...chain_id };
@@ -299,10 +102,10 @@ export default ({ environment = "mainnet", chain, symbol, address, decimals }) =
             addTokenToMetaMask(
               chain_data?.chain_id,
               {
-                symbol: symbol,
+                symbol,
                 address,
                 decimals,
-                image: `/images/assets/${(symbol.startsWith('axl') && !symbol.endsWith('axl') ? symbol.replace('axl', '') : symbol).toLowerCase()}.png`,
+                image: image || `/images/assets/${(symbol.startsWith("axl") && !symbol.endsWith("axl") ? symbol.replace("axl", "") : symbol).toLowerCase()}.png`,
               }
             );
           }
@@ -311,7 +114,7 @@ export default ({ environment = "mainnet", chain, symbol, address, decimals }) =
           }
         }
       }}
-      className="bg-gray-200 dark:bg-gray-800 rounded-lg cursor-pointer flex items-center py-1.5 px-2"
+      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center py-1.5 px-2"
     >
       <Image
         src="/images/wallets/metamask.png"

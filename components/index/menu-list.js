@@ -67,7 +67,7 @@ export default () => {
             </a>
 
           const element = (
-            <div className="card h-full flex flex-col justify-between">
+            <div className="card-index h-full flex flex-col justify-between">
               <div className="mb-2">
                 <div className="flex items-center space-x-3">
                   {item.icon}

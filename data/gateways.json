@@ -1,0 +1,46 @@
+{
+  "mainnet": [
+    {
+      "id": "ethereum",
+      "address": "0x4F4495243837681061C4743b74B3eEdf548D56A5"
+    },
+    {
+      "id": "avalanche",
+      "address": "0x5029C0EFf6C34351a0CEc334542cDb22c7928f78"
+    },
+    {
+      "id": "polygon",
+      "address": "0x6f015F16De9fC8791b234eF68D486d2bF203FBA8"
+    },
+    {
+      "id": "fantom",
+      "address": "0x304acf330bbE08d1e512eefaa92F6a57871fD895"
+    },
+    {
+      "id": "moonbeam",
+      "address": "0x4F4495243837681061C4743b74B3eEdf548D56A5"
+    }
+  ],
+  "testnet": [
+    {
+      "id": "ethereum",
+      "address": "0xBC6fcce7c5487d43830a219CA6E7B83238B41e71"
+    },
+    {
+      "id": "avalanche",
+      "address": "0xC249632c2D40b9001FE907806902f63038B737Ab"
+    },
+    {
+      "id": "polygon",
+      "address": "0xBF62ef1486468a6bd26Dd669C06db43dEd5B849B"
+    },
+    {
+      "id": "fantom",
+      "address": "0x97837985Ec0494E7b9C71f5D3f9250188477ae14"
+    },
+    {
+      "id": "moonbeam",
+      "address": "0x5769D84DD62a6fD969856c75c7D321b84d455929"
+    }
+  ]
+}

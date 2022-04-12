@@ -6,8 +6,8 @@ export default ({ language, children }) => {
       language={language}
       className="code-block my-2"
     >
-      {typeof children === 'string' ?
-        children.replace(/\\/g, '\\\n')
+      {typeof children === "string" ?
+        children.replace(/\\/g, "\\\n")
         :
         children
       }

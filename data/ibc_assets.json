@@ -1,0 +1,132 @@
+{
+  "mainnet": [
+    {
+      "id": "uaxl",
+      "name": "Axelar",
+      "symbol": "AXL",
+      "image": "/images/assets/axl.png"
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 0.005
+    },
+    {
+      "id": "uusdc",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "image": "/images/assets/usdc.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uatom",
+      "name": "Cosmos",
+      "symbol": "ATOM",
+      "image": "/images/assets/atom.png",
+      "transfer_fee": 0.02
+    },
+    {
+      "id": "frax-wei",
+      "name": "Frax",
+      "symbol": "FRAX",
+      "image": "/images/assets/frax.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "dai-wei",
+      "name": "Dai",
+      "symbol": "DAI",
+      "image": "/images/assets/dai.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uusdt",
+      "name": "Tether",
+      "symbol": "USDT",
+      "image": "/images/assets/usdt.png",
+      "transfer_fee": 0.5
+    }
+  ],
+  "testnet": [
+    {
+      "id": "uaxl",
+      "name": "Axelar",
+      "symbol": "AXL",
+      "image": "/images/assets/axl.png"
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 0.005
+    },
+    {
+      "id": "uusdc",
+      "name": "Fake USD Coin",
+      "symbol": "FakeUSDC",
+      "image": "/images/assets/usdc.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uatom",
+      "name": "Cosmos",
+      "symbol": "ATOM",
+      "image": "/images/assets/atom.png",
+      "transfer_fee": 0.02
+    },
+    {
+      "id": "uausdc",
+      "name": "USD Coin",
+      "symbol": "aUSDC",
+      "image": "/images/assets/usdc.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "weth-wei",
+      "name": "Wrapped Ether",
+      "symbol": "WETH",
+      "image": "/images/assets/eth.png"
+    },
+    {
+      "id": "wavax-wei",
+      "name": "Wrapped AVAX",
+      "symbol": "WAVAX",
+      "image": "/images/assets/avax.png"
+    },
+    {
+      "id": "wmatic-wei",
+      "name": "Wrapped MATIC",
+      "symbol": "WMATIC",
+      "image": "/images/assets/matic.png"
+    },
+    {
+      "id": "wftm-wei",
+      "name": "Wrapped FTM",
+      "symbol": "WFTM",
+      "image": "/images/assets/ftm.png"
+    },
+    {
+      "id": "wdev-wei",
+      "name": "Wrapped DEV",
+      "symbol": "WDEV",
+      "image": "/images/assets/glmr.png"
+    }
+  ]
+}

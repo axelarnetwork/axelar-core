@@ -49,6 +49,18 @@ td {
   }
 }
 
+.items-center {
+  h1,h2,h3 {
+    margin-top: unset;
+  }
+}
+
+div {
+  h2 {
+    border-bottom-width: 0 !important;
+  }
+}
+
 .callout {
   div {
     max-width: 95%;
