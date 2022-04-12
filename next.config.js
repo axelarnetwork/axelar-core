@@ -6,10 +6,6 @@ const withNextra = require("nextra")({
 });
 
 module.exports = withNextra({
-  i18n: {
-    locales: ["en-US"],
-    defaultLocale: "en-US",
-  },
   redirects: () => {
     return [
       {
@@ -48,18 +44,18 @@ module.exports = withNextra({
         statusCode: 301,
       },
       {
-        source: "/releases/:path",
-        destination: "/resources/:path",
+        source: "/releases/:slug*",
+        destination: "/resources/:slug*",
         statusCode: 301,
       },
       {
-        source: "/user/:path",
-        destination: "/resources/:path",
+        source: "/user/:slug*",
+        destination: "/resources/:slug*",
         statusCode: 301,
       },
       {
-        source: "/roles/:path",
-        destination: "/:path",
+        source: "/roles/:slug*",
+        destination: "/:slug*",
         statusCode: 301,
       },
     ];

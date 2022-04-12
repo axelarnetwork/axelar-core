@@ -257,7 +257,4 @@ export default {
       </div>
     </div>
   ),
-  i18n: [
-    { locale: "en-US", text: "English" },
-  ],
 };
