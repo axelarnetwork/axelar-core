@@ -62,6 +62,31 @@ module.exports = withNextra({
         destination: "/validator/troubleshoot/startup",
         statusCode: 302,
       },
+      {
+        source: "/resources/mainnet-releases",
+        destination: "/resources/mainnet",
+        statusCode: 301,
+      },
+      {
+        source: "/resources/testnet-releases",
+        destination: "/resources/testnet",
+        statusCode: 301,
+      },
+      {
+        source: "/releases(.*)",
+        destination: "/resources$1",
+        statusCode: 301,
+      },
+      {
+        source: "/roles(.*)",
+        destination: "$1",
+        statusCode: 301,
+      },
+      {
+        source: "/user(.*)",
+        destination: "/resources$1",
+        statusCode: 301,
+      }
     ];
   },
 });
