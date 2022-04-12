@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { BsFileEarmarkTextFill, BsStack } from "react-icons/bs";
 
@@ -70,13 +71,11 @@ export default () => {
             {element}
           </a>
           :
-          <a
-            key={key}
-            href={item.url}
-            className="no-underline text-black dark:text-white"
-          >
-            {element}
-          </a>
+          <Link key={key} href={item.url}>
+            <a className="no-underline text-black dark:text-white">
+              {element}
+            </a>
+          </Link>
       })}
     </div>
   );

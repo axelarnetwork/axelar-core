@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { RiCodeFill, RiRadarFill, RiSettings4Fill, RiServerFill } from "react-icons/ri";
 import { HiArrowNarrowRight } from "react-icons/hi";
 
@@ -57,14 +58,12 @@ export default () => {
               <HiArrowNarrowRight size={16} className="mt-0.5" />
             </a>
             :
-            <a
-              href={item.url}
-              target="_blank"
-              className="no-underline flex items-center space-x-1.5"
-            >
-              <span>Documentation</span>
-              <HiArrowNarrowRight size={16} className="mt-0.5" />
-            </a>
+            <Link href={item.url}>
+              <a className="no-underline flex items-center space-x-1.5">
+                <span>Documentation</span>
+                <HiArrowNarrowRight size={16} className="mt-0.5" />
+              </a>
+            </Link>
 
           const element = (
             <div className="card-index h-full flex flex-col justify-between">
@@ -92,13 +91,11 @@ export default () => {
               {element}
             </a>
             :
-            <a
-              key={key}
-              href={item.url}
-              className="no-underline text-black dark:text-white"
-            >
-              {element}
-            </a>
+            <Link key={key} href={item.url}>
+              <a className="no-underline text-black dark:text-white">
+                {element}
+              </a>
+            </Link>
         })}
       </div>
     </>
