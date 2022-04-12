@@ -9,7 +9,7 @@ import Button from '../components/button'
 
 ## Example: Hello-world
 
-`axelar-local-dev-sample` is a complete, working example illustrating the build-deploy process. _[TODO Under construction!]_
+`axelar-local-dev-sample` is a complete, working example illustrating the build-deploy process.
 
 1. Run the dapp in the local development environment.
 2. Run the same dapp in the live testnet, interacting with contracts already deployed on Ethereum and Avalanche testnets.
@@ -53,7 +53,7 @@ See `axelar-local-dev-sample` for a working example:
 
 The AxelarJS SDK is a `npm` dependency that empowers developers to leverage microservices or IBC relayers provided by Axelar.
 
-Not all dapps need the SDK. _[TODO review the following.]_ Your dapp might benefit from the SDK in the following use cases:
+Not all dapps need the SDK. Your dapp might benefit from the SDK in the following use cases:
 
 1. **_Microservices._** Example: Get a deposit address for cross-chain token transfer dapps like [Satellite](/resources/satellite).
 2. **_Relayers._** Example: Connect EVM chains to Cosmos chains such as Terra.
