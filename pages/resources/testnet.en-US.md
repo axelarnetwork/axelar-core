@@ -2,21 +2,21 @@
 
 import MarkdownPath from '../../components/markdown'
 import EVMAddresses from '../../components/evm/addresses'
+import IBCChannels from '../../components/ibc/channels'
 
-| Variable                           | Value         |
-| ---------------------------------- | ------------- |
-| `axelar-core` version              | `v0.16.2`     |
-| `tofnd` version                    | `v0.8.2`      |
-| Terra -> Axelar IBC channel id     | `channel-78`  |
-| Axelar -> Terra IBC channel id     | `channel-0`   |
-| Osmosis -> Axelar IBC channel id   | `channel-184` |
-| Axelar -> Osmosis IBC channel id   | `channel-3`   |
-| Cosmoshub -> Axelar IBC channel id | `channel-238` |
-| Axelar -> Cosmoshub IBC channel id | `channel-4`   |
+| Variable              | Value         |
+| ----------------------| ------------- |
+| `axelar-core` version | `v0.16.2`     |
+| `tofnd` version       | `v0.8.2`      |
 
 <div className="space-y-1 mt-4">
   ## EVM Chains
   <EVMAddresses environment="testnet" />
+</div>
+
+<div className="space-y-1 mt-4">
+  ## IBC Channels
+  <IBCChannels environment="testnet" />
 </div>
 
 ## Cross-chain transfer fee

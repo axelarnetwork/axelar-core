@@ -1,0 +1,66 @@
+{
+  "mainnet": [
+    {
+      "from": "terra",
+      "to": "axelarnet",
+      "channel_id": "channel-19"
+    },
+    {
+      "from": "axelarnet",
+      "to": "terra",
+      "channel_id": "channel-0"
+    },
+    {
+      "from": "osmosis",
+      "to": "axelarnet",
+      "channel_id": "channel-208"
+    },
+    {
+      "from": "axelarnet",
+      "to": "osmosis",
+      "channel_id": "channel-3"
+    },
+    {
+      "from": "cosmoshub",
+      "to": "axelarnet",
+      "channel_id": "channel-293"
+    },
+    {
+      "from": "axelarnet",
+      "to": "cosmoshub",
+      "channel_id": "channel-2"
+    }
+  ],
+  "testnet": [
+    {
+      "from": "terra",
+      "to": "axelarnet",
+      "channel_id": "channel-78"
+    },
+    {
+      "from": "axelarnet",
+      "to": "terra",
+      "channel_id": "channel-0"
+    },
+    {
+      "from": "osmosis",
+      "to": "axelarnet",
+      "channel_id": "channel-184"
+    },
+    {
+      "from": "axelarnet",
+      "to": "osmosis",
+      "channel_id": "channel-3"
+    },
+    {
+      "from": "cosmoshub",
+      "to": "axelarnet",
+      "channel_id": "channel-238"
+    },
+    {
+      "from": "axelarnet",
+      "to": "cosmoshub",
+      "channel_id": "channel-4"
+    }
+  ]
+}

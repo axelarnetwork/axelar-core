@@ -16,6 +16,7 @@
     "@reach/skip-nav": "^0.16.0",
     "focus-visible": "^5.1.0",
     "intersection-observer": "^0.10.0",
+    "lodash": "^4.17.21",
     "markdown-to-jsx": "^6.11.4",
     "next": "^12.1.0",
     "nextra": "2.0.0-alpha.44",

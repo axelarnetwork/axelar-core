@@ -1,0 +1,46 @@
+{
+  "mainnet": [
+    {
+      "id": "axelarnet",
+      "name": "Axelar",
+      "image": "/images/chains/axelar.png"
+    },
+    {
+      "id": "terra",
+      "name": "Terra",
+      "image": "/images/chains/terra.png"
+    },
+    {
+      "id": "cosmoshub",
+      "name": "Cosmos",
+      "image": "/images/chains/cosmos.png"
+    },
+    {
+      "id": "osmosis",
+      "name": "Osmosis",
+      "image": "/images/chains/osmosis.png"
+    }
+  ],
+  "testnet": [
+    {
+      "id": "axelarnet",
+      "name": "Axelar",
+      "image": "/images/chains/axelar.png"
+    },
+    {
+      "id": "terra",
+      "name": "Terra",
+      "image": "/images/chains/terra.png"
+    },
+    {
+      "id": "cosmoshub",
+      "name": "Cosmos",
+      "image": "/images/chains/cosmos.png"
+    },
+    {
+      "id": "osmosis",
+      "name": "Osmosis",
+      "image": "/images/chains/osmosis.png"
+    }
+  ]
+}

@@ -16,7 +16,7 @@ export default ({ environment = "mainnet" }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center space-x-2">
+      <div className="flex flex-wrap items-center justify-center space-x-2">
         <Dropdown
           environment={environment}
           dataName="evm_chains"
