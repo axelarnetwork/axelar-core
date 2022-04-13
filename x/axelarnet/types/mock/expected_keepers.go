@@ -668,6 +668,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chain exported.Chain, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
 // 			},
+// 			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain exported.Chain) bool {
+// 				panic("mock out the IsChainActivated method")
+// 			},
 // 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
@@ -713,6 +716,9 @@ type NexusMock struct {
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chain exported.Chain, denom string) bool
+
+	// IsChainActivatedFunc mocks the IsChainActivated method.
+	IsChainActivatedFunc func(ctx cosmossdktypes.Context, chain exported.Chain) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
@@ -795,6 +801,13 @@ type NexusMock struct {
 			// Denom is the denom argument value.
 			Denom string
 		}
+		// IsChainActivated holds details about calls to the IsChainActivated method.
+		IsChainActivated []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain exported.Chain
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -837,6 +850,7 @@ type NexusMock struct {
 	lockGetTransferFees        sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
 	lockIsAssetRegistered      sync.RWMutex
+	lockIsChainActivated       sync.RWMutex
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
@@ -1163,6 +1177,41 @@ func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 	mock.lockIsAssetRegistered.RLock()
 	calls = mock.calls.IsAssetRegistered
 	mock.lockIsAssetRegistered.RUnlock()
+	return calls
+}
+
+// IsChainActivated calls IsChainActivatedFunc.
+func (mock *NexusMock) IsChainActivated(ctx cosmossdktypes.Context, chain exported.Chain) bool {
+	if mock.IsChainActivatedFunc == nil {
+		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockIsChainActivated.Lock()
+	mock.calls.IsChainActivated = append(mock.calls.IsChainActivated, callInfo)
+	mock.lockIsChainActivated.Unlock()
+	return mock.IsChainActivatedFunc(ctx, chain)
+}
+
+// IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
+// Check the length with:
+//     len(mockedNexus.IsChainActivatedCalls())
+func (mock *NexusMock) IsChainActivatedCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain exported.Chain
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain exported.Chain
+	}
+	mock.lockIsChainActivated.RLock()
+	calls = mock.calls.IsChainActivated
+	mock.lockIsChainActivated.RUnlock()
 	return calls
 }
 
