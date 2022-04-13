@@ -42,4 +42,4 @@ KEYRING_PASSWORD="pw-1" ./scripts/node.sh -n testnet -a v0.17.0
 KEYRING_PASSWORD="pw-1" TOFND_PASSWORD="pw-2" ./scripts/validator-tools-host.sh -a v0.17.0 -n testnet
 ```
 
-The join scripts should automatically pull the new binary from [Testnet resources](https://docs.axelar.dev/resources/testnet). Or you can add the flag `-a v0.17.0` to force a specific version.
+The join scripts should automatically pull the new binary from [Testnet resources](../testnet). Or you can add the flag `-a v0.17.0` to force a specific version.

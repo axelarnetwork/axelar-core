@@ -298,6 +298,76 @@
           "symbol": "axlUSDT"
         }
       ]
+    },
+    {
+      "id": "ungm",
+      "name": "e-Money Staking Coin",
+      "symbol": "NGM",
+      "image": "/images/assets/ngm.png",
+      "transfer_fee": 0.8,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x08fe7A0db575c2a08d76EEcA71763E48C6e60F45",
+          "decimals": 6,
+          "transfer_fee": 16
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x5A44422beaAA38031f57720d88697105be6970BE",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0xC8d5A4E04387EBdaa2c0FBB6858F246116431e9f",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0xE549Caf5f0c3e80b8738CB03ae4fBb4c15b0DD86",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x08fe7A0db575c2a08d76EEcA71763E48C6e60F45",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "ueeur",
+      "name": "e-Money EUR",
+      "symbol": "EEUR",
+      "image": "/images/assets/eeur.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xDd26a5c8Ae5b60Bb14aEcED892A052CA48A2e915",
+          "decimals": 6,
+          "transfer_fee": 20
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xE1d70994Be12b73E76889412b284A8F19b0DE56d",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0x8CD51880C0a5dbde37dDdFce8d5B772Fc9007495",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0x4000aB030f3615d1616b4C71E7129BbE3f1f9C55",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0xDd26a5c8Ae5b60Bb14aEcED892A052CA48A2e915",
+          "decimals": 6
+        }
+      ]
     }
   ],
   "testnet": [

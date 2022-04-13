@@ -19,6 +19,11 @@
       "id": "osmosis",
       "name": "Osmosis",
       "image": "/images/chains/osmosis.png"
+    },
+    {
+      "id": "emoney",
+      "name": "e-Money",
+      "image": "/images/chains/emoney.jpg"
     }
   ],
   "testnet": [

@@ -4,10 +4,10 @@ import MarkdownPath from '../../components/markdown'
 import EVMAddresses from '../../components/evm/addresses'
 import IBCChannels from '../../components/ibc/channels'
 
-| Variable              | Value         |
-| --------------------- | ------------- |
-| `axelar-core` version | `v0.16.2`     |
-| `tofnd` version       | `v0.8.2`      |
+| Variable              | Value     |
+| --------------------- | --------- |
+| `axelar-core` version | `v0.16.2` |
+| `tofnd` version       | `v0.8.2`  |
 
 <div className="space-y-1 mt-4">
   ## EVM Chains
@@ -26,15 +26,17 @@ This fee only depends on the source/destination chain and the asset and does NOT
 When transferring an asset X from chain Y to chain Z, the transfer fee is the sum of per-chain fee for that asset.
 For e.g. a transfer of 1000 UST from Terra to Avalanche will have a fee of 1.5 UST (= 0.5 UST for Terra + 1.0 UST for Avalanche), and so the recipient will get 998.5 UST.
 
-| Asset symbol | Ethereum | non-Ethereum EVM | Cosmos Chains  | Decimals  | Unit     |
-| ------------ | -------- | ---------------- | -------------- | --------- | -------- |
-| UST          | 20 UST   | 1 UST            | 0.5 UST        | 6         | uusd     |
-| LUNA         | 0.2 LUNA | 0.01 LUNA        | 0.005 LUNA     | 6         | uluna    |
-| ATOM         | 0.7 ATOM | 0.04 ATOM        | 0.02 ATOM      | 6         | uatom    |
-| USDC         | 20 USDC  | 1 USDC           | 0.5 USDC       | 6         | uusdc    |
-| FRAX         | 20 FRAX  | 1 FRAX           | 0.5 FRAX       | 18        | frax-wei |
-| DAI          | 20 DAI   | 1 DAI            | 0.5 DAI        | 18        | dai-wei  |
-| USDT         | 20 USDT  | 1 USDT           | 0.5 USDT       | 6         | uusdt    |
+| Asset symbol | Ethereum | non-Ethereum EVM | Cosmos Chains | Decimals | Unit     |
+| ------------ | -------- | ---------------- | ------------- | -------- | -------- |
+| UST          | 20 UST   | 1 UST            | 0.5 UST       | 6        | uusd     |
+| LUNA         | 0.2 LUNA | 0.01 LUNA        | 0.005 LUNA    | 6        | uluna    |
+| ATOM         | 0.7 ATOM | 0.04 ATOM        | 0.02 ATOM     | 6        | uatom    |
+| USDC         | 20 USDC  | 1 USDC           | 0.5 USDC      | 6        | uusdc    |
+| FRAX         | 20 FRAX  | 1 FRAX           | 0.5 FRAX      | 18       | frax-wei |
+| DAI          | 20 DAI   | 1 DAI            | 0.5 DAI       | 18       | dai-wei  |
+| USDT         | 20 USDT  | 1 USDT           | 0.5 USDT      | 6        | uusdt    |
+| NGM          | 16 NGM   | 0.8 NGM          | 0.4 NGM       | 6        | ungm     |
+| EEUR         | 20 EEUR  | 1 EEUR           | 0.5 EEUR      | 6        | eeur     |
 
 The current transfer fee can also be queried on the network with
 
