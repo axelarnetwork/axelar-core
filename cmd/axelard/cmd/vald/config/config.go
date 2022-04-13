@@ -24,7 +24,7 @@ func DefaultValdConfig() ValdConfig {
 	return ValdConfig{
 		TssConfig:       tss.DefaultConfig(),
 		BroadcastConfig: DefaultBroadcastConfig(),
-		BatchSizeLimit:  15,
+		BatchSizeLimit:  250,
 		BatchThreshold:  3,
 		EVMConfig:       evm.DefaultConfig(),
 	}
