@@ -24,7 +24,7 @@ export default ({ environment = "mainnet" }) => {
   return (
     <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {pairs.map((p, key) => (
-        <div key={key} className="shadow-lg rounded-xl flex items-center justify-between space-x-2 p-3">
+        <div key={key} className="border dark:border-gray-700 rounded-xl flex items-center justify-between space-x-2 p-3">
           <div className="flex flex-col items-center space-y-1">
             <Image
               src={p.chain_data?.image}

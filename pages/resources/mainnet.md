@@ -1,7 +1,8 @@
 # Mainnet
 
 import MarkdownPath from '../../components/markdown'
-import EVMAddresses from '../../components/evm/addresses'
+import EVMChains from '../../components/evm/chains'
+import EVMAssets from '../../components/evm/assets'
 import IBCChannels from '../../components/ibc/channels'
 
 | Variable              | Value     |
@@ -11,7 +12,12 @@ import IBCChannels from '../../components/ibc/channels'
 
 <div className="space-y-1 mt-4">
   ## EVM Chains
-  <EVMAddresses environment="mainnet" />
+  <EVMChains environment="mainnet" />
+</div>
+
+<div className="space-y-1 mt-4">
+  ## Assets
+  <EVMAssets environment="mainnet" />
 </div>
 
 <div className="space-y-1 mt-4">

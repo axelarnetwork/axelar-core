@@ -79,7 +79,7 @@ export default ({ environment = "mainnet" }) => {
                       href={rpc_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="no-underline text-blue-500 dark:text-blue-300 font-semibold"
+                      className="no-underline text-blue-500 dark:text-white font-semibold"
                     >
                       {utils.ellipse(rpc_url, 18)}
                     </a>
@@ -99,7 +99,7 @@ export default ({ environment = "mainnet" }) => {
                       href={explorer_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="no-underline text-blue-500 dark:text-blue-300 font-semibold"
+                      className="no-underline text-blue-500 dark:text-white font-semibold"
                     >
                       {utils.ellipse(explorer_url, 18)}
                     </a>

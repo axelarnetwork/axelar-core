@@ -114,7 +114,7 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
           }
         }
       }}
-      className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center py-1.5 px-2"
+      className="min-w-max bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center py-1.5 px-2"
     >
       <Image
         src="/images/wallets/metamask.png"
