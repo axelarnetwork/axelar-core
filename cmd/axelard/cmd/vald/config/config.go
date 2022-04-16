@@ -13,9 +13,10 @@ import (
 type ValdConfig struct {
 	tss.TssConfig      `mapstructure:",squash"`
 	BroadcastConfig    `mapstructure:",squash"`
-	BatchSizeLimit     int   `mapstructure:"max_batch_size"`
-	BatchThreshold     int   `mapstructure:"batch_threshold"`
-	MaxOutOfSyncHeight int64 `mapstructure:"max_out_of_sync_height"`
+	BatchSizeLimit     int           `mapstructure:"max_batch_size"`
+	BatchThreshold     int           `mapstructure:"batch_threshold"`
+	MaxOutOfSyncHeight int64         `mapstructure:"max_out_of_sync_height"`
+	MaxBlockTime       time.Duration `mapstructure:"max_block_time"`
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -28,6 +29,7 @@ func DefaultValdConfig() ValdConfig {
 		BatchSizeLimit:     250,
 		BatchThreshold:     3,
 		MaxOutOfSyncHeight: 50, // Max voting/sign/heartbeats periods are 50 blocks
+		MaxBlockTime:       15 * time.Second,
 		EVMConfig:          evm.DefaultConfig(),
 	}
 }

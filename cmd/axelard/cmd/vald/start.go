@@ -176,7 +176,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	panic(fmt.Errorf("max sync config %d", axelarCfg.MaxOutOfSyncHeight))
 	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
 
 	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
@@ -191,14 +190,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 		return cl, nil
 	})
-	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(axelarCfg, stateStore, robustClient, logger)
-	if err != nil {
-		panic(err)
-	}
-
-	eventBus := createEventBus(robustClient, startBlock, logger)
-
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
@@ -208,6 +199,13 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := waitTillNetworkSync(axelarCfg, stateStore, robustClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	eventBus := createEventBus(robustClient, startBlock, logger)
 	var subscriptions []tmEvents.FilteredSubscriber
 	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
 		return tmEvents.MustSubscribeWithAttributes(eventBus,
@@ -321,44 +319,50 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
-// Get the block height to start listening for TM events from.
-// Checks that the node is not too out of sync from the network.
-// If state.json is not stale, uses that as starting height.
-// Otherwise, starts from the node height.
-func getStartBlock(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
-	startBlock, err := stateStore.GetState()
+// Wait until the node has synced with the network
+// and then return the block height to start listening to TM events from
+func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.BlockInfoClient, logger log.Logger) (int64, error) {
+	cachedHeight, err := stateStore.GetState()
 	if err != nil {
-		logger.Info(err.Error())
-		startBlock = 0
+		logger.Info(fmt.Sprintf("failed to retrieve the cached block height, using the latest: %s", err.Error()))
+		cachedHeight = 0
 	} else {
-		startBlock++ // Skip the block that might have already been executed
+		logger.Info(fmt.Sprintf("retrieved cached block height %d", cachedHeight))
+		cachedHeight++ // Skip the block that might have already been executed
 	}
 
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	nodeHeight, err := tmClient.LatestNodeBlockHeight(rpcCtx)
+	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
 	if err != nil {
 		return 0, err
 	}
 
-	networkHeight, err := tmClient.LatestBlockHeight(rpcCtx)
-	if err != nil {
-		return 0, err
+	// cached height must not be more than one block ahead of the node
+	if cachedHeight > syncInfo.LatestBlockHeight+1 {
+		return 0, fmt.Errorf("cached block height %d is ahead of the node height %d", cachedHeight, syncInfo.LatestBlockHeight)
 	}
 
-	if networkHeight-nodeHeight > cfg.MaxOutOfSyncHeight {
-		return 0, fmt.Errorf("node height %d is old compared to network block height %d", nodeHeight, networkHeight)
+	// If the block height is older than the allowed time, then wait for the node to sync
+	for syncInfo.LatestBlockTime.Add(cfg.MaxBlockTime).Before(time.Now()) {
+		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		time.Sleep(cfg.MaxBlockTime)
+
+		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	// start block height must not be more than one block ahead of the network
-	if startBlock > networkHeight+1 {
-		return 0, fmt.Errorf("start block height %d is ahead of the network block height %d", startBlock, networkHeight)
-	}
+	nodeHeight := syncInfo.LatestBlockHeight
+	startBlock := cachedHeight
 
-	if networkHeight-startBlock > cfg.MaxOutOfSyncHeight {
-		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the node height %d instead", startBlock, nodeHeight))
-		startBlock = nodeHeight
+	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
+
+	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxOutOfSyncHeight {
+		logger.Info(fmt.Sprintf("cached block height %d is too old, starting from the latest block", startBlock))
+		startBlock = 0
 	}
 
 	return startBlock, nil
