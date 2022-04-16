@@ -322,6 +322,14 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 // Wait until the node has synced with the network
 // and then return the block height to start listening to TM events from
 func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.BlockInfoClient, logger log.Logger) (int64, error) {
+	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
+	if err != nil {
+		return 0, err
+	}
+
 	cachedHeight, err := stateStore.GetState()
 	if err != nil {
 		logger.Info(fmt.Sprintf("failed to retrieve the cached block height, using the latest: %s", err.Error()))
@@ -329,14 +337,6 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 	} else {
 		logger.Info(fmt.Sprintf("retrieved cached block height %d", cachedHeight))
 		cachedHeight++ // Skip the block that might have already been executed
-	}
-
-	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
-	if err != nil {
-		return 0, err
 	}
 
 	// cached height must not be more than one block ahead of the node
