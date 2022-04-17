@@ -1,0 +1,16 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "combine": "swagger-combine ./config.json -o static/swagger/swagger.yaml -f yaml --continueOnConflictingPaths true --includeDefinitions true",
+    "convert": "swagger2openapi static/swagger/swagger.yaml --outfile static/openapi/openapi.yaml --yaml",
+    "build": "redoc-cli bundle static/openapi/openapi.yaml --output ./static/openapi/index.html"
+  },
+  "dependencies": {
+    "redoc-cli": "^0.9.12",
+    "swagger-combine": "^1.3.0",
+    "swagger2openapi": "^7.0.8"
+  }
+}
