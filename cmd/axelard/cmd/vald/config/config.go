@@ -16,7 +16,7 @@ type ValdConfig struct {
 	BatchSizeLimit        int           `mapstructure:"max_batch_size"`
 	BatchThreshold        int           `mapstructure:"batch_threshold"`
 	MaxBlocksBehindLatest int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid
-	BlockTimeout          time.Duration `mapstructure:"block_timeout"`            // The amount of time a block is considered as latest by vald. Blocks with a timestamp older than this aren't considered as latest
+	MaxLatestBlockAge     time.Duration `mapstructure:"max_latest_block_age"`     // The duration a block is considered as latest by vald. Blocks with a timestamp older by this amount aren't considered as latest
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -29,7 +29,7 @@ func DefaultValdConfig() ValdConfig {
 		BatchSizeLimit:        250,
 		BatchThreshold:        3,
 		MaxBlocksBehindLatest: 50, // Max voting/sign/heartbeats periods are 50 blocks
-		BlockTimeout:          15 * time.Second,
+		MaxLatestBlockAge:     15 * time.Second,
 		EVMConfig:             evm.DefaultConfig(),
 	}
 }

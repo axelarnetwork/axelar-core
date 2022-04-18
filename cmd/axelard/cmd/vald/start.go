@@ -345,9 +345,9 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 	}
 
 	// If the block height is older than the allowed time, then wait for the node to sync
-	for syncInfo.LatestBlockTime.Add(cfg.BlockTimeout).Before(time.Now()) {
+	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
 		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
-		time.Sleep(cfg.BlockTimeout)
+		time.Sleep(cfg.MaxLatestBlockAge)
 
 		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
 		if err != nil {
