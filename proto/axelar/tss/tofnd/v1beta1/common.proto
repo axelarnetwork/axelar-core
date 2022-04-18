@@ -1,0 +1,24 @@
+// File copied from golang tofnd with minor tweaks
+syntax = "proto3";
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
+
+import "gogoproto/gogo.proto";
+
+package axelar.tss.tofnd.v1beta1;
+
+// Key presence check types
+message KeyPresenceRequest { string key_uid = 1; }
+
+message KeyPresenceResponse {
+  enum Response {
+    option (gogoproto.goproto_enum_prefix) = false;
+
+    RESPONSE_UNSPECIFIED = 0;
+    RESPONSE_PRESENT = 1;
+    RESPONSE_ABSENT = 2;
+    RESPONSE_FAIL = 3;
+  }
+
+  Response response = 1;
+}

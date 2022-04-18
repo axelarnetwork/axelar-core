@@ -1,0 +1,61 @@
+syntax = "proto3";
+package axelar.tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
+
+message KeygenVoteData {
+  bytes pub_key = 1;
+  bytes group_recovery_info = 2;
+}
+
+// KeyInfo holds information about a key
+message KeyInfo {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  tss.exported.v1beta1.KeyRole key_role = 2;
+  tss.exported.v1beta1.KeyType key_type = 3;
+}
+
+message MultisigInfo {
+  message Info {
+    bytes participant = 1
+        [ (gogoproto.casttype) =
+              "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+    repeated bytes data = 2;
+  }
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  int64 timeout = 2;
+  int64 target_num = 3;
+  repeated Info infos = 4;
+}
+
+message KeyRecoveryInfo {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  bytes public = 2;
+  map<string, bytes> private = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ExternalKeys {
+  string chain = 1;
+  repeated string key_ids = 2 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message ValidatorStatus {
+  bytes validator = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  uint64 suspended_until = 2;
+}

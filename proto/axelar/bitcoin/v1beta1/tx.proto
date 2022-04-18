@@ -1,0 +1,101 @@
+syntax = "proto3";
+package axelar.bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "axelar/bitcoin/v1beta1/types.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// MsgConfirmOutpoint represents a message to trigger the confirmation of a
+// Bitcoin outpoint
+message ConfirmOutpointRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  OutPointInfo out_point_info = 2 [ (gogoproto.nullable) = false ];
+}
+
+message ConfirmOutpointResponse {};
+
+// MsgLink represents a message to link a cross-chain address to a Bitcoin
+// address
+message LinkRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string recipient_addr = 2;
+  string recipient_chain = 3;
+}
+
+message LinkResponse { string deposit_addr = 2; };
+
+// CreatePendingTransfersTxRequest represents a message to trigger the creation
+// of a secondary key consolidation transaction
+message CreatePendingTransfersTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  int64 master_key_amount = 3
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+}
+
+message CreatePendingTransfersTxResponse {};
+
+// MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
+message VoteConfirmOutpointRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
+  string out_point = 3;
+  bool confirmed = 4;
+}
+
+message VoteConfirmOutpointResponse { string status = 1; };
+
+message SubmitExternalSignatureRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  bytes signature = 3;
+  bytes sig_hash = 4;
+};
+
+message SubmitExternalSignatureResponse {};
+
+message CreateMasterTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  int64 secondary_key_amount = 3
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+}
+
+message CreateRescueTxResponse {}
+
+message CreateRescueTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message CreateMasterTxResponse {}
+
+message SignTxRequest {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bitcoin.v1beta1.TxType tx_type = 2;
+}
+
+message SignTxResponse { int64 position = 1; }

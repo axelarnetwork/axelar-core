@@ -1,0 +1,19 @@
+syntax = "proto3";
+package axelar.permission.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/crypto/multisig/keys.proto";
+import "axelar/permission/v1beta1/types.proto";
+import "axelar/permission/v1beta1/params.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// GenesisState represents the genesis state
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2;
+  repeated GovAccount gov_accounts = 3 [ (gogoproto.nullable) = false ];
+}

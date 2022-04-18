@@ -1,0 +1,20 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/reward/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the axelarnet Msg service.
+service MsgService {
+  rpc RefundMsg(RefundMsgRequest) returns (RefundMsgResponse) {
+    option (google.api.http) = {
+      post : "/reward/refund-message"
+      body : "*"
+    };
+  }
+}

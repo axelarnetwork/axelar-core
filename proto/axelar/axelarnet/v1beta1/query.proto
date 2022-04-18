@@ -1,0 +1,17 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/axelarnet/v1beta1/types.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "axelar/nexus/v1beta1/query.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message PendingIBCTransferCountRequest {}
+
+message PendingIBCTransferCountResponse {
+  map<string, uint32> transfers_by_chain = 1 [ (gogoproto.nullable) = false ];
+}

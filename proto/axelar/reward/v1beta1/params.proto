@@ -1,0 +1,20 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params represent the genesis parameters for the module
+message Params {
+  bytes external_chain_voting_inflation_rate = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  bytes tss_relative_inflation_rate = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
