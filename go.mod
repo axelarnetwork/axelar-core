@@ -164,3 +164,6 @@ replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.
 // Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 // TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+
+// Fix build warning on Mac OS 12: https://github.com/Zondax/hid/pull/5
+replace github.com/zondax/hid => github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
