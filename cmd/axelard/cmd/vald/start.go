@@ -336,11 +336,10 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 		cachedHeight = 0
 	} else {
 		logger.Info(fmt.Sprintf("retrieved cached block height %d", cachedHeight))
-		cachedHeight++ // Skip the block that might have already been processed
 	}
 
-	// cached height must not be more than one block ahead of the node
-	if cachedHeight > syncInfo.LatestBlockHeight+1 {
+	// cached height must not be larger than node height
+	if cachedHeight > syncInfo.LatestBlockHeight {
 		return 0, fmt.Errorf("cached block height %d is ahead of the node height %d", cachedHeight, syncInfo.LatestBlockHeight)
 	}
 
@@ -356,9 +355,13 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 	}
 
 	nodeHeight := syncInfo.LatestBlockHeight
-	startBlock := cachedHeight
-
 	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
+
+	startBlock := cachedHeight
+	if startBlock != 0 {
+		// The block at the cached height might have already been processed by vald, so skip it
+		startBlock++
+	}
 
 	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxBlocksBehindLatest {
 		logger.Info(fmt.Sprintf("cached block height %d is too old, starting from the latest block", startBlock))

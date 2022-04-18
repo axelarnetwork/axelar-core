@@ -15,8 +15,8 @@ type ValdConfig struct {
 	BroadcastConfig       `mapstructure:",squash"`
 	BatchSizeLimit        int           `mapstructure:"max_batch_size"`
 	BatchThreshold        int           `mapstructure:"batch_threshold"`
-	MaxBlocksBehindLatest int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid
-	MaxLatestBlockAge     time.Duration `mapstructure:"max_latest_block_age"`     // If a block is older than this, vald does not consider it to be the latest block
+	MaxBlocksBehindLatest int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid.
+	MaxLatestBlockAge     time.Duration `mapstructure:"max_latest_block_age"`     // If a block is older than this, vald does not consider it to be the latest block. This is supposed to be sufficiently larger than the block production time.
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
