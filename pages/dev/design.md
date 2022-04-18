@@ -1,3 +1,0 @@
-# Network Design
-
-Placeholder

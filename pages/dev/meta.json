@@ -1,6 +1,5 @@
 {
   "gmp": "General message passing",
   "cli": "CLI",
-  "design": "Network Design",
   "sdk": "AxelarJS SDK"
 }

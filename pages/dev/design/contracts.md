@@ -1,3 +1,0 @@
-# Gateway contracts
-
-Placeholder
