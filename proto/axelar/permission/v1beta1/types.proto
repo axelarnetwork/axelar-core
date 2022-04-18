@@ -1,0 +1,15 @@
+syntax = "proto3";
+package axelar.permission.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message GovAccount {
+  bytes address = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  permission.exported.v1beta1.Role role = 2;
+}

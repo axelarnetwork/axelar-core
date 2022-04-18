@@ -1,0 +1,17 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/reward/v1beta1/params.proto";
+import "axelar/reward/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// GenesisState represents the genesis state
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+
+  repeated Pool pools = 2 [ (gogoproto.nullable) = false ];
+}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package axelar.snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message RegisterProxyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes proxy_addr = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RegisterProxyResponse {}
+
+message DeactivateProxyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+}
+
+message DeactivateProxyResponse {}
