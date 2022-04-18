@@ -40,8 +40,8 @@ lint:
 .PHONY: goimports
 goimports:
 	@echo "running goimports"
-# exclude mocks and proto generated files
-	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | xargs goimports -local github.com/axelarnetwork/ -w
+# exclude mocks, statik and proto generated files
+	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | grep -v statik.go | xargs goimports -local github.com/axelarnetwork/ -w
 
 # Build the project with release flags
 .PHONY: build
