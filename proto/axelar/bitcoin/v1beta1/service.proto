@@ -1,0 +1,74 @@
+syntax = "proto3";
+package axelar.bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/bitcoin/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the bitcoin Msg service.
+service MsgService {
+  rpc Link(bitcoin.v1beta1.LinkRequest) returns (bitcoin.v1beta1.LinkResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/link/{recipient_chain}"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmOutpoint(bitcoin.v1beta1.ConfirmOutpointRequest)
+      returns (bitcoin.v1beta1.ConfirmOutpointResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/confirm"
+      body : "*"
+    };
+  }
+
+  rpc VoteConfirmOutpoint(bitcoin.v1beta1.VoteConfirmOutpointRequest)
+      returns (bitcoin.v1beta1.VoteConfirmOutpointResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc CreatePendingTransfersTx(bitcoin.v1beta1.CreatePendingTransfersTxRequest)
+      returns (bitcoin.v1beta1.CreatePendingTransfersTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/create-pending-transfers-tx"
+      body : "*"
+    };
+  }
+
+  rpc CreateMasterTx(bitcoin.v1beta1.CreateMasterTxRequest)
+      returns (bitcoin.v1beta1.CreateMasterTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/create-master-tx"
+      body : "*"
+    };
+  }
+
+  rpc CreateRescueTx(bitcoin.v1beta1.CreateRescueTxRequest)
+      returns (bitcoin.v1beta1.CreateRescueTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/create-rescue-tx"
+      body : "*"
+    };
+  }
+
+  rpc SignTx(bitcoin.v1beta1.SignTxRequest)
+      returns (bitcoin.v1beta1.SignTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/sign-tx"
+      body : "*"
+    };
+  }
+
+  rpc SubmitExternalSignature(bitcoin.v1beta1.SubmitExternalSignatureRequest)
+      returns (bitcoin.v1beta1.SubmitExternalSignatureResponse) {
+    option (google.api.http) = {
+      post : "/axelar/bitcoin/submit-external-signature"
+      body : "*"
+    };
+  }
+}

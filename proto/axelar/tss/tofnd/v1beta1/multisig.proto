@@ -1,0 +1,38 @@
+// File copied from golang tofnd with minor tweaks
+syntax = "proto3";
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
+import "axelar/tss/tofnd/v1beta1/common.proto"; // import key presence request/response
+
+package axelar.tss.tofnd.v1beta1;
+
+// service Multisig {
+//  rpc KeyPresence(KeyPresenceRequest) returns (KeyPresenceResponse);
+//  rpc Keygen(KeygenRequest) returns (KeygenResponse);
+//  rpc Sign(SignRequest) returns (SignResponse);
+//}
+
+message KeygenRequest {
+  string key_uid = 1;
+  string party_uid = 2; // used only for logging
+}
+
+message KeygenResponse {
+  oneof keygen_response {
+    bytes pub_key = 1; // SEC1-encoded compressed curve point
+    string error = 2;  // reply with an error message if keygen fails
+  }
+}
+
+message SignRequest {
+  string key_uid = 1;
+  bytes msg_to_sign = 2; // 32-byte pre-hashed message digest
+  string party_uid = 3;  // used only for logging
+}
+
+message SignResponse {
+  oneof sign_response {
+    bytes signature = 1; // ASN.1 DER-encoded ECDSA signature
+    string error = 2;    // reply with an error message if sign fails
+  }
+}

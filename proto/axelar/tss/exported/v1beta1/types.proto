@@ -1,0 +1,135 @@
+syntax = "proto3";
+package axelar.tss.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/exported";
+
+import "axelar/utils/v1beta1/threshold.proto";
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+// KeyRequirement defines requirements for keys
+message KeyRequirement {
+  KeyRole key_role = 1;
+  KeyType key_type = 2;
+  utils.v1beta1.Threshold min_keygen_threshold = 3
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold safety_threshold = 4 [ (gogoproto.nullable) = false ];
+  KeyShareDistributionPolicy key_share_distribution_policy = 5;
+  int64 max_total_share_count = 6;
+  int64 min_total_share_count = 7;
+  utils.v1beta1.Threshold keygen_voting_threshold = 8
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold sign_voting_threshold = 9
+      [ (gogoproto.nullable) = false ];
+  int64 keygen_timeout = 10;
+  int64 sign_timeout = 11;
+}
+
+enum KeyRole {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unknown" ];
+  KEY_ROLE_MASTER_KEY = 1 [ (gogoproto.enumvalue_customname) = "MasterKey" ];
+  KEY_ROLE_SECONDARY_KEY = 2
+      [ (gogoproto.enumvalue_customname) = "SecondaryKey" ];
+  KEY_ROLE_EXTERNAL_KEY = 3
+      [ (gogoproto.enumvalue_customname) = "ExternalKey" ];
+}
+
+enum KeyShareDistributionPolicy {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE = 1
+      [ (gogoproto.enumvalue_customname) = "WeightedByStake" ];
+  KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR = 2
+      [ (gogoproto.enumvalue_customname) = "OnePerValidator" ];
+}
+
+enum AckType {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ACK_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  ACK_TYPE_KEYGEN = 1 [ (gogoproto.enumvalue_customname) = "Keygen" ];
+  ACK_TYPE_SIGN = 2 [ (gogoproto.enumvalue_customname) = "Sign" ];
+}
+
+// SignInfo holds information about a sign request
+message SignInfo {
+  string key_id = 1
+      [ (gogoproto.customname) = "KeyID", (gogoproto.casttype) = "KeyID" ];
+  string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes msg = 3;
+  int64 snapshot_counter = 4;
+  string request_module = 5;
+  string metadata = 6;
+}
+
+enum SigStatus {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  SIG_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  SIG_STATUS_QUEUED = 1 [ (gogoproto.enumvalue_customname) = "Queued" ];
+  SIG_STATUS_SIGNING = 2 [ (gogoproto.enumvalue_customname) = "Signing" ];
+  SIG_STATUS_SIGNED = 3 [ (gogoproto.enumvalue_customname) = "Signed" ];
+  SIG_STATUS_ABORTED = 4 [ (gogoproto.enumvalue_customname) = "Aborted" ];
+  SIG_STATUS_INVALID = 5 [ (gogoproto.enumvalue_customname) = "Invalid" ];
+}
+
+enum KeyType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_TYPE_UNSPECIFIED = 0;
+  KEY_TYPE_NONE = 1 [ (gogoproto.enumvalue_customname) = "None" ];
+  KEY_TYPE_THRESHOLD = 2 [ (gogoproto.enumvalue_customname) = "Threshold" ];
+  KEY_TYPE_MULTISIG = 3 [ (gogoproto.enumvalue_customname) = "Multisig" ];
+}
+
+// PubKeyInfo holds a pubkey and a signature
+message SigKeyPair {
+  bytes pub_key = 1;
+  bytes signature = 2;
+}
+
+// Signature holds public key and ECDSA signature
+message Signature {
+  message SingleSig {
+    SigKeyPair sig_key_pair = 1 [ (gogoproto.nullable) = false ];
+  }
+  message MultiSig {
+    repeated SigKeyPair sig_key_pairs = 1 [ (gogoproto.nullable) = false ];
+  }
+  string sig_id = 1 [ (gogoproto.customname) = "SigID" ];
+  oneof sig {
+    SingleSig single_sig = 2;
+    MultiSig multi_sig = 3;
+  }
+  SigStatus sig_status = 4;
+}
+
+message Key {
+  message ECDSAKey { bytes value = 1; }
+  message MultisigKey {
+    repeated bytes values = 1;
+    int64 threshold = 2;
+  }
+  string id = 1
+      [ (gogoproto.customname) = "ID", (gogoproto.casttype) = "KeyID" ];
+  tss.exported.v1beta1.KeyRole role = 2;
+  tss.exported.v1beta1.KeyType type = 3;
+  oneof public_key {
+    ECDSAKey ecdsa_key = 4 [ (gogoproto.customname) = "ECDSAKey" ];
+    MultisigKey multisig_key = 5;
+  }
+  google.protobuf.Timestamp rotated_at = 6 [ (gogoproto.stdtime) = true ];
+  int64 rotation_count = 7;
+  string chain = 8;
+  int64 snapshot_counter = 9;
+}

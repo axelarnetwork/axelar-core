@@ -1,0 +1,41 @@
+syntax = "proto3";
+package axelar.permission.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/permission/v1beta1/tx.proto";
+import "axelar/permission/v1beta1/query.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the gov Msg service.
+service Msg {
+  rpc RegisterController(permission.v1beta1.RegisterControllerRequest)
+      returns (permission.v1beta1.RegisterControllerResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc DeregisterController(permission.v1beta1.DeregisterControllerRequest)
+      returns (permission.v1beta1.DeregisterControllerResponse) {
+    option (google.api.http) = {
+    };
+  }
+
+  rpc UpdateGovernanceKey(permission.v1beta1.UpdateGovernanceKeyRequest)
+      returns (permission.v1beta1.UpdateGovernanceKeyResponse) {
+    option (google.api.http) = {
+    };
+  }
+}
+
+// Query defines the gRPC querier service.
+service Query {
+  // GovernanceKey returns multisig governance key
+  rpc GovernanceKey(QueryGovernanceKeyRequest)
+      returns (QueryGovernanceKeyResponse) {
+    option (google.api.http).get = "/permission/v1beta1/governance_key";
+  }
+}
