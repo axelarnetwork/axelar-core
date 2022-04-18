@@ -16,7 +16,7 @@ type ValdConfig struct {
 	BatchSizeLimit     int           `mapstructure:"max_batch_size"`
 	BatchThreshold     int           `mapstructure:"batch_threshold"`
 	MaxOutOfSyncHeight int64         `mapstructure:"max_out_of_sync_height"`
-	MaxBlockTime       time.Duration `mapstructure:"max_block_time"`
+	MaxBlockTime       time.Duration `mapstructure:"max_block_time"` // The max time it can take to produce a block. This should be large enough so vald can deduce whether a node is out of sync
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
