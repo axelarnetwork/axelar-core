@@ -321,7 +321,7 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 // Wait until the node has synced with the network
 // and then return the block height to start listening to TM events from
-func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.BlockInfoClient, logger log.Logger) (int64, error) {
+func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
