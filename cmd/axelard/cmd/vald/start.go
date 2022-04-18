@@ -336,7 +336,7 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 		cachedHeight = 0
 	} else {
 		logger.Info(fmt.Sprintf("retrieved cached block height %d", cachedHeight))
-		cachedHeight++ // Skip the block that might have already been executed
+		cachedHeight++ // Skip the block that might have already been processed
 	}
 
 	// cached height must not be more than one block ahead of the node
