@@ -1,0 +1,31 @@
+syntax = "proto3";
+package axelar.snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/snapshot/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the snapshot Msg service.
+service MsgService {
+  // RegisterProxy defines a method for registering a proxy account that can act
+  // in a validator account's stead.
+  rpc RegisterProxy(RegisterProxyRequest) returns (RegisterProxyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/registerProxy/{proxy_addr}"
+      body : "*"
+    };
+  }
+
+  // DeactivateProxy defines a method for deregistering a proxy account.
+  rpc DeactivateProxy(DeactivateProxyRequest)
+      returns (DeactivateProxyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/deactivateProxy"
+      body : "*"
+    };
+  }
+}
