@@ -120,6 +120,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+
+	// Override with generated statik docs
+	_ "github.com/axelarnetwork/axelar-core/client/docs/statik"
 )
 
 // Name is the name of the application
@@ -582,7 +585,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	app.mm.RegisterInvariants(&crisisK)
-	app.mm.RegisterInvariants(&crisisK)
 
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)
@@ -748,7 +750,7 @@ func RegisterSwaggerAPI(rtr *mux.Router) {
 	}
 
 	staticServer := http.FileServer(statikFS)
-	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
+	rtr.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticServer))
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.

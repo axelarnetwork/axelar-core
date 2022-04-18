@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: axelarnetwork - gRPC Gateway docs
+  title: Axelar - gRPC Gateway docs
   description: A REST interface for state queries, legacy transactions
   version: 1.0.0
 paths:
@@ -8848,7 +8848,7 @@ paths:
         required: true
       tags:
         - MsgService
-  "/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}":
+  /tss/v1beta1/assignable_key:
     get:
       summary: |-
         AssignableKey returns true if there is no assigned key for the
@@ -9037,13 +9037,13 @@ paths:
                             }
       parameters:
         - name: chain
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
         - name: key_role
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
             enum:
@@ -9051,9 +9051,10 @@ paths:
               - KEY_ROLE_MASTER_KEY
               - KEY_ROLE_SECONDARY_KEY
               - KEY_ROLE_EXTERNAL_KEY
+            default: KEY_ROLE_UNSPECIFIED
       tags:
         - QueryService
-  "/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}":
+  /tss/v1beta1/next_key_id:
     get:
       summary: |-
         NextKeyID returns the key ID assigned for the next rotation on a given
@@ -9241,13 +9242,13 @@ paths:
                             }
       parameters:
         - name: chain
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
         - name: key_role
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
             enum:
@@ -9255,6 +9256,7 @@ paths:
               - KEY_ROLE_MASTER_KEY
               - KEY_ROLE_SECONDARY_KEY
               - KEY_ROLE_EXTERNAL_KEY
+            default: KEY_ROLE_UNSPECIFIED
       tags:
         - QueryService
   /cosmos/auth/v1beta1/accounts:

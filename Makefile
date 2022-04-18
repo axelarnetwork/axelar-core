@@ -119,7 +119,7 @@ tofnd-client:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-proto-all: proto-update-deps proto-format proto-lint proto-gen
+proto-all: proto-update-deps proto-format proto-lint proto-gen proto-swagger-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
@@ -133,7 +133,10 @@ proto-format:
 	find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \;
 
 proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
+	@echo "Generating Protobuf Swagger endpoint"
+	@DOCKER_BUILDKIT=1 docker build -t axelar/proto-gen -f ./Dockerfile.protocgen .
+	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protoc-swagger-gen.sh
+	@statik -src=./client/docs/static -dest=./client/docs -f -m
 
 proto-lint:
 	@echo "Linting Protobuf files"
@@ -143,7 +146,7 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
-TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc6/proto/tendermint
+TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.16/proto/tendermint
 GOGO_PROTO_URL      	= https://raw.githubusercontent.com/regen-network/protobuf/cosmos
 GOOGLE_PROTOBUF_URL		= https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf
 GOOGLE_API_URL			= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
@@ -165,6 +168,7 @@ COSMOS_PROTO_TYPES  	= third_party/proto/cosmos_proto
 CONFIO_TYPES        	= third_party/proto
 
 proto-update-deps:
+	@echo "Updating Protobuf deps"
 	@mkdir -p $(GOGO_PROTO_TYPES)
 	@curl -sSL $(GOGO_PROTO_URL)/gogoproto/gogo.proto > $(GOGO_PROTO_TYPES)/gogo.proto
 
