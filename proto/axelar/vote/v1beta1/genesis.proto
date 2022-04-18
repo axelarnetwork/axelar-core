@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package axelar.vote.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/vote/v1beta1/params.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+
+  repeated vote.exported.v1beta1.PollMetadata poll_metadatas = 2
+      [ (gogoproto.nullable) = false ];
+}

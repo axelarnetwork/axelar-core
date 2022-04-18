@@ -1,0 +1,10 @@
+syntax = "proto3";
+package axelar.bitcoin.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/bitcoin/v1beta1/params.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message GenesisState { Params params = 1 [ (gogoproto.nullable) = false ]; }
