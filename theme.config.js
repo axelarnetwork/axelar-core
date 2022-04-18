@@ -99,14 +99,14 @@ export default {
           name="description"
           content={
             meta.description ||
-            "The documentation for the Axelar network"
+            "Axelar Network Resources & Documentation"
           }
         />
         <meta
           name="og:description"
           content={
             meta.description ||
-            "The documentation for the Axelar network"
+            "Axelar Network Resources & Documentation"
           }
         />
         <meta name="twitter:card" content="summary_large_image" />
