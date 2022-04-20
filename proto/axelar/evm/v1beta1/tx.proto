@@ -200,3 +200,13 @@ message AddChainRequest {
 }
 
 message AddChainResponse {}
+
+message RetryFailedEventRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2;
+  string event_id = 3 [ (gogoproto.customname) = "EventID" ];
+}
+
+message RetryFailedEventResponse {}
