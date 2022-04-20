@@ -957,21 +957,19 @@ func TestHandleMsgConfirmChain(t *testing.T) {
 
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
-		v       *mock.VoterMock
-		n       *mock.NexusMock
-		s       *mock.SignerMock
-		msg     *types.ConfirmTokenRequest
-		token   types.ERC20Token
-		server  types.MsgServiceServer
-		voteReq *types.VoteConfirmTokenRequest
+		ctx    sdk.Context
+		basek  *mock.BaseKeeperMock
+		chaink *mock.ChainKeeperMock
+		v      *mock.VoterMock
+		n      *mock.NexusMock
+		s      *mock.SignerMock
+		msg    *types.ConfirmTokenRequest
+		token  types.ERC20Token
+		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		voteReq = &types.VoteConfirmTokenRequest{Chain: evmChain}
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
 				if strings.EqualFold(chain, evmChain) {
@@ -1057,42 +1055,6 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
 		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.NativeAsset))
-	}).Repeat(repeats))
-
-	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
-		setup()
-		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		err := token.RecordDeployment(types.Hash(hash))
-		if err != nil {
-			panic(err)
-		}
-		pollKey := types.GetConfirmTokenKey(types.Hash(hash), btc.NativeAsset)
-		voteReq.Asset = btc.NativeAsset
-		voteReq.PollKey = pollKey
-
-		_, err = server.VoteConfirmToken(sdk.WrapSDKContext(ctx), voteReq)
-
-		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeTokenConfirmation
-			if !isValidType {
-				return false
-			}
-			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
-					string(attribute.GetValue()) == types.AttributeValueVote
-			})) == 1
-			if !isVoteAction {
-				return false
-			}
-			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				if string(attribute.GetKey()) != types.AttributeKeyValue {
-					return false
-				}
-				return string(attribute.GetValue()) == "false"
-			})) == 1
-			return hasCorrectValue
-		}), 1)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -1212,20 +1174,18 @@ func TestAddChain(t *testing.T) {
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
-		v       *mock.VoterMock
-		s       *mock.SignerMock
-		n       *mock.NexusMock
-		msg     *types.ConfirmDepositRequest
-		server  types.MsgServiceServer
-		voteReq *types.VoteConfirmDepositRequest
+		ctx    sdk.Context
+		basek  *mock.BaseKeeperMock
+		chaink *mock.ChainKeeperMock
+		v      *mock.VoterMock
+		s      *mock.SignerMock
+		n      *mock.NexusMock
+		msg    *types.ConfirmDepositRequest
+		server types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		voteReq = &types.VoteConfirmDepositRequest{Chain: evmChain}
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain string) types.ChainKeeper {
 				if strings.EqualFold(chain, evmChain) {
@@ -1298,11 +1258,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		msg = &types.ConfirmDepositRequest{
-			Sender:        rand.AccAddr(),
-			Chain:         evmChain,
-			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Amount:        sdk.NewUint(mathRand.Uint64()),
-			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			Sender: rand.AccAddr(),
+			Chain:  evmChain,
+			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		}
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -1319,82 +1277,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, chaink.SetPendingDepositCalls()[0].Key)
-	}).Repeat(repeats))
-
-	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
-		setup()
-
-		_, err := server.VoteConfirmDeposit(sdk.WrapSDKContext(ctx), voteReq)
-
-		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeDepositConfirmation
-			if !isValidType {
-				return false
-			}
-			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
-					string(attribute.GetValue()) == types.AttributeValueVote
-			})) == 1
-			if !isVoteAction {
-				return false
-			}
-			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				if string(attribute.GetKey()) != types.AttributeKeyValue {
-					return false
-				}
-				return string(attribute.GetValue()) == "false"
-			})) == 1
-			return hasCorrectValue
-		}), 1)
-
+		assert.Equal(t, len(v.InitializePollCalls()), 1)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
 		msg.Chain = rand.StrBetween(5, 20)
-
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
-		setup()
-		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-			return types.ERC20Deposit{
-				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-				Amount:           sdk.NewUint(mathRand.Uint64()),
-				DestinationChain: btc.Bitcoin.Name,
-				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			}, types.DepositStatus_Confirmed, true
-		}
-
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
-		setup()
-		chaink.GetDepositFunc = func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-			return types.ERC20Deposit{
-				TxID:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-				Amount:           sdk.NewUint(mathRand.Uint64()),
-				DestinationChain: btc.Bitcoin.Name,
-				BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			}, types.DepositStatus_Burned, true
-		}
-
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("burner address unknown", testutils.Func(func(t *testing.T) {
-		setup()
-		chaink.GetBurnerInfoFunc = func(sdk.Context, types.Address) *types.BurnerInfo { return nil }
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 

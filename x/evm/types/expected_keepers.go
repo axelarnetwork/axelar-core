@@ -86,6 +86,7 @@ type ChainKeeper interface {
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID string) error
 	SetEventFailed(ctx sdk.Context, eventID string) error
+	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
 // ParamsKeeper represents a global paramstore
@@ -153,6 +154,7 @@ type Signer interface {
 	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool)
 	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
 	GetKeyType(ctx sdk.Context, keyID tss.KeyID) tss.KeyType
+	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 }
 
 // Snapshotter provides access to the snapshot functionality

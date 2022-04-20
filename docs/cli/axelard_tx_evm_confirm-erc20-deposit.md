@@ -1,9 +1,9 @@
 ## axelard tx evm confirm-erc20-deposit
 
-Confirm an ERC20 deposit in an EVM chain transaction that sent given amount of token to a burner address
+Confirm ERC20 deposits in an EVM chain transaction to a burner address
 
 ```
-axelard tx evm confirm-erc20-deposit [chain] [txID] [amount] [burnerAddr] [flags]
+axelard tx evm confirm-erc20-deposit [chain] [txID] [burnerAddr] [flags]
 ```
 
 ### Options

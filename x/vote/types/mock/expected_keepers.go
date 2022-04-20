@@ -22,6 +22,9 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
 // 			GetSnapshotFunc: func(context github_com_cosmos_cosmos_sdk_types.Context, n int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
@@ -32,11 +35,21 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// GetOperatorFunc mocks the GetOperator method.
+	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
+
 	// GetSnapshotFunc mocks the GetSnapshot method.
 	GetSnapshotFunc func(context github_com_cosmos_cosmos_sdk_types.Context, n int64) (snapshot.Snapshot, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetOperator holds details about calls to the GetOperator method.
+		GetOperator []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Proxy is the proxy argument value.
+			Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
 			// Context is the context argument value.
@@ -45,7 +58,43 @@ type SnapshotterMock struct {
 			N int64
 		}
 	}
+	lockGetOperator sync.RWMutex
 	lockGetSnapshot sync.RWMutex
+}
+
+// GetOperator calls GetOperatorFunc.
+func (mock *SnapshotterMock) GetOperator(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+	if mock.GetOperatorFunc == nil {
+		panic("SnapshotterMock.GetOperatorFunc: method is nil but Snapshotter.GetOperator was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+	}{
+		Ctx:   ctx,
+		Proxy: proxy,
+	}
+	mock.lockGetOperator.Lock()
+	mock.calls.GetOperator = append(mock.calls.GetOperator, callInfo)
+	mock.lockGetOperator.Unlock()
+	return mock.GetOperatorFunc(ctx, proxy)
+}
+
+// GetOperatorCalls gets all the calls that were made to GetOperator.
+// Check the length with:
+//     len(mockedSnapshotter.GetOperatorCalls())
+func (mock *SnapshotterMock) GetOperatorCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+	}
+	mock.lockGetOperator.RLock()
+	calls = mock.calls.GetOperator
+	mock.lockGetOperator.RUnlock()
+	return calls
 }
 
 // GetSnapshot calls GetSnapshotFunc.

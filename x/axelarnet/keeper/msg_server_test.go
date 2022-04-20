@@ -130,6 +130,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetRecipientFunc: func(sdk.Context, nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
 				return nexus.CrossChainAddress{}, true
 			},
+			IsChainActivatedFunc: func(ctx2 sdk.Context, chain nexus.Chain) bool { return true },
 		}
 		bankKeeper = &mock.BankKeeperMock{
 			GetBalanceFunc: func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
@@ -277,6 +278,22 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when asset is not a valid IBC denom and not registered", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
+		msg = randomMsgConfirmDeposit()
+		msg.Denom = "ibc" + rand.Denom(5, 10)
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.Error(t, err)
+	}).Repeat(repeatCount))
+
+	t.Run("should return error when chain is not activated", testutils.Func(func(t *testing.T) {
+		setup()
+		nexusKeeper.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool {
+			if chain.Name != exported.Axelarnet.Name {
+				return false
+			}
+			return true
+		}
+
 		msg = randomMsgConfirmDeposit()
 		msg.Denom = "ibc" + rand.Denom(5, 10)
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)

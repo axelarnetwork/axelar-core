@@ -30,6 +30,7 @@ type Keeper struct {
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	rewarder    types.Rewarder
+	voteRouter  types.VoteRouter
 }
 
 // NewKeeper - keeper constructor
@@ -151,6 +152,28 @@ func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey) *pollStore {
 		getPoll: func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
 		logger:  k.Logger(ctx),
 	}
+}
+
+// SetVoteRouter sets the vote router. It will panic if called more than once
+func (k *Keeper) SetVoteRouter(router types.VoteRouter) {
+	if k.voteRouter != nil {
+		panic("router already set")
+	}
+
+	k.voteRouter = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additional handlers from being registered after the keeper is initialized.
+	k.voteRouter.Seal()
+}
+
+// GetVoteRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetVoteRouter() types.VoteRouter {
+	if k.voteRouter == nil {
+		k.SetVoteRouter(types.NewRouter())
+	}
+
+	return k.voteRouter
 }
 
 var _ types.Store = &pollStore{}

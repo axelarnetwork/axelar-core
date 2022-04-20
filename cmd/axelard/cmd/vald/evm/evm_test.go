@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"hash"
 	"math/big"
-	mathRand "math/rand"
 	"strconv"
 	"testing"
+
+	"github.com/axelarnetwork/utils/slices"
+
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -134,10 +137,10 @@ func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 
 	l := &geth.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
 
-	symbol, tokenAddr, err := decodeERC20TokenDeploymentEvent(l)
+	tokenDeployed, err := decodeERC20TokenDeploymentEvent(l)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedSymbol, symbol)
-	assert.Equal(t, expectedAddr, tokenAddr)
+	assert.Equal(t, expectedSymbol, tokenDeployed.Symbol)
+	assert.Equal(t, evmTypes.Address(expectedAddr), tokenDeployed.TokenAddress)
 }
 
 func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
@@ -150,8 +153,7 @@ func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, _, err := decodeERC20TransferEvent(&l)
-
+	_, err := decodeERC20TransferEvent(&l)
 	assert.Error(t, err)
 }
 
@@ -166,7 +168,7 @@ func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, _, err := decodeERC20TransferEvent(&l)
+	_, err := decodeERC20TransferEvent(&l)
 
 	assert.Error(t, err)
 }
@@ -186,11 +188,11 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
 	}
 
-	actualTo, actualAmount, err := decodeERC20TransferEvent(&l)
+	transfer, err := decodeERC20TransferEvent(&l)
 
 	assert.NoError(t, err)
-	assert.Equal(t, expectedTo, actualTo)
-	assert.Equal(t, expectedAmount, actualAmount)
+	assert.Equal(t, evmTypes.Address(expectedTo), transfer.To)
+	assert.Equal(t, expectedAmount, transfer.Amount)
 }
 
 func TestDecodeTransferOwnershipEvent_CorrectData(t *testing.T) {
@@ -229,12 +231,12 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 			common.HexToAddress("2b7f57804a9e60c25852c825e8400562efa69065"),
 			common.HexToAddress("3b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
-		expectedThreshold := uint8(3)
-		actualAddresses, actualThreshold, err := decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+		expectedThreshold := uint64(3)
+		ownershipTransferredEvent, err := decodeMultisigOwnershipTransferredEvent(&log)
 
 		assert.NoError(t, err)
-		assert.Equal(t, expectedAddresses, actualAddresses)
-		assert.Equal(t, expectedThreshold, actualThreshold)
+		assert.Equal(t, expectedAddresses, slices.Map(ownershipTransferredEvent.NewOwners, func(addr evmTypes.Address) common.Address { return common.Address(addr) }))
+		assert.Equal(t, expectedThreshold, ownershipTransferredEvent.NewThreshold.Uint64())
 	}))
 
 	t.Run("should return error when event is not about transfer of the correct multisig keys", testutils.Func(func(t *testing.T) {
@@ -246,7 +248,7 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 			},
 			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
-		_, _, err := decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+		_, err := decodeMultisigOwnershipTransferredEvent(&log)
 		assert.Error(t, err)
 
 		// wrong topics[0]
@@ -256,7 +258,7 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 			},
 			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
-		_, _, err = decodeMultisigKeyTransferEvent(&log, evmTypes.Operatorship)
+		_, err = decodeMultisigOwnershipTransferredEvent(&log)
 		assert.Error(t, err)
 
 		// wrong data
@@ -266,7 +268,7 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 			},
 			Data: common.Hex2Bytes("ea69ec886a7d763f933f7d442a6d437538008cb5"),
 		}
-		_, _, err = decodeMultisigKeyTransferEvent(&log, evmTypes.Ownership)
+		_, err = decodeMultisigOwnershipTransferredEvent(&log)
 		assert.Error(t, err)
 	}))
 }
@@ -342,7 +344,6 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		attributes = map[string]string{
 			evmTypes.AttributeKeyChain:          "Ethereum",
 			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyAmount:         strconv.FormatUint(uint64(amount), 10),
 			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
 			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
@@ -424,7 +425,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.True(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.Equal(t, 1, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -447,7 +448,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -461,19 +462,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
-	}).Repeat(repeats))
-
-	t.Run("amount mismatch", testutils.Func(func(t *testing.T) {
-		setup()
-		attributes[evmTypes.AttributeKeyAmount] = strconv.FormatUint(mathRand.Uint64(), 10)
-
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
-
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmDepositRequest).Confirmed)
+		assert.Equal(t, len(msg.(*voteTypes.VoteRequest).Vote.Results), 0)
 	}).Repeat(repeats))
 }
 
@@ -501,7 +490,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
 			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
 			evmTypes.AttributeKeySymbol:         symbol,
-			evmTypes.AttributeKeyAsset:          "satoshi",
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
 			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
@@ -548,7 +536,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.True(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.Equal(t, len(msg.(*voteTypes.VoteRequest).Vote.Results), 1)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -571,7 +559,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -585,7 +573,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -607,7 +595,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+
 	}).Repeat(repeats))
 
 	t.Run("wrong deploy event", testutils.Func(func(t *testing.T) {
@@ -626,7 +615,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTokenRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 }
 
@@ -654,8 +643,6 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyTransferKeyType: evmTypes.Ownership.SimpleString(),
 			evmTypes.AttributeKeyKeyType:         tss.Threshold.SimpleString(),
 			evmTypes.AttributeKeyGatewayAddress:  common.Bytes2Hex(gatewayAddrBytes),
-			evmTypes.AttributeKeyAddress:         common.Bytes2Hex(newOwnerAddrBytes),
-			evmTypes.AttributeKeyThreshold:       "",
 			evmTypes.AttributeKeyConfHeight:      strconv.FormatUint(uint64(confHeight), 10),
 			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
 		}
@@ -746,7 +733,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.True(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.Equal(t, 1, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -769,7 +756,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -783,20 +770,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
-	}).Repeat(repeats))
-
-	t.Run("new owner mismatch", testutils.Func(func(t *testing.T) {
-		setup()
-
-		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()
-
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
 	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
@@ -814,21 +788,9 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
+		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
 	}).Repeat(repeats))
 
-	t.Run("new owner not last transfer event", testutils.Func(func(t *testing.T) {
-		setup()
-
-		attributes[evmTypes.AttributeKeyAddress] = common.BytesToAddress(prevNewOwnerAddrBytes).Hex()
-
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.False(t, msg.(*evmTypes.VoteConfirmTransferKeyRequest).Confirmed)
-	}).Repeat(repeats))
 }
 
 func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig common.Hash, hasCorrectLog bool) []*geth.Log {

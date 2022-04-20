@@ -862,12 +862,12 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
-func getEventKey(event types.Event) utils.Key {
-	return eventPrefix.Append(utils.LowerCaseKey(event.GetID()))
+func getEventKey(eventID string) utils.Key {
+	return eventPrefix.Append(utils.LowerCaseKey(eventID))
 }
 
 func (k chainKeeper) setEvent(ctx sdk.Context, event types.Event) {
-	k.getStore(ctx, k.chainLowerKey).Set(getEventKey(event), &event)
+	k.getStore(ctx, k.chainLowerKey).Set(getEventKey(event.GetID()), &event)
 }
 
 func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
@@ -886,7 +886,7 @@ func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
 
 // GetEvent returns the event for the given event ID
 func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
-	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(event), &event)
+	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(eventID), &event)
 
 	return event, event.Status != types.EventNonExistent
 }
@@ -902,7 +902,10 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
-		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(event), &event)
+		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
+	case *types.Event_Transfer, *types.Event_TokenDeployed,
+		*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+		k.setEvent(ctx, event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -928,6 +931,19 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
+	}
+
+	event.Status = types.EventFailed
+	k.setEvent(ctx, event)
+
+	return nil
+}
+
+// SetFailedEvent sets the event to failed if the event status is not completed or failed
+func (k chainKeeper) SetFailedEvent(ctx sdk.Context, event types.Event) error {
+	e, ok := k.GetEvent(ctx, event.GetID())
+	if ok && e.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is already %s", e.GetID(), e.Status)
 	}
 
 	event.Status = types.EventFailed

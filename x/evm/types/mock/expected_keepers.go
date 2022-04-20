@@ -384,6 +384,9 @@ var _ types.Signer = &SignerMock{}
 // 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool) {
 // 				panic("mock out the GetNextKeyID method")
 // 			},
+// 			GetRotationCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+// 				panic("mock out the GetRotationCount method")
+// 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
 // 				panic("mock out the GetSig method")
 // 			},
@@ -435,6 +438,9 @@ type SignerMock struct {
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
 	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, bool)
+
+	// GetRotationCountFunc mocks the GetRotationCount method.
+	GetRotationCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -545,6 +551,15 @@ type SignerMock struct {
 			// KeyRole is the keyRole argument value.
 			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
 		}
+		// GetRotationCount holds details about calls to the GetRotationCount method.
+		GetRotationCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
 			// Ctx is the ctx argument value.
@@ -593,6 +608,7 @@ type SignerMock struct {
 	lockGetKeyRole                   sync.RWMutex
 	lockGetKeyType                   sync.RWMutex
 	lockGetNextKeyID                 sync.RWMutex
+	lockGetRotationCount             sync.RWMutex
 	lockGetSig                       sync.RWMutex
 	lockGetSnapshotCounterForKeyID   sync.RWMutex
 	lockRotateKey                    sync.RWMutex
@@ -1013,6 +1029,45 @@ func (mock *SignerMock) GetNextKeyIDCalls() []struct {
 	mock.lockGetNextKeyID.RLock()
 	calls = mock.calls.GetNextKeyID
 	mock.lockGetNextKeyID.RUnlock()
+	return calls
+}
+
+// GetRotationCount calls GetRotationCountFunc.
+func (mock *SignerMock) GetRotationCount(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) int64 {
+	if mock.GetRotationCountFunc == nil {
+		panic("SignerMock.GetRotationCountFunc: method is nil but Signer.GetRotationCount was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetRotationCount.Lock()
+	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
+	mock.lockGetRotationCount.Unlock()
+	return mock.GetRotationCountFunc(ctx, chain, keyRole)
+}
+
+// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
+// Check the length with:
+//     len(mockedSigner.GetRotationCountCalls())
+func (mock *SignerMock) GetRotationCountCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole
+	}
+	mock.lockGetRotationCount.RLock()
+	calls = mock.calls.GetRotationCount
+	mock.lockGetRotationCount.RUnlock()
 	return calls
 }
 
@@ -2881,6 +2936,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
 // 				panic("mock out the SetEventFailed method")
 // 			},
+// 			SetFailedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+// 				panic("mock out the SetFailedEvent method")
+// 			},
 // 			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
 // 				panic("mock out the SetGateway method")
 // 			},
@@ -3031,6 +3089,9 @@ type ChainKeeperMock struct {
 
 	// SetEventFailedFunc mocks the SetEventFailed method.
 	SetEventFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error
+
+	// SetFailedEventFunc mocks the SetFailedEvent method.
+	SetFailedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error
 
 	// SetGatewayFunc mocks the SetGateway method.
 	SetGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)
@@ -3324,6 +3385,13 @@ type ChainKeeperMock struct {
 			// EventID is the eventID argument value.
 			EventID string
 		}
+		// SetFailedEvent holds details about calls to the SetFailedEvent method.
+		SetFailedEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Event is the event argument value.
+			Event types.Event
+		}
 		// SetGateway holds details about calls to the SetGateway method.
 		SetGateway []struct {
 			// Ctx is the ctx argument value.
@@ -3407,6 +3475,7 @@ type ChainKeeperMock struct {
 	lockSetDeposit                    sync.RWMutex
 	lockSetEventCompleted             sync.RWMutex
 	lockSetEventFailed                sync.RWMutex
+	lockSetFailedEvent                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
 	lockSetParams                     sync.RWMutex
@@ -4863,6 +4932,41 @@ func (mock *ChainKeeperMock) SetEventFailedCalls() []struct {
 	mock.lockSetEventFailed.RLock()
 	calls = mock.calls.SetEventFailed
 	mock.lockSetEventFailed.RUnlock()
+	return calls
+}
+
+// SetFailedEvent calls SetFailedEventFunc.
+func (mock *ChainKeeperMock) SetFailedEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+	if mock.SetFailedEventFunc == nil {
+		panic("ChainKeeperMock.SetFailedEventFunc: method is nil but ChainKeeper.SetFailedEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockSetFailedEvent.Lock()
+	mock.calls.SetFailedEvent = append(mock.calls.SetFailedEvent, callInfo)
+	mock.lockSetFailedEvent.Unlock()
+	return mock.SetFailedEventFunc(ctx, event)
+}
+
+// SetFailedEventCalls gets all the calls that were made to SetFailedEvent.
+// Check the length with:
+//     len(mockedChainKeeper.SetFailedEventCalls())
+func (mock *ChainKeeperMock) SetFailedEventCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Event types.Event
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event types.Event
+	}
+	mock.lockSetFailedEvent.RLock()
+	calls = mock.calls.SetFailedEvent
+	mock.lockSetFailedEvent.RUnlock()
 	return calls
 }
 

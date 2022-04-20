@@ -1,0 +1,44 @@
+syntax = "proto3";
+package axelar.bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/bitcoin/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// DepositQueryParams describe the parameters used to query for a Bitcoin
+// deposit address
+message DepositQueryParams {
+  string address = 1;
+  string chain = 2;
+}
+
+message QueryAddressResponse {
+  string address = 1;
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message QueryDepositStatusResponse {
+  string log = 1;
+  OutPointState status = 2;
+}
+
+message QueryTxResponse {
+  message SigningInfo {
+    string redeem_script = 1;
+    int64 amount = 2;
+  }
+
+  string tx = 1;
+  TxStatus status = 2;
+  bool confirmation_required = 3;
+  string prev_signed_tx_hash = 4;
+  uint32 anyone_can_spend_vout = 5;
+  repeated SigningInfo signing_infos = 6;
+}

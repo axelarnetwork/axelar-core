@@ -17,7 +17,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -301,12 +300,10 @@ func createMsgsWithSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
 
 	for i := int64(0); i < count; i++ {
 
-		msg := evm.NewVoteConfirmDepositRequest(
+		msg := evm.NewVoteConfirmChainRequest(
 			signer,
 			rand.StrBetween(5, 10),
 			exported.NewPollKey(evm.ModuleName, rand.StrBetween(5, 100)),
-			common.BytesToHash(rand.Bytes(common.HashLength)),
-			evm.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			rand.Bools(0.5).Next(),
 		)
 		msgs = append(msgs, msg)

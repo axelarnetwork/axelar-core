@@ -8,7 +8,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -62,34 +61,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.VoteConfirmChainRequest:
 			res, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmDepositRequest:
-			res, err := server.VoteConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmTokenRequest:
-			res, err := server.VoteConfirmToken(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmTransferKeyRequest:
-			res, err := server.VoteConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
-		case *types.VoteConfirmGatewayTxRequest:
-			res, err := server.VoteConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
 				result.Log = res.Log

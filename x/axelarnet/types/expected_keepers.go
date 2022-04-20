@@ -46,6 +46,7 @@ type Nexus interface {
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
+	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

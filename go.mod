@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.3.10
 	github.com/axelarnetwork/tm-events v0.0.0-20220329200027-3f6720431fcf
-	github.com/axelarnetwork/utils v0.0.0-20220404190329-a441c50ebb3a
+	github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.45.1
@@ -29,6 +29,7 @@ require (
 	github.com/tendermint/tendermint v0.34.16
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.10
@@ -138,7 +139,6 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/zondax/hid v0.9.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb // indirect
 	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220329152356-43be30ef3008 // indirect
@@ -164,3 +164,6 @@ replace github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.
 // Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 // TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+
+// Fix build warning on Mac OS 12: https://github.com/Zondax/hid/pull/5
+replace github.com/zondax/hid => github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
