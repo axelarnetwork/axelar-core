@@ -199,8 +199,13 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
+	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
 	stateStore := NewStateStore(stateSource)
-	startBlock, err := waitTillNetworkSync(axelarCfg, stateStore, robustClient, logger)
+	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -319,28 +324,14 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
-// Wait until the node has synced with the network
-// and then return the block height to start listening to TM events from
-func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+// Wait until the node has synced with the network and return the node height
+func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
 	if err != nil {
 		return 0, err
-	}
-
-	cachedHeight, err := stateStore.GetState()
-	if err != nil {
-		logger.Info(fmt.Sprintf("failed to retrieve the cached block height, using the latest: %s", err.Error()))
-		cachedHeight = 0
-	} else {
-		logger.Info(fmt.Sprintf("retrieved cached block height %d", cachedHeight))
-	}
-
-	// cached height must not be larger than node height
-	if cachedHeight > syncInfo.LatestBlockHeight {
-		return 0, fmt.Errorf("cached block height %d is ahead of the node height %d", cachedHeight, syncInfo.LatestBlockHeight)
 	}
 
 	// If the block height is older than the allowed time, then wait for the node to sync
@@ -354,17 +345,34 @@ func waitTillNetworkSync(cfg config.ValdConfig, stateStore StateStore, tmClient 
 		}
 	}
 
-	nodeHeight := syncInfo.LatestBlockHeight
+	return syncInfo.LatestBlockHeight, nil
+}
+
+// Return the block height to start listening to TM events from
+func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+	storedHeight, err := stateStore.GetState()
+	if err != nil {
+		logger.Info(fmt.Sprintf("failed to retrieve the cached block height, using the latest: %s", err.Error()))
+		storedHeight = 0
+	} else {
+		logger.Info(fmt.Sprintf("retrieved cached block height %d", storedHeight))
+	}
+
+	// stored height must not be larger than node height
+	if storedHeight > nodeHeight {
+		return 0, fmt.Errorf("stored block height %d is ahead of the node height %d", storedHeight, nodeHeight)
+	}
+
 	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
 
-	startBlock := cachedHeight
+	startBlock := storedHeight
 	if startBlock != 0 {
-		// The block at the cached height might have already been processed by vald, so skip it
+		// The block at the stored height might have already been processed by vald, so skip it
 		startBlock++
 	}
 
 	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxBlocksBehindLatest {
-		logger.Info(fmt.Sprintf("cached block height %d is too old, starting from the latest block", startBlock))
+		logger.Info(fmt.Sprintf("stored block height %d is too old, starting from the latest block", startBlock))
 		startBlock = 0
 	}
 
