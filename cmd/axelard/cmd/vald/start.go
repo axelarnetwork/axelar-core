@@ -205,7 +205,9 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		}
 	}
 
-	tssMgr.RefreshKeys(ctx)
+	if err := tssMgr.RefreshKeys(ctx); err != nil {
+		panic(err)
+	}
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
