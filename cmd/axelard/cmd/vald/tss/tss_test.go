@@ -85,7 +85,7 @@ func TestHeartBeatResponseMarshaling(t *testing.T) {
 	// -------------------------------
 
 	cfg := app.MakeEncodingConfig()
-	mgr := NewMgr(nil, nil, client.Context{Codec: cfg.Codec}, 0, "", nil, nil, log.TestingLogger(), cfg.Amino)
+	mgr := NewMgr(nil, nil, client.Context{Codec: cfg.Codec}, 0, "", nil, log.TestingLogger(), cfg.Amino)
 	heartbeats, err := mgr.extractHeartBeatResponses(txResp)
 	assert.NoError(t, err)
 	assert.Equal(t, heartbeat1, heartbeats[0])

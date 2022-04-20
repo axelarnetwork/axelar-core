@@ -24,8 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
@@ -200,12 +198,14 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	eventBus := createEventBus(robustClient, startBlock, logger)
 
-	tssMgr := createTSSMgr(ctx, bc, clientCtx, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
 	}
+
+	tssMgr.RefreshKeys(ctx)
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
@@ -367,7 +367,7 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster.WithRefund(broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger))
 }
 
-func createTSSMgr(ctx context.Context, broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
@@ -379,29 +379,7 @@ func createTSSMgr(ctx context.Context, broadcaster broadcasterTypes.Broadcaster,
 		gg20client := tofnd.NewGG20Client(conn)
 		multiSigClient := tofnd.NewMultisigClient(conn)
 
-		// retrieve key id mappings
-
-		queryClient := tssTypes.NewQueryServiceClient(cliCtx)
-		valKeysResponse, err := queryClient.ValidatorMultisigKeys(ctx, &tssTypes.ValidatorMultisigKeysRequest{
-			Address: valAddr,
-		})
-
-		status, _ := status.FromError(err)
-
-		switch status.Code() {
-		case codes.OK:
-		case codes.NotFound:
-			return nil, fmt.Errorf("query result was not found")
-		default:
-			return nil, sdkerrors.Wrap(err, "failed to execute query")
-		}
-
-		pubKeys := make(map[string][][]byte, len(valKeysResponse.Keys))
-		for keyID, keys := range valKeysResponse.Keys {
-			pubKeys[keyID] = keys.Keys
-		}
-
-		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, pubKeys, broadcaster, logger, cdc)
+		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}

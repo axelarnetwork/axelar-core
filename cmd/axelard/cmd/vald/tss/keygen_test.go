@@ -55,7 +55,6 @@ func TestMgr_ProcessKeygenStart(t *testing.T) {
 			client.Context{},
 			1*time.Second,
 			principalAddr,
-			nil,
 			&mock2.BroadcasterMock{},
 			log.TestingLogger(),
 			cdc,

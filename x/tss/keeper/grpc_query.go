@@ -72,28 +72,19 @@ func (q Querier) ValidatorMultisigKeys(c context.Context, req *types.ValidatorMu
 		return nil, err
 	}
 
-	validator := q.staker.Validator(ctx, valAddress)
-	if validator == nil {
-		return nil, fmt.Errorf("not a validator")
-	}
-
 	chains := q.nexus.GetChains(ctx)
-	keys := make(map[string]*types.ValidatorMultisigKeysResponse_Keys, 10)
-
 	keyRoles := []exported.KeyRole{exported.MasterKey, exported.SecondaryKey}
+
+	var keys []exported.Key
 
 	for _, chain := range chains {
 		for _, keyRole := range keyRoles {
 			if currentKey, found := q.keeper.GetCurrentKey(ctx, chain, keyRole); found {
-				if valKeys, ok := q.getSerializedMultisigKeys(ctx, currentKey, valAddress); ok {
-					keys[string(currentKey.ID)] = valKeys
-				}
+				keys = append(keys, currentKey)
 			}
 
 			if nextKey, found := q.keeper.GetNextKey(ctx, chain, keyRole); found {
-				if valKeys, ok := q.getSerializedMultisigKeys(ctx, nextKey, valAddress); ok {
-					keys[string(nextKey.ID)] = valKeys
-				}
+				keys = append(keys, nextKey)
 			}
 
 			oldActiveKeys, err := q.keeper.GetOldActiveKeys(ctx, chain, keyRole)
@@ -101,15 +92,21 @@ func (q Querier) ValidatorMultisigKeys(c context.Context, req *types.ValidatorMu
 				return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
-			for _, oldActiveKey := range oldActiveKeys {
-				if valKeys, ok := q.getSerializedMultisigKeys(ctx, oldActiveKey, valAddress); ok {
-					keys[string(oldActiveKey.ID)] = valKeys
-				}
-			}
+			keys = append(keys, oldActiveKeys...)
 		}
 	}
 
-	return &types.ValidatorMultisigKeysResponse{Keys: keys}, nil
+	res := types.ValidatorMultisigKeysResponse{Keys: make(map[string]*types.ValidatorMultisigKeysResponse_Keys, len(keys))}
+	for _, key := range keys {
+		valKeys, ok := q.getSerializedMultisigKeys(ctx, key, valAddress)
+		if !ok {
+			continue
+		}
+
+		res.Keys[string(key.ID)] = valKeys
+	}
+
+	return &res, nil
 }
 
 func (q Querier) getSerializedMultisigKeys(ctx sdk.Context, key exported.Key, valAddress sdk.ValAddress) (*types.ValidatorMultisigKeysResponse_Keys, bool) {
