@@ -352,10 +352,10 @@ func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient
 func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	storedHeight, err := stateStore.GetState()
 	if err != nil {
-		logger.Info(fmt.Sprintf("failed to retrieve the cached block height, using the latest: %s", err.Error()))
+		logger.Info(fmt.Sprintf("failed to retrieve the stored block height, using the latest: %s", err.Error()))
 		storedHeight = 0
 	} else {
-		logger.Info(fmt.Sprintf("retrieved cached block height %d", storedHeight))
+		logger.Info(fmt.Sprintf("retrieved stored block height %d", storedHeight))
 	}
 
 	// stored height must not be larger than node height
