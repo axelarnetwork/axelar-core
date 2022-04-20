@@ -41,6 +41,7 @@ lint:
 goimports:
 	@echo "running goimports"
 # exclude mocks and proto generated files
+	@./scripts/rm-blank-lines.sh # remove blank lines from imports
 	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | xargs goimports -local github.com/axelarnetwork/ -w
 
 # Build the project with release flags

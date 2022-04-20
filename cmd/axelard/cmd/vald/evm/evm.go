@@ -18,8 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
@@ -27,6 +25,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/utils/slices"
 )
 

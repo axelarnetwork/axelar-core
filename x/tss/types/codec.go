@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 

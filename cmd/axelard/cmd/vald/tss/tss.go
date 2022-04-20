@@ -15,11 +15,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
-
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"

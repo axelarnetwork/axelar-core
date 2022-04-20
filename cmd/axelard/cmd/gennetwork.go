@@ -7,6 +7,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 
@@ -14,10 +17,6 @@ import (
 	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-
-	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
 )
 
 const (

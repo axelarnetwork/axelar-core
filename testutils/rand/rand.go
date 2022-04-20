@@ -8,11 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/text/unicode/norm"
-
-	"github.com/ethereum/go-ethereum/common/math"
 )
 
 const (

@@ -8,12 +8,11 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 

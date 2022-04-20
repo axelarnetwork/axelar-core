@@ -1,10 +1,10 @@
 package vote
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
