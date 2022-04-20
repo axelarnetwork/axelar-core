@@ -12,9 +12,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths

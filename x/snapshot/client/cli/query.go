@@ -3,14 +3,13 @@ package cli
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

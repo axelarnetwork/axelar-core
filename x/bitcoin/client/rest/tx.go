@@ -10,9 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
-
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 )
 
 // rest routes

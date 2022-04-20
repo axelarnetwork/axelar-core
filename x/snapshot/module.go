@@ -16,7 +16,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/client/rest"
-
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )

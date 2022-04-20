@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-
-	"github.com/cosmos/cosmos-sdk/client"
-
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
-
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
 // GetHandlerQueryProxy returns the proxy address associated to some operator address
