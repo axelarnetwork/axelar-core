@@ -10,8 +10,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/utils"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -19,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 // ProcessSignStart starts the communication with the sign protocol

@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
@@ -22,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 func TestMgr_ProcessConfirmation(t *testing.T) {

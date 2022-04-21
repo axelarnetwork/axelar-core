@@ -36,12 +36,11 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/axelarnetwork/axelar-core/config"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
+	"github.com/axelarnetwork/axelar-core/config"
 )
 
 const minGasPrice = "0.00005uaxl"

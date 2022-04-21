@@ -8,9 +8,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
-
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 // CheckRefundFeeDecorator record potential refund for tss and vote txs

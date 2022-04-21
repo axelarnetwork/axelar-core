@@ -11,16 +11,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"

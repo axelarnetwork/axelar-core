@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"

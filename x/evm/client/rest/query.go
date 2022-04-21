@@ -10,10 +10,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-
-	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 )
 
 // query parameters
