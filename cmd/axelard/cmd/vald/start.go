@@ -195,10 +195,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		}
 	}
 
-	if err := tssMgr.RefreshKeys(ctx); err != nil {
-		panic(err)
-	}
-
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
 	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
@@ -209,6 +205,11 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
 	if err != nil {
+		panic(err)
+	}
+
+	// Refresh keys after the node has synced
+	if err := tssMgr.RefreshKeys(ctx); err != nil {
 		panic(err)
 	}
 
