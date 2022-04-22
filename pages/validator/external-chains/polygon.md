@@ -17,7 +17,7 @@ Set up your Polygon Mumbai Testnet node.
 
 In order to build the `go-opera`, you first need to install all of the required dependencies.
 
-##### 1. Update and install `build-essential`
+### 1. Update and install `build-essential`
 
 ```bash
 sudo apt-get update
@@ -25,15 +25,11 @@ sudo apt-get -y upgrade
 sudo apt-get install -y build-essential
 ```
 
-##### 2. Install `golang`
+### 2. Install `golang`
 
-```bash
-wget https://gist.githubusercontent.com/ssandeep/a6c7197811c83c71e5fead841bab396c/raw/go-install.sh
-bash go-install.sh
-sudo ln -nfs ~/.go/bin/go /usr/bin/go
-```
+Install the [latest version of golang](https://go.dev/doc/install).
 
-##### 2. Install `RabbitMq`
+### 2. Install `RabbitMq`
 
 ```bash
 docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.9-management
@@ -43,30 +39,30 @@ docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.9-man
 
 Polygon node consists of 2 layers, `Heimdall` and `Bor`. Heimdall is a fork of tendermint and is running in parallel to an Ethereum network, monitoring contracts. Bor is a fork of go-Ethereum and producing blocks shuffled by Heimdall nodes. You need to install and run both binaries in the correct order as explained in the following steps.
 
-##### 1. Install Heimdall
+### 1. Install Heimdall
 
-Please make sure you checkout the [latest release tag](https://github.com/maticnetwork/heimdall/tags). In this tutorial we are using `v0.2.5-beta1`
+Please make sure you checkout the [latest release tag](https://github.com/maticnetwork/heimdall/tags). In this tutorial we are using `v0.2.9`
 
 ```bash
 cd ~/
 git clone https://github.com/maticnetwork/heimdall
 cd heimdall
-git checkout v0.2.5-beta1
+git checkout v0.2.9
 make install
 
 # Verify the correct version
 heimdalld version --long
 ```
 
-##### 2. Install Bor
+### 2. Install Bor
 
-Please make sure you checkout the [latest release tag](https://github.com/maticnetwork/bor/tags). In this tutorial we are using `v0.2.13-beta2`
+Please make sure you checkout the [latest release tag](https://github.com/maticnetwork/bor/tags). In this tutorial we are using `v0.2.14`
 
 ```bash
 cd ~/
 git clone https://github.com/maticnetwork/bor
 cd bor
-git checkout v0.2.13-beta2
+git checkout v0.2.14
 make bor-all
 sudo ln -nfs ~/bor/build/bin/bor /usr/bin/bor
 sudo ln -nfs ~/bor/build/bin/bootnode /usr/bin/bootnode
@@ -77,7 +73,7 @@ bor version
 
 ## Setup and configure node
 
-##### 1. Setup launch directory
+### 1. Setup launch directory
 
 ```bash
 cd ~/
@@ -87,7 +83,7 @@ mkdir -p node
 cp -rf launch/testnet-v4/sentry/sentry/* ~/node
 ```
 
-##### 2. Setup network directories
+### 2. Setup network directories
 
 ```bash
 # Heimdall
@@ -99,7 +95,7 @@ cd ~/node/bor
 bash setup.sh
 ```
 
-##### 3. Setup service files
+### 3. Setup service files
 
 ```bash
 # Download service file
@@ -117,7 +113,7 @@ bash service.sh
 sudo cp *.service /etc/systemd/system/
 ```
 
-##### 4. Setup config files
+### 4. Setup config files
 
 Open the `~/.heimdalld/config/config.toml` and edit:
 
@@ -138,7 +134,7 @@ Open the `~/node/bor/start.sh` and add the following flag to start parameters:
 --bootnodes "enode://320553cda00dfc003f499a3ce9598029f364fbb3ed1222fdc20a94d97dcc4d8ba0cd0bfa996579dcc6d17a534741fb0a5da303a90579431259150de66b597251@54.147.31.250:30303"
 ```
 
-##### 5. Download maintained snapshots
+### 5. Download maintained snapshots
 
 <Callout emoji="ℹ️">
   Info: Syncing Heimdall and Bor services can take several days to fully sync. Alternatively, you can use snapshots which will reduce the sync time to few hours. If you wish to sync the node from start, then you can skip this step.
@@ -156,7 +152,7 @@ wget https://matic-blockchain-snapshots.s3-accelerate.amazonaws.com/matic-mumbai
 
 After completing all of the previous steps, your node should be configured and ready to launch with the previously created service files.
 
-##### 1. Start Heimdalld
+### 1. Start Heimdalld
 
 ```bash
 sudo service heimdalld start
@@ -174,7 +170,7 @@ sudo service heimdalld status
 journalctl -u heimdalld.service -f
 ```
 
-##### 2. Start Bor
+### 2. Start Bor
 
 Once `heimdalld` is synced with the [latest block height](https://wallet-dev.polygon.technology/staking/), then you can start the `bor` service file:
 
@@ -196,7 +192,7 @@ curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method":
 
 If the node is successfully synced, the output from above will print `{"jsonrpc":"2.0","id":1,"result":false}`
 
-#### EVM RPC endpoint URL
+### EVM RPC endpoint URL
 
 Axelar Network will be connecting to the EVM compatible blockchain `Bor`, so your `rpc_addr` should be exposed in this format:
 

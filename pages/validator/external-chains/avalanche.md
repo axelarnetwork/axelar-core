@@ -44,7 +44,7 @@ sudo systemctl stop avalanchego
 nano  /home/avax/.avalanchego/configs/node.json
 ```
 
-Change network-id to `"fuji"`, save the file and restart the service:
+Change `"network-id"` to `"fuji"`, save the file and restart the service:
 
 ```bash
 sudo systemctl start avalanchego

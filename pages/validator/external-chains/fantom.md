@@ -17,7 +17,7 @@ Set up your Fantom Opera node.
 
 In order to build the `go-opera`, you first need to install all of the required dependencies.
 
-##### 1. Update and install `build-essential`
+### 1. Update and install `build-essential`
 
 ```bash
 sudo apt-get update
@@ -25,37 +25,31 @@ sudo apt-get -y upgrade
 sudo apt-get install -y build-essential
 ```
 
-##### 2. Install `golang`
+### 2. Install `golang`
 
-```bash
-wget https://dl.google.com/go/go1.17.5.linux-amd64.tar.gz
-sudo tar -xvf go1.17.5.linux-amd64.tar.gz -C /usr/local/
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-```
+Install the [latest version of golang](https://go.dev/doc/install).
 
 ## Install Go-Opera
 
-##### 1. Checkout and build go-opera
+### 1. Checkout and build go-opera
 
-Use the commands below to clone the `go-opera` repository, checkout correct version and compile the binary.
+Please make sure you checkout the [latest release tag](https://github.com/Fantom-foundation/go-opera/tags). In this tutorial we are using `1.1.0-rc.4`.
 
 ```bash
 git clone https://github.com/Fantom-foundation/go-opera.git
 cd go-opera/
-git checkout release/1.0.2-rc.5
+git checkout release/1.1.0-rc.4
 make
 ```
 
-##### 2. Download the genesis file
+### 2. Download the genesis file
 
 ```bash
 cd build/
 wget https://opera.fantom.network/testnet.g
 ```
 
-##### 3. Start the Fantom Opera node
+### 3. Start the Fantom Opera node
 
 In this guide we are using `tmux` to run the `opera-go` process in the background. In case you don't have tmux installed, then you can do so with:
 
@@ -91,7 +85,7 @@ curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method":
 
 If the node is successfully synced, the output from above will print `{"jsonrpc":"2.0","id":1,"result":false}`
 
-#### EVM RPC endpoint URL
+### EVM RPC endpoint URL
 
 In order for Axelar Network to connect to your Fantom node, your `rpc_addr` should be exposed in this format:
 

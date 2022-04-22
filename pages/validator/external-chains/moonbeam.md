@@ -26,24 +26,20 @@ cargo build --release
 
 ## Install Moonbase Alpha
 
-In this guide we are using the release binary from PureStake. To get started, you need to download the [latest version](https://github.com/PureStake/moonbeam/releases) and create the systemd configuration file.
+### 1. Download compiled binary
 
-##### 1. Download compiled binary
+Download the [latest release binary](https://github.com/PureStake/moonbeam/tags) from PureState.
 
-```bash
-wget https://github.com/PureStake/moonbeam/releases/download/v0.17.0/moonbeam
-```
-
-##### 2. Create service account and copy the binary
+### 2. Create service account and copy the binary
 
 ```bash
 adduser moonbase_service --system --no-create-home
 mkdir /var/lib/alphanet-data
-cp ./moonbeam /var/lib/alphanet-data
+cp ./moonbeam /var/lib/alphanet-data # assumption: ./moonbeam is your downloaded binary
 sudo chown -R moonbase_service /var/lib/alphanet-data
 ```
 
-##### 3. Create the systemd service file
+### 3. Create the systemd service file
 
 After installation of `moonbase-alpha`, we are now ready to start the node but in order to ensure it is running in the background and auto-restarts in case of a server failure, we will setup a service file using systemd.
 
@@ -94,7 +90,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-##### 4. Enable and start the `moonbeam` service
+### 4. Enable and start the `moonbeam` service
 
 ```bash
 sudo systemctl enable moonbeam.service
