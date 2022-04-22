@@ -50,11 +50,11 @@ jobs:
           go install github.com/rakyll/statik
           pip3 install mdformat
 
-      - name: Run go generate
-        run: make generate
-
       - name: Generate proto files and docs
         run: make proto-format proto-gen
+
+      - name: Run go generate
+        run: make generate
 
       - name: Run goimports
         run: make goimports
