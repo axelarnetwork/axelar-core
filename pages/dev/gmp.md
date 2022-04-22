@@ -9,7 +9,7 @@ For GMP to work, both chain A and chain B should have an Axelar Gateway deployed
 
 To check if a chain has an Axelar Gateway deployed you can refer to [Resources](../resources).
 
-![axelar-gmp.png](/images/axelar-gmp.png)
+![gmp-diagram.png](/images/gmp-diagram.png)
 
 ## Call a contract on chain B from chain A
 
