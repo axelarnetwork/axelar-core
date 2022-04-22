@@ -125,7 +125,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cmd.Context(), cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -163,7 +163,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -205,6 +205,11 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
 	if err != nil {
+		panic(err)
+	}
+
+	// Refresh keys after the node has synced
+	if err := tssMgr.RefreshKeys(ctx); err != nil {
 		panic(err)
 	}
 
@@ -412,6 +417,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 
 		return tssMgr, nil
 	}
+
 	mgr, err := create()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))

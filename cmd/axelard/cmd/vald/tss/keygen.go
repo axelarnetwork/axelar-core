@@ -93,6 +93,8 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 	defer cancel()
 
 	var sigKeyPairs []tssexported.SigKeyPair
+	pubKeys := make([][]byte, shares)
+
 	for i := uint32(0); i < shares; i++ {
 		keyUID := fmt.Sprintf("%s_%d", keyID, i)
 		keygenRequest := &tofnd.KeygenRequest{
@@ -109,17 +111,21 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 		case *tofnd.KeygenResponse_PubKey:
 			//  proof validator owns the pub key
 			d := sha256.Sum256([]byte(mgr.principalAddr))
-			sig, err := mgr.multiSigSign(keyUID, d[:])
+			sig, err := mgr.multiSigSign(keyUID, d[:], res.GetPubKey())
 			if err != nil {
 				return sdkerrors.Wrapf(err, "failed to sign")
 			}
 			sigKeyPairs = append(sigKeyPairs, tssexported.SigKeyPair{PubKey: res.GetPubKey(), Signature: sig})
+			pubKeys[i] = res.GetPubKey()
 		case *tofnd.KeygenResponse_Error:
 			return sdkerrors.Wrap(err, res.GetError())
 		default:
 			return sdkerrors.Wrap(err, "unknown multisig keygen response")
 		}
 	}
+
+	// TODO: Evict keys older than X rotations (they can be retrieved again if needed)
+	mgr.Keys[keyID] = pubKeys
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
 	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)

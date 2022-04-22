@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -23,6 +24,7 @@ func TestNextKeyID(t *testing.T) {
 	var (
 		tssKeeper       *mock.TSSKeeperMock
 		nexusKeeper     *mock.NexusMock
+		stakingKeeper   *mock.StakingKeeperMock
 		ctx             sdk.Context
 		grpcQuerier     *keeper.Querier
 		existingChain   string
@@ -60,7 +62,13 @@ func TestNextKeyID(t *testing.T) {
 			},
 		}
 
-		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper)
+		stakingKeeper = &mock.StakingKeeperMock{
+			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+				return stakingtypes.Validator{}
+			},
+		}
+
+		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper, stakingKeeper)
 		grpcQuerier = &q
 	}
 
@@ -116,6 +124,7 @@ func TestAssignbleKey(t *testing.T) {
 	var (
 		tssKeeper       *mock.TSSKeeperMock
 		nexusKeeper     *mock.NexusMock
+		stakingKeeper   *mock.StakingKeeperMock
 		ctx             sdk.Context
 		grpcQuerier     *keeper.Querier
 		existingChain   string
@@ -151,7 +160,13 @@ func TestAssignbleKey(t *testing.T) {
 			},
 		}
 
-		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper)
+		stakingKeeper = &mock.StakingKeeperMock{
+			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+				return stakingtypes.Validator{}
+			},
+		}
+
+		q := keeper.NewGRPCQuerier(tssKeeper, nexusKeeper, stakingKeeper)
 		grpcQuerier = &q
 	}
 
