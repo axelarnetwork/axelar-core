@@ -96,4 +96,12 @@ service QueryService {
   rpc AssignableKey(AssignableKeyRequest) returns (AssignableKeyResponse) {
     option (google.api.http).get = "/tss/v1beta1/assignable_key";
   }
+
+  // ValidatorMultisigKeys returns the validator's multisig pubkeys
+  // corresponding to each active key ID
+  rpc ValidatorMultisigKeys(ValidatorMultisigKeysRequest)
+      returns (ValidatorMultisigKeysResponse) {
+    option (google.api.http).get =
+        "/axelar/tss/v1beta1/validator_multisig_keys/{address}";
+  }
 }

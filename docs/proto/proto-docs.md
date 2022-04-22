@@ -439,6 +439,10 @@
     - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
     - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
     - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
+    - [ValidatorMultisigKeysRequest](#tss.v1beta1.ValidatorMultisigKeysRequest)
+    - [ValidatorMultisigKeysResponse](#tss.v1beta1.ValidatorMultisigKeysResponse)
+    - [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys)
+    - [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry)
   
     - [VoteStatus](#tss.v1beta1.VoteStatus)
   
@@ -5420,6 +5424,7 @@ Key presence check types
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_uid` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed pub key bytes to find the right |
 
 
 
@@ -5514,6 +5519,7 @@ File copied from golang tofnd with minor tweaks
 | `key_uid` | [string](#string) |  |  |
 | `msg_to_sign` | [bytes](#bytes) |  | 32-byte pre-hashed message digest |
 | `party_uid` | [string](#string) |  | used only for logging |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed pub key bytes to find the right |
 
 
 
@@ -6358,6 +6364,67 @@ KeyInfo holds information about a key
 
 
 
+
+<a name="tss.v1beta1.ValidatorMultisigKeysRequest"></a>
+
+### ValidatorMultisigKeysRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse"></a>
+
+### ValidatorMultisigKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.Keys"></a>
+
+### ValidatorMultisigKeysResponse.Keys
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry"></a>
+
+### ValidatorMultisigKeysResponse.KeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
 
@@ -6740,6 +6807,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/tss/v1beta1/next_key_id|
 | `AssignableKey` | [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/tss/v1beta1/assignable_key|
+| `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
 
  <!-- end services -->
 
