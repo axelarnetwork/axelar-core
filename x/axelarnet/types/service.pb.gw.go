@@ -43,24 +43,6 @@ func request_MsgService_Link_0(ctx context.Context, marshaler runtime.Marshaler,
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
-	}
-
 	msg, err := client.Link(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -76,24 +58,6 @@ func local_request_MsgService_Link_0(ctx context.Context, marshaler runtime.Mars
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
 	}
 
 	msg, err := server.Link(ctx, &protoReq)
@@ -757,21 +721,21 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "axelarnet", "link", "recipient_chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "link"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "confirm-deposit"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "confirm_deposit"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ExecutePendingTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "execute-pending-transfers"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ExecutePendingTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "execute_pending_transfers"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_RegisterIBCPath_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register-ibc-path"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RegisterIBCPath_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register_ibc_path"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_AddCosmosBasedChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "add-cosmos-based-chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_AddCosmosBasedChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "add_cosmos_based_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_RegisterAsset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register-asset"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RegisterAsset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register_asset"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_RouteIBCTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "route-ibc-transfers"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RouteIBCTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "route_ibc_transfers"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_RegisterFeeCollector_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register-fee-collector"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RegisterFeeCollector_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register_fee_collector"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

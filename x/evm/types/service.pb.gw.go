@@ -111,24 +111,6 @@ func request_MsgService_Link_0(ctx context.Context, marshaler runtime.Marshaler,
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
-	}
-
 	msg, err := client.Link(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -144,24 +126,6 @@ func local_request_MsgService_Link_0(ctx context.Context, marshaler runtime.Mars
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
 	}
 
 	msg, err := server.Link(ctx, &protoReq)
@@ -577,19 +541,37 @@ func local_request_MsgService_AddChain_0(ctx context.Context, marshaler runtime.
 
 }
 
-var (
-	filter_QueryService_BatchedCommands_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_BatchedCommands_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq BatchedCommandsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_BatchedCommands_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.BatchedCommands(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -601,11 +583,33 @@ func local_request_QueryService_BatchedCommands_0(ctx context.Context, marshaler
 	var protoReq BatchedCommandsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_BatchedCommands_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := server.BatchedCommands(ctx, &protoReq)
@@ -649,19 +653,26 @@ func local_request_QueryService_BurnerInfo_0(ctx context.Context, marshaler runt
 
 }
 
-var (
-	filter_QueryService_ConfirmationHeight_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_ConfirmationHeight_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ConfirmationHeightRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ConfirmationHeight_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := client.ConfirmationHeight(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -673,11 +684,22 @@ func local_request_QueryService_ConfirmationHeight_0(ctx context.Context, marsha
 	var protoReq ConfirmationHeightRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_ConfirmationHeight_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := server.ConfirmationHeight(ctx, &protoReq)
@@ -721,19 +743,26 @@ func local_request_QueryService_DepositState_0(ctx context.Context, marshaler ru
 
 }
 
-var (
-	filter_QueryService_PendingCommands_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_PendingCommands_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PendingCommandsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_PendingCommands_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := client.PendingCommands(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -745,11 +774,22 @@ func local_request_QueryService_PendingCommands_0(ctx context.Context, marshaler
 	var protoReq PendingCommandsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_PendingCommands_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := server.PendingCommands(ctx, &protoReq)
@@ -776,12 +816,30 @@ func local_request_QueryService_Chains_0(ctx context.Context, marshaler runtime.
 }
 
 var (
-	filter_QueryService_KeyAddress_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_QueryService_KeyAddress_0 = &utilities.DoubleArray{Encoding: map[string]int{"chain": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_QueryService_KeyAddress_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq KeyAddressRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
+	}
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -799,6 +857,24 @@ func local_request_QueryService_KeyAddress_0(ctx context.Context, marshaler runt
 	var protoReq KeyAddressRequest
 	var metadata runtime.ServerMetadata
 
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
+	}
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -811,19 +887,26 @@ func local_request_QueryService_KeyAddress_0(ctx context.Context, marshaler runt
 
 }
 
-var (
-	filter_QueryService_GatewayAddress_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_GatewayAddress_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GatewayAddressRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_GatewayAddress_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := client.GatewayAddress(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -835,11 +918,22 @@ func local_request_QueryService_GatewayAddress_0(ctx context.Context, marshaler 
 	var protoReq GatewayAddressRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_GatewayAddress_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
 	msg, err := server.GatewayAddress(ctx, &protoReq)
@@ -847,19 +941,37 @@ func local_request_QueryService_GatewayAddress_0(ctx context.Context, marshaler 
 
 }
 
-var (
-	filter_QueryService_Bytecode_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_Bytecode_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq BytecodeRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Bytecode_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["contract"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "contract")
+	}
+
+	protoReq.Contract, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "contract", err)
 	}
 
 	msg, err := client.Bytecode(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -871,11 +983,33 @@ func local_request_QueryService_Bytecode_0(ctx context.Context, marshaler runtim
 	var protoReq BytecodeRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Bytecode_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["contract"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "contract")
+	}
+
+	protoReq.Contract, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "contract", err)
 	}
 
 	msg, err := server.Bytecode(ctx, &protoReq)
@@ -883,19 +1017,37 @@ func local_request_QueryService_Bytecode_0(ctx context.Context, marshaler runtim
 
 }
 
-var (
-	filter_QueryService_Event_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_QueryService_Event_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq EventRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Event_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["event_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "event_id")
+	}
+
+	protoReq.EventId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "event_id", err)
 	}
 
 	msg, err := client.Event(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -907,11 +1059,33 @@ func local_request_QueryService_Event_0(ctx context.Context, marshaler runtime.M
 	var protoReq EventRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Event_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Chain, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
+	}
+
+	val, ok = pathParams["event_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "event_id")
+	}
+
+	protoReq.EventId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "event_id", err)
 	}
 
 	msg, err := server.Event(ctx, &protoReq)
@@ -1779,35 +1953,35 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_SetGateway_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "set-gateway"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_SetGateway_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "set_gateway"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmGatewayTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-gateway-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmGatewayTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm_gateway_tx"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "evm", "link", "recipient_chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "link"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-erc20-deploy"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm_token"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-erc20-deposit"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm_deposit"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_ConfirmTransferKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm-transfer-ownership"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_ConfirmTransferKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "confirm_transfer_key"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_VoteConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote-confirm-chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_VoteConfirmChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "vote_confirm_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateDeployToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-deploy-token"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateDeployToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create_deploy_token"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateBurnTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "sign-burn"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateBurnTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create_burn_tokens"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreatePendingTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-pending-transfers"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreatePendingTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create_pending_transfers"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateTransferOwnership_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-transfer-ownership"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateTransferOwnership_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create_transfer_ownership"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateTransferOperatorship_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create-transfer-operatorship"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateTransferOperatorship_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "create_transfer_operatorship"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_SignCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "sign-commands"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_SignCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "sign_commands"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_AddChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "add-chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_AddChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "evm", "add_chain"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -2084,25 +2258,25 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 }
 
 var (
-	pattern_QueryService_BatchedCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "batched_commands"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_BatchedCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "batched_commands", "chain", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_BurnerInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "burner_info"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_BurnerInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "evm", "v1beta1", "burner_info"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_ConfirmationHeight_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "confirmation_height"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_ConfirmationHeight_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "confirmation_height", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_DepositState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "deposit_state"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_DepositState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "evm", "v1beta1", "deposit_state"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_PendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "pending_commands"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_PendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "pending_commands", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_Chains_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "chains"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_Chains_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "evm", "v1beta1", "chains"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_KeyAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "key_address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_KeyAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "key_address", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_GatewayAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "gateway_address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_GatewayAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "gateway_address", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_Bytecode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "bytecode"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_Bytecode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "bytecode", "chain", "contract"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_Event_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"evm", "v1beta1", "event"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_Event_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "event", "chain", "event_id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

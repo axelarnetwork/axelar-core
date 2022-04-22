@@ -13,7 +13,7 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc RefundMsg(RefundMsgRequest) returns (RefundMsgResponse) {
     option (google.api.http) = {
-      post : "/reward/refund-message"
+      post : "/axelar/reward/refund_message"
       body : "*"
     };
   }

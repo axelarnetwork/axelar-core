@@ -15,7 +15,7 @@ service MsgService {
   rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
       returns (RegisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/registerChainMaintainer"
+      post : "/axelar/nexus/register_chain_maintainer"
       body : "*"
     };
   }
@@ -23,14 +23,14 @@ service MsgService {
   rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
       returns (DeregisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deregisterChainMaintainer"
+      post : "/axelar/nexus/deregister_chain_maintainer"
       body : "*"
     };
   }
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/activate-chain"
+      post : "/axelar/nexus/activate_chain"
       body : "*"
     };
   }
@@ -38,7 +38,7 @@ service MsgService {
   rpc DeactivateChain(nexus.v1beta1.DeactivateChainRequest)
       returns (nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deactivate-chain"
+      post : "/axelar/nexus/deactivate_chain"
       body : "*"
     };
   }
@@ -46,7 +46,7 @@ service MsgService {
   rpc RegisterAssetFee(RegisterAssetFeeRequest)
       returns (RegisterAssetFeeResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register-asset-fee"
+      post : "/axelar/nexus/register_asset_fee"
       body : "*"
     };
   }
@@ -57,25 +57,34 @@ service QueryService {
   // LatestDepositAddress queries the a deposit address by recipient
   rpc LatestDepositAddress(LatestDepositAddressRequest)
       returns (LatestDepositAddressResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/latest_deposit_address/"
-                                   "{recipient_chain}/{recipient_addr}";
+    option (google.api.http).get =
+        "/axelar/nexus/v1beta1/latest_deposit_address/"
+        "{recipient_addr}/{recipient_chain}/{deposit_chain}";
   }
 
   // TransfersForChain queries transfers by chain
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
-    option (google.api.http).get = "/nexus/v1beta1/transfers_for_chain";
+    option (google.api.http).get =
+        "/axelar/nexus/v1beta1/transfers_for_chain/{chain}/{state}";
   }
 
-  // Fee queries the fee info by chain and asset
-  rpc Fee(FeeRequest) returns (FeeResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/fee";
+  // FeeInfo queries the fee info by chain and asset
+  rpc FeeInfo(FeeInfoRequest) returns (FeeInfoResponse) {
+    option (google.api.http) = {
+      get : "/axelar/nexus/v1beta1/fee_info/{chain}/{asset}"
+      additional_bindings : {get : "/axelar/nexus/v1beta1/fee"}
+    };
   }
 
   // TransferFee queries the transfer fee by the source, destination chain,
-  // asset and amount
+  // and amount. If amount is 0, the min fee is returned
   rpc TransferFee(TransferFeeRequest) returns (TransferFeeResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_fee";
+    option (google.api.http) = {
+      get : "/axelar/nexus/v1beta1/transfer_fee/{source_chain}/"
+            "{destination_chain}/{amount}"
+      additional_bindings : {get : "/axelar/nexus/v1beta1/transfer_fee"}
+    };
   }
 
   // Chains queries the chains registered on the network

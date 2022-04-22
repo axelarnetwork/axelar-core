@@ -1,16 +1,16 @@
-## axelard query nexus fee
+## axelard query nexus fee-info
 
 Returns the per-chain fee for a registered asset
 
 ```
-axelard query nexus fee [chain] [asset] [flags]
+axelard query nexus fee-info [chain] [asset] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for fee
+  -h, --help          help for fee-info
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

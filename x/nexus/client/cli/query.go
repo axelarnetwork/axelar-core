@@ -153,7 +153,7 @@ func GetCommandTransfersForChain() *cobra.Command {
 // GetCommandFee returns the query for the fee info of an asset registered on a chain
 func GetCommandFee() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fee [chain] [asset]",
+		Use:   "fee-info [chain] [asset]",
 		Short: "Returns the per-chain fee for a registered asset",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -164,8 +164,8 @@ func GetCommandFee() *cobra.Command {
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
-			res, err := queryClient.Fee(cmd.Context(),
-				&types.FeeRequest{
+			res, err := queryClient.FeeInfo(cmd.Context(),
+				&types.FeeInfoRequest{
 					Chain: args[0],
 					Asset: args[1],
 				})
