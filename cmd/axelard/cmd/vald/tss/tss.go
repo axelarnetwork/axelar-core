@@ -212,6 +212,7 @@ func (mgr *Mgr) RefreshKeys(ctx context.Context) error {
 
 	mgr.Keys = make(map[string][][]byte, len(valKeysResponse.Keys))
 	for keyID, keys := range valKeysResponse.Keys {
+		mgr.Logger.Info(fmt.Sprintf("retrieved key %s", keyID))
 		mgr.Keys[keyID] = keys.Keys
 	}
 
