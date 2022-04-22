@@ -2,28 +2,43 @@
 
 import Button from '../../components/button'
 
-## Develop and test in a local development environment
+## Develop your cross-chain dapp in 2 simple steps
 
-The Axelar local development environment emulates multiple EVM chains and the Axelar overlay network that connects them.
+1. **_Build._** Develop your dapp, test against the Axelar local development environment.
+2. **_Deploy._** Deploy your contracts, point your dapp to a live network: testnet or mainnet.
 
-1. Create new emulated EVM chains pre-loaded with ERC-20 tokens and gateway contracts.
-2. Write your own `IAxelarExecutable` contracts and deploy to your emulated EVM chains.
-3. Call your `IAxelarExecutable` contracts from any chain via that chain's gateway contract. Use `relay()` to simulate the Axelar overlay network.
+## Example: Hello-world
 
-Learn more at the `axelar-local-dev` github README:
+The `testnet` project is a complete, working example illustrating the build-deploy process.
 
-<Button title="Axelar local development environment" url="https://github.com/axelarnetwork/axelar-local-dev" />
+1. Run the dapp in the local development environment.
+2. Run the same dapp in the live testnet, interacting with contracts already deployed on Ethereum and Avalanche testnets.
+
+View the github README for instructions and code:
+
+<Button title="testnet example" url="https://github.com/axelarnetwork/axelar-local-gmp-examples/tree/main/advanced-examples/testnet" />
+
+## Build
+
+Build your cross-chain dapp from basic components:
+
+- **RPC endpoints** to query or post transactions to the various EVM chains supported by Axelar.
+- **Contract addresses** on various EVM chains for
+  - Axelar services such as the Gateway contract and ERC-20 token contracts.
+  - Your own custom `IAxelarExecutable` smart contracts.
+
+The _Axelar local development environment_ emulates multiple EVM chains and the Axelar overlay network that connects them.
+
+1. Create new emulated EVM chains with RPC endpoints on your localhost. These chains come pre-loaded with Gateway and ERC-20 tokens contracts.
+2. Deploy your custom `IAxelarExecutable` contracts to your emulated EVM chains.
+3. Test your app against the RPC endoints and contract addresses of your local development environment.
 
 ## Deploy to testnet or mainnet
 
 When you're ready to go live:
 
-1. Deploy your `IAxelarExecutable` contracts to any EVM chain supported by Axelar.
-2. Remove calls to `relay()`---the Axelar network will handle everything for you!
-
-See `axelar-local-gmp-examples` for a working example:
-
-<Button title="axelar-local-gmp-examples" url="https://github.com/axelarnetwork/axelar-local-gmp-examples" />
+- Deploy your custom `IAxelarExecutable` contracts to the live EVM chains your dapp supports.
+- Swap out the RPC endpoints and contract addresses so they now point to live EVM chains.
 
 ## More examples
 
