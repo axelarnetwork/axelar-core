@@ -156,7 +156,7 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_RefundMsg_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"reward", "refund-message"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RefundMsg_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "reward", "refund_message"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

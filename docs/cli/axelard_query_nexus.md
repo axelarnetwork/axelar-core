@@ -31,7 +31,7 @@ axelard query nexus [flags]
 - [axelard query nexus chain-maintainers](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
 - [axelard query nexus chain-state](axelard_query_nexus_chain-state.md)	 - Returns the chain state
 - [axelard query nexus chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
-- [axelard query nexus fee](axelard_query_nexus_fee.md)	 - Returns the per-chain fee for a registered asset
+- [axelard query nexus fee-info](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
 - [axelard query nexus latest-deposit-address](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
 - [axelard query nexus transfer-fee](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
 - [axelard query nexus transfers-for-chain](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address

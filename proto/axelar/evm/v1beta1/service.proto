@@ -14,7 +14,7 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc SetGateway(SetGatewayRequest) returns (SetGatewayResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/set-gateway"
+      post : "/axelar/evm/set_gateway"
       body : "*"
     };
   }
@@ -22,35 +22,35 @@ service MsgService {
   rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
       returns (ConfirmGatewayTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-gateway-tx"
+      post : "/axelar/evm/confirm_gateway_tx"
       body : "*"
     };
   }
 
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/link/{recipient_chain}"
+      post : "/axelar/evm/link"
       body : "*"
     };
   }
 
   rpc ConfirmChain(ConfirmChainRequest) returns (ConfirmChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-chain"
+      post : "/axelar/evm/confirm_chain"
       body : "*"
     };
   }
 
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-erc20-deploy"
+      post : "/axelar/evm/confirm_token"
       body : "*"
     };
   }
 
   rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-erc20-deposit"
+      post : "/axelar/evm/confirm_deposit"
       body : "*"
     };
   }
@@ -58,7 +58,7 @@ service MsgService {
   rpc ConfirmTransferKey(ConfirmTransferKeyRequest)
       returns (ConfirmTransferKeyResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm-transfer-ownership"
+      post : "/axelar/evm/confirm_transfer_key"
       body : "*"
     };
   }
@@ -66,7 +66,7 @@ service MsgService {
   rpc VoteConfirmChain(VoteConfirmChainRequest)
       returns (VoteConfirmChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/vote-confirm-chain",
+      post : "/axelar/evm/vote_confirm_chain",
       body : "*"
     };
   }
@@ -74,7 +74,7 @@ service MsgService {
   rpc CreateDeployToken(CreateDeployTokenRequest)
       returns (CreateDeployTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create-deploy-token"
+      post : "/axelar/evm/create_deploy_token"
       body : "*"
     };
   }
@@ -82,7 +82,7 @@ service MsgService {
   rpc CreateBurnTokens(CreateBurnTokensRequest)
       returns (CreateBurnTokensResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-burn"
+      post : "/axelar/evm/create_burn_tokens"
       body : "*"
     };
   }
@@ -90,7 +90,7 @@ service MsgService {
   rpc CreatePendingTransfers(CreatePendingTransfersRequest)
       returns (CreatePendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create-pending-transfers"
+      post : "/axelar/evm/create_pending_transfers"
       body : "*"
     };
   }
@@ -98,7 +98,7 @@ service MsgService {
   rpc CreateTransferOwnership(CreateTransferOwnershipRequest)
       returns (CreateTransferOwnershipResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create-transfer-ownership"
+      post : "/axelar/evm/create_transfer_ownership"
       body : "*"
     };
   }
@@ -106,21 +106,21 @@ service MsgService {
   rpc CreateTransferOperatorship(CreateTransferOperatorshipRequest)
       returns (CreateTransferOperatorshipResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create-transfer-operatorship"
+      post : "/axelar/evm/create_transfer_operatorship"
       body : "*"
     };
   }
 
   rpc SignCommands(SignCommandsRequest) returns (SignCommandsResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign-commands"
+      post : "/axelar/evm/sign_commands"
       body : "*"
     };
   }
 
   rpc AddChain(AddChainRequest) returns (AddChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/add-chain"
+      post : "/axelar/evm/add_chain"
       body : "*"
     };
   }
@@ -134,53 +134,59 @@ service QueryService {
   // latest batched commands
   rpc BatchedCommands(BatchedCommandsRequest)
       returns (BatchedCommandsResponse) {
-    option (google.api.http).get = "/evm/v1beta1/batched_commands";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/batched_commands/{chain}/{id}";
   }
 
   // BurnerInfo queries the burner info for the specified address
   rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
-    option (google.api.http).get = "/evm/v1beta1/burner_info";
+    option (google.api.http).get = "/axelar/evm/v1beta1/burner_info";
   }
 
   // ConfirmationHeight queries the confirmation height for the specified chain
   rpc ConfirmationHeight(ConfirmationHeightRequest)
       returns (ConfirmationHeightResponse) {
-    option (google.api.http).get = "/evm/v1beta1/confirmation_height";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/confirmation_height/{chain}";
   }
 
   // DepositState queries the state of the specified deposit
   rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
-    option (google.api.http).get = "/evm/v1beta1/deposit_state";
+    option (google.api.http).get = "/axelar/evm/v1beta1/deposit_state";
   }
 
   // PendingCommands queries the pending commands for the specified chain
   rpc PendingCommands(PendingCommandsRequest)
       returns (PendingCommandsResponse) {
-    option (google.api.http).get = "/evm/v1beta1/pending_commands";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/pending_commands/{chain}";
   }
 
   // Chains queries the available evm chains
   rpc Chains(ChainsRequest) returns (ChainsResponse) {
-    option (google.api.http).get = "/evm/v1beta1/chains";
+    option (google.api.http).get = "/axelar/evm/v1beta1/chains";
   }
 
   // KeyAddress queries the address of key of a chain
   rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
-    option (google.api.http).get = "/evm/v1beta1/key_address";
+    option (google.api.http).get = "/axelar/evm/v1beta1/key_address/{chain}";
   }
 
   // GatewayAddress queries the address of axelar gateway at the specified chain
   rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
-    option (google.api.http).get = "/evm/v1beta1/gateway_address";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/gateway_address/{chain}";
   }
 
   // Bytecode queries the bytecode of a specified gateway at the specified chain
   rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
-    option (google.api.http).get = "/evm/v1beta1/bytecode";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/bytecode/{chain}/{contract}";
   }
 
   // Event queries an event at the specified chain
   rpc Event(EventRequest) returns (EventResponse) {
-    option (google.api.http).get = "/evm/v1beta1/event";
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/event/{chain}/{event_id}";
   }
 }

@@ -43,24 +43,6 @@ func request_MsgService_RegisterProxy_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["proxy_addr"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proxy_addr")
-	}
-
-	protoReq.ProxyAddr, err = runtime.Bytes(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proxy_addr", err)
-	}
-
 	msg, err := client.RegisterProxy(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -76,24 +58,6 @@ func local_request_MsgService_RegisterProxy_0(ctx context.Context, marshaler run
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["proxy_addr"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proxy_addr")
-	}
-
-	protoReq.ProxyAddr, err = runtime.Bytes(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proxy_addr", err)
 	}
 
 	msg, err := server.RegisterProxy(ctx, &protoReq)
@@ -266,9 +230,9 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_RegisterProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "snapshot", "registerProxy", "proxy_addr"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RegisterProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "snapshot", "register_proxy"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_DeactivateProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "snapshot", "deactivateProxy"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_DeactivateProxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "snapshot", "deactivate_proxy"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

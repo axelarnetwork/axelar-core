@@ -13,7 +13,7 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc Link(bitcoin.v1beta1.LinkRequest) returns (bitcoin.v1beta1.LinkResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/link/{recipient_chain}"
+      post : "/axelar/bitcoin/link"
       body : "*"
     };
   }
@@ -29,13 +29,15 @@ service MsgService {
   rpc VoteConfirmOutpoint(bitcoin.v1beta1.VoteConfirmOutpointRequest)
       returns (bitcoin.v1beta1.VoteConfirmOutpointResponse) {
     option (google.api.http) = {
+      post : "/axelar/bitcoin/vote_confirm"
+      body : "*"
     };
   }
 
   rpc CreatePendingTransfersTx(bitcoin.v1beta1.CreatePendingTransfersTxRequest)
       returns (bitcoin.v1beta1.CreatePendingTransfersTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/create-pending-transfers-tx"
+      post : "/axelar/bitcoin/create_pending_transfers_tx"
       body : "*"
     };
   }
@@ -43,7 +45,7 @@ service MsgService {
   rpc CreateMasterTx(bitcoin.v1beta1.CreateMasterTxRequest)
       returns (bitcoin.v1beta1.CreateMasterTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/create-master-tx"
+      post : "/axelar/bitcoin/create_master_tx"
       body : "*"
     };
   }
@@ -51,7 +53,7 @@ service MsgService {
   rpc CreateRescueTx(bitcoin.v1beta1.CreateRescueTxRequest)
       returns (bitcoin.v1beta1.CreateRescueTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/create-rescue-tx"
+      post : "/axelar/bitcoin/create_rescue_tx"
       body : "*"
     };
   }
@@ -59,7 +61,7 @@ service MsgService {
   rpc SignTx(bitcoin.v1beta1.SignTxRequest)
       returns (bitcoin.v1beta1.SignTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/sign-tx"
+      post : "/axelar/bitcoin/sign_tx"
       body : "*"
     };
   }
@@ -67,7 +69,7 @@ service MsgService {
   rpc SubmitExternalSignature(bitcoin.v1beta1.SubmitExternalSignatureRequest)
       returns (bitcoin.v1beta1.SubmitExternalSignatureResponse) {
     option (google.api.http) = {
-      post : "/axelar/bitcoin/submit-external-signature"
+      post : "/axelar/bitcoin/submit_external_signature"
       body : "*"
     };
   }

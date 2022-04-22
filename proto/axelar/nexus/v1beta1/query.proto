@@ -41,14 +41,14 @@ message TransfersForChainResponse {
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
-// FeeRequest represents a message that queries the transfer fees associated
+// FeeInfoRequest represents a message that queries the transfer fees associated
 // to an asset on a chain
-message FeeRequest {
+message FeeInfoRequest {
   string chain = 1;
   string asset = 2;
 }
 
-message FeeResponse { exported.v1beta1.FeeInfo fee_info = 1; }
+message FeeInfoResponse { exported.v1beta1.FeeInfo fee_info = 1; }
 
 // TransferFeeRequest represents a message that queries the fees charged by
 // the network for a cross-chain transfer

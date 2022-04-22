@@ -58,8 +58,8 @@
     - [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse)
     - [ChainsRequest](#axelar.nexus.v1beta1.ChainsRequest)
     - [ChainsResponse](#axelar.nexus.v1beta1.ChainsResponse)
-    - [FeeRequest](#axelar.nexus.v1beta1.FeeRequest)
-    - [FeeResponse](#axelar.nexus.v1beta1.FeeResponse)
+    - [FeeInfoRequest](#axelar.nexus.v1beta1.FeeInfoRequest)
+    - [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse)
     - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
@@ -1209,10 +1209,10 @@ registered on the network
 
 
 
-<a name="axelar.nexus.v1beta1.FeeRequest"></a>
+<a name="axelar.nexus.v1beta1.FeeInfoRequest"></a>
 
-### FeeRequest
-FeeRequest represents a message that queries the transfer fees associated
+### FeeInfoRequest
+FeeInfoRequest represents a message that queries the transfer fees associated
 to an asset on a chain
 
 
@@ -1226,9 +1226,9 @@ to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.FeeResponse"></a>
+<a name="axelar.nexus.v1beta1.FeeInfoResponse"></a>
 
-### FeeResponse
+### FeeInfoResponse
 
 
 
@@ -1721,14 +1721,14 @@ Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link/{recipient_chain}|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm-deposit|
-| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute-pending-transfers|
-| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register-ibc-path|
-| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add-cosmos-based-chain|
-| `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register-asset|
-| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route-ibc-transfers|
-| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register-fee-collector|
+| `Link` | [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm_deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute_pending_transfers|
+| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register_ibc_path|
+| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add_cosmos_based_chain|
+| `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
+| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
+| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>
@@ -1738,7 +1738,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
+| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
 
  <!-- end services -->
 
@@ -2592,14 +2592,14 @@ Msg defines the bitcoin Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest) | [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link/{recipient_chain}|
+| `Link` | [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest) | [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link|
 | `ConfirmOutpoint` | [ConfirmOutpointRequest](#axelar.bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#axelar.bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
-| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | ||
-| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create-pending-transfers-tx|
-| `CreateMasterTx` | [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create-master-tx|
-| `CreateRescueTx` | [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create-rescue-tx|
-| `SignTx` | [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign-tx|
-| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit-external-signature|
+| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | POST|/axelar/bitcoin/vote_confirm|
+| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create_pending_transfers_tx|
+| `CreateMasterTx` | [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create_master_tx|
+| `CreateRescueTx` | [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create_rescue_tx|
+| `SignTx` | [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign_tx|
+| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit_external_signature|
 
  <!-- end services -->
 
@@ -4219,21 +4219,21 @@ Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set-gateway|
-| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm-gateway-tx|
-| `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link/{recipient_chain}|
-| `ConfirmChain` | [ConfirmChainRequest](#axelar.evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#axelar.evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm-chain|
-| `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm-erc20-deploy|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm-erc20-deposit|
-| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#axelar.evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm-transfer-ownership|
-| `VoteConfirmChain` | [VoteConfirmChainRequest](#axelar.evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#axelar.evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote-confirm-chain|
-| `CreateDeployToken` | [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create-deploy-token|
-| `CreateBurnTokens` | [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/sign-burn|
-| `CreatePendingTransfers` | [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create-pending-transfers|
-| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create-transfer-ownership|
-| `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create-transfer-operatorship|
-| `SignCommands` | [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign-commands|
-| `AddChain` | [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest) | [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add-chain|
+| `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
+| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
+| `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
+| `ConfirmChain` | [ConfirmChainRequest](#axelar.evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#axelar.evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm_chain|
+| `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|
+| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#axelar.evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm_transfer_key|
+| `VoteConfirmChain` | [VoteConfirmChainRequest](#axelar.evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#axelar.evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote_confirm_chain|
+| `CreateDeployToken` | [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create_deploy_token|
+| `CreateBurnTokens` | [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/create_burn_tokens|
+| `CreatePendingTransfers` | [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create_pending_transfers|
+| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create_transfer_ownership|
+| `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create_transfer_operatorship|
+| `SignCommands` | [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign_commands|
+| `AddChain` | [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest) | [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add_chain|
 
 
 <a name="axelar.evm.v1beta1.QueryService"></a>
@@ -4243,16 +4243,16 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `BatchedCommands` | [BatchedCommandsRequest](#axelar.evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#axelar.evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/evm/v1beta1/batched_commands|
-| `BurnerInfo` | [BurnerInfoRequest](#axelar.evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#axelar.evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/evm/v1beta1/burner_info|
-| `ConfirmationHeight` | [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/evm/v1beta1/confirmation_height|
-| `DepositState` | [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/evm/v1beta1/deposit_state|
-| `PendingCommands` | [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/evm/v1beta1/pending_commands|
-| `Chains` | [ChainsRequest](#axelar.evm.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/evm/v1beta1/chains|
-| `KeyAddress` | [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/evm/v1beta1/key_address|
-| `GatewayAddress` | [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/evm/v1beta1/gateway_address|
-| `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/evm/v1beta1/bytecode|
-| `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/evm/v1beta1/event|
+| `BatchedCommands` | [BatchedCommandsRequest](#axelar.evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#axelar.evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/axelar/evm/v1beta1/batched_commands/{chain}/{id}|
+| `BurnerInfo` | [BurnerInfoRequest](#axelar.evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#axelar.evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/axelar/evm/v1beta1/burner_info|
+| `ConfirmationHeight` | [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/axelar/evm/v1beta1/confirmation_height/{chain}|
+| `DepositState` | [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/axelar/evm/v1beta1/deposit_state|
+| `PendingCommands` | [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/axelar/evm/v1beta1/pending_commands/{chain}|
+| `Chains` | [ChainsRequest](#axelar.evm.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/axelar/evm/v1beta1/chains|
+| `KeyAddress` | [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/axelar/evm/v1beta1/key_address/{chain}|
+| `GatewayAddress` | [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/axelar/evm/v1beta1/gateway_address/{chain}|
+| `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
+| `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 
  <!-- end services -->
 
@@ -4494,11 +4494,11 @@ Msg defines the nexus Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/registerChainMaintainer|
-| `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#axelar.nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#axelar.nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregisterChainMaintainer|
-| `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate-chain|
-| `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate-chain|
-| `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/axelarnet/register-asset-fee|
+| `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/register_chain_maintainer|
+| `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#axelar.nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#axelar.nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregister_chain_maintainer|
+| `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
+| `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
+| `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
 
 
 <a name="axelar.nexus.v1beta1.QueryService"></a>
@@ -4508,10 +4508,10 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `LatestDepositAddress` | [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/nexus/v1beta1/latest_deposit_address/{recipient_chain}/{recipient_addr}|
-| `TransfersForChain` | [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/nexus/v1beta1/transfers_for_chain|
-| `Fee` | [FeeRequest](#axelar.nexus.v1beta1.FeeRequest) | [FeeResponse](#axelar.nexus.v1beta1.FeeResponse) | Fee queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee|
-| `TransferFee` | [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, asset and amount | GET|/axelar/nexus/v1beta1/transfer_fee|
+| `LatestDepositAddress` | [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/axelar/nexus/v1beta1/latest_deposit_address/{recipient_addr}/{recipient_chain}/{deposit_chain}|
+| `TransfersForChain` | [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/axelar/nexus/v1beta1/transfers_for_chain/{chain}/{state}|
+| `FeeInfo` | [FeeInfoRequest](#axelar.nexus.v1beta1.FeeInfoRequest) | [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse) | FeeInfo queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee_info/{chain}/{asset}GET|/axelar/nexus/v1beta1/fee|
+| `TransferFee` | [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, and amount. If amount is 0, the min fee is returned | GET|/axelar/nexus/v1beta1/transfer_fee/{source_chain}/{destination_chain}/{amount}GET|/axelar/nexus/v1beta1/transfer_fee|
 | `Chains` | [ChainsRequest](#axelar.nexus.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
 | `Assets` | [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest) | [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
@@ -4769,9 +4769,9 @@ Msg defines the gov Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterController` | [RegisterControllerRequest](#axelar.permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#axelar.permission.v1beta1.RegisterControllerResponse) |  | ||
-| `DeregisterController` | [DeregisterControllerRequest](#axelar.permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#axelar.permission.v1beta1.DeregisterControllerResponse) |  | ||
-| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#axelar.permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#axelar.permission.v1beta1.UpdateGovernanceKeyResponse) |  | ||
+| `RegisterController` | [RegisterControllerRequest](#axelar.permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#axelar.permission.v1beta1.RegisterControllerResponse) |  | POST|/axelar/permission/register_controller|
+| `DeregisterController` | [DeregisterControllerRequest](#axelar.permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#axelar.permission.v1beta1.DeregisterControllerResponse) |  | POST|/axelar/permission/deregister_controller|
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#axelar.permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#axelar.permission.v1beta1.UpdateGovernanceKeyResponse) |  | POST|/axelar/permission/update_governance_key|
 
 
 <a name="axelar.permission.v1beta1.Query"></a>
@@ -4781,7 +4781,7 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `GovernanceKey` | [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns multisig governance key | GET|/permission/v1beta1/governance_key|
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns the multisig governance key | GET|/axelar/permission/v1beta1/governance_key|
 
  <!-- end services -->
 
@@ -4983,7 +4983,7 @@ Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RefundMsg` | [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse) |  | POST|/reward/refund-message|
+| `RefundMsg` | [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse) |  | POST|/axelar/reward/refund_message|
 
  <!-- end services -->
 
@@ -5242,8 +5242,8 @@ Msg defines the snapshot Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterProxy` | [RegisterProxyRequest](#axelar.snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#axelar.snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/registerProxy/{proxy_addr}|
-| `DeactivateProxy` | [DeactivateProxyRequest](#axelar.snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#axelar.snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivateProxy|
+| `RegisterProxy` | [RegisterProxyRequest](#axelar.snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#axelar.snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/register_proxy|
+| `DeactivateProxy` | [DeactivateProxyRequest](#axelar.snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#axelar.snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivate_proxy|
 
  <!-- end services -->
 
@@ -6627,16 +6627,16 @@ Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register-external-key|
+| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register_external_keys|
 | `HeartBeat` | [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
-| `StartKeygen` | [StartKeygenRequest](#axelar.tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/startKeygen|
-| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#axelar.tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#axelar.tss.v1beta1.ProcessKeygenTrafficResponse) |  | ||
-| `RotateKey` | [RotateKeyRequest](#axelar.tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/assign/{chain}|
-| `VotePubKey` | [VotePubKeyRequest](#axelar.tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#axelar.tss.v1beta1.VotePubKeyResponse) |  | ||
-| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#axelar.tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#axelar.tss.v1beta1.ProcessSignTrafficResponse) |  | ||
-| `VoteSig` | [VoteSigRequest](#axelar.tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#axelar.tss.v1beta1.VoteSigResponse) |  | ||
-| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#axelar.tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#axelar.tss.v1beta1.SubmitMultisigPubKeysResponse) |  | ||
-| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#axelar.tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#axelar.tss.v1beta1.SubmitMultisigSignaturesResponse) |  | ||
+| `StartKeygen` | [StartKeygenRequest](#axelar.tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/start_keygen|
+| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#axelar.tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#axelar.tss.v1beta1.ProcessKeygenTrafficResponse) |  | POST|/axelar/tss/process_keygen_traffic|
+| `RotateKey` | [RotateKeyRequest](#axelar.tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/rotate_key|
+| `VotePubKey` | [VotePubKeyRequest](#axelar.tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#axelar.tss.v1beta1.VotePubKeyResponse) |  | POST|/axelar/tss/vote_pub_key|
+| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#axelar.tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#axelar.tss.v1beta1.ProcessSignTrafficResponse) |  | POST|/axelar/tss/process_sign_traffic|
+| `VoteSig` | [VoteSigRequest](#axelar.tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#axelar.tss.v1beta1.VoteSigResponse) |  | POST|/axelar/tss/vote_sig|
+| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#axelar.tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#axelar.tss.v1beta1.SubmitMultisigPubKeysResponse) |  | POST|/axelar/tss/submit_multisig_pub_keys|
+| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#axelar.tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#axelar.tss.v1beta1.SubmitMultisigSignaturesResponse) |  | POST|/axelar/tss/submit_multisig_signatures|
 
 
 <a name="axelar.tss.v1beta1.QueryService"></a>
@@ -6646,8 +6646,8 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `NextKeyID` | [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/tss/v1beta1/next_key_id|
-| `AssignableKey` | [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/tss/v1beta1/assignable_key|
+| `NextKeyID` | [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}|
+| `AssignableKey` | [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}|
 | `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
 
  <!-- end services -->

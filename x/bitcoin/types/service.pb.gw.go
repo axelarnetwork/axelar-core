@@ -43,24 +43,6 @@ func request_MsgService_Link_0(ctx context.Context, marshaler runtime.Marshaler,
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
-	}
-
 	msg, err := client.Link(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -76,24 +58,6 @@ func local_request_MsgService_Link_0(ctx context.Context, marshaler runtime.Mars
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["recipient_chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "recipient_chain")
-	}
-
-	protoReq.RecipientChain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "recipient_chain", err)
 	}
 
 	msg, err := server.Link(ctx, &protoReq)
@@ -131,6 +95,40 @@ func local_request_MsgService_ConfirmOutpoint_0(ctx context.Context, marshaler r
 	}
 
 	msg, err := server.ConfirmOutpoint(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_MsgService_VoteConfirmOutpoint_0(ctx context.Context, marshaler runtime.Marshaler, client MsgServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq VoteConfirmOutpointRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.VoteConfirmOutpoint(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_MsgService_VoteConfirmOutpoint_0(ctx context.Context, marshaler runtime.Marshaler, server MsgServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq VoteConfirmOutpointRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.VoteConfirmOutpoint(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -351,6 +349,26 @@ func RegisterMsgServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
+	mux.Handle("POST", pattern_MsgService_VoteConfirmOutpoint_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_MsgService_VoteConfirmOutpoint_0(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_MsgService_VoteConfirmOutpoint_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_MsgService_CreatePendingTransfersTx_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -532,6 +550,26 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
+	mux.Handle("POST", pattern_MsgService_VoteConfirmOutpoint_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MsgService_VoteConfirmOutpoint_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_MsgService_VoteConfirmOutpoint_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_MsgService_CreatePendingTransfersTx_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -636,25 +674,29 @@ func RegisterMsgServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"axelar", "bitcoin", "link", "recipient_chain"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_Link_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "link"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_MsgService_ConfirmOutpoint_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "confirm"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreatePendingTransfersTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create-pending-transfers-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_VoteConfirmOutpoint_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "vote_confirm"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateMasterTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create-master-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreatePendingTransfersTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create_pending_transfers_tx"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_CreateRescueTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create-rescue-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateMasterTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create_master_tx"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_SignTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "sign-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_CreateRescueTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "create_rescue_tx"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_SubmitExternalSignature_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "submit-external-signature"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_SignTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "sign_tx"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_MsgService_SubmitExternalSignature_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "bitcoin", "submit_external_signature"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
 	forward_MsgService_Link_0 = runtime.ForwardResponseMessage
 
 	forward_MsgService_ConfirmOutpoint_0 = runtime.ForwardResponseMessage
+
+	forward_MsgService_VoteConfirmOutpoint_0 = runtime.ForwardResponseMessage
 
 	forward_MsgService_CreatePendingTransfersTx_0 = runtime.ForwardResponseMessage
 

@@ -14,40 +14,45 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/link/{recipient_chain}"
+      post : "/axelar/axelarnet/link"
       body : "*"
     };
   }
+
   rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/confirm-deposit"
+      post : "/axelar/axelarnet/confirm_deposit"
       body : "*"
     };
   }
+
   rpc ExecutePendingTransfers(ExecutePendingTransfersRequest)
       returns (ExecutePendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/execute-pending-transfers"
+      post : "/axelar/axelarnet/execute_pending_transfers"
       body : "*"
     };
   }
+
   rpc RegisterIBCPath(RegisterIBCPathRequest)
       returns (RegisterIBCPathResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register-ibc-path"
+      post : "/axelar/axelarnet/register_ibc_path"
       body : "*"
     };
   }
+
   rpc AddCosmosBasedChain(AddCosmosBasedChainRequest)
       returns (AddCosmosBasedChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/add-cosmos-based-chain"
+      post : "/axelar/axelarnet/add_cosmos_based_chain"
       body : "*"
     };
   }
+
   rpc RegisterAsset(RegisterAssetRequest) returns (RegisterAssetResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register-asset"
+      post : "/axelar/axelarnet/register_asset"
       body : "*"
     };
   }
@@ -55,14 +60,15 @@ service MsgService {
   rpc RouteIBCTransfers(RouteIBCTransfersRequest)
       returns (RouteIBCTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/route-ibc-transfers"
+      post : "/axelar/axelarnet/route_ibc_transfers"
       body : "*"
     };
   }
+
   rpc RegisterFeeCollector(RegisterFeeCollectorRequest)
       returns (RegisterFeeCollectorResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register-fee-collector"
+      post : "/axelar/axelarnet/register_fee_collector"
       body : "*"
     };
   }
@@ -70,6 +76,8 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
+
+  // PendingIBCTransferCount queries the pending ibc transfers for all chains
   rpc PendingIBCTransferCount(PendingIBCTransferCountRequest)
       returns (PendingIBCTransferCountResponse) {
     option (google.api.http).get =
