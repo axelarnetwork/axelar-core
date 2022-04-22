@@ -126,18 +126,15 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	@DOCKER_BUILDKIT=1 docker build -t axelar/proto-gen -f ./Dockerfile.protocgen .
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protocgen.sh
+	@echo "Generating Protobuf Swagger endpoint"
+	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protoc-swagger-gen.sh
+	@statik -src=./client/docs/static -dest=./client/docs -f -m
 
 proto-format:
 	@echo "Formatting Protobuf files"
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace \
 	--workdir /workspace tendermintdev/docker-build-proto \
 	find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \;
-
-proto-swagger-gen:
-	@echo "Generating Protobuf Swagger endpoint"
-	@DOCKER_BUILDKIT=1 docker build -t axelar/proto-gen -f ./Dockerfile.protocgen .
-	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protoc-swagger-gen.sh
-	@statik -src=./client/docs/static -dest=./client/docs -f -m
 
 proto-lint:
 	@echo "Linting Protobuf files"
@@ -218,7 +215,7 @@ proto-update-deps:
 
 	@./scripts/proto-copy-cosmos-sdk.sh
 
-.PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: proto-all proto-gen proto-gen-any proto-format proto-lint proto-check-breaking proto-update-deps
 
 guard-%:
 	@ if [ -z '${${*}}' ]; then echo 'Environment variable $* not set' && exit 1; fi
