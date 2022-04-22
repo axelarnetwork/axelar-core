@@ -1,24 +1,8 @@
-# Developer
+# Get started
 
-import Button from '../components/button'
+import Button from '../../components/button'
 
-## Develop your cross-chain dapp in 2 simple steps
-
-1. **_Build._** Develop and test in the Axelar local development environment
-2. **_Deploy._** Deploy to a live network: testnet or mainnet
-
-## Example: Hello-world
-
-`axelar-local-gmp-examples` is a complete, working example illustrating the build-deploy process.
-
-1. Run the dapp in the local development environment.
-2. Run the same dapp in the live testnet, interacting with contracts already deployed on Ethereum and Avalanche testnets.
-
-View the github README for instructions and code:
-
-<Button title="axelar-local-gmp-examples" url="https://github.com/axelarnetwork/axelar-local-gmp-examples" />
-
-## Build
+## Develop and test in a local development environment
 
 The Axelar local development environment emulates multiple EVM chains and the Axelar overlay network that connects them.
 
@@ -30,7 +14,7 @@ Learn more at the `axelar-local-dev` github README:
 
 <Button title="Axelar local development environment" url="https://github.com/axelarnetwork/axelar-local-dev" />
 
-## Deploy
+## Deploy to testnet or mainnet
 
 When you're ready to go live:
 
@@ -49,16 +33,3 @@ See `axelar-local-gmp-examples` for a working example:
 - [Token linker](https://github.com/axelarnetwork/axelar-local-gmp-examples/tree/main/advanced-examples/token-linker). Use cross-chain contract calls to transfer ERC-20 tokens across EVM chains.
 - [NFT linker](https://github.com/axelarnetwork/axelar-local-gmp-examples/tree/main/advanced-examples/nft-linker). Use cross-chain contract calls to transfer NFTs across EVM chains.
 - More to come
-
-## AxelarJS SDK
-
-The AxelarJS SDK is a `npm` dependency that empowers developers to leverage microservices or IBC relayers provided by Axelar.
-
-Not all dapps need the SDK. Your dapp might benefit from the SDK in the following use cases:
-
-1. **_Microservices._** Example: Get a deposit address for cross-chain token transfer dapps like [Satellite](/resources/satellite).
-2. **_Relayers._** Example: Connect EVM chains to Cosmos chains such as Terra.
-
-Learn more at the `axelarjs-sdk` github README:
-
-<Button title="axelarjs-sdk" url="https://github.com/axelarnetwork/axelarjs-sdk" />

@@ -58,6 +58,36 @@ module.exports = withNextra({
         destination: "/:slug*",
         statusCode: 301,
       },
+      {
+        source: "/dev",
+        destination: "/dev/intro",
+        statusCode: 301,
+      },
+      {
+        source: "/intro",
+        destination: "/learn",
+        statusCode: 301,
+      },
+      {
+        source: "/dev/sdk",
+        destination: "/learn/sdk",
+        statusCode: 301,
+      },
+      {
+        source: "/dev/sdk/:slug*",
+        destination: "/learn/sdk/:slug*",
+        statusCode: 301,
+      },
+      {
+        source: "/dev/cli",
+        destination: "/learn/cli",
+        statusCode: 301,
+      },
+      {
+        source: "/dev/cli/:slug*",
+        destination: "/learn/cli/:slug*",
+        statusCode: 301,
+      },
     ];
   },
 });

@@ -1,5 +1,6 @@
 {
-  "gmp": "General message passing",
-  "cli": "CLI",
-  "sdk": "AxelarJS SDK"
+  "intro": "Introduction",
+  "get-started": "Get started",
+  "tokens": "Transfer tokens",
+  "gmp": "General Message Passing"
 }

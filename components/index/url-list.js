@@ -26,7 +26,7 @@ const items = [
         </div>
       </>
     ),
-    url: "/intro",
+    url: "/learn",
     external: false,
   },
   {

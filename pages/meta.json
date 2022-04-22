@@ -1,23 +1,18 @@
 {
   "index": {
-    "title": "Welcome",
-    "type": "page",
-    "hidden": true
-  },
-  "intro": {
-    "title": "Introduction",
+    "title": "What is Axelar?",
     "type": "doc"
   },
   "dev": {
-    "title": "Developer",
+    "title": "Developers",
     "type": "doc"
   },
   "node": {
-    "title": "Node operator",
+    "title": "Node operators",
     "type": "doc"
   },
   "validator": {
-    "title": "Validator",
+    "title": "Validators",
     "type": "doc"
   },
   "resources": {
@@ -31,6 +26,10 @@
   },
   "bug-bounty": {
     "title": "Bug Bounty",
+    "type": "doc"
+  },
+  "learn": {
+    "title": "Learn more about Axelar",
     "type": "doc"
   },
   "terms-of-use": {

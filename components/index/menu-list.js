@@ -9,7 +9,7 @@ const items = [
     icon: (
       <RiCodeFill size={24} />
     ),
-    url: "/dev",
+    url: "/dev/intro",
     external: false,
   },
   {
@@ -44,8 +44,7 @@ const items = [
 export default () => {
   return (
     <>
-      <h2 className="border-0">Learn for your role</h2>
-      <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 my-4">
+      <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 my-4">
         {items.map((item, key) => {
           const link = item.external ?
             <a
