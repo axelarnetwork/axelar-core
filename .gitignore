@@ -21,3 +21,4 @@
 /node_modules/
 *.DS_Store
 /contract-artifacts/*/*.json
+/client/docs/node_modules/

@@ -40,9 +40,9 @@ lint:
 .PHONY: goimports
 goimports:
 	@echo "running goimports"
-# exclude mocks and proto generated files
+# exclude mocks, statik and proto generated files
 	@./scripts/rm-blank-lines.sh # remove blank lines from imports
-	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | xargs goimports -local github.com/axelarnetwork/ -w
+	@goimports -l -local github.com/axelarnetwork/ . | grep -v .pb.go$ | grep -v mock | grep -v statik.go$ | xargs goimports -local github.com/axelarnetwork/ -w
 
 # Build the project with release flags
 .PHONY: build
@@ -101,6 +101,7 @@ docker-image-debug:
 prereqs:
 	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
 	@which moq &>/dev/null			||	go install github.com/matryer/moq
+	@which statik &>/dev/null       ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	||	pip3 install mdformat
 	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
@@ -120,21 +121,21 @@ tofnd-client:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-proto-all: proto-update-deps proto-format proto-lint proto-gen
+proto-all: proto-update-deps proto-format proto-lint proto-gen proto-swagger-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
 	@DOCKER_BUILDKIT=1 docker build -t axelar/proto-gen -f ./Dockerfile.protocgen .
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protocgen.sh
+	@echo "Generating Protobuf Swagger endpoint"
+	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace axelar/proto-gen sh ./scripts/protoc-swagger-gen.sh
+	@statik -src=./client/docs/static -dest=./client/docs -f -m
 
 proto-format:
 	@echo "Formatting Protobuf files"
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace \
 	--workdir /workspace tendermintdev/docker-build-proto \
 	find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \;
-
-proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
 
 proto-lint:
 	@echo "Linting Protobuf files"
@@ -144,7 +145,7 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
-TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc6/proto/tendermint
+TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.16/proto/tendermint
 GOGO_PROTO_URL      	= https://raw.githubusercontent.com/regen-network/protobuf/cosmos
 GOOGLE_PROTOBUF_URL		= https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf
 GOOGLE_API_URL			= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
@@ -166,6 +167,7 @@ COSMOS_PROTO_TYPES  	= third_party/proto/cosmos_proto
 CONFIO_TYPES        	= third_party/proto
 
 proto-update-deps:
+	@echo "Updating Protobuf deps"
 	@mkdir -p $(GOGO_PROTO_TYPES)
 	@curl -sSL $(GOGO_PROTO_URL)/gogoproto/gogo.proto > $(GOGO_PROTO_TYPES)/gogo.proto
 
@@ -214,7 +216,7 @@ proto-update-deps:
 
 	@./scripts/proto-copy-cosmos-sdk.sh
 
-.PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: proto-all proto-gen proto-gen-any proto-format proto-lint proto-check-breaking proto-update-deps
 
 guard-%:
 	@ if [ -z '${${*}}' ]; then echo 'Environment variable $* not set' && exit 1; fi
