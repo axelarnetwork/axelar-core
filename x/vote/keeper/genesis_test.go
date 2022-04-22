@@ -16,7 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardMock "github.com/axelarnetwork/axelar-core/x/reward/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"

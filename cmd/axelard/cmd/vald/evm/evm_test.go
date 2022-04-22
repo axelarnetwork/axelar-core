@@ -9,10 +9,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/axelarnetwork/utils/slices"
-
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -23,8 +19,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/crypto/sha3"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
@@ -34,6 +28,9 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // testHasher is the helper tool for transaction/receipt list hashing.

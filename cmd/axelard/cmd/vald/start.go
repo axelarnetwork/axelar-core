@@ -25,17 +25,11 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-	"github.com/axelarnetwork/tm-events/pubsub"
-	"github.com/axelarnetwork/tm-events/tendermint"
-	"github.com/axelarnetwork/utils/jobs"
-
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
 	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
@@ -43,6 +37,10 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/tm-events/tendermint"
+	"github.com/axelarnetwork/utils/jobs"
 )
 
 // RW grants -rw------- file permissions
@@ -127,7 +125,7 @@ func GetValdCommand() *cobra.Command {
 			stateSource := NewRWFile(fPath)
 
 			logger.Info("start listening to events")
-			listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
+			listen(cmd.Context(), cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
 			logger.Info("shutting down")
 			return nil
 		},
@@ -165,7 +163,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -190,14 +188,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 		return cl, nil
 	})
-	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(stateStore, robustClient, logger)
-	if err != nil {
-		panic(err)
-	}
-
-	eventBus := createEventBus(robustClient, startBlock, logger)
-
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
@@ -207,6 +197,23 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
+	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	// Refresh keys after the node has synced
+	if err := tssMgr.RefreshKeys(ctx); err != nil {
+		panic(err)
+	}
+
+	eventBus := createEventBus(robustClient, startBlock, logger)
 	var subscriptions []tmEvents.FilteredSubscriber
 	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
 		return tmEvents.MustSubscribeWithAttributes(eventBus,
@@ -320,30 +327,59 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
-func getStartBlock(stateStore StateStore, tmClient tmEvents.BlockHeightClient, logger log.Logger) (int64, error) {
-	startBlock, err := stateStore.GetState()
-	if err != nil {
-		logger.Error(err.Error())
-
-		return 0, nil
-	}
-
+// Wait until the node has synced with the network and return the node height
+func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	height, err := tmClient.LatestBlockHeight(rpcCtx)
+	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
 	if err != nil {
 		return 0, err
 	}
 
-	// TODO: Make it configurable instead of a hardcoded 100
-	if height-startBlock > 100 {
-		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
+	// If the block height is older than the allowed time, then wait for the node to sync
+	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
+		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		time.Sleep(cfg.MaxLatestBlockAge)
 
-		return 0, nil
+		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	return startBlock + 1, nil
+	return syncInfo.LatestBlockHeight, nil
+}
+
+// Return the block height to start listening to TM events from
+func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+	storedHeight, err := stateStore.GetState()
+	if err != nil {
+		logger.Info(fmt.Sprintf("failed to retrieve the stored block height, using the latest: %s", err.Error()))
+		storedHeight = 0
+	} else {
+		logger.Info(fmt.Sprintf("retrieved stored block height %d", storedHeight))
+	}
+
+	// stored height must not be larger than node height
+	if storedHeight > nodeHeight {
+		return 0, fmt.Errorf("stored block height %d is ahead of the node height %d", storedHeight, nodeHeight)
+	}
+
+	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
+
+	startBlock := storedHeight
+	if startBlock != 0 {
+		// The block at the stored height might have already been processed by vald, so skip it
+		startBlock++
+	}
+
+	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxBlocksBehindLatest {
+		logger.Info(fmt.Sprintf("stored block height %d is too old, starting from the latest block", startBlock))
+		startBlock = 0
+	}
+
+	return startBlock, nil
 }
 
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
@@ -381,6 +417,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 
 		return tssMgr, nil
 	}
+
 	mgr, err := create()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))

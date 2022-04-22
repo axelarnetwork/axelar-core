@@ -9,10 +9,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/spf13/cobra"
 
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-
-	"github.com/spf13/cobra"
 )
 
 const flagMinProxyBalance = "min-proxy-balance"

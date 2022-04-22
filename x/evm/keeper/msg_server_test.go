@@ -8,23 +8,16 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-
-	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/ethereum/go-ethereum/common"
-	evmCrypto "github.com/ethereum/go-ethereum/crypto"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
+	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-
-	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -36,10 +29,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 )
 
 var (

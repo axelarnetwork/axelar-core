@@ -13,8 +13,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc/mock"
@@ -23,6 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	mock3 "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 func TestMgr_ProcessKeygenStart(t *testing.T) {
