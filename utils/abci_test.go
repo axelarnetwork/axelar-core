@@ -71,13 +71,13 @@ func TestRunEndBlocker(t *testing.T) {
 		baseCtx sdk.Context
 		logger  utils.Logger
 	)
-	testutils.Given("a base context with event manager", func() {
+	testutils.Given("a base context with event manager", func(t *testing.T) {
 		ctx, l, store, _ := setup()
 		logger = l
 		baseCtx = ctx.
 			WithMultiStore(store).
 			WithEventManager(sdk.NewEventManager())
-	}).When("running an end blocker that emits events", func() {
+	}).When("running an end blocker that emits events", func(t *testing.T) {
 		utils.RunEndBlocker(baseCtx, logger, func(cachedCtx sdk.Context) ([]types.ValidatorUpdate, error) {
 			cachedCtx.EventManager().EmitEvent(sdk.Event{})
 			return nil, nil
