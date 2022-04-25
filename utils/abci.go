@@ -32,6 +32,7 @@ func RunEndBlocker(c sdk.Context, l Logger, endBlocker func(sdk.Context) ([]abci
 	}
 
 	writeCache()
+	c.EventManager().EmitEvents(ctx.EventManager().Events())
 
 	return updates
 }
