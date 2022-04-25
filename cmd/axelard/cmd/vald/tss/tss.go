@@ -14,6 +14,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 
@@ -155,6 +157,7 @@ type Mgr struct {
 	timeoutQueue   *TimeoutQueue
 	Timeout        time.Duration
 	principalAddr  string
+	Keys           map[string][][]byte
 	Logger         log.Logger
 	broadcaster    broadcasterTypes.Broadcaster
 	cdc            *codec.LegacyAmino
@@ -183,10 +186,38 @@ func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClie
 		timeoutQueue:   NewTimeoutQueue(),
 		Timeout:        timeout,
 		principalAddr:  principalAddr,
+		Keys:           make(map[string][][]byte),
 		Logger:         logger.With("listener", "tss"),
 		broadcaster:    broadcaster,
 		cdc:            cdc,
 	}
+}
+
+// RefreshKeys refreshes validator key id to pub key mapping
+// TODO: Allow refreshing by individual key id
+func (mgr *Mgr) RefreshKeys(ctx context.Context) error {
+	queryClient := tss.NewQueryServiceClient(mgr.cliCtx)
+	valKeysResponse, err := queryClient.ValidatorMultisigKeys(ctx, &tss.ValidatorMultisigKeysRequest{
+		Address: mgr.principalAddr,
+	})
+
+	status, _ := status.FromError(err)
+
+	switch status.Code() {
+	case codes.OK:
+	case codes.NotFound:
+		return fmt.Errorf("query result was not found")
+	default:
+		return sdkerrors.Wrap(err, "failed to execute query")
+	}
+
+	mgr.Keys = make(map[string][][]byte, len(valKeysResponse.Keys))
+	for keyID, keys := range valKeysResponse.Keys {
+		mgr.Logger.Info(fmt.Sprintf("retrieved key %s", keyID))
+		mgr.Keys[keyID] = keys.Keys
+	}
+
+	return nil
 }
 
 // Recover instructs tofnd to recover the node's shares given the recovery info provided
@@ -232,6 +263,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 	// TODO: we should have a specific GRPC to do this diagnostic
 	request := &tofnd.KeyPresenceRequest{
 		KeyUid: "dummyID",
+		PubKey: []byte{},
 	}
 
 	response, err := mgr.client.KeyPresence(grpcCtx, request)
@@ -261,12 +293,20 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 		case exported.Threshold:
 			request = &tofnd.KeyPresenceRequest{
 				KeyUid: string(keyInfo.KeyID),
+				PubKey: []byte{},
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
+			pubKeys, found := mgr.Keys[string(keyInfo.KeyID)]
+			if !found {
+				continue
+			}
+
 			request = &tofnd.KeyPresenceRequest{
 				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
+				PubKey: pubKeys[0],
 			}
+
 			response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
 		default:
 			return sdkerrors.Wrapf(err, fmt.Sprintf("unrecognize key type %s", keyInfo.KeyType.SimpleString()))
