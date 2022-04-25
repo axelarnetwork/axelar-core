@@ -40,6 +40,16 @@ When you're ready to go live:
 - Deploy your custom `IAxelarExecutable` contracts to the live EVM chains your dapp supports.
 - Swap out the RPC endpoints and contract addresses so they now point to live EVM chains.
 
+Supported EVM Networks:
+
+- Ethereum
+- Avalanche
+- Fantom
+- Polygon
+- Moonbeam
+ 
+Any capitalization is supported as the input but incomming values for `sourceChain` will match those seen above.
+
 ## More examples
 
 - [Simple](https://github.com/axelarnetwork/axelar-local-gmp-examples/tree/main/advanced-examples/general-message-passing). Set up two EVM chains, transfer tokens from one chain to the other, send a "Hello world!" message to a contract on both chains.
