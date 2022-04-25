@@ -157,8 +157,8 @@ github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbE
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/aws/smithy-go v1.8.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
-github.com/axelarnetwork/tm-events v0.0.0-20220329200027-3f6720431fcf h1:nacjHL5tF1PsK1bR0xcwm7XnC7D8TfvnF6YJF4RP0KM=
-github.com/axelarnetwork/tm-events v0.0.0-20220329200027-3f6720431fcf/go.mod h1:DMlrWfQ/Au/v5miwry3c67fM8q5mcxEMzuVzOT8qHbE=
+github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb h1:WonRLhuO891Nj/X2G4zP/8X6HDN6tdUJaHRRmtU4S2g=
+github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb/go.mod h1:DMlrWfQ/Au/v5miwry3c67fM8q5mcxEMzuVzOT8qHbE=
 github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4 h1:47fzYnroSRJnTHjT/RAbbcCZ4fln8Hzpc296XW6NAUY=
 github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4/go.mod h1:B6mKp8Eti8x4vgwBRXgGeo4myArtk77xuLSRPzce3I0=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
