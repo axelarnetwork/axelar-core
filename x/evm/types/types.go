@@ -1608,7 +1608,8 @@ func (m EventTokenSent) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.DestinationAddress); err != nil {
+	err := utils.ValidateString(m.DestinationAddress)
+	if err != nil || common.IsHexAddress(m.DestinationAddress) {
 		return sdkerrors.Wrap(err, "invalid destination address")
 	}
 
@@ -1633,7 +1634,8 @@ func (m EventContractCall) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 
@@ -1654,7 +1656,8 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 

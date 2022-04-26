@@ -105,7 +105,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_Transfer{
@@ -327,8 +327,14 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCall{
@@ -343,8 +349,14 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCallWithToken{
@@ -357,8 +369,14 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenSent{
