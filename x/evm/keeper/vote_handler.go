@@ -54,6 +54,7 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 		}
 
 		writeCache()
+		ctx.EventManager().EmitEvents(cacheCtx.EventManager().Events())
 		return nil
 	}
 }
@@ -142,6 +143,7 @@ func handleVoteConfirmDeposit(ctx sdk.Context, keeper types.ChainKeeper, n types
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
 	return nil
