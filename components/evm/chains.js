@@ -5,6 +5,7 @@ import Copy from "../copy";
 import utils from "../../utils";
 import evm_chains from "../../data/evm_chains.json";
 import gateways from "../../data/gateways.json";
+import gas_receiver from "../../data/gas_receiver.json";
 
 export default ({ environment = "mainnet" }) => {
   return (
@@ -12,6 +13,7 @@ export default ({ environment = "mainnet" }) => {
       {evm_chains?.[environment].map((c, key) => {
         const explorer_url = c.provider_params?.[0]?.blockExplorerUrls?.[0];
         const gateway_contract_address = gateways?.[environment]?.find(g => g?.id === c.id)?.address;
+        const gas_receiver_address = gas_receiver[environment].address;
 
         return (
           <div key={key} className="border dark:border-gray-700 rounded-xl flex flex-col justify-between space-y-2 p-4">
@@ -31,7 +33,7 @@ export default ({ environment = "mainnet" }) => {
               </div>
               <AddToWeb3 environment={environment} chain={c.id} />
             </div>
-            <div className="flex flex-wrap items-center justify-between">
+            <div className="flex flex-col flex-wrap justify-between">
               <span className="whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">Gateway Contract:</span>
               <div className="flex items-center text-sm space-x-1">
                 {gateway_contract_address ?
@@ -44,10 +46,30 @@ export default ({ environment = "mainnet" }) => {
                     {utils.ellipse(gateway_contract_address, 14)}
                   </a>
                   :
-                  <span className="text-gray-400 dark:text-gray-600">-</span>
+                  <span className="text-gray-500 dark:text-white font-semibold">-</span>
                 }
                 {gateway_contract_address && (
                   <Copy size={18} value={gateway_contract_address} />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col flex-wrap justify-between">
+              <div className="whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">Gas Receiver Contract:</div>
+              <div className="flex items-center text-sm space-x-1">
+                {gas_receiver_address ?
+                  <a
+                    href={`${explorer_url}/address/${gas_receiver_address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="no-underline text-blue-500 dark:text-white font-semibold"
+                  >
+                    {utils.ellipse(gas_receiver_address, 14)}
+                  </a>
+                  :
+                  <span className="text-gray-500 dark:text-white font-semibold">-</span>
+                }
+                {gas_receiver_address && (
+                  <Copy size={18} value={gas_receiver_address} />
                 )}
               </div>
             </div>
