@@ -1,6 +1,7 @@
 package btc
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -10,17 +11,19 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+
 	"github.com/axelarnetwork/axelar-core/app"
-	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
+	mock3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/mock"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 func TestMgr_ProcessConfirmation(t *testing.T) {
@@ -36,7 +39,9 @@ func TestMgr_ProcessConfirmation(t *testing.T) {
 	setup := func() {
 		cdc := app.MakeEncodingConfig().Amino
 		rpc = &mock2.ClientMock{}
-		broadcaster = &mock3.BroadcasterMock{}
+		broadcaster = &mock3.BroadcasterMock{
+			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
+		}
 		ctx := client.Context{}
 
 		mgr = NewMgr(rpc, ctx, broadcaster, log.TestingLogger(), cdc)

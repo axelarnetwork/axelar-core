@@ -5,7 +5,6 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -19,15 +18,15 @@ import (
 	"sync"
 )
 
-// Ensure, that ClientMock does implement types.Client.
+// Ensure, that ClientMock does implement Client.
 // If this is not the case, regenerate this file with moq.
-var _ types.Client = &ClientMock{}
+var _ Client = &ClientMock{}
 
-// ClientMock is a mock implementation of types.Client.
+// ClientMock is a mock implementation of Client.
 //
 // 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.Client
+// 		// make and configure a mocked Client
 // 		mockedClient := &ClientMock{
 // 			ABCIInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
 // 				panic("mock out the ABCIInfo method")
@@ -151,7 +150,7 @@ var _ types.Client = &ClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedClient in code that requires types.Client
+// 		// use mockedClient in code that requires Client
 // 		// and then make assertions.
 //
 // 	}
@@ -583,6 +582,9 @@ type ClientMock struct {
 
 // ABCIInfo calls ABCIInfoFunc.
 func (mock *ClientMock) ABCIInfo(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
+	if mock.ABCIInfoFunc == nil {
+		panic("ClientMock.ABCIInfoFunc: method is nil but Client.ABCIInfo was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -591,13 +593,6 @@ func (mock *ClientMock) ABCIInfo(contextMoqParam context.Context) (*coretypes.Re
 	mock.lockABCIInfo.Lock()
 	mock.calls.ABCIInfo = append(mock.calls.ABCIInfo, callInfo)
 	mock.lockABCIInfo.Unlock()
-	if mock.ABCIInfoFunc == nil {
-		var (
-			resultABCIInfoOut *coretypes.ResultABCIInfo
-			errOut            error
-		)
-		return resultABCIInfoOut, errOut
-	}
 	return mock.ABCIInfoFunc(contextMoqParam)
 }
 
@@ -618,6 +613,9 @@ func (mock *ClientMock) ABCIInfoCalls() []struct {
 
 // ABCIQuery calls ABCIQueryFunc.
 func (mock *ClientMock) ABCIQuery(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
+	if mock.ABCIQueryFunc == nil {
+		panic("ClientMock.ABCIQueryFunc: method is nil but Client.ABCIQuery was just called")
+	}
 	callInfo := struct {
 		Ctx  context.Context
 		Path string
@@ -630,13 +628,6 @@ func (mock *ClientMock) ABCIQuery(ctx context.Context, path string, data bytes.H
 	mock.lockABCIQuery.Lock()
 	mock.calls.ABCIQuery = append(mock.calls.ABCIQuery, callInfo)
 	mock.lockABCIQuery.Unlock()
-	if mock.ABCIQueryFunc == nil {
-		var (
-			resultABCIQueryOut *coretypes.ResultABCIQuery
-			errOut             error
-		)
-		return resultABCIQueryOut, errOut
-	}
 	return mock.ABCIQueryFunc(ctx, path, data)
 }
 
@@ -661,6 +652,9 @@ func (mock *ClientMock) ABCIQueryCalls() []struct {
 
 // ABCIQueryWithOptions calls ABCIQueryWithOptionsFunc.
 func (mock *ClientMock) ABCIQueryWithOptions(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+	if mock.ABCIQueryWithOptionsFunc == nil {
+		panic("ClientMock.ABCIQueryWithOptionsFunc: method is nil but Client.ABCIQueryWithOptions was just called")
+	}
 	callInfo := struct {
 		Ctx  context.Context
 		Path string
@@ -675,13 +669,6 @@ func (mock *ClientMock) ABCIQueryWithOptions(ctx context.Context, path string, d
 	mock.lockABCIQueryWithOptions.Lock()
 	mock.calls.ABCIQueryWithOptions = append(mock.calls.ABCIQueryWithOptions, callInfo)
 	mock.lockABCIQueryWithOptions.Unlock()
-	if mock.ABCIQueryWithOptionsFunc == nil {
-		var (
-			resultABCIQueryOut *coretypes.ResultABCIQuery
-			errOut             error
-		)
-		return resultABCIQueryOut, errOut
-	}
 	return mock.ABCIQueryWithOptionsFunc(ctx, path, data, opts)
 }
 
@@ -708,6 +695,9 @@ func (mock *ClientMock) ABCIQueryWithOptionsCalls() []struct {
 
 // Block calls BlockFunc.
 func (mock *ClientMock) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+	if mock.BlockFunc == nil {
+		panic("ClientMock.BlockFunc: method is nil but Client.Block was just called")
+	}
 	callInfo := struct {
 		Ctx    context.Context
 		Height *int64
@@ -718,13 +708,6 @@ func (mock *ClientMock) Block(ctx context.Context, height *int64) (*coretypes.Re
 	mock.lockBlock.Lock()
 	mock.calls.Block = append(mock.calls.Block, callInfo)
 	mock.lockBlock.Unlock()
-	if mock.BlockFunc == nil {
-		var (
-			resultBlockOut *coretypes.ResultBlock
-			errOut         error
-		)
-		return resultBlockOut, errOut
-	}
 	return mock.BlockFunc(ctx, height)
 }
 
@@ -747,6 +730,9 @@ func (mock *ClientMock) BlockCalls() []struct {
 
 // BlockByHash calls BlockByHashFunc.
 func (mock *ClientMock) BlockByHash(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error) {
+	if mock.BlockByHashFunc == nil {
+		panic("ClientMock.BlockByHashFunc: method is nil but Client.BlockByHash was just called")
+	}
 	callInfo := struct {
 		Ctx  context.Context
 		Hash []byte
@@ -757,13 +743,6 @@ func (mock *ClientMock) BlockByHash(ctx context.Context, hash []byte) (*coretype
 	mock.lockBlockByHash.Lock()
 	mock.calls.BlockByHash = append(mock.calls.BlockByHash, callInfo)
 	mock.lockBlockByHash.Unlock()
-	if mock.BlockByHashFunc == nil {
-		var (
-			resultBlockOut *coretypes.ResultBlock
-			errOut         error
-		)
-		return resultBlockOut, errOut
-	}
 	return mock.BlockByHashFunc(ctx, hash)
 }
 
@@ -786,6 +765,9 @@ func (mock *ClientMock) BlockByHashCalls() []struct {
 
 // BlockResults calls BlockResultsFunc.
 func (mock *ClientMock) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+	if mock.BlockResultsFunc == nil {
+		panic("ClientMock.BlockResultsFunc: method is nil but Client.BlockResults was just called")
+	}
 	callInfo := struct {
 		Ctx    context.Context
 		Height *int64
@@ -796,13 +778,6 @@ func (mock *ClientMock) BlockResults(ctx context.Context, height *int64) (*coret
 	mock.lockBlockResults.Lock()
 	mock.calls.BlockResults = append(mock.calls.BlockResults, callInfo)
 	mock.lockBlockResults.Unlock()
-	if mock.BlockResultsFunc == nil {
-		var (
-			resultBlockResultsOut *coretypes.ResultBlockResults
-			errOut                error
-		)
-		return resultBlockResultsOut, errOut
-	}
 	return mock.BlockResultsFunc(ctx, height)
 }
 
@@ -825,6 +800,9 @@ func (mock *ClientMock) BlockResultsCalls() []struct {
 
 // BlockSearch calls BlockSearchFunc.
 func (mock *ClientMock) BlockSearch(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
+	if mock.BlockSearchFunc == nil {
+		panic("ClientMock.BlockSearchFunc: method is nil but Client.BlockSearch was just called")
+	}
 	callInfo := struct {
 		Ctx     context.Context
 		Query   string
@@ -841,13 +819,6 @@ func (mock *ClientMock) BlockSearch(ctx context.Context, query string, page *int
 	mock.lockBlockSearch.Lock()
 	mock.calls.BlockSearch = append(mock.calls.BlockSearch, callInfo)
 	mock.lockBlockSearch.Unlock()
-	if mock.BlockSearchFunc == nil {
-		var (
-			resultBlockSearchOut *coretypes.ResultBlockSearch
-			errOut               error
-		)
-		return resultBlockSearchOut, errOut
-	}
 	return mock.BlockSearchFunc(ctx, query, page, perPage, orderBy)
 }
 
@@ -876,6 +847,9 @@ func (mock *ClientMock) BlockSearchCalls() []struct {
 
 // BlockchainInfo calls BlockchainInfoFunc.
 func (mock *ClientMock) BlockchainInfo(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
+	if mock.BlockchainInfoFunc == nil {
+		panic("ClientMock.BlockchainInfoFunc: method is nil but Client.BlockchainInfo was just called")
+	}
 	callInfo := struct {
 		Ctx       context.Context
 		MinHeight int64
@@ -888,13 +862,6 @@ func (mock *ClientMock) BlockchainInfo(ctx context.Context, minHeight int64, max
 	mock.lockBlockchainInfo.Lock()
 	mock.calls.BlockchainInfo = append(mock.calls.BlockchainInfo, callInfo)
 	mock.lockBlockchainInfo.Unlock()
-	if mock.BlockchainInfoFunc == nil {
-		var (
-			resultBlockchainInfoOut *coretypes.ResultBlockchainInfo
-			errOut                  error
-		)
-		return resultBlockchainInfoOut, errOut
-	}
 	return mock.BlockchainInfoFunc(ctx, minHeight, maxHeight)
 }
 
@@ -919,6 +886,9 @@ func (mock *ClientMock) BlockchainInfoCalls() []struct {
 
 // BroadcastEvidence calls BroadcastEvidenceFunc.
 func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+	if mock.BroadcastEvidenceFunc == nil {
+		panic("ClientMock.BroadcastEvidenceFunc: method is nil but Client.BroadcastEvidence was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		Evidence        tenderminttypes.Evidence
@@ -929,13 +899,6 @@ func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evide
 	mock.lockBroadcastEvidence.Lock()
 	mock.calls.BroadcastEvidence = append(mock.calls.BroadcastEvidence, callInfo)
 	mock.lockBroadcastEvidence.Unlock()
-	if mock.BroadcastEvidenceFunc == nil {
-		var (
-			resultBroadcastEvidenceOut *coretypes.ResultBroadcastEvidence
-			errOut                     error
-		)
-		return resultBroadcastEvidenceOut, errOut
-	}
 	return mock.BroadcastEvidenceFunc(contextMoqParam, evidence)
 }
 
@@ -958,6 +921,9 @@ func (mock *ClientMock) BroadcastEvidenceCalls() []struct {
 
 // BroadcastTxAsync calls BroadcastTxAsyncFunc.
 func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+	if mock.BroadcastTxAsyncFunc == nil {
+		panic("ClientMock.BroadcastTxAsyncFunc: method is nil but Client.BroadcastTxAsync was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		Tx              tenderminttypes.Tx
@@ -968,13 +934,6 @@ func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx ten
 	mock.lockBroadcastTxAsync.Lock()
 	mock.calls.BroadcastTxAsync = append(mock.calls.BroadcastTxAsync, callInfo)
 	mock.lockBroadcastTxAsync.Unlock()
-	if mock.BroadcastTxAsyncFunc == nil {
-		var (
-			resultBroadcastTxOut *coretypes.ResultBroadcastTx
-			errOut               error
-		)
-		return resultBroadcastTxOut, errOut
-	}
 	return mock.BroadcastTxAsyncFunc(contextMoqParam, tx)
 }
 
@@ -997,6 +956,9 @@ func (mock *ClientMock) BroadcastTxAsyncCalls() []struct {
 
 // BroadcastTxCommit calls BroadcastTxCommitFunc.
 func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+	if mock.BroadcastTxCommitFunc == nil {
+		panic("ClientMock.BroadcastTxCommitFunc: method is nil but Client.BroadcastTxCommit was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		Tx              tenderminttypes.Tx
@@ -1007,13 +969,6 @@ func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx te
 	mock.lockBroadcastTxCommit.Lock()
 	mock.calls.BroadcastTxCommit = append(mock.calls.BroadcastTxCommit, callInfo)
 	mock.lockBroadcastTxCommit.Unlock()
-	if mock.BroadcastTxCommitFunc == nil {
-		var (
-			resultBroadcastTxCommitOut *coretypes.ResultBroadcastTxCommit
-			errOut                     error
-		)
-		return resultBroadcastTxCommitOut, errOut
-	}
 	return mock.BroadcastTxCommitFunc(contextMoqParam, tx)
 }
 
@@ -1036,6 +991,9 @@ func (mock *ClientMock) BroadcastTxCommitCalls() []struct {
 
 // BroadcastTxSync calls BroadcastTxSyncFunc.
 func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+	if mock.BroadcastTxSyncFunc == nil {
+		panic("ClientMock.BroadcastTxSyncFunc: method is nil but Client.BroadcastTxSync was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		Tx              tenderminttypes.Tx
@@ -1046,13 +1004,6 @@ func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tend
 	mock.lockBroadcastTxSync.Lock()
 	mock.calls.BroadcastTxSync = append(mock.calls.BroadcastTxSync, callInfo)
 	mock.lockBroadcastTxSync.Unlock()
-	if mock.BroadcastTxSyncFunc == nil {
-		var (
-			resultBroadcastTxOut *coretypes.ResultBroadcastTx
-			errOut               error
-		)
-		return resultBroadcastTxOut, errOut
-	}
 	return mock.BroadcastTxSyncFunc(contextMoqParam, tx)
 }
 
@@ -1075,6 +1026,9 @@ func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 
 // CheckTx calls CheckTxFunc.
 func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
+	if mock.CheckTxFunc == nil {
+		panic("ClientMock.CheckTxFunc: method is nil but Client.CheckTx was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		Tx              tenderminttypes.Tx
@@ -1085,13 +1039,6 @@ func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tendermintty
 	mock.lockCheckTx.Lock()
 	mock.calls.CheckTx = append(mock.calls.CheckTx, callInfo)
 	mock.lockCheckTx.Unlock()
-	if mock.CheckTxFunc == nil {
-		var (
-			resultCheckTxOut *coretypes.ResultCheckTx
-			errOut           error
-		)
-		return resultCheckTxOut, errOut
-	}
 	return mock.CheckTxFunc(contextMoqParam, tx)
 }
 
@@ -1114,6 +1061,9 @@ func (mock *ClientMock) CheckTxCalls() []struct {
 
 // Commit calls CommitFunc.
 func (mock *ClientMock) Commit(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
+	if mock.CommitFunc == nil {
+		panic("ClientMock.CommitFunc: method is nil but Client.Commit was just called")
+	}
 	callInfo := struct {
 		Ctx    context.Context
 		Height *int64
@@ -1124,13 +1074,6 @@ func (mock *ClientMock) Commit(ctx context.Context, height *int64) (*coretypes.R
 	mock.lockCommit.Lock()
 	mock.calls.Commit = append(mock.calls.Commit, callInfo)
 	mock.lockCommit.Unlock()
-	if mock.CommitFunc == nil {
-		var (
-			resultCommitOut *coretypes.ResultCommit
-			errOut          error
-		)
-		return resultCommitOut, errOut
-	}
 	return mock.CommitFunc(ctx, height)
 }
 
@@ -1153,6 +1096,9 @@ func (mock *ClientMock) CommitCalls() []struct {
 
 // ConsensusParams calls ConsensusParamsFunc.
 func (mock *ClientMock) ConsensusParams(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error) {
+	if mock.ConsensusParamsFunc == nil {
+		panic("ClientMock.ConsensusParamsFunc: method is nil but Client.ConsensusParams was just called")
+	}
 	callInfo := struct {
 		Ctx    context.Context
 		Height *int64
@@ -1163,13 +1109,6 @@ func (mock *ClientMock) ConsensusParams(ctx context.Context, height *int64) (*co
 	mock.lockConsensusParams.Lock()
 	mock.calls.ConsensusParams = append(mock.calls.ConsensusParams, callInfo)
 	mock.lockConsensusParams.Unlock()
-	if mock.ConsensusParamsFunc == nil {
-		var (
-			resultConsensusParamsOut *coretypes.ResultConsensusParams
-			errOut                   error
-		)
-		return resultConsensusParamsOut, errOut
-	}
 	return mock.ConsensusParamsFunc(ctx, height)
 }
 
@@ -1192,6 +1131,9 @@ func (mock *ClientMock) ConsensusParamsCalls() []struct {
 
 // ConsensusState calls ConsensusStateFunc.
 func (mock *ClientMock) ConsensusState(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error) {
+	if mock.ConsensusStateFunc == nil {
+		panic("ClientMock.ConsensusStateFunc: method is nil but Client.ConsensusState was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1200,13 +1142,6 @@ func (mock *ClientMock) ConsensusState(contextMoqParam context.Context) (*corety
 	mock.lockConsensusState.Lock()
 	mock.calls.ConsensusState = append(mock.calls.ConsensusState, callInfo)
 	mock.lockConsensusState.Unlock()
-	if mock.ConsensusStateFunc == nil {
-		var (
-			resultConsensusStateOut *coretypes.ResultConsensusState
-			errOut                  error
-		)
-		return resultConsensusStateOut, errOut
-	}
 	return mock.ConsensusStateFunc(contextMoqParam)
 }
 
@@ -1227,6 +1162,9 @@ func (mock *ClientMock) ConsensusStateCalls() []struct {
 
 // DumpConsensusState calls DumpConsensusStateFunc.
 func (mock *ClientMock) DumpConsensusState(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error) {
+	if mock.DumpConsensusStateFunc == nil {
+		panic("ClientMock.DumpConsensusStateFunc: method is nil but Client.DumpConsensusState was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1235,13 +1173,6 @@ func (mock *ClientMock) DumpConsensusState(contextMoqParam context.Context) (*co
 	mock.lockDumpConsensusState.Lock()
 	mock.calls.DumpConsensusState = append(mock.calls.DumpConsensusState, callInfo)
 	mock.lockDumpConsensusState.Unlock()
-	if mock.DumpConsensusStateFunc == nil {
-		var (
-			resultDumpConsensusStateOut *coretypes.ResultDumpConsensusState
-			errOut                      error
-		)
-		return resultDumpConsensusStateOut, errOut
-	}
 	return mock.DumpConsensusStateFunc(contextMoqParam)
 }
 
@@ -1262,6 +1193,9 @@ func (mock *ClientMock) DumpConsensusStateCalls() []struct {
 
 // Genesis calls GenesisFunc.
 func (mock *ClientMock) Genesis(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
+	if mock.GenesisFunc == nil {
+		panic("ClientMock.GenesisFunc: method is nil but Client.Genesis was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1270,13 +1204,6 @@ func (mock *ClientMock) Genesis(contextMoqParam context.Context) (*coretypes.Res
 	mock.lockGenesis.Lock()
 	mock.calls.Genesis = append(mock.calls.Genesis, callInfo)
 	mock.lockGenesis.Unlock()
-	if mock.GenesisFunc == nil {
-		var (
-			resultGenesisOut *coretypes.ResultGenesis
-			errOut           error
-		)
-		return resultGenesisOut, errOut
-	}
 	return mock.GenesisFunc(contextMoqParam)
 }
 
@@ -1297,6 +1224,9 @@ func (mock *ClientMock) GenesisCalls() []struct {
 
 // GenesisChunked calls GenesisChunkedFunc.
 func (mock *ClientMock) GenesisChunked(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
+	if mock.GenesisChunkedFunc == nil {
+		panic("ClientMock.GenesisChunkedFunc: method is nil but Client.GenesisChunked was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 		V               uint
@@ -1307,13 +1237,6 @@ func (mock *ClientMock) GenesisChunked(contextMoqParam context.Context, v uint) 
 	mock.lockGenesisChunked.Lock()
 	mock.calls.GenesisChunked = append(mock.calls.GenesisChunked, callInfo)
 	mock.lockGenesisChunked.Unlock()
-	if mock.GenesisChunkedFunc == nil {
-		var (
-			resultGenesisChunkOut *coretypes.ResultGenesisChunk
-			errOut                error
-		)
-		return resultGenesisChunkOut, errOut
-	}
 	return mock.GenesisChunkedFunc(contextMoqParam, v)
 }
 
@@ -1336,6 +1259,9 @@ func (mock *ClientMock) GenesisChunkedCalls() []struct {
 
 // Health calls HealthFunc.
 func (mock *ClientMock) Health(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
+	if mock.HealthFunc == nil {
+		panic("ClientMock.HealthFunc: method is nil but Client.Health was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1344,13 +1270,6 @@ func (mock *ClientMock) Health(contextMoqParam context.Context) (*coretypes.Resu
 	mock.lockHealth.Lock()
 	mock.calls.Health = append(mock.calls.Health, callInfo)
 	mock.lockHealth.Unlock()
-	if mock.HealthFunc == nil {
-		var (
-			resultHealthOut *coretypes.ResultHealth
-			errOut          error
-		)
-		return resultHealthOut, errOut
-	}
 	return mock.HealthFunc(contextMoqParam)
 }
 
@@ -1371,17 +1290,14 @@ func (mock *ClientMock) HealthCalls() []struct {
 
 // IsRunning calls IsRunningFunc.
 func (mock *ClientMock) IsRunning() bool {
+	if mock.IsRunningFunc == nil {
+		panic("ClientMock.IsRunningFunc: method is nil but Client.IsRunning was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockIsRunning.Lock()
 	mock.calls.IsRunning = append(mock.calls.IsRunning, callInfo)
 	mock.lockIsRunning.Unlock()
-	if mock.IsRunningFunc == nil {
-		var (
-			bOut bool
-		)
-		return bOut
-	}
 	return mock.IsRunningFunc()
 }
 
@@ -1400,6 +1316,9 @@ func (mock *ClientMock) IsRunningCalls() []struct {
 
 // NetInfo calls NetInfoFunc.
 func (mock *ClientMock) NetInfo(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error) {
+	if mock.NetInfoFunc == nil {
+		panic("ClientMock.NetInfoFunc: method is nil but Client.NetInfo was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1408,13 +1327,6 @@ func (mock *ClientMock) NetInfo(contextMoqParam context.Context) (*coretypes.Res
 	mock.lockNetInfo.Lock()
 	mock.calls.NetInfo = append(mock.calls.NetInfo, callInfo)
 	mock.lockNetInfo.Unlock()
-	if mock.NetInfoFunc == nil {
-		var (
-			resultNetInfoOut *coretypes.ResultNetInfo
-			errOut           error
-		)
-		return resultNetInfoOut, errOut
-	}
 	return mock.NetInfoFunc(contextMoqParam)
 }
 
@@ -1435,6 +1347,9 @@ func (mock *ClientMock) NetInfoCalls() []struct {
 
 // NumUnconfirmedTxs calls NumUnconfirmedTxsFunc.
 func (mock *ClientMock) NumUnconfirmedTxs(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error) {
+	if mock.NumUnconfirmedTxsFunc == nil {
+		panic("ClientMock.NumUnconfirmedTxsFunc: method is nil but Client.NumUnconfirmedTxs was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1443,13 +1358,6 @@ func (mock *ClientMock) NumUnconfirmedTxs(contextMoqParam context.Context) (*cor
 	mock.lockNumUnconfirmedTxs.Lock()
 	mock.calls.NumUnconfirmedTxs = append(mock.calls.NumUnconfirmedTxs, callInfo)
 	mock.lockNumUnconfirmedTxs.Unlock()
-	if mock.NumUnconfirmedTxsFunc == nil {
-		var (
-			resultUnconfirmedTxsOut *coretypes.ResultUnconfirmedTxs
-			errOut                  error
-		)
-		return resultUnconfirmedTxsOut, errOut
-	}
 	return mock.NumUnconfirmedTxsFunc(contextMoqParam)
 }
 
@@ -1470,17 +1378,14 @@ func (mock *ClientMock) NumUnconfirmedTxsCalls() []struct {
 
 // OnReset calls OnResetFunc.
 func (mock *ClientMock) OnReset() error {
+	if mock.OnResetFunc == nil {
+		panic("ClientMock.OnResetFunc: method is nil but Client.OnReset was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockOnReset.Lock()
 	mock.calls.OnReset = append(mock.calls.OnReset, callInfo)
 	mock.lockOnReset.Unlock()
-	if mock.OnResetFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.OnResetFunc()
 }
 
@@ -1499,17 +1404,14 @@ func (mock *ClientMock) OnResetCalls() []struct {
 
 // OnStart calls OnStartFunc.
 func (mock *ClientMock) OnStart() error {
+	if mock.OnStartFunc == nil {
+		panic("ClientMock.OnStartFunc: method is nil but Client.OnStart was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockOnStart.Lock()
 	mock.calls.OnStart = append(mock.calls.OnStart, callInfo)
 	mock.lockOnStart.Unlock()
-	if mock.OnStartFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.OnStartFunc()
 }
 
@@ -1528,14 +1430,14 @@ func (mock *ClientMock) OnStartCalls() []struct {
 
 // OnStop calls OnStopFunc.
 func (mock *ClientMock) OnStop() {
+	if mock.OnStopFunc == nil {
+		panic("ClientMock.OnStopFunc: method is nil but Client.OnStop was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockOnStop.Lock()
 	mock.calls.OnStop = append(mock.calls.OnStop, callInfo)
 	mock.lockOnStop.Unlock()
-	if mock.OnStopFunc == nil {
-		return
-	}
 	mock.OnStopFunc()
 }
 
@@ -1554,17 +1456,14 @@ func (mock *ClientMock) OnStopCalls() []struct {
 
 // Quit calls QuitFunc.
 func (mock *ClientMock) Quit() <-chan struct{} {
+	if mock.QuitFunc == nil {
+		panic("ClientMock.QuitFunc: method is nil but Client.Quit was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockQuit.Lock()
 	mock.calls.Quit = append(mock.calls.Quit, callInfo)
 	mock.lockQuit.Unlock()
-	if mock.QuitFunc == nil {
-		var (
-			valChOut <-chan struct{}
-		)
-		return valChOut
-	}
 	return mock.QuitFunc()
 }
 
@@ -1583,17 +1482,14 @@ func (mock *ClientMock) QuitCalls() []struct {
 
 // Reset calls ResetFunc.
 func (mock *ClientMock) Reset() error {
+	if mock.ResetFunc == nil {
+		panic("ClientMock.ResetFunc: method is nil but Client.Reset was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockReset.Lock()
 	mock.calls.Reset = append(mock.calls.Reset, callInfo)
 	mock.lockReset.Unlock()
-	if mock.ResetFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.ResetFunc()
 }
 
@@ -1612,6 +1508,9 @@ func (mock *ClientMock) ResetCalls() []struct {
 
 // SetLogger calls SetLoggerFunc.
 func (mock *ClientMock) SetLogger(logger log.Logger) {
+	if mock.SetLoggerFunc == nil {
+		panic("ClientMock.SetLoggerFunc: method is nil but Client.SetLogger was just called")
+	}
 	callInfo := struct {
 		Logger log.Logger
 	}{
@@ -1620,9 +1519,6 @@ func (mock *ClientMock) SetLogger(logger log.Logger) {
 	mock.lockSetLogger.Lock()
 	mock.calls.SetLogger = append(mock.calls.SetLogger, callInfo)
 	mock.lockSetLogger.Unlock()
-	if mock.SetLoggerFunc == nil {
-		return
-	}
 	mock.SetLoggerFunc(logger)
 }
 
@@ -1643,17 +1539,14 @@ func (mock *ClientMock) SetLoggerCalls() []struct {
 
 // Start calls StartFunc.
 func (mock *ClientMock) Start() error {
+	if mock.StartFunc == nil {
+		panic("ClientMock.StartFunc: method is nil but Client.Start was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockStart.Lock()
 	mock.calls.Start = append(mock.calls.Start, callInfo)
 	mock.lockStart.Unlock()
-	if mock.StartFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.StartFunc()
 }
 
@@ -1672,6 +1565,9 @@ func (mock *ClientMock) StartCalls() []struct {
 
 // Status calls StatusFunc.
 func (mock *ClientMock) Status(contextMoqParam context.Context) (*coretypes.ResultStatus, error) {
+	if mock.StatusFunc == nil {
+		panic("ClientMock.StatusFunc: method is nil but Client.Status was just called")
+	}
 	callInfo := struct {
 		ContextMoqParam context.Context
 	}{
@@ -1680,13 +1576,6 @@ func (mock *ClientMock) Status(contextMoqParam context.Context) (*coretypes.Resu
 	mock.lockStatus.Lock()
 	mock.calls.Status = append(mock.calls.Status, callInfo)
 	mock.lockStatus.Unlock()
-	if mock.StatusFunc == nil {
-		var (
-			resultStatusOut *coretypes.ResultStatus
-			errOut          error
-		)
-		return resultStatusOut, errOut
-	}
 	return mock.StatusFunc(contextMoqParam)
 }
 
@@ -1707,17 +1596,14 @@ func (mock *ClientMock) StatusCalls() []struct {
 
 // Stop calls StopFunc.
 func (mock *ClientMock) Stop() error {
+	if mock.StopFunc == nil {
+		panic("ClientMock.StopFunc: method is nil but Client.Stop was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockStop.Lock()
 	mock.calls.Stop = append(mock.calls.Stop, callInfo)
 	mock.lockStop.Unlock()
-	if mock.StopFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.StopFunc()
 }
 
@@ -1736,17 +1622,14 @@ func (mock *ClientMock) StopCalls() []struct {
 
 // String calls StringFunc.
 func (mock *ClientMock) String() string {
+	if mock.StringFunc == nil {
+		panic("ClientMock.StringFunc: method is nil but Client.String was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockString.Lock()
 	mock.calls.String = append(mock.calls.String, callInfo)
 	mock.lockString.Unlock()
-	if mock.StringFunc == nil {
-		var (
-			sOut string
-		)
-		return sOut
-	}
 	return mock.StringFunc()
 }
 
@@ -1765,6 +1648,9 @@ func (mock *ClientMock) StringCalls() []struct {
 
 // Subscribe calls SubscribeFunc.
 func (mock *ClientMock) Subscribe(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
+	if mock.SubscribeFunc == nil {
+		panic("ClientMock.SubscribeFunc: method is nil but Client.Subscribe was just called")
+	}
 	callInfo := struct {
 		Ctx         context.Context
 		Subscriber  string
@@ -1779,13 +1665,6 @@ func (mock *ClientMock) Subscribe(ctx context.Context, subscriber string, query 
 	mock.lockSubscribe.Lock()
 	mock.calls.Subscribe = append(mock.calls.Subscribe, callInfo)
 	mock.lockSubscribe.Unlock()
-	if mock.SubscribeFunc == nil {
-		var (
-			outOut <-chan coretypes.ResultEvent
-			errOut error
-		)
-		return outOut, errOut
-	}
 	return mock.SubscribeFunc(ctx, subscriber, query, outCapacity...)
 }
 
@@ -1812,6 +1691,9 @@ func (mock *ClientMock) SubscribeCalls() []struct {
 
 // Tx calls TxFunc.
 func (mock *ClientMock) Tx(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error) {
+	if mock.TxFunc == nil {
+		panic("ClientMock.TxFunc: method is nil but Client.Tx was just called")
+	}
 	callInfo := struct {
 		Ctx   context.Context
 		Hash  []byte
@@ -1824,13 +1706,6 @@ func (mock *ClientMock) Tx(ctx context.Context, hash []byte, prove bool) (*coret
 	mock.lockTx.Lock()
 	mock.calls.Tx = append(mock.calls.Tx, callInfo)
 	mock.lockTx.Unlock()
-	if mock.TxFunc == nil {
-		var (
-			resultTxOut *coretypes.ResultTx
-			errOut      error
-		)
-		return resultTxOut, errOut
-	}
 	return mock.TxFunc(ctx, hash, prove)
 }
 
@@ -1855,6 +1730,9 @@ func (mock *ClientMock) TxCalls() []struct {
 
 // TxSearch calls TxSearchFunc.
 func (mock *ClientMock) TxSearch(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error) {
+	if mock.TxSearchFunc == nil {
+		panic("ClientMock.TxSearchFunc: method is nil but Client.TxSearch was just called")
+	}
 	callInfo := struct {
 		Ctx     context.Context
 		Query   string
@@ -1873,13 +1751,6 @@ func (mock *ClientMock) TxSearch(ctx context.Context, query string, prove bool, 
 	mock.lockTxSearch.Lock()
 	mock.calls.TxSearch = append(mock.calls.TxSearch, callInfo)
 	mock.lockTxSearch.Unlock()
-	if mock.TxSearchFunc == nil {
-		var (
-			resultTxSearchOut *coretypes.ResultTxSearch
-			errOut            error
-		)
-		return resultTxSearchOut, errOut
-	}
 	return mock.TxSearchFunc(ctx, query, prove, page, perPage, orderBy)
 }
 
@@ -1910,6 +1781,9 @@ func (mock *ClientMock) TxSearchCalls() []struct {
 
 // UnconfirmedTxs calls UnconfirmedTxsFunc.
 func (mock *ClientMock) UnconfirmedTxs(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error) {
+	if mock.UnconfirmedTxsFunc == nil {
+		panic("ClientMock.UnconfirmedTxsFunc: method is nil but Client.UnconfirmedTxs was just called")
+	}
 	callInfo := struct {
 		Ctx   context.Context
 		Limit *int
@@ -1920,13 +1794,6 @@ func (mock *ClientMock) UnconfirmedTxs(ctx context.Context, limit *int) (*corety
 	mock.lockUnconfirmedTxs.Lock()
 	mock.calls.UnconfirmedTxs = append(mock.calls.UnconfirmedTxs, callInfo)
 	mock.lockUnconfirmedTxs.Unlock()
-	if mock.UnconfirmedTxsFunc == nil {
-		var (
-			resultUnconfirmedTxsOut *coretypes.ResultUnconfirmedTxs
-			errOut                  error
-		)
-		return resultUnconfirmedTxsOut, errOut
-	}
 	return mock.UnconfirmedTxsFunc(ctx, limit)
 }
 
@@ -1949,6 +1816,9 @@ func (mock *ClientMock) UnconfirmedTxsCalls() []struct {
 
 // Unsubscribe calls UnsubscribeFunc.
 func (mock *ClientMock) Unsubscribe(ctx context.Context, subscriber string, query string) error {
+	if mock.UnsubscribeFunc == nil {
+		panic("ClientMock.UnsubscribeFunc: method is nil but Client.Unsubscribe was just called")
+	}
 	callInfo := struct {
 		Ctx        context.Context
 		Subscriber string
@@ -1961,12 +1831,6 @@ func (mock *ClientMock) Unsubscribe(ctx context.Context, subscriber string, quer
 	mock.lockUnsubscribe.Lock()
 	mock.calls.Unsubscribe = append(mock.calls.Unsubscribe, callInfo)
 	mock.lockUnsubscribe.Unlock()
-	if mock.UnsubscribeFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.UnsubscribeFunc(ctx, subscriber, query)
 }
 
@@ -1991,6 +1855,9 @@ func (mock *ClientMock) UnsubscribeCalls() []struct {
 
 // UnsubscribeAll calls UnsubscribeAllFunc.
 func (mock *ClientMock) UnsubscribeAll(ctx context.Context, subscriber string) error {
+	if mock.UnsubscribeAllFunc == nil {
+		panic("ClientMock.UnsubscribeAllFunc: method is nil but Client.UnsubscribeAll was just called")
+	}
 	callInfo := struct {
 		Ctx        context.Context
 		Subscriber string
@@ -2001,12 +1868,6 @@ func (mock *ClientMock) UnsubscribeAll(ctx context.Context, subscriber string) e
 	mock.lockUnsubscribeAll.Lock()
 	mock.calls.UnsubscribeAll = append(mock.calls.UnsubscribeAll, callInfo)
 	mock.lockUnsubscribeAll.Unlock()
-	if mock.UnsubscribeAllFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.UnsubscribeAllFunc(ctx, subscriber)
 }
 
@@ -2029,6 +1890,9 @@ func (mock *ClientMock) UnsubscribeAllCalls() []struct {
 
 // Validators calls ValidatorsFunc.
 func (mock *ClientMock) Validators(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
+	if mock.ValidatorsFunc == nil {
+		panic("ClientMock.ValidatorsFunc: method is nil but Client.Validators was just called")
+	}
 	callInfo := struct {
 		Ctx     context.Context
 		Height  *int64
@@ -2043,13 +1907,6 @@ func (mock *ClientMock) Validators(ctx context.Context, height *int64, page *int
 	mock.lockValidators.Lock()
 	mock.calls.Validators = append(mock.calls.Validators, callInfo)
 	mock.lockValidators.Unlock()
-	if mock.ValidatorsFunc == nil {
-		var (
-			resultValidatorsOut *coretypes.ResultValidators
-			errOut              error
-		)
-		return resultValidatorsOut, errOut
-	}
 	return mock.ValidatorsFunc(ctx, height, page, perPage)
 }
 
@@ -2074,90 +1931,15 @@ func (mock *ClientMock) ValidatorsCalls() []struct {
 	return calls
 }
 
-// Ensure, that BroadcasterMock does implement types.Broadcaster.
+// Ensure, that AccountRetrieverMock does implement AccountRetriever.
 // If this is not the case, regenerate this file with moq.
-var _ types.Broadcaster = &BroadcasterMock{}
+var _ AccountRetriever = &AccountRetrieverMock{}
 
-// BroadcasterMock is a mock implementation of types.Broadcaster.
-//
-// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
-//
-// 		// make and configure a mocked types.Broadcaster
-// 		mockedBroadcaster := &BroadcasterMock{
-// 			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-// 				panic("mock out the Broadcast method")
-// 			},
-// 		}
-//
-// 		// use mockedBroadcaster in code that requires types.Broadcaster
-// 		// and then make assertions.
-//
-// 	}
-type BroadcasterMock struct {
-	// BroadcastFunc mocks the Broadcast method.
-	BroadcastFunc func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// Broadcast holds details about calls to the Broadcast method.
-		Broadcast []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Msgs is the msgs argument value.
-			Msgs []sdk.Msg
-		}
-	}
-	lockBroadcast sync.RWMutex
-}
-
-// Broadcast calls BroadcastFunc.
-func (mock *BroadcasterMock) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	callInfo := struct {
-		Ctx  context.Context
-		Msgs []sdk.Msg
-	}{
-		Ctx:  ctx,
-		Msgs: msgs,
-	}
-	mock.lockBroadcast.Lock()
-	mock.calls.Broadcast = append(mock.calls.Broadcast, callInfo)
-	mock.lockBroadcast.Unlock()
-	if mock.BroadcastFunc == nil {
-		var (
-			txResponseOut *sdk.TxResponse
-			errOut        error
-		)
-		return txResponseOut, errOut
-	}
-	return mock.BroadcastFunc(ctx, msgs...)
-}
-
-// BroadcastCalls gets all the calls that were made to Broadcast.
-// Check the length with:
-//     len(mockedBroadcaster.BroadcastCalls())
-func (mock *BroadcasterMock) BroadcastCalls() []struct {
-	Ctx  context.Context
-	Msgs []sdk.Msg
-} {
-	var calls []struct {
-		Ctx  context.Context
-		Msgs []sdk.Msg
-	}
-	mock.lockBroadcast.RLock()
-	calls = mock.calls.Broadcast
-	mock.lockBroadcast.RUnlock()
-	return calls
-}
-
-// Ensure, that AccountRetrieverMock does implement types.AccountRetriever.
-// If this is not the case, regenerate this file with moq.
-var _ types.AccountRetriever = &AccountRetrieverMock{}
-
-// AccountRetrieverMock is a mock implementation of types.AccountRetriever.
+// AccountRetrieverMock is a mock implementation of AccountRetriever.
 //
 // 	func TestSomethingThatUsesAccountRetriever(t *testing.T) {
 //
-// 		// make and configure a mocked types.AccountRetriever
+// 		// make and configure a mocked AccountRetriever
 // 		mockedAccountRetriever := &AccountRetrieverMock{
 // 			EnsureExistsFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
 // 				panic("mock out the EnsureExists method")
@@ -2173,7 +1955,7 @@ var _ types.AccountRetriever = &AccountRetrieverMock{}
 // 			},
 // 		}
 //
-// 		// use mockedAccountRetriever in code that requires types.AccountRetriever
+// 		// use mockedAccountRetriever in code that requires AccountRetriever
 // 		// and then make assertions.
 //
 // 	}
@@ -2229,6 +2011,9 @@ type AccountRetrieverMock struct {
 
 // EnsureExists calls EnsureExistsFunc.
 func (mock *AccountRetrieverMock) EnsureExists(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
+	if mock.EnsureExistsFunc == nil {
+		panic("AccountRetrieverMock.EnsureExistsFunc: method is nil but AccountRetriever.EnsureExists was just called")
+	}
 	callInfo := struct {
 		ClientCtx sdkClient.Context
 		Addr      sdk.AccAddress
@@ -2239,12 +2024,6 @@ func (mock *AccountRetrieverMock) EnsureExists(clientCtx sdkClient.Context, addr
 	mock.lockEnsureExists.Lock()
 	mock.calls.EnsureExists = append(mock.calls.EnsureExists, callInfo)
 	mock.lockEnsureExists.Unlock()
-	if mock.EnsureExistsFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.EnsureExistsFunc(clientCtx, addr)
 }
 
@@ -2267,6 +2046,9 @@ func (mock *AccountRetrieverMock) EnsureExistsCalls() []struct {
 
 // GetAccount calls GetAccountFunc.
 func (mock *AccountRetrieverMock) GetAccount(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error) {
+	if mock.GetAccountFunc == nil {
+		panic("AccountRetrieverMock.GetAccountFunc: method is nil but AccountRetriever.GetAccount was just called")
+	}
 	callInfo := struct {
 		ClientCtx sdkClient.Context
 		Addr      sdk.AccAddress
@@ -2277,13 +2059,6 @@ func (mock *AccountRetrieverMock) GetAccount(clientCtx sdkClient.Context, addr s
 	mock.lockGetAccount.Lock()
 	mock.calls.GetAccount = append(mock.calls.GetAccount, callInfo)
 	mock.lockGetAccount.Unlock()
-	if mock.GetAccountFunc == nil {
-		var (
-			accountOut sdkClient.Account
-			errOut     error
-		)
-		return accountOut, errOut
-	}
 	return mock.GetAccountFunc(clientCtx, addr)
 }
 
@@ -2306,6 +2081,9 @@ func (mock *AccountRetrieverMock) GetAccountCalls() []struct {
 
 // GetAccountNumberSequence calls GetAccountNumberSequenceFunc.
 func (mock *AccountRetrieverMock) GetAccountNumberSequence(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+	if mock.GetAccountNumberSequenceFunc == nil {
+		panic("AccountRetrieverMock.GetAccountNumberSequenceFunc: method is nil but AccountRetriever.GetAccountNumberSequence was just called")
+	}
 	callInfo := struct {
 		ClientCtx sdkClient.Context
 		Addr      sdk.AccAddress
@@ -2316,14 +2094,6 @@ func (mock *AccountRetrieverMock) GetAccountNumberSequence(clientCtx sdkClient.C
 	mock.lockGetAccountNumberSequence.Lock()
 	mock.calls.GetAccountNumberSequence = append(mock.calls.GetAccountNumberSequence, callInfo)
 	mock.lockGetAccountNumberSequence.Unlock()
-	if mock.GetAccountNumberSequenceFunc == nil {
-		var (
-			accNumOut uint64
-			accSeqOut uint64
-			errOut    error
-		)
-		return accNumOut, accSeqOut, errOut
-	}
 	return mock.GetAccountNumberSequenceFunc(clientCtx, addr)
 }
 
@@ -2346,6 +2116,9 @@ func (mock *AccountRetrieverMock) GetAccountNumberSequenceCalls() []struct {
 
 // GetAccountWithHeight calls GetAccountWithHeightFunc.
 func (mock *AccountRetrieverMock) GetAccountWithHeight(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error) {
+	if mock.GetAccountWithHeightFunc == nil {
+		panic("AccountRetrieverMock.GetAccountWithHeightFunc: method is nil but AccountRetriever.GetAccountWithHeight was just called")
+	}
 	callInfo := struct {
 		ClientCtx sdkClient.Context
 		Addr      sdk.AccAddress
@@ -2356,14 +2129,6 @@ func (mock *AccountRetrieverMock) GetAccountWithHeight(clientCtx sdkClient.Conte
 	mock.lockGetAccountWithHeight.Lock()
 	mock.calls.GetAccountWithHeight = append(mock.calls.GetAccountWithHeight, callInfo)
 	mock.lockGetAccountWithHeight.Unlock()
-	if mock.GetAccountWithHeightFunc == nil {
-		var (
-			accountOut sdkClient.Account
-			nOut       int64
-			errOut     error
-		)
-		return accountOut, nOut, errOut
-	}
 	return mock.GetAccountWithHeightFunc(clientCtx, addr)
 }
 
@@ -2384,15 +2149,15 @@ func (mock *AccountRetrieverMock) GetAccountWithHeightCalls() []struct {
 	return calls
 }
 
-// Ensure, that KeyringMock does implement types.Keyring.
+// Ensure, that KeyringMock does implement Keyring.
 // If this is not the case, regenerate this file with moq.
-var _ types.Keyring = &KeyringMock{}
+var _ Keyring = &KeyringMock{}
 
-// KeyringMock is a mock implementation of types.Keyring.
+// KeyringMock is a mock implementation of Keyring.
 //
 // 	func TestSomethingThatUsesKeyring(t *testing.T) {
 //
-// 		// make and configure a mocked types.Keyring
+// 		// make and configure a mocked Keyring
 // 		mockedKeyring := &KeyringMock{
 // 			DeleteFunc: func(uid string) error {
 // 				panic("mock out the Delete method")
@@ -2453,7 +2218,7 @@ var _ types.Keyring = &KeyringMock{}
 // 			},
 // 		}
 //
-// 		// use mockedKeyring in code that requires types.Keyring
+// 		// use mockedKeyring in code that requires Keyring
 // 		// and then make assertions.
 //
 // 	}
@@ -2678,6 +2443,9 @@ type KeyringMock struct {
 
 // Delete calls DeleteFunc.
 func (mock *KeyringMock) Delete(uid string) error {
+	if mock.DeleteFunc == nil {
+		panic("KeyringMock.DeleteFunc: method is nil but Keyring.Delete was just called")
+	}
 	callInfo := struct {
 		UID string
 	}{
@@ -2686,12 +2454,6 @@ func (mock *KeyringMock) Delete(uid string) error {
 	mock.lockDelete.Lock()
 	mock.calls.Delete = append(mock.calls.Delete, callInfo)
 	mock.lockDelete.Unlock()
-	if mock.DeleteFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.DeleteFunc(uid)
 }
 
@@ -2712,6 +2474,9 @@ func (mock *KeyringMock) DeleteCalls() []struct {
 
 // DeleteByAddress calls DeleteByAddressFunc.
 func (mock *KeyringMock) DeleteByAddress(address sdk.Address) error {
+	if mock.DeleteByAddressFunc == nil {
+		panic("KeyringMock.DeleteByAddressFunc: method is nil but Keyring.DeleteByAddress was just called")
+	}
 	callInfo := struct {
 		Address sdk.Address
 	}{
@@ -2720,12 +2485,6 @@ func (mock *KeyringMock) DeleteByAddress(address sdk.Address) error {
 	mock.lockDeleteByAddress.Lock()
 	mock.calls.DeleteByAddress = append(mock.calls.DeleteByAddress, callInfo)
 	mock.lockDeleteByAddress.Unlock()
-	if mock.DeleteByAddressFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.DeleteByAddressFunc(address)
 }
 
@@ -2746,6 +2505,9 @@ func (mock *KeyringMock) DeleteByAddressCalls() []struct {
 
 // ExportPrivKeyArmor calls ExportPrivKeyArmorFunc.
 func (mock *KeyringMock) ExportPrivKeyArmor(uid string, encryptPassphrase string) (string, error) {
+	if mock.ExportPrivKeyArmorFunc == nil {
+		panic("KeyringMock.ExportPrivKeyArmorFunc: method is nil but Keyring.ExportPrivKeyArmor was just called")
+	}
 	callInfo := struct {
 		UID               string
 		EncryptPassphrase string
@@ -2756,13 +2518,6 @@ func (mock *KeyringMock) ExportPrivKeyArmor(uid string, encryptPassphrase string
 	mock.lockExportPrivKeyArmor.Lock()
 	mock.calls.ExportPrivKeyArmor = append(mock.calls.ExportPrivKeyArmor, callInfo)
 	mock.lockExportPrivKeyArmor.Unlock()
-	if mock.ExportPrivKeyArmorFunc == nil {
-		var (
-			armorOut string
-			errOut   error
-		)
-		return armorOut, errOut
-	}
 	return mock.ExportPrivKeyArmorFunc(uid, encryptPassphrase)
 }
 
@@ -2785,6 +2540,9 @@ func (mock *KeyringMock) ExportPrivKeyArmorCalls() []struct {
 
 // ExportPrivKeyArmorByAddress calls ExportPrivKeyArmorByAddressFunc.
 func (mock *KeyringMock) ExportPrivKeyArmorByAddress(address sdk.Address, encryptPassphrase string) (string, error) {
+	if mock.ExportPrivKeyArmorByAddressFunc == nil {
+		panic("KeyringMock.ExportPrivKeyArmorByAddressFunc: method is nil but Keyring.ExportPrivKeyArmorByAddress was just called")
+	}
 	callInfo := struct {
 		Address           sdk.Address
 		EncryptPassphrase string
@@ -2795,13 +2553,6 @@ func (mock *KeyringMock) ExportPrivKeyArmorByAddress(address sdk.Address, encryp
 	mock.lockExportPrivKeyArmorByAddress.Lock()
 	mock.calls.ExportPrivKeyArmorByAddress = append(mock.calls.ExportPrivKeyArmorByAddress, callInfo)
 	mock.lockExportPrivKeyArmorByAddress.Unlock()
-	if mock.ExportPrivKeyArmorByAddressFunc == nil {
-		var (
-			armorOut string
-			errOut   error
-		)
-		return armorOut, errOut
-	}
 	return mock.ExportPrivKeyArmorByAddressFunc(address, encryptPassphrase)
 }
 
@@ -2824,6 +2575,9 @@ func (mock *KeyringMock) ExportPrivKeyArmorByAddressCalls() []struct {
 
 // ExportPubKeyArmor calls ExportPubKeyArmorFunc.
 func (mock *KeyringMock) ExportPubKeyArmor(uid string) (string, error) {
+	if mock.ExportPubKeyArmorFunc == nil {
+		panic("KeyringMock.ExportPubKeyArmorFunc: method is nil but Keyring.ExportPubKeyArmor was just called")
+	}
 	callInfo := struct {
 		UID string
 	}{
@@ -2832,13 +2586,6 @@ func (mock *KeyringMock) ExportPubKeyArmor(uid string) (string, error) {
 	mock.lockExportPubKeyArmor.Lock()
 	mock.calls.ExportPubKeyArmor = append(mock.calls.ExportPubKeyArmor, callInfo)
 	mock.lockExportPubKeyArmor.Unlock()
-	if mock.ExportPubKeyArmorFunc == nil {
-		var (
-			sOut   string
-			errOut error
-		)
-		return sOut, errOut
-	}
 	return mock.ExportPubKeyArmorFunc(uid)
 }
 
@@ -2859,6 +2606,9 @@ func (mock *KeyringMock) ExportPubKeyArmorCalls() []struct {
 
 // ExportPubKeyArmorByAddress calls ExportPubKeyArmorByAddressFunc.
 func (mock *KeyringMock) ExportPubKeyArmorByAddress(address sdk.Address) (string, error) {
+	if mock.ExportPubKeyArmorByAddressFunc == nil {
+		panic("KeyringMock.ExportPubKeyArmorByAddressFunc: method is nil but Keyring.ExportPubKeyArmorByAddress was just called")
+	}
 	callInfo := struct {
 		Address sdk.Address
 	}{
@@ -2867,13 +2617,6 @@ func (mock *KeyringMock) ExportPubKeyArmorByAddress(address sdk.Address) (string
 	mock.lockExportPubKeyArmorByAddress.Lock()
 	mock.calls.ExportPubKeyArmorByAddress = append(mock.calls.ExportPubKeyArmorByAddress, callInfo)
 	mock.lockExportPubKeyArmorByAddress.Unlock()
-	if mock.ExportPubKeyArmorByAddressFunc == nil {
-		var (
-			sOut   string
-			errOut error
-		)
-		return sOut, errOut
-	}
 	return mock.ExportPubKeyArmorByAddressFunc(address)
 }
 
@@ -2894,6 +2637,9 @@ func (mock *KeyringMock) ExportPubKeyArmorByAddressCalls() []struct {
 
 // ImportPrivKey calls ImportPrivKeyFunc.
 func (mock *KeyringMock) ImportPrivKey(uid string, armor string, passphrase string) error {
+	if mock.ImportPrivKeyFunc == nil {
+		panic("KeyringMock.ImportPrivKeyFunc: method is nil but Keyring.ImportPrivKey was just called")
+	}
 	callInfo := struct {
 		UID        string
 		Armor      string
@@ -2906,12 +2652,6 @@ func (mock *KeyringMock) ImportPrivKey(uid string, armor string, passphrase stri
 	mock.lockImportPrivKey.Lock()
 	mock.calls.ImportPrivKey = append(mock.calls.ImportPrivKey, callInfo)
 	mock.lockImportPrivKey.Unlock()
-	if mock.ImportPrivKeyFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.ImportPrivKeyFunc(uid, armor, passphrase)
 }
 
@@ -2936,6 +2676,9 @@ func (mock *KeyringMock) ImportPrivKeyCalls() []struct {
 
 // ImportPubKey calls ImportPubKeyFunc.
 func (mock *KeyringMock) ImportPubKey(uid string, armor string) error {
+	if mock.ImportPubKeyFunc == nil {
+		panic("KeyringMock.ImportPubKeyFunc: method is nil but Keyring.ImportPubKey was just called")
+	}
 	callInfo := struct {
 		UID   string
 		Armor string
@@ -2946,12 +2689,6 @@ func (mock *KeyringMock) ImportPubKey(uid string, armor string) error {
 	mock.lockImportPubKey.Lock()
 	mock.calls.ImportPubKey = append(mock.calls.ImportPubKey, callInfo)
 	mock.lockImportPubKey.Unlock()
-	if mock.ImportPubKeyFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
 	return mock.ImportPubKeyFunc(uid, armor)
 }
 
@@ -2974,6 +2711,9 @@ func (mock *KeyringMock) ImportPubKeyCalls() []struct {
 
 // Key calls KeyFunc.
 func (mock *KeyringMock) Key(uid string) (keyring.Info, error) {
+	if mock.KeyFunc == nil {
+		panic("KeyringMock.KeyFunc: method is nil but Keyring.Key was just called")
+	}
 	callInfo := struct {
 		UID string
 	}{
@@ -2982,13 +2722,6 @@ func (mock *KeyringMock) Key(uid string) (keyring.Info, error) {
 	mock.lockKey.Lock()
 	mock.calls.Key = append(mock.calls.Key, callInfo)
 	mock.lockKey.Unlock()
-	if mock.KeyFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.KeyFunc(uid)
 }
 
@@ -3009,6 +2742,9 @@ func (mock *KeyringMock) KeyCalls() []struct {
 
 // KeyByAddress calls KeyByAddressFunc.
 func (mock *KeyringMock) KeyByAddress(address sdk.Address) (keyring.Info, error) {
+	if mock.KeyByAddressFunc == nil {
+		panic("KeyringMock.KeyByAddressFunc: method is nil but Keyring.KeyByAddress was just called")
+	}
 	callInfo := struct {
 		Address sdk.Address
 	}{
@@ -3017,13 +2753,6 @@ func (mock *KeyringMock) KeyByAddress(address sdk.Address) (keyring.Info, error)
 	mock.lockKeyByAddress.Lock()
 	mock.calls.KeyByAddress = append(mock.calls.KeyByAddress, callInfo)
 	mock.lockKeyByAddress.Unlock()
-	if mock.KeyByAddressFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.KeyByAddressFunc(address)
 }
 
@@ -3044,18 +2773,14 @@ func (mock *KeyringMock) KeyByAddressCalls() []struct {
 
 // List calls ListFunc.
 func (mock *KeyringMock) List() ([]keyring.Info, error) {
+	if mock.ListFunc == nil {
+		panic("KeyringMock.ListFunc: method is nil but Keyring.List was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockList.Lock()
 	mock.calls.List = append(mock.calls.List, callInfo)
 	mock.lockList.Unlock()
-	if mock.ListFunc == nil {
-		var (
-			infosOut []keyring.Info
-			errOut   error
-		)
-		return infosOut, errOut
-	}
 	return mock.ListFunc()
 }
 
@@ -3074,6 +2799,9 @@ func (mock *KeyringMock) ListCalls() []struct {
 
 // NewAccount calls NewAccountFunc.
 func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+	if mock.NewAccountFunc == nil {
+		panic("KeyringMock.NewAccountFunc: method is nil but Keyring.NewAccount was just called")
+	}
 	callInfo := struct {
 		UID             string
 		Mnemonic        string
@@ -3090,13 +2818,6 @@ func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase
 	mock.lockNewAccount.Lock()
 	mock.calls.NewAccount = append(mock.calls.NewAccount, callInfo)
 	mock.lockNewAccount.Unlock()
-	if mock.NewAccountFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.NewAccountFunc(uid, mnemonic, bip39Passphrase, hdPath, algo)
 }
 
@@ -3125,6 +2846,9 @@ func (mock *KeyringMock) NewAccountCalls() []struct {
 
 // NewMnemonic calls NewMnemonicFunc.
 func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+	if mock.NewMnemonicFunc == nil {
+		panic("KeyringMock.NewMnemonicFunc: method is nil but Keyring.NewMnemonic was just called")
+	}
 	callInfo := struct {
 		UID             string
 		Language        keyring.Language
@@ -3141,14 +2865,6 @@ func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPa
 	mock.lockNewMnemonic.Lock()
 	mock.calls.NewMnemonic = append(mock.calls.NewMnemonic, callInfo)
 	mock.lockNewMnemonic.Unlock()
-	if mock.NewMnemonicFunc == nil {
-		var (
-			infoOut keyring.Info
-			sOut    string
-			errOut  error
-		)
-		return infoOut, sOut, errOut
-	}
 	return mock.NewMnemonicFunc(uid, language, hdPath, bip39Passphrase, algo)
 }
 
@@ -3177,6 +2893,9 @@ func (mock *KeyringMock) NewMnemonicCalls() []struct {
 
 // SaveLedgerKey calls SaveLedgerKeyFunc.
 func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+	if mock.SaveLedgerKeyFunc == nil {
+		panic("KeyringMock.SaveLedgerKeyFunc: method is nil but Keyring.SaveLedgerKey was just called")
+	}
 	callInfo := struct {
 		UID      string
 		Algo     keyring.SignatureAlgo
@@ -3195,13 +2914,6 @@ func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, h
 	mock.lockSaveLedgerKey.Lock()
 	mock.calls.SaveLedgerKey = append(mock.calls.SaveLedgerKey, callInfo)
 	mock.lockSaveLedgerKey.Unlock()
-	if mock.SaveLedgerKeyFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.SaveLedgerKeyFunc(uid, algo, hrp, coinType, account, index)
 }
 
@@ -3232,6 +2944,9 @@ func (mock *KeyringMock) SaveLedgerKeyCalls() []struct {
 
 // SaveMultisig calls SaveMultisigFunc.
 func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+	if mock.SaveMultisigFunc == nil {
+		panic("KeyringMock.SaveMultisigFunc: method is nil but Keyring.SaveMultisig was just called")
+	}
 	callInfo := struct {
 		UID    string
 		Pubkey cryptotypes.PubKey
@@ -3242,13 +2957,6 @@ func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (ke
 	mock.lockSaveMultisig.Lock()
 	mock.calls.SaveMultisig = append(mock.calls.SaveMultisig, callInfo)
 	mock.lockSaveMultisig.Unlock()
-	if mock.SaveMultisigFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.SaveMultisigFunc(uid, pubkey)
 }
 
@@ -3271,6 +2979,9 @@ func (mock *KeyringMock) SaveMultisigCalls() []struct {
 
 // SavePubKey calls SavePubKeyFunc.
 func (mock *KeyringMock) SavePubKey(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
+	if mock.SavePubKeyFunc == nil {
+		panic("KeyringMock.SavePubKeyFunc: method is nil but Keyring.SavePubKey was just called")
+	}
 	callInfo := struct {
 		UID    string
 		Pubkey cryptotypes.PubKey
@@ -3283,13 +2994,6 @@ func (mock *KeyringMock) SavePubKey(uid string, pubkey cryptotypes.PubKey, algo 
 	mock.lockSavePubKey.Lock()
 	mock.calls.SavePubKey = append(mock.calls.SavePubKey, callInfo)
 	mock.lockSavePubKey.Unlock()
-	if mock.SavePubKeyFunc == nil {
-		var (
-			infoOut keyring.Info
-			errOut  error
-		)
-		return infoOut, errOut
-	}
 	return mock.SavePubKeyFunc(uid, pubkey, algo)
 }
 
@@ -3314,6 +3018,9 @@ func (mock *KeyringMock) SavePubKeyCalls() []struct {
 
 // Sign calls SignFunc.
 func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+	if mock.SignFunc == nil {
+		panic("KeyringMock.SignFunc: method is nil but Keyring.Sign was just called")
+	}
 	callInfo := struct {
 		UID string
 		Msg []byte
@@ -3324,14 +3031,6 @@ func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKe
 	mock.lockSign.Lock()
 	mock.calls.Sign = append(mock.calls.Sign, callInfo)
 	mock.lockSign.Unlock()
-	if mock.SignFunc == nil {
-		var (
-			bytesOut  []byte
-			pubKeyOut cryptotypes.PubKey
-			errOut    error
-		)
-		return bytesOut, pubKeyOut, errOut
-	}
 	return mock.SignFunc(uid, msg)
 }
 
@@ -3354,6 +3053,9 @@ func (mock *KeyringMock) SignCalls() []struct {
 
 // SignByAddress calls SignByAddressFunc.
 func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+	if mock.SignByAddressFunc == nil {
+		panic("KeyringMock.SignByAddressFunc: method is nil but Keyring.SignByAddress was just called")
+	}
 	callInfo := struct {
 		Address sdk.Address
 		Msg     []byte
@@ -3364,14 +3066,6 @@ func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte,
 	mock.lockSignByAddress.Lock()
 	mock.calls.SignByAddress = append(mock.calls.SignByAddress, callInfo)
 	mock.lockSignByAddress.Unlock()
-	if mock.SignByAddressFunc == nil {
-		var (
-			bytesOut  []byte
-			pubKeyOut cryptotypes.PubKey
-			errOut    error
-		)
-		return bytesOut, pubKeyOut, errOut
-	}
 	return mock.SignByAddressFunc(address, msg)
 }
 
@@ -3394,18 +3088,14 @@ func (mock *KeyringMock) SignByAddressCalls() []struct {
 
 // SupportedAlgorithms calls SupportedAlgorithmsFunc.
 func (mock *KeyringMock) SupportedAlgorithms() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
+	if mock.SupportedAlgorithmsFunc == nil {
+		panic("KeyringMock.SupportedAlgorithmsFunc: method is nil but Keyring.SupportedAlgorithms was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockSupportedAlgorithms.Lock()
 	mock.calls.SupportedAlgorithms = append(mock.calls.SupportedAlgorithms, callInfo)
 	mock.lockSupportedAlgorithms.Unlock()
-	if mock.SupportedAlgorithmsFunc == nil {
-		var (
-			signingAlgoListOut1 keyring.SigningAlgoList
-			signingAlgoListOut2 keyring.SigningAlgoList
-		)
-		return signingAlgoListOut1, signingAlgoListOut2
-	}
 	return mock.SupportedAlgorithmsFunc()
 }
 
@@ -3422,15 +3112,15 @@ func (mock *KeyringMock) SupportedAlgorithmsCalls() []struct {
 	return calls
 }
 
-// Ensure, that InfoMock does implement types.Info.
+// Ensure, that InfoMock does implement Info.
 // If this is not the case, regenerate this file with moq.
-var _ types.Info = &InfoMock{}
+var _ Info = &InfoMock{}
 
-// InfoMock is a mock implementation of types.Info.
+// InfoMock is a mock implementation of Info.
 //
 // 	func TestSomethingThatUsesInfo(t *testing.T) {
 //
-// 		// make and configure a mocked types.Info
+// 		// make and configure a mocked Info
 // 		mockedInfo := &InfoMock{
 // 			GetAddressFunc: func() sdk.AccAddress {
 // 				panic("mock out the GetAddress method")
@@ -3452,7 +3142,7 @@ var _ types.Info = &InfoMock{}
 // 			},
 // 		}
 //
-// 		// use mockedInfo in code that requires types.Info
+// 		// use mockedInfo in code that requires Info
 // 		// and then make assertions.
 //
 // 	}
@@ -3506,17 +3196,14 @@ type InfoMock struct {
 
 // GetAddress calls GetAddressFunc.
 func (mock *InfoMock) GetAddress() sdk.AccAddress {
+	if mock.GetAddressFunc == nil {
+		panic("InfoMock.GetAddressFunc: method is nil but Info.GetAddress was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetAddress.Lock()
 	mock.calls.GetAddress = append(mock.calls.GetAddress, callInfo)
 	mock.lockGetAddress.Unlock()
-	if mock.GetAddressFunc == nil {
-		var (
-			accAddressOut sdk.AccAddress
-		)
-		return accAddressOut
-	}
 	return mock.GetAddressFunc()
 }
 
@@ -3535,17 +3222,14 @@ func (mock *InfoMock) GetAddressCalls() []struct {
 
 // GetAlgo calls GetAlgoFunc.
 func (mock *InfoMock) GetAlgo() hd.PubKeyType {
+	if mock.GetAlgoFunc == nil {
+		panic("InfoMock.GetAlgoFunc: method is nil but Info.GetAlgo was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetAlgo.Lock()
 	mock.calls.GetAlgo = append(mock.calls.GetAlgo, callInfo)
 	mock.lockGetAlgo.Unlock()
-	if mock.GetAlgoFunc == nil {
-		var (
-			pubKeyTypeOut hd.PubKeyType
-		)
-		return pubKeyTypeOut
-	}
 	return mock.GetAlgoFunc()
 }
 
@@ -3564,17 +3248,14 @@ func (mock *InfoMock) GetAlgoCalls() []struct {
 
 // GetName calls GetNameFunc.
 func (mock *InfoMock) GetName() string {
+	if mock.GetNameFunc == nil {
+		panic("InfoMock.GetNameFunc: method is nil but Info.GetName was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetName.Lock()
 	mock.calls.GetName = append(mock.calls.GetName, callInfo)
 	mock.lockGetName.Unlock()
-	if mock.GetNameFunc == nil {
-		var (
-			sOut string
-		)
-		return sOut
-	}
 	return mock.GetNameFunc()
 }
 
@@ -3593,18 +3274,14 @@ func (mock *InfoMock) GetNameCalls() []struct {
 
 // GetPath calls GetPathFunc.
 func (mock *InfoMock) GetPath() (*hd.BIP44Params, error) {
+	if mock.GetPathFunc == nil {
+		panic("InfoMock.GetPathFunc: method is nil but Info.GetPath was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetPath.Lock()
 	mock.calls.GetPath = append(mock.calls.GetPath, callInfo)
 	mock.lockGetPath.Unlock()
-	if mock.GetPathFunc == nil {
-		var (
-			bIP44ParamsOut *hd.BIP44Params
-			errOut         error
-		)
-		return bIP44ParamsOut, errOut
-	}
 	return mock.GetPathFunc()
 }
 
@@ -3623,17 +3300,14 @@ func (mock *InfoMock) GetPathCalls() []struct {
 
 // GetPubKey calls GetPubKeyFunc.
 func (mock *InfoMock) GetPubKey() cryptotypes.PubKey {
+	if mock.GetPubKeyFunc == nil {
+		panic("InfoMock.GetPubKeyFunc: method is nil but Info.GetPubKey was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetPubKey.Lock()
 	mock.calls.GetPubKey = append(mock.calls.GetPubKey, callInfo)
 	mock.lockGetPubKey.Unlock()
-	if mock.GetPubKeyFunc == nil {
-		var (
-			pubKeyOut cryptotypes.PubKey
-		)
-		return pubKeyOut
-	}
 	return mock.GetPubKeyFunc()
 }
 
@@ -3652,17 +3326,14 @@ func (mock *InfoMock) GetPubKeyCalls() []struct {
 
 // GetType calls GetTypeFunc.
 func (mock *InfoMock) GetType() keyring.KeyType {
+	if mock.GetTypeFunc == nil {
+		panic("InfoMock.GetTypeFunc: method is nil but Info.GetType was just called")
+	}
 	callInfo := struct {
 	}{}
 	mock.lockGetType.Lock()
 	mock.calls.GetType = append(mock.calls.GetType, callInfo)
 	mock.lockGetType.Unlock()
-	if mock.GetTypeFunc == nil {
-		var (
-			keyTypeOut keyring.KeyType
-		)
-		return keyTypeOut
-	}
 	return mock.GetTypeFunc()
 }
 
@@ -3676,115 +3347,5 @@ func (mock *InfoMock) GetTypeCalls() []struct {
 	mock.lockGetType.RLock()
 	calls = mock.calls.GetType
 	mock.lockGetType.RUnlock()
-	return calls
-}
-
-// Ensure, that PipelineMock does implement types.Pipeline.
-// If this is not the case, regenerate this file with moq.
-var _ types.Pipeline = &PipelineMock{}
-
-// PipelineMock is a mock implementation of types.Pipeline.
-//
-// 	func TestSomethingThatUsesPipeline(t *testing.T) {
-//
-// 		// make and configure a mocked types.Pipeline
-// 		mockedPipeline := &PipelineMock{
-// 			CloseFunc: func()  {
-// 				panic("mock out the Close method")
-// 			},
-// 			PushFunc: func(f func() error, retryOnError func(error) bool) error {
-// 				panic("mock out the Push method")
-// 			},
-// 		}
-//
-// 		// use mockedPipeline in code that requires types.Pipeline
-// 		// and then make assertions.
-//
-// 	}
-type PipelineMock struct {
-	// CloseFunc mocks the Close method.
-	CloseFunc func()
-
-	// PushFunc mocks the Push method.
-	PushFunc func(f func() error, retryOnError func(error) bool) error
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// Close holds details about calls to the Close method.
-		Close []struct {
-		}
-		// Push holds details about calls to the Push method.
-		Push []struct {
-			// F is the f argument value.
-			F func() error
-			// RetryOnError is the retryOnError argument value.
-			RetryOnError func(error) bool
-		}
-	}
-	lockClose sync.RWMutex
-	lockPush  sync.RWMutex
-}
-
-// Close calls CloseFunc.
-func (mock *PipelineMock) Close() {
-	callInfo := struct {
-	}{}
-	mock.lockClose.Lock()
-	mock.calls.Close = append(mock.calls.Close, callInfo)
-	mock.lockClose.Unlock()
-	if mock.CloseFunc == nil {
-		return
-	}
-	mock.CloseFunc()
-}
-
-// CloseCalls gets all the calls that were made to Close.
-// Check the length with:
-//     len(mockedPipeline.CloseCalls())
-func (mock *PipelineMock) CloseCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockClose.RLock()
-	calls = mock.calls.Close
-	mock.lockClose.RUnlock()
-	return calls
-}
-
-// Push calls PushFunc.
-func (mock *PipelineMock) Push(f func() error, retryOnError func(error) bool) error {
-	callInfo := struct {
-		F            func() error
-		RetryOnError func(error) bool
-	}{
-		F:            f,
-		RetryOnError: retryOnError,
-	}
-	mock.lockPush.Lock()
-	mock.calls.Push = append(mock.calls.Push, callInfo)
-	mock.lockPush.Unlock()
-	if mock.PushFunc == nil {
-		var (
-			errOut error
-		)
-		return errOut
-	}
-	return mock.PushFunc(f, retryOnError)
-}
-
-// PushCalls gets all the calls that were made to Push.
-// Check the length with:
-//     len(mockedPipeline.PushCalls())
-func (mock *PipelineMock) PushCalls() []struct {
-	F            func() error
-	RetryOnError func(error) bool
-} {
-	var calls []struct {
-		F            func() error
-		RetryOnError func(error) bool
-	}
-	mock.lockPush.RLock()
-	calls = mock.calls.Push
-	mock.lockPush.RUnlock()
 	return calls
 }

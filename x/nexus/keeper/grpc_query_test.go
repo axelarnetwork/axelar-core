@@ -34,16 +34,16 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 		response       *types.TransfersForChainResponse
 	)
 
-	Given("a nexus keeper", func(t *testing.T) {
+	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
-	}).And().
-		Given("a correct context", func(t *testing.T) {
+	}).
+		Given("a correct context", func() {
 			store := fake.NewMultiStore()
 			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
-		}).And().
-		Given("the keeper is correctly set up", func(t *testing.T) {
+		}).
+		Given("the keeper is correctly set up", func() {
 			k.SetParams(ctx, types.DefaultParams())
 			k.SetChain(ctx, evm.Ethereum)
 			k.ActivateChain(ctx, evm.Ethereum)
@@ -58,8 +58,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			})
 			k.SetRouter(nexusRouter)
 
-		}).And().
-		Given("there are some pending transfers", func(t *testing.T) {
+		}).
+		Given("there are some pending transfers", func() {
 			totalTransfers = rand.I64Between(10, 200)
 			for i := int64(0); i < totalTransfers; i++ {
 				sender := exported.CrossChainAddress{
@@ -78,8 +78,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64())))
 				assert.NoError(t, err)
 			}
-		}).And().
-		Given("pagination flags are set up", func(t *testing.T) {
+		}).
+		Given("pagination flags are set up", func() {
 			pageFlags := pflag.NewFlagSet("pagination", pflag.PanicOnError)
 			pageFlags.Uint64(flags.FlagPage, 1, "")
 			pageFlags.Uint64(flags.FlagLimit, 100, "")
@@ -94,7 +94,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 
 			assert.NoError(t, err)
 		}).
-		When("TransferForChain is called", func(t *testing.T) {
+		When("TransferForChain is called", func() {
 			var err error
 			response, err = k.TransfersForChain(sdk.WrapSDKContext(ctx), &types.TransfersForChainRequest{
 				Chain:      axelarnet.Axelarnet.Name,

@@ -11,7 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
@@ -23,13 +23,13 @@ import (
 type Mgr struct {
 	cliCtx      sdkClient.Context
 	logger      log.Logger
-	broadcaster types.Broadcaster
+	broadcaster broadcast.Broadcaster
 	rpc         rpc3.Client
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpc rpc3.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpc rpc3.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpc:         rpc,
 		cliCtx:      cliCtx,

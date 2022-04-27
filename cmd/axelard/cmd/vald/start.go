@@ -22,25 +22,26 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster"
-	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
-	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
-	utils2 "github.com/axelarnetwork/axelar-core/utils"
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
 	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/jobs"
+
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
+	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // RW grants -rw------- file permissions
@@ -68,19 +69,7 @@ func GetValdCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := serverCtx.Logger.With("module", "vald")
-
-			// in case of panic we still want to try and cleanup resources,
-			// but we have to make sure it's not called more than once if the program is stopped by an interrupt signal
-			defer once.Do(cleanUp)
-
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-			go func() {
-				sig := <-sigs
-				logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
-				once.Do(cleanUp)
-			}()
+			v := serverCtx.Viper
 
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
@@ -90,44 +79,7 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			valdConf := config.DefaultValdConfig()
-			if err := serverCtx.Viper.Unmarshal(&valdConf); err != nil {
-				panic(err)
-			}
-
-			valAddr := serverCtx.Viper.GetString("validator-addr")
-			if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
-				return sdkerrors.Wrap(err, "invalid validator operator address")
-			}
-
-			valdHome := filepath.Join(cliCtx.HomeDir, "vald")
-			if _, err := os.Stat(valdHome); os.IsNotExist(err) {
-				logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
-				err := os.Mkdir(valdHome, RWX)
-				if err != nil {
-					return err
-				}
-			}
-
-			var recoveryJSON []byte
-			recoveryFile := serverCtx.Viper.GetString("tofnd-recovery")
-			if recoveryFile != "" {
-				recoveryJSON, err = ioutil.ReadFile(recoveryFile)
-				if err != nil {
-					return err
-				}
-				if len(recoveryJSON) == 0 {
-					return fmt.Errorf("JSON file is empty")
-				}
-			}
-
-			fPath := filepath.Join(valdHome, "state.json")
-			stateSource := NewRWFile(fPath)
-
-			logger.Info("start listening to events")
-			listen(cmd.Context(), cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
-			logger.Info("shutting down")
-			return nil
+			return runVald(cliCtx, txf, logger, v)
 		},
 	}
 	setPersistentFlags(cmd)
@@ -148,6 +100,62 @@ func GetValdCommand() *cobra.Command {
 	return cmd
 }
 
+func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper *viper.Viper) error {
+	// in case of panic we still want to try and cleanup resources,
+	// but we have to make sure it's not called more than once if the program is stopped by an interrupt signal
+	defer once.Do(cleanUp)
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigs
+		logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
+		once.Do(cleanUp)
+	}()
+
+	valdConf := config.DefaultValdConfig()
+	viper.RegisterAlias("broadcast.max_timeout", "rpc.timeout_broadcast_tx_commit")
+	if err := viper.Unmarshal(&valdConf); err != nil {
+		panic(err)
+	}
+
+	valAddr := viper.GetString("validator-addr")
+	if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
+		return sdkerrors.Wrap(err, "invalid validator operator address")
+	}
+
+	valdHome := filepath.Join(cliCtx.HomeDir, "vald")
+	if _, err := os.Stat(valdHome); os.IsNotExist(err) {
+		logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
+		err := os.Mkdir(valdHome, RWX)
+		if err != nil {
+			return err
+		}
+	}
+
+	var recoveryJSON []byte
+	recoveryFile := viper.GetString("tofnd-recovery")
+	if recoveryFile != "" {
+		var err error
+		recoveryJSON, err = ioutil.ReadFile(recoveryFile)
+		if err != nil {
+			return err
+		}
+		if len(recoveryJSON) == 0 {
+			return fmt.Errorf("JSON file is empty")
+		}
+	}
+
+	fPath := filepath.Join(valdHome, "state.json")
+	stateSource := NewRWFile(fPath)
+
+	logger.Info("start listening to events")
+	listen(cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
+	logger.Info("shutting down")
+	return nil
+}
+
 func cleanUp() {
 	for _, cmd := range cleanupCommands {
 		cmd()
@@ -163,7 +171,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -188,6 +196,14 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		}
 		return cl, nil
 	})
+	stateStore := NewStateStore(stateSource)
+	startBlock, err := getStartBlock(stateStore, robustClient, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	eventBus := createEventBus(robustClient, startBlock, logger)
+
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
@@ -197,23 +213,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
 
-	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
-	if err != nil {
-		panic(err)
-	}
-
-	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
-	if err != nil {
-		panic(err)
-	}
-
-	// Refresh keys after the node has synced
-	if err := tssMgr.RefreshKeys(ctx); err != nil {
-		panic(err)
-	}
-
-	eventBus := createEventBus(robustClient, startBlock, logger)
 	var subscriptions []tmEvents.FilteredSubscriber
 	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
 		return tmEvents.MustSubscribeWithAttributes(eventBus,
@@ -327,8 +326,14 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 }
 
-// Wait until the node has synced with the network and return the node height
-func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+func getStartBlock(stateStore StateStore, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+	startBlock, err := stateStore.GetState()
+	if err != nil {
+		logger.Error(err.Error())
+
+		return 0, nil
+	}
+
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -337,49 +342,14 @@ func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient
 		return 0, err
 	}
 
-	// If the block height is older than the allowed time, then wait for the node to sync
-	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
-		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
-		time.Sleep(cfg.MaxLatestBlockAge)
+	// TODO: Make it configurable instead of a hardcoded 100
+	if syncInfo.LatestBlockHeight-startBlock > 100 {
+		logger.Info(fmt.Sprintf("block in state %d is too old and will start from the latest instead", startBlock))
 
-		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
-		if err != nil {
-			return 0, err
-		}
+		return 0, nil
 	}
 
-	return syncInfo.LatestBlockHeight, nil
-}
-
-// Return the block height to start listening to TM events from
-func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
-	storedHeight, err := stateStore.GetState()
-	if err != nil {
-		logger.Info(fmt.Sprintf("failed to retrieve the stored block height, using the latest: %s", err.Error()))
-		storedHeight = 0
-	} else {
-		logger.Info(fmt.Sprintf("retrieved stored block height %d", storedHeight))
-	}
-
-	// stored height must not be larger than node height
-	if storedHeight > nodeHeight {
-		return 0, fmt.Errorf("stored block height %d is ahead of the node height %d", storedHeight, nodeHeight)
-	}
-
-	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
-
-	startBlock := storedHeight
-	if startBlock != 0 {
-		// The block at the stored height might have already been processed by vald, so skip it
-		startBlock++
-	}
-
-	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxBlocksBehindLatest {
-		logger.Info(fmt.Sprintf("stored block height %d is too old, starting from the latest block", startBlock))
-		startBlock = 0
-	}
-
-	return startBlock, nil
+	return startBlock + 1, nil
 }
 
 func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
@@ -396,12 +366,16 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, logger lo
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus, logger)
 }
 
-func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {
-	pipeline := broadcaster.NewPipelineWithRetry(10000, axelarCfg.MaxRetries, utils2.LinearBackOff(axelarCfg.MinTimeout), logger)
-	return broadcaster.WithRefund(broadcaster.NewBroadcaster(txf, ctx, pipeline, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger))
+func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
+	broadcaster := broadcast.WithStateManager(ctx, txf, logger, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
+	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry, logger)
+	broadcaster = broadcast.InBatches(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
+	broadcaster = broadcast.WithRefund(broadcaster)
+
+	return broadcaster
 }
 
-func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 		if err != nil {
@@ -417,7 +391,6 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 
 		return tssMgr, nil
 	}
-
 	mgr, err := create()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create tss manager"))
@@ -426,7 +399,7 @@ func createTSSMgr(broadcaster broadcasterTypes.Broadcaster, cliCtx client.Contex
 	return mgr
 }
 
-func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {

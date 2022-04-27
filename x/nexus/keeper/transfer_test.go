@@ -74,12 +74,12 @@ func TestComputeTransferFee(t *testing.T) {
 	assert.Error(t, err)
 
 	Given("a keeper",
-		func(t *testing.T) {
+		func() {
 			k, ctx = setup(cfg)
 			assetFees = make(map[string]nexus.FeeInfo)
 		}).
 		When("asset fees are registered",
-			func(t *testing.T) {
+			func() {
 				for _, chain := range chains {
 					for _, asset := range assets {
 						assetFees[chain.Name+"_"+asset] = randFee(chain.Name, asset)
@@ -151,11 +151,11 @@ func TestTransfer(t *testing.T) {
 	)
 
 	Given("a keeper",
-		func(t *testing.T) {
+		func() {
 			k, ctx = setup(cfg)
 		}).
 		When("no recipient linked to sender",
-			func(t *testing.T) {
+			func() {
 				sender, _ = makeRandAddresses(k, ctx)
 			}).
 		Then("enqueue transfer should return error",
@@ -166,7 +166,7 @@ func TestTransfer(t *testing.T) {
 		).Run(t, repeated)
 
 	Given("a keeper",
-		func(t *testing.T) {
+		func() {
 			k, ctx = setup(cfg)
 
 			// clear start
@@ -175,7 +175,7 @@ func TestTransfer(t *testing.T) {
 			transfers = nil
 			expectedTransfers = nil
 		}).
-		When("senders and recipients are linked", func(t *testing.T) {
+		When("senders and recipients are linked", func() {
 			for i := 0; i < linkedAddr; i++ {
 				s, r := makeRandAddresses(k, ctx)
 				senders = append(senders, s)
@@ -185,7 +185,7 @@ func TestTransfer(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		}).Branch(
-		When("transfer amounts are smaller than min fee", func(t *testing.T) {
+		When("transfer amounts are smaller than min fee", func() {
 			for _, r := range recipients {
 				asset := randAsset()
 				feeInfo, ok := k.GetFeeInfo(ctx, r.Chain, asset)
@@ -193,8 +193,8 @@ func TestTransfer(t *testing.T) {
 				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
 				transfers = append(transfers, randAmt)
 			}
-		}).And().
-			When("enqueue all transfers", func(t *testing.T) {
+		}).
+			When("enqueue all transfers", func() {
 				for i, transfer := range transfers {
 					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
@@ -230,13 +230,13 @@ func TestTransfer(t *testing.T) {
 					}
 				}),
 
-		When("transfer amounts are greater than min amount", func(t *testing.T) {
+		When("transfer amounts are greater than min amount", func() {
 			for i := 0; i < len(recipients); i++ {
 				asset := randAsset()
 				transfers = append(transfers, makeAmountAboveMin(asset))
 			}
-		}).And().
-			When("enqueue all transfers", func(t *testing.T) {
+		}).
+			When("enqueue all transfers", func() {
 				for i, transfer := range transfers {
 					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
 					assert.NoError(t, err)
@@ -275,11 +275,11 @@ func TestTransfer(t *testing.T) {
 	).Run(t, repeated)
 
 	Given("a keeper with registered assets",
-		func(t *testing.T) {
+		func() {
 			k, ctx = setup(cfg)
 		}).
 		When("enqueue transfer first time",
-			func(t *testing.T) {
+			func() {
 				sender, recipient = makeRandAddresses(k, ctx)
 				err := k.LinkAddresses(ctx, sender, recipient)
 				assert.NoError(t, err)
@@ -295,9 +295,9 @@ func TestTransfer(t *testing.T) {
 
 				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
 				assert.Len(t, actualTransfers, 1)
-			}).And().
+			}).
 		When("enqueue transfer second time",
-			func(t *testing.T) {
+			func() {
 				secondAmount := makeAmountAboveMin(asset)
 				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount)
 				assert.NoError(t, err)
@@ -314,12 +314,12 @@ func TestTransfer(t *testing.T) {
 		).Run(t, repeated)
 
 	Given("a keeper with registered assets",
-		func(t *testing.T) {
+		func() {
 			k, ctx = setup(cfg)
 			expectedTransfers = nil
 		}).
 		When("enqueue transfers",
-			func(t *testing.T) {
+			func() {
 				for i := 0; i < linkedAddr; i++ {
 					s, r := makeRandAddresses(k, ctx)
 
@@ -337,9 +337,9 @@ func TestTransfer(t *testing.T) {
 					chain, _ := k.GetChain(ctx, chainName)
 					assert.Equal(t, expected.count, len(k.GetTransfersForChain(ctx, chain, nexus.Pending)))
 				}
-			}).And().
+			}).
 		When("archive pending transfers",
-			func(t *testing.T) {
+			func() {
 				for chainName := range expectedTransfers {
 					chain, _ := k.GetChain(ctx, chainName)
 					for _, transfer := range k.GetTransfersForChain(ctx, chain, nexus.Pending) {
