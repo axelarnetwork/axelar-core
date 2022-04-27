@@ -3,9 +3,9 @@ module github.com/axelarnetwork/axelar-core
 go 1.18
 
 require (
-	github.com/armon/go-metrics v0.3.10
-	github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb
-	github.com/axelarnetwork/utils v0.0.0-20220422045817-a376bf889bea
+	github.com/armon/go-metrics v0.3.11
+	github.com/axelarnetwork/tm-events v0.0.0-20220427205951-b2751210ec88
+	github.com/axelarnetwork/utils v0.0.0-20220427135829-9eaa425319c1
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.45.4
@@ -28,12 +28,12 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.10
-	google.golang.org/genproto v0.0.0-20220422154200-b37d22cd5731
+	google.golang.org/genproto v0.0.0-20220426171045-31bebdecfb46
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
 )
@@ -48,7 +48,6 @@ require (
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
-	github.com/boz/go-lifecycle v0.1.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.1.3 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
@@ -128,6 +127,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
+	github.com/smallnest/chanx v1.0.1-0.20211205150931-349643806662 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
@@ -142,7 +142,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
@@ -168,3 +168,5 @@ replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 
 // Fix build warning on Mac OS 12: https://github.com/Zondax/hid/pull/5
 replace github.com/zondax/hid => github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
+
+replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.1.3
