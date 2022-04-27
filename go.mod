@@ -169,4 +169,5 @@ replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 // Fix build warning on Mac OS 12: https://github.com/Zondax/hid/pull/5
 replace github.com/zondax/hid => github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
 
+// Update btcec explicitly since btcd hasn't created a new release yet
 replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.1.3
