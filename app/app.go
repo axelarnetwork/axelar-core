@@ -619,6 +619,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	anteHandler := sdk.ChainAnteDecorators(
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
+		ante.NewCheckCommissionRate(),
 		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
