@@ -17,12 +17,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.1
         with:
           fetch-depth: '0'
+          submodules: recursive
 
       - id: release
-        uses: anothrNick/github-tag-action@1.26.0
+        uses: anothrNick/github-tag-action@1.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
@@ -73,7 +74,7 @@ jobs:
           fi
 
       - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@1.26.0
+        uses: anothrNick/github-tag-action@1.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
