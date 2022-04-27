@@ -130,6 +130,7 @@ func TestGetMigrationHandler(t *testing.T) {
 					token := types.CreateERC20Token(func(_ types.ERC20TokenMetadata) {}, meta)
 
 					command, err := token.CreateDeployCommand(tssTestUtils.RandKeyID())
+					command.ID = types.NewCommandID([]byte(meta.Details.Symbol), meta.ChainID)
 					if err != nil {
 						panic(err)
 					}

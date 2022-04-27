@@ -13,7 +13,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
@@ -71,9 +70,9 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 			}, 100),
 		},
 		Timestamp:       time.Now(),
-		Height:          rand2.I64Between(1, 1000000),
+		Height:          rand.I64Between(1, 1000000),
 		TotalShareCount: sdk.NewInt(600),
-		Counter:         rand2.I64Between(0, 100000),
+		Counter:         rand.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
 	assert.Equal(t, int64(399), snap.CorruptionThreshold)
@@ -164,9 +163,9 @@ func TestStartSign_NoEnoughActiveValidators(t *testing.T) {
 			}, 100),
 		},
 		Timestamp:       time.Now(),
-		Height:          rand2.I64Between(1, 1000000),
+		Height:          rand.I64Between(1, 1000000),
 		TotalShareCount: sdk.NewInt(200),
-		Counter:         rand2.I64Between(0, 100000),
+		Counter:         rand.I64Between(0, 100000),
 	}
 	snap.CorruptionThreshold = exported.ComputeAbsCorruptionThreshold(utils.Threshold{Numerator: 2, Denominator: 3}, snap.TotalShareCount)
 	s.Snapshotter.GetValidatorIllegibilityFunc = func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
@@ -288,7 +287,7 @@ func TestMultisigSign(t *testing.T) {
 	t.Run("should set sign timeout when start multisig sign", testutils.Func(func(t *testing.T) {
 		s := setup()
 		sigID := "sigID"
-		keyID := exported.KeyID(rand2.StrBetween(5, 20))
+		keyID := exported.KeyID(rand.StrBetween(5, 20))
 		msgToSign := []byte("message")
 
 		signInfo := exported.SignInfo{
@@ -337,7 +336,7 @@ func TestMultisigSign(t *testing.T) {
 	t.Run("should update sig count and save signatures when validator submits signatures", testutils.Func(func(t *testing.T) {
 		s := setup()
 		sigID := "sigID"
-		keyID := exported.KeyID(rand2.StrBetween(5, 20))
+		keyID := exported.KeyID(rand.StrBetween(5, 20))
 		msgToSign := []byte("message")
 		snap = randSnapshot()
 		signInfo := exported.SignInfo{
@@ -412,8 +411,8 @@ func generatePubKey() ecdsa.PublicKey {
 }
 
 func randSignInfo(snap snapshot.Snapshot) exported.SignInfo {
-	sigID := rand2.StrBetween(5, 20)
-	keyID := exported.KeyID(rand2.StrBetween(5, 20))
+	sigID := rand.StrBetween(5, 20)
+	keyID := exported.KeyID(rand.StrBetween(5, 20))
 	msgToSign := []byte("message")
 	snap = randSnapshot()
 	return exported.SignInfo{

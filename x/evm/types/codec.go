@@ -50,6 +50,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
+		&SigMetadata{},
 		&Event{},
 	)
 

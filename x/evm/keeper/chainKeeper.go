@@ -259,7 +259,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		}
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
-	case types.BurnerCodeHashV2, types.BurnerCodeHashV3:
+	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4:
 		initCodeHash = token.GetBurnerCodeHash()
 	default:
 		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
@@ -670,7 +670,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 	}
 
 	keyRole := signer.GetKeyRole(ctx, keyID)
-	commandBatch, err := types.NewCommandBatchMetadata(chainID, keyID, keyRole, commands)
+	commandBatch, err := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, keyRole, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}

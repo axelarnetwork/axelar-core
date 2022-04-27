@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,18 +12,25 @@ import (
 
 const uaxlAsset = "uaxl"
 
-// GetMigrationHandler returns the handler that performs in-place store migrations from v0.15 to v0.16. The
+// GetMigrationHandler returns the handler that performs in-place store migrations from v0.17 to v0.18. The
 // migration includes:
+// - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE)
 // - delete uaxl token for all evm chains
 // - delete uaxl token's burners for all evm chains
+// - migrate uaxl token's confirmed deposits to burnt for all evm chains
+// - delete uaxl token's deployment commands for all evm chains
 func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		for _, chain := range n.GetChains(ctx) {
 			if chain.Module != types.ModuleName {
 				continue
 			}
-
 			ck := k.ForChain(chain.Name).(chainKeeper)
+
+			if err := migrateContractsBytecode(ctx, ck); err != nil {
+				return err
+			}
+
 			token, ok := ck.getTokenMetadataByAsset(ctx, uaxlAsset)
 			if !ok {
 				continue
@@ -89,4 +97,31 @@ func migrateConfirmedDepositsToBurnt(ctx sdk.Context, ck chainKeeper) {
 		ck.DeleteDeposit(ctx, deposit)
 		ck.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
 	}
+}
+
+// this function migrates the contracts bytecode to the latest for every existing
+// EVM chain. It's crucial whenever contracts are changed between versions and
+// DO NOT DELETE
+func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
+	bzToken, err := hex.DecodeString(types.Token)
+	if err != nil {
+		return err
+	}
+
+	bzBurnable, err := hex.DecodeString(types.Burnable)
+	if err != nil {
+		return err
+	}
+
+	params := ck.GetParams(ctx)
+	params.TokenCode = bzToken
+	params.Burnable = bzBurnable
+
+	if err := params.Validate(); err != nil {
+		return err
+	}
+
+	ck.SetParams(ctx, params)
+
+	return nil
 }
