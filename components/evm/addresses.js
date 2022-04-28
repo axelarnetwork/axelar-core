@@ -11,7 +11,7 @@ import gateways from "../../data/gateways.json";
 import ibc_assets from "../../data/ibc_assets.json";
 
 export default ({ environment = "mainnet" }) => {
-  const [chainData, setChainData] = useState(null);
+  const [chainData, setChainData] = useState(evm_chains?.[environment]?.find(c => c?.id === "avalanche"));
   const [assetData, setAssetData] = useState(null);
 
   return (
