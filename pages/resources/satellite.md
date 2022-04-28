@@ -15,16 +15,16 @@ Satellite is a web application built on top of the Axelar Network. It provides a
   Caution: Satellite is used to transfers real assets across main networks. When using it for the first time, try transferring small amounts initially. If you need assistance, use the `FAQ` and `Support` buttons in Satellite for help.
 </Callout>
 
-Click here to [Visit Satellite](https://satellite.axelar.network/)
+Click here to [Visit Satellite](https://satellite.money/)
 
 For a step-by-step walkthrough on how to use Satellite, check out the following tutorials created by the Axelar Team.
 
-- [Tutorial Video](https://www.youtube.com/watch?v=VsfCJl1A9QI)
+- [Tutorial Video](https://www.youtube.com/watch?v=_bxEw9Otb20)
 <Bleed>
   <iframe
     width="80%"
     height="430"
-    src="https://www.youtube.com/embed/VsfCJl1A9QI"
+    src="https://www.youtube.com/embed/_bxEw9Otb20"
     frameBorder="0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowFullScreen
