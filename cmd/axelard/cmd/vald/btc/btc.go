@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	rpc3 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/btc/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
-	"github.com/axelarnetwork/axelar-core/utils"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
@@ -60,10 +59,6 @@ func (mgr *Mgr) ProcessConfirmation(e tmEvents.Event) error {
 
 	mgr.logger.Debug(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
-	if utils.IsABCIError(err) {
-		mgr.logger.Info(fmt.Sprintf("tx response with error: %s", err))
-		return nil
-	}
 	return err
 }
 
