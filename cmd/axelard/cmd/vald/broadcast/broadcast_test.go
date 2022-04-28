@@ -3,7 +3,9 @@ package broadcast_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	mathRand "math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -226,9 +228,8 @@ func TestWithRefund(t *testing.T) {
 		refunder    broadcast.Broadcaster
 	)
 
-	broadcaster = &mock.BroadcasterMock{}
-
 	Given("a refunding broadcaster", func() {
+		broadcaster = &mock.BroadcasterMock{}
 		refunder = broadcast.WithRefund(broadcaster)
 	}).
 		When("the response contains the msgs of the tx", func() {
@@ -244,6 +245,169 @@ func TestWithRefund(t *testing.T) {
 				assert.IsType(t, &types.RefundMsgRequest{}, msg)
 			}
 		}).Run(t)
+}
+
+func TestInBatches(t *testing.T) {
+	var (
+		broadcaster      *mock.BroadcasterMock
+		batched          broadcast.Broadcaster
+		msgs             []sdk.Msg
+		broadcastCalled  chan struct{}
+		unblockBroadcast chan struct{}
+	)
+
+	Given("a batched broadcaster", func() {
+		broadcaster = &mock.BroadcasterMock{}
+		batched = broadcast.Batched(broadcaster, 1, 5, log.TestingLogger())
+	}).Branch(
+		When("trying to broadcast 0 msgs", func() {
+			msgs = []sdk.Msg{}
+			broadcaster.BroadcastFunc = func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil }
+		}).
+			Then("return error", func(t *testing.T) {
+				_, err := batched.Broadcast(context.Background(), msgs...)
+				assert.Error(t, err)
+			}),
+
+		When("there is low traffic", func() {
+			broadcaster.BroadcastFunc = func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
+				return &sdk.TxResponse{Data: "expected"}, nil
+			}
+		}).
+			Then("send msgs one by one", func(t *testing.T) {
+				for i := 0; i < 9; i++ {
+					response, err := batched.Broadcast(context.Background(), randomMsgs(1)...)
+					assert.NoError(t, err)
+					assert.Equal(t, "expected", response.Data)
+				}
+				assert.Len(t, broadcaster.BroadcastCalls(), 9)
+			}),
+		When("there is high traffic", func() {
+			broadcastCalled = make(chan struct{})
+			unblockBroadcast = make(chan struct{})
+			once := &sync.Once{}
+			broadcaster.BroadcastFunc = func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+				once.Do(func() { close(broadcastCalled) })
+				<-unblockBroadcast
+
+				events := slices.Map(msgs, func(msg sdk.Msg) abci.Event { return abci.Event{Type: msg.String()} })
+				return &sdk.TxResponse{Events: events}, nil
+			}
+		}).
+			Then("batch msgs", func(t *testing.T) {
+				wg := &sync.WaitGroup{}
+				wg.Add(1)
+				// block the broadcast pipeline with one message
+				go func() {
+					defer wg.Done()
+					msgs := randomMsgs(1)
+					response, err := batched.Broadcast(context.Background(), msgs...)
+					assert.NoError(t, err)
+					assert.Equal(t, msgs[0].String(), response.Events[0].Type)
+				}()
+				<-broadcastCalled
+				// accumulate msgs in the backlog
+				for i := 0; i < 9; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						msgs := randomMsgs(1)
+						response, err := batched.Broadcast(context.Background(), msgs...)
+						assert.NoError(t, err)
+						// make sure the expected msg is part of the response
+						assert.True(t,
+							slices.Any(response.Events,
+								func(event abci.Event) bool { return msgs[0].String() == event.Type }))
+					}()
+				}
+				close(unblockBroadcast)
+				wg.Wait()
+				assert.Less(t, len(broadcaster.BroadcastCalls()), 9)
+			}),
+	).Run(t)
+}
+
+func TestWithRetry(t *testing.T) {
+	var (
+		broadcaster *mock.BroadcasterMock
+		retry       broadcast.Broadcaster
+	)
+
+	Given("a retry broadcaster", func() {
+		broadcaster = &mock.BroadcasterMock{}
+		retry = broadcast.WithRetry(broadcaster, 3, 1*time.Nanosecond, log.TestingLogger())
+	}).Branch(
+		When("one of the msgs fails", func() {
+			once := &sync.Once{}
+			broadcaster.BroadcastFunc = func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+				var err error
+				once.Do(func() {
+					err = fmt.Errorf("some error; message index: %d", rand.I64Between(0, len(msgs)))
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				events := slices.Map(msgs, func(msg sdk.Msg) abci.Event { return abci.Event{Type: msg.String()} })
+				return &sdk.TxResponse{Events: events}, nil
+			}
+		}).
+			Then("retry without that msg", func(t *testing.T) {
+				msgs := randomMsgs(10)
+				res, err := retry.Broadcast(context.Background(), msgs...)
+				assert.NoError(t, err)
+
+				matches := 0
+				for _, msg := range msgs {
+					if slices.Any(res.Events,
+						func(event abci.Event) bool {
+							return msg.String() == event.Type
+						}) {
+						matches++
+					}
+				}
+				assert.Equal(t, 9, matches)
+			}),
+
+		AsTestCases[error](sdkerrors.ErrWrongSequence, sdkerrors.ErrOutOfGas, errors.New("some error")).
+			Map(
+				func(err error) Runner {
+					return When("the broadcast fails because of a retriable error", func() {
+						broadcaster.BroadcastFunc = func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
+							return nil, err
+						}
+					}).
+						Then("retry up to the max parameter", func(t *testing.T) {
+							_, err := retry.Broadcast(context.Background(), randomMsgs(10)...)
+							assert.Error(t, err)
+							assert.Len(t, broadcaster.BroadcastCalls(), 4) // try once + 3 retries
+						})
+				},
+			),
+
+		When("the msg execution fails", func() {
+			broadcaster.BroadcastFunc = func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
+				return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
+			}
+		}).
+			Then("don't retry broadcast", func(t *testing.T) {
+				_, err := retry.Broadcast(context.Background(), randomMsgs(10)...)
+				assert.Error(t, err)
+				assert.Len(t, broadcaster.BroadcastCalls(), 1)
+			}),
+	).Run(t)
+}
+
+func TestSuppressExecutionErrs(t *testing.T) {
+	broadcaster := &mock.BroadcasterMock{
+		BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
+			return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
+		}}
+
+	suppressor := broadcast.SuppressExecutionErrs(broadcaster, log.TestingLogger())
+
+	_, err := suppressor.Broadcast(context.Background(), randomMsgs(5)...)
+	assert.NoError(t, err)
 }
 
 func unsafePack(value sdk.Msg) *codectypes.Any {

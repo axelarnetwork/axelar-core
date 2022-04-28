@@ -243,6 +243,7 @@ func WithRetry(broadcaster Broadcaster, maxRetries int, minSleep time.Duration, 
 	b := &pipelinedBroadcaster{
 		broadcaster:   broadcaster,
 		retryPipeline: newPipelineWithRetry(10000, maxRetries, utils.LinearBackOff(minSleep), logger),
+		logger:        logger,
 	}
 
 	return b
@@ -253,17 +254,20 @@ func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 		response *sdk.TxResponse
 		err      error
 	)
+
+	// need to be able to reorder msgs, so clone the msgs slice
+	retryMsgs := append(make([]sdk.Msg, 0, len(msgs)), msgs...)
 	err = b.retryPipeline.Push(
 		func() error {
-			response, err = b.broadcaster.Broadcast(ctx, msgs...)
+			response, err = b.broadcaster.Broadcast(ctx, retryMsgs...)
 			return err
 		},
 		func(err error) bool {
-			logger := b.logger.With("batch_size", len(msgs))
+			logger := b.logger.With("batch_size", len(retryMsgs))
 			i, ok := tryParseErrorMsgIndex(err)
-			if ok && len(msgs) > 1 {
+			if ok && len(retryMsgs) > 1 {
 				logger.Debug(fmt.Sprintf("excluding message at index %d due to error", i))
-				msgs = append(msgs[:i], msgs[i+1:]...)
+				retryMsgs = append(retryMsgs[:i], retryMsgs[i+1:]...)
 				return true
 			}
 
@@ -282,7 +286,7 @@ func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 }
 
 func tryParseErrorMsgIndex(err error) (int, bool) {
-	split := strings.SplitAfter(err.Error(), "failed to execute message; message index: ")
+	split := strings.SplitAfter(err.Error(), "message index: ")
 	if len(split) < 2 {
 		return 0, false
 	}
@@ -304,7 +308,7 @@ type batchedBroadcaster struct {
 	logger         log.Logger
 }
 
-func InBatches(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger log.Logger) Broadcaster {
+func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger log.Logger) Broadcaster {
 	b := &batchedBroadcaster{
 		broadcaster:    broadcaster,
 		backlog:        backlog{tail: make(chan broadcastTask, 10000)},
@@ -411,4 +415,25 @@ func (b *refundableBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) 
 // WithRefund wraps a broadcaster into a refundableBroadcaster
 func WithRefund(b Broadcaster) Broadcaster {
 	return &refundableBroadcaster{broadcaster: b}
+}
+
+type suppressorBroadcaster struct {
+	b      Broadcaster
+	logger log.Logger
+}
+
+func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	res, err := s.b.Broadcast(ctx, msgs...)
+	if utils2.IsABCIError(err) {
+		s.logger.Info(fmt.Sprintf("tx response with error: %s", err))
+		return nil, nil
+	}
+	return res, err
+}
+
+func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcaster {
+	return suppressorBroadcaster{
+		b:      broadcaster,
+		logger: logger,
+	}
 }

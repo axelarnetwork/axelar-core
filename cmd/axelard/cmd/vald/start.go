@@ -369,8 +369,9 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, logger lo
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
 	broadcaster := broadcast.WithStateManager(ctx, txf, logger, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
 	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry, logger)
-	broadcaster = broadcast.InBatches(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
+	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
 	broadcaster = broadcast.WithRefund(broadcaster)
+	broadcaster = broadcast.SuppressExecutionErrs(broadcaster, logger)
 
 	return broadcaster
 }

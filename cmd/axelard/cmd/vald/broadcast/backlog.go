@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"context"
+	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -31,6 +32,9 @@ func (bl *backlog) Push(task broadcastTask) <-chan struct{} {
 	go func() {
 		defer close(done)
 		if len(task.Msgs) == 0 {
+			task.Callback <- broadcastResult{
+				Err: errors.New("task without msg pushed into backlog"),
+			}
 			return
 		}
 		bl.tail <- task

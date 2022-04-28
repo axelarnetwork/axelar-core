@@ -57,8 +57,7 @@ func (p *retryPipeline) retry(f func() error, retryOnError func(error) bool) err
 		}
 
 		if !retryOnError(err) {
-			p.logger.Error(fmt.Sprintf("tx response with error: %s", err))
-			return nil
+			return err
 		}
 
 		if i < p.maxRetries {
