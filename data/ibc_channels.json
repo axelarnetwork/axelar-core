@@ -55,22 +55,12 @@
     {
       "from": "osmosis",
       "to": "axelarnet",
-      "channel_id": "channel-184"
+      "channel_id": "channel-240"
     },
     {
       "from": "axelarnet",
       "to": "osmosis",
-      "channel_id": "channel-3"
-    },
-    {
-      "from": "cosmoshub",
-      "to": "axelarnet",
-      "channel_id": "channel-238"
-    },
-    {
-      "from": "axelarnet",
-      "to": "cosmoshub",
-      "channel_id": "channel-4"
+      "channel_id": "channel-7"
     }
   ]
 }

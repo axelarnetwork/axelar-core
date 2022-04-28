@@ -38,11 +38,6 @@
       "image": "/images/chains/terra.png"
     },
     {
-      "id": "cosmoshub",
-      "name": "Cosmos",
-      "image": "/images/chains/cosmos.png"
-    },
-    {
       "id": "osmosis",
       "name": "Osmosis",
       "image": "/images/chains/osmosis.png"

@@ -78,20 +78,6 @@
       "transfer_fee": 0.005
     },
     {
-      "id": "uusdc",
-      "name": "Fake USD Coin",
-      "symbol": "FakeUSDC",
-      "image": "/images/assets/usdc.png",
-      "transfer_fee": 0.5
-    },
-    {
-      "id": "uatom",
-      "name": "Cosmos",
-      "symbol": "ATOM",
-      "image": "/images/assets/atom.png",
-      "transfer_fee": 0.02
-    },
-    {
       "id": "uausdc",
       "name": "USD Coin",
       "symbol": "aUSDC",
