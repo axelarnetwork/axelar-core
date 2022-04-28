@@ -28,16 +28,15 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
 
-	"github.com/axelarnetwork/utils/slices"
-	. "github.com/axelarnetwork/utils/test"
-	"github.com/axelarnetwork/utils/test/rand"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/slices"
+	. "github.com/axelarnetwork/utils/test"
+	"github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestStatefulBroadcaster(t *testing.T) {

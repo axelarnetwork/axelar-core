@@ -26,22 +26,20 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-	"github.com/axelarnetwork/tm-events/pubsub"
-	"github.com/axelarnetwork/tm-events/tendermint"
-	"github.com/axelarnetwork/utils/jobs"
-
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
-
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/tm-events/pubsub"
+	"github.com/axelarnetwork/tm-events/tendermint"
+	"github.com/axelarnetwork/utils/jobs"
 )
 
 // RW grants -rw------- file permissions
