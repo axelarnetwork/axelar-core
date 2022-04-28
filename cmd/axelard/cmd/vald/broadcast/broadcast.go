@@ -25,6 +25,7 @@ import (
 
 //go:generate moq -pkg mock -out mock/broadcast.go . Broadcaster
 
+// PrepareTx returns a marshalled tx that can be broadcast to the blockchain
 func PrepareTx(ctx sdkClient.Context, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 	if len(msgs) == 0 {
 		return nil, fmt.Errorf("call broadcast with at least one message")
@@ -73,7 +74,8 @@ func isSequenceMismatch(err error) bool {
 	return strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error())
 }
 
-func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcastOption) (*sdk.TxResponse, error) {
+// Broadcast sends the given tx to the blockchain and blocks until it is added to a block (or timeout).
+func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
 	res, err := ctx.BroadcastTx(txBytes)
 	if err == nil && ctx.BroadcastMode != flags.BroadcastBlock {
 		params := broadcastParams{
@@ -115,11 +117,17 @@ func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options b
 
 			return res, nil
 		case <-timeout.Done():
-			return nil, errors.New("timed out waiting for tx to be included in a block")
+			// try one last time to find the tx
+			res, err := authtx.QueryTx(clientCtx, txHash)
+			if err != nil {
+				return nil, errors.New("timed out waiting for tx to be included in a block")
+			}
+			return res, err
 		}
 	}
 }
 
+// Broadcaster broadcasts msgs to the blockchain
 type Broadcaster interface {
 	Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
 }
@@ -127,11 +135,12 @@ type Broadcaster interface {
 type statefulBroadcaster struct {
 	clientCtx sdkClient.Context
 	txf       tx.Factory
-	options   []BroadcastOption
+	options   []BroadcasterOption
 	logger    log.Logger
 }
 
-func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, logger log.Logger, options ...BroadcastOption) Broadcaster {
+// WithStateManager tracks sequence numbers, so it can be used to broadcast consecutive txs
+func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, logger log.Logger, options ...BroadcasterOption) Broadcaster {
 	return &statefulBroadcaster{
 		clientCtx: clientCtx,
 		txf:       txf,
@@ -140,6 +149,7 @@ func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, logger log.Lo
 	}
 }
 
+// Broadcast broadcasts the given msgs to the blockchain, keeps track of the sender's sequence number
 func (b *statefulBroadcaster) Broadcast(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	if len(msgs) == 0 {
 		return nil, fmt.Errorf("no messages to broadcast")
@@ -210,21 +220,24 @@ func prepareFactory(clientCtx sdkClient.Context, txf tx.Factory) (tx.Factory, er
 	return txf, nil
 }
 
-type BroadcastOption func(broadcaster broadcastParams) broadcastParams
+// BroadcasterOption modifies broadcaster behaviour
+type BroadcasterOption func(broadcaster broadcastParams) broadcastParams
 
 type broadcastParams struct {
 	PollingInterval time.Duration
 	Timeout         time.Duration
 }
 
-func WithResponseTimeout(timeout time.Duration) BroadcastOption {
+// WithResponseTimeout sets the time to wait for a tx response
+func WithResponseTimeout(timeout time.Duration) BroadcasterOption {
 	return func(params broadcastParams) broadcastParams {
 		params.Timeout = timeout
 		return params
 	}
 }
 
-func WithPollingInterval(interval time.Duration) BroadcastOption {
+// WithPollingInterval modifies how often the broadcaster checks the blockchain for tx responses
+func WithPollingInterval(interval time.Duration) BroadcasterOption {
 	return func(params broadcastParams) broadcastParams {
 		params.PollingInterval = interval
 		return params
@@ -239,6 +252,7 @@ type pipelinedBroadcaster struct {
 	broadcaster   Broadcaster
 }
 
+// WithRetry returns a broadcaster that retries the broadcast up to the given number of times if the broadcast fails
 func WithRetry(broadcaster Broadcaster, maxRetries int, minSleep time.Duration, logger log.Logger) Broadcaster {
 	b := &pipelinedBroadcaster{
 		broadcaster:   broadcaster,
@@ -249,6 +263,7 @@ func WithRetry(broadcaster Broadcaster, maxRetries int, minSleep time.Duration, 
 	return b
 }
 
+// Broadcast implements the Broadcaster interface
 func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	var (
 		response *sdk.TxResponse
@@ -308,6 +323,7 @@ type batchedBroadcaster struct {
 	logger         log.Logger
 }
 
+// Batched returns a broadcaster that batches msgs together if there is high traffic to increase throughput
 func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger log.Logger) Broadcaster {
 	b := &batchedBroadcaster{
 		broadcaster:    broadcaster,
@@ -321,6 +337,7 @@ func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger
 	return b
 }
 
+// Broadcast implements the Broadcaster interface
 func (b *batchedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	// serialize concurrent calls to broadcast
 	callback := make(chan broadcastResult, 1)
@@ -422,6 +439,15 @@ type suppressorBroadcaster struct {
 	logger log.Logger
 }
 
+// SuppressExecutionErrs logs errors when msg executions fail and then suppresses them
+func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcaster {
+	return suppressorBroadcaster{
+		b:      broadcaster,
+		logger: logger,
+	}
+}
+
+// Broadcast implements the Broadcaster interface
 func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	res, err := s.b.Broadcast(ctx, msgs...)
 	if utils2.IsABCIError(err) {
@@ -429,11 +455,4 @@ func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 		return nil, nil
 	}
 	return res, err
-}
-
-func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcaster {
-	return suppressorBroadcaster{
-		b:      broadcaster,
-		logger: logger,
-	}
 }
