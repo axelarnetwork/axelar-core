@@ -9,7 +9,7 @@ import evm_chains from "../../data/evm_chains.json";
 import evm_assets from "../../data/evm_assets.json";
 
 export default ({ environment = "mainnet" }) => {
-  const [chainData, setChainData] = useState(null);
+  const [chainData, setChainData] = useState(evm_chains?.[environment]?.find(c => c?.id === "avalanche"));
   const [assetData, setAssetData] = useState(null);
 
   const columns = [
