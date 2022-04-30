@@ -13,7 +13,7 @@ export default ({ environment = "mainnet" }) => {
       {evm_chains?.[environment].map((c, key) => {
         const explorer_url = c.provider_params?.[0]?.blockExplorerUrls?.[0];
         const gateway_contract_address = gateways?.[environment]?.find(g => g?.id === c.id)?.address;
-        const gas_receiver_address = gas_receiver[environment].address;
+        const gas_receiver_address = gas_receiver?.[environment]?.find(g => g?.id === c.id)?.address;
 
         return (
           <div key={key} className="border dark:border-gray-700 rounded-xl flex flex-col justify-between space-y-2 p-4">
