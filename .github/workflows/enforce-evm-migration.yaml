@@ -23,9 +23,11 @@ jobs:
       - name: Compare bytecode version to previous tagged version
         run: |
           tag=$(git tag --list --merged HEAD --sort=-v:refname | head -n 1)
-          echo tag:$tag
+          echo "Comparing current branch with tag $tag"
           if ! git diff $tag -s --exit-code ./contract-artifacts; then
-            echo changed
+            echo "The contract version has changed"
+            if ! git diff $tag -s --exit-code ./x/evm/module.go | grep ConsensusVersion; then
+              echo "EVM module consensus version needs to be incremented"
           else
-            echo same
+            echo "The contract version has not changed, no need to enforce a migration"            
           fi
