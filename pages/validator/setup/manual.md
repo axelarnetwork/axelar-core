@@ -17,10 +17,10 @@ import CodeBlock from '../../../components/code-block'
 mkdir binaries && cd binaries
 
 # get axelard, tofnd binaries and rename
-wget https://github.com/axelarnetwork/axelar-core/releases/download/v0.16.2/axelard-linux-amd64-v0.16.2
-wget https://github.com/axelarnetwork/tofnd/releases/download/v0.9.1/tofnd-linux-amd64-v0.9.1
-mv axelard-linux-amd64-v0.16.2 axelard
-mv tofnd-linux-amd64-v0.9.1 tofnd
+wget https://github.com/axelarnetwork/axelar-core/releases/download/v0.17.1/axelard-linux-amd64-v0.17.1
+wget https://github.com/axelarnetwork/tofnd/releases/download/v0.10.1/tofnd-linux-amd64-v0.10.1
+mv axelard-linux-amd64-v0.17.1 axelard
+mv tofnd-linux-amd64-v0.10.1 tofnd
 
 # make binaries executable
 chmod +x *

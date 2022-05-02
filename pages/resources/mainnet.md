@@ -7,8 +7,9 @@ import IBCChannels from '../../components/ibc/channels'
 
 | Variable              | Value     |
 | --------------------- | --------- |
-| `axelar-core` version | `v0.16.2` |
-| `tofnd` version       | `v0.8.2`  |
+| `axelar-core` version | `v0.17.1` |
+| `vald` version        | `v0.17.0` |
+| `tofnd` version       | `v0.10.1`  |
 
 <div className="space-y-1 mt-4">
   ## EVM Chains

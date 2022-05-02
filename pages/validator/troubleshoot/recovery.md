@@ -9,7 +9,7 @@ import Callout from 'nextra-theme-docs/callout'
 [TODO: new section on building tofnd?]
 ```
 tofnd binary release is only available for linux-amd64
-For other platforms, build your own from the tofnd repo and place it at: /Users/gus/.axelar_testnet/bin/tofnd-v0.8.2.
+For other platforms, build your own from the tofnd repo and place it at: /Users/gus/.axelar_testnet/bin/tofnd.
 ```
 
 # OLD
