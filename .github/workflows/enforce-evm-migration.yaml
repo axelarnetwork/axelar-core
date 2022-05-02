@@ -18,8 +18,7 @@ jobs:
 
       - name: Compare bytecode version to previous tagged version
         run: |
-          git tag --list --merged HEAD --sort=-v:refname
-          echo $tag
+          git tag --list --merged HEAD --sort=-v:refname | cat
           if ! git diff $tag -s --exit-code ./contract-artifacts; then
             echo changed
           else
