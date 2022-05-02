@@ -2,7 +2,7 @@
 
 Axelar enables secure, any-to-any communication across blockchains, regardless of consensus mechanism or message payload.
 
-Cross-chain apps built on Axelar are truly permissionless, meaning that their transactions cannot be censored by any oracle, relayer or validator. Axelar introduces no new trust assumptions between proof-of-stake chains.
+Cross-chain apps built on Axelar are truly permissionless, meaning that their transactions cannot be censored by any oracle, relayer or validator. Axelar is based on the same proof-of-stake security model as many of the chains it connects.
 
 ## Basic functions
 
