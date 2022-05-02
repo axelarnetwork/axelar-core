@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get previous tag
         id: previous_tag
@@ -22,4 +22,8 @@ jobs:
 
       - name: Compare bytecode version
         run: |
-          echo ${{steps.previous_tag.ouputs.result}}
+          if ! git diff ${{steps.previous_tag.outputs.result}} -s --exit-code ./contract-artifacts; then
+            echo changed
+          else
+            echo same
+          fi
