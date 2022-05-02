@@ -1,0 +1,22 @@
+name: Ensure EVM module migration when bytecode changes
+
+on:
+  - pull_request
+
+jobs:
+  ensure-evm-migration:
+    strategy:
+      matrix:
+        go-version:
+          - 1.18
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Get previous tag
+        id: previous_tag
+        uses: younited/get-previous-tag-action@v1.0.0
+
+      - name: Compare bytecode version
+        run: |
+          echo ${{steps.previous_tag.ouputs.result}}
