@@ -13,6 +13,9 @@ jobs:
           - ubuntu-18.04
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Get previous tag
         id: previous_tag
         uses: younited/get-previous-tag-action@v1.0.0
