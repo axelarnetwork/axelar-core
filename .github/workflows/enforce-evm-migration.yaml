@@ -35,7 +35,7 @@ jobs:
           echo "The contract version has changed"
           # Check out the latest tag, increment the consensus version and check if it matches the version in the current commit
           git checkout -q "$tag"  $evm_module
-          perl -i -pe 's/(?<=^func \(AppModule\) ConsensusVersion\(\) uint64 { return )(\b\d+\b)(?= }$)/$1+1/me' $evm_module
+          perl -i -pe 's/(?<=^func \(AppModule\) ConsensusVersion\(\) uint64 \{ return )(\b\d+\b)(?= }$)/$1+1/me' $evm_module
           if git diff "$current_commit" --exit-code $evm_module | grep ConsensusVersion > /dev/null; then
           echo "EVM module consensus version needs to be incremented"
           exit 1
