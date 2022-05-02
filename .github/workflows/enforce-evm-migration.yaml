@@ -16,12 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Get previous tag
-        uses: younited/get-previous-tag-action@v1.0.0
-
-      - name: Compare bytecode version
+      - name: Compare bytecode version to previous tagged version
         run: |
-          if ! git diff ${{steps.previous-tag.outputs.result}} -s --exit-code ./contract-artifacts; then
+          tag=$(git tag --list --merged HEAD --sort=-v:refname | head -n 1)
+          if ! git diff $tag -s --exit-code ./contract-artifacts; then
             echo changed
           else
             echo same
