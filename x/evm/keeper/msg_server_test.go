@@ -923,6 +923,7 @@ func TestAddChain(t *testing.T) {
 	var (
 		ctx     sdk.Context
 		basek   *mock.BaseKeeperMock
+		chaink  *mock.ChainKeeperMock
 		tssMock *mock.TSSMock
 		n       *mock.NexusMock
 		msg     *types.AddChainRequest
@@ -939,7 +940,15 @@ func TestAddChain(t *testing.T) {
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		basek = &mock.BaseKeeperMock{
-			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
+			ForChainFunc: func(n string) types.ChainKeeper {
+				if n == name {
+					return chaink
+				}
+				return nil
+			},
+		}
+		chaink = &mock.ChainKeeperMock{
+			SetParamsFunc: func(sdk.Context, types.Params) {},
 		}
 
 		tssMock = &mock.TSSMock{}
@@ -951,6 +960,7 @@ func TestAddChain(t *testing.T) {
 				return c, ok
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+			SetChainFunc:              func(sdk.Context, nexus.Chain) {},
 		}
 
 		name = rand.StrBetween(5, 20)
@@ -972,9 +982,12 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
-		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
-		assert.Equal(t, params, basek.SetPendingChainCalls()[0].P)
+		assert.Equal(t, 1, len(basek.ForChainCalls()))
+		assert.Equal(t, 1, len(chaink.SetParamsCalls()))
+		assert.Equal(t, 1, len(n.SetChainCalls()))
+		assert.Equal(t, name, basek.ForChainCalls()[0].Chain)
+		assert.Equal(t, params, chaink.SetParamsCalls()[0].P)
+		assert.Equal(t, name, n.SetChainCalls()[0].Chain.Name)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 

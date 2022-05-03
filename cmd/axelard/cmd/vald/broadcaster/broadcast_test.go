@@ -29,8 +29,8 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -299,12 +299,12 @@ func createMsgsWithSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
 
 	for i := int64(0); i < count; i++ {
 
-		msg := evm.NewVoteConfirmChainRequest(
+		msg := &vote.VoteRequest{
 			signer,
-			rand.StrBetween(5, 10),
-			exported.NewPollKey(evm.ModuleName, rand.StrBetween(5, 100)),
-			rand.Bools(0.5).Next(),
-		)
+			exported.NewPollKey(vote.ModuleName, rand.StrBetween(5, 100)),
+			exported.Vote{},
+		}
+
 		msgs = append(msgs, msg)
 	}
 	return msgs

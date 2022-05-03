@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	testutils "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
@@ -87,7 +88,11 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			return &sdk.Result{}, fmt.Errorf("failed to execute message")
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
-		voteReq := &votetypes.VoteRequest{}
+		voteReq := &votetypes.VoteRequest{
+			rand.AccAddr(),
+			exported.NewPollKey(votetypes.ModuleName, rand.StrBetween(5, 100)),
+			exported.Vote{},
+		}
 		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
