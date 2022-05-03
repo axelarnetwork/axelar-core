@@ -22,18 +22,24 @@ Redeem UST tokens from an EVM chain to Terra using the terminal.
 Link your `{TERRA_DEST_ADDR}` address to a new temporary deposit address on the EVM chain:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard tx evm link {EVM_CHAIN} terra {TERRA_DEST_ADDR} uusd --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm link {EVM_CHAIN} terra {TERRA_DEST_ADDR} uusd --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard tx evm link {EVM_CHAIN} terra {TERRA_DEST_ADDR} uusd --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm link {EVM_CHAIN} terra {TERRA_DEST_ADDR} uusd --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm link {EVM_CHAIN} terra {TERRA_DEST_ADDR} uusd --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 Output should contain
@@ -51,13 +57,13 @@ Use Metamask to send some wrapped AXL tokens on `{EVM_CHAIN}` to the new tempora
 <Callout emoji="📝">
   Note: Third-party monitoring tools will automatically complete the remaining steps of this process.
 
-  Wait a few minutes then check your Terra `{TERRA_DEST_ADDR}` account UST token balance.
+Wait a few minutes then check your Terra `{TERRA_DEST_ADDR}` account UST token balance.
 </Callout>
 
 <Callout type="warning" emoji="⚠️">
   Caution: If you attempt the remaining steps while third-party monitoring tools are active then your commands are likely to conflict with third-party commands. In this case you are likely to observe errors. Deeper investigation might be needed to resolve conflicts and complete the transfer.
 
-  The remaining steps are needed only if there are no active third-party monitoring tools and you wish to complete the process manually.
+The remaining steps are needed only if there are no active third-party monitoring tools and you wish to complete the process manually.
 </Callout>
 
 Do not proceed to the next step until you have waited for sufficiently many block confirmations on the EVM chain. Block confirmation minimums can be found at [Testnet resources](/resources/testnet), [Mainnet resources](/resources/mainnet).
@@ -65,18 +71,24 @@ Do not proceed to the next step until you have waited for sufficiently many bloc
 Confirm the EVM chain transaction on Axelar.
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard tx evm confirm-erc20-deposit {EVM_CHAIN} {EVM_TX_HASH} {AMOUNT} {EVM_TEMP_ADDR} --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm confirm-erc20-deposit {EVM_CHAIN} {EVM_TX_HASH} {AMOUNT} {EVM_TEMP_ADDR} --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard tx evm confirm-erc20-deposit {EVM_CHAIN} {EVM_TX_HASH} {AMOUNT} {EVM_TEMP_ADDR} --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm confirm-erc20-deposit {EVM_CHAIN} {EVM_TX_HASH} {AMOUNT} {EVM_TEMP_ADDR} --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm confirm-erc20-deposit {EVM_CHAIN} {EVM_TX_HASH} {AMOUNT} {EVM_TEMP_ADDR} --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 Wait for confirmation on Axelar.
@@ -84,20 +96,27 @@ Wait for confirmation on Axelar.
 Create and sign pending transfers for `{EVM_CHAIN}`.
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
 {`echo my-secret-password | ~/.axelar/bin/axelard tx evm create-burn-tokens {EVM_CHAIN} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core --gas auto --gas-adjustment 1.5
 echo my-secret-password | ~/.axelar/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-dojo-1 --home ~/.axelar/.core`}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
 {`echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm create-burn-tokens {EVM_CHAIN} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core --gas auto --gas-adjustment 1.5
 echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core`}
-    </CodeBlock>
-  }
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{`echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm create-burn-tokens {EVM_CHAIN} --from validator --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core --gas auto --gas-adjustment 1.5
+echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core`}
+</CodeBlock>
+}
 ]} />
 
 Output should contain
@@ -109,18 +128,24 @@ successfully started signing batched commands with ID {BATCH_ID}
 Get the `execute_data`:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"~/.axelar/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"~/.axelar_testnet/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"~/.axelar/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"~/.axelar_testnet/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"~/.axelar_testnet-2/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
+</CodeBlock>
+}
 ]} />
 
 Wait for `status: BATCHED_COMMANDS_STATUS_SIGNED` and copy the `execute_data`.
@@ -134,32 +159,38 @@ Use Metamask to send a transaction on `{EVM_CHAIN}` with the `execute_data` to t
 <Callout type="warning" emoji="⚠️">
   Caution: Manually increase the gas limit to 5 million gas (5000000). If you don't do this then the transaction will fail due to insufficient gas and you will not receive your tokens.
 
-  Before you click "confirm": select "EDIT", change "Gas Limit" to 5000000, and "Save"
+Before you click "confirm": select "EDIT", change "Gas Limit" to 5000000, and "Save"
 </Callout>
 
 <Callout emoji="💡">
   Tip: Learn the Axelar `{GATEWAY_ADDR}` for `{EVM_CHAIN}` in two ways:
 
-  ### 1. Documentation
+### 1. Documentation
 
-  [Testnet resources](/resources/testnet), [Mainnet resources](/resources/mainnet).
+[Testnet resources](/resources/testnet), [Mainnet resources](/resources/mainnet).
 
-  ### 2. Terminal
+### 2. Terminal
 
-  <Tabs tabs={[
-    {
-      title: "Mainnet",
-      content: <CodeBlock language="bash">
-        {"~/.axelar/bin/axelard q evm gateway-address {EVM_CHAIN}"}
-      </CodeBlock>
-    },
-    {
-      title: "Testnet",
-      content: <CodeBlock language="bash">
-        {"~/.axelar_testnet/bin/axelard q evm gateway-address {EVM_CHAIN}"}
-      </CodeBlock>
-    }
-  ]} />
+<Tabs tabs={[
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"~/.axelar/bin/axelard q evm gateway-address {EVM_CHAIN}"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"~/.axelar_testnet/bin/axelard q evm gateway-address {EVM_CHAIN}"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"~/.axelar_testnet-2/bin/axelard q evm gateway-address {EVM_CHAIN}"}
+</CodeBlock>
+}
+]} />
 </Callout>
 
 To send a transaction to `{GATEWAY_ADDR}` using Metamask: paste hex from `execute_data` above into "Hex Data" field. (Do not send tokens!)
@@ -167,18 +198,24 @@ To send a transaction to `{GATEWAY_ADDR}` using Metamask: paste hex from `execut
 Execute the pending IBC transfer:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard tx axelarnet route-ibc-transfers --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx axelarnet route-ibc-transfers --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard tx axelarnet route-ibc-transfers --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx axelarnet route-ibc-transfers --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx axelarnet route-ibc-transfers --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 Wait a few minutes for the IBC relayer to relay your transaction to Terra.

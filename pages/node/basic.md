@@ -30,18 +30,24 @@ kill -9 $(pgrep -f "axelard start")
 </Callout>
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-     {"cp -r ~/.axelar ~/.axelar_mainnet_backup"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"cp -r ~/.axelar_testnet ~/.axelar_testnet_backup"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"cp -r ~/.axelar ~/.axelar_mainnet_backup"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"cp -r ~/.axelar_testnet ~/.axelar_testnet_backup"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"cp -r ~/.axelar_testnet-2 ~/.axelar_testnet-2_backup"}
+</CodeBlock>
+}
 ]} />
 
 ## Resume your Axelar node
@@ -53,18 +59,24 @@ Resume your stopped Axelar node.
 </Callout>
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet-2"}
+</CodeBlock>
+}
 ]} />
 
 ## Learn your address
@@ -76,18 +88,24 @@ Resume your stopped Axelar node.
 Learn the address of your `validator` account:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard keys show validator -a --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard keys show validator -a --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard keys show validator -a --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard keys show validator -a --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard keys show validator -a --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 ## Check your AXL balance
@@ -99,39 +117,51 @@ Let `{MY_ADDRESS}` denote the address of your `validator` account.
 </Callout>
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 If this is a new account then you should see no token balances.
 
-<Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <Markdown>
-      {""}
-    </Markdown>
-  },
-  {
-    title: "Testnet",
-    content: <Markdown>{`
 ## Get AXL tokens from the faucet
+
+<Tabs tabs={[
+{
+title: "Mainnet",
+content: <Markdown>
+{"There is no faucet for mainnet AXL tokens."}
+</Markdown>
+},
+{
+title: "Testnet",
+content: <Markdown>{`
 
 Get free AXL testnet tokens sent to {MY_ADDRESS} from the [Axelar Testnet Faucet](https://faucet.testnet.axelar.dev/).
 
 Check your balance again to see the tokens you received from the faucet.
-    `}</Markdown>
-  }
+`}</Markdown> }, { title: "Testnet-2", content: <Markdown>{`
+
+Get free AXL testnet tokens sent to {MY_ADDRESS} from the [Axelar Testnet Faucet](https://faucet-casablanca.testnet.axelar.dev/).
+
+Check your balance again to see the tokens you received from the faucet.
+`}</Markdown>
+}
 ]} />
 
 ## Recover your secret keys

@@ -44,26 +44,37 @@ cd axelarate-community
 ```
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <div>
-      Launch a new Axelar mainnet node with version <Markdown>`0.10.7`</Markdown> of axelar-core:
-      <CodeBlock language="bash">
-        {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.10.7 -n mainnet"}
-      </CodeBlock>
-      Your Axelar node will initialize your data folder <Markdown>`~/.axelar`</Markdown>
-    </div>
-  },
-  {
-    title: "Testnet",
-    content: <div>
-      Launch a new Axelar testnet node with version <Markdown>`0.13.6`</Markdown> of axelar-core:
-      <CodeBlock language="bash">
-        {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.13.6"}
-      </CodeBlock>
-      Your Axelar node will initialize your data folder <Markdown>`~/.axelar_testnet`</Markdown>
-    </div>
-  }
+{
+title: "Mainnet",
+content: <div>
+Launch a new Axelar mainnet node with version <Markdown>`0.10.7`</Markdown> of axelar-core:
+<CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.10.7 -n mainnet"}
+</CodeBlock>
+Your Axelar node will initialize your data folder <Markdown>`~/.axelar`</Markdown>
+
+</div>
+},
+{
+title: "Testnet",
+content: <div>
+Launch a new Axelar testnet node with version <Markdown>`0.13.6`</Markdown> of axelar-core:
+<CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.13.6"}
+</CodeBlock>
+Your Axelar node will initialize your data folder <Markdown>`~/.axelar_testnet`</Markdown>
+</div>
+},
+{
+title: "Testnet-2",
+content: <div>
+Launch a new Axelar testnet node with version <Markdown>`0.17.0`</Markdown> of axelar-core:
+<CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.17.0 -n testnet-2"}
+</CodeBlock>
+Your Axelar node will initialize your data folder <Markdown>`~/.axelar_testnet-2`</Markdown>
+</div>
+}
 ]} />
 
 To recover your secret keys from mnemonics, use `-t path_to_tendermint_key -m path_to_validator_mnemonic -r` (`-r` is to reset the chain). These flags work only on a completely fresh state.
@@ -75,35 +86,47 @@ Then your Axelar node will begin downloading blocks in the blockchain one-by-one
 BACKUP and DELETE the `validator` account secret mnemonic:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/validator.txt"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/validator.txt"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/validator.txt"}
+</CodeBlock>
+}
 ]} />
 
 BACKUP but do NOT DELETE the Tendermint consensus secret key (this is needed on node restarts):
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/.core/config/priv_validator_key.json"}
+</CodeBlock>
+}
 ]} />
 
 ## View logs
@@ -113,18 +136,24 @@ View the streaming logs for your Axelar node:
 In a new terminal window:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"tail -f ~/.axelar/logs/axelard.log"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"tail -f ~/.axelar_testnet/logs/axelard.log"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar/logs/axelard.log"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar_testnet/logs/axelard.log"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar_testnet-2/logs/axelard.log"}
+</CodeBlock>
+}
 ]} />
 
 You should see log messages for each block in the blockchain that your node downloads.
@@ -142,18 +171,24 @@ kill -9 $(pgrep -f "axelard start")
 Delete your `data` directory:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"rm -r ~/.axelar/.core/data"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"rm -r ~/.axelar_testnet/.core/data"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"rm -r ~/.axelar/.core/data"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"rm -r ~/.axelar_testnet/.core/data"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"rm -r ~/.axelar_testnet-2/.core/data"}
+</CodeBlock>
+}
 ]} />
 
 # Download the latest Axelar blockchain snapshot
@@ -173,18 +208,24 @@ Let `{SNAPSHOT_FILE}` denote the file name of the snapshot you downloaded. Examp
 Decompress the downloaded snapshot into your `data` directory:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 ## Resume your node
@@ -192,18 +233,24 @@ Decompress the downloaded snapshot into your `data` directory:
 Resume your Axelar node with the latest version of axelar-core:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet-2"}
+</CodeBlock>
+}
 ]} />
 
 Your Axelar node will launch and resume downloading the blockchain. You should see log messages for new blocks.
@@ -230,4 +277,3 @@ Congratulations! You joined the Axelar network and downloaded the blockchain.
 Learn what you can do with Axelar:
 
 - [Basic node management](./basic)
-- Tutorial: transfer UST or LUNA tokens from the Terra blockchain to EVM-compatible blockchains such as Avalanche, Ethereum, Fantom, Moonbeam, Polygon.

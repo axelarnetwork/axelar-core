@@ -16,18 +16,24 @@ Axelar validators exchange messages with one another via the Axelar blockchain. 
 Your `broadcaster` address `{BROADCASTER_ADDR}` is stored in a text file:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/broadcaster.address"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/broadcaster.address"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/broadcaster.address"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/broadcaster.address"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/broadcaster.address"}
+</CodeBlock>
+}
 ]} />
 
 ## Fund your validator and broadcaster accounts
@@ -38,18 +44,24 @@ Go to [Axelar faucet](http://faucet.testnet.axelar.dev/) and send some free AXL 
 ## Register your broadcaster account
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
+</CodeBlock>
+}
 ]} />
 
 ## Optional: check your broadcaster registration

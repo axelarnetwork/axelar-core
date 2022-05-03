@@ -49,18 +49,24 @@ Your `tofnd` secret mnemonic is in a file `.tofnd/export`. Save this mnemonic so
 ## Set environment variables
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo export CHAIN_ID=axelar-dojo-1 >> $HOME/.profile"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo export CHAIN_ID=axelar-testnet-lisbon-3 >> $HOME/.profile"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo export CHAIN_ID=axelar-dojo-1 >> $HOME/.profile"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo export CHAIN_ID=axelar-testnet-lisbon-3 >> $HOME/.profile"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo export CHAIN_ID=axelar-testnet-casablanca-1 >> $HOME/.profile"}
+</CodeBlock>
+}
 ]} />
 
 ```bash
@@ -92,9 +98,9 @@ source $HOME/.profile
 Initialize your Axelar node, fetch configuration, genesis, seeds.
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
 {`axelard init $MONIKER --chain-id $CHAIN_ID
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/config.toml -O $HOME/.axelar/config/config.toml
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/app.toml -O $HOME/.axelar/config/app.toml
@@ -102,55 +108,25 @@ wget https://axelar-mainnet.s3.us-east-2.amazonaws.com/genesis.json -O $HOME/.ax
 wget https://axelar-mainnet.s3.us-east-2.amazonaws.com/seeds.txt -O $HOME/.axelar/config/seeds.txt
 
 # enter seeds to your config.json file
+
 sed -i.bak 's/seeds = \"\"/seeds = \"'$(cat $HOME/.axelar/config/seeds.txt)'\"/g' $HOME/.axelar/config/config.toml
 
 # set external ip to your config.json file
-sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.co)"':26656\"/g' $HOME/.axelar/config/config.toml`}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-{`axelard init $MONIKER --chain-id $CHAIN_ID
-wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/config.toml -O $HOME/.axelar/config/config.toml
-wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/app.toml -O $HOME/.axelar/config/app.toml
-wget https://axelar-testnet.s3.us-east-2.amazonaws.com/genesis.json -O $HOME/.axelar/config/genesis.json
-wget https://axelar-testnet.s3.us-east-2.amazonaws.com/seeds.txt -O $HOME/.axelar/config/seeds.txt
 
-# enter seeds to your config.json file
-sed -i.bak 's/seeds = \"\"/seeds = \"'$(cat $HOME/.axelar/config/seeds.txt)'\"/g' $HOME/.axelar/config/config.toml
-
-# set external ip to your config.json file
-sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.co)"':26656\"/g' $HOME/.axelar/config/config.toml`}
-    </CodeBlock>
-  }
+sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.co)"':26656\"/g' $HOME/.axelar/config/config.toml`} </CodeBlock> }
 ]} />
 
 ## Sync From Snapshot
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-{`axelard unsafe-reset-all
-URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{`axelard unsafe-reset-all URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
-cd $HOME`}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-{`axelard unsafe-reset-all
-URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelartestnet-lisbon-3-pruned")|.url'\`
-echo $URL
-cd $HOME/.axelar/
-wget -O - $URL | lz4 -d | tar -xvf -
-cd $HOME`}
-    </CodeBlock>
-  }
+cd $HOME`} </CodeBlock> }
 ]} />
 
 ## Create services

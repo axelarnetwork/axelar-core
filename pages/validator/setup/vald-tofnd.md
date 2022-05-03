@@ -24,18 +24,24 @@ In what follows you will execute a shell script to launch the companion processe
 Launch `vald`, `tofnd` for the first time:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n mainnet"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n mainnet"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n testnet-2"}
+</CodeBlock>
+}
 ]} />
 
 To recover your secret keys from mnemonics, use `-p path_to_broadcaster_mnemonic -z path_to_tofnd_mnemonic`. These flags work only on a completely fresh state.
@@ -49,18 +55,25 @@ To recover your secret keys from mnemonics, use `-p path_to_broadcaster_mnemonic
 View the streaming logs for `vald`, `tofnd`:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
 {`tail -f ~/.axelar/logs/vald.log
 tail -f ~/.axelar/logs/tofnd.log`}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
 {`tail -f ~/.axelar_testnet/logs/vald.log
 tail -f ~/.axelar_testnet/logs/tofnd.log`}
-    </CodeBlock>
-  }
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{`tail -f ~/.axelar_testnet-2/logs/vald.log
+tail -f ~/.axelar_testnet-2/logs/tofnd.log`}
+</CodeBlock>
+}
 ]} />

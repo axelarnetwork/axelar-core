@@ -44,26 +44,37 @@ cd axelarate-community
 ```
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <div>
-      Launch a new Axelar mainnet node with version <Markdown>`0.10.7`</Markdown> of axelar-core:
-      <CodeBlock language="bash">
-        {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.10.7 -n mainnet"}
-      </CodeBlock>
-      Your Axelar node will initialize your data folder <Markdown>`~/.axelar`</Markdown>
-    </div>
-  },
-  {
-    title: "Testnet",
-    content: <div>
-      Launch a new Axelar testnet node with version `0.13.6` of axelar-core:
-      <CodeBlock language="bash">
-        KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.13.6
-      </CodeBlock>
-      Your Axelar node will initialize your data folder `~/.axelar_testnet`
-    </div>
-  }
+{
+title: "Mainnet",
+content: <div>
+Launch a new Axelar mainnet node with version <Markdown>`0.10.7`</Markdown> of axelar-core:
+<CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.10.7 -n mainnet"}
+</CodeBlock>
+Your Axelar node will initialize your data folder <Markdown>`~/.axelar`</Markdown>
+
+</div>
+},
+{
+title: "Testnet",
+content: <div>
+Launch a new Axelar testnet node with version `0.13.6` of axelar-core:
+<CodeBlock language="bash">
+KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.13.6
+</CodeBlock>
+Your Axelar node will initialize your data folder `~/.axelar_testnet`
+</div>
+},
+{
+title: "Testnet-2",
+content: <div>
+Launch a new Axelar testnet node with version `0.17.0` of axelar-core:
+<CodeBlock language="bash">
+KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.17.0
+</CodeBlock>
+Your Axelar node will initialize your data folder `~/.axelar_testnet-2`
+</div>
+}
 ]} />
 
 To recover your secret keys from mnemonics, use `-t path_to_tendermint_key -m path_to_validator_mnemonic -r` (`-r` is to reset the chain). These flags work only on a completely fresh state.
@@ -75,35 +86,47 @@ Your Axelar node will launch and begin downloading the blockchain.
 BACKUP and DELETE the `validator` account secret mnemonic:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/validator.txt"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/validator.txt"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/validator.txt"}
+</CodeBlock>
+}
 ]} />
 
 BACKUP but do NOT DELETE the Tendermint consensus secret key (this is needed on node restarts):
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/.core/config/priv_validator_key.json"}
+</CodeBlock>
+}
 ]} />
 
 ## View logs
@@ -113,18 +136,24 @@ View the streaming logs for your Axelar node:
 In a new terminal window:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"tail -f ~/.axelar/logs/axelard.log"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"tail -f ~/.axelar_testnet/logs/axelard.log"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar/logs/axelard.log"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar_testnet/logs/axelard.log"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"tail -f ~/.axelar_testnet-2/logs/axelard.log"}
+</CodeBlock>
+}
 ]} />
 
 ## Follow the upgrade path
@@ -132,14 +161,18 @@ In a new terminal window:
 Your Axelar node will download the blockchain until it reaches the first `UPGRADE_HEIGHT` listed below.
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <MarkdownPath src="/md/mainnet/upgrade-path.md" />
-  },
-  {
-    title: "Testnet",
-    content: <MarkdownPath src="/md/testnet/upgrade-path.md" />
-  }
+{
+title: "Mainnet",
+content: <MarkdownPath src="/md/mainnet/upgrade-path.md" />
+},
+{
+title: "Testnet",
+content: <MarkdownPath src="/md/testnet/upgrade-path.md" />
+},
+{
+title: "Testnet-2",
+content: <MarkdownPath src="/md/testnet-2/upgrade-path.md" />
+}
 ]} />
 
 After your blockchain has reached `UPGRADE_HEIGHT` you will see a panic in the logs like
@@ -151,18 +184,24 @@ panic: UPGRADE {NAME} NEEDED at height: {UPGRADE_HEIGHT}:
 Launch your Axelar node again with the `CORE_VERSION` listed below:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a {CORE_VERSION} -n mainnet"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a {CORE_VERSION} -n testnet"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a {CORE_VERSION} -n mainnet"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a {CORE_VERSION} -n testnet"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a {CORE_VERSION} -n testnet-2"}
+</CodeBlock>
+}
 ]} />
 
 Your Axelar node will launch and resume downloading the blockchain.
@@ -191,4 +230,3 @@ Congratulations! You joined the Axelar network and downloaded the blockchain.
 Learn what you can do with Axelar:
 
 - [Basic node management](./basic)
-- Tutorial: transfer UST or LUNA tokens from the Terra blockchain to EVM-compatible blockchains such as Avalanche, Ethereum, Fantom, Moonbeam, Polygon.

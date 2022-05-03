@@ -27,18 +27,24 @@ Items 3 and 4 were created when you completed [Launch validator companion proces
 BACKUP and DELETE the `validator` account secret mnemonic:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/validator.txt"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/validator.txt"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/validator.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/validator.txt"}
+</CodeBlock>
+}
 ]} />
 
 ## Tendermint validator secret key
@@ -46,18 +52,24 @@ BACKUP and DELETE the `validator` account secret mnemonic:
 BACKUP but do NOT DELETE the Tendermint consensus secret key (this is needed on node restarts):
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/.core/config/priv_validator_key.json"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/.core/config/priv_validator_key.json"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/.core/config/priv_validator_key.json"}
+</CodeBlock>
+}
 ]} />
 
 ## Broadcaster account secret mnemonic
@@ -65,18 +77,24 @@ BACKUP but do NOT DELETE the Tendermint consensus secret key (this is needed on 
 BACKUP and DELETE the `broadcaster` account secret mnemonic:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/broadcaster.txt"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/broadcaster.txt"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/broadcaster.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/broadcaster.txt"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/broadcaster.txt"}
+</CodeBlock>
+}
 ]} />
 
 ## Tofnd secret mnemonic
@@ -84,16 +102,22 @@ BACKUP and DELETE the `broadcaster` account secret mnemonic:
 BACKUP and DELETE the `tofnd` secret mnemonic:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock>
-      {"~/.axelar/.tofnd/import"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock>
-      {"~/.axelar_testnet/.tofnd/import"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock>
+{"~/.axelar/.tofnd/import"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock>
+{"~/.axelar_testnet/.tofnd/import"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock>
+{"~/.axelar_testnet-2/.tofnd/import"}
+</CodeBlock>
+}
 ]} />

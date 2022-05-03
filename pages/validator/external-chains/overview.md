@@ -100,18 +100,24 @@ kill -9 $(pgrep -f "axelard vald-start")
 Immediately resume your companion processes `vald`, `tofnd`:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n mainnet"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n mainnet"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n testnet-2"}
+</CodeBlock>
+}
 ]} />
 
 ## Check your connections to new chains in vald
@@ -135,32 +141,39 @@ For each external blockchain you selected earlier you must inform the Axelar net
 Example: multiple EVM chains in one command:
 
 <Tabs tabs={[
-  {
-    title: "Mainnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-dojo-1 --home ~/.axelar/.vald --gas auto --gas-adjustment 1.5"}
-    </CodeBlock>
-  },
-  {
-    title: "Testnet",
-    content: <CodeBlock language="bash">
-      {"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.vald --gas auto --gas-adjustment 1.5"}
-    </CodeBlock>
-  }
+{
+title: "Mainnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-dojo-1 --home ~/.axelar/.vald --gas auto --gas-adjustment 1.5"}
+</CodeBlock>
+},
+{
+title: "Testnet",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.vald --gas auto --gas-adjustment 1.5"}
+</CodeBlock>
+},
+{
+title: "Testnet-2",
+content: <CodeBlock language="bash">
+{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.vald --gas auto --gas-adjustment 1.5"}
+</CodeBlock>
+}
 ]} />
 
 <Callout emoji="ℹ️">
   Validator voting for maintained chains
 
-  If you have added an RPC endpoint to your configuration for chain C then your validator will _always_ post vote messages for chain C on the Axelar network, regardless of whether you are registered as a maintainer for chain C. (Why? Because the `vald` process that posts vote messages is stateless; it doesn't know whether your validator is registered as a maintainer for chain C.)
+If you have added an RPC endpoint to your configuration for chain C then your validator will _always_ post vote messages for chain C on the Axelar network, regardless of whether you are registered as a maintainer for chain C. (Why? Because the `vald` process that posts vote messages is stateless; it doesn't know whether your validator is registered as a maintainer for chain C.)
 
-  The Axelar consensus protocol simply ignores all votes for chain C events from those validators who are not registered as a maintainer for C.
+The Axelar consensus protocol simply ignores all votes for chain C events from those validators who are not registered as a maintainer for C.
 </Callout>
 
 <Callout type="warning" emoji="⚠️">
   Caution: If for some reason you need to deregister as chain maintainer for a chain C then you should also disable the RPC endpoint for C (set `start-with-bridge = false` in your `config.toml` file) and then restart vald. Otherwise, your validator will continue to post vote messages for chain C on the Axelar network, leading to the following consequences:
 
-  - Your broadcaster account will lose funds because the Axelar network does not refund transaction fees for vote messages unless you are a registered maintainer for chain C.
-  - You will see spurious error messages in your vald logs.
-  - Axelar dashboards might display your votes for chain C even though you are not a registered maintainer for C.
+- Your broadcaster account will lose funds because the Axelar network does not refund transaction fees for vote messages unless you are a registered maintainer for chain C.
+- You will see spurious error messages in your vald logs.
+- Axelar dashboards might display your votes for chain C even though you are not a registered maintainer for C.
+
 </Callout>
