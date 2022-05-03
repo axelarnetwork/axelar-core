@@ -114,15 +114,15 @@ func (q Querier) getSerializedMultisigKeys(ctx sdk.Context, key exported.Key, va
 		return nil, false
 	}
 
-	pubkeys, ok := q.keeper.GetMultisigPubKeysByValidator(ctx, key.ID, valAddress)
-	if !ok {
+	pubKeys, ok := q.keeper.GetMultisigPubKeysByValidator(ctx, key.ID, valAddress)
+	if !ok || len(pubKeys) == 0 {
 		return nil, false
 	}
 
-	valKeys := make([][]byte, len(pubkeys))
+	valKeys := make([][]byte, len(pubKeys))
 
-	for i, pubkey := range pubkeys {
-		wrappedKey := btcec.PublicKey(pubkey)
+	for i, pubKey := range pubKeys {
+		wrappedKey := btcec.PublicKey(pubKey)
 		valKeys[i] = wrappedKey.SerializeCompressed()
 	}
 
