@@ -389,11 +389,7 @@ func (k Keeper) GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.Ke
 	}
 
 	pubKeys := info.GetPubKeysByValidator(val)
-	if len(pubKeys) == 0 {
-		return []ecdsa.PublicKey{}, false
-	}
-
-	return pubKeys, true
+	return pubKeys, len(pubKeys) > 0
 }
 
 // GetMultisigKeygenQueue returns the multisig keygen timeout queue
