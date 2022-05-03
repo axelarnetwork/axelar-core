@@ -7,10 +7,6 @@ import CodeBlock from '../../components/code-block'
 
 Start your Axelar node and download the blockchain.
 
-<Callout type="error" emoji="🔥">
-  Important: The Axelar network is under active development. Use at your own risk with funds you're comfortable using. See [Terms of use](/terms-of-use).
-</Callout>
-
 <Callout emoji="💡">
   Tip: These instructions syncronize your Axelar node quickly by downloading a recent snapshot of the blockchain. If instead you prefer to syncronize your Axelar node using the Axelar peer-to-peer network then see [Genesis sync](./join-genesis)
 </Callout>
@@ -26,13 +22,9 @@ Start your Axelar node and download the blockchain.
 
 ## Choose a keyring password
 
-Your Axelar keyring is encrypted with a password you choose. Your password must have at least 8 characters.
+Your Axelar keyring is encrypted with a password you choose. Learn more about keyring passwords at [Keyring backend](keyring.md).
 
-In what follows you will execute a shell script to join the Axelar network. Your keyring password is supplied to the shell script via a `KEYRING_PASSWORD` environment variable.
-
-<Callout type="warning" emoji="⚠️">
-  Caution: In the following instructions you must substitute your chosen keyring password for `my-secret-password`.
-</Callout>
+In what follows you will execute a shell script `node.sh` to join the Axelar network. Your keyring password is supplied to `node.sh` via a `KEYRING_PASSWORD` environment variable. The script `node.sh` enforces an 8-character minimum for your keyring password.
 
 ## Join the Axelar network
 
@@ -49,7 +41,7 @@ title: "Mainnet",
 content: <div>
 Launch a new Axelar mainnet node with version <Markdown>`0.10.7`</Markdown> of axelar-core:
 <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.10.7 -n mainnet"}
+{"./scripts/node.sh -a v0.10.7 -n mainnet"}
 </CodeBlock>
 Your Axelar node will initialize your data folder <Markdown>`~/.axelar`</Markdown>
 
@@ -60,7 +52,7 @@ title: "Testnet",
 content: <div>
 Launch a new Axelar testnet node with version <Markdown>`0.13.6`</Markdown> of axelar-core:
 <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.13.6"}
+{"./scripts/node.sh -a v0.13.6 -n testnet"}
 </CodeBlock>
 Your Axelar node will initialize your data folder <Markdown>`~/.axelar_testnet`</Markdown>
 </div>
@@ -70,7 +62,7 @@ title: "Testnet-2",
 content: <div>
 Launch a new Axelar testnet node with version <Markdown>`0.17.0`</Markdown> of axelar-core:
 <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -a v0.17.0 -n testnet-2"}
+{"./scripts/node.sh -a v0.17.0 -n testnet-2"}
 </CodeBlock>
 Your Axelar node will initialize your data folder <Markdown>`~/.axelar_testnet-2`</Markdown>
 </div>
@@ -236,19 +228,19 @@ Resume your Axelar node with the latest version of axelar-core:
 {
 title: "Mainnet",
 content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
+{"./scripts/node.sh -n mainnet"}
 </CodeBlock>
 },
 {
 title: "Testnet",
 content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet"}
+{"./scripts/node.sh -n testnet"}
 </CodeBlock>
 },
 {
 title: "Testnet-2",
 content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet-2"}
+{"./scripts/node.sh -n testnet-2"}
 </CodeBlock>
 }
 ]} />
