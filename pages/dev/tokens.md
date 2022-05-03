@@ -105,25 +105,32 @@ async getDepositAddress(
 Example: Cosmos-to-EVM (Terra to Avalanche):
 
 ```tsx
-getDepositAddress(
-    "terra", // source chain
-    "avalanche", // destination chain
-    "0xF16DfB26e1FEc993E085092563ECFAEaDa7eD7fD", // destination address
-    "uusd" // asset to transfer
-  );
-}
+const sdk = new AxelarAssetTransfer({
+    environment: 'testnet',
+    auth: "local",
+});
+const depositAddress = await sdk.getDepositAddress(
+  "terra", // source chain
+  "avalanche", // destination chain
+  "0xF16DfB26e1FEc993E085092563ECFAEaDa7eD7fD", // destination address
+  "uusd" // asset to transfer
+);
 ```
 
 Example: EVM-to-Cosmos (Avalanche to Terra)
 
 ```tsx
-getDepositAddress(
-    "avalanche", // source chain
-    "terra", // destination chain
-    "terra1qem4njhac8azalrav7shvp06myhqldpmkk3p0t", // destination address
-    "uusd" // asset to transfer
-  );
-}
+const sdk = new AxelarAssetTransfer({
+    environment: 'testnet',
+    auth: "local",
+});
+const depositAddress = await sdk.getDepositAddress(
+  "avalanche", // source chain
+  "terra", // destination chain
+  "terra1qem4njhac8azalrav7shvp06myhqldpmkk3p0t", // destination address
+  "uusd" // asset to transfer
+);
+
 ```
 
 Note: The destination address format is validated based on the destination chain. Make sure that the destination address is a valid address on the destination chain. For instance Terra addresses start with “terra,” Osmosis with “osmo,” etc.

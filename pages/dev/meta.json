@@ -2,5 +2,6 @@
   "intro": "Introduction",
   "get-started": "Get started",
   "tokens": "Transfer tokens",
-  "gmp": "General Message Passing"
+  "gmp": "General Message Passing",
+  "gas-receiver": "Axelar Gas Receiver"
 }
