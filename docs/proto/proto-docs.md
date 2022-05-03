@@ -242,8 +242,6 @@
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
     - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse)
-    - [ConfirmChainRequest](#axelar.evm.v1beta1.ConfirmChainRequest)
-    - [ConfirmChainResponse](#axelar.evm.v1beta1.ConfirmChainResponse)
     - [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest)
@@ -268,8 +266,6 @@
     - [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse)
     - [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest)
     - [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse)
-    - [VoteConfirmChainRequest](#axelar.evm.v1beta1.VoteConfirmChainRequest)
-    - [VoteConfirmChainResponse](#axelar.evm.v1beta1.VoteConfirmChainResponse)
   
 - [axelar/evm/v1beta1/service.proto](#axelar/evm/v1beta1/service.proto)
     - [MsgService](#axelar.evm.v1beta1.MsgService)
@@ -3787,32 +3783,6 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmChainRequest"></a>
-
-### ConfirmChainRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `name` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.ConfirmChainResponse"></a>
-
-### ConfirmChainResponse
-
-
-
-
-
-
-
 <a name="axelar.evm.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
@@ -4157,39 +4127,6 @@ address
 
 
 
-
-<a name="axelar.evm.v1beta1.VoteConfirmChainRequest"></a>
-
-### VoteConfirmChainRequest
-MsgVoteConfirmChain represents a message that votes on a new EVM chain
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `name` | [string](#string) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `confirmed` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.VoteConfirmChainResponse"></a>
-
-### VoteConfirmChainResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-
-
-
-
-
  <!-- end messages -->
 
  <!-- end enums -->
@@ -4223,11 +4160,9 @@ Msg defines the evm Msg service.
 | `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
 | `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
 | `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
-| `ConfirmChain` | [ConfirmChainRequest](#axelar.evm.v1beta1.ConfirmChainRequest) | [ConfirmChainResponse](#axelar.evm.v1beta1.ConfirmChainResponse) |  | POST|/axelar/evm/confirm_chain|
 | `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|
 | `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#axelar.evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm_transfer_key|
-| `VoteConfirmChain` | [VoteConfirmChainRequest](#axelar.evm.v1beta1.VoteConfirmChainRequest) | [VoteConfirmChainResponse](#axelar.evm.v1beta1.VoteConfirmChainResponse) |  | POST|/axelar/evm/vote_confirm_chain|
 | `CreateDeployToken` | [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create_deploy_token|
 | `CreateBurnTokens` | [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/create_burn_tokens|
 | `CreatePendingTransfers` | [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create_pending_transfers|

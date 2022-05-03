@@ -247,8 +247,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	subscriptions = append(subscriptions, evmNewChain)
-	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmNewChain)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	subscriptions = append(subscriptions, evmDepConf)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -296,7 +294,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
 		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJob(evmChainConf, evmMgr.ProcessChainConfirmation, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),

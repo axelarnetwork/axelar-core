@@ -12,12 +12,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
-	pendingChainKey = utils.KeyFromStr("pending_chain_asset")
-
 	chainPrefix    = utils.KeyFromStr("chain")
 	subspacePrefix = utils.KeyFromStr("subspace")
 )
@@ -56,24 +53,6 @@ func (k BaseKeeper) ForChain(chain string) types.ChainKeeper {
 		BaseKeeper:    k,
 		chainLowerKey: strings.ToLower(chain),
 	}
-}
-
-// SetPendingChain stores the chain pending for confirmation
-func (k BaseKeeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain, p types.Params) {
-	k.getBaseStore(ctx).Set(pendingChainKey.Append(utils.LowerCaseKey(chain.Name)), &types.PendingChain{Chain: chain, Params: p})
-}
-
-// GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
-func (k BaseKeeper) GetPendingChain(ctx sdk.Context, chainName string) (types.PendingChain, bool) {
-	var chain types.PendingChain
-	found := k.getBaseStore(ctx).Get(pendingChainKey.Append(utils.LowerCaseKey(chainName)), &chain)
-
-	return chain, found
-}
-
-// DeletePendingChain deletes a chain that is not registered yet
-func (k BaseKeeper) DeletePendingChain(ctx sdk.Context, chain string) {
-	k.getBaseStore(ctx).Delete(pendingChainKey.Append(utils.LowerCaseKey(chain)))
 }
 
 func (k BaseKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {

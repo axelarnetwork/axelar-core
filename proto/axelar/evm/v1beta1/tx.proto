@@ -36,15 +36,6 @@ message ConfirmGatewayTxRequest {
 
 message ConfirmGatewayTxResponse {}
 
-message ConfirmChainRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string name = 2;
-}
-
-message ConfirmChainResponse {}
-
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
@@ -154,18 +145,6 @@ message CreatePendingTransfersRequest {
 }
 
 message CreatePendingTransfersResponse {}
-
-// MsgVoteConfirmChain represents a message that votes on a new EVM chain
-message VoteConfirmChainRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string name = 2;
-  vote.exported.v1beta1.PollKey poll_key = 3 [ (gogoproto.nullable) = false ];
-  bool confirmed = 4;
-}
-
-message VoteConfirmChainResponse { string log = 1; }
 
 message CreateTransferOwnershipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
