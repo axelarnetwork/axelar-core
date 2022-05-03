@@ -385,7 +385,7 @@ func (k Keeper) IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID)
 func (k Keeper) GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.KeyID, val sdk.ValAddress) ([]ecdsa.PublicKey, bool) {
 	info, ok := k.GetMultisigKeygenInfo(ctx, keyID)
 	if !ok {
-		return []ecdsa.PublicKey{}, false
+		return nil, false
 	}
 
 	pubKeys := info.GetPubKeysByValidator(val)

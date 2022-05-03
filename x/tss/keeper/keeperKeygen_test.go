@@ -169,7 +169,7 @@ func TestMultisigKeygen(t *testing.T) {
 
 		pubKeysCount := int64(0)
 		for _, v := range snap.Validators {
-			// random pub keys
+			// generate random pub keys for validator v
 			pubKeys := slices.Expand(func(idx int) ecdsa.PublicKey { return generatePubKey() }, int(v.ShareCount))
 			serializedPubKeys := slices.Map(pubKeys, func(pk ecdsa.PublicKey) []byte { pk2 := btcec.PublicKey(pk); return pk2.SerializeCompressed() })
 
@@ -181,16 +181,17 @@ func TestMultisigKeygen(t *testing.T) {
 			assert.Equal(t, pubKeysCount, keygenInfo.Count())
 			assert.True(t, keygenInfo.DoesParticipate(v.GetSDKValidator().GetOperator()))
 
+			// verify that the validator's pub keys in the keeper are correct
 			actualPubKeys, ok := s.Keeper.GetMultisigPubKeysByValidator(s.Ctx, keyID, v.GetSDKValidator().GetOperator())
 			assert.True(t, ok)
 			assert.Equal(t, pubKeys, actualPubKeys)
 		}
 
-		// another validator doesn't have pub keys stored
+		// fail to retrieve pub keys for a validator that wasn't in the snapshot
 		val := newValidator(rand.ValAddr(), 100)
 		pubKeys, ok := s.Keeper.GetMultisigPubKeysByValidator(s.Ctx, keyID, val.GetSDKValidator().GetOperator())
 		assert.False(t, ok)
-		assert.Equal(t, pubKeys, []ecdsa.PublicKey{})
+		assert.Nil(t, pubKeys)
 	}).Repeat(repeats))
 }
 

@@ -193,7 +193,7 @@ func (m MultisigInfo) GetKeys() []ecdsa.PublicKey {
 
 // GetPubKeysByValidator returns pub keys a validator submitted
 func (m MultisigInfo) GetPubKeysByValidator(val sdk.ValAddress) []ecdsa.PublicKey {
-	pubKeys := []ecdsa.PublicKey{}
+	var pubKeys []ecdsa.PublicKey
 
 	for _, info := range m.Infos {
 		if val.Equals(info.Participant) {
