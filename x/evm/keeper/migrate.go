@@ -22,7 +22,7 @@ const uaxlAsset = "uaxl"
 // - delete uaxl token's deployment commands for all evm chains
 func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		deleteAllPendingChain(ctx, k)
+		deleteAllPendingChains(ctx, k)
 
 		for _, chain := range n.GetChains(ctx) {
 			if chain.Module != types.ModuleName {
@@ -52,7 +52,7 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) erro
 	}
 }
 
-func deleteAllPendingChain(ctx sdk.Context, k BaseKeeper) {
+func deleteAllPendingChains(ctx sdk.Context, k BaseKeeper) {
 	iter := k.getBaseStore(ctx).Iterator(pendingChainKey)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
