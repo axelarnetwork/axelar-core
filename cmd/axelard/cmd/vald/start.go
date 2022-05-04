@@ -330,9 +330,8 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 // Wait until the node has synced with the network and return the node height
 func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
+	cancel()
 	if err != nil {
 		return 0, err
 	}
@@ -342,7 +341,9 @@ func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient
 		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
 		time.Sleep(cfg.MaxLatestBlockAge)
 
+		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+		cancel()
 		if err != nil {
 			return 0, err
 		}
