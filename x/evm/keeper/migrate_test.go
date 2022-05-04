@@ -56,6 +56,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			},
 			Status: types.Pending,
 		},
+
 		{
 			Asset: rand.NormalizedStr(5),
 			Details: types.TokenDetails{
