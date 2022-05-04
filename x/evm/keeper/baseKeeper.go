@@ -12,7 +12,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -55,23 +54,6 @@ func (k BaseKeeper) ForChain(chain string) types.ChainKeeper {
 	return chainKeeper{
 		BaseKeeper:    k,
 		chainLowerKey: strings.ToLower(chain),
-	}
-}
-
-func (k BaseKeeper) setPendingChain(ctx sdk.Context, chain nexus.Chain, p types.Params) {
-	k.getBaseStore(ctx).Set(pendingChainKey.Append(utils.LowerCaseKey(chain.Name)), &types.PendingChain{Chain: chain, Params: p})
-}
-
-func (k BaseKeeper) hasPendingChain(ctx sdk.Context, chainName string) bool {
-	return k.getBaseStore(ctx).Has(pendingChainKey.Append(utils.LowerCaseKey(chainName)))
-}
-
-func (k BaseKeeper) deleteAllPendingChain(ctx sdk.Context) {
-	iter := k.getBaseStore(ctx).Iterator(pendingChainKey)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		k.getBaseStore(ctx).Delete(iter.GetKey())
 	}
 }
 
