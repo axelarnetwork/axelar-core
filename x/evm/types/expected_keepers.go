@@ -22,9 +22,6 @@ type BaseKeeper interface {
 	HasChain(ctx sdk.Context, chain string) bool
 	ForChain(chain string) ChainKeeper
 
-	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)
-	GetPendingChain(ctx sdk.Context, chain string) (PendingChain, bool)
-	DeletePendingChain(ctx sdk.Context, chain string)
 	InitGenesis(ctx sdk.Context, state GenesisState)
 	ExportGenesis(ctx sdk.Context) GenesisState
 }

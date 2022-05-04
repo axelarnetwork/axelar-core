@@ -14,13 +14,16 @@ const uaxlAsset = "uaxl"
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.17 to v0.18. The
 // migration includes:
+// - delete pending chains from the base keeper
 // - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE)
 // - delete uaxl token for all evm chains
 // - delete uaxl token's burners for all evm chains
 // - migrate uaxl token's confirmed deposits to burnt for all evm chains
 // - delete uaxl token's deployment commands for all evm chains
-func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		deleteAllPendingChains(ctx, k)
+
 		for _, chain := range n.GetChains(ctx) {
 			if chain.Module != types.ModuleName {
 				continue
@@ -46,6 +49,15 @@ func GetMigrationHandler(k types.BaseKeeper, n types.Nexus) func(ctx sdk.Context
 		}
 
 		return nil
+	}
+}
+
+func deleteAllPendingChains(ctx sdk.Context, k BaseKeeper) {
+	iter := k.getBaseStore(ctx).Iterator(pendingChainKey)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		k.getBaseStore(ctx).Delete(iter.GetKey())
 	}
 }
 

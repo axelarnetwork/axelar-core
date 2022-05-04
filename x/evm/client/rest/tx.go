@@ -21,7 +21,6 @@ import (
 
 // rest routes
 const (
-	TxConfirmChain                = "confirm-chain"
 	TxLink                        = "link"
 	TxConfirmTokenDeploy          = "confirm-erc20-deploy"
 	TxConfirmDeposit              = "confirm-erc20-deposit"
@@ -55,7 +54,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerCreateTransferOwnership(cliCtx), TxCreateTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateTransferOperatorship(cliCtx), TxCreateTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignCommands(cliCtx), TxSignCommands, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmChain(cliCtx), TxConfirmChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
@@ -199,32 +197,6 @@ func GetHandlerConfirmTokenDeploy(cliCtx client.Context) http.HandlerFunc {
 		txID := common.HexToHash(req.TxID)
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
 		msg := types.NewConfirmTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, txID)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// GetHandlerConfirmChain returns a handler to confirm an EVM chain
-func GetHandlerConfirmChain(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqConfirmChain
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		msg := types.NewConfirmChainRequest(fromAddr, req.Chain)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
