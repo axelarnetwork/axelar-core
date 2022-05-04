@@ -50,10 +50,11 @@ const (
 func validateBurnerCode(burnerCode []byte) error {
 	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
 	switch burnerCodeHash {
-	case BurnerCodeHashV1:
-	case BurnerCodeHashV2:
-	case BurnerCodeHashV3:
-	case BurnerCodeHashV4:
+	case BurnerCodeHashV1,
+		BurnerCodeHashV2,
+		BurnerCodeHashV3,
+		BurnerCodeHashV4:
+		break
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
 	}

@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -12,7 +11,7 @@ import (
 )
 
 // NewTssHandler returns the handler for processing signatures delivered by the tss module
-func NewTssHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, signer types.Signer) tss.Handler {
+func NewTssHandler(cdc codec.Codec, keeper types.BaseKeeper, signer types.Signer) tss.Handler {
 	return func(ctx sdk.Context, sigInfo tss.SignInfo) error {
 		var sigMetadata types.SigMetadata
 		if err := cdc.Unmarshal(sigInfo.GetModuleMetadata().Value, &sigMetadata); err != nil {
@@ -43,33 +42,4 @@ func NewTssHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, 
 
 		return nil
 	}
-}
-
-func handleUnsignedBatchedCommands(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) bool {
-	if _, ok := keeper.GetNetwork(ctx); !ok {
-		return false
-	}
-
-	commandBatch := keeper.GetLatestCommandBatch(ctx)
-	if !commandBatch.Is(types.BatchSigning) {
-		return false
-	}
-
-	_, sigStatus := signer.GetSig(ctx, hex.EncodeToString(commandBatch.GetID()))
-	switch sigStatus {
-	case tss.SigStatus_Signed:
-		commandBatch.SetStatus(types.BatchSigned)
-		keeper.DeleteUnsignedCommandBatchID(ctx)
-		keeper.SetLatestSignedCommandBatchID(ctx, commandBatch.GetID())
-
-		return true
-	case tss.SigStatus_Aborted:
-		fallthrough
-	case tss.SigStatus_Invalid:
-		commandBatch.SetStatus(types.BatchAborted)
-
-		return true
-	}
-
-	return false
 }
