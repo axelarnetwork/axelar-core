@@ -9,9 +9,12 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -24,7 +27,7 @@ import (
 
 const uaxl = "uaxl"
 
-func setup() (sdk.Context, types.BaseKeeper) {
+func setup() (sdk.Context, BaseKeeper) {
 	encCfg := params.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -40,7 +43,7 @@ func setup() (sdk.Context, types.BaseKeeper) {
 func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx     sdk.Context
-		keeper  types.BaseKeeper
+		keeper  BaseKeeper
 		handler func(ctx sdk.Context) error
 	)
 
@@ -66,6 +69,32 @@ func TestGetMigrationHandler(t *testing.T) {
 				Capacity:  sdk.ZeroInt(),
 			},
 			Status: types.Pending,
+		},
+	}
+
+	pendingChains := []types.PendingChain{
+		{
+			Chain: nexus.Chain{
+				Name:   "evm-1",
+				Module: types.ModuleName,
+			},
+			Params: testutils.RandomParams(),
+		},
+
+		{
+			Chain: nexus.Chain{
+				Name:   "evm-2",
+				Module: types.ModuleName,
+			},
+			Params: testutils.RandomParams(),
+		},
+
+		{
+			Chain: nexus.Chain{
+				Name:   "evm-3",
+				Module: types.ModuleName,
+			},
+			Params: testutils.RandomParams(),
 		},
 	}
 
@@ -240,4 +269,30 @@ func TestGetMigrationHandler(t *testing.T) {
 			}
 		}).
 		Run(t)
+
+	whenTokensAreSetup.
+		And().
+		When("some pending chains exist", func(t *testing.T) {
+			for _, pending := range pendingChains {
+				setPendingChain(ctx, keeper, pending.Chain, pending.Params)
+				assert.True(t, hasPendingChain(ctx, keeper, pending.Chain.Name))
+			}
+		}).
+		Then("should delete all pending chains", func(t *testing.T) {
+			err := handler(ctx)
+			assert.Error(t, err)
+
+			for _, pending := range pendingChains {
+				assert.False(t, hasPendingChain(ctx, keeper, pending.Chain.Name))
+			}
+		}).
+		Run(t)
+}
+
+func setPendingChain(ctx sdk.Context, k BaseKeeper, chain nexus.Chain, p types.Params) {
+	k.getBaseStore(ctx).Set(pendingChainKey.Append(utils.LowerCaseKey(chain.Name)), &types.PendingChain{Chain: chain, Params: p})
+}
+
+func hasPendingChain(ctx sdk.Context, k BaseKeeper, chainName string) bool {
+	return k.getBaseStore(ctx).Has(pendingChainKey.Append(utils.LowerCaseKey(chainName)))
 }
