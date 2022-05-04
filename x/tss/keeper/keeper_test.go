@@ -16,12 +16,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -36,12 +34,11 @@ var (
 	snap       = snapshot.Snapshot{
 		Validators:      validators,
 		Timestamp:       time.Now(),
-		Height:          rand2.I64Between(1, 1000000),
+		Height:          rand.I64Between(1, 1000000),
 		TotalShareCount: sdk.NewInt(400),
-		Counter:         rand2.I64Between(0, 100000),
+		Counter:         rand.I64Between(0, 100000),
 	}
-	randPosInt      = rand2.I64GenBetween(0, 100000000)
-	randDistinctStr = rand2.Strings(3, 15).Distinct()
+	randDistinctStr = rand.Strings(3, 15).Distinct()
 )
 
 type testSetup struct {
@@ -104,7 +101,7 @@ func setup() *testSetup {
 	return setup
 }
 
-func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) tss.Key {
+func (s *testSetup) SetKey(t *testing.T, ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) exported.Key {
 	keyID := exported.KeyID(randDistinctStr.Next())
 	s.PrivateKey = make(chan *ecdsa.PrivateKey, 1)
 	keyInfo := types.KeyInfo{
@@ -145,7 +142,7 @@ func newValidator(address sdk.ValAddress, power int64) snapshot.Validator {
 func randKeyIDs() []exported.KeyID {
 	keyIDs := make([]exported.KeyID, 10)
 	for i := range keyIDs {
-		keyIDs[i] = tss.KeyID(rand.HexStr(int(rand.I64Between(exported.KeyIDLengthMin, exported.KeyIDLengthMax))))
+		keyIDs[i] = exported.KeyID(rand.HexStr(int(rand.I64Between(exported.KeyIDLengthMin, exported.KeyIDLengthMax))))
 	}
 	return keyIDs
 }
@@ -303,13 +300,13 @@ func TestActiveOldKeys(t *testing.T) {
 	t.Run("testing locked rotation keys", testutils.Func(func(t *testing.T) {
 		s := setup()
 		chain := bitcoin.Bitcoin
-		iterations := int(rand2.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
+		iterations := int(rand.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
 		params := types.DefaultParams()
 		params.MaxSignQueueSize = int64(iterations)
 		s.Keeper.SetParams(s.Ctx, params)
 
 		// exclude KeyRole external
-		role := exported.GetKeyRoles()[int(rand2.I64Between(0, int64(len(exported.GetKeyRoles()))-1))]
+		role := exported.GetKeyRoles()[int(rand.I64Between(0, int64(len(exported.GetKeyRoles()))-1))]
 		var expectedKeys []exported.Key
 
 		for i := 0; i < iterations; i++ {

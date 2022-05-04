@@ -110,7 +110,7 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), am.keeper)
 
-	err := cfg.RegisterMigration(types.ModuleName, 3, keeper.GetMigrationHandler(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 4, keeper.GetMigrationHandler(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -159,4 +159,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 4 }
+func (AppModule) ConsensusVersion() uint64 { return 5 }

@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	gogoprototypes "github.com/gogo/protobuf/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -729,16 +729,6 @@ func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) 
 	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
 }
 
-func getMultisigThreshold(keyCount int, threshold utils.Threshold) uint8 {
-	return uint8(
-		sdk.NewDec(int64(keyCount)).
-			MulInt64(threshold.Numerator).
-			QuoInt64(threshold.Denominator).
-			Ceil().
-			RoundInt64(),
-	)
-}
-
 func getMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
 	multisigPubKeys, err := key.GetMultisigPubKey()
 	if err != nil {
@@ -973,9 +963,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
 
-	sigMetadata := types.SigMetadata{
+	sigMetadata, err := codectypes.NewAnyWithValue(&types.SigMetadata{
 		Type:  types.SigCommand,
 		Chain: chain.Name,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
@@ -985,7 +978,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Msg:             commandBatch.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
-		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
+		ModuleMetadata:  sigMetadata,
 	}, s.snapshotter, s.voter)
 	if err != nil {
 		return nil, err
