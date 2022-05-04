@@ -331,26 +331,22 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 // Wait until the node has synced with the network and return the node height
 func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
-	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
-	if err != nil {
-		return 0, err
-	}
-
-	// If the block height is older than the allowed time, then wait for the node to sync
-	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
-		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
-		time.Sleep(cfg.MaxLatestBlockAge)
-
-		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+	for {
+		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
+		cancel()
 		if err != nil {
 			return 0, err
 		}
-	}
 
-	return syncInfo.LatestBlockHeight, nil
+		// If the block height is older than the allowed time, then wait for the node to sync
+		if syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).After(time.Now()) {
+			return syncInfo.LatestBlockHeight, nil
+		}
+
+		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		time.Sleep(cfg.MaxLatestBlockAge)
+	}
 }
 
 // Return the block height to start listening to TM events from
