@@ -43,14 +43,18 @@ const (
 	BurnerCodeHashV2 = "0x49c166661e31e0bf5434d891dea1448dc35f6ecd54a0d88594df06e24effe7c2"
 	// BurnerCodeHashV3 is the hash of the bytecode of burner v3
 	BurnerCodeHashV3 = "0xa50851cafd39f2f61171c0c00a11bda820ed0958950df5a53ba11a047402351f"
+	// BurnerCodeHashV4 is the hash of the bytecode of burner v4
+	BurnerCodeHashV4 = "0x701d8db26f2d668fee8acf2346199a6b63b0173f212324d1c5a04b4d4de95666"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
 	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
 	switch burnerCodeHash {
-	case BurnerCodeHashV1:
-	case BurnerCodeHashV2:
-	case BurnerCodeHashV3:
+	case BurnerCodeHashV1,
+		BurnerCodeHashV2,
+		BurnerCodeHashV3,
+		BurnerCodeHashV4:
+		break
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
 	}
@@ -146,16 +150,6 @@ func (t ERC20Token) IsExternal() bool {
 	return t.metadata.IsExternal
 }
 
-// SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
-func (t *ERC20Token) SaveBurnerCode(burnerCode []byte) {
-	if len(t.metadata.BurnerCode) > 0 {
-		panic(fmt.Errorf("burner code already set"))
-	}
-
-	t.metadata.BurnerCode = burnerCode
-	t.setMeta(t.metadata)
-}
-
 // GetBurnerCode returns the version of the burner the token is deployed with
 func (t ERC20Token) GetBurnerCode() []byte {
 	return t.metadata.BurnerCode
@@ -170,9 +164,9 @@ func (t ERC20Token) GetBurnerCodeHash() Hash {
 func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
-		return Command{}, fmt.Errorf("token %s non-existent", t.metadata.Asset)
+		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
 	case t.Is(Confirmed):
-		return Command{}, fmt.Errorf("token %s already confirmed", t.metadata.Asset)
+		return Command{}, fmt.Errorf("token %s already confirmed", t.GetAsset())
 	}
 	if err := key.Validate(); err != nil {
 		return Command{}, err
@@ -182,6 +176,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		return CreateDeployTokenCommand(
 			t.metadata.ChainID,
 			key,
+			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
 		)
@@ -190,6 +185,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	return CreateDeployTokenCommand(
 		t.metadata.ChainID,
 		key,
+		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
 	)
@@ -815,14 +811,14 @@ func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burn
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, tokenDetails TokenDetails, address Address) (Command, error) {
+func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address) (Command, error) {
 	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address)
 	if err != nil {
 		return Command{}, err
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(tokenDetails.Symbol), chainID),
+		ID:         NewCommandID([]byte(fmt.Sprintf("%s-%s", asset, tokenDetails.Symbol)), chainID),
 		Command:    AxelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
@@ -993,7 +989,7 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
 	var r role
 	var commandIDs []CommandID
 	var commands []string
@@ -1019,8 +1015,11 @@ func NewCommandBatchMetadata(chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRo
 		return CommandBatchMetadata{}, err
 	}
 
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
+
 	return CommandBatchMetadata{
-		ID:         crypto.Keccak256(data),
+		ID:         crypto.Keccak256(bz, data),
 		CommandIDs: commandIDs,
 		Data:       data,
 		SigHash:    Hash(GetSignHash(data)),

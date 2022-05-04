@@ -3,9 +3,11 @@ package axelar.tss.exported.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/tss/exported";
 
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "cosmos_proto/cosmos.proto";
 import "axelar/utils/v1beta1/threshold.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
 
 // KeyRequirement defines requirements for keys
 message KeyRequirement {
@@ -66,7 +68,10 @@ message SignInfo {
   bytes msg = 3;
   int64 snapshot_counter = 4;
   string request_module = 5;
-  string metadata = 6;
+  string metadata = 6 [ deprecated = true ];
+  google.protobuf.Any module_metadata = 7
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
 }
 
 enum SigStatus {
