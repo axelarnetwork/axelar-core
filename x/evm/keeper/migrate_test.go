@@ -9,8 +9,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
-
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -18,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	testUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
