@@ -66,8 +66,13 @@ func (k BaseKeeper) hasPendingChain(ctx sdk.Context, chainName string) bool {
 	return k.getBaseStore(ctx).Has(pendingChainKey.Append(utils.LowerCaseKey(chainName)))
 }
 
-func (k BaseKeeper) deletePendingChain(ctx sdk.Context, chain string) {
-	k.getBaseStore(ctx).Delete(pendingChainKey.Append(utils.LowerCaseKey(chain)))
+func (k BaseKeeper) deleteAllPendingChain(ctx sdk.Context) {
+	iter := k.getBaseStore(ctx).Iterator(pendingChainKey)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		k.getBaseStore(ctx).Delete(iter.GetKey())
+	}
 }
 
 func (k BaseKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {
