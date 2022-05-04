@@ -46,6 +46,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&gogoprototypes.BoolValue{},
 		&SigMetadata{},
 		&Event{},
+		&VoteEvents{},
 	)
 }
 

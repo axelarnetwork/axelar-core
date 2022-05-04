@@ -8,6 +8,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState) {
@@ -128,32 +129,39 @@ func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
 	return chainState.Activated
 }
 
-// GetChainMaintainers returns the maintainers of the given chain
-func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress {
+// GetChainMaintainerStates returns the maintainer states of the given chain
+func (k Keeper) GetChainMaintainerStates(ctx sdk.Context, chain exported.Chain) []types.MaintainerState {
 	chainState, ok := k.getChainState(ctx, chain)
 	if !ok {
-		return []sdk.ValAddress{}
+		return []types.MaintainerState{}
 	}
 
-	return chainState.Maintainers
+	return chainState.MaintainerStates
+}
+
+// GetChainMaintainers returns the maintainers of the given chain
+func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress {
+	return slices.Map(k.GetChainMaintainerStates(ctx, chain), func(ms types.MaintainerState) sdk.ValAddress {
+		return ms.Address
+	})
 }
 
 // IsChainMaintainer returns true if the given address is one of the given chain's maintainers; false otherwise
-func (k Keeper) IsChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) bool {
+func (k Keeper) IsChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) bool {
 	chainState, ok := k.getChainState(ctx, chain)
 	if !ok {
 		return false
 	}
 
-	return chainState.HasMaintainer(maintainer)
+	return chainState.HasMaintainer(address)
 }
 
 // AddChainMaintainer adds the given address to be one of the given chain's maintainers
-func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) error {
+func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) error {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
 
-	if err := chainState.AddMaintainer(maintainer); err != nil {
+	if err := chainState.AddMaintainer(address); err != nil {
 		return err
 	}
 
@@ -163,17 +171,45 @@ func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, mainta
 }
 
 // RemoveChainMaintainer removes the given address from the given chain's maintainers
-func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) error {
+func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) error {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
 
-	if err := chainState.RemoveMaintainer(maintainer); err != nil {
+	if err := chainState.RemoveMaintainer(address); err != nil {
 		return err
 	}
 
 	k.setChainState(ctx, chainState)
 
 	return nil
+}
+
+// MarkChainMaintainerMissingVote marks the given chain maintainer for missing vote of a poll
+func (k Keeper) MarkChainMaintainerMissingVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, missingVote bool) {
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
+
+	i := chainState.IndexOfMaintainer(address)
+	if i == -1 {
+		return
+	}
+
+	chainState.MaintainerStates[i].MissingVotes.Add(missingVote)
+	k.setChainState(ctx, chainState)
+}
+
+// MarkChainMaintainerIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
+func (k Keeper) MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, incorrectVote bool) {
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
+
+	i := chainState.IndexOfMaintainer(address)
+	if i == -1 {
+		return
+	}
+
+	chainState.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
+	k.setChainState(ctx, chainState)
 }
 
 // GetChains retrieves the specification for all supported blockchains

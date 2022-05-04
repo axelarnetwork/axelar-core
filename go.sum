@@ -159,6 +159,8 @@ github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB
 github.com/aws/smithy-go v1.8.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
 github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb h1:WonRLhuO891Nj/X2G4zP/8X6HDN6tdUJaHRRmtU4S2g=
 github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb/go.mod h1:DMlrWfQ/Au/v5miwry3c67fM8q5mcxEMzuVzOT8qHbE=
+github.com/axelarnetwork/utils v0.0.0-20220401043914-7ad6dab4d07b h1:FKMG48CtDoHdDLBHQuWA6jauLQ0cm/yiXQjM5LB5jqI=
+github.com/axelarnetwork/utils v0.0.0-20220401043914-7ad6dab4d07b/go.mod h1:DwdvRtciC4HumSBF/JzJ6DLw4n2tn+fWy7ZYVd+LGXQ=
 github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4 h1:47fzYnroSRJnTHjT/RAbbcCZ4fln8Hzpc296XW6NAUY=
 github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4/go.mod h1:B6mKp8Eti8x4vgwBRXgGeo4myArtk77xuLSRPzce3I0=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

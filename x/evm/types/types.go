@@ -1839,29 +1839,14 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 }
 
 // UnpackEvents converts Any slice to Events
-func UnpackEvents(cdc codec.Codec, eventsAny []*codectypes.Any) ([]Event, error) {
-	var events []Event
-	for _, any := range eventsAny {
-		var event Event
-		if err := cdc.Unmarshal(any.Value, &event); err != nil {
-			return nil, err
-		}
-		events = append(events, event)
-	}
-
-	return events, nil
+func UnpackEvents(cdc codec.Codec, any *codectypes.Any) (voteEvents VoteEvents, err error) {
+	return voteEvents, cdc.Unmarshal(any.Value, &voteEvents)
 }
 
 // PackEvents converts Event to Any slice
-func PackEvents(events []Event) ([]*codectypes.Any, error) {
-	eventsAny := make([]*codectypes.Any, len(events))
-	for i, e := range events {
-		any, err := codectypes.NewAnyWithValue(&e)
-		if err != nil {
-			return nil, err
-		}
-		eventsAny[i] = any
-	}
-
-	return eventsAny, nil
+func PackEvents(chain string, events []Event) (*codectypes.Any, error) {
+	return codectypes.NewAnyWithValue(&VoteEvents{
+		Chain:  chain,
+		Events: events,
+	})
 }

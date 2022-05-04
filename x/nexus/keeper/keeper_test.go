@@ -24,7 +24,6 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -35,19 +34,19 @@ var keeper nexusKeeper.Keeper
 
 func addressValidator() types.Router {
 	router := types.NewRouter()
-	router.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+	router.AddAddressValidator("evm", func(_ sdk.Context, addr exported.CrossChainAddress) error {
 		if !evmUtil.IsHexAddress(addr.Address) {
 			return fmt.Errorf("not an hex address")
 		}
 
 		return nil
-	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr exported.CrossChainAddress) error {
 		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
 			return err
 		}
 
 		return nil
-	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr exported.CrossChainAddress) error {
 		bz, err := sdk.GetFromBech32(addr.Address, getPrefixByAddress(addr.Address))
 		if err != nil {
 			return err
@@ -85,7 +84,7 @@ func TestLinkAddress(t *testing.T) {
 			keeper.ActivateChain(ctx, chain)
 		}
 
-		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, nexus.NewAsset(btc.NativeAsset, true))
+		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, exported.NewAsset(btc.NativeAsset, true))
 	}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {

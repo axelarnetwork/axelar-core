@@ -8645,6 +8645,26 @@ paths:
                         is_native_asset:
                           type: boolean
                           format: boolean
+                  maintainer_states:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        address:
+                          type: string
+                          format: byte
+                        missing_votes:
+                          type: object
+                          properties:
+                            bits:
+                              type: string
+                              format: byte
+                        incorrect_votes:
+                          type: object
+                          properties:
+                            bits:
+                              type: string
+                              format: byte
                 title: ChainState represents the state of a registered blockchain
         default:
           description: An unexpected error response
@@ -38378,6 +38398,26 @@ definitions:
             is_native_asset:
               type: boolean
               format: boolean
+      maintainer_states:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              format: byte
+            missing_votes:
+              type: object
+              properties:
+                bits:
+                  type: string
+                  format: byte
+            incorrect_votes:
+              type: object
+              properties:
+                bits:
+                  type: string
+                  format: byte
     title: ChainState represents the state of a registered blockchain
   axelar.nexus.v1beta1.ChainStateResponse:
     type: object
@@ -38422,6 +38462,26 @@ definitions:
                 is_native_asset:
                   type: boolean
                   format: boolean
+          maintainer_states:
+            type: array
+            items:
+              type: object
+              properties:
+                address:
+                  type: string
+                  format: byte
+                missing_votes:
+                  type: object
+                  properties:
+                    bits:
+                      type: string
+                      format: byte
+                incorrect_votes:
+                  type: object
+                  properties:
+                    bits:
+                      type: string
+                      format: byte
         title: ChainState represents the state of a registered blockchain
   axelar.nexus.v1beta1.ChainsByAssetResponse:
     type: object
@@ -38486,6 +38546,24 @@ definitions:
     properties:
       deposit_addr:
         type: string
+  axelar.nexus.v1beta1.MaintainerState:
+    type: object
+    properties:
+      address:
+        type: string
+        format: byte
+      missing_votes:
+        type: object
+        properties:
+          bits:
+            type: string
+            format: byte
+      incorrect_votes:
+        type: object
+        properties:
+          bits:
+            type: string
+            format: byte
   axelar.nexus.v1beta1.RegisterAssetFeeRequest:
     type: object
     properties:
@@ -38631,6 +38709,12 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
+  axelar.utils.v1beta1.Bitmap:
+    type: object
+    properties:
+      bits:
+        type: string
+        format: byte
   cosmos.base.query.v1beta1.PageRequest:
     type: object
     properties:

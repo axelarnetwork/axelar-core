@@ -17,36 +17,46 @@ import (
 
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
 func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, signer types.Signer) vote.VoteHandler {
-	return func(ctx sdk.Context, result *vote.Vote) error {
-		events, err := types.UnpackEvents(cdc, result.Results)
+	return func(ctx sdk.Context, poll vote.Poll) error {
+		voteEvents, err := types.UnpackEvents(cdc, poll.GetResult().(*vote.Vote).Result)
 		if err != nil {
 			return err
 		}
 
-		if len(events) == 0 {
-			return fmt.Errorf("vote result has no events")
-		}
-
-		chainName := events[0].Chain
-		if slices.Any(events, func(event types.Event) bool { return event.Chain != chainName }) {
+		if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != voteEvents.Chain }) {
 			return fmt.Errorf("events are not from the same source chain")
 		}
 
-		chain, ok := nexus.GetChain(ctx, chainName)
+		chain, ok := nexus.GetChain(ctx, voteEvents.Chain)
 		if !ok {
-			return fmt.Errorf("%s is not a registered chain", chainName)
+			return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
 		}
-		if !keeper.HasChain(ctx, chainName) {
-			return fmt.Errorf("%s is not an evm chain", chainName)
+
+		if !keeper.HasChain(ctx, voteEvents.Chain) {
+			return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
+		}
+
+		for _, voter := range poll.GetVoters() {
+			hasVoted := poll.HasVoted(voter.Validator)
+			hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter.Validator)
+
+			nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, !hasVoted)
+			nexus.MarkChainMaintainerIncorrectVote(ctx, chain, voter.Validator, hasVotedIncorrectly)
+		}
+
+		if len(voteEvents.Events) == 0 {
+			poll.AllowOverride()
+
+			return nil
 		}
 
 		chainK := keeper.ForChain(chain.Name)
 		cacheCtx, writeCache := ctx.CacheContext()
 
-		err = handleEvents(cacheCtx, chainK, nexus, signer, events, chain)
+		err = handleEvents(cacheCtx, chainK, nexus, signer, voteEvents.Events, chain)
 		if err != nil {
 			// set events to failed, we will deal with later
-			for _, e := range events {
+			for _, e := range voteEvents.Events {
 				chainK.SetFailedEvent(ctx, e)
 			}
 			return err

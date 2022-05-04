@@ -67,17 +67,12 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	}
 
-	result, ok := poll.GetResult().(*vote.Vote)
+	_, ok := poll.GetResult().(*vote.Vote)
 	if !ok {
 		return nil, fmt.Errorf("result of poll %s has wrong type, expected VoteConfirmDepositRequest_Vote, got %T", poll.GetKey().String(), poll.GetResult())
 	}
 
-	if len(result.Results) == 0 {
-		poll.AllowOverride()
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed to decide anything", poll.GetKey())}, nil
-	}
-
-	if err := voteHandler(ctx, result); err != nil {
+	if err := voteHandler(ctx, poll); err != nil {
 		return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
 	}
 
