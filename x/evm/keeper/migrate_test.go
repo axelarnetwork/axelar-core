@@ -97,7 +97,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		},
 	}
 
-	whenTokensAreSetup := Given("the migration handler", func(t *testing.T) {
+	whenTokensAreSetup := Given("the migration handler", func() {
 		ctx, keeper = setup()
 		nexus := mock.NexusMock{
 			GetChainsFunc: func(_ sdk.Context) []nexus.Chain {
@@ -106,7 +106,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 		handler = GetMigrationHandler(keeper, &nexus)
 	}).
-		When("tokens are setup for evm chains", func(t *testing.T) {
+		When("tokens are setup for evm chains", func() {
 			for _, chain := range evmChains {
 				for _, token := range tokens {
 					keeper.ForChain(chain.Name).(chainKeeper).setTokenMetadata(ctx, token)
@@ -147,8 +147,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	chainToCommandIDs := make(map[string][]types.CommandID)
 	whenTokensAreSetup.
-		And().
-		When("token deployment commands are set", func(t *testing.T) {
+		When("token deployment commands are set", func() {
 			for _, chain := range evmChains {
 				chainToCommandIDs[chain.Name] = make([]types.CommandID, len(tokens))
 
@@ -196,8 +195,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	chainToNonUaxlBurnerCount := make(map[string]uint)
 	whenTokensAreSetup.
-		And().
-		When("some token burners are set", func(t *testing.T) {
+		When("some token burners are set", func() {
 			for _, chain := range evmChains {
 				burnerCount := int(rand.I64Between(5, 1000))
 				ck := keeper.ForChain(chain.Name).(chainKeeper)
@@ -228,8 +226,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	chainToUaxlConfirmedDepositCount := make(map[string]uint)
 	whenTokensAreSetup.
-		And().
-		When("some confirmed uaxl deposits exist", func(t *testing.T) {
+		When("some confirmed uaxl deposits exist", func() {
 			for _, chain := range evmChains {
 				confirmedDepositCount := int(rand.I64Between(5, 1000))
 				ck := keeper.ForChain(chain.Name).(chainKeeper)
@@ -270,8 +267,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		Run(t)
 
 	whenTokensAreSetup.
-		And().
-		When("some pending chains exist", func(t *testing.T) {
+		When("some pending chains exist", func() {
 			for _, pending := range pendingChains {
 				setPendingChain(ctx, keeper, pending.Chain, pending.Params)
 				assert.True(t, hasPendingChain(ctx, keeper, pending.Chain.Name))

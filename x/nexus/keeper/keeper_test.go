@@ -78,7 +78,7 @@ func TestKeeper(t *testing.T) {
 
 	repeats := 20
 
-	givenKeeper := Given("nexus keeper", func(_ *testing.T) {
+	givenKeeper := Given("nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -93,7 +93,7 @@ func TestKeeper(t *testing.T) {
 		)
 
 		givenKeeper.
-			When("chain maintainer exists", func(_ *testing.T) {
+			When("chain maintainer exists", func() {
 				maintainer = rand.ValAddr()
 				chain = makeRandomChain(rand.Str(5))
 
@@ -117,7 +117,7 @@ func TestKeeper(t *testing.T) {
 		)
 
 		givenKeeper.
-			When("chain maintainer exists", func(_ *testing.T) {
+			When("chain maintainer exists", func() {
 				maintainer = rand.ValAddr()
 				chain = makeRandomChain(rand.Str(5))
 

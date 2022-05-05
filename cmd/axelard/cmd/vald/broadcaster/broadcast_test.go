@@ -137,14 +137,13 @@ func TestBroadcast(t *testing.T) {
 		msgs        []sdk.Msg
 	)
 
-	Given("a broadcaster", func(t *testing.T) {
+	Given("a broadcaster", func() {
 		signer := rand.AccAddr()
 		broadcaster, ctx = setup(signer)
-	}).
-		And().Given("a batch of multiple messages", func(t *testing.T) {
+	}).When("a batch of multiple messages", func() {
 		msgs = createMsgsWithSigner(ctx.FromAddress, rand.I64Between(2, 20))
 	}).
-		When("the broadcaster returns a message specific error", func(t *testing.T) {
+		When("the broadcaster returns a message specific error", func() {
 			attempt := 0
 			ctx.Client.(*mock2.ClientMock).BroadcastTxSyncFunc = func(context.Context, types.Tx) (*coretypes.ResultBroadcastTx, error) {
 				if attempt == 0 {

@@ -17,9 +17,9 @@ func TestBitmap(t *testing.T) {
 		var bitmap utils.Bitmap
 		var trueCount, falseCount int
 
-		givenNewBitmap := Given("a new bitmap", func(_ *testing.T) { bitmap = utils.NewBitmap(100000000) })
-		whenPushedWith := func(value bool, count int) ThenStatement {
-			return givenNewBitmap.When(fmt.Sprintf("pushed with %d %t's", count, value), func(_ *testing.T) {
+		givenNewBitmap := Given("a new bitmap", func() { bitmap = utils.NewBitmap(100000000) })
+		whenPushedWith := func(value bool, count int) WhenStatement {
+			return givenNewBitmap.When(fmt.Sprintf("pushed with %d %t's", count, value), func() {
 				for i := uint64(0); i < uint64(count); i++ {
 					bitmap.Add(value)
 				}
@@ -48,7 +48,7 @@ func TestBitmap(t *testing.T) {
 		trueCount = int(rand.I64Between(1, int64(total)))
 		falseCount = total - trueCount
 		givenNewBitmap.
-			When(fmt.Sprintf("pushed with pushed with %d true's and %d false's", trueCount, falseCount), func(_ *testing.T) {
+			When(fmt.Sprintf("pushed with pushed with %d true's and %d false's", trueCount, falseCount), func() {
 				tCount := trueCount
 				fCount := falseCount
 
