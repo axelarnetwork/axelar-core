@@ -1,4 +1,5 @@
 {
+  "config": "Configure your environment",
   "join": "Quick sync (recommended)",
   "join-genesis": "Genesis sync",
   "basic": "Basic node management",

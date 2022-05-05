@@ -1,9 +1,6 @@
 # Register broadcaster proxy
 
 import Callout from 'nextra-theme-docs/callout'
-import Markdown from 'markdown-to-jsx'
-import Tabs from '../../../components/tabs'
-import CodeBlock from '../../../components/code-block'
 
 Axelar validators exchange messages with one another via the Axelar blockchain. Each validator sends these messages from a separate `broadcaster` account.
 
@@ -15,57 +12,26 @@ Axelar validators exchange messages with one another via the Axelar blockchain. 
 
 Your `broadcaster` address `{BROADCASTER_ADDR}` is stored in a text file:
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock>
-{"~/.axelar/broadcaster.address"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock>
-{"~/.axelar_testnet/broadcaster.address"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock>
-{"~/.axelar_testnet-2/broadcaster.address"}
-</CodeBlock>
-}
-]} />
+```
+$AXELARD_HOME/broadcaster.address
+```
 
 ## Fund your validator and broadcaster accounts
 
-**Testnet:**
-Go to [Axelar faucet](http://faucet.testnet.axelar.dev/) and send some free AXL testnet tokens to both `{BROADCASTER_ADDR}` and `{VALIDATOR_ADDR}`.
+**Testnets:**
+Go to the Axelar testnet faucet and send some free AXL testnet tokens to both `{BROADCASTER_ADDR}` and `{VALIDATOR_ADDR}`:
+
+- [Testnet-1 Faucet](https://faucet.testnet.axelar.dev/).
+- [Testnet-2 Faucet](https://faucet-casablanca.testnet.axelar.dev/)
 
 ## Register your broadcaster account
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator
+```
 
 ## Optional: check your broadcaster registration
 
 ```bash
-echo my-secret-password | ~/.axelar_testnet/bin/axelard q snapshot proxy $(cat ~/.axelar_testnet/validator.bech)
+axelard q snapshot proxy $(cat $AXELARD_HOME/validator.bech)
 ```

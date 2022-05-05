@@ -1,9 +1,6 @@
 # Health check
 
 import Callout from 'nextra-theme-docs/callout'
-import Markdown from 'markdown-to-jsx'
-import Tabs from '../../../components/tabs'
-import CodeBlock from '../../../components/code-block'
 
 Check the status of your validator.
 
@@ -13,26 +10,9 @@ Check the status of your validator.
 
 This step is not mandatory but it is good practice to help you detect and diagnose problems with your validator.
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR} --home ~/.axelar/.vald"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR} --home ~/.axelar_testnet/.vald"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR} --home ~/.axelar_testnet-2/.vald"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR}
+```
 
 You should see output like:
 

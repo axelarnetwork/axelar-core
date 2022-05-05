@@ -47,7 +47,11 @@
         {
           "chainId": "0x89",
           "chainName": "Matic Mainnet",
-          "rpcUrls": ["https://polygon-rpc.com", "https://matic-mainnet.chainstacklabs.com", "https://rpc-mainnet.maticvigil.com"],
+          "rpcUrls": [
+            "https://polygon-rpc.com",
+            "https://matic-mainnet.chainstacklabs.com",
+            "https://rpc-mainnet.maticvigil.com"
+          ],
           "nativeCurrency": {
             "name": "Matic",
             "symbol": "MATIC",
@@ -66,7 +70,11 @@
         {
           "chainId": "0xfa",
           "chainName": "Fantom Opera",
-          "rpcUrls": ["https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpcapi.fantom.network"],
+          "rpcUrls": [
+            "https://rpc.ftm.tools",
+            "https://rpc.ankr.com/fantom",
+            "https://rpcapi.fantom.network"
+          ],
           "nativeCurrency": {
             "name": "Fantom",
             "symbol": "FTM",
@@ -106,7 +114,9 @@
         {
           "chainId": "0x3",
           "chainName": "Ethereum Ropsten",
-          "rpcUrls": ["https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"],
+          "rpcUrls": [
+            "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+          ],
           "nativeCurrency": {
             "name": "Ropsten Ether",
             "symbol": "ROP",
@@ -144,7 +154,11 @@
         {
           "chainId": "0x13881",
           "chainName": "Polygon Mumbai",
-          "rpcUrls": ["https://rpc-mumbai.maticvigil.com", "https://rpc-mumbai.matic.today", "https://matic-mumbai.chainstacklabs.com"],
+          "rpcUrls": [
+            "https://rpc-mumbai.maticvigil.com",
+            "https://rpc-mumbai.matic.today",
+            "https://matic-mumbai.chainstacklabs.com"
+          ],
           "nativeCurrency": {
             "name": "Matic",
             "symbol": "MATIC",
@@ -189,6 +203,48 @@
             "decimals": 18
           },
           "blockExplorerUrls": ["https://moonbase.moonscan.io"]
+        }
+      ]
+    }
+  ],
+  "testnet-2": [
+    {
+      "id": "ethereum",
+      "name": "Ethereum Ropsten",
+      "chain_id": 3,
+      "image": "/images/chains/ethereum.png",
+      "provider_params": [
+        {
+          "chainId": "0x3",
+          "chainName": "Ethereum Ropsten",
+          "rpcUrls": [
+            "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+          ],
+          "nativeCurrency": {
+            "name": "Ropsten Ether",
+            "symbol": "ROP",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://ropsten.etherscan.io"]
+        }
+      ]
+    },
+    {
+      "id": "avalanche",
+      "name": "Avalanche Fuji",
+      "chain_id": 43113,
+      "image": "/images/chains/avalanche.png",
+      "provider_params": [
+        {
+          "chainId": "0xa869",
+          "chainName": "Avalanche Testnet C-Chain",
+          "rpcUrls": ["https://api.avax-test.network/ext/bc/C/rpc"],
+          "nativeCurrency": {
+            "name": "Avalanche",
+            "symbol": "AVAX",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://testnet.snowtrace.io"]
         }
       ]
     }

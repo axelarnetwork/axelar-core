@@ -19,6 +19,7 @@ Start your Axelar node and download the blockchain.
   - Install [`jq`](https://stedolan.github.io/jq/download/).
   - Install `lz4`: [MacOS](https://formulae.brew.sh/formula/lz4) | [Ubuntu](https://snapcraft.io/install/lz4/ubuntu)
   - Increase the maximum number of open files on your system. Example: `ulimit -n 16384`. You may wish to add this command to your shell profile so that you don't need to execute it next time you restart your machine.
+- You have configured your environment for `axelard` CLI commands as per [Configure your environment](config).
 
 ## Choose a keyring password
 

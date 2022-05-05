@@ -1,21 +1,14 @@
 # Send AXL to an EVM chain
 
 import Callout from 'nextra-theme-docs/callout'
-import Markdown from 'markdown-to-jsx'
-import Tabs from '../../../components/tabs'
-import CodeBlock from '../../../components/code-block'
 
 Transfer AXL tokens from Axelar to an EVM chain using the terminal.
-
-<Callout type="error" emoji="🔥">
-  Important: The Axelar network is under active development. Use at your own risk with funds you're comfortable using. See [Terms of use](/terms-of-use).
-</Callout>
 
 ## Prerequisites
 
 - Skill level: intermediate
 - You have downloaded the Axelar blockchain and are comfortable with [Basic node management](/node/basic).
-- Your Axelar node has an account named `validator` that you control. Let `{VALIDATOR_ADDR}` denote the address of your `validator` account.
+- Your Axelar node has an account named `my_account` that you control. Let `{MY_ADDR}` denote the address of your `my_account` account.
 - Select an EVM chain `{EVM_CHAIN}` from: Ethereum, Avalanche, Fantom, Moonbeam, Polygon.
 - Complete steps from [Metamask for EVM chains](/resources/metamask) to connect your Metamask to `{EVM_CHAIN}`.
 - You need both AXL tokens and `{EVM_CHAIN}` tokens to pay transaction fees.
@@ -28,30 +21,13 @@ Transfer AXL tokens from Axelar to an EVM chain using the terminal.
 
 ## Send AXL tokens from Axelar to an EVM chain
 
-Optional: Verify that your `validator` account has sufficient balance as per [Basic node management](/node/basic).
+Optional: Verify that your `my_account` account has sufficient balance as per [Basic node management](/node/basic).
 
 Link your `{EVM_DEST_ADDR}` to a new temporary deposit address on Axelar:
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard tx axelarnet link {EVM_CHAIN} {EVM_DEST_ADDR} uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx axelarnet link {EVM_CHAIN} {EVM_DEST_ADDR} uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx axelarnet link {EVM_CHAIN} {EVM_DEST_ADDR} uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx axelarnet link {EVM_CHAIN} {EVM_DEST_ADDR} uaxl --from my_account
+```
 
 Output should contain
 
@@ -61,49 +37,15 @@ successfully linked {AXELAR_TEMP_ADDR} and {EVM_DEST_ADDR}
 
 Optional: query your new `{AXELAR_TEMP_ADDR}`:
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"~/.axelar/bin/axelard q nexus latest-deposit-address axelarnet {EVM_CHAIN} {EVM_DEST_ADDR}"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet/bin/axelard q nexus latest-deposit-address axelarnet {EVM_CHAIN} {EVM_DEST_ADDR}"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet-2/bin/axelard q nexus latest-deposit-address axelarnet {EVM_CHAIN} {EVM_DEST_ADDR}"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard q nexus latest-deposit-address axelarnet {EVM_CHAIN} {EVM_DEST_ADDR}
+```
 
 Send `{AMOUNT}` of `uaxl` to the new `{AXELAR_TEMP_ADDR}`.
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard tx bank send validator {AXELAR_TEMP_ADDR} {AMOUNT}uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx bank send validator {AXELAR_TEMP_ADDR} {AMOUNT}uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx bank send validator {AXELAR_TEMP_ADDR} {AMOUNT}uaxl --from validator --gas auto --gas-adjustment 1.5 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx bank send my_account {AXELAR_TEMP_ADDR} {AMOUNT}uaxl --from my_account
+```
 
 <Callout emoji="📝">
   Note: Third-party monitoring tools will automatically complete the remaining steps of this process.
@@ -119,52 +61,16 @@ The remaining steps are needed only if there are no active third-party monitorin
 
 Confirm the deposit transaction. Look for `{TX_HASH}` in the output of the previous command.
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard tx axelarnet confirm-deposit {TX_HASH} {AMOUNT}uaxl {AXELAR_TEMP_ADDR} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx axelarnet confirm-deposit {TX_HASH} {AMOUNT}uaxl {AXELAR_TEMP_ADDR} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx axelarnet confirm-deposit {TX_HASH} {AMOUNT}uaxl {AXELAR_TEMP_ADDR} --from validator --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx axelarnet confirm-deposit {TX_HASH} {AMOUNT}uaxl {AXELAR_TEMP_ADDR} --from my_account
+```
 
 Create and sign pending transfers for `{EVM_CHAIN}`.
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{`echo my-secret-password | ~/.axelar/bin/axelard tx evm create-pending-transfers {EVM_CHAIN} --from validator --chain-id axelar-dojo-1 --home ~/.axelar/.core --gas auto --gas-adjustment 1.5
-echo my-secret-password | ~/.axelar/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-dojo-1 --home ~/.axelar/.core`}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{`echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm create-pending-transfers {EVM_CHAIN} --from validator --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core --gas auto --gas-adjustment 1.5
-echo my-secret-password | ~/.axelar_testnet/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.core`}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{`echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm create-pending-transfers {EVM_CHAIN} --from validator --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core --gas auto --gas-adjustment 1.5
-echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx evm sign-commands {EVM_CHAIN} --from validator --gas auto --gas-adjustment 1.2 --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.core`}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx evm create-pending-transfers {EVM_CHAIN} --from my_account
+axelard tx evm sign-commands {EVM_CHAIN} --from my_account
+```
 
 Output should contain
 
@@ -174,26 +80,9 @@ successfully started signing batched commands with ID {BATCH_ID}
 
 Get the `execute_data`:
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"~/.axelar/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet-2/bin/axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard q evm batched-commands {EVM_CHAIN} {BATCH_ID}
+```
 
 Wait for `status: BATCHED_COMMANDS_STATUS_SIGNED` and copy the `execute_data`.
 
@@ -218,26 +107,10 @@ Before you click "confirm": select "EDIT", change "Gas Limit" to 5000000, and "S
 
 ### 2. Terminal
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"~/.axelar/bin/axelard q evm gateway-address {EVM_CHAIN}"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet/bin/axelard q evm gateway-address {EVM_CHAIN}"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"~/.axelar_testnet-2/bin/axelard q evm gateway-address {EVM_CHAIN}"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard q evm gateway-address {EVM_CHAIN}
+```
+
 </Callout>
 
 To send a transaction to `{GATEWAY_ADDR}` using Metamask: paste hex from `execute_data` above into "Hex Data" field. (Do not send tokens!)

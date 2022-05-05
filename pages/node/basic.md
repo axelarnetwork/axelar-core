@@ -29,33 +29,16 @@ kill -9 $(pgrep -f "axelard start")
   Caution: Your node must be stopped in order to properly backup chain data.
 </Callout>
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"cp -r ~/.axelar ~/.axelar_mainnet_backup"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"cp -r ~/.axelar_testnet ~/.axelar_testnet_backup"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"cp -r ~/.axelar_testnet-2 ~/.axelar_testnet-2_backup"}
-</CodeBlock>
-}
-]} />
+```bash
+cp -r $AXELARD_HOME ${AXELARD_HOME}_backup
+```
 
 ## Resume your Axelar node
 
 Resume your stopped Axelar node.
 
 <Callout emoji="💡">
-  Tip: If your node is still in `catching_up` mode then you might need to use the `-a` flag in the following command to specify a different version of axelar-core depending on your current progress downloading the blockchain. See [Join the Axelar testnet for the first time](./join).
+  Tip: If your node is still in `catching_up` mode then you might need to use the `-a` flag in the following command to specify a different version of axelar-core depending on your current progress downloading the blockchain. See [Genesis sync](./join-genesis).
 </Callout>
 
 <Tabs tabs={[
@@ -116,53 +99,19 @@ Let `{MY_ADDRESS}` denote the address of your `validator` account.
   Tip: Your balance will appear only after you have downloaded the blockchain and exited `catching_up` mode.
 </Callout>
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard q bank balances {MY_ADDRESS} --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard q bank balances {MY_ADDRESS}
+```
 
 If this is a new account then you should see no token balances.
 
 ## Get AXL tokens from the faucet
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <Markdown>
-{"There is no faucet for mainnet AXL tokens."}
-</Markdown>
-},
-{
-title: "Testnet",
-content: <Markdown>{`
+**Testnets:**
+Go to the Axelar testnet faucet and send some free AXL testnet tokens to `{MY_ADDRESS}`:
 
-Get free AXL testnet tokens sent to {MY_ADDRESS} from the [Axelar Testnet Faucet](https://faucet.testnet.axelar.dev/).
-
-Check your balance again to see the tokens you received from the faucet.
-`}</Markdown> }, { title: "Testnet-2", content: <Markdown>{`
-
-Get free AXL testnet tokens sent to {MY_ADDRESS} from the [Axelar Testnet Faucet](https://faucet-casablanca.testnet.axelar.dev/).
-
-Check your balance again to see the tokens you received from the faucet.
-`}</Markdown>
-}
-]} />
+- [Testnet-1 Faucet](https://faucet.testnet.axelar.dev/).
+- [Testnet-2 Faucet](https://faucet-casablanca.testnet.axelar.dev/)
 
 ## Recover your secret keys
 
