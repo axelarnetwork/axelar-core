@@ -21,6 +21,9 @@ rm $TOFND_HOME/export
 # Restart vald/tofnd processes as usual
 ```
 
+After performing the rotation, monitor your validator to make sure it's
+still posting heartbeats and there are no unexpected errors in `vald`/`tofnd` logs. It's also useful to perform a health check.
+
 ## Recovery of mnmenonics
 
 As always, you can import a `tofnd` mnemonic with `tofnd -m import -d $AXELARD_HOME/.tofnd`. If there are no other mnemonics yet in `tofnd` storage then the imported mnemonic will be treated as the latest mnemonic, 
