@@ -24,8 +24,7 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type Bitmap struct {
-	Bits           []byte        `protobuf:"bytes,1,opt,name=bits,proto3" json:"bits,omitempty"`
-	TrueCountCache *Bitmap_Cache `protobuf:"bytes,2,opt,name=true_count_cache,json=trueCountCache,proto3" json:"true_count_cache,omitempty"`
+	TrueCountCache *CircularBuffer `protobuf:"bytes,2,opt,name=true_count_cache,json=trueCountCache,proto3" json:"true_count_cache,omitempty"`
 }
 
 func (m *Bitmap) Reset()         { *m = Bitmap{} }
@@ -61,23 +60,24 @@ func (m *Bitmap) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Bitmap proto.InternalMessageInfo
 
-type Bitmap_Cache struct {
-	BitCount uint64 `protobuf:"varint,1,opt,name=bit_count,json=bitCount,proto3" json:"bit_count,omitempty"`
-	Result   uint64 `protobuf:"varint,2,opt,name=result,proto3" json:"result,omitempty"`
+type CircularBuffer struct {
+	CumulativeValue []uint64 `protobuf:"varint,1,rep,packed,name=cumulative_value,json=cumulativeValue,proto3" json:"cumulative_value,omitempty"`
+	Index           int32    `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
+	MaxSize         int32    `protobuf:"varint,3,opt,name=max_size,json=maxSize,proto3" json:"max_size,omitempty"`
 }
 
-func (m *Bitmap_Cache) Reset()         { *m = Bitmap_Cache{} }
-func (m *Bitmap_Cache) String() string { return proto.CompactTextString(m) }
-func (*Bitmap_Cache) ProtoMessage()    {}
-func (*Bitmap_Cache) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1919f8dbb764fb71, []int{0, 0}
+func (m *CircularBuffer) Reset()         { *m = CircularBuffer{} }
+func (m *CircularBuffer) String() string { return proto.CompactTextString(m) }
+func (*CircularBuffer) ProtoMessage()    {}
+func (*CircularBuffer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1919f8dbb764fb71, []int{1}
 }
-func (m *Bitmap_Cache) XXX_Unmarshal(b []byte) error {
+func (m *CircularBuffer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Bitmap_Cache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CircularBuffer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Bitmap_Cache.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CircularBuffer.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -87,44 +87,45 @@ func (m *Bitmap_Cache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (m *Bitmap_Cache) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Bitmap_Cache.Merge(m, src)
+func (m *CircularBuffer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CircularBuffer.Merge(m, src)
 }
-func (m *Bitmap_Cache) XXX_Size() int {
+func (m *CircularBuffer) XXX_Size() int {
 	return m.Size()
 }
-func (m *Bitmap_Cache) XXX_DiscardUnknown() {
-	xxx_messageInfo_Bitmap_Cache.DiscardUnknown(m)
+func (m *CircularBuffer) XXX_DiscardUnknown() {
+	xxx_messageInfo_CircularBuffer.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Bitmap_Cache proto.InternalMessageInfo
+var xxx_messageInfo_CircularBuffer proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*Bitmap)(nil), "axelar.utils.v1beta1.Bitmap")
-	proto.RegisterType((*Bitmap_Cache)(nil), "axelar.utils.v1beta1.Bitmap.Cache")
+	proto.RegisterType((*CircularBuffer)(nil), "axelar.utils.v1beta1.CircularBuffer")
 }
 
 func init() { proto.RegisterFile("axelar/utils/v1beta1/bitmap.proto", fileDescriptor_1919f8dbb764fb71) }
 
 var fileDescriptor_1919f8dbb764fb71 = []byte{
-	// 261 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x90, 0x31, 0x4b, 0x03, 0x31,
-	0x1c, 0xc5, 0x2f, 0x52, 0x0f, 0x8d, 0x22, 0x12, 0x8a, 0x94, 0x0a, 0xa1, 0x76, 0x2a, 0x82, 0x09,
-	0xd5, 0xd5, 0xa9, 0x5d, 0x1c, 0x9c, 0x6e, 0x74, 0x29, 0x49, 0x08, 0xd7, 0xe0, 0xb5, 0x29, 0xb9,
-	0x7f, 0xd4, 0x8f, 0xe1, 0xc7, 0xf0, 0xa3, 0x74, 0xec, 0xe8, 0xa8, 0x77, 0x5f, 0x44, 0xee, 0x9f,
-	0x1b, 0xdd, 0xde, 0x83, 0xdf, 0x7b, 0x2f, 0xf9, 0xd3, 0x1b, 0xf5, 0x61, 0x2b, 0x15, 0x64, 0x04,
-	0x57, 0xd5, 0xf2, 0x6d, 0xae, 0x2d, 0xa8, 0xb9, 0xd4, 0x0e, 0x36, 0x6a, 0x27, 0x76, 0xc1, 0x83,
-	0x67, 0xc3, 0x84, 0x08, 0x44, 0x44, 0x8f, 0x8c, 0x87, 0xa5, 0x2f, 0x3d, 0x02, 0xb2, 0x53, 0x89,
-	0x9d, 0x7e, 0x11, 0x9a, 0x2f, 0x30, 0xcc, 0x18, 0x1d, 0x68, 0x07, 0xf5, 0x88, 0x4c, 0xc8, 0xec,
-	0xbc, 0x40, 0xcd, 0x9e, 0xe9, 0x25, 0x84, 0x68, 0x57, 0xc6, 0xc7, 0x2d, 0xac, 0x8c, 0x32, 0x6b,
-	0x3b, 0x3a, 0x9a, 0x90, 0xd9, 0xd9, 0xfd, 0x54, 0xfc, 0xb7, 0x22, 0x52, 0x97, 0x58, 0x76, 0x64,
-	0x71, 0xd1, 0x65, 0x97, 0x5d, 0x14, 0xfd, 0xf8, 0x91, 0x1e, 0xa3, 0x60, 0xd7, 0xf4, 0x54, 0x3b,
-	0x48, 0xad, 0xb8, 0x37, 0x28, 0x4e, 0xb4, 0x03, 0x44, 0xd9, 0x15, 0xcd, 0x83, 0xad, 0x63, 0x05,
-	0xb8, 0x34, 0x28, 0x7a, 0xb7, 0x78, 0xda, 0xff, 0xf2, 0x6c, 0xdf, 0x70, 0x72, 0x68, 0x38, 0xf9,
-	0x69, 0x38, 0xf9, 0x6c, 0x79, 0x76, 0x68, 0x79, 0xf6, 0xdd, 0xf2, 0xec, 0xe5, 0xb6, 0x74, 0xb0,
-	0x8e, 0x5a, 0x18, 0xbf, 0x91, 0xe9, 0x65, 0x5b, 0x0b, 0xef, 0x3e, 0xbc, 0xf6, 0xee, 0xce, 0xf8,
-	0x60, 0xd3, 0xd5, 0x74, 0x8e, 0x7f, 0x7f, 0xf8, 0x0b, 0x00, 0x00, 0xff, 0xff, 0x06, 0x5b, 0x5d,
-	0x83, 0x4c, 0x01, 0x00, 0x00,
+	// 288 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x90, 0xc1, 0x4a, 0xc3, 0x30,
+	0x18, 0xc7, 0x5b, 0xe7, 0xa6, 0x44, 0x98, 0xa3, 0xec, 0x50, 0x3d, 0x84, 0x39, 0x3c, 0x4c, 0xc1,
+	0x94, 0xe9, 0x1b, 0xb4, 0x17, 0x4f, 0x1e, 0x2a, 0x88, 0x78, 0x29, 0x69, 0xfc, 0xd6, 0x05, 0xd3,
+	0x66, 0x64, 0x49, 0x2d, 0x7b, 0x0a, 0x1f, 0x6b, 0xc7, 0x1d, 0x3d, 0x6a, 0xfb, 0x22, 0xd2, 0x74,
+	0x20, 0x82, 0xb7, 0x7c, 0xff, 0xfc, 0x7e, 0x21, 0xdf, 0x1f, 0x5d, 0xd0, 0x0a, 0x04, 0x55, 0x81,
+	0xd1, 0x5c, 0xac, 0x83, 0x72, 0x9e, 0x82, 0xa6, 0xf3, 0x20, 0xe5, 0x3a, 0xa7, 0x2b, 0xb2, 0x52,
+	0x52, 0x4b, 0x6f, 0xdc, 0x21, 0xc4, 0x22, 0x64, 0x8f, 0x9c, 0x8f, 0x33, 0x99, 0x49, 0x0b, 0x04,
+	0xed, 0xa9, 0x63, 0xa7, 0xcf, 0x68, 0x10, 0x5a, 0xd7, 0x7b, 0x40, 0x23, 0xad, 0x0c, 0x24, 0x4c,
+	0x9a, 0x42, 0x27, 0x8c, 0xb2, 0x25, 0xf8, 0x07, 0x13, 0x77, 0x76, 0x72, 0x7b, 0x49, 0xfe, 0x7b,
+	0x90, 0x44, 0x5c, 0x31, 0x23, 0xa8, 0x0a, 0xcd, 0x62, 0x01, 0x2a, 0x1e, 0xb6, 0x76, 0xd4, 0xca,
+	0x51, 0xeb, 0x4e, 0x05, 0x1a, 0xfe, 0x25, 0xbc, 0x2b, 0x34, 0x62, 0x26, 0x37, 0x82, 0x6a, 0x5e,
+	0x42, 0x52, 0x52, 0x61, 0xc0, 0x77, 0x27, 0xbd, 0xd9, 0x61, 0x7c, 0xfa, 0x9b, 0x3f, 0xb5, 0xb1,
+	0x37, 0x46, 0x7d, 0x5e, 0xbc, 0x42, 0x65, 0x7f, 0xd0, 0x8f, 0xbb, 0xc1, 0x3b, 0x43, 0xc7, 0x39,
+	0xad, 0x92, 0x35, 0xdf, 0x80, 0xdf, 0xb3, 0x17, 0x47, 0x39, 0xad, 0x1e, 0xf9, 0x06, 0xc2, 0xfb,
+	0xed, 0x37, 0x76, 0xb6, 0x35, 0x76, 0x77, 0x35, 0x76, 0xbf, 0x6a, 0xec, 0x7e, 0x34, 0xd8, 0xd9,
+	0x35, 0xd8, 0xf9, 0x6c, 0xb0, 0xf3, 0x72, 0x9d, 0x71, 0xbd, 0x34, 0x29, 0x61, 0x32, 0x0f, 0xba,
+	0x5d, 0x0a, 0xd0, 0xef, 0x52, 0xbd, 0xed, 0xa7, 0x1b, 0x26, 0x15, 0x74, 0x95, 0xa6, 0x03, 0x5b,
+	0xcc, 0xdd, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x88, 0xfe, 0x6f, 0x45, 0x69, 0x01, 0x00, 0x00,
 }
 
 func (m *Bitmap) Marshal() (dAtA []byte, err error) {
@@ -159,17 +160,10 @@ func (m *Bitmap) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Bits) > 0 {
-		i -= len(m.Bits)
-		copy(dAtA[i:], m.Bits)
-		i = encodeVarintBitmap(dAtA, i, uint64(len(m.Bits)))
-		i--
-		dAtA[i] = 0xa
-	}
 	return len(dAtA) - i, nil
 }
 
-func (m *Bitmap_Cache) Marshal() (dAtA []byte, err error) {
+func (m *CircularBuffer) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -179,25 +173,43 @@ func (m *Bitmap_Cache) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Bitmap_Cache) MarshalTo(dAtA []byte) (int, error) {
+func (m *CircularBuffer) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Bitmap_Cache) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CircularBuffer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Result != 0 {
-		i = encodeVarintBitmap(dAtA, i, uint64(m.Result))
+	if m.MaxSize != 0 {
+		i = encodeVarintBitmap(dAtA, i, uint64(m.MaxSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Index != 0 {
+		i = encodeVarintBitmap(dAtA, i, uint64(m.Index))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.BitCount != 0 {
-		i = encodeVarintBitmap(dAtA, i, uint64(m.BitCount))
+	if len(m.CumulativeValue) > 0 {
+		dAtA3 := make([]byte, len(m.CumulativeValue)*10)
+		var j2 int
+		for _, num := range m.CumulativeValue {
+			for num >= 1<<7 {
+				dAtA3[j2] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j2++
+			}
+			dAtA3[j2] = uint8(num)
+			j2++
+		}
+		i -= j2
+		copy(dAtA[i:], dAtA3[:j2])
+		i = encodeVarintBitmap(dAtA, i, uint64(j2))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -219,10 +231,6 @@ func (m *Bitmap) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Bits)
-	if l > 0 {
-		n += 1 + l + sovBitmap(uint64(l))
-	}
 	if m.TrueCountCache != nil {
 		l = m.TrueCountCache.Size()
 		n += 1 + l + sovBitmap(uint64(l))
@@ -230,17 +238,24 @@ func (m *Bitmap) Size() (n int) {
 	return n
 }
 
-func (m *Bitmap_Cache) Size() (n int) {
+func (m *CircularBuffer) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.BitCount != 0 {
-		n += 1 + sovBitmap(uint64(m.BitCount))
+	if len(m.CumulativeValue) > 0 {
+		l = 0
+		for _, e := range m.CumulativeValue {
+			l += sovBitmap(uint64(e))
+		}
+		n += 1 + sovBitmap(uint64(l)) + l
 	}
-	if m.Result != 0 {
-		n += 1 + sovBitmap(uint64(m.Result))
+	if m.Index != 0 {
+		n += 1 + sovBitmap(uint64(m.Index))
+	}
+	if m.MaxSize != 0 {
+		n += 1 + sovBitmap(uint64(m.MaxSize))
 	}
 	return n
 }
@@ -280,40 +295,6 @@ func (m *Bitmap) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Bitmap: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Bits", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBitmap
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthBitmap
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthBitmap
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Bits = append(m.Bits[:0], dAtA[iNdEx:postIndex]...)
-			if m.Bits == nil {
-				m.Bits = []byte{}
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TrueCountCache", wireType)
@@ -344,7 +325,7 @@ func (m *Bitmap) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.TrueCountCache == nil {
-				m.TrueCountCache = &Bitmap_Cache{}
+				m.TrueCountCache = &CircularBuffer{}
 			}
 			if err := m.TrueCountCache.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -371,7 +352,7 @@ func (m *Bitmap) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Bitmap_Cache) Unmarshal(dAtA []byte) error {
+func (m *CircularBuffer) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -394,17 +375,93 @@ func (m *Bitmap_Cache) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Cache: wiretype end group for non-group")
+			return fmt.Errorf("proto: CircularBuffer: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Cache: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CircularBuffer: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BitCount", wireType)
+			if wireType == 0 {
+				var v uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowBitmap
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.CumulativeValue = append(m.CumulativeValue, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowBitmap
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthBitmap
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthBitmap
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.CumulativeValue) == 0 {
+					m.CumulativeValue = make([]uint64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowBitmap
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.CumulativeValue = append(m.CumulativeValue, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field CumulativeValue", wireType)
 			}
-			m.BitCount = 0
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
+			}
+			m.Index = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowBitmap
@@ -414,16 +471,16 @@ func (m *Bitmap_Cache) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.BitCount |= uint64(b&0x7F) << shift
+				m.Index |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 2:
+		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxSize", wireType)
 			}
-			m.Result = 0
+			m.MaxSize = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowBitmap
@@ -433,7 +490,7 @@ func (m *Bitmap_Cache) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Result |= uint64(b&0x7F) << shift
+				m.MaxSize |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

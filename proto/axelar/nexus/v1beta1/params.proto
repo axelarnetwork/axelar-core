@@ -15,5 +15,5 @@ message Params {
       [ (gogoproto.nullable) = false ];
   utils.v1beta1.Threshold chain_maintainer_incorrect_vote_threshold = 3
       [ (gogoproto.nullable) = false ];
-  uint64 chain_maintainer_check_window = 4;
+  int32 chain_maintainer_check_window = 4;
 }

@@ -7864,33 +7864,37 @@ paths:
                             missing_votes:
                               type: object
                               properties:
-                                bits:
-                                  type: string
-                                  format: byte
                                 true_count_cache:
                                   type: object
                                   properties:
-                                    bit_count:
-                                      type: string
-                                      format: uint64
-                                    result:
-                                      type: string
-                                      format: uint64
+                                    cumulative_value:
+                                      type: array
+                                      items:
+                                        type: string
+                                        format: uint64
+                                    index:
+                                      type: integer
+                                      format: int32
+                                    max_size:
+                                      type: integer
+                                      format: int32
                             incorrect_votes:
                               type: object
                               properties:
-                                bits:
-                                  type: string
-                                  format: byte
                                 true_count_cache:
                                   type: object
                                   properties:
-                                    bit_count:
-                                      type: string
-                                      format: uint64
-                                    result:
-                                      type: string
-                                      format: uint64
+                                    cumulative_value:
+                                      type: array
+                                      items:
+                                        type: string
+                                        format: uint64
+                                    index:
+                                      type: integer
+                                      format: int32
+                                    max_size:
+                                      type: integer
+                                      format: int32
                     title: ChainState represents the state of a registered blockchain
         default:
           description: An unexpected error response
@@ -35400,33 +35404,37 @@ components:
               missing_votes:
                 type: object
                 properties:
-                  bits:
-                    type: string
-                    format: byte
                   true_count_cache:
                     type: object
                     properties:
-                      bit_count:
-                        type: string
-                        format: uint64
-                      result:
-                        type: string
-                        format: uint64
+                      cumulative_value:
+                        type: array
+                        items:
+                          type: string
+                          format: uint64
+                      index:
+                        type: integer
+                        format: int32
+                      max_size:
+                        type: integer
+                        format: int32
               incorrect_votes:
                 type: object
                 properties:
-                  bits:
-                    type: string
-                    format: byte
                   true_count_cache:
                     type: object
                     properties:
-                      bit_count:
-                        type: string
-                        format: uint64
-                      result:
-                        type: string
-                        format: uint64
+                      cumulative_value:
+                        type: array
+                        items:
+                          type: string
+                          format: uint64
+                      index:
+                        type: integer
+                        format: int32
+                      max_size:
+                        type: integer
+                        format: int32
       title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainStateResponse:
       type: object
@@ -35482,33 +35490,37 @@ components:
                   missing_votes:
                     type: object
                     properties:
-                      bits:
-                        type: string
-                        format: byte
                       true_count_cache:
                         type: object
                         properties:
-                          bit_count:
-                            type: string
-                            format: uint64
-                          result:
-                            type: string
-                            format: uint64
+                          cumulative_value:
+                            type: array
+                            items:
+                              type: string
+                              format: uint64
+                          index:
+                            type: integer
+                            format: int32
+                          max_size:
+                            type: integer
+                            format: int32
                   incorrect_votes:
                     type: object
                     properties:
-                      bits:
-                        type: string
-                        format: byte
                       true_count_cache:
                         type: object
                         properties:
-                          bit_count:
-                            type: string
-                            format: uint64
-                          result:
-                            type: string
-                            format: uint64
+                          cumulative_value:
+                            type: array
+                            items:
+                              type: string
+                              format: uint64
+                          index:
+                            type: integer
+                            format: int32
+                          max_size:
+                            type: integer
+                            format: int32
           title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainsByAssetResponse:
       type: object
@@ -35582,33 +35594,37 @@ components:
         missing_votes:
           type: object
           properties:
-            bits:
-              type: string
-              format: byte
             true_count_cache:
               type: object
               properties:
-                bit_count:
-                  type: string
-                  format: uint64
-                result:
-                  type: string
-                  format: uint64
+                cumulative_value:
+                  type: array
+                  items:
+                    type: string
+                    format: uint64
+                index:
+                  type: integer
+                  format: int32
+                max_size:
+                  type: integer
+                  format: int32
         incorrect_votes:
           type: object
           properties:
-            bits:
-              type: string
-              format: byte
             true_count_cache:
               type: object
               properties:
-                bit_count:
-                  type: string
-                  format: uint64
-                result:
-                  type: string
-                  format: uint64
+                cumulative_value:
+                  type: array
+                  items:
+                    type: string
+                    format: uint64
+                index:
+                  type: integer
+                  format: int32
+                max_size:
+                  type: integer
+                  format: int32
     axelar.nexus.v1beta1.RegisterAssetFeeRequest:
       type: object
       properties:
@@ -35757,27 +35773,34 @@ components:
     axelar.utils.v1beta1.Bitmap:
       type: object
       properties:
-        bits:
-          type: string
-          format: byte
         true_count_cache:
           type: object
           properties:
-            bit_count:
-              type: string
-              format: uint64
-            result:
-              type: string
-              format: uint64
-    axelar.utils.v1beta1.Bitmap.Cache:
+            cumulative_value:
+              type: array
+              items:
+                type: string
+                format: uint64
+            index:
+              type: integer
+              format: int32
+            max_size:
+              type: integer
+              format: int32
+    axelar.utils.v1beta1.CircularBuffer:
       type: object
       properties:
-        bit_count:
-          type: string
-          format: uint64
-        result:
-          type: string
-          format: uint64
+        cumulative_value:
+          type: array
+          items:
+            type: string
+            format: uint64
+        index:
+          type: integer
+          format: int32
+        max_size:
+          type: integer
+          format: int32
     cosmos.base.query.v1beta1.PageRequest:
       type: object
       properties:

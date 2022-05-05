@@ -1,7 +1,7 @@
 package types
 
 import (
-	fmt "fmt"
+	"fmt"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -90,13 +90,17 @@ func validateThresholdWith(paramName string) func(interface{}) error {
 }
 
 func validateChainMaintainerCheckWindow(i interface{}) error {
-	val, ok := i.(uint64)
+	val, ok := i.(int32)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for ChainMaintainerCheckWindow: %T", i)
 	}
 
-	if val == 0 {
+	if val <= 0 {
 		return fmt.Errorf("ChainMaintainerCheckWindow must be >0")
+	}
+
+	if val >= maxBitmapSize {
+		return fmt.Errorf("ChainMaintainerCheckWindow must be < %d", maxBitmapSize)
 	}
 
 	return nil
