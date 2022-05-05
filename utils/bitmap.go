@@ -18,11 +18,11 @@ func (m *Bitmap) Add(bit bool) *Bitmap {
 }
 
 // CountTrue returns the number of 1's in the given range
-func (m *Bitmap) CountTrue(bitCount int) uint64 {
+func (m Bitmap) CountTrue(bitCount int) uint64 {
 	return m.TrueCountCache.Count(bitCount)
 }
 
 // CountFalse returns the number of 0's in the given range
-func (m *Bitmap) CountFalse(bitCount int) uint64 {
-	return uint64(bitCount) - m.TrueCountCache.Count(bitCount)
+func (m Bitmap) CountFalse(bitCount int) uint64 {
+	return uint64(bitCount) - m.CountTrue(bitCount)
 }
