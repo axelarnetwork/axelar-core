@@ -5,10 +5,10 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.3.10
 	github.com/axelarnetwork/tm-events v0.0.0-20220418232640-ec3f8734fcfb
-	github.com/axelarnetwork/utils v0.0.0-20220408024410-9473fc8c29b4
+	github.com/axelarnetwork/utils v0.0.0-20220427210315-486bfb5d7157
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/cosmos/cosmos-sdk v0.45.1
+	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/cosmos/ibc-go/v2 v2.2.0
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/gogo/protobuf v1.3.3
@@ -26,10 +26,10 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
-	github.com/tendermint/tendermint v0.34.16
+	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
-	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb
+	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.10
@@ -141,9 +141,9 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220329152356-43be30ef3008 // indirect
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

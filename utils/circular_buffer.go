@@ -1,5 +1,7 @@
 package utils
 
+import "github.com/axelarnetwork/utils/math"
+
 func NewCircularBuffer(maxSize int) *CircularBuffer {
 	return &CircularBuffer{
 		CumulativeValue: make([]uint64, 32),
@@ -10,7 +12,7 @@ func NewCircularBuffer(maxSize int) *CircularBuffer {
 
 func (m *CircularBuffer) Add(value uint32) {
 	if m.bufferIsFull() && m.bufferLTMaxSize() {
-		m.doubleBufferSize()
+		m.increaseBufferSize()
 	}
 
 	prevValue := m.CumulativeValue[m.Index]
@@ -33,8 +35,9 @@ func (m CircularBuffer) bufferLTMaxSize() bool {
 	return (len(m.CumulativeValue) << 1) <= int(m.MaxSize)
 }
 
-func (m *CircularBuffer) doubleBufferSize() {
-	newBuffer := make([]uint64, len(m.CumulativeValue)<<1)
+// double buffer size until it reaches max size. If max size is not a power of 2 limit the last increase to max size
+func (m *CircularBuffer) increaseBufferSize() {
+	newBuffer := make([]uint64, math.Min(len(m.CumulativeValue)<<1, int(m.MaxSize)))
 	for i := 0; i < len(m.CumulativeValue); i++ {
 		newBuffer[i] = m.CumulativeValue[i]
 	}
