@@ -1,6 +1,7 @@
 {
   "setup": "Setup",
   "external-chains": "Support external chains",
+  "operations": "Operational Commands",
   "troubleshoot": {
     "title": "Troubleshoot",
     "hidden": true
